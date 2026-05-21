@@ -1,0 +1,317 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #0a0a0f;
+  color: #e8e8f0;
+}
+
+#__next {
+  height: 100%;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.12);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+@keyframes blink {
+  0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.msg-animate {
+  animation: fadeSlideIn 0.2s ease forwards;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #6366f1;
+  animation: blink 1.2s ease-in-out infinite;
+  display: inline-block;
+}
+
+pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+textarea {
+  resize: none;
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+select {
+  font-family: inherit;
+}
+
+/* Syntax highlighted code blocks */
+.code-block {
+  background: #0d0d1a;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 10px 0;
+}
+
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px;
+  background: rgba(99, 102, 241, 0.08);
+  border-bottom: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+.code-lang {
+  font-size: 11px;
+  font-weight: 600;
+  color: #818cf8;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.code-copy {
+  font-size: 11px;
+  color: #6b7280;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+.code-copy:hover {
+  color: #818cf8;
+  background: rgba(99,102,241,0.1);
+}
+
+.code-body {
+  padding: 14px;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #c8d6e5;
+  overflow-x: auto;
+}
+
+/* Topic sidebar */
+.topic-item {
+  transition: background 0.12s;
+}
+.topic-item:hover {
+  background: rgba(255,255,255,0.04);
+}
+.topic-item.active {
+  background: rgba(99,102,241,0.12);
+}
+
+.subtopic-item {
+  transition: background 0.12s;
+}
+.subtopic-item:hover {
+  background: rgba(255,255,255,0.04);
+}
+.subtopic-item.active {
+  background: rgba(99,102,241,0.1);
+  color: #818cf8;
+}
+
+/* Chip buttons */
+.chip {
+  padding: 5px 13px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 20px;
+  border: 1px solid rgba(99,102,241,0.3);
+  background: rgba(99,102,241,0.06);
+  color: #a5b4fc;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.chip:hover {
+  background: rgba(99,102,241,0.15);
+  border-color: rgba(99,102,241,0.5);
+  color: #c7d2fe;
+}
+
+/* Mode toggle */
+.mode-btn {
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-transform: capitalize;
+}
+.mode-btn.active {
+  background: rgba(99,102,241,0.2);
+  color: #a5b4fc;
+}
+.mode-btn:not(.active) {
+  background: transparent;
+  color: #6b7280;
+}
+.mode-btn:not(.active):hover {
+  color: #9ca3af;
+}
+
+/* Send button */
+.send-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: none;
+  background: #6366f1;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.send-btn:hover:not(:disabled) {
+  background: #818cf8;
+}
+.send-btn:disabled {
+  background: rgba(99,102,241,0.3);
+  cursor: not-allowed;
+}
+
+/* Start button */
+.start-btn {
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 7px;
+  border: 1px solid rgba(99,102,241,0.4);
+  background: rgba(99,102,241,0.12);
+  color: #a5b4fc;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s;
+}
+.start-btn:hover:not(:disabled) {
+  background: rgba(99,102,241,0.22);
+  border-color: rgba(99,102,241,0.6);
+}
+.start-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Difficulty select */
+.diff-select {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  color: #9ca3af;
+  outline: none;
+}
+.diff-select:focus {
+  border-color: rgba(99,102,241,0.4);
+}
+
+/* Message input */
+.msg-input {
+  flex: 1;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  color: #e8e8f0;
+  line-height: 1.5;
+  outline: none;
+  transition: border 0.15s;
+  font-family: inherit;
+}
+.msg-input::placeholder {
+  color: #4b5563;
+}
+.msg-input:focus {
+  border-color: rgba(99,102,241,0.4);
+}
+
+.code-input {
+  width: 100%;
+  background: #0d0d1a;
+  border: 1px solid rgba(99,102,241,0.2);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 12.5px;
+  color: #c8d6e5;
+  outline: none;
+  line-height: 1.6;
+  transition: border 0.15s;
+}
+.code-input:focus {
+  border-color: rgba(99,102,241,0.4);
+}
+.code-input::placeholder {
+  color: #374151;
+}
+
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.icon-btn:hover {
+  background: rgba(255,255,255,0.08);
+  color: #9ca3af;
+}
+.icon-btn.active {
+  background: rgba(99,102,241,0.12);
+  border-color: rgba(99,102,241,0.3);
+  color: #818cf8;
+}
