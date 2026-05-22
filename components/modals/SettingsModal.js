@@ -14,9 +14,9 @@ export default function SettingsModal({ onClose, theme }) {
       }}
     >
       <div
+        className="glass-chrome"
         onClick={(event) => event.stopPropagation()}
         style={{
-          background: theme.surface,
           border: `1px solid ${theme.accentBorder}`,
           borderRadius: "16px 16px 0 0",
           padding: 20,
@@ -30,7 +30,7 @@ export default function SettingsModal({ onClose, theme }) {
             <i className={`ti ${theme.icon}`} style={{ color: theme.accentStrong, marginRight: 7 }} />
             About
           </span>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: "#6b7280", fontSize: 22, cursor: "pointer" }}>x</button>
+          <button className="icon-btn" onClick={onClose} style={{ color: "#6b7280", fontSize: 22, cursor: "pointer" }}>x</button>
         </div>
 
         <div style={{ fontSize: 13, color: "#9ca3af", lineHeight: 1.8 }}>

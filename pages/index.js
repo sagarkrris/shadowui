@@ -3,6 +3,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import CompanyPrep from "../components/company/CompanyPrep";
 import MessageContent from "../components/chat/MessageContent";
 import ScoreBadge from "../components/chat/ScoreBadge";
+import TechBackground from "../components/TechBackground";
 import TypingDots from "../components/chat/TypingDots";
 import ScreenModal from "../components/modals/ScreenModal";
 import SettingsModal from "../components/modals/SettingsModal";
@@ -357,6 +358,16 @@ export default function Home() {
     "--tech-accent-strong": techTheme.accentStrong,
     "--tech-accent-text": techTheme.accentText,
     "--tech-surface": techTheme.surface,
+    "--tech-panel": techTheme.panel,
+    "--tech-panel-strong": techTheme.panelStrong,
+    "--tech-glass-panel": techTheme.glass.panel,
+    "--tech-glass-panel-strong": techTheme.glass.panelStrong,
+    "--tech-glass-tint": techTheme.glass.tint,
+    "--tech-glass-tint-strong": techTheme.glass.tintStrong,
+    "--tech-glass-shine": techTheme.glass.shine,
+    "--tech-glass-edge": techTheme.glass.edge,
+    "--tech-glass-edge-soft": techTheme.glass.edgeSoft,
+    "--tech-glass-shadow": techTheme.glass.shadow,
   };
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -384,7 +395,8 @@ export default function Home() {
       {showSettings && <SettingsModal theme={techTheme} onClose={() => setShowSettings(false)} />}
 
       {/* App shell */}
-      <div style={{ ...themeVars, display:"flex", height:"calc(var(--vh, 1vh) * 100)", overflow:"hidden", background:techTheme.surface }}>
+      <div style={{ ...themeVars, position:"relative", isolation:"isolate", display:"flex", height:"calc(var(--vh, 1vh) * 100)", overflow:"hidden", background:techTheme.surface }}>
+        <TechBackground theme={techTheme} />
 
         {/* Sidebar */}
         <Sidebar
@@ -401,10 +413,10 @@ export default function Home() {
         />
 
         {/* Main */}
-        <main style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden", minWidth:0, background:techTheme.surface }}>
+        <main className="glass-panel" style={{ position:"relative", zIndex:1, flex:1, display:"flex", flexDirection:"column", overflow:"hidden", minWidth:0 }}>
 
           {/* ── Top bar ── */}
-          <header style={{ display:"flex", alignItems:"center", gap:8, padding:"9px 12px", borderBottom:"1px solid rgba(255,255,255,.06)", background:techTheme.surface, flexShrink:0, minHeight:52 }}>
+          <header className="glass-chrome" style={{ display:"flex", alignItems:"center", gap:8, padding:"9px 12px", borderBottom:"1px solid rgba(255,255,255,.08)", flexShrink:0, minHeight:52 }}>
             <button className="icon-btn" onClick={() => setSidebar(p => !p)} title="Topics">
               <i className="ti ti-menu-2" />
             </button>
@@ -428,17 +440,18 @@ export default function Home() {
 
               <div style={{ display:"flex", background:"rgba(255,255,255,.04)", borderRadius:7, padding:2, border:"1px solid rgba(255,255,255,.07)" }}>
                 {["interview","practice"].map(m => (
-                  <button key={m} onClick={() => setMode(m)} style={{ padding:"3px 10px", fontSize:11, fontWeight:500, borderRadius:5, border:"none", cursor:"pointer", color: mode===m?techTheme.accentText:"#6b7280", background: mode===m?techTheme.accentSoft:"transparent", textTransform:"capitalize" }}>{m}</button>
+                <button key={m} className={mode===m?"glass-button":""} onClick={() => setMode(m)} style={{ padding:"3px 10px", fontSize:11, fontWeight:500, borderRadius:5, border:mode===m?`1px solid ${techTheme.accentBorder}`:"none", cursor:"pointer", color: mode===m?techTheme.accentText:"#6b7280", background: mode===m?techTheme.accentSoft:"transparent", textTransform:"capitalize" }}>{m}</button>
                 ))}
               </div>
 
               <select value={difficulty} onChange={e => setDifficulty(e.target.value)}
-                style={{ fontSize:11, padding:"3px 6px", borderRadius:6, border:"1px solid rgba(255,255,255,.09)", background:"rgba(255,255,255,.04)", color:"#9ca3af", outline:"none" }}>
+                className="glass-input"
+                style={{ fontSize:11, padding:"3px 6px", borderRadius:6, border:"1px solid rgba(255,255,255,.09)", color:"#9ca3af", outline:"none" }}>
                 {DIFFS.map(d => <option key={d}>{d}</option>)}
               </select>
 
-              <button onClick={startSession} disabled={!candidateProfile || !selectedCat || loading}
-                style={{ padding:"4px 12px", fontSize:12, fontWeight:600, borderRadius:7, border:`1px solid ${techTheme.accentBorder}`, background:techTheme.accentSoft, color:techTheme.accentText, cursor: candidateProfile&&selectedCat&&!loading?"pointer":"not-allowed", opacity: candidateProfile&&selectedCat&&!loading?1:.4, display:"flex", alignItems:"center", gap:5 }}>
+              <button className="glass-button" onClick={startSession} disabled={!candidateProfile || !selectedCat || loading}
+                style={{ padding:"4px 12px", fontSize:12, fontWeight:600, borderRadius:7, border:`1px solid ${techTheme.accentBorder}`, color:techTheme.accentText, cursor: candidateProfile&&selectedCat&&!loading?"pointer":"not-allowed", opacity: candidateProfile&&selectedCat&&!loading?1:.4, display:"flex", alignItems:"center", gap:5 }}>
                 <i className="ti ti-player-play" style={{ fontSize:11 }} />Start
               </button>
             </div>}
@@ -468,6 +481,8 @@ export default function Home() {
                   theme={techTheme}
                   profile={candidateProfile}
                   showCodeTools={showCodeTools}
+                  topics={visibleTopics}
+                  weakSpots={weakSpots}
                 />
               : (
                 <>
@@ -476,7 +491,7 @@ export default function Home() {
                       <div style={{ width:28, height:28, borderRadius:"50%", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", background: msg.role==="user"?techTheme.accentSoft:"rgba(168,85,247,.12)", border: msg.role==="user"?`1px solid ${techTheme.accentBorder}`:"1px solid rgba(168,85,247,.25)", fontSize:13 }}>
                         <i className={`ti ${msg.role==="user"?"ti-user":"ti-robot"}`} style={{ color: msg.role==="user"?techTheme.accentStrong:"#c084fc" }} />
                       </div>
-                      <div style={{ maxWidth: isMobile?"88%":"82%", background: msg.role==="user"?techTheme.accentMuted:"rgba(255,255,255,.03)", border: msg.role==="user"?`1px solid ${techTheme.accentBorder}`:"1px solid rgba(255,255,255,.07)", borderRadius: msg.role==="user"?"12px 12px 4px 12px":"12px 12px 12px 4px", padding: isMobile?"9px 12px":"10px 14px" }}>
+                      <div className="glass-card" style={{ maxWidth: isMobile?"88%":"82%", border: msg.role==="user"?`1px solid ${techTheme.accentBorder}`:"1px solid rgba(255,255,255,.07)", borderRadius: msg.role==="user"?"12px 12px 4px 12px":"12px 12px 12px 4px", padding: isMobile?"9px 12px":"10px 14px" }}>
                         {msg.role==="assistant" && idx>0 && <ScoreBadge content={msg.content} />}
                         {msg.role==="user"
                           ? <div style={{ fontSize: isMobile?13:13.5, color:techTheme.accentText, lineHeight:1.65, whiteSpace:"pre-wrap", wordBreak:"break-word" }}>{msg.content}</div>
@@ -493,14 +508,15 @@ export default function Home() {
           </div>
 
           {/* ── Input area ── */}
-          {showComposer && <footer style={{ padding: isMobile?"8px 10px 10px":"10px 12px 12px", borderTop:"1px solid rgba(255,255,255,.06)", background:techTheme.surface, flexShrink:0 }}>
+          {showComposer && <footer className="glass-chrome" style={{ padding: isMobile?"8px 10px 10px":"10px 12px 12px", borderTop:"1px solid rgba(255,255,255,.08)", flexShrink:0 }}>
             {showCodeTools && showCode && (
               <div style={{ marginBottom:8 }}>
                 <div style={{ fontSize:11.5, color:"#6b7280", marginBottom:5, display:"flex", alignItems:"center", gap:6 }}>
                   <i className="ti ti-code" style={{ fontSize:13 }} />Code
                 </div>
                 <textarea value={codeInput} onChange={e => setCodeInput(e.target.value)} rows={4} placeholder="// Paste your Code here…"
-                  style={{ width:"100%", background:"rgba(0,0,0,.2)", border:`1px solid ${techTheme.accentBorder}`, borderRadius:8, padding:"8px 12px", fontFamily:"'JetBrains Mono',monospace", fontSize:12, color:"#c8d6e5", outline:"none", lineHeight:1.6 }} />
+                  className="glass-input"
+                  style={{ width:"100%", border:`1px solid ${techTheme.accentBorder}`, borderRadius:8, padding:"8px 12px", fontFamily:"'JetBrains Mono',monospace", fontSize:12, color:"#c8d6e5", outline:"none", lineHeight:1.6 }} />
               </div>
             )}
             <div style={{ display:"flex", gap:7, alignItems:"flex-end" }}>
@@ -508,14 +524,16 @@ export default function Home() {
                 onKeyDown={e => { if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();callAPI(input);} }}
                 rows={2} disabled={loading}
                 placeholder={mode==="interview" ? "Type your answer… or use 📸/🎤" : "Ask anything about frontend, backend, DSA, system design, or databases…"}
-                style={{ flex:1, background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.09)", borderRadius:9, padding:"9px 12px", fontSize: isMobile?14:13, color:"#e8e8f0", outline:"none", lineHeight:1.5, maxHeight:120 }} />
+                className="glass-input"
+                style={{ flex:1, border:"1px solid rgba(255,255,255,.09)", borderRadius:9, padding:"9px 12px", fontSize: isMobile?14:13, color:"#e8e8f0", outline:"none", lineHeight:1.5, maxHeight:120 }} />
 
               <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
                 <button className="icon-btn" onClick={() => setShowScreen(true)} title="Analyze Screen" style={{ width:30, height:30, fontSize:15 }}><i className="ti ti-screenshot" /></button>
                 <button className={`icon-btn ${isListening?"recording":""}`} onClick={toggleVoice} title="Voice" style={{ width:30, height:30, fontSize:15 }}><i className={`ti ${isListening?"ti-microphone-off":"ti-microphone"}`} /></button>
                 {showCodeTools && <button className={`icon-btn ${showCode?"active":""}`} onClick={() => setShowCode(p=>!p)} title="Code" style={{ width:30, height:30, fontSize:15 }}><i className="ti ti-code" /></button>}
                 <button onClick={() => callAPI(input)} disabled={!canSend||loading}
-                  style={{ width:30, height:30, borderRadius:7, border:"none", background: canSend&&!loading?techTheme.accent:techTheme.accentMuted, color:"white", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, cursor: canSend&&!loading?"pointer":"not-allowed" }}>
+                  className={canSend&&!loading?"glass-button":""}
+                  style={{ width:30, height:30, borderRadius:7, border:canSend&&!loading?`1px solid ${techTheme.accentBorder}`:"none", background: canSend&&!loading?techTheme.accent:techTheme.accentMuted, color:"white", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, cursor: canSend&&!loading?"pointer":"not-allowed" }}>
                   <i className="ti ti-send" />
                 </button>
               </div>
@@ -526,15 +544,16 @@ export default function Home() {
               <div style={{ marginTop:8, display:"flex", alignItems:"center", justifyContent:"space-between", gap:8 }}>
                 <div style={{ display:"flex", background:"rgba(255,255,255,.04)", borderRadius:7, padding:2, border:"1px solid rgba(255,255,255,.07)", flex:1 }}>
                   {["interview","practice"].map(m => (
-                    <button key={m} onClick={() => setMode(m)} style={{ flex:1, padding:"5px 6px", fontSize:11, fontWeight:500, borderRadius:5, border:"none", cursor:"pointer", color: mode===m?techTheme.accentText:"#6b7280", background: mode===m?techTheme.accentSoft:"transparent", textTransform:"capitalize" }}>{m}</button>
+                    <button key={m} className={mode===m?"glass-button":""} onClick={() => setMode(m)} style={{ flex:1, padding:"5px 6px", fontSize:11, fontWeight:500, borderRadius:5, border:mode===m?`1px solid ${techTheme.accentBorder}`:"none", cursor:"pointer", color: mode===m?techTheme.accentText:"#6b7280", background: mode===m?techTheme.accentSoft:"transparent", textTransform:"capitalize" }}>{m}</button>
                   ))}
                 </div>
                 <select value={difficulty} onChange={e => setDifficulty(e.target.value)}
-                  style={{ fontSize:11, padding:"5px 6px", borderRadius:6, border:"1px solid rgba(255,255,255,.09)", background:"rgba(255,255,255,.04)", color:"#9ca3af", outline:"none" }}>
+                  className="glass-input"
+                  style={{ fontSize:11, padding:"5px 6px", borderRadius:6, border:"1px solid rgba(255,255,255,.09)", color:"#9ca3af", outline:"none" }}>
                   {DIFFS.map(d => <option key={d}>{d}</option>)}
                 </select>
-                <button onClick={startSession} disabled={!candidateProfile||!selectedCat||loading}
-                  style={{ padding:"5px 12px", fontSize:11, fontWeight:600, borderRadius:7, border:`1px solid ${techTheme.accentBorder}`, background:techTheme.accentSoft, color:techTheme.accentText, cursor: candidateProfile&&selectedCat&&!loading?"pointer":"not-allowed", opacity: candidateProfile&&selectedCat&&!loading?1:.4, display:"flex", alignItems:"center", gap:4, whiteSpace:"nowrap" }}>
+                <button className="glass-button" onClick={startSession} disabled={!candidateProfile||!selectedCat||loading}
+                  style={{ padding:"5px 12px", fontSize:11, fontWeight:600, borderRadius:7, border:`1px solid ${techTheme.accentBorder}`, color:techTheme.accentText, cursor: candidateProfile&&selectedCat&&!loading?"pointer":"not-allowed", opacity: candidateProfile&&selectedCat&&!loading?1:.4, display:"flex", alignItems:"center", gap:4, whiteSpace:"nowrap" }}>
                   <i className="ti ti-player-play" style={{ fontSize:10 }} />Start
                 </button>
               </div>
@@ -555,7 +574,7 @@ export default function Home() {
 
           {/* ── Mobile bottom nav ── */}
           {isMobile && (
-            <nav style={{ display:"flex", alignItems:"center", justifyContent:"space-around", padding:"6px 8px", borderTop:"1px solid rgba(255,255,255,.06)", background:techTheme.surface, flexShrink:0, paddingBottom:"max(6px, env(safe-area-inset-bottom))" }}>
+            <nav className="glass-chrome" style={{ display:"flex", alignItems:"center", justifyContent:"space-around", padding:"6px 8px", borderTop:"1px solid rgba(255,255,255,.08)", flexShrink:0, paddingBottom:"max(6px, env(safe-area-inset-bottom))" }}>
               {[
                 { icon:"ti-layout-sidebar", label:"Topics",  action:()=>setSidebar(p=>!p), active:sidebarOpen },
                 { icon:"ti-building",        label:"Company", action:()=>setActiveTab(activeTab==="company"?"chat":"company"), active:activeTab==="company" },

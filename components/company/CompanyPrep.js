@@ -9,7 +9,7 @@ function QuestionList({ title, icon, items, company, type, theme, onMock }) {
       </h2>
       <div style={{ display: "grid", gap: 8 }}>
         {items.map((item) => (
-          <article key={`${type}-${item.title}`} style={{ border: "1px solid rgba(255,255,255,.07)", background: "rgba(255,255,255,.035)", borderRadius: 8, padding: 10 }}>
+          <article key={`${type}-${item.title}`} className="glass-card" style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 10 }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start", marginBottom: 6 }}>
               <strong style={{ fontSize: 12.5, color: theme.accentText }}>{item.title}</strong>
               <span style={{ fontSize: 10, color: "#6b7280", whiteSpace: "nowrap" }}>{item.difficulty}</span>
@@ -17,7 +17,7 @@ function QuestionList({ title, icon, items, company, type, theme, onMock }) {
             <p style={{ fontSize: 12, color: "#9ca3af", lineHeight: 1.55, marginBottom: 8 }}>{item.prompt}</p>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
               <span style={{ fontSize: 10.5, color: "#4b5563" }}>{item.source} - {item.date}</span>
-              <button onClick={() => onMock(buildCompanyMockPrompt({ ...item, company, type }))} style={{ display: "inline-flex", alignItems: "center", gap: 5, border: `1px solid ${theme.accentBorder}`, background: theme.accentMuted, color: theme.accentText, borderRadius: 6, padding: "4px 8px", fontSize: 11, fontWeight: 600 }}>
+              <button className="glass-button" onClick={() => onMock(buildCompanyMockPrompt({ ...item, company, type }))} style={{ display: "inline-flex", alignItems: "center", gap: 5, border: `1px solid ${theme.accentBorder}`, color: theme.accentText, borderRadius: 6, padding: "4px 8px", fontSize: 11, fontWeight: 600 }}>
                 <i className="ti ti-player-play" />Mock
               </button>
             </div>
@@ -66,8 +66,8 @@ export default function CompanyPrep({ theme, weakSpots, onMock }) {
             <p style={{ fontSize: 12.5, color: "#6b7280", lineHeight: 1.5 }}>Publicly reported questions, mock interviews, weak spots, and source links.</p>
           </div>
           <form onSubmit={(event) => { event.preventDefault(); loadCompany(); }} style={{ display: "flex", gap: 7, flex: "1 1 320px" }}>
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search company, e.g. Amazon" style={{ flex: 1, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 8, padding: "9px 11px", color: "#e8e8f0", outline: "none", fontSize: 13 }} />
-            <button disabled={loading} style={{ border: `1px solid ${theme.accentBorder}`, background: theme.accentSoft, color: theme.accentText, borderRadius: 8, padding: "0 13px", fontSize: 12, fontWeight: 700 }}>
+            <input className="glass-input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search company, e.g. Amazon" style={{ flex: 1, border: "1px solid rgba(255,255,255,.09)", borderRadius: 8, padding: "9px 11px", color: "#e8e8f0", outline: "none", fontSize: 13 }} />
+            <button className="glass-button" disabled={loading} style={{ border: `1px solid ${theme.accentBorder}`, color: theme.accentText, borderRadius: 8, padding: "0 13px", fontSize: 12, fontWeight: 700 }}>
               {loading ? "Loading" : "Search"}
             </button>
           </form>
@@ -84,14 +84,14 @@ export default function CompanyPrep({ theme, weakSpots, onMock }) {
                 ["Behavioral", prep.behavioral.length, "ti-users"],
                 ["Resources", prep.resources.length, "ti-link"],
               ].map(([label, value, icon]) => (
-                <div key={label} style={{ border: `1px solid ${theme.accentBorder}`, background: theme.accentMuted, borderRadius: 8, padding: 10 }}>
+                <div key={label} className="glass-card" style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 10 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 7, color: theme.accentText, fontSize: 12, fontWeight: 700 }}><i className={`ti ${icon}`} />{label}</div>
                   <div style={{ color: "#e8e8f0", fontSize: 20, fontWeight: 700, marginTop: 4 }}>{value}</div>
                 </div>
               ))}
             </div>
 
-            <div style={{ border: "1px solid rgba(255,255,255,.07)", background: "rgba(255,255,255,.03)", borderRadius: 8, padding: 12 }}>
+            <div className="glass-card" style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 12 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
                 <div>
                   <h2 style={{ color: theme.accentText, fontSize: 15, marginBottom: 4 }}>{prep.company} Interview Console</h2>
@@ -112,7 +112,7 @@ export default function CompanyPrep({ theme, weakSpots, onMock }) {
                   <h2 style={{ fontSize: 13, color: "#e8e8f0", marginBottom: 10 }}><i className="ti ti-users" style={{ color: theme.accentStrong, marginRight: 7 }} />Behavioral Cheat Sheet</h2>
                   <div style={{ display: "grid", gap: 7 }}>
                     {prep.behavioral.map((question) => (
-                      <button key={question} onClick={() => onMock(buildCompanyMockPrompt({ company: prep.company, type: "Behavioral", title: "Behavioral question", prompt: question }))} style={{ textAlign: "left", border: "1px solid rgba(255,255,255,.07)", background: "rgba(255,255,255,.035)", borderRadius: 8, padding: 9, color: "#9ca3af", fontSize: 12, lineHeight: 1.45 }}>
+                      <button key={question} className="glass-button" onClick={() => onMock(buildCompanyMockPrompt({ company: prep.company, type: "Behavioral", title: "Behavioral question", prompt: question }))} style={{ textAlign: "left", border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 9, color: "#9ca3af", fontSize: 12, lineHeight: 1.45 }}>
                         {question}
                       </button>
                     ))}
@@ -123,7 +123,7 @@ export default function CompanyPrep({ theme, weakSpots, onMock }) {
                   <h2 style={{ fontSize: 13, color: "#e8e8f0", marginBottom: 10 }}><i className="ti ti-alert-triangle" style={{ color: theme.accentStrong, marginRight: 7 }} />Weak Spots</h2>
                   {weakSpots.length ? (
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
-                      {weakSpots.map((spot) => <span key={spot} style={{ border: "1px solid rgba(239,68,68,.25)", background: "rgba(239,68,68,.08)", color: "#fca5a5", borderRadius: 999, padding: "4px 8px", fontSize: 11 }}>{spot}</span>)}
+                      {weakSpots.map((spot) => <span key={spot} className="glass-card" style={{ border: "1px solid rgba(239,68,68,.25)", color: "#fca5a5", borderRadius: 999, padding: "4px 8px", fontSize: 11 }}>{spot}</span>)}
                     </div>
                   ) : (
                     <p style={{ color: "#6b7280", fontSize: 12, lineHeight: 1.5 }}>Start a mock interview and feedback gaps will appear here automatically.</p>
@@ -134,7 +134,7 @@ export default function CompanyPrep({ theme, weakSpots, onMock }) {
                   <h2 style={{ fontSize: 13, color: "#e8e8f0", marginBottom: 10 }}><i className="ti ti-link" style={{ color: theme.accentStrong, marginRight: 7 }} />Resources</h2>
                   <div style={{ display: "grid", gap: 8 }}>
                     {prep.resources.map((resource) => (
-                      <a key={resource.url} href={resource.url} target="_blank" rel="noreferrer" style={{ border: "1px solid rgba(255,255,255,.07)", background: "rgba(255,255,255,.035)", borderRadius: 8, padding: 9, textDecoration: "none" }}>
+                      <a key={resource.url} className="glass-card" href={resource.url} target="_blank" rel="noreferrer" style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 9, textDecoration: "none" }}>
                         <div style={{ color: theme.accentText, fontSize: 12, fontWeight: 700, marginBottom: 3 }}>{resource.label}</div>
                         <div style={{ color: "#6b7280", fontSize: 11, lineHeight: 1.4 }}>{resource.note}</div>
                       </a>

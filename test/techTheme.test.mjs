@@ -43,3 +43,24 @@ test("uses a non-blue default landing theme", () => {
   assert.equal(theme.accentText, "#bbf7d0");
   assert.equal(theme.surface, "#10130f");
 });
+
+test("provides stack-specific background artwork for known themes", () => {
+  const java = getTechTheme("Java, Spring Boot");
+  const python = getTechTheme("Python, Django");
+
+  assert.deepEqual(java.background.glyphs, ["Java", "Spring Boot", "JVM"]);
+  assert.deepEqual(python.background.glyphs, ["Python", "Django", "FastAPI"]);
+  assert.notDeepEqual(java.background.glyphs, python.background.glyphs);
+  assert.match(java.background.image, /linear-gradient/);
+  assert.match(python.background.image, /linear-gradient/);
+});
+
+test("provides glossy glass tokens derived from the selected stack", () => {
+  const theme = getTechTheme("Java, Spring Boot");
+
+  assert.equal(theme.glass.panel, "rgba(27,18,8,.68)");
+  assert.equal(theme.glass.panelStrong, "rgba(27,18,8,.86)");
+  assert.equal(theme.glass.tint, "rgba(248,152,32,.18)");
+  assert.equal(theme.glass.shine, "rgba(255,183,74,.26)");
+  assert.match(theme.glass.shadow, /rgba\(0,0,0/);
+});

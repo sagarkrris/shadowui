@@ -8,7 +8,6 @@ export default function ProfileSetup({ draft, onChange, onSubmit, theme }) {
   ];
   const fieldStyle = {
     width: "100%",
-    background: "rgba(255,255,255,.04)",
     border: "1px solid rgba(255,255,255,.09)",
     borderRadius: 9,
     padding: "10px 12px",
@@ -30,15 +29,15 @@ export default function ProfileSetup({ draft, onChange, onSubmit, theme }) {
       <div style={{ width: "100%", maxWidth: 430, display: "grid", gap: 10, textAlign: "left" }}>
         <label style={{ display: "grid", gap: 5, fontSize: 12, color: "#9ca3af" }}>
           Name
-          <input value={draft.name} onChange={(event) => onChange({ ...draft, name: event.target.value })} placeholder="e.g. Sagar" style={fieldStyle} />
+          <input className="glass-input" value={draft.name} onChange={(event) => onChange({ ...draft, name: event.target.value })} placeholder="e.g. Sagar" style={fieldStyle} />
         </label>
         <label style={{ display: "grid", gap: 5, fontSize: 12, color: "#9ca3af" }}>
           Position
-          <input value={draft.position} onChange={(event) => onChange({ ...draft, position: event.target.value })} placeholder="e.g. Full Stack Developer, Frontend Developer" style={fieldStyle} />
+          <input className="glass-input" value={draft.position} onChange={(event) => onChange({ ...draft, position: event.target.value })} placeholder="e.g. Full Stack Developer, Frontend Developer" style={fieldStyle} />
         </label>
         <label style={{ display: "grid", gap: 5, fontSize: 12, color: "#9ca3af" }}>
           Years of experience
-          <select value={draft.experience} onChange={(event) => onChange({ ...draft, experience: event.target.value })} style={fieldStyle}>
+          <select className="glass-input" value={draft.experience} onChange={(event) => onChange({ ...draft, experience: event.target.value })} style={fieldStyle}>
             <option value="">Select experience</option>
             <option>0-1 years</option>
             <option>2-4 years</option>
@@ -48,16 +47,16 @@ export default function ProfileSetup({ draft, onChange, onSubmit, theme }) {
         </label>
         <label style={{ display: "grid", gap: 5, fontSize: 12, color: "#9ca3af" }}>
           Tech stack
-          <input value={draft.stack} onChange={(event) => onChange({ ...draft, stack: event.target.value })} placeholder="e.g. React, Node.js, Spring Boot, PostgreSQL, AWS" style={fieldStyle} />
+          <input className="glass-input" value={draft.stack} onChange={(event) => onChange({ ...draft, stack: event.target.value })} placeholder="e.g. React, Node.js, Spring Boot, PostgreSQL, AWS" style={fieldStyle} />
         </label>
-        <button onClick={onSubmit} disabled={!canContinue} style={{ marginTop: 4, padding: "10px 14px", borderRadius: 9, border: `1px solid ${theme.accentBorder}`, background: canContinue ? theme.accentSoft : theme.accentMuted, color: canContinue ? theme.accentText : "#4b5563", fontSize: 13, fontWeight: 600, cursor: canContinue ? "pointer" : "not-allowed" }}>
+        <button className="glass-button" onClick={onSubmit} disabled={!canContinue} style={{ marginTop: 4, padding: "10px 14px", borderRadius: 9, border: `1px solid ${theme.accentBorder}`, color: canContinue ? theme.accentText : "#4b5563", fontSize: 13, fontWeight: 600, cursor: canContinue ? "pointer" : "not-allowed" }}>
           Personalize Prep
         </button>
       </div>
 
       <div style={{ width: "100%", maxWidth: 720, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10, marginTop: 20, textAlign: "left" }}>
         {unlockCards.map(([icon, title, copy]) => (
-          <div key={title} style={{ border: "1px solid rgba(255,255,255,.07)", background: "rgba(255,255,255,.035)", borderRadius: 8, padding: 11, minHeight: 96 }}>
+          <div key={title} className="glass-card" style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 11, minHeight: 96 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 7, color: theme.accentText, fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
               <i className={`ti ${icon}`} style={{ color: theme.accentStrong }} />{title}
             </div>

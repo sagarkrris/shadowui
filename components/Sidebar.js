@@ -4,7 +4,7 @@ export default function Sidebar({ topics, open, onClose, expandedCat, selectedCa
       {isMobile && open && (
         <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.55)", zIndex: 40, backdropFilter: "blur(2px)" }} />
       )}
-      <aside style={{
+      <aside className="glass-chrome" style={{
         width: isMobile ? 260 : (open ? 220 : 0),
         minWidth: isMobile ? undefined : (open ? 220 : 0),
         position: isMobile ? "fixed" : "relative",
@@ -13,7 +13,6 @@ export default function Sidebar({ topics, open, onClose, expandedCat, selectedCa
         height: isMobile ? "100%" : undefined,
         zIndex: isMobile ? 50 : undefined,
         transform: isMobile ? (open ? "translateX(0)" : "translateX(-100%)") : undefined,
-        background: theme.surface,
         borderRight: "1px solid rgba(255,255,255,.06)",
         display: "flex",
         flexDirection: "column",
@@ -38,7 +37,7 @@ export default function Sidebar({ topics, open, onClose, expandedCat, selectedCa
 
         <div style={{ flex: 1, overflowY: "auto", padding: "5px 0" }}>
           {topicsLocked && (
-            <div style={{ margin: "8px 12px 10px", padding: 10, borderRadius: 8, border: `1px solid ${theme.accentBorder}`, background: theme.accentMuted }}>
+            <div className="glass-card" style={{ margin: "8px 12px 10px", padding: 10, borderRadius: 8, border: `1px solid ${theme.accentBorder}` }}>
               <div style={{ display: "flex", alignItems: "center", gap: 7, color: theme.accentText, fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
                 <i className="ti ti-lock" />Setup required
               </div>
@@ -52,7 +51,7 @@ export default function Sidebar({ topics, open, onClose, expandedCat, selectedCa
             const isExpanded = expandedCat === topic.cat;
             return (
               <div key={topic.cat}>
-                <button onClick={() => topicsLocked ? onLockedTopic?.() : onToggleCat(topic.cat)} style={{
+                <button className={isActive ? "glass-button" : ""} onClick={() => topicsLocked ? onLockedTopic?.() : onToggleCat(topic.cat)} style={{
                   width: "100%",
                   display: "flex",
                   alignItems: "center",
@@ -73,7 +72,7 @@ export default function Sidebar({ topics, open, onClose, expandedCat, selectedCa
                   <i className={`ti ${topicsLocked ? "ti-info-circle" : `ti-chevron-${isExpanded ? "up" : "down"}`}`} style={{ fontSize: 11, color: "#374151", flexShrink: 0 }} />
                 </button>
                 {!topicsLocked && isExpanded && topic.subs.map((sub) => (
-                  <button key={sub} onClick={() => onSelectSub(topic.cat, sub)} style={{
+                  <button key={sub} className={selectedSub === sub ? "glass-button" : ""} onClick={() => onSelectSub(topic.cat, sub)} style={{
                     width: "100%",
                     display: "block",
                     padding: "7px 16px 7px 38px",

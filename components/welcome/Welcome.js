@@ -1,10 +1,13 @@
 import { getQuickPrompts } from "../../lib/prompts.mjs";
 import { getStackGreeting } from "../../lib/personalization.mjs";
+import { buildPrepCommandCenter } from "../../lib/prepCoach.mjs";
+import PrepCommandCenter from "./PrepCommandCenter";
 
-export default function Welcome({ onChip, onScreen, onVoice, selectedCat, selectedSub, theme, profile, showCodeTools }) {
+export default function Welcome({ onChip, onScreen, onVoice, selectedCat, selectedSub, theme, profile, showCodeTools, topics, weakSpots }) {
   const topic = selectedSub || selectedCat;
   const quickPrompts = getQuickPrompts(selectedCat, selectedSub);
   const greeting = getStackGreeting(profile);
+  const commandCenter = buildPrepCommandCenter({ profile, topics, weakSpots });
   const featureBadges = [
     ["ti-screenshot", "Screen AI"],
     ["ti-microphone", "Voice"],
@@ -29,21 +32,23 @@ export default function Welcome({ onChip, onScreen, onVoice, selectedCat, select
       )}
 
       <div className="welcome-actions" style={{ display: "flex", gap: 10, marginBottom: 24, flexWrap: "wrap", justifyContent: "center" }}>
-        <button onClick={onScreen} style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 18px", background: theme.accentMuted, border: `1px solid ${theme.accentBorder}`, borderRadius: 10, color: theme.accentText, fontSize: 13, fontWeight: 500, cursor: "pointer" }}>
+        <button className="glass-button" onClick={onScreen} style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 18px", border: `1px solid ${theme.accentBorder}`, borderRadius: 10, color: theme.accentText, fontSize: 13, fontWeight: 500, cursor: "pointer" }}>
           <i className="ti ti-screenshot" />Analyze Screen
         </button>
-        <button onClick={onVoice} style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 18px", background: "rgba(34,197,94,.07)", border: "1px solid rgba(34,197,94,.22)", borderRadius: 10, color: "#86efac", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>
+        <button className="glass-button" onClick={onVoice} style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 18px", border: `1px solid ${theme.accentBorder}`, borderRadius: 10, color: theme.accentText, fontSize: 13, fontWeight: 500, cursor: "pointer" }}>
           <i className="ti ti-microphone" />Voice Input
         </button>
       </div>
 
       <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", maxWidth: 500 }}>
         {quickPrompts.map((chip) => (
-          <button key={chip} onClick={() => onChip(chip)} style={{ padding: "6px 13px", fontSize: 12, fontWeight: 500, borderRadius: 20, border: `1px solid ${theme.accentBorder}`, background: theme.accentMuted, color: theme.accentText, cursor: "pointer" }}>
+          <button key={chip} className="glass-button" onClick={() => onChip(chip)} style={{ padding: "6px 13px", fontSize: 12, fontWeight: 500, borderRadius: 20, border: `1px solid ${theme.accentBorder}`, color: theme.accentText, cursor: "pointer" }}>
             {chip}
           </button>
         ))}
       </div>
+
+      <PrepCommandCenter center={commandCenter} theme={theme} onAction={onChip} />
 
       <div className="welcome-features" style={{ marginTop: 28, display: "flex", gap: 20, fontSize: 11, color: "#374151", flexWrap: "wrap", justifyContent: "center" }}>
         {featureBadges.map(([icon, label]) => (

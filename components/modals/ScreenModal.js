@@ -54,8 +54,7 @@ export default function ScreenModal({ onCapture, onClose, theme }) {
 
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", zIndex: 200, display: "flex", alignItems: "flex-end", justifyContent: "center", padding: "0 0 0", backdropFilter: "blur(4px)" }}>
-      <div onClick={(event) => event.stopPropagation()} style={{
-        background: theme.surface,
+      <div className="glass-chrome" onClick={(event) => event.stopPropagation()} style={{
         border: `1px solid ${theme.accentBorder}`,
         borderRadius: "16px 16px 0 0",
         padding: 20,
@@ -69,22 +68,22 @@ export default function ScreenModal({ onCapture, onClose, theme }) {
           <span style={{ fontSize: 15, fontWeight: 600, color: "#e8e8f0", display: "flex", alignItems: "center", gap: 8 }}>
             <i className="ti ti-screenshot" style={{ color: theme.accentStrong }} />Analyze Screen
           </span>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: "#6b7280", fontSize: 22, cursor: "pointer" }}>x</button>
+          <button className="icon-btn" onClick={onClose} style={{ color: "#6b7280", fontSize: 22, cursor: "pointer" }}>x</button>
         </div>
 
         {!preview ? (
-          <div onDragOver={(event) => event.preventDefault()} onDrop={onDrop}
+          <div className="glass-card" onDragOver={(event) => event.preventDefault()} onDrop={onDrop}
             style={{ border: `2px dashed ${theme.accentBorder}`, borderRadius: 12, padding: "32px 20px", textAlign: "center", marginBottom: 14, cursor: "pointer" }}
             onClick={() => fileRef.current?.click()}>
             <i className="ti ti-photo-scan" style={{ fontSize: 36, color: "#4b5563", display: "block", marginBottom: 12 }} />
             <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 16, lineHeight: 1.6 }}>Drag & drop a screenshot or tap to upload</p>
             <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-              <button onClick={(event) => { event.stopPropagation(); capture(); }} disabled={capturing}
-                style={{ padding: "9px 16px", background: theme.accentSoft, border: `1px solid ${theme.accentBorder}`, borderRadius: 9, color: theme.accentText, fontSize: 13, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 7 }}>
+              <button className="glass-button" onClick={(event) => { event.stopPropagation(); capture(); }} disabled={capturing}
+                style={{ padding: "9px 16px", border: `1px solid ${theme.accentBorder}`, borderRadius: 9, color: theme.accentText, fontSize: 13, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 7 }}>
                 <i className="ti ti-screenshot" />{capturing ? "Capturing..." : "Share Screen"}
               </button>
-              <button onClick={(event) => { event.stopPropagation(); fileRef.current?.click(); }}
-                style={{ padding: "9px 16px", background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 9, color: "#9ca3af", fontSize: 13, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 7 }}>
+              <button className="glass-button" onClick={(event) => { event.stopPropagation(); fileRef.current?.click(); }}
+                style={{ padding: "9px 16px", border: "1px solid rgba(255,255,255,.1)", borderRadius: 9, color: "#9ca3af", fontSize: 13, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 7 }}>
                 <i className="ti ti-upload" />Upload Image
               </button>
             </div>
@@ -101,14 +100,13 @@ export default function ScreenModal({ onCapture, onClose, theme }) {
 
         <div style={{ marginBottom: 14 }}>
           <label style={{ fontSize: 12, color: "#9ca3af", display: "block", marginBottom: 5 }}>Context <span style={{ color: "#4b5563" }}>(optional)</span></label>
-          <input value={context} onChange={(event) => setContext(event.target.value)} placeholder="e.g. Focus on optimal DP approach..."
-            style={{ width: "100%", background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 8, padding: "9px 12px", fontSize: 13, color: "#e8e8f0", outline: "none" }} />
+          <input className="glass-input" value={context} onChange={(event) => setContext(event.target.value)} placeholder="e.g. Focus on optimal DP approach..."
+            style={{ width: "100%", border: "1px solid rgba(255,255,255,.09)", borderRadius: 8, padding: "9px 12px", fontSize: 13, color: "#e8e8f0", outline: "none" }} />
         </div>
 
-        <button onClick={() => imgData && onCapture(imgData, context)} disabled={!imgData} style={{
+        <button className="glass-button" onClick={() => imgData && onCapture(imgData, context)} disabled={!imgData} style={{
           width: "100%",
           padding: 11,
-          background: imgData ? theme.accentSoft : theme.accentMuted,
           border: `1px solid ${imgData ? theme.accentBorder : theme.accentMuted}`,
           borderRadius: 10,
           color: imgData ? theme.accentText : "#4b5563",
