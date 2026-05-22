@@ -11,7 +11,44 @@ const TOPICS = [
   { cat: "Behavioral",      icon: "ti-users",          color: "#34d399", subs: ["Leadership & Ownership","Technical Decision Making","Conflict Resolution","Mentoring Junior Devs","Delivery Under Pressure","STAR Method Practice"] },
 ];
 const CHIPS = ["Java Concurrency","LRU Cache in Java","URL Shortener Design","Spring Security JWT","Dijkstra's Algorithm","JVM GC Tuning","Kafka vs RabbitMQ","DP: Coin Change"];
+const TOPIC_CHIPS = {
+  "Core Java": ["JVM memory model questions","Java concurrency scenarios","Collections trade-offs","Streams and lambdas quiz","GC tuning interview"],
+  "Spring Boot": ["Spring Security JWT questions","REST API design review","JPA pitfalls interview","AOP proxy deep dive","Spring Boot testing plan"],
+  "Micronaut / OCI": ["Micronaut DI questions","GraalVM native image trade-offs","OCI architecture interview","Kafka event streaming design","API gateway scenarios"],
+  DSA: ["Array and string drills","Tree and graph questions","Dynamic programming practice","Heap interview problems","Explain Dijkstra's algorithm"],
+  "System Design": ["URL shortener design","Caching strategy interview","Message queue trade-offs","Database schema design","Scalability deep dive"],
+  Behavioral: ["Leadership STAR questions","Conflict resolution practice","Mentoring story review","Delivery pressure scenario","Technical decision examples"],
+};
 const DIFFS = ["Easy","Medium","Hard","Tech Lead"];
+
+function getQuickPrompts(selectedCat, selectedSub) {
+  if (!selectedCat) return CHIPS;
+  if (selectedSub) {
+    if (selectedCat === "Behavioral") {
+      return [
+        `Ask STAR questions about ${selectedSub}`,
+        `Give a strong ${selectedSub} answer`,
+        `Evaluate my ${selectedSub} story`,
+        `Follow-up questions for ${selectedSub}`,
+      ];
+    }
+    if (selectedCat === "System Design") {
+      return [
+        `Ask HLD questions on ${selectedSub}`,
+        `Design a system using ${selectedSub}`,
+        `Trade-offs in ${selectedSub}`,
+        `Common mistakes in ${selectedSub}`,
+      ];
+    }
+    return [
+      `Ask interview questions on ${selectedSub}`,
+      `Explain ${selectedSub} deeply`,
+      `Give Java examples for ${selectedSub}`,
+      `Common mistakes in ${selectedSub}`,
+    ];
+  }
+  return TOPIC_CHIPS[selectedCat] || CHIPS;
+}
 
 // ─── Markdown renderer ─────────────────────────────────────────────────────────
 function escHtml(s) {
@@ -404,19 +441,29 @@ function VoiceBar({ transcript, onStop }) {
 }
 
 // ─── Welcome screen ────────────────────────────────────────────────────────────
-function Welcome({ onChip, onScreen, onVoice }) {
+function Welcome({ onChip, onScreen, onVoice, selectedCat, selectedSub }) {
+  const topic = selectedSub || selectedCat;
+  const quickPrompts = getQuickPrompts(selectedCat, selectedSub);
+
   return (
-    <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"32px 20px", textAlign:"center", overflowY:"auto" }}>
-      <div style={{ width:60, height:60, borderRadius:"50%", background:"rgba(99,102,241,.1)", border:"1px solid rgba(99,102,241,.25)", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:18 }}>
+    <div className="welcome-screen" style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"32px 20px", textAlign:"center", overflowY:"auto" }}>
+      <div className="welcome-logo" style={{ width:60, height:60, borderRadius:"50%", background:"rgba(99,102,241,.1)", border:"1px solid rgba(99,102,241,.25)", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:18 }}>
         <i className="ti ti-code" style={{ fontSize:26, color:"#818cf8" }} />
       </div>
-      <h1 style={{ fontSize:20, fontWeight:600, color:"#e8e8f0", marginBottom:8 }}>Java Tech Lead Interview AI</h1>
-      <p style={{ fontSize:13.5, color:"#6b7280", marginBottom:24, maxWidth:340, lineHeight:1.65 }}>
+      <h1 className="welcome-title" style={{ fontSize:20, fontWeight:600, color:"#e8e8f0", marginBottom:8 }}>Java Tech Lead Interview AI</h1>
+      {topic ? (
+        <p className="welcome-copy" style={{ fontSize:13.5, color:"#6b7280", marginBottom:24, maxWidth:340, lineHeight:1.65 }}>
+          {`Ready for ${topic}. Hit Start or pick a focused prompt below.`}
+        </p>
+      ) : (
+      <p className="welcome-copy" style={{ fontSize:13.5, color:"#6b7280", marginBottom:24, maxWidth:340, lineHeight:1.65 }}>
         Select a topic from the sidebar, choose mode &amp; difficulty, then hit Start — or jump in below.
       </p>
 
+      )}
+
       {/* Power tools */}
-      <div style={{ display:"flex", gap:10, marginBottom:24, flexWrap:"wrap", justifyContent:"center" }}>
+      <div className="welcome-actions" style={{ display:"flex", gap:10, marginBottom:24, flexWrap:"wrap", justifyContent:"center" }}>
         <button onClick={onScreen} style={{ display:"flex", alignItems:"center", gap:7, padding:"10px 18px", background:"rgba(99,102,241,.08)", border:"1px solid rgba(99,102,241,.22)", borderRadius:10, color:"#a5b4fc", fontSize:13, fontWeight:500, cursor:"pointer" }}>
           <i className="ti ti-screenshot" />Analyze Screen
         </button>
@@ -427,14 +474,14 @@ function Welcome({ onChip, onScreen, onVoice }) {
 
       {/* Quick chips */}
       <div style={{ display:"flex", gap:8, justifyContent:"center", flexWrap:"wrap", maxWidth:500 }}>
-        {CHIPS.map(c => (
+        {quickPrompts.map(c => (
           <button key={c} onClick={() => onChip(c)} style={{ padding:"6px 13px", fontSize:12, fontWeight:500, borderRadius:20, border:"1px solid rgba(99,102,241,.25)", background:"rgba(99,102,241,.06)", color:"#a5b4fc", cursor:"pointer" }}>
             {c}
           </button>
         ))}
       </div>
 
-      <div style={{ marginTop:28, display:"flex", gap:20, fontSize:11, color:"#374151", flexWrap:"wrap", justifyContent:"center" }}>
+      <div className="welcome-features" style={{ marginTop:28, display:"flex", gap:20, fontSize:11, color:"#374151", flexWrap:"wrap", justifyContent:"center" }}>
         {[["ti-screenshot","Screen AI"],["ti-microphone","Voice"],["ti-code","Code Review"],["ti-bolt","Streaming"]].map(([ic, label]) => (
           <span key={label} style={{ display:"flex", alignItems:"center", gap:5 }}><i className={`ti ${ic}`} />{label}</span>
         ))}
@@ -477,6 +524,20 @@ export default function Home() {
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
+  }, []);
+
+  useEffect(() => {
+    const setViewportHeight = () => {
+      const height = window.visualViewport?.height || window.innerHeight;
+      document.documentElement.style.setProperty("--vh", `${height * 0.01}px`);
+    };
+    setViewportHeight();
+    window.addEventListener("resize", setViewportHeight);
+    window.visualViewport?.addEventListener("resize", setViewportHeight);
+    return () => {
+      window.removeEventListener("resize", setViewportHeight);
+      window.visualViewport?.removeEventListener("resize", setViewportHeight);
+    };
   }, []);
 
   // ── Auto-scroll ───────────────────────────────────────────────────────────
@@ -692,7 +753,6 @@ export default function Home() {
   const handleToggleCat = (cat) => {
     setExpanded(p => p === cat ? null : cat);
     setSelCat(cat); setSelSub(null);
-    if (isMobile) setSidebar(false);
   };
   const handleSelectSub = (cat, sub) => {
     setSelCat(cat); setSelSub(sub);
@@ -708,6 +768,9 @@ export default function Home() {
         <title>Java Interview Assistant</title>
         <meta name="description" content="Java Tech Lead AI Interview Assistant" />
         <meta name="theme-color" content="#0a0a0f" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
       </Head>
 
       {/* Toast */}
@@ -723,7 +786,7 @@ export default function Home() {
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
 
       {/* App shell */}
-      <div style={{ display:"flex", height:"100%", overflow:"hidden" }}>
+      <div style={{ display:"flex", height:"calc(var(--vh, 1vh) * 100)", overflow:"hidden" }}>
 
         {/* Sidebar */}
         <Sidebar
@@ -777,7 +840,13 @@ export default function Home() {
           {/* ── Chat area ── */}
           <div ref={chatRef} style={{ flex:1, overflowY:"auto", padding: isMobile?"12px 10px":"20px 16px", display:"flex", flexDirection:"column" }}>
             {messages.length === 0 && !loading
-              ? <Welcome onChip={t => callAPI(t)} onScreen={() => setShowScreen(true)} onVoice={toggleVoice} />
+              ? <Welcome
+                  onChip={t => callAPI(t)}
+                  onScreen={() => setShowScreen(true)}
+                  onVoice={toggleVoice}
+                  selectedCat={selectedCat}
+                  selectedSub={selectedSub}
+                />
               : (
                 <>
                   {messages.map((msg, idx) => (
@@ -890,6 +959,28 @@ export default function Home() {
         }
         @media (max-width: 380px) {
           .wl-title { font-size: 16px !important; }
+        }
+        @media (max-width: 480px) {
+          .welcome-screen {
+            justify-content: flex-start !important;
+            padding: 18px 20px 20px !important;
+          }
+        }
+        @media (max-width: 380px), (max-height: 760px) {
+          .welcome-screen { padding-top: 12px !important; }
+          .welcome-logo {
+            width: 48px !important;
+            height: 48px !important;
+            margin-bottom: 14px !important;
+          }
+          .welcome-logo i { font-size: 22px !important; }
+          .welcome-title { font-size: 18px !important; }
+          .welcome-copy { margin-bottom: 18px !important; }
+          .welcome-actions { margin-bottom: 18px !important; }
+          .welcome-features {
+            margin-top: 20px !important;
+            gap: 14px !important;
+          }
         }
       `}</style>
     </>
