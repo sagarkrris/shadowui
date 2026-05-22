@@ -289,20 +289,103 @@ function ScreenModal({ onCapture, onClose }) {
 // ─── Settings Modal ────────────────────────────────────────────────────────────
 function SettingsModal({ onClose }) {
   return (
-    <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.7)", zIndex:200, display:"flex", alignItems:"flex-end", justifyContent:"center", backdropFilter:"blur(4px)" }}>
-      <div onClick={e => e.stopPropagation()} style={{ background:"#0f0f1a", border:"1px solid rgba(99,102,241,.25)", borderRadius:"16px 16px 0 0", padding:20, width:"100%", maxWidth:480 }}>
-        <div style={{ width:36, height:4, background:"rgba(255,255,255,.1)", borderRadius:2, margin:"0 auto 16px" }} />
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
-          <span style={{ fontSize:15, fontWeight:600, color:"#e8e8f0" }}>ℹ️ About</span>
-          <button onClick={onClose} style={{ background:"none", border:"none", color:"#6b7280", fontSize:22, cursor:"pointer" }}>×</button>
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,.7)",
+        zIndex: 200,
+        display: "flex",
+        alignItems: "flex-end",
+        justifyContent: "center",
+        backdropFilter: "blur(4px)"
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: "#0f0f1a",
+          border: "1px solid rgba(99,102,241,.25)",
+          borderRadius: "16px 16px 0 0",
+          padding: 20,
+          width: "100%",
+          maxWidth: 480
+        }}
+      >
+        <div
+          style={{
+            width: 36,
+            height: 4,
+            background: "rgba(255,255,255,.1)",
+            borderRadius: 2,
+            margin: "0 auto 16px"
+          }}
+        />
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 16
+          }}
+        >
+          <span
+            style={{
+              fontSize: 15,
+              fontWeight: 600,
+              color: "#e8e8f0"
+            }}
+          >
+            ℹ️ About
+          </span>
+
+          <button
+            onClick={onClose}
+            style={{
+              background: "none",
+              border: "none",
+              color: "#6b7280",
+              fontSize: 22,
+              cursor: "pointer"
+            }}
+          >
+            ×
+          </button>
         </div>
-        <div style={{ fontSize:13, color:"#9ca3af", lineHeight:1.7 }}>
-          <p style={{ marginBottom:12 }}>This app is powered by <strong style={{ color:"#a5b4fc" }}>Google Gemini</strong> via your Vercel deployment. The API key is stored securely as a server environment variable.</p>
-          <p style={{ marginBottom:12 }}>To update your API key, go to <strong style={{ color:"#e8e8f0" }}>Vercel → Project → Settings → Environment Variables</strong>.</p>
-          <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer"
-            style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"8px 14px", background:"rgba(99,102,241,.12)", border:"1px solid rgba(99,102,241,.3)", borderRadius:8, color:"#a5b4fc", fontSize:13, textDecoration:"none" }}>
-            <i className="ti ti-external-link" />Get Free Gemini API Key ↗
-          </a>
+
+        <div
+          style={{
+            fontSize: 13,
+            color: "#9ca3af",
+            lineHeight: 1.8
+          }}
+        >
+          <p style={{ marginBottom: 12 }}>
+            <strong style={{ color: "#a5b4fc" }}>
+              Java Interview Assistant
+            </strong>
+          </p>
+
+          <p style={{ marginBottom: 12 }}>
+            Designed & Developed by
+            <strong style={{ color: "#ffffff" }}>
+              {" "}Sagar Krishna
+            </strong>
+          </p>
+
+          <p style={{ marginBottom: 12 }}>
+            AI-powered Java Tech Lead interview preparation platform with:
+          </p>
+
+          <ul style={{ paddingLeft: 18 }}>
+            <li>Mock Interviews</li>
+            <li>DSA Practice</li>
+            <li>Voice Input</li>
+            <li>Screen Analysis</li>
+            <li>Code Review</li>
+          </ul>
         </div>
       </div>
     </div>
@@ -496,34 +579,96 @@ export default function Home() {
 
   // ── Voice ─────────────────────────────────────────────────────────────────
   const stopVoice = useCallback(() => {
-    recogRef.current?.stop();
-    setListening(false);
-    const text = voiceFinal.current.trim();
-    voiceFinal.current = "";
-    setVoiceText("");
-    if (text) callAPI(text);
-  }, [callAPI]);
+  if (recogRef.current) {
+    recogRef.current.stop();
+  }
+
+  setListening(false);
+}, []);
 
   const startVoice = useCallback(() => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { showToast("Voice requires Chrome or Edge", "error"); return; }
-    const r = new SR();
-    r.continuous = true; r.interimResults = true; r.lang = "en-US";
+  const SR =
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
+
+  if (!SR) {
+    showToast("Voice requires Chrome or Edge", "error");
+    return;
+  }
+
+  try {
+    const recognition = new SR();
+
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+
     voiceFinal.current = "";
-    r.onstart  = () => setListening(true);
-    r.onresult = e => {
-      let interim = "";
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const t = e.results[i][0].transcript;
-        if (e.results[i].isFinal) voiceFinal.current += t + " "; else interim = t;
-      }
-      setVoiceText((voiceFinal.current + interim).trim());
+
+    recognition.onstart = () => {
+      setListening(true);
+      setVoiceText("");
     };
-    r.onerror = () => stopVoice();
-    r.onend   = () => { if (isListening) stopVoice(); };
-    recogRef.current = r;
-    r.start();
-  }, [isListening, showToast, stopVoice]);
+
+    recognition.onresult = (event) => {
+      let interim = "";
+      let finalText = voiceFinal.current;
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript =
+          event.results[i][0].transcript;
+
+        if (event.results[i].isFinal) {
+          finalText += transcript + " ";
+        } else {
+          interim += transcript;
+        }
+      }
+
+      voiceFinal.current = finalText;
+
+      setVoiceText(
+        (finalText + interim).trim()
+      );
+    };
+
+    recognition.onerror = (event) => {
+      console.error(event);
+
+      setListening(false);
+
+      showToast(
+        "Voice recognition error",
+        "error"
+      );
+    };
+
+    recognition.onend = () => {
+      setListening(false);
+
+      const finalSpeech =
+        voiceFinal.current.trim();
+
+      if (finalSpeech) {
+        callAPI(finalSpeech);
+      }
+
+      voiceFinal.current = "";
+      setVoiceText("");
+    };
+
+    recogRef.current = recognition;
+
+    recognition.start();
+  } catch (err) {
+    console.error(err);
+
+    showToast(
+      "Could not start voice input",
+      "error"
+    );
+  }
+}, [callAPI, showToast]);
 
   const toggleVoice = () => isListening ? stopVoice() : startVoice();
 
