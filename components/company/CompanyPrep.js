@@ -1,0 +1,151 @@
+import { useEffect, useState } from "react";
+import { buildCompanyMockPrompt } from "../../lib/companyPrep.mjs";
+
+function QuestionList({ title, icon, items, company, type, theme, onMock }) {
+  return (
+    <section style={{ borderTop: `1px solid ${theme.accentBorder}`, paddingTop: 12 }}>
+      <h2 style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 13, color: "#e8e8f0", marginBottom: 10 }}>
+        <i className={`ti ${icon}`} style={{ color: theme.accentStrong }} />{title}
+      </h2>
+      <div style={{ display: "grid", gap: 8 }}>
+        {items.map((item) => (
+          <article key={`${type}-${item.title}`} style={{ border: "1px solid rgba(255,255,255,.07)", background: "rgba(255,255,255,.035)", borderRadius: 8, padding: 10 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start", marginBottom: 6 }}>
+              <strong style={{ fontSize: 12.5, color: theme.accentText }}>{item.title}</strong>
+              <span style={{ fontSize: 10, color: "#6b7280", whiteSpace: "nowrap" }}>{item.difficulty}</span>
+            </div>
+            <p style={{ fontSize: 12, color: "#9ca3af", lineHeight: 1.55, marginBottom: 8 }}>{item.prompt}</p>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+              <span style={{ fontSize: 10.5, color: "#4b5563" }}>{item.source} - {item.date}</span>
+              <button onClick={() => onMock(buildCompanyMockPrompt({ ...item, company, type }))} style={{ display: "inline-flex", alignItems: "center", gap: 5, border: `1px solid ${theme.accentBorder}`, background: theme.accentMuted, color: theme.accentText, borderRadius: 6, padding: "4px 8px", fontSize: 11, fontWeight: 600 }}>
+                <i className="ti ti-player-play" />Mock
+              </button>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export default function CompanyPrep({ theme, weakSpots, onMock }) {
+  const [query, setQuery] = useState("Amazon");
+  const [companyPrep, setCompanyPrep] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const loadCompany = async (company = query) => {
+    const trimmed = company.trim() || "Amazon";
+    setLoading(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/company-prep?company=${encodeURIComponent(trimmed)}`);
+      if (!response.ok) throw new Error("Company prep lookup failed");
+      const data = await response.json();
+      setCompanyPrep(data);
+    } catch (err) {
+      setError(err.message || "Could not load company prep");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadCompany("Amazon");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const prep = companyPrep;
+
+  return (
+    <div style={{ flex: 1, overflowY: "auto", padding: "18px 16px 22px" }}>
+      <div style={{ maxWidth: 1100, margin: "0 auto", display: "grid", gap: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <div style={{ flex: "1 1 260px" }}>
+            <h1 style={{ fontSize: 18, color: "#e8e8f0", marginBottom: 4 }}>Company Prep</h1>
+            <p style={{ fontSize: 12.5, color: "#6b7280", lineHeight: 1.5 }}>Publicly reported questions, mock interviews, weak spots, and source links.</p>
+          </div>
+          <form onSubmit={(event) => { event.preventDefault(); loadCompany(); }} style={{ display: "flex", gap: 7, flex: "1 1 320px" }}>
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search company, e.g. Amazon" style={{ flex: 1, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 8, padding: "9px 11px", color: "#e8e8f0", outline: "none", fontSize: 13 }} />
+            <button disabled={loading} style={{ border: `1px solid ${theme.accentBorder}`, background: theme.accentSoft, color: theme.accentText, borderRadius: 8, padding: "0 13px", fontSize: 12, fontWeight: 700 }}>
+              {loading ? "Loading" : "Search"}
+            </button>
+          </form>
+        </div>
+
+        {error && <div style={{ color: "#f87171", fontSize: 12 }}>{error}</div>}
+
+        {prep && (
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
+              {[
+                ["DSA", prep.dsa.length, "ti-code"],
+                ["System Design", prep.systemDesign.length, "ti-topology-star"],
+                ["Behavioral", prep.behavioral.length, "ti-users"],
+                ["Resources", prep.resources.length, "ti-link"],
+              ].map(([label, value, icon]) => (
+                <div key={label} style={{ border: `1px solid ${theme.accentBorder}`, background: theme.accentMuted, borderRadius: 8, padding: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 7, color: theme.accentText, fontSize: 12, fontWeight: 700 }}><i className={`ti ${icon}`} />{label}</div>
+                  <div style={{ color: "#e8e8f0", fontSize: 20, fontWeight: 700, marginTop: 4 }}>{value}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ border: "1px solid rgba(255,255,255,.07)", background: "rgba(255,255,255,.03)", borderRadius: 8, padding: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                <div>
+                  <h2 style={{ color: theme.accentText, fontSize: 15, marginBottom: 4 }}>{prep.company} Interview Console</h2>
+                  <p style={{ color: "#6b7280", fontSize: 12, lineHeight: 1.5 }}>{prep.caveat}</p>
+                </div>
+                <span style={{ color: "#4b5563", fontSize: 11 }}>Updated {prep.lastUpdated}</span>
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))", gap: 14 }}>
+              <div style={{ display: "grid", gap: 16 }}>
+                <QuestionList title="Latest DSA Patterns" icon="ti-binary-tree" items={prep.dsa} company={prep.company} type="DSA" theme={theme} onMock={onMock} />
+                <QuestionList title="System Design Prompts" icon="ti-topology-star" items={prep.systemDesign} company={prep.company} type="System Design" theme={theme} onMock={onMock} />
+              </div>
+
+              <aside style={{ display: "grid", gap: 14, alignContent: "start" }}>
+                <section style={{ borderTop: `1px solid ${theme.accentBorder}`, paddingTop: 12 }}>
+                  <h2 style={{ fontSize: 13, color: "#e8e8f0", marginBottom: 10 }}><i className="ti ti-users" style={{ color: theme.accentStrong, marginRight: 7 }} />Behavioral Cheat Sheet</h2>
+                  <div style={{ display: "grid", gap: 7 }}>
+                    {prep.behavioral.map((question) => (
+                      <button key={question} onClick={() => onMock(buildCompanyMockPrompt({ company: prep.company, type: "Behavioral", title: "Behavioral question", prompt: question }))} style={{ textAlign: "left", border: "1px solid rgba(255,255,255,.07)", background: "rgba(255,255,255,.035)", borderRadius: 8, padding: 9, color: "#9ca3af", fontSize: 12, lineHeight: 1.45 }}>
+                        {question}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                <section style={{ borderTop: `1px solid ${theme.accentBorder}`, paddingTop: 12 }}>
+                  <h2 style={{ fontSize: 13, color: "#e8e8f0", marginBottom: 10 }}><i className="ti ti-alert-triangle" style={{ color: theme.accentStrong, marginRight: 7 }} />Weak Spots</h2>
+                  {weakSpots.length ? (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+                      {weakSpots.map((spot) => <span key={spot} style={{ border: "1px solid rgba(239,68,68,.25)", background: "rgba(239,68,68,.08)", color: "#fca5a5", borderRadius: 999, padding: "4px 8px", fontSize: 11 }}>{spot}</span>)}
+                    </div>
+                  ) : (
+                    <p style={{ color: "#6b7280", fontSize: 12, lineHeight: 1.5 }}>Start a mock interview and feedback gaps will appear here automatically.</p>
+                  )}
+                </section>
+
+                <section style={{ borderTop: `1px solid ${theme.accentBorder}`, paddingTop: 12 }}>
+                  <h2 style={{ fontSize: 13, color: "#e8e8f0", marginBottom: 10 }}><i className="ti ti-link" style={{ color: theme.accentStrong, marginRight: 7 }} />Resources</h2>
+                  <div style={{ display: "grid", gap: 8 }}>
+                    {prep.resources.map((resource) => (
+                      <a key={resource.url} href={resource.url} target="_blank" rel="noreferrer" style={{ border: "1px solid rgba(255,255,255,.07)", background: "rgba(255,255,255,.035)", borderRadius: 8, padding: 9, textDecoration: "none" }}>
+                        <div style={{ color: theme.accentText, fontSize: 12, fontWeight: 700, marginBottom: 3 }}>{resource.label}</div>
+                        <div style={{ color: "#6b7280", fontSize: 11, lineHeight: 1.4 }}>{resource.note}</div>
+                      </a>
+                    ))}
+                  </div>
+                </section>
+              </aside>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

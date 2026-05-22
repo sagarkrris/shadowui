@@ -23,6 +23,7 @@ Be concise but complete. Format code in fenced code blocks with the right langua
 
 function buildScreenPrompt(context, profile) {
   const details = [];
+  if (profile?.name) details.push(`Candidate name: ${String(profile.name).slice(0, 80)}`);
   if (profile?.position) details.push(`Target position: ${String(profile.position).slice(0, 120)}`);
   if (profile?.experience) details.push(`Years of experience: ${String(profile.experience).slice(0, 80)}`);
   if (profile?.stack) details.push(`Tech stack: ${String(profile.stack).slice(0, 240)}`);

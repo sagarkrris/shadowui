@@ -15,6 +15,7 @@ Formatting: wrap code in fenced code blocks with the right language when possibl
 
 function buildSystemPrompt(profile) {
   const details = [];
+  if (profile?.name) details.push(`Candidate name: ${String(profile.name).slice(0, 80)}`);
   if (profile?.position) details.push(`Target position: ${String(profile.position).slice(0, 120)}`);
   if (profile?.experience) details.push(`Years of experience: ${String(profile.experience).slice(0, 80)}`);
   if (profile?.stack) details.push(`Tech stack: ${String(profile.stack).slice(0, 240)}`);
@@ -25,7 +26,7 @@ function buildSystemPrompt(profile) {
 
 Candidate profile:
 ${details.map((detail) => `- ${detail}`).join("\n")}
-Tailor questions, examples, and expected depth to this profile.`;
+Use the candidate name naturally when greeting or giving direct feedback. Tailor questions, examples, and expected depth to this profile.`;
 }
 
 async function getBestModel(apiKey) {

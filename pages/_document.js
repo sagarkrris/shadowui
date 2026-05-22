@@ -18,8 +18,8 @@ export default function Document() {
           rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
         />
-        <meta name="description" content="Java Tech Lead AI Interview Assistant" />
-        <link rel="icon" href="/favicon.ico" />
+        <meta name="description" content="Full Stack Developer AI Interview Assistant" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
       </Head>
       <body>
         <Main />

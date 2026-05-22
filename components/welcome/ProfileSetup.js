@@ -1,0 +1,70 @@
+export default function ProfileSetup({ draft, onChange, onSubmit, theme }) {
+  const canContinue = draft.name.trim() && draft.position.trim() && draft.experience.trim() && draft.stack.trim();
+  const unlockCards = [
+    ["ti-list-check", "Stack Topics", "Sidebar topics change to match Java, Python, React, and more."],
+    ["ti-building", "Company Prep", "Search a company and start mocks from reported interview patterns."],
+    ["ti-message-circle", "Mock Rounds", "Practice interview or learning mode with calibrated difficulty."],
+    ["ti-target-arrow", "Weak Spots", "Feedback gaps are tracked automatically after mock answers."],
+  ];
+  const fieldStyle = {
+    width: "100%",
+    background: "rgba(255,255,255,.04)",
+    border: "1px solid rgba(255,255,255,.09)",
+    borderRadius: 9,
+    padding: "10px 12px",
+    fontSize: 13,
+    color: "#e8e8f0",
+    outline: "none",
+  };
+
+  return (
+    <div className="welcome-screen" style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "28px 20px", textAlign: "center", overflowY: "auto" }}>
+      <div className="welcome-logo" style={{ width: 60, height: 60, borderRadius: "50%", background: theme.accentSoft, border: `1px solid ${theme.accentBorder}`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18 }}>
+        <i className={`ti ${theme.icon}`} style={{ fontSize: 26, color: theme.accentStrong }} />
+      </div>
+      <h1 className="welcome-title" style={{ fontSize: 20, fontWeight: 600, color: "#e8e8f0", marginBottom: 8 }}>Tell me your interview target</h1>
+      <p className="welcome-copy" style={{ fontSize: 13.5, color: "#6b7280", marginBottom: 22, maxWidth: 380, lineHeight: 1.65 }}>
+        I will tailor sections and questions to your role, experience, and stack.
+      </p>
+
+      <div style={{ width: "100%", maxWidth: 430, display: "grid", gap: 10, textAlign: "left" }}>
+        <label style={{ display: "grid", gap: 5, fontSize: 12, color: "#9ca3af" }}>
+          Name
+          <input value={draft.name} onChange={(event) => onChange({ ...draft, name: event.target.value })} placeholder="e.g. Sagar" style={fieldStyle} />
+        </label>
+        <label style={{ display: "grid", gap: 5, fontSize: 12, color: "#9ca3af" }}>
+          Position
+          <input value={draft.position} onChange={(event) => onChange({ ...draft, position: event.target.value })} placeholder="e.g. Full Stack Developer, Frontend Developer" style={fieldStyle} />
+        </label>
+        <label style={{ display: "grid", gap: 5, fontSize: 12, color: "#9ca3af" }}>
+          Years of experience
+          <select value={draft.experience} onChange={(event) => onChange({ ...draft, experience: event.target.value })} style={fieldStyle}>
+            <option value="">Select experience</option>
+            <option>0-1 years</option>
+            <option>2-4 years</option>
+            <option>5-7 years</option>
+            <option>8+ years</option>
+          </select>
+        </label>
+        <label style={{ display: "grid", gap: 5, fontSize: 12, color: "#9ca3af" }}>
+          Tech stack
+          <input value={draft.stack} onChange={(event) => onChange({ ...draft, stack: event.target.value })} placeholder="e.g. React, Node.js, Spring Boot, PostgreSQL, AWS" style={fieldStyle} />
+        </label>
+        <button onClick={onSubmit} disabled={!canContinue} style={{ marginTop: 4, padding: "10px 14px", borderRadius: 9, border: `1px solid ${theme.accentBorder}`, background: canContinue ? theme.accentSoft : theme.accentMuted, color: canContinue ? theme.accentText : "#4b5563", fontSize: 13, fontWeight: 600, cursor: canContinue ? "pointer" : "not-allowed" }}>
+          Personalize Prep
+        </button>
+      </div>
+
+      <div style={{ width: "100%", maxWidth: 720, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10, marginTop: 20, textAlign: "left" }}>
+        {unlockCards.map(([icon, title, copy]) => (
+          <div key={title} style={{ border: "1px solid rgba(255,255,255,.07)", background: "rgba(255,255,255,.035)", borderRadius: 8, padding: 11, minHeight: 96 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 7, color: theme.accentText, fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
+              <i className={`ti ${icon}`} style={{ color: theme.accentStrong }} />{title}
+            </div>
+            <p style={{ color: "#6b7280", fontSize: 11.5, lineHeight: 1.45 }}>{copy}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
