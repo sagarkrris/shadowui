@@ -1,44 +1,75 @@
 import Head from "next/head";
 import { useState, useRef, useEffect, useCallback } from "react";
 
-// ─── Topic data ───────────────────────────────────────────────────────────────
+// ─── Data ──────────────────────────────────────────────────────────────────────
 const TOPICS = [
-  { cat: "Core Java", icon: "ti-coffee", color: "#f59e0b", topics: ["JVM & Memory Model","Concurrency & Threads","Collections Framework","Streams & Lambdas","Design Patterns","Generics & Reflection","Garbage Collection","Java 17–21 Features"] },
-  { cat: "Spring Boot", icon: "ti-leaf", color: "#22c55e", topics: ["DI & IoC Container","REST API Design","Spring Security","Spring Data / JPA","AOP & Proxies","Testing Strategies","Actuator & Observability","Microservice Patterns"] },
-  { cat: "Micronaut / OCI", icon: "ti-cloud", color: "#38bdf8", topics: ["Micronaut Core","GraalVM Native Image","OCI Architecture","GCP Integration","Service Mesh / Istio","API Gateway","Kafka & Event Streaming"] },
-  { cat: "DSA", icon: "ti-binary-tree", color: "#a78bfa", topics: ["Arrays & Strings","Linked Lists","Trees & Graphs","Dynamic Programming","Sorting & Searching","Stacks & Queues","Heaps & Priority Queues","Tries & Segment Trees"] },
-  { cat: "System Design", icon: "ti-topology-star", color: "#f472b6", topics: ["HLD Patterns","Database Design","Caching Strategies","Message Queues","Scalability & Load","API Design","Real-world Systems"] },
-  { cat: "Behavioral", icon: "ti-users", color: "#34d399", topics: ["Leadership & Ownership","Technical Decision Making","Conflict Resolution","Mentoring Junior Devs","Delivery Under Pressure","STAR Method Practice"] },
+  { cat: "Core Java",       icon: "ti-coffee",        color: "#f59e0b", subs: ["JVM & Memory Model","Concurrency & Threads","Collections Framework","Streams & Lambdas","Design Patterns","Generics & Reflection","Garbage Collection","Java 17–21 Features"] },
+  { cat: "Spring Boot",     icon: "ti-leaf",           color: "#22c55e", subs: ["DI & IoC Container","REST API Design","Spring Security","Spring Data / JPA","AOP & Proxies","Testing Strategies","Actuator & Observability","Microservice Patterns"] },
+  { cat: "Micronaut / OCI", icon: "ti-cloud",          color: "#38bdf8", subs: ["Micronaut Core","GraalVM Native Image","OCI Architecture","GCP Integration","Service Mesh / Istio","API Gateway","Kafka & Event Streaming"] },
+  { cat: "DSA",             icon: "ti-binary-tree",    color: "#a78bfa", subs: ["Arrays & Strings","Linked Lists","Trees & Graphs","Dynamic Programming","Sorting & Searching","Stacks & Queues","Heaps & Priority Queues","Tries & Segment Trees"] },
+  { cat: "System Design",   icon: "ti-topology-star",  color: "#f472b6", subs: ["HLD Patterns","Database Design","Caching Strategies","Message Queues","Scalability & Load","API Design","Real-world Systems"] },
+  { cat: "Behavioral",      icon: "ti-users",          color: "#34d399", subs: ["Leadership & Ownership","Technical Decision Making","Conflict Resolution","Mentoring Junior Devs","Delivery Under Pressure","STAR Method Practice"] },
 ];
+const CHIPS = ["Java Concurrency","LRU Cache in Java","URL Shortener Design","Spring Security JWT","Dijkstra's Algorithm","JVM GC Tuning","Kafka vs RabbitMQ","DP: Coin Change"];
+const DIFFS = ["Easy","Medium","Hard","Tech Lead"];
 
-const DIFFICULTIES = ["Easy", "Medium", "Hard", "Tech Lead"];
-const QUICK_CHIPS = ["Java Concurrency","LRU Cache in Java","System Design: URL shortener","Spring Security JWT","Dijkstra's Algorithm","JVM GC tuning","Kafka vs RabbitMQ","DP: Coin change"];
+// ─── Markdown renderer ─────────────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+function renderInline(t) {
+  return escHtml(t)
+    .replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>")
+    .replace(/\*(.+?)\*/g,"<em>$1</em>")
+    .replace(/`([^`]+)`/g,'<span class="inline-code">$1</span>');
+}
+function parseMarkdown(raw) {
+  return raw.split(/(```[\s\S]*?```)/g).map((p, i) => {
+    if (p.startsWith("```")) {
+      const lang = (p.match(/```(\w*)\n?/) || [])[1] || "java";
+      const code = p.replace(/```\w*\n?/, "").replace(/```$/, "").trim();
+      const id = "cb" + Math.random().toString(36).slice(2);
+      return (
+        `<div class="code-block">` +
+        `<div class="code-header"><span class="code-lang"><i class="ti ti-code"></i>${escHtml(lang)}</span>` +
+        `<button class="code-copy" onclick="(function(){navigator.clipboard.writeText(document.getElementById('${id}').textContent)})()">` +
+        `<i class="ti ti-copy"></i>Copy</button></div>` +
+        `<pre class="code-body"><code id="${id}">${escHtml(code)}</code></pre></div>`
+      );
+    }
+    return p.split("\n").filter(l => l.trim()).map(l => `<p style="margin-bottom:5px">${renderInline(l)}</p>`).join("");
+  }).join("");
+}
 
-// ─── Markdown renderer ────────────────────────────────────────────────────────
-function renderInline(text) {
-  return text
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\*(.+?)\*/g, "<em>$1</em>")
-    .replace(/`([^`]+)`/g, '<code style="background:rgba(99,102,241,0.12);padding:1px 6px;border-radius:4px;font-family:\'JetBrains Mono\',monospace;font-size:12.5px;color:#a5b4fc">$1</code>');
+// ─── Sub-components ────────────────────────────────────────────────────────────
+function CodeBlock({ lang, code }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="code-block">
+      <div className="code-header">
+        <span className="code-lang"><i className={`ti ti-code`} />{lang}</span>
+        <button className="code-copy" onClick={() => { navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 2000); }}>
+          <i className={`ti ${copied ? "ti-check" : "ti-copy"}`} />{copied ? "Copied!" : "Copy"}
+        </button>
+      </div>
+      <pre className="code-body"><code>{code}</code></pre>
+    </div>
+  );
 }
 
 function MessageContent({ content }) {
-  const parts = content.split(/(```[\s\S]*?```)/g);
   return (
     <div>
-      {parts.map((part, i) => {
+      {content.split(/(```[\s\S]*?```)/g).map((part, i) => {
         if (part.startsWith("```")) {
-          const langMatch = part.match(/```(\w*)\n?/);
-          const lang = langMatch?.[1] || "java";
+          const lang = (part.match(/```(\w*)\n?/) || [])[1] || "java";
           const code = part.replace(/```\w*\n?/, "").replace(/```$/, "").trim();
           return <CodeBlock key={i} lang={lang} code={code} />;
         }
-        const lines = part.split("\n").filter((l) => l !== "");
         return (
-          <div key={i} style={{ fontSize: 14, lineHeight: 1.75 }}>
-            {lines.map((line, j) => (
-              <p key={j} style={{ marginBottom: j < lines.length - 1 ? 6 : 0 }} dangerouslySetInnerHTML={{ __html: renderInline(line) }} />
+          <div key={i}>
+            {part.split("\n").filter(l => l.trim()).map((line, j) => (
+              <p key={j} style={{ marginBottom: 5, lineHeight: 1.72 }} dangerouslySetInnerHTML={{ __html: renderInline(line) }} />
             ))}
           </div>
         );
@@ -47,548 +78,675 @@ function MessageContent({ content }) {
   );
 }
 
-function CodeBlock({ lang, code }) {
-  const [copied, setCopied] = useState(false);
-  const copy = () => { navigator.clipboard.writeText(code).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }); };
-  return (
-    <div className="code-block">
-      <div className="code-header">
-        <span className="code-lang"><i className="ti ti-code" style={{ marginRight: 5, fontSize: 13 }} />{lang}</span>
-        <button className="code-copy" onClick={copy}><i className={`ti ${copied ? "ti-check" : "ti-copy"}`} style={{ marginRight: 4 }} />{copied ? "Copied!" : "Copy"}</button>
-      </div>
-      <pre className="code-body"><code>{code}</code></pre>
-    </div>
-  );
-}
-
 function TypingDots() {
   return (
-    <div style={{ display: "flex", gap: 5, alignItems: "center", padding: "10px 0" }}>
-      {[0, 1, 2].map((i) => <div key={i} className="dot" style={{ animationDelay: `${i * 0.2}s` }} />)}
+    <div style={{ display:"flex", gap:5, alignItems:"center", padding:"8px 2px" }}>
+      {[0,1,2].map(i => <div key={i} className="dot" style={{ animationDelay:`${i*.2}s` }} />)}
     </div>
   );
 }
 
 function ScoreBadge({ content }) {
-  const match = content.match(/Score:\s*(\d+)\/10/i);
-  if (!match) return null;
-  const score = parseInt(match[1]);
-  const color = score >= 8 ? "#22c55e" : score >= 6 ? "#f59e0b" : "#ef4444";
+  const m = content.match(/Score:\s*(\d+)\/10/i);
+  if (!m) return null;
+  const s = parseInt(m[1]);
+  const c = s >= 8 ? "#22c55e" : s >= 6 ? "#f59e0b" : "#ef4444";
   return (
-    <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "3px 10px", borderRadius: 20, background: `${color}20`, border: `1px solid ${color}40`, color, fontSize: 12, fontWeight: 600, marginBottom: 8 }}>
-      <i className="ti ti-star-filled" style={{ fontSize: 11 }} />{score}/10
+    <div style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"2px 10px", borderRadius:20, background:`${c}20`, border:`1px solid ${c}40`, color:c, fontSize:11, fontWeight:600, marginBottom:8 }}>
+      <i className="ti ti-star-filled" style={{ fontSize:10 }} />{s}/10
     </div>
   );
 }
 
-// ─── Voice Indicator ──────────────────────────────────────────────────────────
-function VoiceIndicator({ isListening, transcript, onStop }) {
-  if (!isListening) return null;
+// ─── Toast ─────────────────────────────────────────────────────────────────────
+function Toast({ msg, type }) {
+  if (!msg) return null;
   return (
-    <div style={{ position: "fixed", bottom: 100, left: "50%", transform: "translateX(-50%)", zIndex: 1000, background: "rgba(15,15,26,0.95)", border: "1px solid rgba(239,68,68,0.4)", borderRadius: 12, padding: "12px 20px", display: "flex", alignItems: "center", gap: 12, boxShadow: "0 8px 32px rgba(0,0,0,0.4)", minWidth: 280, maxWidth: 480 }}>
-      <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#ef4444", boxShadow: "0 0 8px #ef4444", flexShrink: 0, animation: "blink 1s ease-in-out infinite" }} />
-      <div style={{ flex: 1, fontSize: 13, color: "#e8e8f0", lineHeight: 1.4 }}>
-        {transcript ? <span style={{ color: "#c7d2fe" }}>{transcript}</span> : <span style={{ color: "#6b7280" }}>Listening… speak your question</span>}
-      </div>
-      <button onClick={onStop} style={{ background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, padding: "4px 10px", color: "#f87171", fontSize: 12, cursor: "pointer", flexShrink: 0 }}>Stop</button>
+    <div className={`toast toast-${type}`} style={{ position:"fixed", top:14, right:14, zIndex:9999 }}>
+      <i className={`ti ${type==="success"?"ti-check":type==="error"?"ti-x":"ti-info-circle"}`} />{msg}
     </div>
   );
 }
 
-// ─── Screen Capture Modal ─────────────────────────────────────────────────────
-function ScreenCaptureModal({ onCapture, onClose }) {
+// ─── Sidebar drawer ────────────────────────────────────────────────────────────
+function Sidebar({ open, onClose, expandedCat, selectedCat, selectedSub, onToggleCat, onSelectSub, isMobile }) {
+  return (
+    <>
+      {/* Backdrop (mobile only) */}
+      {isMobile && open && (
+        <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.55)", zIndex:40, backdropFilter:"blur(2px)" }} />
+      )}
+      <aside style={{
+        width: isMobile ? 260 : (open ? 220 : 0),
+        minWidth: isMobile ? undefined : (open ? 220 : 0),
+        position: isMobile ? "fixed" : "relative",
+        top: isMobile ? 0 : undefined,
+        left: isMobile ? 0 : undefined,
+        height: isMobile ? "100%" : undefined,
+        zIndex: isMobile ? 50 : undefined,
+        transform: isMobile ? (open ? "translateX(0)" : "translateX(-100%)") : undefined,
+        background:"#0d0d1a",
+        borderRight:"1px solid rgba(255,255,255,.06)",
+        display:"flex", flexDirection:"column",
+        transition:"all .25s cubic-bezier(.4,0,.2,1)",
+        overflow:"hidden", flexShrink:0,
+      }}>
+        {/* Header */}
+        <div style={{ padding:"14px 16px", borderBottom:"1px solid rgba(255,255,255,.06)", display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:9 }}>
+            <div style={{ width:28, height:28, borderRadius:8, background:"rgba(99,102,241,.15)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <i className="ti ti-code" style={{ fontSize:14, color:"#818cf8" }} />
+            </div>
+            <span style={{ fontSize:13, fontWeight:600, color:"#c7d2fe", whiteSpace:"nowrap" }}>Java Interview AI</span>
+          </div>
+          {isMobile && (
+            <button onClick={onClose} style={{ background:"none", border:"none", color:"#6b7280", fontSize:22, lineHeight:1, cursor:"pointer", padding:"2px 4px" }}>×</button>
+          )}
+        </div>
+
+        {/* Topics */}
+        <div style={{ flex:1, overflowY:"auto", padding:"5px 0" }}>
+          {TOPICS.map(t => {
+            const isActive = selectedCat === t.cat;
+            const isExp = expandedCat === t.cat;
+            return (
+              <div key={t.cat}>
+                <button onClick={() => onToggleCat(t.cat)} style={{
+                  width:"100%", display:"flex", alignItems:"center", gap:9, padding:"9px 16px",
+                  background:"none", border:"none", borderLeft:`2px solid ${isActive?"#6366f1":"transparent"}`,
+                  background: isActive ? "rgba(99,102,241,.08)" : "transparent",
+                  textAlign:"left", color: isActive?"#c7d2fe":"#9ca3af", cursor:"pointer", transition:"all .12s",
+                  minHeight:42,
+                }}>
+                  <i className={`ti ${t.icon}`} style={{ fontSize:16, color: isActive?t.color:"#4b5563", flexShrink:0 }} />
+                  <span style={{ flex:1, fontSize:13, fontWeight: isActive?500:400, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{t.cat}</span>
+                  <i className={`ti ti-chevron-${isExp?"up":"down"}`} style={{ fontSize:11, color:"#374151", flexShrink:0 }} />
+                </button>
+                {isExp && t.subs.map(sub => (
+                  <button key={sub} onClick={() => onSelectSub(t.cat, sub)} style={{
+                    width:"100%", display:"block", padding:"7px 16px 7px 38px", background:"none",
+                    background: selectedSub===sub ? "rgba(99,102,241,.07)" : "transparent",
+                    border:"none", textAlign:"left", fontSize:12.5,
+                    color: selectedSub===sub ? "#818cf8" : "#6b7280",
+                    fontWeight: selectedSub===sub ? 500 : 400, cursor:"pointer",
+                    whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", minHeight:36,
+                  }}>{sub}</button>
+                ))}
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ padding:"11px 16px", borderTop:"1px solid rgba(255,255,255,.06)", fontSize:11, color:"#1f2937", flexShrink:0 }}>
+          Java Tech Lead Prep · Free
+        </div>
+      </aside>
+    </>
+  );
+}
+
+// ─── Screen Capture Modal ──────────────────────────────────────────────────────
+function ScreenModal({ onCapture, onClose }) {
+  const [preview, setPreview] = useState(null);
+  const [imgData, setImgData] = useState(null);
   const [context, setContext] = useState("");
   const [capturing, setCapturing] = useState(false);
-  const [preview, setPreview] = useState(null);
-  const [imageData, setImageData] = useState(null);
+  const fileRef = useRef();
 
-  const captureScreen = async () => {
+  const capture = async () => {
     setCapturing(true);
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: { mediaSource: "screen" }, audio: false });
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
       const video = document.createElement("video");
       video.srcObject = stream;
+      await new Promise(r => { video.onloadedmetadata = r; });
       await video.play();
       const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      canvas.width = video.videoWidth; canvas.height = video.videoHeight;
       canvas.getContext("2d").drawImage(video, 0, 0);
-      stream.getTracks().forEach((t) => t.stop());
-      const dataUrl = canvas.toDataURL("image/png");
-      const base64 = dataUrl.split(",")[1];
-      setPreview(dataUrl);
-      setImageData(base64);
-    } catch (err) {
-      if (err.name !== "NotAllowedError") alert("Screen capture failed: " + err.message);
-    }
+      stream.getTracks().forEach(t => t.stop());
+      const url = canvas.toDataURL("image/png");
+      setPreview(url); setImgData(url.split(",")[1]);
+    } catch(e) { if (e.name !== "NotAllowedError") alert("Capture failed: " + e.message); }
     setCapturing(false);
   };
 
-  const analyze = () => {
-    if (imageData) onCapture(imageData, context);
+  const onFile = e => {
+    const f = e.target.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = ev => { setPreview(ev.target.result); setImgData(ev.target.result.split(",")[1]); };
+    r.readAsDataURL(f);
+  };
+
+  const onDrop = e => {
+    e.preventDefault();
+    const f = e.dataTransfer.files[0]; if (!f || !f.type.startsWith("image/")) return;
+    const r = new FileReader();
+    r.onload = ev => { setPreview(ev.target.result); setImgData(ev.target.result.split(",")[1]); };
+    r.readAsDataURL(f);
   };
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-      <div style={{ background: "#0f0f1a", border: "1px solid rgba(99,102,241,0.3)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 560, maxHeight: "90vh", overflowY: "auto" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(99,102,241,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <i className="ti ti-screenshot" style={{ fontSize: 18, color: "#818cf8" }} />
-            </div>
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 600, color: "#e8e8f0" }}>Screen Capture</div>
-              <div style={{ fontSize: 12, color: "#6b7280" }}>Share your screen to analyze a coding problem</div>
-            </div>
-          </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: "#6b7280", cursor: "pointer", fontSize: 20 }}>×</button>
+    <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.7)", zIndex:200, display:"flex", alignItems:"flex-end", justifyContent:"center", padding:"0 0 0", backdropFilter:"blur(4px)" }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background:"#0f0f1a", border:"1px solid rgba(99,102,241,.25)", borderRadius:"16px 16px 0 0",
+        padding:20, width:"100%", maxWidth:520, maxHeight:"90vh", overflowY:"auto",
+      }}>
+        {/* Handle bar */}
+        <div style={{ width:36, height:4, background:"rgba(255,255,255,.1)", borderRadius:2, margin:"0 auto 16px" }} />
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
+          <span style={{ fontSize:15, fontWeight:600, color:"#e8e8f0", display:"flex", alignItems:"center", gap:8 }}>
+            <i className="ti ti-screenshot" style={{ color:"#818cf8" }} />Analyze Screen
+          </span>
+          <button onClick={onClose} style={{ background:"none", border:"none", color:"#6b7280", fontSize:22, cursor:"pointer" }}>×</button>
         </div>
 
         {!preview ? (
-          <div style={{ border: "2px dashed rgba(99,102,241,0.25)", borderRadius: 12, padding: "40px 20px", textAlign: "center", marginBottom: 16 }}>
-            <i className="ti ti-device-desktop" style={{ fontSize: 36, color: "#4b5563", marginBottom: 12, display: "block" }} />
-            <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 16, lineHeight: 1.6 }}>Click below to share your screen. A screenshot will be taken instantly and sent to AI for analysis.</p>
-            <button onClick={captureScreen} disabled={capturing} style={{ padding: "10px 24px", background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.4)", borderRadius: 10, color: "#a5b4fc", fontSize: 13, fontWeight: 500, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8 }}>
-              <i className="ti ti-screenshot" />
-              {capturing ? "Capturing…" : "Capture Screen"}
-            </button>
+          <div onDragOver={e => e.preventDefault()} onDrop={onDrop}
+            style={{ border:"2px dashed rgba(99,102,241,.25)", borderRadius:12, padding:"32px 20px", textAlign:"center", marginBottom:14, cursor:"pointer" }}
+            onClick={() => fileRef.current?.click()}>
+            <i className="ti ti-photo-scan" style={{ fontSize:36, color:"#4b5563", display:"block", marginBottom:12 }} />
+            <p style={{ fontSize:13, color:"#6b7280", marginBottom:16, lineHeight:1.6 }}>Drag & drop a screenshot or tap to upload</p>
+            <div style={{ display:"flex", gap:8, justifyContent:"center", flexWrap:"wrap" }}>
+              <button onClick={e => { e.stopPropagation(); capture(); }} disabled={capturing}
+                style={{ padding:"9px 16px", background:"rgba(99,102,241,.12)", border:"1px solid rgba(99,102,241,.3)", borderRadius:9, color:"#a5b4fc", fontSize:13, fontWeight:500, cursor:"pointer", display:"flex", alignItems:"center", gap:7 }}>
+                <i className="ti ti-screenshot" />{capturing ? "Capturing…" : "Share Screen"}
+              </button>
+              <button onClick={e => { e.stopPropagation(); fileRef.current?.click(); }}
+                style={{ padding:"9px 16px", background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.1)", borderRadius:9, color:"#9ca3af", fontSize:13, fontWeight:500, cursor:"pointer", display:"flex", alignItems:"center", gap:7 }}>
+                <i className="ti ti-upload" />Upload Image
+              </button>
+            </div>
           </div>
         ) : (
-          <div style={{ marginBottom: 16 }}>
-            <img src={preview} alt="Screenshot preview" style={{ width: "100%", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)", marginBottom: 12 }} />
-            <button onClick={() => { setPreview(null); setImageData(null); }} style={{ fontSize: 12, color: "#6b7280", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>Retake screenshot</button>
+          <div style={{ marginBottom:14 }}>
+            <img src={preview} alt="Preview" style={{ width:"100%", borderRadius:8, border:"1px solid rgba(255,255,255,.08)", marginBottom:8 }} />
+            <button onClick={() => { setPreview(null); setImgData(null); }}
+              style={{ fontSize:12, color:"#6b7280", background:"none", border:"none", cursor:"pointer", textDecoration:"underline" }}>↺ Change image</button>
           </div>
         )}
 
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ fontSize: 12, color: "#9ca3af", marginBottom: 6, display: "block" }}>Extra context (optional)</label>
-          <textarea value={context} onChange={(e) => setContext(e.target.value)} placeholder="e.g. This is a LeetCode hard, focus on optimal DP approach..." rows={2} style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "8px 12px", color: "#e8e8f0", fontSize: 13, outline: "none", resize: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+        <input ref={fileRef} type="file" accept="image/*" style={{ display:"none" }} onChange={onFile} />
+
+        <div style={{ marginBottom:14 }}>
+          <label style={{ fontSize:12, color:"#9ca3af", display:"block", marginBottom:5 }}>Context <span style={{ color:"#4b5563" }}>(optional)</span></label>
+          <input value={context} onChange={e => setContext(e.target.value)} placeholder="e.g. Focus on optimal DP approach…"
+            style={{ width:"100%", background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.09)", borderRadius:8, padding:"9px 12px", fontSize:13, color:"#e8e8f0", outline:"none" }} />
         </div>
 
-        <button onClick={analyze} disabled={!imageData} style={{ width: "100%", padding: "11px", background: imageData ? "rgba(99,102,241,0.2)" : "rgba(99,102,241,0.06)", border: `1px solid ${imageData ? "rgba(99,102,241,0.5)" : "rgba(99,102,241,0.15)"}`, borderRadius: 10, color: imageData ? "#a5b4fc" : "#4b5563", fontSize: 13, fontWeight: 600, cursor: imageData ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-          <i className="ti ti-robot" />
-          Analyze with AI
+        <button onClick={() => imgData && onCapture(imgData, context)} disabled={!imgData} style={{
+          width:"100%", padding:11, background: imgData?"rgba(99,102,241,.15)":"rgba(99,102,241,.05)",
+          border:`1px solid ${imgData?"rgba(99,102,241,.4)":"rgba(99,102,241,.1)"}`,
+          borderRadius:10, color: imgData?"#a5b4fc":"#4b5563", fontSize:13, fontWeight:600,
+          cursor: imgData?"pointer":"not-allowed", display:"flex", alignItems:"center", justifyContent:"center", gap:8,
+        }}>
+          <i className="ti ti-robot" />Analyze with AI
         </button>
       </div>
     </div>
   );
 }
 
-// ─── Welcome screen ───────────────────────────────────────────────────────────
-function WelcomeScreen({ onChip, onCapture, onVoice }) {
+// ─── Settings Modal ────────────────────────────────────────────────────────────
+function SettingsModal({ onClose }) {
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 24px", textAlign: "center" }}>
-      <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.3)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
-        <i className="ti ti-code" style={{ fontSize: 28, color: "#818cf8" }} />
+    <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.7)", zIndex:200, display:"flex", alignItems:"flex-end", justifyContent:"center", backdropFilter:"blur(4px)" }}>
+      <div onClick={e => e.stopPropagation()} style={{ background:"#0f0f1a", border:"1px solid rgba(99,102,241,.25)", borderRadius:"16px 16px 0 0", padding:20, width:"100%", maxWidth:480 }}>
+        <div style={{ width:36, height:4, background:"rgba(255,255,255,.1)", borderRadius:2, margin:"0 auto 16px" }} />
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
+          <span style={{ fontSize:15, fontWeight:600, color:"#e8e8f0" }}>ℹ️ About</span>
+          <button onClick={onClose} style={{ background:"none", border:"none", color:"#6b7280", fontSize:22, cursor:"pointer" }}>×</button>
+        </div>
+        <div style={{ fontSize:13, color:"#9ca3af", lineHeight:1.7 }}>
+          <p style={{ marginBottom:12 }}>This app is powered by <strong style={{ color:"#a5b4fc" }}>Google Gemini</strong> via your Vercel deployment. The API key is stored securely as a server environment variable.</p>
+          <p style={{ marginBottom:12 }}>To update your API key, go to <strong style={{ color:"#e8e8f0" }}>Vercel → Project → Settings → Environment Variables</strong>.</p>
+          <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer"
+            style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"8px 14px", background:"rgba(99,102,241,.12)", border:"1px solid rgba(99,102,241,.3)", borderRadius:8, color:"#a5b4fc", fontSize:13, textDecoration:"none" }}>
+            <i className="ti ti-external-link" />Get Free Gemini API Key ↗
+          </a>
+        </div>
       </div>
-      <h1 style={{ fontSize: 20, fontWeight: 600, color: "#e8e8f0", marginBottom: 8 }}>Java Tech Lead Interview Assistant</h1>
-      <p style={{ fontSize: 14, color: "#6b7280", marginBottom: 28, maxWidth: 380, lineHeight: 1.6 }}>Select a topic from the sidebar, choose interview or practice mode, then hit Start. Or use the power tools below.</p>
+    </div>
+  );
+}
 
-      {/* Power tools row */}
-      <div style={{ display: "flex", gap: 12, marginBottom: 28, flexWrap: "wrap", justifyContent: "center" }}>
-        <button onClick={onCapture} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 18px", background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.25)", borderRadius: 10, color: "#a5b4fc", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>
-          <i className="ti ti-screenshot" style={{ fontSize: 16 }} />Analyze Screen
+// ─── Voice bar ─────────────────────────────────────────────────────────────────
+function VoiceBar({ transcript, onStop }) {
+  return (
+    <div style={{ position:"fixed", bottom:80, left:"50%", transform:"translateX(-50%)", zIndex:100, background:"rgba(10,10,15,.96)", border:"1px solid rgba(239,68,68,.35)", borderRadius:12, padding:"11px 16px", display:"flex", alignItems:"center", gap:10, minWidth:260, maxWidth:"90vw", boxShadow:"0 8px 28px rgba(0,0,0,.5)" }}>
+      <div style={{ width:9, height:9, borderRadius:"50%", background:"#ef4444", flexShrink:0, animation:"pulse 1.3s infinite" }} />
+      <span style={{ flex:1, fontSize:13, color: transcript?"#e8e8f0":"#6b7280", lineHeight:1.4 }}>{transcript || "Listening… speak now"}</span>
+      <button onClick={onStop} style={{ background:"rgba(239,68,68,.12)", border:"1px solid rgba(239,68,68,.3)", borderRadius:7, padding:"5px 11px", color:"#f87171", fontSize:12, cursor:"pointer" }}>Stop</button>
+    </div>
+  );
+}
+
+// ─── Welcome screen ────────────────────────────────────────────────────────────
+function Welcome({ onChip, onScreen, onVoice }) {
+  return (
+    <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"32px 20px", textAlign:"center", overflowY:"auto" }}>
+      <div style={{ width:60, height:60, borderRadius:"50%", background:"rgba(99,102,241,.1)", border:"1px solid rgba(99,102,241,.25)", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:18 }}>
+        <i className="ti ti-code" style={{ fontSize:26, color:"#818cf8" }} />
+      </div>
+      <h1 style={{ fontSize:20, fontWeight:600, color:"#e8e8f0", marginBottom:8 }}>Java Tech Lead Interview AI</h1>
+      <p style={{ fontSize:13.5, color:"#6b7280", marginBottom:24, maxWidth:340, lineHeight:1.65 }}>
+        Select a topic from the sidebar, choose mode &amp; difficulty, then hit Start — or jump in below.
+      </p>
+
+      {/* Power tools */}
+      <div style={{ display:"flex", gap:10, marginBottom:24, flexWrap:"wrap", justifyContent:"center" }}>
+        <button onClick={onScreen} style={{ display:"flex", alignItems:"center", gap:7, padding:"10px 18px", background:"rgba(99,102,241,.08)", border:"1px solid rgba(99,102,241,.22)", borderRadius:10, color:"#a5b4fc", fontSize:13, fontWeight:500, cursor:"pointer" }}>
+          <i className="ti ti-screenshot" />Analyze Screen
         </button>
-        <button onClick={onVoice} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 18px", background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.25)", borderRadius: 10, color: "#86efac", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>
-          <i className="ti ti-microphone" style={{ fontSize: 16 }} />Voice Question
+        <button onClick={onVoice} style={{ display:"flex", alignItems:"center", gap:7, padding:"10px 18px", background:"rgba(34,197,94,.07)", border:"1px solid rgba(34,197,94,.22)", borderRadius:10, color:"#86efac", fontSize:13, fontWeight:500, cursor:"pointer" }}>
+          <i className="ti ti-microphone" />Voice Input
         </button>
       </div>
 
-      <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", maxWidth: 520 }}>
-        {QUICK_CHIPS.map((c) => <button key={c} className="chip" onClick={() => onChip(c)}>{c}</button>)}
+      {/* Quick chips */}
+      <div style={{ display:"flex", gap:8, justifyContent:"center", flexWrap:"wrap", maxWidth:500 }}>
+        {CHIPS.map(c => (
+          <button key={c} onClick={() => onChip(c)} style={{ padding:"6px 13px", fontSize:12, fontWeight:500, borderRadius:20, border:"1px solid rgba(99,102,241,.25)", background:"rgba(99,102,241,.06)", color:"#a5b4fc", cursor:"pointer" }}>
+            {c}
+          </button>
+        ))}
       </div>
 
-      <div style={{ marginTop: 36, display: "flex", gap: 24, fontSize: 12, color: "#374151" }}>
-        {[{ icon: "ti-screenshot", label: "Screen analysis" }, { icon: "ti-microphone", label: "Voice input" }, { icon: "ti-bolt", label: "Streaming AI" }].map(({ icon, label }) => (
-          <div key={label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
-            <i className={`ti ${icon}`} style={{ fontSize: 14 }} />{label}
-          </div>
+      <div style={{ marginTop:28, display:"flex", gap:20, fontSize:11, color:"#374151", flexWrap:"wrap", justifyContent:"center" }}>
+        {[["ti-screenshot","Screen AI"],["ti-microphone","Voice"],["ti-code","Code Review"],["ti-bolt","Streaming"]].map(([ic, label]) => (
+          <span key={label} style={{ display:"flex", alignItems:"center", gap:5 }}><i className={`ti ${ic}`} />{label}</span>
         ))}
       </div>
     </div>
   );
 }
 
-// ─── Main page ────────────────────────────────────────────────────────────────
+// ─── Main Page ─────────────────────────────────────────────────────────────────
 export default function Home() {
-  const [messages, setMessages] = useState([]);
-  const [expandedCat, setExpandedCat] = useState(null);
-  const [selectedTopic, setSelectedTopic] = useState(null);
-  const [selectedSub, setSelectedSub] = useState(null);
-  const [mode, setMode] = useState("interview");
-  const [difficulty, setDifficulty] = useState("Medium");
-  const [input, setInput] = useState("");
-  const [codeInput, setCodeInput] = useState("");
-  const [showCode, setShowCode] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [showScreenModal, setShowScreenModal] = useState(false);
-  const [isListening, setIsListening] = useState(false);
-  const [voiceTranscript, setVoiceTranscript] = useState("");
+  const [messages, setMessages]       = useState([]);
+  const [expandedCat, setExpanded]    = useState(null);
+  const [selectedCat, setSelCat]      = useState(null);
+  const [selectedSub, setSelSub]      = useState(null);
+  const [mode, setMode]               = useState("interview");
+  const [difficulty, setDifficulty]   = useState("Medium");
+  const [input, setInput]             = useState("");
+  const [codeInput, setCodeInput]     = useState("");
+  const [showCode, setShowCode]       = useState(false);
+  const [loading, setLoading]         = useState(false);
+  const [sidebarOpen, setSidebar]     = useState(false);
+  const [isMobile, setIsMobile]       = useState(false);
+  const [isListening, setListening]   = useState(false);
+  const [voiceText, setVoiceText]     = useState("");
+  const [showScreen, setShowScreen]   = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [activeTab, setActiveTab]     = useState("chat");
+  const [toast, setToast]             = useState(null);
 
-  const chatEndRef = useRef(null);
-  const inputRef = useRef(null);
-  const abortRef = useRef(null);
-  const recognitionRef = useRef(null);
+  const chatRef    = useRef(null);
+  const inputRef   = useRef(null);
+  const abortRef   = useRef(null);
+  const recogRef   = useRef(null);
+  const voiceFinal = useRef("");
+  const toastTimer = useRef(null);
 
-  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
+  // ── Viewport ──────────────────────────────────────────────────────────────
+  useEffect(() => {
+    const check = () => { const m = window.innerWidth < 768; setIsMobile(m); if (!m) setSidebar(true); };
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
-  // ─── Stream helper ──────────────────────────────────────────────────────────
-  const streamFromEndpoint = useCallback(async (endpoint, body, userLabel) => {
-    if (loading) return;
+  // ── Auto-scroll ───────────────────────────────────────────────────────────
+  useEffect(() => { chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: "smooth" }); }, [messages, loading]);
+
+  // ── Toast ─────────────────────────────────────────────────────────────────
+  const showToast = useCallback((msg, type = "info") => {
+    setToast({ msg, type });
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 2800);
+  }, []);
+
+  // ── API call ──────────────────────────────────────────────────────────────
+  const callAPI = useCallback(async (userText) => {
+    if (loading || !userText.trim()) return;
     setLoading(true);
 
-    const userMsg = { role: "user", content: userLabel };
-    const newMessages = [...messages, userMsg];
-    setMessages([...newMessages, { role: "assistant", content: "", streaming: true }]);
-
-    try {
-      abortRef.current = new AbortController();
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-        signal: abortRef.current.signal,
-      });
-
-      if (!res.ok) { const e = await res.json(); throw new Error(e.error || "Request failed"); }
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let assistantText = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop();
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const data = line.slice(6).trim();
-          if (data === "[DONE]") break;
-          try {
-            const parsed = JSON.parse(data);
-            if (parsed.text) {
-              assistantText += parsed.text;
-              setMessages((prev) => { const u = [...prev]; u[u.length - 1] = { role: "assistant", content: assistantText, streaming: true }; return u; });
-            }
-          } catch {}
-        }
-      }
-      setMessages((prev) => { const u = [...prev]; u[u.length - 1] = { role: "assistant", content: assistantText, streaming: false }; return u; });
-    } catch (err) {
-      if (err.name !== "AbortError") {
-        setMessages((prev) => { const u = [...prev]; u[u.length - 1] = { role: "assistant", content: "⚠️ " + (err.message || "Something went wrong."), streaming: false }; return u; });
-      }
-    } finally { setLoading(false); }
-  }, [messages, loading]);
-
-  // ─── Chat send ──────────────────────────────────────────────────────────────
-  const sendMessage = useCallback(async (userText) => {
-    if (!userText.trim() || loading) return;
-    const finalText = codeInput.trim() ? `${userText.trim()}\n\n\`\`\`java\n${codeInput.trim()}\n\`\`\`` : userText.trim();
+    const finalText = codeInput.trim()
+      ? `${userText.trim()}\n\n\`\`\`java\n${codeInput.trim()}\n\`\`\``
+      : userText.trim();
     setInput(""); setCodeInput(""); setShowCode(false);
-    setLoading(true);
 
-    const newMessages = [...messages, { role: "user", content: finalText }];
-    setMessages([...newMessages, { role: "assistant", content: "", streaming: true }]);
+    const newMsgs = [...messages, { role:"user", content:finalText }];
+    setMessages([...newMsgs, { role:"assistant", content:"", streaming:true }]);
 
     try {
       abortRef.current = new AbortController();
       const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: newMessages }),
-        signal: abortRef.current.signal,
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ messages: newMsgs }), signal: abortRef.current.signal,
       });
       if (!res.ok) { const e = await res.json(); throw new Error(e.error || "Request failed"); }
 
       const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "", assistantText = "";
+      const dec    = new TextDecoder();
+      let buf = "", aiText = "";
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n"); buffer = lines.pop();
+        buf += dec.decode(value, { stream:true });
+        const lines = buf.split("\n"); buf = lines.pop();
         for (const line of lines) {
           if (!line.startsWith("data: ")) continue;
           const data = line.slice(6).trim();
           if (data === "[DONE]") break;
-          try { const p = JSON.parse(data); if (p.text) { assistantText += p.text; setMessages((prev) => { const u = [...prev]; u[u.length - 1] = { role: "assistant", content: assistantText, streaming: true }; return u; }); } } catch {}
+          try { const p = JSON.parse(data); if (p.text) { aiText += p.text; setMessages(prev => { const u=[...prev]; u[u.length-1]={role:"assistant",content:aiText,streaming:true}; return u; }); } } catch {}
         }
       }
-      setMessages((prev) => { const u = [...prev]; u[u.length - 1] = { role: "assistant", content: assistantText, streaming: false }; return u; });
-    } catch (err) {
-      if (err.name !== "AbortError") setMessages((prev) => { const u = [...prev]; u[u.length - 1] = { role: "assistant", content: "⚠️ " + (err.message || "Error"), streaming: false }; return u; });
+      setMessages(prev => { const u=[...prev]; u[u.length-1]={role:"assistant",content:aiText,streaming:false}; return u; });
+    } catch(err) {
+      if (err.name !== "AbortError") {
+        setMessages(prev => { const u=[...prev]; u[u.length-1]={role:"assistant",content:"⚠️ "+(err.message||"Something went wrong."),streaming:false}; return u; });
+        showToast(err.message || "API error", "error");
+      }
     } finally { setLoading(false); }
-  }, [messages, codeInput, loading]);
+  }, [messages, codeInput, loading, showToast]);
 
-  // ─── Screen capture ─────────────────────────────────────────────────────────
-  const handleScreenCapture = useCallback(async (imageBase64, context) => {
-    setShowScreenModal(false);
-    const label = `📸 Screen captured${context ? ` — ${context}` : ""} — analyzing coding problem…`;
+  // ── Screen analyze ────────────────────────────────────────────────────────
+  const analyzeScreen = useCallback(async (b64, ctx) => {
+    setShowScreen(false);
+    if (loading) return;
     setLoading(true);
-    const userMsg = { role: "user", content: label };
-    const newMessages = [...messages, userMsg];
-    setMessages([...newMessages, { role: "assistant", content: "", streaming: true }]);
+    const label = `📸 Screenshot${ctx?" — "+ctx:""}`;
+    const newMsgs = [...messages, { role:"user", content:label }];
+    setMessages([...newMsgs, { role:"assistant", content:"", streaming:true }]);
 
     try {
       abortRef.current = new AbortController();
       const res = await fetch("/api/analyze-screen", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64, mimeType: "image/png", context }),
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ imageBase64:b64, mimeType:"image/png", context:ctx }),
         signal: abortRef.current.signal,
       });
-      if (!res.ok) { const e = await res.json(); throw new Error(e.error || "Screen analysis failed"); }
+      if (!res.ok) { const e = await res.json(); throw new Error(e.error||"Screen analysis failed"); }
 
       const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "", assistantText = "";
+      const dec    = new TextDecoder();
+      let buf = "", aiText = "";
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n"); buffer = lines.pop();
+        buf += dec.decode(value, { stream:true });
+        const lines = buf.split("\n"); buf = lines.pop();
         for (const line of lines) {
           if (!line.startsWith("data: ")) continue;
           const data = line.slice(6).trim();
           if (data === "[DONE]") break;
-          try { const p = JSON.parse(data); if (p.text) { assistantText += p.text; setMessages((prev) => { const u = [...prev]; u[u.length - 1] = { role: "assistant", content: assistantText, streaming: true }; return u; }); } } catch {}
+          try { const p = JSON.parse(data); if (p.text) { aiText += p.text; setMessages(prev => { const u=[...prev]; u[u.length-1]={role:"assistant",content:aiText,streaming:true}; return u; }); } } catch {}
         }
       }
-      setMessages((prev) => { const u = [...prev]; u[u.length - 1] = { role: "assistant", content: assistantText, streaming: false }; return u; });
-    } catch (err) {
-      if (err.name !== "AbortError") setMessages((prev) => { const u = [...prev]; u[u.length - 1] = { role: "assistant", content: "⚠️ " + (err.message || "Screen analysis error"), streaming: false }; return u; });
+      setMessages(prev => { const u=[...prev]; u[u.length-1]={role:"assistant",content:aiText,streaming:false}; return u; });
+    } catch(err) {
+      if (err.name !== "AbortError") {
+        setMessages(prev => { const u=[...prev]; u[u.length-1]={role:"assistant",content:"⚠️ "+(err.message||"Screen analysis error"),streaming:false}; return u; });
+        showToast("Screen analysis failed", "error");
+      }
     } finally { setLoading(false); }
-  }, [messages]);
+  }, [messages, loading, showToast]);
 
-  // ─── Voice input ────────────────────────────────────────────────────────────
+  // ── Voice ─────────────────────────────────────────────────────────────────
+  const stopVoice = useCallback(() => {
+    recogRef.current?.stop();
+    setListening(false);
+    const text = voiceFinal.current.trim();
+    voiceFinal.current = "";
+    setVoiceText("");
+    if (text) callAPI(text);
+  }, [callAPI]);
+
   const startVoice = useCallback(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) { alert("Speech recognition is not supported in this browser. Please use Chrome or Edge."); return; }
-
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = "en-US";
-
-    let finalTranscript = "";
-
-    recognition.onstart = () => { setIsListening(true); setVoiceTranscript(""); };
-    recognition.onresult = (e) => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { showToast("Voice requires Chrome or Edge", "error"); return; }
+    const r = new SR();
+    r.continuous = true; r.interimResults = true; r.lang = "en-US";
+    voiceFinal.current = "";
+    r.onstart  = () => setListening(true);
+    r.onresult = e => {
       let interim = "";
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const t = e.results[i][0].transcript;
-        if (e.results[i].isFinal) finalTranscript += t + " ";
-        else interim = t;
+        if (e.results[i].isFinal) voiceFinal.current += t + " "; else interim = t;
       }
-      setVoiceTranscript((finalTranscript + interim).trim());
+      setVoiceText((voiceFinal.current + interim).trim());
     };
-    recognition.onerror = (e) => { console.error("Speech error:", e.error); stopVoice(finalTranscript); };
-    recognition.onend = () => { if (isListening) stopVoice(finalTranscript); };
+    r.onerror = () => stopVoice();
+    r.onend   = () => { if (isListening) stopVoice(); };
+    recogRef.current = r;
+    r.start();
+  }, [isListening, showToast, stopVoice]);
 
-    recognitionRef.current = recognition;
-    recognition.start();
-  }, [isListening]);
+  const toggleVoice = () => isListening ? stopVoice() : startVoice();
 
-  const stopVoice = useCallback((transcript) => {
-    recognitionRef.current?.stop();
-    setIsListening(false);
-    const text = (typeof transcript === "string" ? transcript : voiceTranscript).trim();
-    setVoiceTranscript("");
-    if (text) sendMessage(text);
-  }, [voiceTranscript, sendMessage]);
-
-  const toggleVoice = () => { isListening ? stopVoice() : startVoice(); };
-
+  // ── Session start ─────────────────────────────────────────────────────────
   const startSession = () => {
-    if (!selectedTopic) return;
-    const topic = selectedSub || selectedTopic;
+    if (!selectedCat || loading) return;
+    const topic = selectedSub || selectedCat;
     const prompt = mode === "interview"
       ? `Start a mock Tech Lead interview on "${topic}". Difficulty: ${difficulty}. Ask your first question.`
-      : `Give me a comprehensive ${difficulty}-level practice session on "${topic}". Cover key concepts with examples and code.`;
+      : `Give me a comprehensive ${difficulty}-level practice session on "${topic}". Include working Java code.`;
     setMessages([]);
-    setTimeout(() => sendMessage(prompt), 50);
+    setActiveTab("chat");
+    setTimeout(() => callAPI(prompt), 50);
   };
 
-  const handleKey = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(input); } };
-  const clearChat = () => { if (abortRef.current) abortRef.current.abort(); setMessages([]); setLoading(false); };
+  const clearChat = () => {
+    abortRef.current?.abort(); setMessages([]); setLoading(false);
+  };
 
-  const currentLabel = selectedSub || selectedTopic;
+  // ── Sidebar handlers ──────────────────────────────────────────────────────
+  const handleToggleCat = (cat) => {
+    setExpanded(p => p === cat ? null : cat);
+    setSelCat(cat); setSelSub(null);
+    if (isMobile) setSidebar(false);
+  };
+  const handleSelectSub = (cat, sub) => {
+    setSelCat(cat); setSelSub(sub);
+    if (isMobile) setSidebar(false);
+  };
 
+  const currentLabel = selectedSub || selectedCat;
+
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <>
       <Head>
         <title>Java Interview Assistant</title>
+        <meta name="description" content="Java Tech Lead AI Interview Assistant" />
+        <meta name="theme-color" content="#0a0a0f" />
       </Head>
 
-      {/* Screen capture modal */}
-      {showScreenModal && <ScreenCaptureModal onCapture={handleScreenCapture} onClose={() => setShowScreenModal(false)} />}
+      {/* Toast */}
+      {toast && <Toast msg={toast.msg} type={toast.type} />}
 
-      {/* Voice indicator */}
-      <VoiceIndicator isListening={isListening} transcript={voiceTranscript} onStop={stopVoice} />
+      {/* Voice bar */}
+      {isListening && <VoiceBar transcript={voiceText} onStop={stopVoice} />}
 
-      <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
-        {/* ── Sidebar ── */}
-        <aside style={{ width: sidebarOpen ? 220 : 0, minWidth: sidebarOpen ? 220 : 0, overflow: "hidden", background: "#0f0f1a", borderRight: "1px solid rgba(255,255,255,0.06)", display: "flex", flexDirection: "column", transition: "width 0.2s ease, min-width 0.2s ease", flexShrink: 0 }}>
-          <div style={{ padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(99,102,241,0.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <i className="ti ti-code" style={{ fontSize: 15, color: "#818cf8" }} />
+      {/* Screen modal */}
+      {showScreen && <ScreenModal onCapture={analyzeScreen} onClose={() => setShowScreen(false)} />}
+
+      {/* Settings modal */}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+
+      {/* App shell */}
+      <div style={{ display:"flex", height:"100%", overflow:"hidden" }}>
+
+        {/* Sidebar */}
+        <Sidebar
+          open={sidebarOpen} onClose={() => setSidebar(false)}
+          expandedCat={expandedCat} selectedCat={selectedCat} selectedSub={selectedSub}
+          onToggleCat={handleToggleCat} onSelectSub={handleSelectSub}
+          isMobile={isMobile}
+        />
+
+        {/* Main */}
+        <main style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden", minWidth:0 }}>
+
+          {/* ── Top bar ── */}
+          <header style={{ display:"flex", alignItems:"center", gap:8, padding:"9px 12px", borderBottom:"1px solid rgba(255,255,255,.06)", background:"#0a0a0f", flexShrink:0, minHeight:52 }}>
+            <button className="icon-btn" onClick={() => setSidebar(p => !p)} title="Topics">
+              <i className="ti ti-menu-2" />
+            </button>
+
+            <span style={{ flex:1, fontSize:13, fontWeight:500, color: currentLabel?"#e8e8f0":"#4b5563", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+              {currentLabel || "Select a topic"}
+            </span>
+
+            {/* Desktop-only controls */}
+            <div style={{ display:"flex", alignItems:"center", gap:6 }} className="desktop-controls">
+              <button className="icon-btn" onClick={() => setShowScreen(true)} title="Analyze Screen"><i className="ti ti-screenshot" /></button>
+              <button className={`icon-btn ${isListening?"recording":""}`} onClick={toggleVoice} title="Voice"><i className={`ti ${isListening?"ti-microphone-off":"ti-microphone"}`} /></button>
+
+              <div style={{ display:"flex", background:"rgba(255,255,255,.04)", borderRadius:7, padding:2, border:"1px solid rgba(255,255,255,.07)" }}>
+                {["interview","practice"].map(m => (
+                  <button key={m} onClick={() => setMode(m)} style={{ padding:"3px 10px", fontSize:11, fontWeight:500, borderRadius:5, border:"none", cursor:"pointer", color: mode===m?"#a5b4fc":"#6b7280", background: mode===m?"rgba(99,102,241,.18)":"transparent", textTransform:"capitalize" }}>{m}</button>
+                ))}
+              </div>
+
+              <select value={difficulty} onChange={e => setDifficulty(e.target.value)}
+                style={{ fontSize:11, padding:"3px 6px", borderRadius:6, border:"1px solid rgba(255,255,255,.09)", background:"rgba(255,255,255,.04)", color:"#9ca3af", outline:"none" }}>
+                {DIFFS.map(d => <option key={d}>{d}</option>)}
+              </select>
+
+              <button onClick={startSession} disabled={!selectedCat || loading}
+                style={{ padding:"4px 12px", fontSize:12, fontWeight:600, borderRadius:7, border:"1px solid rgba(99,102,241,.4)", background:"rgba(99,102,241,.1)", color:"#a5b4fc", cursor: selectedCat&&!loading?"pointer":"not-allowed", opacity: selectedCat&&!loading?1:.4, display:"flex", alignItems:"center", gap:5 }}>
+                <i className="ti ti-player-play" style={{ fontSize:11 }} />Start
+              </button>
             </div>
-            <span style={{ fontSize: 13, fontWeight: 600, color: "#c7d2fe", whiteSpace: "nowrap" }}>Java Interview AI</span>
-          </div>
-
-          <div style={{ flex: 1, overflowY: "auto", padding: "6px 0" }}>
-            {TOPICS.map((t) => {
-              const isExp = expandedCat === t.cat;
-              const isActive = selectedTopic === t.cat;
-              return (
-                <div key={t.cat}>
-                  <button className={`topic-item ${isActive ? "active" : ""}`} onClick={() => { setExpandedCat(isExp ? null : t.cat); setSelectedTopic(t.cat); setSelectedSub(null); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 9, padding: "8px 16px", background: "none", border: "none", textAlign: "left", color: isActive ? "#c7d2fe" : "#9ca3af", cursor: "pointer", borderLeft: `2px solid ${isActive ? "#6366f1" : "transparent"}` }}>
-                    <i className={`ti ${t.icon}`} style={{ fontSize: 16, color: isActive ? t.color : "#4b5563", flexShrink: 0 }} />
-                    <span style={{ flex: 1, fontSize: 13, fontWeight: isActive ? 500 : 400, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.cat}</span>
-                    <i className={`ti ti-chevron-${isExp ? "up" : "down"}`} style={{ fontSize: 11, color: "#374151", flexShrink: 0 }} />
-                  </button>
-                  {isExp && (
-                    <div>
-                      {t.topics.map((sub) => {
-                        const isSub = selectedSub === sub;
-                        return (
-                          <button key={sub} className={`subtopic-item ${isSub ? "active" : ""}`} onClick={() => { setSelectedTopic(t.cat); setSelectedSub(sub); }} style={{ width: "100%", display: "block", padding: "5px 16px 5px 40px", background: "none", border: "none", textAlign: "left", fontSize: 12.5, color: isSub ? "#818cf8" : "#6b7280", fontWeight: isSub ? 500 : 400, cursor: "pointer", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                            {sub}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          <div style={{ padding: "12px 16px", borderTop: "1px solid rgba(255,255,255,0.06)", fontSize: 11, color: "#374151" }}>Built for Java Tech Lead prep</div>
-        </aside>
-
-        {/* ── Main panel ── */}
-        <main style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
-          {/* Top bar */}
-          <header style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderBottom: "1px solid rgba(255,255,255,0.06)", background: "#0a0a0f", flexShrink: 0 }}>
-            <button className="icon-btn" onClick={() => setSidebarOpen((v) => !v)} title="Toggle sidebar"><i className="ti ti-menu-2" style={{ fontSize: 17 }} /></button>
-            <span style={{ flex: 1, fontSize: 13.5, fontWeight: 500, color: currentLabel ? "#e8e8f0" : "#4b5563", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{currentLabel || "Select a topic to begin"}</span>
-
-            {/* Screen capture button */}
-            <button className="icon-btn" onClick={() => setShowScreenModal(true)} title="Analyze screen — capture a coding problem" style={{ position: "relative" }}>
-              <i className="ti ti-screenshot" style={{ fontSize: 17 }} />
-            </button>
-
-            {/* Voice button */}
-            <button className={`icon-btn ${isListening ? "active" : ""}`} onClick={toggleVoice} title={isListening ? "Stop listening" : "Voice input"} style={{ background: isListening ? "rgba(239,68,68,0.15)" : undefined, borderColor: isListening ? "rgba(239,68,68,0.4)" : undefined }}>
-              <i className={`ti ${isListening ? "ti-microphone-off" : "ti-microphone"}`} style={{ fontSize: 17, color: isListening ? "#f87171" : undefined }} />
-            </button>
-
-            {/* Mode toggle */}
-            <div style={{ display: "flex", background: "rgba(255,255,255,0.04)", borderRadius: 8, padding: 3, gap: 2, border: "1px solid rgba(255,255,255,0.08)" }}>
-              {["interview", "practice"].map((m) => (
-                <button key={m} className={`mode-btn ${mode === m ? "active" : ""}`} onClick={() => setMode(m)}>{m}</button>
-              ))}
-            </div>
-
-            <select className="diff-select" value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>
-              {DIFFICULTIES.map((d) => <option key={d}>{d}</option>)}
-            </select>
-
-            <button className="start-btn" disabled={!selectedTopic || loading} onClick={startSession}>
-              <i className="ti ti-player-play" style={{ fontSize: 12 }} />Start
-            </button>
 
             {messages.length > 0 && (
-              <button className="icon-btn" onClick={clearChat} title="Clear chat"><i className="ti ti-trash" style={{ fontSize: 16 }} /></button>
+              <button className="icon-btn" onClick={clearChat} title="Clear"><i className="ti ti-trash" /></button>
             )}
+            <button className="icon-btn" onClick={() => setShowSettings(true)} title="Info"><i className="ti ti-info-circle" /></button>
           </header>
 
-          {/* Chat area */}
-          <div style={{ flex: 1, overflowY: "auto", padding: "20px 16px", display: "flex", flexDirection: "column" }}>
-            {messages.length === 0 && !loading ? (
-              <WelcomeScreen onChip={(c) => sendMessage(c)} onCapture={() => setShowScreenModal(true)} onVoice={toggleVoice} />
-            ) : (
-              <>
-                {messages.map((msg, idx) => (
-                  <div key={idx} className="msg-animate" style={{ display: "flex", gap: 10, marginBottom: 18, flexDirection: msg.role === "user" ? "row-reverse" : "row", alignItems: "flex-start" }}>
-                    <div style={{ width: 30, height: 30, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: msg.role === "user" ? "rgba(99,102,241,0.15)" : "rgba(168,85,247,0.12)", border: msg.role === "user" ? "1px solid rgba(99,102,241,0.3)" : "1px solid rgba(168,85,247,0.25)" }}>
-                      <i className={`ti ${msg.role === "user" ? "ti-user" : "ti-robot"}`} style={{ fontSize: 14, color: msg.role === "user" ? "#818cf8" : "#c084fc" }} />
+          {/* ── Chat area ── */}
+          <div ref={chatRef} style={{ flex:1, overflowY:"auto", padding: isMobile?"12px 10px":"20px 16px", display:"flex", flexDirection:"column" }}>
+            {messages.length === 0 && !loading
+              ? <Welcome onChip={t => callAPI(t)} onScreen={() => setShowScreen(true)} onVoice={toggleVoice} />
+              : (
+                <>
+                  {messages.map((msg, idx) => (
+                    <div key={idx} className="msg-anim" style={{ display:"flex", gap: isMobile?8:10, marginBottom: isMobile?14:18, flexDirection: msg.role==="user"?"row-reverse":"row", alignItems:"flex-start" }}>
+                      <div style={{ width:28, height:28, borderRadius:"50%", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", background: msg.role==="user"?"rgba(99,102,241,.15)":"rgba(168,85,247,.12)", border: msg.role==="user"?"1px solid rgba(99,102,241,.3)":"1px solid rgba(168,85,247,.25)", fontSize:13 }}>
+                        <i className={`ti ${msg.role==="user"?"ti-user":"ti-robot"}`} style={{ color: msg.role==="user"?"#818cf8":"#c084fc" }} />
+                      </div>
+                      <div style={{ maxWidth: isMobile?"88%":"82%", background: msg.role==="user"?"rgba(99,102,241,.1)":"rgba(255,255,255,.03)", border: msg.role==="user"?"1px solid rgba(99,102,241,.2)":"1px solid rgba(255,255,255,.07)", borderRadius: msg.role==="user"?"12px 12px 4px 12px":"12px 12px 12px 4px", padding: isMobile?"9px 12px":"10px 14px" }}>
+                        {msg.role==="assistant" && idx>0 && <ScoreBadge content={msg.content} />}
+                        {msg.role==="user"
+                          ? <div style={{ fontSize: isMobile?13:13.5, color:"#c7d2fe", lineHeight:1.65, whiteSpace:"pre-wrap", wordBreak:"break-word" }}>{msg.content}</div>
+                          : msg.content
+                            ? <MessageContent content={msg.content} />
+                            : <TypingDots />
+                        }
+                      </div>
                     </div>
-                    <div style={{ maxWidth: "80%", background: msg.role === "user" ? "rgba(99,102,241,0.1)" : "rgba(255,255,255,0.03)", border: msg.role === "user" ? "1px solid rgba(99,102,241,0.2)" : "1px solid rgba(255,255,255,0.07)", borderRadius: msg.role === "user" ? "12px 12px 4px 12px" : "12px 12px 12px 4px", padding: "10px 14px" }}>
-                      {msg.role === "assistant" && idx > 0 && <ScoreBadge content={msg.content} />}
-                      {msg.role === "user" ? (
-                        <div style={{ fontSize: 14, color: "#c7d2fe", lineHeight: 1.65, whiteSpace: "pre-wrap" }}>{msg.content}</div>
-                      ) : (
-                        <MessageContent content={msg.content} />
-                      )}
-                      {msg.streaming && msg.content === "" && <TypingDots />}
-                    </div>
-                  </div>
-                ))}
-                {loading && messages[messages.length - 1]?.role !== "assistant" && (
-                  <div style={{ display: "flex", gap: 10, marginBottom: 18 }}>
-                    <div style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(168,85,247,0.12)", border: "1px solid rgba(168,85,247,0.25)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      <i className="ti ti-robot" style={{ fontSize: 14, color: "#c084fc" }} />
-                    </div>
-                    <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "12px 12px 12px 4px", padding: "12px 16px" }}>
-                      <TypingDots />
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-            <div ref={chatEndRef} />
+                  ))}
+                </>
+              )
+            }
           </div>
 
-          {/* Input area */}
-          <footer style={{ padding: "12px 16px 14px", borderTop: "1px solid rgba(255,255,255,0.06)", background: "#0a0a0f", flexShrink: 0 }}>
+          {/* ── Input area ── */}
+          <footer style={{ padding: isMobile?"8px 10px 10px":"10px 12px 12px", borderTop:"1px solid rgba(255,255,255,.06)", background:"#0a0a0f", flexShrink:0 }}>
             {showCode && (
-              <div style={{ marginBottom: 8 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                  <i className="ti ti-code" style={{ fontSize: 13, color: "#6b7280" }} />
-                  <span style={{ fontSize: 12, color: "#6b7280" }}>Java code (optional)</span>
+              <div style={{ marginBottom:8 }}>
+                <div style={{ fontSize:11.5, color:"#6b7280", marginBottom:5, display:"flex", alignItems:"center", gap:6 }}>
+                  <i className="ti ti-code" style={{ fontSize:13 }} />Java code
                 </div>
-                <textarea className="code-input" rows={5} value={codeInput} onChange={(e) => setCodeInput(e.target.value)} placeholder="// Paste your Java solution here..." />
+                <textarea value={codeInput} onChange={e => setCodeInput(e.target.value)} rows={4} placeholder="// Paste your Java code here…"
+                  style={{ width:"100%", background:"#0d0d1a", border:"1px solid rgba(99,102,241,.2)", borderRadius:8, padding:"8px 12px", fontFamily:"'JetBrains Mono',monospace", fontSize:12, color:"#c8d6e5", outline:"none", lineHeight:1.6 }} />
               </div>
             )}
+            <div style={{ display:"flex", gap:7, alignItems:"flex-end" }}>
+              <textarea ref={inputRef} value={input} onChange={e => setInput(e.target.value)}
+                onKeyDown={e => { if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();callAPI(input);} }}
+                rows={2} disabled={loading}
+                placeholder={mode==="interview" ? "Type your answer… or use 📸/🎤" : "Ask anything about Java or DSA…"}
+                style={{ flex:1, background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.09)", borderRadius:9, padding:"9px 12px", fontSize: isMobile?14:13, color:"#e8e8f0", outline:"none", lineHeight:1.5, maxHeight:120 }} />
 
-            <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
-              <textarea ref={inputRef} className="msg-input" rows={2} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKey} placeholder={mode === "interview" ? "Type your answer… or use 🎤 voice / 📸 screen capture" : "Ask anything about Java or DSA…"} disabled={loading} />
-
-              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                {/* Screen capture */}
-                <button className="icon-btn" onClick={() => setShowScreenModal(true)} title="Capture screen" style={{ width: 32, height: 32 }}>
-                  <i className="ti ti-screenshot" style={{ fontSize: 15 }} />
-                </button>
-                {/* Voice */}
-                <button className={`icon-btn ${isListening ? "active" : ""}`} onClick={toggleVoice} title={isListening ? "Stop voice" : "Voice input"} style={{ width: 32, height: 32, background: isListening ? "rgba(239,68,68,0.15)" : undefined, borderColor: isListening ? "rgba(239,68,68,0.4)" : undefined }}>
-                  <i className={`ti ${isListening ? "ti-microphone-off" : "ti-microphone"}`} style={{ fontSize: 15, color: isListening ? "#f87171" : undefined }} />
-                </button>
-                {/* Code toggle */}
-                <button className={`icon-btn ${showCode ? "active" : ""}`} onClick={() => setShowCode((v) => !v)} title="Attach code" style={{ width: 32, height: 32 }}>
-                  <i className="ti ti-code" style={{ fontSize: 15 }} />
-                </button>
-                {/* Send */}
-                <button className="send-btn" disabled={(!input.trim() && !codeInput.trim()) || loading} onClick={() => sendMessage(input)} title="Send" style={{ width: 32, height: 32 }}>
-                  <i className="ti ti-send" style={{ fontSize: 15 }} />
+              <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+                <button className="icon-btn" onClick={() => setShowScreen(true)} title="Analyze Screen" style={{ width:30, height:30, fontSize:15 }}><i className="ti ti-screenshot" /></button>
+                <button className={`icon-btn ${isListening?"recording":""}`} onClick={toggleVoice} title="Voice" style={{ width:30, height:30, fontSize:15 }}><i className={`ti ${isListening?"ti-microphone-off":"ti-microphone"}`} /></button>
+                <button className={`icon-btn ${showCode?"active":""}`} onClick={() => setShowCode(p=>!p)} title="Code" style={{ width:30, height:30, fontSize:15 }}><i className="ti ti-code" /></button>
+                <button onClick={() => callAPI(input)} disabled={(!input.trim()&&!codeInput.trim())||loading}
+                  style={{ width:30, height:30, borderRadius:7, border:"none", background: (input.trim()||codeInput.trim())&&!loading?"#6366f1":"rgba(99,102,241,.3)", color:"white", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, cursor: (input.trim()||codeInput.trim())&&!loading?"pointer":"not-allowed" }}>
+                  <i className="ti ti-send" />
                 </button>
               </div>
             </div>
 
-            <div style={{ marginTop: 6, display: "flex", justifyContent: "space-between", fontSize: 11, color: "#374151" }}>
-              <span>📸 screen · 🎤 voice · 💻 code · Enter to send</span>
-              <span style={{ color: "#1f2937" }}>Powered by Gemini · Free tier</span>
-            </div>
+            {/* Desktop hint / Mobile mode bar */}
+            {isMobile ? (
+              <div style={{ marginTop:8, display:"flex", alignItems:"center", justifyContent:"space-between", gap:8 }}>
+                <div style={{ display:"flex", background:"rgba(255,255,255,.04)", borderRadius:7, padding:2, border:"1px solid rgba(255,255,255,.07)", flex:1 }}>
+                  {["interview","practice"].map(m => (
+                    <button key={m} onClick={() => setMode(m)} style={{ flex:1, padding:"5px 6px", fontSize:11, fontWeight:500, borderRadius:5, border:"none", cursor:"pointer", color: mode===m?"#a5b4fc":"#6b7280", background: mode===m?"rgba(99,102,241,.18)":"transparent", textTransform:"capitalize" }}>{m}</button>
+                  ))}
+                </div>
+                <select value={difficulty} onChange={e => setDifficulty(e.target.value)}
+                  style={{ fontSize:11, padding:"5px 6px", borderRadius:6, border:"1px solid rgba(255,255,255,.09)", background:"rgba(255,255,255,.04)", color:"#9ca3af", outline:"none" }}>
+                  {DIFFS.map(d => <option key={d}>{d}</option>)}
+                </select>
+                <button onClick={startSession} disabled={!selectedCat||loading}
+                  style={{ padding:"5px 12px", fontSize:11, fontWeight:600, borderRadius:7, border:"1px solid rgba(99,102,241,.4)", background:"rgba(99,102,241,.1)", color:"#a5b4fc", cursor: selectedCat&&!loading?"pointer":"not-allowed", opacity: selectedCat&&!loading?1:.4, display:"flex", alignItems:"center", gap:4, whiteSpace:"nowrap" }}>
+                  <i className="ti ti-player-play" style={{ fontSize:10 }} />Start
+                </button>
+              </div>
+            ) : (
+              <div style={{ marginTop:5, display:"flex", justifyContent:"space-between", fontSize:10.5, color:"#1f2937" }}>
+                <span>📸 screen · 🎤 voice · 💻 code · Enter to send</span>
+                <span>Powered by Gemini · Free</span>
+              </div>
+            )}
           </footer>
+
+          {/* ── Mobile bottom nav ── */}
+          {isMobile && (
+            <nav style={{ display:"flex", alignItems:"center", justifyContent:"space-around", padding:"6px 8px", borderTop:"1px solid rgba(255,255,255,.06)", background:"#0d0d1a", flexShrink:0, paddingBottom:"max(6px, env(safe-area-inset-bottom))" }}>
+              {[
+                { icon:"ti-layout-sidebar", label:"Topics",  action:()=>setSidebar(p=>!p), active:sidebarOpen },
+                { icon:"ti-screenshot",      label:"Screen",  action:()=>setShowScreen(true) },
+                { icon:"ti-microphone",       label:"Voice",   action:toggleVoice, active:isListening, danger:isListening },
+                { icon:"ti-trash",            label:"Clear",   action:clearChat, disabled:messages.length===0 },
+                { icon:"ti-info-circle",      label:"Info",    action:()=>setShowSettings(true) },
+              ].map(({ icon, label, action, active, danger, disabled }) => (
+                <button key={label} onClick={action} disabled={disabled}
+                  style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:3, background:"none", border:"none", color: danger?"#f87171":active?"#818cf8":"#6b7280", fontSize:10, padding:"6px 10px", borderRadius:8, cursor:disabled?"not-allowed":"pointer", opacity:disabled?.35:1, minWidth:48, transition:"all .15s" }}>
+                  <i className={`ti ${icon}`} style={{ fontSize:20 }} />
+                  {label}
+                </button>
+              ))}
+            </nav>
+          )}
+
         </main>
       </div>
+
+      {/* Responsive CSS injected via style tag */}
+      <style>{`
+        @media (max-width: 767px) {
+          .desktop-controls { display: none !important; }
+        }
+        @media (min-width: 768px) {
+          .desktop-controls { display: flex !important; }
+        }
+        @media (hover: hover) {
+          button:hover { opacity: .9; }
+        }
+        @media (max-width: 380px) {
+          .wl-title { font-size: 16px !important; }
+        }
+      `}</style>
     </>
   );
 }
