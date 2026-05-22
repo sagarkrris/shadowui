@@ -3,23 +3,25 @@ import { useState, useRef, useEffect, useCallback } from "react";
 
 // ─── Data ──────────────────────────────────────────────────────────────────────
 const TOPICS = [
-  { cat: "Core Java",       icon: "ti-coffee",        color: "#f59e0b", subs: ["JVM & Memory Model","Concurrency & Threads","Collections Framework","Streams & Lambdas","Design Patterns","Generics & Reflection","Garbage Collection","Java 17–21 Features"] },
-  { cat: "Spring Boot",     icon: "ti-leaf",           color: "#22c55e", subs: ["DI & IoC Container","REST API Design","Spring Security","Spring Data / JPA","AOP & Proxies","Testing Strategies","Actuator & Observability","Microservice Patterns"] },
-  { cat: "Micronaut / OCI", icon: "ti-cloud",          color: "#38bdf8", subs: ["Micronaut Core","GraalVM Native Image","OCI Architecture","GCP Integration","Service Mesh / Istio","API Gateway","Kafka & Event Streaming"] },
+  { cat: "Frontend",        icon: "ti-brand-react",    color: "#38bdf8", subs: ["HTML & CSS","JavaScript / TypeScript","React & Next.js","State Management","Accessibility","Performance","Testing UI","Frontend Architecture"] },
+  { cat: "Backend",         icon: "ti-server",         color: "#22c55e", subs: ["API Design","Java / Spring Boot","Node.js / Express","Authentication & Security","ORM / JPA","Microservices","Caching","Testing APIs"] },
+  { cat: "Databases",       icon: "ti-database",       color: "#f59e0b", subs: ["SQL Design","Indexing & Query Tuning","Transactions","NoSQL Databases","Data Modeling","Migrations","Replication","Caching Strategies"] },
+  { cat: "Cloud & DevOps",  icon: "ti-cloud",          color: "#60a5fa", subs: ["Docker","Kubernetes","CI/CD","AWS / Azure / GCP","Observability","Deployment Strategies","API Gateway","Message Queues"] },
   { cat: "DSA",             icon: "ti-binary-tree",    color: "#a78bfa", subs: ["Arrays & Strings","Linked Lists","Trees & Graphs","Dynamic Programming","Sorting & Searching","Stacks & Queues","Heaps & Priority Queues","Tries & Segment Trees"] },
   { cat: "System Design",   icon: "ti-topology-star",  color: "#f472b6", subs: ["HLD Patterns","Database Design","Caching Strategies","Message Queues","Scalability & Load","API Design","Real-world Systems"] },
-  { cat: "Behavioral",      icon: "ti-users",          color: "#34d399", subs: ["Leadership & Ownership","Technical Decision Making","Conflict Resolution","Mentoring Junior Devs","Delivery Under Pressure","STAR Method Practice"] },
+  { cat: "Behavioral",      icon: "ti-users",          color: "#34d399", subs: ["Ownership","Collaboration","Conflict Resolution","Mentoring","Delivery Under Pressure","STAR Method Practice"] },
 ];
-const CHIPS = ["Java Concurrency","LRU Cache in Java","URL Shortener Design","Spring Security JWT","Dijkstra's Algorithm","JVM GC Tuning","Kafka vs RabbitMQ","DP: Coin Change"];
+const CHIPS = ["React state patterns","REST API design","SQL indexing","System design basics","JavaScript closures","Spring Security JWT","Docker deployment","DP: Coin Change"];
 const TOPIC_CHIPS = {
-  "Core Java": ["JVM memory model questions","Java concurrency scenarios","Collections trade-offs","Streams and lambdas quiz","GC tuning interview"],
-  "Spring Boot": ["Spring Security JWT questions","REST API design review","JPA pitfalls interview","AOP proxy deep dive","Spring Boot testing plan"],
-  "Micronaut / OCI": ["Micronaut DI questions","GraalVM native image trade-offs","OCI architecture interview","Kafka event streaming design","API gateway scenarios"],
+  Frontend: ["React interview questions","JavaScript fundamentals","Frontend performance review","Accessibility scenarios","Next.js routing practice"],
+  Backend: ["REST API design review","Authentication interview questions","Spring Boot scenarios","Node.js API practice","Microservice trade-offs"],
+  Databases: ["SQL query tuning questions","Database schema design","Transactions interview","NoSQL trade-offs","Indexing practice"],
+  "Cloud & DevOps": ["Docker interview questions","CI/CD pipeline design","Cloud deployment scenarios","Observability practice","Message queue trade-offs"],
   DSA: ["Array and string drills","Tree and graph questions","Dynamic programming practice","Heap interview problems","Explain Dijkstra's algorithm"],
   "System Design": ["URL shortener design","Caching strategy interview","Message queue trade-offs","Database schema design","Scalability deep dive"],
-  Behavioral: ["Leadership STAR questions","Conflict resolution practice","Mentoring story review","Delivery pressure scenario","Technical decision examples"],
+  Behavioral: ["Ownership STAR questions","Collaboration scenarios","Conflict resolution practice","Mentoring story review","Delivery pressure scenario"],
 };
-const DIFFS = ["Easy","Medium","Hard","Tech Lead"];
+const DIFFS = ["Entry","Mid","Senior","Lead"];
 
 function getQuickPrompts(selectedCat, selectedSub) {
   if (!selectedCat) return CHIPS;
@@ -43,11 +45,38 @@ function getQuickPrompts(selectedCat, selectedSub) {
     return [
       `Ask interview questions on ${selectedSub}`,
       `Explain ${selectedSub} deeply`,
-      `Give Java examples for ${selectedSub}`,
+      `Give practical examples for ${selectedSub}`,
       `Common mistakes in ${selectedSub}`,
     ];
   }
   return TOPIC_CHIPS[selectedCat] || CHIPS;
+}
+
+const DEFAULT_PROFILE = {
+  position: "",
+  experience: "",
+  stack: "",
+};
+
+function getRecommendedTopics(profile) {
+  if (!profile) return TOPICS;
+
+  const haystack = `${profile.position || ""} ${profile.stack || ""}`.toLowerCase();
+  const selected = new Set();
+
+  const add = (cat) => selected.add(cat);
+  if (/full\s*stack|mern|mean|frontend.*backend|backend.*frontend/.test(haystack)) {
+    ["Frontend","Backend","Databases","Cloud & DevOps"].forEach(add);
+  }
+  if (/front|react|next|angular|vue|javascript|typescript|html|css|ui|web/.test(haystack)) add("Frontend");
+  if (/back|api|java|spring|node|express|python|django|go|microservice|auth/.test(haystack)) add("Backend");
+  if (/sql|postgres|mysql|mongo|database|db|redis|oracle|nosql/.test(haystack)) add("Databases");
+  if (/cloud|aws|azure|gcp|docker|kubernetes|devops|ci\/cd|cicd|jenkins|terraform|oci/.test(haystack)) add("Cloud & DevOps");
+
+  ["DSA","System Design","Behavioral"].forEach(add);
+
+  const recommended = TOPICS.filter((topic) => selected.has(topic.cat));
+  return recommended.length ? recommended : TOPICS;
 }
 
 // ─── Markdown renderer ─────────────────────────────────────────────────────────
@@ -146,7 +175,7 @@ function Toast({ msg, type }) {
 }
 
 // ─── Sidebar drawer ────────────────────────────────────────────────────────────
-function Sidebar({ open, onClose, expandedCat, selectedCat, selectedSub, onToggleCat, onSelectSub, isMobile }) {
+function Sidebar({ topics, open, onClose, expandedCat, selectedCat, selectedSub, onToggleCat, onSelectSub, isMobile }) {
   return (
     <>
       {/* Backdrop (mobile only) */}
@@ -174,7 +203,7 @@ function Sidebar({ open, onClose, expandedCat, selectedCat, selectedSub, onToggl
             <div style={{ width:28, height:28, borderRadius:8, background:"rgba(99,102,241,.15)", display:"flex", alignItems:"center", justifyContent:"center" }}>
               <i className="ti ti-code" style={{ fontSize:14, color:"#818cf8" }} />
             </div>
-            <span style={{ fontSize:13, fontWeight:600, color:"#c7d2fe", whiteSpace:"nowrap" }}>Java Interview AI</span>
+            <span style={{ fontSize:13, fontWeight:600, color:"#c7d2fe", whiteSpace:"nowrap" }}>Full Stack Interview AI</span>
           </div>
           {isMobile && (
             <button onClick={onClose} style={{ background:"none", border:"none", color:"#6b7280", fontSize:22, lineHeight:1, cursor:"pointer", padding:"2px 4px" }}>×</button>
@@ -183,7 +212,7 @@ function Sidebar({ open, onClose, expandedCat, selectedCat, selectedSub, onToggl
 
         {/* Topics */}
         <div style={{ flex:1, overflowY:"auto", padding:"5px 0" }}>
-          {TOPICS.map(t => {
+          {topics.map(t => {
             const isActive = selectedCat === t.cat;
             const isExp = expandedCat === t.cat;
             return (
@@ -214,7 +243,7 @@ function Sidebar({ open, onClose, expandedCat, selectedCat, selectedSub, onToggl
           })}
         </div>
         <div style={{ padding:"11px 16px", borderTop:"1px solid rgba(255,255,255,.06)", fontSize:11, color:"#1f2937", flexShrink:0 }}>
-          Java Tech Lead Prep · Free
+          Full Stack Prep · Free
         </div>
       </aside>
     </>
@@ -401,7 +430,7 @@ function SettingsModal({ onClose }) {
         >
           <p style={{ marginBottom: 12 }}>
             <strong style={{ color: "#a5b4fc" }}>
-              Java Interview Assistant
+              Full Stack Interview Assistant
             </strong>
           </p>
 
@@ -413,12 +442,14 @@ function SettingsModal({ onClose }) {
           </p>
 
           <p style={{ marginBottom: 12 }}>
-            AI-powered Java Tech Lead interview preparation platform with:
+            AI-powered full stack developer interview preparation platform with:
           </p>
 
           <ul style={{ paddingLeft: 18 }}>
             <li>Mock Interviews</li>
+            <li>Frontend, Backend & Database Practice</li>
             <li>DSA Practice</li>
+            <li>System Design Preparation</li>
             <li>Voice Input</li>
             <li>Screen Analysis</li>
             <li>Code Review</li>
@@ -441,6 +472,50 @@ function VoiceBar({ transcript, onStop }) {
 }
 
 // ─── Welcome screen ────────────────────────────────────────────────────────────
+function ProfileSetup({ draft, onChange, onSubmit }) {
+  const canContinue = draft.position.trim() && draft.experience.trim() && draft.stack.trim();
+  const fieldStyle = {
+    width:"100%", background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.09)",
+    borderRadius:9, padding:"10px 12px", fontSize:13, color:"#e8e8f0", outline:"none",
+  };
+
+  return (
+    <div className="welcome-screen" style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"32px 20px", textAlign:"center", overflowY:"auto" }}>
+      <div className="welcome-logo" style={{ width:60, height:60, borderRadius:"50%", background:"rgba(99,102,241,.1)", border:"1px solid rgba(99,102,241,.25)", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:18 }}>
+        <i className="ti ti-user-question" style={{ fontSize:26, color:"#818cf8" }} />
+      </div>
+      <h1 className="welcome-title" style={{ fontSize:20, fontWeight:600, color:"#e8e8f0", marginBottom:8 }}>Tell me your interview target</h1>
+      <p className="welcome-copy" style={{ fontSize:13.5, color:"#6b7280", marginBottom:22, maxWidth:380, lineHeight:1.65 }}>
+        I will tailor sections and questions to your role, experience, and stack.
+      </p>
+
+      <div style={{ width:"100%", maxWidth:430, display:"grid", gap:10, textAlign:"left" }}>
+        <label style={{ display:"grid", gap:5, fontSize:12, color:"#9ca3af" }}>
+          Position
+          <input value={draft.position} onChange={e => onChange({ ...draft, position:e.target.value })} placeholder="e.g. Full Stack Developer, Frontend Developer" style={fieldStyle} />
+        </label>
+        <label style={{ display:"grid", gap:5, fontSize:12, color:"#9ca3af" }}>
+          Years of experience
+          <select value={draft.experience} onChange={e => onChange({ ...draft, experience:e.target.value })} style={fieldStyle}>
+            <option value="">Select experience</option>
+            <option>0-1 years</option>
+            <option>2-4 years</option>
+            <option>5-7 years</option>
+            <option>8+ years</option>
+          </select>
+        </label>
+        <label style={{ display:"grid", gap:5, fontSize:12, color:"#9ca3af" }}>
+          Tech stack
+          <input value={draft.stack} onChange={e => onChange({ ...draft, stack:e.target.value })} placeholder="e.g. React, Node.js, Spring Boot, PostgreSQL, AWS" style={fieldStyle} />
+        </label>
+        <button onClick={onSubmit} disabled={!canContinue} style={{ marginTop:4, padding:"10px 14px", borderRadius:9, border:"1px solid rgba(99,102,241,.4)", background:canContinue?"rgba(99,102,241,.16)":"rgba(99,102,241,.06)", color:canContinue?"#a5b4fc":"#4b5563", fontSize:13, fontWeight:600, cursor:canContinue?"pointer":"not-allowed" }}>
+          Personalize Prep
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function Welcome({ onChip, onScreen, onVoice, selectedCat, selectedSub }) {
   const topic = selectedSub || selectedCat;
   const quickPrompts = getQuickPrompts(selectedCat, selectedSub);
@@ -450,7 +525,7 @@ function Welcome({ onChip, onScreen, onVoice, selectedCat, selectedSub }) {
       <div className="welcome-logo" style={{ width:60, height:60, borderRadius:"50%", background:"rgba(99,102,241,.1)", border:"1px solid rgba(99,102,241,.25)", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:18 }}>
         <i className="ti ti-code" style={{ fontSize:26, color:"#818cf8" }} />
       </div>
-      <h1 className="welcome-title" style={{ fontSize:20, fontWeight:600, color:"#e8e8f0", marginBottom:8 }}>Java Tech Lead Interview AI</h1>
+      <h1 className="welcome-title" style={{ fontSize:20, fontWeight:600, color:"#e8e8f0", marginBottom:8 }}>Full Stack Developer Interview AI</h1>
       {topic ? (
         <p className="welcome-copy" style={{ fontSize:13.5, color:"#6b7280", marginBottom:24, maxWidth:340, lineHeight:1.65 }}>
           {`Ready for ${topic}. Hit Start or pick a focused prompt below.`}
@@ -497,7 +572,7 @@ export default function Home() {
   const [selectedCat, setSelCat]      = useState(null);
   const [selectedSub, setSelSub]      = useState(null);
   const [mode, setMode]               = useState("interview");
-  const [difficulty, setDifficulty]   = useState("Medium");
+  const [difficulty, setDifficulty]   = useState("Mid");
   const [input, setInput]             = useState("");
   const [codeInput, setCodeInput]     = useState("");
   const [showCode, setShowCode]       = useState(false);
@@ -510,6 +585,8 @@ export default function Home() {
   const [showSettings, setShowSettings] = useState(false);
   const [activeTab, setActiveTab]     = useState("chat");
   const [toast, setToast]             = useState(null);
+  const [candidateProfile, setCandidateProfile] = useState(null);
+  const [profileDraft, setProfileDraft] = useState(DEFAULT_PROFILE);
 
   const chatRef    = useRef(null);
   const inputRef   = useRef(null);
@@ -517,6 +594,7 @@ export default function Home() {
   const recogRef   = useRef(null);
   const voiceFinal = useRef("");
   const toastTimer = useRef(null);
+  const visibleTopics = getRecommendedTopics(candidateProfile);
 
   // ── Viewport ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -567,7 +645,7 @@ export default function Home() {
       abortRef.current = new AbortController();
       const res = await fetch("/api/chat", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ messages: newMsgs }), signal: abortRef.current.signal,
+        body: JSON.stringify({ messages: newMsgs, profile: candidateProfile }), signal: abortRef.current.signal,
       });
       if (!res.ok) { const e = await res.json(); throw new Error(e.error || "Request failed"); }
 
@@ -594,7 +672,7 @@ export default function Home() {
         showToast(err.message || "API error", "error");
       }
     } finally { setLoading(false); }
-  }, [messages, codeInput, loading, showToast]);
+  }, [messages, codeInput, loading, showToast, candidateProfile]);
 
   // ── Screen analyze ────────────────────────────────────────────────────────
   const analyzeScreen = useCallback(async (b64, ctx) => {
@@ -609,7 +687,7 @@ export default function Home() {
       abortRef.current = new AbortController();
       const res = await fetch("/api/analyze-screen", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ imageBase64:b64, mimeType:"image/png", context:ctx }),
+        body: JSON.stringify({ imageBase64:b64, mimeType:"image/png", context:ctx, profile: candidateProfile }),
         signal: abortRef.current.signal,
       });
       if (!res.ok) { const e = await res.json(); throw new Error(e.error||"Screen analysis failed"); }
@@ -636,7 +714,7 @@ export default function Home() {
         showToast("Screen analysis failed", "error");
       }
     } finally { setLoading(false); }
-  }, [messages, loading, showToast]);
+  }, [messages, loading, showToast, candidateProfile]);
 
   // ── Voice ─────────────────────────────────────────────────────────────────
   const stopVoice = useCallback(() => {
@@ -733,13 +811,29 @@ export default function Home() {
 
   const toggleVoice = () => isListening ? stopVoice() : startVoice();
 
+  const saveProfile = () => {
+    const nextProfile = {
+      position: profileDraft.position.trim(),
+      experience: profileDraft.experience.trim(),
+      stack: profileDraft.stack.trim(),
+    };
+    if (!nextProfile.position || !nextProfile.experience || !nextProfile.stack) return;
+    const nextTopics = getRecommendedTopics(nextProfile);
+    setCandidateProfile(nextProfile);
+    setSelCat(nextTopics[0]?.cat || null);
+    setExpanded(nextTopics[0]?.cat || null);
+    setSelSub(null);
+    setMessages([]);
+    setSidebar(!isMobile);
+  };
+
   // ── Session start ─────────────────────────────────────────────────────────
   const startSession = () => {
-    if (!selectedCat || loading) return;
+    if (!candidateProfile || !selectedCat || loading) return;
     const topic = selectedSub || selectedCat;
     const prompt = mode === "interview"
-      ? `Start a mock Tech Lead interview on "${topic}". Difficulty: ${difficulty}. Ask your first question.`
-      : `Give me a comprehensive ${difficulty}-level practice session on "${topic}". Include working Java code.`;
+      ? `Start a mock full stack developer interview on "${topic}". Difficulty: ${difficulty}. Ask your first question.`
+      : `Give me a comprehensive ${difficulty}-level practice session on "${topic}". Include working code when useful.`;
     setMessages([]);
     setActiveTab("chat");
     setTimeout(() => callAPI(prompt), 50);
@@ -765,8 +859,8 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Java Interview Assistant</title>
-        <meta name="description" content="Java Tech Lead AI Interview Assistant" />
+        <title>Full Stack Interview Assistant</title>
+        <meta name="description" content="Full Stack Developer AI Interview Assistant" />
         <meta name="theme-color" content="#0a0a0f" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -790,6 +884,7 @@ export default function Home() {
 
         {/* Sidebar */}
         <Sidebar
+          topics={visibleTopics}
           open={sidebarOpen} onClose={() => setSidebar(false)}
           expandedCat={expandedCat} selectedCat={selectedCat} selectedSub={selectedSub}
           onToggleCat={handleToggleCat} onSelectSub={handleSelectSub}
@@ -806,7 +901,7 @@ export default function Home() {
             </button>
 
             <span style={{ flex:1, fontSize:13, fontWeight:500, color: currentLabel?"#e8e8f0":"#4b5563", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-              {currentLabel || "Select a topic"}
+              {candidateProfile ? (currentLabel || "Select a topic") : "Tell us your target role"}
             </span>
 
             {/* Desktop-only controls */}
@@ -825,8 +920,8 @@ export default function Home() {
                 {DIFFS.map(d => <option key={d}>{d}</option>)}
               </select>
 
-              <button onClick={startSession} disabled={!selectedCat || loading}
-                style={{ padding:"4px 12px", fontSize:12, fontWeight:600, borderRadius:7, border:"1px solid rgba(99,102,241,.4)", background:"rgba(99,102,241,.1)", color:"#a5b4fc", cursor: selectedCat&&!loading?"pointer":"not-allowed", opacity: selectedCat&&!loading?1:.4, display:"flex", alignItems:"center", gap:5 }}>
+              <button onClick={startSession} disabled={!candidateProfile || !selectedCat || loading}
+                style={{ padding:"4px 12px", fontSize:12, fontWeight:600, borderRadius:7, border:"1px solid rgba(99,102,241,.4)", background:"rgba(99,102,241,.1)", color:"#a5b4fc", cursor: candidateProfile&&selectedCat&&!loading?"pointer":"not-allowed", opacity: candidateProfile&&selectedCat&&!loading?1:.4, display:"flex", alignItems:"center", gap:5 }}>
                 <i className="ti ti-player-play" style={{ fontSize:11 }} />Start
               </button>
             </div>
@@ -834,13 +929,18 @@ export default function Home() {
             {messages.length > 0 && (
               <button className="icon-btn" onClick={clearChat} title="Clear"><i className="ti ti-trash" /></button>
             )}
+            {candidateProfile && (
+              <button className="icon-btn" onClick={() => { setProfileDraft(candidateProfile); setCandidateProfile(null); setMessages([]); }} title="Edit Profile"><i className="ti ti-user-cog" /></button>
+            )}
             <button className="icon-btn" onClick={() => setShowSettings(true)} title="Info"><i className="ti ti-info-circle" /></button>
           </header>
 
           {/* ── Chat area ── */}
           <div ref={chatRef} style={{ flex:1, overflowY:"auto", padding: isMobile?"12px 10px":"20px 16px", display:"flex", flexDirection:"column" }}>
             {messages.length === 0 && !loading
-              ? <Welcome
+              ? !candidateProfile
+                ? <ProfileSetup draft={profileDraft} onChange={setProfileDraft} onSubmit={saveProfile} />
+                : <Welcome
                   onChip={t => callAPI(t)}
                   onScreen={() => setShowScreen(true)}
                   onVoice={toggleVoice}
@@ -875,9 +975,9 @@ export default function Home() {
             {showCode && (
               <div style={{ marginBottom:8 }}>
                 <div style={{ fontSize:11.5, color:"#6b7280", marginBottom:5, display:"flex", alignItems:"center", gap:6 }}>
-                  <i className="ti ti-code" style={{ fontSize:13 }} />Java code
+                  <i className="ti ti-code" style={{ fontSize:13 }} />Code
                 </div>
-                <textarea value={codeInput} onChange={e => setCodeInput(e.target.value)} rows={4} placeholder="// Paste your Java code here…"
+                <textarea value={codeInput} onChange={e => setCodeInput(e.target.value)} rows={4} placeholder="// Paste your Code here…"
                   style={{ width:"100%", background:"#0d0d1a", border:"1px solid rgba(99,102,241,.2)", borderRadius:8, padding:"8px 12px", fontFamily:"'JetBrains Mono',monospace", fontSize:12, color:"#c8d6e5", outline:"none", lineHeight:1.6 }} />
               </div>
             )}
@@ -885,7 +985,7 @@ export default function Home() {
               <textarea ref={inputRef} value={input} onChange={e => setInput(e.target.value)}
                 onKeyDown={e => { if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();callAPI(input);} }}
                 rows={2} disabled={loading}
-                placeholder={mode==="interview" ? "Type your answer… or use 📸/🎤" : "Ask anything about Java or DSA…"}
+                placeholder={mode==="interview" ? "Type your answer… or use 📸/🎤" : "Ask anything about frontend, backend, DSA, system design, or databases…"}
                 style={{ flex:1, background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.09)", borderRadius:9, padding:"9px 12px", fontSize: isMobile?14:13, color:"#e8e8f0", outline:"none", lineHeight:1.5, maxHeight:120 }} />
 
               <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
@@ -911,8 +1011,8 @@ export default function Home() {
                   style={{ fontSize:11, padding:"5px 6px", borderRadius:6, border:"1px solid rgba(255,255,255,.09)", background:"rgba(255,255,255,.04)", color:"#9ca3af", outline:"none" }}>
                   {DIFFS.map(d => <option key={d}>{d}</option>)}
                 </select>
-                <button onClick={startSession} disabled={!selectedCat||loading}
-                  style={{ padding:"5px 12px", fontSize:11, fontWeight:600, borderRadius:7, border:"1px solid rgba(99,102,241,.4)", background:"rgba(99,102,241,.1)", color:"#a5b4fc", cursor: selectedCat&&!loading?"pointer":"not-allowed", opacity: selectedCat&&!loading?1:.4, display:"flex", alignItems:"center", gap:4, whiteSpace:"nowrap" }}>
+                <button onClick={startSession} disabled={!candidateProfile||!selectedCat||loading}
+                  style={{ padding:"5px 12px", fontSize:11, fontWeight:600, borderRadius:7, border:"1px solid rgba(99,102,241,.4)", background:"rgba(99,102,241,.1)", color:"#a5b4fc", cursor: candidateProfile&&selectedCat&&!loading?"pointer":"not-allowed", opacity: candidateProfile&&selectedCat&&!loading?1:.4, display:"flex", alignItems:"center", gap:4, whiteSpace:"nowrap" }}>
                   <i className="ti ti-player-play" style={{ fontSize:10 }} />Start
                 </button>
               </div>

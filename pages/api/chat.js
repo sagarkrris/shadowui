@@ -1,36 +1,49 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const SYSTEM_PROMPT = `You are a senior Java Tech Lead interviewer with 15+ years at top-tier product companies. The candidate has 6+ years of Java backend experience with Spring Boot, Micronaut, GCP, and OCI.
+const SYSTEM_PROMPT = `You are a senior full stack developer interviewer with deep experience across frontend, backend, databases, cloud, DSA, system design, and behavioral interviews.
 
 INTERVIEW MODE: Ask ONE focused question per turn. After the user answers, give structured feedback:
 **Score: X/10**
 **Strengths:** what they got right
 **Gaps:** what was missing or needs depth
-**Ideal Answer:** full explanation + Java code examples where relevant
+**Ideal Answer:** full explanation + practical code examples where relevant
 **Follow-up:** one deeper question
 
-PRACTICE MODE: Answer thoroughly with working Java code, time/space complexity for DSA, trade-offs for system design, and production-level insights.
+PRACTICE MODE: Answer thoroughly with working code when useful, time/space complexity for DSA, trade-offs for system design, and production-level insights.
 
-Formatting: wrap code in \`\`\`java ... \`\`\` blocks. Use **bold** for section headers. Be rigorous — set high Tech Lead standards.`;
+Formatting: wrap code in fenced code blocks with the right language when possible. Use **bold** for section headers. Be rigorous and calibrate depth to the candidate profile.`;
 
-// Fetch available models from Google and pick the best one
+function buildSystemPrompt(profile) {
+  const details = [];
+  if (profile?.position) details.push(`Target position: ${String(profile.position).slice(0, 120)}`);
+  if (profile?.experience) details.push(`Years of experience: ${String(profile.experience).slice(0, 80)}`);
+  if (profile?.stack) details.push(`Tech stack: ${String(profile.stack).slice(0, 240)}`);
+
+  if (!details.length) return SYSTEM_PROMPT;
+
+  return `${SYSTEM_PROMPT}
+
+Candidate profile:
+${details.map((detail) => `- ${detail}`).join("\n")}
+Tailor questions, examples, and expected depth to this profile.`;
+}
+
 async function getBestModel(apiKey) {
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
-    );
-    const data = await res.json();
+    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models", {
+      headers: { "x-goog-api-key": apiKey },
+    });
+    const data = await response.json();
     const models = (data.models || [])
       .filter(
-        (m) =>
-          m.supportedGenerationMethods?.includes("generateContent") &&
-          (m.name.includes("flash") || m.name.includes("pro"))
+        (model) =>
+          model.supportedGenerationMethods?.includes("generateContent") &&
+          (model.name.includes("flash") || model.name.includes("pro"))
       )
-      .map((m) => m.name.replace("models/", ""));
+      .map((model) => model.name.replace("models/", ""));
 
-    // Prefer flash (faster + free), then pro
-    const flash = models.find((m) => m.includes("flash"));
-    const pro = models.find((m) => m.includes("pro"));
+    const flash = models.find((model) => model.includes("flash"));
+    const pro = models.find((model) => model.includes("pro"));
     return flash || pro || models[0];
   } catch {
     return null;
@@ -42,7 +55,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { messages } = req.body;
+  const { messages, profile } = req.body;
 
   if (!messages || !Array.isArray(messages)) {
     return res.status(400).json({ error: "messages array required" });
@@ -53,14 +66,11 @@ export default async function handler(req, res) {
   }
 
   const apiKey = process.env.GEMINI_API_KEY;
-
-  // Auto-detect available model for this API key
   const modelName = await getBestModel(apiKey);
 
   if (!modelName) {
     return res.status(500).json({
-      error:
-        "No supported Gemini models found for your API key. Please check your key at aistudio.google.com/app/apikey",
+      error: "No supported Gemini models found. Please check your server API key configuration.",
     });
   }
 
@@ -70,23 +80,21 @@ export default async function handler(req, res) {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
       model: modelName,
-      systemInstruction: SYSTEM_PROMPT,
+      systemInstruction: buildSystemPrompt(profile),
     });
 
-    const history = messages.slice(0, -1).map((m) => ({
-      role: m.role === "assistant" ? "model" : "user",
-      parts: [{ text: m.content }],
+    const history = messages.slice(0, -1).map((message) => ({
+      role: message.role === "assistant" ? "model" : "user",
+      parts: [{ text: message.content }],
     }));
     const lastMessage = messages[messages.length - 1];
     const chat = model.startChat({ history });
 
-    // SSE streaming
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache, no-transform");
     res.setHeader("Connection", "keep-alive");
     res.setHeader("X-Accel-Buffering", "no");
 
-    // Send which model is being used so user can see
     res.write(`data: ${JSON.stringify({ model: modelName })}\n\n`);
 
     const result = await chat.sendMessageStream(lastMessage.content);
@@ -102,10 +110,11 @@ export default async function handler(req, res) {
     res.end();
   } catch (error) {
     console.error("Gemini error:", error.message);
+    const safeError = "AI request failed. Please try again.";
     if (!res.headersSent) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: safeError });
     } else {
-      res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
+      res.write(`data: ${JSON.stringify({ error: safeError })}\n\n`);
       res.end();
     }
   }
