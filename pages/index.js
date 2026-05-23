@@ -14,11 +14,13 @@ import ProfileSetup from "../components/welcome/ProfileSetup";
 import Welcome from "../components/welcome/Welcome";
 import { deriveWeakSpots } from "../lib/companyPrep.mjs";
 import { buildUserPrepLabel, getDisplayName, getStackGreeting } from "../lib/personalization.mjs";
+import { deriveMockScores } from "../lib/prepCoach.mjs";
 import { getPrepLabel, getRecommendedTopics } from "../lib/prepTopics.mjs";
 import { DEFAULT_PROFILE, DIFFS } from "../lib/prompts.mjs";
+import { createSessionSnapshot, loadSessionSnapshot, saveSessionSnapshot } from "../lib/sessionPersistence.mjs";
 import { getTechTheme } from "../lib/techTheme.mjs";
 import { canUseChatComposer, canUseInterviewTools, canUsePrepTopics, shouldShowCodeTools } from "../lib/uiVisibility.mjs";
-import { getVoiceErrorMessage, getVoiceSupport } from "../lib/voiceSupport.mjs";
+import { buildSpeechTranscript, getVoiceErrorMessage, getVoiceSupport } from "../lib/voiceSupport.mjs";
 
 export default function Home() {
   const [messages, setMessages]       = useState([]);
@@ -38,6 +40,7 @@ export default function Home() {
   const [showScreen, setShowScreen]   = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [activeTab, setActiveTab]     = useState("chat");
+  const [sessionReady, setSessionReady] = useState(false);
   const [toast, setToast]             = useState(null);
   const [candidateProfile, setCandidateProfile] = useState(null);
   const [profileDraft, setProfileDraft] = useState(DEFAULT_PROFILE);
@@ -56,12 +59,49 @@ export default function Home() {
   const stackGreeting = getStackGreeting(candidateProfile);
   const userPrepLabel = candidateProfile ? buildUserPrepLabel(candidateProfile) : prepLabel;
   const weakSpots = deriveWeakSpots(messages);
+  const mockScores = deriveMockScores(messages);
   const showComposer = canUseChatComposer({ activeTab, candidateProfile });
   const showInterviewTools = canUseInterviewTools({ activeTab, candidateProfile });
   const canSelectPrepTopics = canUsePrepTopics({ candidateProfile });
   const showCodeTools = shouldShowCodeTools({ activeTab, candidateProfile, selectedCat });
   const canSend = Boolean(input.trim() || (showCodeTools && codeInput.trim()));
   const footerHint = showCodeTools ? "screen · voice · code · Enter to send" : "screen · voice · Enter to send";
+
+  // ── Local session persistence ────────────────────────────────────────────
+  useEffect(() => {
+    const savedSession = loadSessionSnapshot(window.localStorage);
+    if (savedSession) {
+      setCandidateProfile(savedSession.candidateProfile);
+      setProfileDraft(savedSession.profileDraft);
+      setMessages(savedSession.messages);
+      setSelCat(savedSession.selectedCat);
+      setSelSub(savedSession.selectedSub);
+      setExpanded(savedSession.expandedCat);
+      setMode(savedSession.mode);
+      setDifficulty(savedSession.difficulty);
+      setActiveTab(savedSession.activeTab);
+    }
+    setSessionReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!sessionReady) return;
+
+    saveSessionSnapshot(
+      window.localStorage,
+      createSessionSnapshot({
+        candidateProfile,
+        profileDraft,
+        messages,
+        selectedCat,
+        selectedSub,
+        expandedCat,
+        mode,
+        difficulty,
+        activeTab,
+      }),
+    );
+  }, [sessionReady, candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, difficulty, activeTab]);
 
   // ── Viewport ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -228,25 +268,10 @@ export default function Home() {
     };
 
     recognition.onresult = (event) => {
-      let interim = "";
-      let finalText = voiceFinal.current;
+      const transcript = buildSpeechTranscript(event.results);
 
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript =
-          event.results[i][0].transcript;
-
-        if (event.results[i].isFinal) {
-          finalText += transcript + " ";
-        } else {
-          interim += transcript;
-        }
-      }
-
-      voiceFinal.current = finalText;
-
-      setVoiceText(
-        (finalText + interim).trim()
-      );
+      voiceFinal.current = transcript.finalText;
+      setVoiceText(transcript.displayText);
     };
 
     recognition.onerror = (event) => {
@@ -483,6 +508,7 @@ export default function Home() {
                   showCodeTools={showCodeTools}
                   topics={visibleTopics}
                   weakSpots={weakSpots}
+                  mockScores={mockScores}
                 />
               : (
                 <>

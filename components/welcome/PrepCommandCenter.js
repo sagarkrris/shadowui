@@ -7,8 +7,8 @@ export default function PrepCommandCenter({ center, theme, onAction }) {
             <i className="ti ti-gauge" />Readiness
           </div>
           <div style={{ display: "flex", alignItems: "end", gap: 7 }}>
-            <span style={{ color: "#e8e8f0", fontSize: 30, fontWeight: 800, lineHeight: 1 }}>{center.readinessScore}</span>
-            <span style={{ color: "#6b7280", fontSize: 11, marginBottom: 4 }}>/100</span>
+            <span style={{ color: "#e8e8f0", fontSize: 30, fontWeight: 800, lineHeight: 1 }}>{center.readinessScore ?? "-"}</span>
+            {center.readinessScore !== null && <span style={{ color: "#6b7280", fontSize: 11, marginBottom: 4 }}>/100</span>}
           </div>
           <p style={{ color: "#9ca3af", fontSize: 11.5, lineHeight: 1.45, marginTop: 8 }}>{center.readinessLabel}</p>
         </div>

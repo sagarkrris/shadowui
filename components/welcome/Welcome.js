@@ -3,11 +3,11 @@ import { getStackGreeting } from "../../lib/personalization.mjs";
 import { buildPrepCommandCenter } from "../../lib/prepCoach.mjs";
 import PrepCommandCenter from "./PrepCommandCenter";
 
-export default function Welcome({ onChip, onScreen, onVoice, selectedCat, selectedSub, theme, profile, showCodeTools, topics, weakSpots }) {
+export default function Welcome({ onChip, onScreen, onVoice, selectedCat, selectedSub, theme, profile, showCodeTools, topics, weakSpots, mockScores }) {
   const topic = selectedSub || selectedCat;
   const quickPrompts = getQuickPrompts(selectedCat, selectedSub);
   const greeting = getStackGreeting(profile);
-  const commandCenter = buildPrepCommandCenter({ profile, topics, weakSpots });
+  const commandCenter = buildPrepCommandCenter({ profile, topics, weakSpots, mockScores });
   const featureBadges = [
     ["ti-screenshot", "Screen AI"],
     ["ti-microphone", "Voice"],

@@ -2,9 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  buildSpeechTranscript,
   getVoiceErrorMessage,
   getVoiceSupport,
 } from "../lib/voiceSupport.mjs";
+
+function recognitionResult(transcript, isFinal) {
+  return Object.assign([{ transcript }], { isFinal });
+}
 
 test("supports Web Speech when a recognition constructor is available", () => {
   const support = getVoiceSupport({
@@ -51,4 +56,21 @@ test("maps permission errors to a helpful iOS-specific message", () => {
 
   assert.match(message, /microphone permission/);
   assert.match(message, /Siri/);
+});
+
+test("builds speech text from the current recognition results without replaying prior finals", () => {
+  const firstEvent = buildSpeechTranscript([
+    recognitionResult("I use React", true),
+  ]);
+
+  assert.equal(firstEvent.finalText, "I use React");
+  assert.equal(firstEvent.displayText, "I use React");
+
+  const replayedEvent = buildSpeechTranscript([
+    recognitionResult("I use React", true),
+    recognitionResult(" and Node", false),
+  ]);
+
+  assert.equal(replayedEvent.finalText, "I use React");
+  assert.equal(replayedEvent.displayText, "I use React and Node");
 });
