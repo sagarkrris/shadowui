@@ -17,6 +17,7 @@ test("hides the chat composer until a profile exists and chat is active", () => 
 test("shows interview tools only inside the personalized chat workflow", () => {
   assert.equal(canUseInterviewTools({ activeTab: "chat", candidateProfile: { stack: "Python" } }), true);
   assert.equal(canUseInterviewTools({ activeTab: "company", candidateProfile: { stack: "Python" } }), false);
+  assert.equal(canUseInterviewTools({ activeTab: "course", candidateProfile: { stack: "Python" } }), false);
 });
 
 test("shows code tools only for technical prep categories", () => {

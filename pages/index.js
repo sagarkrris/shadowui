@@ -5,6 +5,7 @@ import MessageContent from "../components/chat/MessageContent";
 import ScoreBadge from "../components/chat/ScoreBadge";
 import TechBackground from "../components/TechBackground";
 import TypingDots from "../components/chat/TypingDots";
+import AgenticUICourse from "../components/course/AgenticUICourse";
 import ScreenModal from "../components/modals/ScreenModal";
 import SettingsModal from "../components/modals/SettingsModal";
 import Sidebar from "../components/Sidebar";
@@ -13,6 +14,7 @@ import VoiceBar from "../components/VoiceBar";
 import ProfileSetup from "../components/welcome/ProfileSetup";
 import Welcome from "../components/welcome/Welcome";
 import { deriveWeakSpots } from "../lib/companyPrep.mjs";
+import { createHomeNavigationState } from "../lib/homeNavigation.mjs";
 import { buildUserPrepLabel, getDisplayName, getStackGreeting } from "../lib/personalization.mjs";
 import { deriveMockScores } from "../lib/prepCoach.mjs";
 import { getPrepLabel, getRecommendedTopics } from "../lib/prepTopics.mjs";
@@ -346,6 +348,29 @@ export default function Home() {
     callAPI(prompt);
   };
 
+  const goHome = () => {
+    abortRef.current?.abort();
+    const homeState = createHomeNavigationState({
+      candidateProfile,
+      profileDraft,
+      messages,
+      activeTab,
+      loading,
+    });
+
+    setActiveTab(homeState.activeTab);
+    setMessages(homeState.messages);
+    setLoading(homeState.loading);
+    setShowCode(false);
+    setCodeInput("");
+    if (isMobile) setSidebar(false);
+  };
+
+  const openCourse = () => {
+    setActiveTab("course");
+    if (isMobile) setSidebar(false);
+  };
+
   const startPracticeMock = ({ prompt, question }) => {
     setActiveTab("chat");
     callAPI(prompt, {
@@ -469,6 +494,7 @@ export default function Home() {
           userPrepLabel={candidateProfile ? userPrepLabel : null}
           topicsLocked={!canSelectPrepTopics}
           onLockedTopic={showProfileRequired}
+          onOpenCourse={openCourse}
         />
 
         {/* Main */}
@@ -476,15 +502,21 @@ export default function Home() {
 
           {/* ── Top bar ── */}
           <header className="glass-chrome" style={{ display:"flex", alignItems:"center", gap:8, padding:"9px 12px", borderBottom:"1px solid rgba(255,255,255,.08)", flexShrink:0, minHeight:52 }}>
+            <button className={`icon-btn ${activeTab==="chat" && messages.length===0 ? "active" : ""}`} onClick={goHome} title="Home">
+              <i className="ti ti-home" />
+            </button>
             <button className="icon-btn" onClick={() => setSidebar(p => !p)} title="Topics">
               <i className="ti ti-menu-2" />
             </button>
             <button className={`icon-btn ${activeTab==="company"?"active":""}`} onClick={() => setActiveTab(activeTab==="company"?"chat":"company")} title="Company Prep">
               <i className="ti ti-building" />
             </button>
+            <button className={`icon-btn ${activeTab==="course"?"active":""}`} onClick={() => setActiveTab(activeTab==="course"?"chat":"course")} title="Agentic UI Course">
+              <i className="ti ti-sparkles" />
+            </button>
 
             <span style={{ flex:1, fontSize:13, fontWeight:500, color: currentLabel?"#e8e8f0":"#4b5563", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-              {activeTab === "company" ? (candidateProfile ? `Company Prep for ${displayName}` : "Company Prep") : candidateProfile ? `${stackGreeting.salutation}${currentLabel ? ` · ${currentLabel}` : ""}` : "Tell us your target role"}
+              {activeTab === "course" ? "Agentic UI Course" : activeTab === "company" ? (candidateProfile ? `Company Prep for ${displayName}` : "Company Prep") : candidateProfile ? `${stackGreeting.salutation}${currentLabel ? ` · ${currentLabel}` : ""}` : "Tell us your target role"}
             </span>
             {candidateProfile && (
               <span style={{ display:isMobile?"none":"inline-flex", alignItems:"center", gap:5, padding:"3px 8px", borderRadius:999, border:`1px solid ${techTheme.accentBorder}`, background:techTheme.accentMuted, color:techTheme.accentText, fontSize:10.5, fontWeight:600, whiteSpace:"nowrap" }}>
@@ -526,7 +558,9 @@ export default function Home() {
 
           {/* ── Chat area ── */}
           <div ref={chatRef} style={{ flex:1, overflowY:"auto", padding: isMobile?"12px 10px":"20px 16px", display:"flex", flexDirection:"column" }}>
-            {activeTab === "company" ? (
+            {activeTab === "course" ? (
+              <AgenticUICourse theme={techTheme} variant="full" />
+            ) : activeTab === "company" ? (
               <CompanyPrep theme={techTheme} weakSpots={weakSpots} onMock={startCompanyMock} />
             ) : messages.length === 0 && !loading
               ? !candidateProfile
@@ -545,6 +579,7 @@ export default function Home() {
                   topics={visibleTopics}
                   weakSpots={weakSpots}
                   mockScores={mockScores}
+                  messages={messages}
                   onPracticeMock={startPracticeMock}
                 />
               : (
@@ -639,8 +674,10 @@ export default function Home() {
           {isMobile && (
             <nav className="glass-chrome" style={{ display:"flex", alignItems:"center", justifyContent:"space-around", padding:"6px 8px", borderTop:"1px solid rgba(255,255,255,.08)", flexShrink:0, paddingBottom:"max(6px, env(safe-area-inset-bottom))" }}>
               {[
+                { icon:"ti-home",           label:"Home",    action:goHome, active:activeTab==="chat" && messages.length===0 },
                 { icon:"ti-layout-sidebar", label:"Topics",  action:()=>setSidebar(p=>!p), active:sidebarOpen },
                 { icon:"ti-building",        label:"Company", action:()=>setActiveTab(activeTab==="company"?"chat":"company"), active:activeTab==="company" },
+                { icon:"ti-sparkles",        label:"Course",  action:()=>setActiveTab(activeTab==="course"?"chat":"course"), active:activeTab==="course" },
                 ...(showInterviewTools ? [
                   { icon:"ti-screenshot",      label:"Screen",  action:()=>setShowScreen(true) },
                   { icon:"ti-microphone",       label:"Voice",   action:toggleVoice, active:isListening, danger:isListening },
@@ -678,6 +715,13 @@ export default function Home() {
           .welcome-screen {
             justify-content: flex-start !important;
             padding: 18px 20px 20px !important;
+          }
+        }
+        @media (max-height: 760px) {
+          .profile-setup-screen {
+            justify-content: flex-start !important;
+            padding-top: 14px !important;
+            padding-bottom: 180px !important;
           }
         }
         @media (max-width: 380px), (max-height: 760px) {

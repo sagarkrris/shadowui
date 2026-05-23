@@ -3,8 +3,9 @@ import { getStackGreeting } from "../../lib/personalization.mjs";
 import { buildPrepCommandCenter } from "../../lib/prepCoach.mjs";
 import PrepCommandCenter from "./PrepCommandCenter";
 import PracticePack from "./PracticePack";
+import PrepInsightsPanel from "./PrepInsightsPanel";
 
-export default function Welcome({ onChip, onScreen, onVoice, selectedCat, selectedSub, mode, difficulty, theme, profile, showCodeTools, topics, weakSpots, mockScores, onPracticeMock }) {
+export default function Welcome({ onChip, onScreen, onVoice, selectedCat, selectedSub, mode, difficulty, theme, profile, showCodeTools, topics, weakSpots, mockScores, messages, onPracticeMock }) {
   const topic = selectedSub || selectedCat;
   const quickPrompts = getQuickPrompts(selectedCat, selectedSub);
   const greeting = getStackGreeting(profile);
@@ -61,6 +62,16 @@ export default function Welcome({ onChip, onScreen, onVoice, selectedCat, select
       )}
 
       <PrepCommandCenter center={commandCenter} theme={theme} onAction={onChip} />
+
+      <PrepInsightsPanel
+        profile={profile}
+        topics={topics}
+        weakSpots={weakSpots}
+        mockScores={mockScores}
+        messages={messages}
+        theme={theme}
+        onAction={onChip}
+      />
 
       <div className="welcome-features" style={{ marginTop: 28, display: "flex", gap: 20, fontSize: 11, color: "#374151", flexWrap: "wrap", justifyContent: "center" }}>
         {featureBadges.map(([icon, label]) => (

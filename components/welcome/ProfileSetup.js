@@ -1,3 +1,5 @@
+import { scrollFocusedControlIntoView } from "../../lib/focusViewport.mjs";
+
 export default function ProfileSetup({ draft, onChange, onSubmit, theme }) {
   const canContinue = draft.name.trim() && draft.position.trim() && draft.experience.trim() && draft.stack.trim();
   const unlockCards = [
@@ -15,9 +17,12 @@ export default function ProfileSetup({ draft, onChange, onSubmit, theme }) {
     color: "#e8e8f0",
     outline: "none",
   };
+  const handleFieldFocus = (event) => {
+    scrollFocusedControlIntoView(event.currentTarget);
+  };
 
   return (
-    <div className="welcome-screen" style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "28px 20px", textAlign: "center", overflowY: "auto" }}>
+    <div className="welcome-screen profile-setup-screen" style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "28px 20px", textAlign: "center", overflowY: "auto", scrollPaddingTop: 18, scrollPaddingBottom: 160 }}>
       <div className="welcome-logo" style={{ width: 60, height: 60, borderRadius: "50%", background: theme.accentSoft, border: `1px solid ${theme.accentBorder}`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18 }}>
         <i className={`ti ${theme.icon}`} style={{ fontSize: 26, color: theme.accentStrong }} />
       </div>
@@ -29,15 +34,15 @@ export default function ProfileSetup({ draft, onChange, onSubmit, theme }) {
       <div style={{ width: "100%", maxWidth: 430, display: "grid", gap: 10, textAlign: "left" }}>
         <label style={{ display: "grid", gap: 5, fontSize: 12, color: "#9ca3af" }}>
           Name
-          <input className="glass-input" value={draft.name} onChange={(event) => onChange({ ...draft, name: event.target.value })} placeholder="e.g. Sagar" style={fieldStyle} />
+          <input className="glass-input" value={draft.name} onFocus={handleFieldFocus} onChange={(event) => onChange({ ...draft, name: event.target.value })} placeholder="e.g. Sagar" style={fieldStyle} />
         </label>
         <label style={{ display: "grid", gap: 5, fontSize: 12, color: "#9ca3af" }}>
           Position
-          <input className="glass-input" value={draft.position} onChange={(event) => onChange({ ...draft, position: event.target.value })} placeholder="e.g. Full Stack Developer, Frontend Developer" style={fieldStyle} />
+          <input className="glass-input" value={draft.position} onFocus={handleFieldFocus} onChange={(event) => onChange({ ...draft, position: event.target.value })} placeholder="e.g. Full Stack Developer, Frontend Developer" style={fieldStyle} />
         </label>
         <label style={{ display: "grid", gap: 5, fontSize: 12, color: "#9ca3af" }}>
           Years of experience
-          <select className="glass-input" value={draft.experience} onChange={(event) => onChange({ ...draft, experience: event.target.value })} style={fieldStyle}>
+          <select className="glass-input" value={draft.experience} onFocus={handleFieldFocus} onChange={(event) => onChange({ ...draft, experience: event.target.value })} style={fieldStyle}>
             <option value="">Select experience</option>
             <option>0-1 years</option>
             <option>2-4 years</option>
@@ -47,7 +52,7 @@ export default function ProfileSetup({ draft, onChange, onSubmit, theme }) {
         </label>
         <label style={{ display: "grid", gap: 5, fontSize: 12, color: "#9ca3af" }}>
           Tech stack
-          <input className="glass-input" value={draft.stack} onChange={(event) => onChange({ ...draft, stack: event.target.value })} placeholder="e.g. React, Node.js, Spring Boot, PostgreSQL, AWS" style={fieldStyle} />
+          <input className="glass-input" value={draft.stack} onFocus={handleFieldFocus} onChange={(event) => onChange({ ...draft, stack: event.target.value })} placeholder="e.g. React, Node.js, Spring Boot, PostgreSQL, AWS" style={fieldStyle} />
         </label>
         <button className="glass-button" onClick={onSubmit} disabled={!canContinue} style={{ marginTop: 4, padding: "10px 14px", borderRadius: 9, border: `1px solid ${theme.accentBorder}`, color: canContinue ? theme.accentText : "#4b5563", fontSize: 13, fontWeight: 600, cursor: canContinue ? "pointer" : "not-allowed" }}>
           Personalize Prep

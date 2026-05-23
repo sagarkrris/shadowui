@@ -72,6 +72,17 @@ test("saves and loads a valid session snapshot from storage", () => {
   assert.deepEqual(loadSessionSnapshot(storage), snapshot);
 });
 
+test("preserves the course tab across refreshes", () => {
+  const storage = memoryStorage();
+  const snapshot = createSessionSnapshot({
+    activeTab: "course",
+  });
+
+  saveSessionSnapshot(storage, snapshot);
+
+  assert.equal(loadSessionSnapshot(storage).activeTab, "course");
+});
+
 test("returns null for missing or corrupt stored sessions", () => {
   assert.equal(loadSessionSnapshot(memoryStorage()), null);
   assert.equal(loadSessionSnapshot(memoryStorage({ [SESSION_STORAGE_KEY]: "not json" })), null);

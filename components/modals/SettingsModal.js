@@ -1,4 +1,3 @@
-import AgenticUICourse from "../course/AgenticUICourse";
 import { PRODUCT_TAGLINE } from "../../lib/agenticCourse.mjs";
 
 export default function SettingsModal({ onClose, theme }) {
@@ -24,7 +23,7 @@ export default function SettingsModal({ onClose, theme }) {
           borderRadius: "16px 16px 0 0",
           padding: 20,
           width: "100%",
-          maxWidth: 760,
+          maxWidth: 480,
           maxHeight: "min(88vh, 820px)",
           overflowY: "auto"
         }}
@@ -59,7 +58,6 @@ export default function SettingsModal({ onClose, theme }) {
             <li>Screen Analysis</li>
             <li>Code Help</li>
           </ul>
-          <AgenticUICourse theme={theme} />
         </div>
       </div>
     </div>

@@ -15,12 +15,23 @@ test("defines a compact agentic UI basics course with visual lessons", () => {
   assert.ok(AGENTIC_UI_COURSE.summary.includes("agent"));
   assert.ok(AGENTIC_UI_COURSE.findings.length >= 4);
   assert.ok(AGENTIC_UI_COURSE.lessons.length >= 4);
+  assert.ok(AGENTIC_UI_COURSE.modules.length >= 4);
 
   AGENTIC_UI_COURSE.lessons.forEach((lesson) => {
     assert.ok(lesson.title);
     assert.ok(lesson.visual);
     assert.ok(lesson.description.length > 30);
+    assert.ok(lesson.plainMeaning.length > 20);
+    assert.ok(lesson.buildThis.length > 20);
     assert.ok(lesson.takeaways.length >= 3);
+  });
+
+  AGENTIC_UI_COURSE.modules.forEach((module) => {
+    assert.ok(module.image.title);
+    assert.ok(module.image.caption.length > 20);
+    assert.ok(module.video.title);
+    assert.ok(module.video.duration);
+    assert.ok(module.video.chapters.length >= 3);
   });
 });
 

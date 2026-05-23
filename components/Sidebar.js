@@ -1,12 +1,16 @@
-export default function Sidebar({ topics, open, onClose, expandedCat, selectedCat, selectedSub, onToggleCat, onSelectSub, isMobile, theme, prepLabel, userPrepLabel, topicsLocked, onLockedTopic }) {
+import AgenticUICourse from "./course/AgenticUICourse";
+
+export default function Sidebar({ topics, open, onClose, expandedCat, selectedCat, selectedSub, onToggleCat, onSelectSub, isMobile, theme, prepLabel, userPrepLabel, topicsLocked, onLockedTopic, onOpenCourse }) {
+  const drawerWidth = isMobile ? "min(340px, 88vw)" : (open ? 320 : 0);
+
   return (
     <>
       {isMobile && open && (
         <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.55)", zIndex: 40, backdropFilter: "blur(2px)" }} />
       )}
       <aside className="glass-chrome" style={{
-        width: isMobile ? 260 : (open ? 220 : 0),
-        minWidth: isMobile ? undefined : (open ? 220 : 0),
+        width: drawerWidth,
+        minWidth: isMobile ? undefined : drawerWidth,
         position: isMobile ? "fixed" : "relative",
         top: isMobile ? 0 : undefined,
         left: isMobile ? 0 : undefined,
@@ -36,6 +40,9 @@ export default function Sidebar({ topics, open, onClose, expandedCat, selectedCa
         </div>
 
         <div style={{ flex: 1, overflowY: "auto", padding: "5px 0" }}>
+          <div style={{ padding: "8px 12px 12px" }}>
+            <AgenticUICourse theme={theme} variant="drawer" onOpenCourse={onOpenCourse} />
+          </div>
           {topicsLocked && (
             <div className="glass-card" style={{ margin: "8px 12px 10px", padding: 10, borderRadius: 8, border: `1px solid ${theme.accentBorder}` }}>
               <div style={{ display: "flex", alignItems: "center", gap: 7, color: theme.accentText, fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
