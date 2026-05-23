@@ -31,6 +31,8 @@ test("defines a compact agentic UI basics course with visual lessons", () => {
     assert.ok(module.image.caption.length > 20);
     assert.ok(module.video.title);
     assert.ok(module.video.duration);
+    assert.match(module.video.embedUrl, /^https:\/\/www\.youtube-nocookie\.com\/embed\/[A-Za-z0-9_-]+/);
+    assert.match(module.video.watchUrl, /^https:\/\/www\.youtube\.com\/watch\?v=[A-Za-z0-9_-]+/);
     assert.ok(module.video.chapters.length >= 3);
   });
 });

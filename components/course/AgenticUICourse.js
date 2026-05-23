@@ -87,18 +87,54 @@ function CourseVisual({ type, theme }) {
 function VideoLesson({ module, theme }) {
   return (
     <div className="glass-card" style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, overflow: "hidden" }}>
-      <div style={{ position: "relative", minHeight: 170, padding: 18, display: "grid", alignContent: "center", justifyItems: "center", background: `linear-gradient(135deg, ${theme.accentMuted}, rgba(255,255,255,.04))` }}>
-        <div style={{ width: 74, height: 74, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${theme.accentBorder}`, background: theme.accentSoft, boxShadow: "0 16px 40px rgba(0,0,0,.28)" }}>
-          <i className="ti ti-player-play-filled" style={{ color: theme.accentStrong, fontSize: 34 }} />
-        </div>
-        <div style={{ marginTop: 12, color: "#e8e8f0", fontSize: 13, fontWeight: 800, textAlign: "center" }}>{module.video.title}</div>
-        <div style={{ marginTop: 4, color: "#9ca3af", fontSize: 11 }}>{module.video.duration}</div>
-        <div style={{ position: "absolute", left: 18, right: 18, bottom: 14, height: 5, borderRadius: 999, background: "rgba(255,255,255,.08)", overflow: "hidden" }}>
-          <div style={{ width: "62%", height: "100%", background: theme.accentStrong, borderRadius: 999 }} />
-        </div>
+      <div style={{ position: "relative", aspectRatio: "16 / 9", background: `linear-gradient(135deg, ${theme.accentMuted}, rgba(255,255,255,.04))` }}>
+        <iframe
+          title={module.video.title}
+          src={module.video.embedUrl}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+          loading="lazy"
+          referrerPolicy="strict-origin-when-cross-origin"
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: 0 }}
+        />
+        <a
+          href={module.video.watchUrl}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={`Play ${module.video.title}`}
+          style={{
+            position: "absolute",
+            left: 12,
+            bottom: 12,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 7,
+            border: `1px solid ${theme.accentBorder}`,
+            borderRadius: 8,
+            padding: "7px 10px",
+            background: "rgba(0,0,0,.58)",
+            color: theme.accentText,
+            fontSize: 11.5,
+            fontWeight: 900,
+            textDecoration: "none",
+            backdropFilter: "blur(12px)",
+            zIndex: 2,
+          }}
+        >
+          <i className="ti ti-player-play-filled" />Play video
+        </a>
       </div>
       <div style={{ padding: 12 }}>
-        <div style={{ color: theme.accentText, fontSize: 11, fontWeight: 900, marginBottom: 7 }}>Video chapters</div>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, marginBottom: 9 }}>
+          <div>
+            <div style={{ color: "#e8e8f0", fontSize: 13, fontWeight: 800, lineHeight: 1.35 }}>{module.video.title}</div>
+            <div style={{ marginTop: 3, color: "#9ca3af", fontSize: 11 }}>{module.video.duration}</div>
+          </div>
+          <a href={module.video.watchUrl} target="_blank" rel="noreferrer" className="glass-button" style={{ display: "inline-flex", alignItems: "center", gap: 5, border: `1px solid ${theme.accentBorder}`, borderRadius: 7, padding: "5px 8px", color: theme.accentText, fontSize: 10.5, fontWeight: 800, textDecoration: "none", whiteSpace: "nowrap" }}>
+            <i className="ti ti-external-link" />Open
+          </a>
+        </div>
+        <div style={{ color: theme.accentText, fontSize: 11, fontWeight: 900, marginBottom: 7 }}>Watch for</div>
         <div style={{ display: "grid", gap: 6 }}>
           {module.video.chapters.map((chapter, index) => (
             <div key={chapter} style={{ display: "flex", alignItems: "center", gap: 8, color: "#9ca3af", fontSize: 11.5 }}>

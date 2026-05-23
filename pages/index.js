@@ -138,6 +138,12 @@ export default function Home() {
   useEffect(() => { chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: "smooth" }); }, [messages, loading]);
 
   useEffect(() => {
+    if (activeTab === "chat" && messages.length === 0 && !loading) {
+      chatRef.current?.scrollTo({ top: 0, behavior: "auto" });
+    }
+  }, [activeTab, messages.length, loading, candidateProfile, selectedCat, selectedSub, mode]);
+
+  useEffect(() => {
     if (!showCodeTools) {
       setShowCode(false);
       setCodeInput("");
@@ -364,6 +370,9 @@ export default function Home() {
     setShowCode(false);
     setCodeInput("");
     if (isMobile) setSidebar(false);
+    requestAnimationFrame(() => {
+      chatRef.current?.scrollTo({ top: 0, behavior: "auto" });
+    });
   };
 
   const openCourse = () => {
@@ -715,6 +724,9 @@ export default function Home() {
           .welcome-screen {
             justify-content: flex-start !important;
             padding: 18px 20px 20px !important;
+          }
+          .prep-home-screen {
+            padding: 12px 6px 18px !important;
           }
         }
         @media (max-height: 760px) {

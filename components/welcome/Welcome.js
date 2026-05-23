@@ -18,7 +18,7 @@ export default function Welcome({ onChip, onScreen, onVoice, selectedCat, select
   ];
 
   return (
-    <div className="welcome-screen" style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 20px", textAlign: "center", overflowY: "auto" }}>
+    <div className="welcome-screen prep-home-screen" style={{ flex: 1, width: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "18px 20px 28px", textAlign: "center", overflowY: "visible" }}>
       <div className="welcome-logo" style={{ width: 60, height: 60, borderRadius: "50%", background: theme.accentSoft, border: `1px solid ${theme.accentBorder}`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18 }}>
         <i className={`ti ${theme.icon}`} style={{ fontSize: 26, color: theme.accentStrong }} />
       </div>
