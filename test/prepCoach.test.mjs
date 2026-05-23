@@ -36,6 +36,8 @@ test("builds a concise command center from profile, topics, and weak spots", () 
     center.dailyPlan.map((item) => item.title),
     ["Warm up", "Core drill", "Mock signal"],
   );
+  assert.ok(center.focusPrompt.includes("Caching"));
+  assert.ok(center.dailyPlan.every((item) => item.prompt.includes("Sagar")));
   assert.ok(center.actions.some((action) => action.id === "weak-spot-review"));
 });
 

@@ -26,7 +26,7 @@ export default function Sidebar({ topics, open, onClose, expandedCat, selectedCa
               <i className={`ti ${theme.icon}`} style={{ fontSize: 14, color: theme.accentStrong }} />
             </div>
             <div style={{ minWidth: 0 }}>
-              <span style={{ display: "block", fontSize: 13, fontWeight: 600, color: theme.accentText, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Full Stack Interview AI</span>
+              <span style={{ display: "block", fontSize: 13, fontWeight: 600, color: theme.accentText, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>InterviewIQ</span>
               <span style={{ display: "block", fontSize: 10.5, color: theme.accentStrong, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{userPrepLabel || prepLabel}</span>
             </div>
           </div>

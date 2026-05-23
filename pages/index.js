@@ -22,6 +22,13 @@ import { getTechTheme } from "../lib/techTheme.mjs";
 import { canUseChatComposer, canUseInterviewTools, canUsePrepTopics, shouldShowCodeTools } from "../lib/uiVisibility.mjs";
 import { buildSpeechTranscript, getVoiceErrorMessage, getVoiceSupport } from "../lib/voiceSupport.mjs";
 
+function toApiMessages(messages) {
+  return messages.map((message) => ({
+    role: message.role,
+    content: message.apiContent || message.content,
+  }));
+}
+
 export default function Home() {
   const [messages, setMessages]       = useState([]);
   const [expandedCat, setExpanded]    = useState(null);
@@ -143,28 +150,38 @@ export default function Home() {
   }, []);
 
   // ── API call ──────────────────────────────────────────────────────────────
-  const callAPI = useCallback(async (userText) => {
+  const callAPI = useCallback(async (userText, options = {}) => {
     const hasCode = showCodeTools ? codeInput.trim() : "";
-    const promptText = userText.trim() || (hasCode ? "Please review this code." : "");
+    const promptText = String(userText || "").trim() || (hasCode ? "Please review this code." : "");
     if (loading || (!promptText && !hasCode)) return;
     setLoading(true);
 
     const codeLanguage = techTheme.key === "default" ? "text" : techTheme.key;
+    const apiPromptText = String(options.apiText || promptText).trim();
     const finalText = hasCode
-      ? `${promptText}\n\n\`\`\`${codeLanguage}\n${hasCode}\n\`\`\``
-      : promptText;
+      ? `${apiPromptText}\n\n\`\`\`${codeLanguage}\n${hasCode}\n\`\`\``
+      : apiPromptText;
+    const displayText = String(options.displayText || finalText).trim();
     setInput(""); setCodeInput(""); setShowCode(false);
 
-    const newMsgs = [...messages, { role:"user", content:finalText }];
+    const userMessage = displayText === finalText
+      ? { role:"user", content:displayText }
+      : { role:"user", content:displayText, apiContent:finalText };
+    const newMsgs = [...messages, userMessage];
+    const apiMessages = [...toApiMessages(messages), { role:"user", content:finalText }];
     setMessages([...newMsgs, { role:"assistant", content:"", streaming:true }]);
 
     try {
       abortRef.current = new AbortController();
       const res = await fetch("/api/chat", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ messages: newMsgs, profile: candidateProfile }), signal: abortRef.current.signal,
+        body: JSON.stringify({ messages: apiMessages, profile: candidateProfile }), signal: abortRef.current.signal,
       });
-      if (!res.ok) { const e = await res.json(); throw new Error(e.error || "Request failed"); }
+      if (!res.ok) {
+        const e = await res.json();
+        const requestId = res.headers.get("x-request-id") || e.requestId;
+        throw new Error(`${e.error || "Request failed"}${requestId ? ` (Request ID: ${requestId})` : ""}`);
+      }
 
       const reader = res.body.getReader();
       const dec    = new TextDecoder();
@@ -179,7 +196,10 @@ export default function Home() {
           if (!line.startsWith("data: ")) continue;
           const data = line.slice(6).trim();
           if (data === "[DONE]") break;
-          try { const p = JSON.parse(data); if (p.text) { aiText += p.text; setMessages(prev => { const u=[...prev]; u[u.length-1]={role:"assistant",content:aiText,streaming:true}; return u; }); } } catch {}
+          let p;
+          try { p = JSON.parse(data); } catch { continue; }
+          if (p.error) throw new Error(`${p.error}${p.requestId ? ` (Request ID: ${p.requestId})` : ""}`);
+          if (p.text) { aiText += p.text; setMessages(prev => { const u=[...prev]; u[u.length-1]={role:"assistant",content:aiText,streaming:true}; return u; }); }
         }
       }
       setMessages(prev => { const u=[...prev]; u[u.length-1]={role:"assistant",content:aiText,streaming:false}; return u; });
@@ -207,7 +227,11 @@ export default function Home() {
         body: JSON.stringify({ imageBase64:b64, mimeType:"image/png", context:ctx, profile: candidateProfile }),
         signal: abortRef.current.signal,
       });
-      if (!res.ok) { const e = await res.json(); throw new Error(e.error||"Screen analysis failed"); }
+      if (!res.ok) {
+        const e = await res.json();
+        const requestId = res.headers.get("x-request-id") || e.requestId;
+        throw new Error(`${e.error || "Screen analysis failed"}${requestId ? ` (Request ID: ${requestId})` : ""}`);
+      }
 
       const reader = res.body.getReader();
       const dec    = new TextDecoder();
@@ -221,7 +245,10 @@ export default function Home() {
           if (!line.startsWith("data: ")) continue;
           const data = line.slice(6).trim();
           if (data === "[DONE]") break;
-          try { const p = JSON.parse(data); if (p.text) { aiText += p.text; setMessages(prev => { const u=[...prev]; u[u.length-1]={role:"assistant",content:aiText,streaming:true}; return u; }); } } catch {}
+          let p;
+          try { p = JSON.parse(data); } catch { continue; }
+          if (p.error) throw new Error(`${p.error}${p.requestId ? ` (Request ID: ${p.requestId})` : ""}`);
+          if (p.text) { aiText += p.text; setMessages(prev => { const u=[...prev]; u[u.length-1]={role:"assistant",content:aiText,streaming:true}; return u; }); }
         }
       }
       setMessages(prev => { const u=[...prev]; u[u.length-1]={role:"assistant",content:aiText,streaming:false}; return u; });
@@ -319,6 +346,13 @@ export default function Home() {
     callAPI(prompt);
   };
 
+  const startPracticeMock = ({ prompt, question }) => {
+    setActiveTab("chat");
+    callAPI(prompt, {
+      displayText: `Practice as mock: ${question}`,
+    });
+  };
+
   const saveProfile = () => {
     const nextProfile = {
       name: profileDraft.name.trim(),
@@ -399,8 +433,8 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Full Stack Interview Assistant</title>
-        <meta name="description" content="Full Stack Developer AI Interview Assistant" />
+        <title>InterviewIQ</title>
+        <meta name="description" content="AI-powered interview intelligence for modern software engineers" />
         <meta name="theme-color" content={techTheme.surface} />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -503,12 +537,15 @@ export default function Home() {
                   onVoice={toggleVoice}
                   selectedCat={selectedCat}
                   selectedSub={selectedSub}
+                  mode={mode}
+                  difficulty={difficulty}
                   theme={techTheme}
                   profile={candidateProfile}
                   showCodeTools={showCodeTools}
                   topics={visibleTopics}
                   weakSpots={weakSpots}
                   mockScores={mockScores}
+                  onPracticeMock={startPracticeMock}
                 />
               : (
                 <>
@@ -542,7 +579,7 @@ export default function Home() {
                 </div>
                 <textarea value={codeInput} onChange={e => setCodeInput(e.target.value)} rows={4} placeholder="// Paste your Code here…"
                   className="glass-input"
-                  style={{ width:"100%", border:`1px solid ${techTheme.accentBorder}`, borderRadius:8, padding:"8px 12px", fontFamily:"'JetBrains Mono',monospace", fontSize:12, color:"#c8d6e5", outline:"none", lineHeight:1.6 }} />
+                  style={{ width:"100%", border:`1px solid ${techTheme.accentBorder}`, borderRadius:8, padding:"8px 12px", fontFamily:'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace', fontSize:12, color:"#c8d6e5", outline:"none", lineHeight:1.6 }} />
               </div>
             )}
             <div style={{ display:"flex", gap:7, alignItems:"flex-end" }}>

@@ -13,24 +13,30 @@ export default function PrepCommandCenter({ center, theme, onAction }) {
           <p style={{ color: "#9ca3af", fontSize: 11.5, lineHeight: 1.45, marginTop: 8 }}>{center.readinessLabel}</p>
         </div>
 
-        <div className="glass-card" style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 12 }}>
+        <button className="glass-card" onClick={() => onAction(center.focusPrompt)} title="Start focus practice" style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 12, textAlign: "left", cursor: "pointer" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 7, color: theme.accentText, fontSize: 12, fontWeight: 700, marginBottom: 8 }}>
             <i className="ti ti-target-arrow" />Focus Signal
           </div>
           <strong style={{ display: "block", color: "#e8e8f0", fontSize: 14, marginBottom: 7 }}>{center.focusArea}</strong>
           <p style={{ color: "#6b7280", fontSize: 11.5, lineHeight: 1.45 }}>Use this as your next high-leverage interview rep.</p>
-        </div>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, color: theme.accentStrong, fontSize: 10.5, fontWeight: 800, marginTop: 8 }}>
+            <i className="ti ti-player-play" />Start rep
+          </span>
+        </button>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
         {center.dailyPlan.map((item) => (
-          <article key={item.title} className="glass-card" style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 11 }}>
+          <button key={item.title} className="glass-card" onClick={() => onAction(item.prompt)} title={`Start ${item.title.toLowerCase()}`} style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 11, textAlign: "left", cursor: "pointer" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
               <strong style={{ color: "#e8e8f0", fontSize: 12.5 }}>{item.title}</strong>
               <span style={{ color: theme.accentStrong, fontSize: 10.5, fontWeight: 700 }}>{item.minutes} min</span>
             </div>
             <p style={{ color: "#6b7280", fontSize: 11.5, lineHeight: 1.45 }}>{item.detail}</p>
-          </article>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 5, color: theme.accentStrong, fontSize: 10.5, fontWeight: 800, marginTop: 8 }}>
+              <i className="ti ti-player-play" />Start
+            </span>
+          </button>
         ))}
       </div>
 

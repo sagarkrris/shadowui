@@ -1,4 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getGeminiModelCandidates } from "../../lib/geminiModels.mjs";
+import { getGeminiErrorStatus, withGeminiModelFallback } from "../../lib/geminiRetry.mjs";
+import { createRequestLogger } from "../../lib/serverLogger.mjs";
 
 const SCREEN_PROMPT = `You are a full stack developer interview assistant analyzing a screenshot of a coding problem, system design prompt, UI task, database question, or interview scenario.
 
@@ -35,74 +38,92 @@ function buildScreenPrompt(context, profile) {
   ].filter(Boolean).join("\n\n");
 }
 
-async function getBestVisionModel(apiKey) {
-  try {
-    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models", {
-      headers: { "x-goog-api-key": apiKey },
-    });
-    const data = await response.json();
-    const models = (data.models || [])
-      .filter(
-        (model) =>
-          model.supportedGenerationMethods?.includes("generateContent") &&
-          (model.name.includes("flash") ||
-            model.name.includes("pro") ||
-            model.name.includes("gemini-pro-vision"))
-      )
-      .map((model) => model.name.replace("models/", ""));
-
-    const flash = models.find((model) => model.includes("flash"));
-    const pro = models.find((model) => model.includes("pro"));
-    return flash || pro || "gemini-1.5-flash-latest";
-  } catch {
-    return "gemini-1.5-flash-latest";
-  }
-}
-
 export const config = {
   api: { bodyParser: { sizeLimit: "10mb" } },
 };
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+  const logger = createRequestLogger({ route: "/api/analyze-screen" });
+  res.setHeader("X-Request-Id", logger.requestId);
+
+  if (req.method !== "POST") {
+    logger.warn("request.method_not_allowed", { method: req.method });
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
   const { imageBase64, mimeType = "image/png", context, profile } = req.body;
 
-  if (!imageBase64) return res.status(400).json({ error: "imageBase64 required" });
-  if (!process.env.GEMINI_API_KEY) return res.status(500).json({ error: "GEMINI_API_KEY not configured" });
+  if (!imageBase64) {
+    logger.warn("request.invalid", { reason: "missing_image" });
+    return res.status(400).json({ error: "imageBase64 required" });
+  }
+  if (!process.env.GEMINI_API_KEY) {
+    logger.error("config.missing_api_key");
+    return res.status(500).json({ error: "GEMINI_API_KEY not configured" });
+  }
 
   const apiKey = process.env.GEMINI_API_KEY;
-  const modelName = await getBestVisionModel(apiKey);
+  const modelCandidates = await getGeminiModelCandidates(apiKey, { vision: true });
+  logger.info("request.accepted", {
+    mimeType,
+    imageBytesApprox: Math.round((imageBase64.length * 3) / 4),
+    contextLength: context ? String(context).length : 0,
+    hasProfile: Boolean(profile),
+    modelCandidateCount: modelCandidates.length,
+  });
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: modelName });
     const prompt = buildScreenPrompt(context, profile);
+
+    const { modelName, result } = await withGeminiModelFallback(
+      modelCandidates,
+      (candidate) => {
+        const model = genAI.getGenerativeModel({ model: candidate });
+        return model.generateContentStream([
+          { inlineData: { data: imageBase64, mimeType } },
+          prompt,
+        ]);
+      },
+      {
+        onFallback: (details) => logger.warn("model.fallback", details),
+      },
+    );
+
+    logger.info("stream.start", { modelName });
 
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache, no-transform");
     res.setHeader("Connection", "keep-alive");
     res.setHeader("X-Accel-Buffering", "no");
 
-    const result = await model.generateContentStream([
-      { inlineData: { data: imageBase64, mimeType } },
-      prompt,
-    ]);
-
+    let chunkCount = 0;
+    let textChars = 0;
     for await (const chunk of result.stream) {
       const text = chunk.text();
-      if (text) res.write(`data: ${JSON.stringify({ text })}\n\n`);
+      if (text) {
+        chunkCount += 1;
+        textChars += text.length;
+        res.write(`data: ${JSON.stringify({ text })}\n\n`);
+      }
     }
 
     res.write("data: [DONE]\n\n");
     res.end();
+    logger.info("stream.done", { modelName, chunkCount, textChars });
   } catch (error) {
-    console.error("Screen analysis error:", error.message);
+    const status = getGeminiErrorStatus(error);
+    logger.error("request.failed", {
+      error,
+      responseStatus: status,
+      status: error.status,
+      code: error.code,
+    });
     const safeError = "Screen analysis failed. Please try again.";
     if (!res.headersSent) {
-      res.status(500).json({ error: safeError });
+      res.status(status).json({ error: safeError, requestId: logger.requestId });
     } else {
-      res.write(`data: ${JSON.stringify({ error: safeError })}\n\n`);
+      res.write(`data: ${JSON.stringify({ error: safeError, requestId: logger.requestId })}\n\n`);
       res.end();
     }
   }

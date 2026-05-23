@@ -4,7 +4,7 @@
 html { height: 100%; -webkit-tap-highlight-color: transparent; }
 body {
   height: 100%;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   background: #10130f;
   color: #e8e8f0;
   overflow: hidden;
@@ -38,8 +38,8 @@ textarea { resize: none; }
 .code-lang { font-size:10.5px; font-weight:600; color:var(--tech-accent-strong, #fb7185); text-transform:uppercase; letter-spacing:.06em; display:flex; align-items:center; gap:5px; }
 .code-copy { font-size:11px; color:#6b7280; background:none; border:none; cursor:pointer; padding:3px 8px; border-radius:4px; transition:all .15s; display:flex; align-items:center; gap:4px; }
 .code-copy:hover { color:var(--tech-accent-strong, #fb7185); background:var(--tech-accent-soft, rgba(34,197,94,.1)); }
-.code-body { padding:13px; font-family:'JetBrains Mono','Fira Code',monospace; font-size:12.5px; line-height:1.65; color:#c8d6e5; overflow-x:auto; }
-.inline-code { background:var(--tech-accent-soft, rgba(34,197,94,.12)); padding:1px 6px; border-radius:4px; font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--tech-accent-text, #bbf7d0); }
+.code-body { padding:13px; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size:12.5px; line-height:1.65; color:#c8d6e5; overflow-x:auto; }
+.inline-code { background:var(--tech-accent-soft, rgba(34,197,94,.12)); padding:1px 6px; border-radius:4px; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size:12.5px; color:var(--tech-accent-text, #bbf7d0); }
 
 /* ─── Liquid-glass inspired surfaces ─────────────────────────────────────── */
 .glass-chrome,

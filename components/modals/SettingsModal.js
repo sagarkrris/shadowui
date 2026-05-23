@@ -1,3 +1,6 @@
+import AgenticUICourse from "../course/AgenticUICourse";
+import { PRODUCT_TAGLINE } from "../../lib/agenticCourse.mjs";
+
 export default function SettingsModal({ onClose, theme }) {
   return (
     <div
@@ -21,7 +24,9 @@ export default function SettingsModal({ onClose, theme }) {
           borderRadius: "16px 16px 0 0",
           padding: 20,
           width: "100%",
-          maxWidth: 480
+          maxWidth: 760,
+          maxHeight: "min(88vh, 820px)",
+          overflowY: "auto"
         }}
       >
         <div style={{ width: 36, height: 4, background: "rgba(255,255,255,.1)", borderRadius: 2, margin: "0 auto 16px" }} />
@@ -35,24 +40,26 @@ export default function SettingsModal({ onClose, theme }) {
 
         <div style={{ fontSize: 13, color: "#9ca3af", lineHeight: 1.8 }}>
           <p style={{ marginBottom: 12 }}>
-            <strong style={{ color: theme.accentText }}>Full Stack Interview Assistant</strong>
+            <strong style={{ color: theme.accentText }}>InterviewIQ</strong>
           </p>
           <p style={{ marginBottom: 12 }}>
             Designed & Developed by
             <strong style={{ color: "#ffffff" }}> Sagar Krishna</strong>
           </p>
           <p style={{ marginBottom: 12 }}>
-            AI-powered full stack developer interview preparation platform with:
+            {PRODUCT_TAGLINE} with:
           </p>
           <ul style={{ paddingLeft: 18 }}>
             <li>Mock Interviews</li>
+            <li>Experience & Tech Stack Based Practice Packs</li>
             <li>Frontend, Backend & Database Practice</li>
             <li>DSA Practice</li>
             <li>System Design Preparation</li>
             <li>Voice Input</li>
             <li>Screen Analysis</li>
-            <li>Code Review</li>
+            <li>Code Help</li>
           </ul>
+          <AgenticUICourse theme={theme} />
         </div>
       </div>
     </div>

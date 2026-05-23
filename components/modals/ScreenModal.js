@@ -9,8 +9,9 @@ export default function ScreenModal({ onCapture, onClose, theme }) {
 
   const capture = async () => {
     setCapturing(true);
+    let stream;
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+      stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
       const video = document.createElement("video");
       video.srcObject = stream;
       await new Promise((resolve) => { video.onloadedmetadata = resolve; });
@@ -19,14 +20,15 @@ export default function ScreenModal({ onCapture, onClose, theme }) {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       canvas.getContext("2d").drawImage(video, 0, 0);
-      stream.getTracks().forEach((track) => track.stop());
       const url = canvas.toDataURL("image/png");
       setPreview(url);
       setImgData(url.split(",")[1]);
     } catch (error) {
       if (error.name !== "NotAllowedError") alert("Capture failed: " + error.message);
+    } finally {
+      stream?.getTracks().forEach((track) => track.stop());
+      setCapturing(false);
     }
-    setCapturing(false);
   };
 
   const onFile = (event) => {
@@ -90,6 +92,7 @@ export default function ScreenModal({ onCapture, onClose, theme }) {
           </div>
         ) : (
           <div style={{ marginBottom: 14 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={preview} alt="Preview" style={{ width: "100%", borderRadius: 8, border: "1px solid rgba(255,255,255,.08)", marginBottom: 8 }} />
             <button onClick={() => { setPreview(null); setImgData(null); }}
               style={{ fontSize: 12, color: "#6b7280", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>Change image</button>

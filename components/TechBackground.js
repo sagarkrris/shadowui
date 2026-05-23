@@ -50,7 +50,7 @@ export default function TechBackground({ theme }) {
             ...style,
             color: index % 2 === 0 ? theme.accentStrong : theme.accentText,
             opacity: index % 2 === 0 ? 0.09 : 0.07,
-            fontFamily: "'JetBrains Mono', monospace",
+            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace',
             fontWeight: 800,
             letterSpacing: 0,
             lineHeight: 1,

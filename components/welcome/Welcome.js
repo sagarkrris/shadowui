@@ -2,8 +2,9 @@ import { getQuickPrompts } from "../../lib/prompts.mjs";
 import { getStackGreeting } from "../../lib/personalization.mjs";
 import { buildPrepCommandCenter } from "../../lib/prepCoach.mjs";
 import PrepCommandCenter from "./PrepCommandCenter";
+import PracticePack from "./PracticePack";
 
-export default function Welcome({ onChip, onScreen, onVoice, selectedCat, selectedSub, theme, profile, showCodeTools, topics, weakSpots, mockScores }) {
+export default function Welcome({ onChip, onScreen, onVoice, selectedCat, selectedSub, mode, difficulty, theme, profile, showCodeTools, topics, weakSpots, mockScores, onPracticeMock }) {
   const topic = selectedSub || selectedCat;
   const quickPrompts = getQuickPrompts(selectedCat, selectedSub);
   const greeting = getStackGreeting(profile);
@@ -11,7 +12,7 @@ export default function Welcome({ onChip, onScreen, onVoice, selectedCat, select
   const featureBadges = [
     ["ti-screenshot", "Screen AI"],
     ["ti-microphone", "Voice"],
-    ...(showCodeTools ? [["ti-code", "Code Review"]] : []),
+    ...(showCodeTools ? [["ti-code", "Code Help"]] : []),
     ["ti-bolt", "Streaming"],
   ];
 
@@ -47,6 +48,17 @@ export default function Welcome({ onChip, onScreen, onVoice, selectedCat, select
           </button>
         ))}
       </div>
+
+      {mode === "practice" && (
+        <PracticePack
+          profile={profile}
+          selectedCat={selectedCat}
+          selectedSub={selectedSub}
+          difficulty={difficulty}
+          theme={theme}
+          onPracticeMock={onPracticeMock}
+        />
+      )}
 
       <PrepCommandCenter center={commandCenter} theme={theme} onAction={onChip} />
 

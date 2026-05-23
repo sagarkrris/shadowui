@@ -1,6 +1,6 @@
-# ShadowPrep - Full Stack Interview Assistant
+# InterviewIQ
 
-AI-powered interview prep for full stack developers. It supports personalized stack-based prep, mock interviews, DSA and system design practice, behavioral coaching, company-specific prep, screen analysis, and voice input.
+AI-powered interview intelligence for modern software engineers. It supports personalized stack-based prep, mock interviews, DSA and system design practice, behavioral coaching, company-specific prep, screen analysis, voice input, and a visual Agentic UI Basics mini-course.
 
 ## Features
 
@@ -11,6 +11,7 @@ AI-powered interview prep for full stack developers. It supports personalized st
 - Locked first-run sidebar topics so users know they must complete target details before starting.
 - Company Prep dashboard with curated public interview patterns, mock buttons, weak-spot tracking, behavioral prompts, and source links.
 - Prep Command Center with readiness score, daily plan, focus signal, and one-click drills.
+- Agentic UI Basics mini-course with visual patterns for agent loops, autonomy, approvals, traces, and guardrails.
 - Chat-based interview and practice modes with difficulty levels.
 - Code paste/review tools shown only where useful, such as technical prep topics.
 - Screen capture/upload analysis for coding, design, database, and interview prompts.
