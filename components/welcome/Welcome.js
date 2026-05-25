@@ -4,6 +4,7 @@ import { buildPrepCommandCenter } from "../../lib/prepCoach.mjs";
 import PrepCommandCenter from "./PrepCommandCenter";
 import PracticePack from "./PracticePack";
 import PrepInsightsPanel from "./PrepInsightsPanel";
+import CareerToolkit from "./CareerToolkit";
 
 export default function Welcome({ onChip, onScreen, onVoice, selectedCat, selectedSub, mode, difficulty, theme, profile, showCodeTools, topics, weakSpots, mockScores, messages, onPracticeMock }) {
   const topic = selectedSub || selectedCat;
@@ -62,6 +63,14 @@ export default function Welcome({ onChip, onScreen, onVoice, selectedCat, select
       )}
 
       <PrepCommandCenter center={commandCenter} theme={theme} onAction={onChip} />
+
+      <CareerToolkit
+        profile={profile}
+        topics={topics}
+        messages={messages}
+        theme={theme}
+        onAction={onChip}
+      />
 
       <PrepInsightsPanel
         profile={profile}

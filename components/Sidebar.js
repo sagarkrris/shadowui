@@ -1,4 +1,5 @@
 import AgenticUICourse from "./course/AgenticUICourse";
+import BrandLogo from "./BrandLogo";
 
 export default function Sidebar({ topics, open, onClose, expandedCat, selectedCat, selectedSub, onToggleCat, onSelectSub, isMobile, theme, prepLabel, userPrepLabel, topicsLocked, onLockedTopic, onOpenCourse }) {
   const drawerWidth = isMobile ? "min(340px, 88vw)" : (open ? 320 : 0);
@@ -26,9 +27,7 @@ export default function Sidebar({ topics, open, onClose, expandedCat, selectedCa
       }}>
         <div style={{ padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,.06)", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-            <div style={{ width: 28, height: 28, borderRadius: 8, background: theme.accentSoft, border: `1px solid ${theme.accentBorder}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <i className={`ti ${theme.icon}`} style={{ fontSize: 14, color: theme.accentStrong }} />
-            </div>
+            <BrandLogo theme={theme} size={30} />
             <div style={{ minWidth: 0 }}>
               <span style={{ display: "block", fontSize: 13, fontWeight: 600, color: theme.accentText, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>InterviewIQ</span>
               <span style={{ display: "block", fontSize: 10.5, color: theme.accentStrong, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{userPrepLabel || prepLabel}</span>
