@@ -5,6 +5,7 @@ import PrepCommandCenter from "./PrepCommandCenter";
 import PracticePack from "./PracticePack";
 import PrepInsightsPanel from "./PrepInsightsPanel";
 import CareerToolkit from "./CareerToolkit";
+import CodeRunner from "../CodeRunner";
 
 export default function Welcome({ onChip, onScreen, onVoice, selectedCat, selectedSub, mode, difficulty, theme, profile, showCodeTools, topics, weakSpots, mockScores, messages, onPracticeMock }) {
   const topic = selectedSub || selectedCat;
@@ -20,8 +21,8 @@ export default function Welcome({ onChip, onScreen, onVoice, selectedCat, select
 
   return (
     <div className="welcome-screen prep-home-screen" style={{ flex: 1, width: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "18px 20px 28px", textAlign: "center", overflowY: "visible" }}>
-      <div className="welcome-logo" style={{ width: 60, height: 60, borderRadius: "50%", background: theme.accentSoft, border: `1px solid ${theme.accentBorder}`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18 }}>
-        <i className={`ti ${theme.icon}`} style={{ fontSize: 26, color: theme.accentStrong }} />
+      <div className="welcome-logo" style={{ width: 60, height: 60, borderRadius: "50%", background: theme.accentSoft, border: `1px solid ${theme.accentBorder}`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18, color: theme.accentStrong, fontSize: greeting.stackBadge.length > 8 ? 11 : greeting.stackBadge.length > 6 ? 12 : 14, fontWeight: 900, lineHeight: 1, letterSpacing: 0, textAlign: "center", padding: "0 8px", overflowWrap: "anywhere" }}>
+        {greeting.stackBadge}
       </div>
       <h1 className="welcome-title" style={{ fontSize: 20, fontWeight: 600, color: "#e8e8f0", marginBottom: 8, maxWidth: 520, overflowWrap: "anywhere", lineHeight: 1.35 }}>{greeting.headline}</h1>
       {topic ? (
@@ -59,6 +60,15 @@ export default function Welcome({ onChip, onScreen, onVoice, selectedCat, select
           difficulty={difficulty}
           theme={theme}
           onPracticeMock={onPracticeMock}
+        />
+      )}
+
+      {showCodeTools && (
+        <CodeRunner
+          profile={profile}
+          selectedCat={selectedCat}
+          selectedSub={selectedSub}
+          theme={theme}
         />
       )}
 

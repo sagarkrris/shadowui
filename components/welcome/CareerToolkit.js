@@ -27,6 +27,20 @@ const EMPTY_INTERVIEW = {
   notes: "",
 };
 
+const RESUME_FILE_LIMIT_BYTES = 5 * 1024 * 1024;
+
+function arrayBufferToBase64(arrayBuffer) {
+  const bytes = new Uint8Array(arrayBuffer);
+  const chunkSize = 0x8000;
+  let binary = "";
+
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
+  }
+
+  return window.btoa(binary);
+}
+
 function readToolkitState() {
   if (typeof window === "undefined") return EMPTY_STATE;
 
@@ -69,6 +83,7 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
   const [state, setState] = useState(EMPTY_STATE);
   const [interviewDraft, setInterviewDraft] = useState(EMPTY_INTERVIEW);
   const [resumeNotice, setResumeNotice] = useState("");
+  const [resumeUploadBusy, setResumeUploadBusy] = useState(false);
 
   useEffect(() => {
     setState(readToolkitState());
@@ -125,14 +140,44 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (!/\.(txt|md|markdown)$/i.test(file.name)) {
-      setResumeNotice("For PDF or Word resumes, paste the resume text below for this local-first version.");
+    if (file.size > RESUME_FILE_LIMIT_BYTES) {
+      setResumeNotice("Resume file is too large. Please upload a file under 5 MB or paste the key resume text.");
+      event.target.value = "";
       return;
     }
 
-    const text = await file.text();
-    setResumeNotice(`${file.name} loaded locally. Nothing was uploaded to a server.`);
-    setState((previous) => ({ ...previous, resumeText: text }));
+    setResumeUploadBusy(true);
+    setResumeNotice("Extracting resume text...");
+
+    try {
+      const response = await fetch("/api/extract-resume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileName: file.name,
+          mimeType: file.type,
+          fileBase64: arrayBufferToBase64(await file.arrayBuffer()),
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload.error || "InterviewIQ could not extract text from this resume. Paste the text below and try again.");
+      }
+
+      const text = String(payload.text || "").trim();
+      if (!text) {
+        throw new Error("InterviewIQ could not find readable text in this resume. Please paste the resume text below.");
+      }
+
+      setState((previous) => ({ ...previous, resumeText: text, resumeAnalysis: null }));
+      setResumeNotice(`${file.name} extracted inside InterviewIQ. Resume text was not sent to Gemini or any external AI service.`);
+    } catch (error) {
+      setResumeNotice(error.message || "InterviewIQ could not extract this resume. Please paste the resume text below.");
+    } finally {
+      setResumeUploadBusy(false);
+      event.target.value = "";
+    }
   };
 
   const practicePrompt = (prompt) => {
@@ -201,18 +246,18 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
           <div style={{ color: theme.accentText, fontSize: 12, fontWeight: 900, display: "flex", alignItems: "center", gap: 7, marginBottom: 8 }}>
             <i className="ti ti-file-cv" />Resume Gap Analysis
           </div>
-          <input type="file" accept=".txt,.md,.markdown,.pdf,.doc,.docx" onChange={handleResumeFile} style={{ color: "#9ca3af", fontSize: 11, marginBottom: 8, width: "100%" }} />
+          <input type="file" accept=".txt,.md,.markdown,.pdf,.doc,.docx" onChange={handleResumeFile} disabled={resumeUploadBusy} style={{ color: "#9ca3af", fontSize: 11, marginBottom: 8, width: "100%", opacity: resumeUploadBusy ? .55 : 1 }} />
           <textarea
             value={state.resumeText}
             onChange={(event) => setState((previous) => ({ ...previous, resumeText: event.target.value }))}
             rows={5}
             className="glass-input"
-            placeholder="Paste resume text here. Analysis stays in this browser."
+            placeholder="Upload PDF/DOCX/TXT/MD or paste resume text here. Gap analysis stays in InterviewIQ."
             style={{ width: "100%", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, padding: 9, color: "#e8e8f0", fontSize: 12, lineHeight: 1.45, outline: "none", marginBottom: 8 }}
           />
           {resumeNotice && <p style={{ color: "#9ca3af", fontSize: 10.8, lineHeight: 1.4, marginBottom: 8 }}>{resumeNotice}</p>}
-          <button className="glass-button" onClick={runResumeAnalysis} disabled={!state.resumeText.trim()} style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: "7px 10px", color: theme.accentText, fontSize: 11.5, fontWeight: 800, cursor: state.resumeText.trim() ? "pointer" : "not-allowed", opacity: state.resumeText.trim() ? 1 : .45 }}>
-            Analyze gaps
+          <button className="glass-button" onClick={runResumeAnalysis} disabled={!state.resumeText.trim() || resumeUploadBusy} style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: "7px 10px", color: theme.accentText, fontSize: 11.5, fontWeight: 800, cursor: state.resumeText.trim() && !resumeUploadBusy ? "pointer" : "not-allowed", opacity: state.resumeText.trim() && !resumeUploadBusy ? 1 : .45 }}>
+            {resumeUploadBusy ? "Extracting..." : "Analyze gaps"}
           </button>
           {state.resumeAnalysis && (
             <div style={{ marginTop: 10, display: "grid", gap: 8 }}>

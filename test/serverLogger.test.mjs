@@ -26,6 +26,7 @@ test("redacts sensitive values from structured log metadata", () => {
   assert.deepEqual(
     sanitizeLogMeta({
       apiKey: "secret",
+      fileBase64: "resume-payload",
       imageBase64: "abc",
       messages: ["hello"],
       safe: "ok",
@@ -33,6 +34,7 @@ test("redacts sensitive values from structured log metadata", () => {
     }),
     {
       apiKey: "[redacted]",
+      fileBase64: "[redacted]",
       imageBase64: "[redacted]",
       messages: "[redacted]",
       safe: "ok",

@@ -27,6 +27,7 @@ test("formats Java greetings with a Java-style message", () => {
   assert.equal(greeting.salutation, "Namaskara, Ananya");
   assert.equal(greeting.headline, "public class AnanyaPrep { ready(); }");
   assert.equal(greeting.context, "Java prep ready for Ananya.");
+  assert.equal(greeting.stackBadge, "Java");
 });
 
 test("falls back to a neutral greeting when stack or name is missing", () => {
