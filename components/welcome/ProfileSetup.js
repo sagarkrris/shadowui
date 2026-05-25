@@ -52,7 +52,7 @@ export default function ProfileSetup({ draft, onChange, onSubmit, theme }) {
         </label>
         <label style={{ display: "grid", gap: 5, fontSize: 12, color: "#9ca3af" }}>
           Tech stack
-          <input className="glass-input" value={draft.stack} onFocus={handleFieldFocus} onChange={(event) => onChange({ ...draft, stack: event.target.value })} placeholder="e.g. React, Node.js, Spring Boot, PostgreSQL, AWS" style={fieldStyle} />
+          <input className="glass-input" value={draft.stack} onFocus={handleFieldFocus} onChange={(event) => onChange({ ...draft, stack: event.target.value })} placeholder="e.g. Java, React, SQL, SAP, Ruby, Rust, AWS" style={fieldStyle} />
         </label>
         <button className="glass-button" onClick={onSubmit} disabled={!canContinue} style={{ marginTop: 4, padding: "10px 14px", borderRadius: 9, border: `1px solid ${theme.accentBorder}`, color: canContinue ? theme.accentText : "#4b5563", fontSize: 13, fontWeight: 600, cursor: canContinue ? "pointer" : "not-allowed" }}>
           Personalize Prep

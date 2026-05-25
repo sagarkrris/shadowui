@@ -71,6 +71,50 @@ test("falls back to selected DSA topic when stack is unknown", () => {
   assert.ok(pack.cards.every((card) => card.experienceLevel === "Entry"));
 });
 
+test("routes generic SQL stacks to the database practice pack", () => {
+  const pack = getPracticePack({
+    profile: {
+      name: "Sagar",
+      position: "Software Engineer",
+      experience: "5 years",
+      stack: "SQL",
+    },
+    selectedCat: "SQL & Relational Databases",
+    selectedSub: "Indexing & Query Plans",
+    difficulty: "Mid",
+    seed: "sql-round-1",
+  });
+
+  assert.equal(pack.id, "databases");
+  assert.equal(pack.bankSize, 50);
+  assert.ok(pack.cards.some((card) => /sql|query|index/i.test(card.question)));
+});
+
+test("routes SAP, Ruby, and Rust stacks to useful local practice packs", () => {
+  const sap = getPracticePack({
+    profile: { stack: "SAP ABAP, S/4HANA" },
+    selectedCat: "SAP Core",
+    selectedSub: "OData Services",
+    seed: "sap-round-1",
+  });
+  const ruby = getPracticePack({
+    profile: { stack: "Ruby on Rails" },
+    selectedCat: "Ruby Core",
+    selectedSub: "Rails MVC",
+    seed: "ruby-round-1",
+  });
+  const rust = getPracticePack({
+    profile: { stack: "Rust, Tokio" },
+    selectedCat: "Rust Core",
+    selectedSub: "Ownership & Borrowing",
+    seed: "rust-round-1",
+  });
+
+  assert.equal(sap.id, "backend-api");
+  assert.equal(ruby.id, "backend-api");
+  assert.equal(rust.id, "backend-api");
+});
+
 test("uses seeded random selection so repeated rounds can avoid shown questions", () => {
   const baseArgs = {
     profile: {

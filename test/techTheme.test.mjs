@@ -35,6 +35,25 @@ test("falls back to the default theme when no known stack is detected", () => {
   assert.deepEqual(theme, DEFAULT_TECH_THEME);
 });
 
+test("treats generic SQL as database prep instead of PostgreSQL-specific prep", () => {
+  const theme = getTechTheme("SQL");
+
+  assert.equal(theme.key, "sql");
+  assert.equal(theme.label, "SQL");
+  assert.equal(theme.icon, "ti-database");
+});
+
+test("keeps PostgreSQL specific when the stack names Postgres", () => {
+  assert.equal(getTechTheme("PostgreSQL").key, "postgresql");
+  assert.equal(getTechTheme("Postgres").key, "postgresql");
+});
+
+test("detects SAP, Ruby, and Rust as first-class stack themes", () => {
+  assert.equal(getTechTheme("SAP ABAP, S/4HANA").key, "sap");
+  assert.equal(getTechTheme("Ruby on Rails").key, "ruby");
+  assert.equal(getTechTheme("Rust backend services").key, "rust");
+});
+
 test("uses a non-blue default landing theme", () => {
   const theme = getTechTheme("");
 
