@@ -1,4 +1,5 @@
 import {
+  buildCodeRunnerError,
   buildPistonPayload,
   CODE_RUN_LIMITS,
   extractPistonResult,
@@ -45,11 +46,14 @@ export default async function handler(req, res) {
     clearTimeout(timeout);
 
     if (!upstream.ok) {
-      logger.warn("upstream.failed", { status: upstream.status });
-      return res.status(502).json({
-        error: "Code runner is temporarily unavailable. Please try again.",
-        requestId: logger.requestId,
+      const body = await upstream.json().catch(() => ({}));
+      const runnerError = buildCodeRunnerError({ status: upstream.status, body });
+      logger.warn("upstream.failed", {
+        status: upstream.status,
+        mappedStatus: runnerError.status,
+        runnerUnavailable: runnerError.runnerUnavailable,
       });
+      return res.status(runnerError.status).json({ ...runnerError, requestId: logger.requestId });
     }
 
     const result = extractPistonResult(await upstream.json());
@@ -63,9 +67,10 @@ export default async function handler(req, res) {
   } catch (error) {
     clearTimeout(timeout);
     const timedOut = error?.name === "AbortError";
+    const runnerError = buildCodeRunnerError({ timedOut });
     logger.error("request.failed", { error, timedOut });
-    return res.status(timedOut ? 504 : 500).json({
-      error: timedOut ? "Code execution timed out." : "Code execution failed. Please try again.",
+    return res.status(runnerError.status).json({
+      ...runnerError,
       requestId: logger.requestId,
     });
   }

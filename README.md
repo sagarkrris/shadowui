@@ -16,7 +16,7 @@ AI-powered interview intelligence for modern software engineers. It supports per
 - Agentic UI Basics mini-course with visual patterns for agent loops, autonomy, approvals, traces, and guardrails.
 - Chat-based interview and practice modes with difficulty levels.
 - Code paste/review tools shown only where useful, such as technical prep topics.
-- Live Code Runner for short Python, JavaScript, TypeScript, Java, C++, Go, and Rust practice snippets.
+- Live Code Runner marked as an upcoming feature while sandbox execution is paused.
 - Screen capture/upload analysis for coding, design, database, and interview prompts.
 - Voice input with helpful iOS/Safari fallback guidance.
 - Responsive layout verified across phone, tablet, iPad, and desktop viewport sizes.
@@ -38,11 +38,12 @@ Create `.env.local` with:
 
 ```bash
 GEMINI_API_KEY=your-gemini-api-key
+PISTON_EXECUTE_URL=https://your-piston-host.example.com/api/v2/execute
 ```
 
 You can create a Gemini API key from Google AI Studio. Keep the key server-side only; browser requests go through the Next.js API routes.
 
-The Live Code Runner uses the public Piston execution API through the local `/api/run-code` route and does not require an API key. Do not paste secrets, tokens, proprietary code, or private stdin into the runner.
+The Live Code Runner is currently shown as an upcoming feature. The old public Piston endpoint became whitelist-only in February 2026; set `PISTON_EXECUTE_URL` to a self-hosted or approved Piston runner before re-enabling live execution. Do not paste secrets, tokens, proprietary code, or private stdin into any external runner.
 
 ## Useful Commands
 
@@ -121,12 +122,12 @@ Browser
   -> streamed response back to the browser
 ```
 
-The browser never receives the Gemini API key. Code execution requests are proxied through `/api/run-code` and sent to Piston only when the user clicks Run.
+The browser never receives the Gemini API key. Code execution requests are proxied through `/api/run-code` and sent to the configured Piston runner only when the user clicks Run.
 
 ## Notes
 
 - Public company interview data is presented as reported/community-sourced, not official company material.
 - Resume gap analysis in the Career Toolkit supports `.pdf`, `.docx`, `.txt`, `.md`, and pasted text. Extraction runs through InterviewIQ's own API route and is not sent to Gemini or external AI services; legacy `.doc` files should be converted to `.docx` or pasted as text.
-- The Live Code Runner is for short practice snippets only. It enforces request-size limits and excludes shell execution.
+- The Live Code Runner is paused in the UI for now. The API route and request-size safeguards remain in place for a future configured sandbox.
 - Voice input depends on browser support. iOS Safari may require microphone permissions, Siri/dictation support, or keyboard dictation fallback.
 - Build may warn about Google Font optimization if the font stylesheet cannot be fetched during build.

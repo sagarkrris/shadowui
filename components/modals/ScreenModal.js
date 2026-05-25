@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { isModalCloseKey } from "../../lib/modalKeyboard.mjs";
 
 export default function ScreenModal({ onCapture, onClose, theme }) {
   const [preview, setPreview] = useState(null);
@@ -6,6 +7,11 @@ export default function ScreenModal({ onCapture, onClose, theme }) {
   const [context, setContext] = useState("");
   const [capturing, setCapturing] = useState(false);
   const fileRef = useRef();
+  const modalRef = useRef();
+
+  useEffect(() => {
+    modalRef.current?.focus();
+  }, []);
 
   const capture = async () => {
     setCapturing(true);
@@ -55,7 +61,17 @@ export default function ScreenModal({ onCapture, onClose, theme }) {
   };
 
   return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", zIndex: 200, display: "flex", alignItems: "flex-end", justifyContent: "center", padding: "0 0 0", backdropFilter: "blur(4px)" }}>
+    <div
+      onClick={onClose}
+      onKeyDown={(event) => {
+        if (isModalCloseKey(event)) onClose();
+      }}
+      role="dialog"
+      aria-modal="true"
+      tabIndex={-1}
+      ref={modalRef}
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", zIndex: 200, display: "flex", alignItems: "flex-end", justifyContent: "center", padding: "0 0 0", backdropFilter: "blur(4px)" }}
+    >
       <div className="glass-chrome" onClick={(event) => event.stopPropagation()} style={{
         border: `1px solid ${theme.accentBorder}`,
         borderRadius: "16px 16px 0 0",

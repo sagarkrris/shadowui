@@ -8,6 +8,7 @@ import {
   buildSpacedReviewQueue,
   normalizeInterviewEvent,
   recordActivityDate,
+  validateInterviewDraft,
 } from "../lib/careerToolkit.mjs";
 
 const profile = {
@@ -74,6 +75,48 @@ test("normalizes interview events and summarizes upcoming schedule", () => {
   assert.equal(summary.upcomingCount, 1);
   assert.equal(summary.next.company, "Amazon");
   assert.equal(summary.next.daysUntil, 5);
+});
+
+test("validates interview tracker fields before adding a schedule item", () => {
+  assert.deepEqual(
+    validateInterviewDraft({ company: "", role: "SDE II", date: "2026-05-30" }, { today: "2026-05-25" }),
+    { ok: false, message: "Company is required." },
+  );
+
+  assert.deepEqual(
+    validateInterviewDraft({ company: "Amazon", role: "", date: "2026-05-30" }, { today: "2026-05-25" }),
+    { ok: false, message: "Role is required." },
+  );
+
+  assert.deepEqual(
+    validateInterviewDraft({ company: "Amazon", role: "SDE II", date: "" }, { today: "2026-05-25" }),
+    { ok: false, message: "Interview date is required." },
+  );
+
+  assert.deepEqual(
+    validateInterviewDraft({ company: "Amazon", role: "SDE II", date: "2026-02-31" }, { today: "2026-05-25" }),
+    { ok: false, message: "Enter a valid interview date." },
+  );
+
+  assert.deepEqual(
+    validateInterviewDraft({ company: "Amazon", role: "SDE II", date: "2026-05-24" }, { today: "2026-05-25" }),
+    { ok: false, message: "Interview date cannot be in the past." },
+  );
+
+  assert.deepEqual(
+    validateInterviewDraft({ company: "Amazon", role: "SDE II", date: "2026-05-30" }, { today: "2026-05-25" }),
+    { ok: true, message: "" },
+  );
+});
+
+test("does not normalize impossible interview dates into another calendar day", () => {
+  const interview = normalizeInterviewEvent({
+    company: "Amazon",
+    role: "SDE II",
+    date: "2026-02-31",
+  });
+
+  assert.equal(interview.date, "");
 });
 
 test("calculates practice streak and XP from activity dates", () => {

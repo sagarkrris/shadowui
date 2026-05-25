@@ -22,6 +22,7 @@ import { DEFAULT_PROFILE, DIFFS } from "../lib/prompts.mjs";
 import { createSessionSnapshot, loadSessionSnapshot, saveSessionSnapshot } from "../lib/sessionPersistence.mjs";
 import { getTechTheme } from "../lib/techTheme.mjs";
 import { canUseChatComposer, canUseInterviewTools, canUsePrepTopics, shouldShowCodeTools } from "../lib/uiVisibility.mjs";
+import { isCompactViewport } from "../lib/viewportMode.mjs";
 import { buildSpeechTranscript, getVoiceErrorMessage, getVoiceSupport } from "../lib/voiceSupport.mjs";
 
 function toApiMessages(messages) {
@@ -114,7 +115,7 @@ export default function Home() {
 
   // ── Viewport ──────────────────────────────────────────────────────────────
   useEffect(() => {
-    const check = () => { const m = window.innerWidth < 768; setIsMobile(m); if (!m) setSidebar(true); };
+    const check = () => { const m = isCompactViewport(window.innerWidth); setIsMobile(m); if (!m) setSidebar(true); };
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
@@ -310,7 +311,7 @@ export default function Home() {
     };
 
     recognition.onerror = (event) => {
-      console.error(event);
+      console.warn("Voice recognition fallback", { name: event.error });
 
       setListening(false);
 
@@ -338,7 +339,7 @@ export default function Home() {
 
     recognition.start();
   } catch (err) {
-    console.error(err);
+    console.warn("Voice recognition unavailable", { name: err.name, message: err.message });
 
     const message = getVoiceErrorMessage(err, support);
     setVoiceHint(message);
@@ -511,16 +512,16 @@ export default function Home() {
 
           {/* ── Top bar ── */}
           <header className="glass-chrome" style={{ display:"flex", alignItems:"center", gap:8, padding:"9px 12px", borderBottom:"1px solid rgba(255,255,255,.08)", flexShrink:0, minHeight:52 }}>
-            <button className={`icon-btn ${activeTab==="chat" && messages.length===0 ? "active" : ""}`} onClick={goHome} title="Home">
+            <button className={`icon-btn ${activeTab==="chat" && messages.length===0 ? "active" : ""}`} onClick={goHome} title="Home" aria-label="Home">
               <i className="ti ti-home" />
             </button>
-            <button className="icon-btn" onClick={() => setSidebar(p => !p)} title="Topics">
+            <button className="icon-btn" onClick={() => setSidebar(p => !p)} title="Topics" aria-label="Topics">
               <i className="ti ti-menu-2" />
             </button>
-            <button className={`icon-btn ${activeTab==="company"?"active":""}`} onClick={() => setActiveTab(activeTab==="company"?"chat":"company")} title="Company Prep">
+            <button className={`icon-btn ${activeTab==="company"?"active":""}`} onClick={() => setActiveTab(activeTab==="company"?"chat":"company")} title="Company Prep" aria-label="Company Prep">
               <i className="ti ti-building" />
             </button>
-            <button className={`icon-btn ${activeTab==="course"?"active":""}`} onClick={() => setActiveTab(activeTab==="course"?"chat":"course")} title="Agentic UI Course">
+            <button className={`icon-btn ${activeTab==="course"?"active":""}`} onClick={() => setActiveTab(activeTab==="course"?"chat":"course")} title="Agentic UI Course" aria-label="Agentic UI Course">
               <i className="ti ti-sparkles" />
             </button>
 
@@ -535,8 +536,8 @@ export default function Home() {
 
             {/* Desktop-only controls */}
             {showInterviewTools && <div style={{ display:"flex", alignItems:"center", gap:6 }} className="desktop-controls">
-              <button className="icon-btn" onClick={() => setShowScreen(true)} title="Analyze Screen"><i className="ti ti-screenshot" /></button>
-              <button className={`icon-btn ${isListening?"recording":""}`} onClick={toggleVoice} title="Voice"><i className={`ti ${isListening?"ti-microphone-off":"ti-microphone"}`} /></button>
+              <button className="icon-btn" onClick={() => setShowScreen(true)} title="Analyze Screen" aria-label="Analyze Screen"><i className="ti ti-screenshot" /></button>
+              <button className={`icon-btn ${isListening?"recording":""}`} onClick={toggleVoice} title="Voice" aria-label="Voice"><i className={`ti ${isListening?"ti-microphone-off":"ti-microphone"}`} /></button>
 
               <div style={{ display:"flex", background:"rgba(255,255,255,.04)", borderRadius:7, padding:2, border:"1px solid rgba(255,255,255,.07)" }}>
                 {["interview","practice"].map(m => (
@@ -557,12 +558,12 @@ export default function Home() {
             </div>}
 
             {messages.length > 0 && (
-              <button className="icon-btn" onClick={clearChat} title="Clear"><i className="ti ti-trash" /></button>
+              <button className="icon-btn" onClick={clearChat} title="Clear" aria-label="Clear"><i className="ti ti-trash" /></button>
             )}
             {candidateProfile && (
-              <button className="icon-btn" onClick={() => { setProfileDraft(candidateProfile); setCandidateProfile(null); setMessages([]); }} title="Edit Profile"><i className="ti ti-user-cog" /></button>
+              <button className="icon-btn" onClick={() => { setProfileDraft(candidateProfile); setCandidateProfile(null); setMessages([]); }} title="Edit Profile" aria-label="Edit Profile"><i className="ti ti-user-cog" /></button>
             )}
-            <button className="icon-btn" onClick={() => setShowSettings(true)} title="Info"><i className="ti ti-info-circle" /></button>
+            <button className="icon-btn" onClick={() => setShowSettings(true)} title="Info" aria-label="Info"><i className="ti ti-info-circle" /></button>
           </header>
 
           {/* ── Chat area ── */}
@@ -635,11 +636,12 @@ export default function Home() {
                 style={{ flex:1, border:"1px solid rgba(255,255,255,.09)", borderRadius:9, padding:"9px 12px", fontSize: isMobile?14:13, color:"#e8e8f0", outline:"none", lineHeight:1.5, maxHeight:120 }} />
 
               <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
-                <button className="icon-btn" onClick={() => setShowScreen(true)} title="Analyze Screen" style={{ width:30, height:30, fontSize:15 }}><i className="ti ti-screenshot" /></button>
-                <button className={`icon-btn ${isListening?"recording":""}`} onClick={toggleVoice} title="Voice" style={{ width:30, height:30, fontSize:15 }}><i className={`ti ${isListening?"ti-microphone-off":"ti-microphone"}`} /></button>
-                {showCodeTools && <button className={`icon-btn ${showCode?"active":""}`} onClick={() => setShowCode(p=>!p)} title="Code" style={{ width:30, height:30, fontSize:15 }}><i className="ti ti-code" /></button>}
+                <button className="icon-btn" onClick={() => setShowScreen(true)} title="Analyze Screen" aria-label="Analyze Screen" style={{ width:30, height:30, fontSize:15 }}><i className="ti ti-screenshot" /></button>
+                <button className={`icon-btn ${isListening?"recording":""}`} onClick={toggleVoice} title="Voice" aria-label="Voice" style={{ width:30, height:30, fontSize:15 }}><i className={`ti ${isListening?"ti-microphone-off":"ti-microphone"}`} /></button>
+                {showCodeTools && <button className={`icon-btn ${showCode?"active":""}`} onClick={() => setShowCode(p=>!p)} title="Code" aria-label="Code" style={{ width:30, height:30, fontSize:15 }}><i className="ti ti-code" /></button>}
                 <button onClick={() => callAPI(input)} disabled={!canSend||loading}
                   className={canSend&&!loading?"glass-button":""}
+                  aria-label="Send"
                   style={{ width:30, height:30, borderRadius:7, border:canSend&&!loading?`1px solid ${techTheme.accentBorder}`:"none", background: canSend&&!loading?techTheme.accent:techTheme.accentMuted, color:"white", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, cursor: canSend&&!loading?"pointer":"not-allowed" }}>
                   <i className="ti ti-send" />
                 </button>
@@ -695,6 +697,7 @@ export default function Home() {
                 { icon:"ti-info-circle",      label:"Info",    action:()=>setShowSettings(true) },
               ].map(({ icon, label, action, active, danger, disabled }) => (
                 <button key={label} onClick={action} disabled={disabled}
+                  aria-label={label}
                   style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:3, background:"none", border:"none", color: danger?"#f87171":active?techTheme.accentStrong:"#6b7280", fontSize:10, padding:"6px 10px", borderRadius:8, cursor:disabled?"not-allowed":"pointer", opacity:disabled?.35:1, minWidth:48, transition:"all .15s" }}>
                   <i className={`ti ${icon}`} style={{ fontSize:20 }} />
                   {label}
@@ -708,10 +711,10 @@ export default function Home() {
 
       {/* Responsive CSS injected via style tag */}
       <style>{`
-        @media (max-width: 767px) {
+        @media (max-width: 1023px) {
           .desktop-controls { display: none !important; }
         }
-        @media (min-width: 768px) {
+        @media (min-width: 1024px) {
           .desktop-controls { display: flex !important; }
         }
         @media (hover: hover) {

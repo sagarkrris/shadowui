@@ -3,10 +3,17 @@ import test from "node:test";
 
 import {
   CODE_RUN_LIMITS,
+  CODE_RUNNER_FEATURE_STATE,
+  buildCodeRunnerError,
   buildPistonPayload,
   extractPistonResult,
   normalizeRunCodeRequest,
 } from "../lib/codeRunner.mjs";
+
+test("marks the live code runner as an upcoming feature", () => {
+  assert.equal(CODE_RUNNER_FEATURE_STATE.status, "upcoming");
+  assert.match(CODE_RUNNER_FEATURE_STATE.title, /Upcoming feature/i);
+});
 
 test("normalizes supported code-run requests", () => {
   const result = normalizeRunCodeRequest({
@@ -76,4 +83,18 @@ test("extracts compile and runtime output from Piston responses", () => {
       exitCode: 0,
     },
   );
+});
+
+test("classifies Piston whitelist failures as runner availability errors", () => {
+  const error = buildCodeRunnerError({
+    status: 401,
+    body: {
+      message: "Public Piston API is now whitelist only as of 2/15/2026.",
+    },
+  });
+
+  assert.equal(error.status, 503);
+  assert.equal(error.runnerUnavailable, true);
+  assert.match(error.error, /whitelist/i);
+  assert.match(error.error, /PISTON_EXECUTE_URL/);
 });

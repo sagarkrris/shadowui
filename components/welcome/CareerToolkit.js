@@ -8,6 +8,7 @@ import {
   markReviewComplete,
   normalizeInterviewEvent,
   recordActivityDate,
+  validateInterviewDraft,
 } from "../../lib/careerToolkit.mjs";
 
 const EMPTY_STATE = {
@@ -82,6 +83,7 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
   const [ready, setReady] = useState(false);
   const [state, setState] = useState(EMPTY_STATE);
   const [interviewDraft, setInterviewDraft] = useState(EMPTY_INTERVIEW);
+  const [interviewNotice, setInterviewNotice] = useState("");
   const [resumeNotice, setResumeNotice] = useState("");
   const [resumeUploadBusy, setResumeUploadBusy] = useState(false);
 
@@ -194,14 +196,20 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
   };
 
   const addInterview = () => {
+    const validation = validateInterviewDraft(interviewDraft);
+    if (!validation.ok) {
+      setInterviewNotice(validation.message);
+      return;
+    }
+
     const next = normalizeInterviewEvent(interviewDraft);
-    if (!next.company || !next.role) return;
 
     setState((previous) => ({
       ...previous,
       interviews: [next, ...previous.interviews].slice(0, 12),
     }));
     setInterviewDraft(EMPTY_INTERVIEW);
+    setInterviewNotice("");
   };
 
   const removeInterview = (id) => {
@@ -317,17 +325,18 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
             <i className="ti ti-calendar-event" />Interview Tracker
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 7, marginBottom: 8 }}>
-            <input className="glass-input" value={interviewDraft.company} onChange={(event) => setInterviewDraft({ ...interviewDraft, company: event.target.value })} placeholder="Company" style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, padding: 8, color: "#e8e8f0", fontSize: 11.5, outline: "none" }} />
-            <input className="glass-input" value={interviewDraft.role} onChange={(event) => setInterviewDraft({ ...interviewDraft, role: event.target.value })} placeholder="Role" style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, padding: 8, color: "#e8e8f0", fontSize: 11.5, outline: "none" }} />
-            <input className="glass-input" type="date" value={interviewDraft.date} onChange={(event) => setInterviewDraft({ ...interviewDraft, date: event.target.value })} style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, padding: 8, color: "#9ca3af", fontSize: 11.5, outline: "none" }} />
-            <select className="glass-input" value={interviewDraft.round} onChange={(event) => setInterviewDraft({ ...interviewDraft, round: event.target.value })} style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, padding: 8, color: "#9ca3af", fontSize: 11.5, outline: "none" }}>
+            <input className="glass-input" value={interviewDraft.company} onChange={(event) => { setInterviewNotice(""); setInterviewDraft({ ...interviewDraft, company: event.target.value }); }} placeholder="Company" aria-invalid={Boolean(interviewNotice && !interviewDraft.company.trim())} maxLength={80} style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, padding: 8, color: "#e8e8f0", fontSize: 11.5, outline: "none" }} />
+            <input className="glass-input" value={interviewDraft.role} onChange={(event) => { setInterviewNotice(""); setInterviewDraft({ ...interviewDraft, role: event.target.value }); }} placeholder="Role" aria-invalid={Boolean(interviewNotice && !interviewDraft.role.trim())} maxLength={100} style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, padding: 8, color: "#e8e8f0", fontSize: 11.5, outline: "none" }} />
+            <input className="glass-input" type="date" value={interviewDraft.date} onChange={(event) => { setInterviewNotice(""); setInterviewDraft({ ...interviewDraft, date: event.target.value }); }} aria-invalid={Boolean(interviewNotice && /date/i.test(interviewNotice))} style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, padding: 8, color: "#9ca3af", fontSize: 11.5, outline: "none" }} />
+            <select className="glass-input" value={interviewDraft.round} onChange={(event) => { setInterviewNotice(""); setInterviewDraft({ ...interviewDraft, round: event.target.value }); }} style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, padding: 8, color: "#9ca3af", fontSize: 11.5, outline: "none" }}>
               {["Recruiter", "Technical", "System Design", "Manager", "Final"].map((round) => <option key={round}>{round}</option>)}
             </select>
-            <select className="glass-input" value={interviewDraft.status} onChange={(event) => setInterviewDraft({ ...interviewDraft, status: event.target.value })} style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, padding: 8, color: "#9ca3af", fontSize: 11.5, outline: "none" }}>
+            <select className="glass-input" value={interviewDraft.status} onChange={(event) => { setInterviewNotice(""); setInterviewDraft({ ...interviewDraft, status: event.target.value }); }} style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, padding: 8, color: "#9ca3af", fontSize: 11.5, outline: "none" }}>
               {["scheduled", "completed", "waiting", "offer", "rejected"].map((status) => <option key={status} value={status}>{status}</option>)}
             </select>
           </div>
-          <textarea className="glass-input" value={interviewDraft.notes} onChange={(event) => setInterviewDraft({ ...interviewDraft, notes: event.target.value })} placeholder="Notes or focus areas" rows={2} style={{ width: "100%", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, padding: 8, color: "#e8e8f0", fontSize: 11.5, outline: "none", marginBottom: 8 }} />
+          <textarea className="glass-input" value={interviewDraft.notes} onChange={(event) => setInterviewDraft({ ...interviewDraft, notes: event.target.value })} placeholder="Notes or focus areas" rows={2} maxLength={400} style={{ width: "100%", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, padding: 8, color: "#e8e8f0", fontSize: 11.5, outline: "none", marginBottom: 8 }} />
+          {interviewNotice && <p role="alert" style={{ color: "#fca5a5", fontSize: 10.8, lineHeight: 1.4, marginBottom: 8 }}>{interviewNotice}</p>}
           <button className="glass-button" onClick={addInterview} style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: "7px 10px", color: theme.accentText, fontSize: 11.5, fontWeight: 800, cursor: "pointer", marginBottom: 9 }}>
             Add interview
           </button>
