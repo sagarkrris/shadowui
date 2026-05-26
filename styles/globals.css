@@ -5,7 +5,9 @@ html { height: 100%; -webkit-tap-highlight-color: transparent; }
 body {
   height: 100%;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background: #10130f;
+  color-scheme: dark;
+  background:
+    linear-gradient(180deg, #151812 0%, #10150f 48%, #121416 100%);
   color: #e8e8f0;
   overflow: hidden;
 }
@@ -31,6 +33,17 @@ body {
 pre { white-space: pre-wrap; word-break: break-word; }
 button, select, textarea, input { font-family: inherit; cursor: pointer; }
 textarea { resize: none; }
+.glass-input::placeholder { color: rgba(203,213,225,.72); opacity: 1; }
+
+button:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+input:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--tech-accent-strong, #fb7185);
+  outline-offset: 3px;
+}
 
 /* ─── Code blocks ────────────────────────────────────────────────────────── */
 .code-block { background:var(--tech-surface, #10130f); border:1px solid var(--tech-accent-border, rgba(34,197,94,.18)); border-radius:9px; overflow:hidden; margin:9px 0; }
@@ -40,6 +53,52 @@ textarea { resize: none; }
 .code-copy:hover { color:var(--tech-accent-strong, #fb7185); background:var(--tech-accent-soft, rgba(34,197,94,.1)); }
 .code-body { padding:13px; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size:12.5px; line-height:1.65; color:#c8d6e5; overflow-x:auto; }
 .inline-code { background:var(--tech-accent-soft, rgba(34,197,94,.12)); padding:1px 6px; border-radius:4px; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size:12.5px; color:var(--tech-accent-text, #bbf7d0); }
+
+/* ─── Chat readability ───────────────────────────────────────────────────── */
+.chat-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+}
+
+.assistant-message {
+  color: #dbe5ee;
+}
+
+.user-message {
+  color: var(--tech-accent-text, #bbf7d0);
+}
+
+.message-line {
+  margin-bottom: 7px;
+  line-height: 1.76;
+  font-size: 13.5px;
+}
+
+.message-part-heading {
+  margin: 10px 0 6px;
+  padding-top: 2px;
+  color: var(--tech-accent-text, #bbf7d0);
+  font-size: 12.5px;
+  line-height: 1.35;
+  font-weight: 900;
+}
+
+.message-part-heading:first-child {
+  margin-top: 0;
+}
+
+.message-comparison-heading {
+  margin: 9px 0 5px;
+  color: #e8e8f0;
+  font-size: 12.4px;
+  line-height: 1.35;
+  font-weight: 900;
+}
+
+.message-comparison-heading strong {
+  color: var(--tech-accent-text, #bbf7d0);
+}
 
 /* ─── Liquid-glass inspired surfaces ─────────────────────────────────────── */
 .glass-chrome,
@@ -150,4 +209,43 @@ textarea { resize: none; }
 @media (max-width: 640px) {
   .code-body { font-size: 11.5px; padding: 10px; }
   .code-header { padding: 5px 10px; }
+}
+
+@media (max-width: 760px) {
+  .glass-chrome,
+  .glass-panel,
+  .glass-card,
+  .glass-button,
+  .glass-input,
+  .icon-btn {
+    box-shadow: 0 8px 22px rgba(0,0,0,.26);
+    backdrop-filter: blur(8px) saturate(1.12);
+    -webkit-backdrop-filter: blur(8px) saturate(1.12);
+  }
+
+  .glass-button:hover {
+    transform: none;
+  }
+
+  .glass-card::before,
+  .glass-button::before,
+  .glass-input::before {
+    opacity: .46;
+  }
+
+  .message-line {
+    font-size: 13.8px;
+    line-height: 1.72;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
 }

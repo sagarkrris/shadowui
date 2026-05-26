@@ -1,28 +1,28 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getGeminiModelCandidates } from "../../lib/geminiModels.mjs";
-import { getGeminiErrorStatus, withGeminiModelFallback } from "../../lib/geminiRetry.mjs";
+import { getGeminiErrorStatus, getSafeGeminiErrorMessage, withGeminiModelFallback } from "../../lib/geminiRetry.mjs";
 import { createRequestLogger } from "../../lib/serverLogger.mjs";
 
 const SCREEN_PROMPT = `You are a full stack developer interview assistant analyzing a screenshot of a coding problem, system design prompt, UI task, database question, or interview scenario.
 
-Analyze what you see and provide a structured response with these sections when relevant:
+Analyze what you see and provide a part-wise structured response with these sections when relevant:
 
-**Problem Understanding**
+**Part 1: Problem Understanding**
 Brief restatement of the problem.
 
-**Approach**
+**Part 2: Approach**
 Step-by-step algorithm, design, debugging, or implementation approach.
 
-**Solution**
+**Part 3: Solution**
 Working code, schema, architecture notes, or explanation depending on the screenshot.
 
-**Complexity / Trade-offs**
+**Part 4: Complexity / Trade-offs / Risks**
 Time and space complexity for algorithms; trade-offs for architecture, frontend, backend, database, or cloud questions.
 
-**Key Insights**
+**Part 5: Interview Tips / Follow-up**
 Edge cases, production concerns, and points to mention in the interview.
 
-Be concise but complete. Format code in fenced code blocks with the right language when possible.`;
+Skip a part only when it would be empty, but keep the remaining part labels clear. Be concise but complete. Format code in fenced code blocks with the right language when possible.`;
 
 function buildScreenPrompt(context, profile) {
   const details = [];
@@ -119,7 +119,7 @@ export default async function handler(req, res) {
       status: error.status,
       code: error.code,
     });
-    const safeError = "Screen analysis failed. Please try again.";
+    const safeError = getSafeGeminiErrorMessage(error, "Screen analysis failed. Please try again.");
     if (!res.headersSent) {
       res.status(status).json({ error: safeError, requestId: logger.requestId });
     } else {

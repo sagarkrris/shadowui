@@ -1,6 +1,6 @@
 # InterviewIQ
 
-AI-powered interview intelligence for modern software engineers. It supports personalized stack-based prep, mock interviews, DSA and system design practice, behavioral coaching, company-specific prep, resume gap analysis, spaced weak-spot reviews, an interview tracker, screen analysis, voice input, live code practice, and a visual Agentic UI Basics mini-course.
+AI-powered interview intelligence for modern software engineers. It supports personalized stack-based prep, mock interviews, DSA and system design practice, behavioral coaching, company-specific prep, resume gap analysis, spaced weak-spot reviews, an interview tracker, screen analysis, voice input, code review practice, and a visual Agentic UI Engineering course.
 
 ## Features
 
@@ -11,9 +11,15 @@ AI-powered interview intelligence for modern software engineers. It supports per
 - Stack-flavored greetings such as Python-style and Java-style welcome messages.
 - Locked first-run sidebar topics so users know they must complete target details before starting.
 - Company Prep dashboard with curated public interview patterns, mock buttons, weak-spot tracking, behavioral prompts, and source links.
-- Prep Command Center with readiness score, daily plan, focus signal, and one-click drills.
-- Career Toolkit with PDF/DOCX/TXT/Markdown resume gap analysis, 1/3/7-day weak-spot review queue, interview scheduling tracker, daily streaks, XP, and badges.
-- Agentic UI Basics mini-course with visual patterns for agent loops, autonomy, approvals, traces, and guardrails.
+- Prep Command Center with offer readiness score, progress dashboard, answer quality heatmap, mock replay, daily plan, focus signal, and one-click drills.
+- Career Toolkit with PDF/DOCX/TXT/Markdown resume gap analysis, target job description match analysis, role-specific mock prompts, 1/3/7-day weak-spot review queue, interview scheduling tracker, daily streaks, XP, and badges.
+- Proof Vault / Story Bank that turns strong mock answers into reusable STAR stories with skills proven, impact metrics, weak spots, and behavioral/system design/resume actions.
+- Interview Calibration Mode for Strict Interviewer, Coach Mode, Bar Raiser, and Behavioral STAR interview styles.
+- Round Strategy Mode for Recruiter, Coding, System Design, Manager, and Final interview rounds.
+- Answer Review Mode with rubric sliders for correctness, depth, examples, trade-offs, communication clarity, and follow-up readiness.
+- Interview Day Pack for scheduled interviews with company/role context, JD gaps, likely questions, saved proof stories, and warm-up drills.
+- Exportable prep report with candidate details, resume gaps, job description match, mock performance, roadmap, and next actions.
+- Agentic UI Engineering course with Java/Spring Boot, React/Next.js, Node/Python, and enterprise adapter tracks for agent loops, tool calling, approvals, traces, streaming, and guardrails.
 - Chat-based interview and practice modes with difficulty levels.
 - Code paste/review tools shown only where useful, such as technical prep topics.
 - Live Code Runner marked as an upcoming feature while sandbox execution is paused.
@@ -38,12 +44,13 @@ Create `.env.local` with:
 
 ```bash
 GEMINI_API_KEY=your-gemini-api-key
-PISTON_EXECUTE_URL=https://your-piston-host.example.com/api/v2/execute
+# Optional only when you are ready to enable live code execution:
+# PISTON_EXECUTE_URL=https://your-piston-host.example.com/api/v2/execute
 ```
 
 You can create a Gemini API key from Google AI Studio. Keep the key server-side only; browser requests go through the Next.js API routes.
 
-The Live Code Runner is currently shown as an upcoming feature. The old public Piston endpoint became whitelist-only in February 2026; set `PISTON_EXECUTE_URL` to a self-hosted or approved Piston runner before re-enabling live execution. Do not paste secrets, tokens, proprietary code, or private stdin into any external runner.
+The Live Code Runner is currently shown as an upcoming feature and `/api/run-code` returns a paused response unless `PISTON_EXECUTE_URL` is explicitly set to a self-hosted or approved Piston runner. The old public Piston endpoint became whitelist-only in February 2026. Do not paste secrets, tokens, proprietary code, or private stdin into any external runner.
 
 ## Useful Commands
 
@@ -67,11 +74,12 @@ The app uses Next.js API routes so the Gemini key stays on the server.
 ```text
 shadowui/
 ├── components/
-│   ├── chat/              # Markdown messages, code blocks, typing dots, score badge
+│   ├── chat/              # Markdown messages, code blocks, typing dots, score badge and rubric UI
 │   ├── company/           # Company Prep dashboard
 │   ├── modals/            # Screen analysis and settings modals
-│   ├── welcome/           # Profile setup, welcome screen, Career Toolkit, practice pack
-│   │   └── PrepCommandCenter.js
+│   ├── welcome/           # Profile setup, welcome screen, Career Toolkit, prep insights, practice pack
+│   │   ├── PrepCommandCenter.js
+│   │   └── PrepInsightsPanel.js
 │   ├── BrandLogo.js
 │   ├── CodeRunner.js
 │   ├── Sidebar.js
@@ -80,13 +88,19 @@ shadowui/
 │   └── VoiceBar.js
 ├── lib/
 │   ├── careerToolkit.mjs
+│   ├── answerRubric.mjs
 │   ├── chatMarkdown.mjs
+│   ├── chatPrompt.mjs
+│   ├── chatRequest.mjs
 │   ├── codeRunner.mjs
 │   ├── companyPrep.mjs
 │   ├── personalization.mjs
 │   ├── prepCoach.mjs
+│   ├── prepInsights.mjs
+│   ├── prepReport.mjs
 │   ├── prepTopics.mjs
 │   ├── resumeExtract.mjs
+│   ├── sessionPersistence.mjs
 │   ├── prompts.mjs
 │   ├── techTheme.mjs
 │   ├── uiVisibility.mjs
@@ -122,12 +136,12 @@ Browser
   -> streamed response back to the browser
 ```
 
-The browser never receives the Gemini API key. Code execution requests are proxied through `/api/run-code` and sent to the configured Piston runner only when the user clicks Run.
+The browser never receives the Gemini API key. Code execution requests are blocked unless `PISTON_EXECUTE_URL` is explicitly configured, then proxied through `/api/run-code` to the configured Piston runner only when the user clicks Run.
 
 ## Notes
 
 - Public company interview data is presented as reported/community-sourced, not official company material.
 - Resume gap analysis in the Career Toolkit supports `.pdf`, `.docx`, `.txt`, `.md`, and pasted text. Extraction runs through InterviewIQ's own API route and is not sent to Gemini or external AI services; legacy `.doc` files should be converted to `.docx` or pasted as text.
-- The Live Code Runner is paused in the UI for now. The API route and request-size safeguards remain in place for a future configured sandbox.
+- The Live Code Runner is paused in the UI for now. The API route returns `503` until a non-public, approved `PISTON_EXECUTE_URL` is configured; request-size safeguards remain in place for that future sandbox.
 - Voice input depends on browser support. iOS Safari may require microphone permissions, Siri/dictation support, or keyboard dictation fallback.
 - Build may warn about Google Font optimization if the font stylesheet cannot be fetched during build.

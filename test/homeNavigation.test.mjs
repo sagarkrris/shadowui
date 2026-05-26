@@ -41,3 +41,18 @@ test("topic selection from a secondary workspace returns to the chat workspace",
   assert.deepEqual(nextState.messages, [{ role: "user", content: "mock me" }]);
   assert.equal(nextState.loading, false);
 });
+
+test("topic selection inside company prep stays in company prep for focused questions", async () => {
+  const navigation = await import("../lib/homeNavigation.mjs");
+
+  const nextState = navigation.createTopicSelectionNavigationState({
+    activeTab: "company",
+    messages: [{ role: "user", content: "mock me" }],
+    loading: false,
+    preserveCompanyPrep: true,
+  });
+
+  assert.equal(nextState.activeTab, "company");
+  assert.deepEqual(nextState.messages, [{ role: "user", content: "mock me" }]);
+  assert.equal(nextState.loading, false);
+});

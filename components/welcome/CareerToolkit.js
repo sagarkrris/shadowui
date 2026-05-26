@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  analyzeJobDescriptionFit,
   analyzeResumeGaps,
   buildInterviewTrackerSummary,
   buildPracticeStreak,
@@ -14,6 +15,8 @@ import {
 const EMPTY_STATE = {
   resumeText: "",
   resumeAnalysis: null,
+  jobDescriptionText: "",
+  jobDescriptionAnalysis: null,
   reviewHistory: {},
   interviews: [],
   activityDates: [],
@@ -79,6 +82,59 @@ function statCard({ icon, label, value, theme }) {
   );
 }
 
+function severityColor(severity, theme) {
+  if (severity === "High") return "#fca5a5";
+  if (severity === "Medium") return theme.accentStrong;
+  return "#9ca3af";
+}
+
+function scoreBandColor(score, theme) {
+  if (score >= 80) return "#86efac";
+  if (score >= 60) return theme.accentStrong;
+  return "#fca5a5";
+}
+
+function normalizeResumeAnalysis(analysis) {
+  if (!analysis) return null;
+
+  return {
+    ...analysis,
+    scoreBreakdown: Array.isArray(analysis?.scoreBreakdown) ? analysis.scoreBreakdown : [],
+    issues: Array.isArray(analysis?.issues) ? analysis.issues : [],
+    rewriteSuggestions: Array.isArray(analysis?.rewriteSuggestions) ? analysis.rewriteSuggestions : [],
+    missingSkills: Array.isArray(analysis?.missingSkills) ? analysis.missingSkills : [],
+    interviewProofGaps: Array.isArray(analysis?.interviewProofGaps) ? analysis.interviewProofGaps : [],
+    practicePlan: Array.isArray(analysis?.practicePlan) ? analysis.practicePlan : [],
+  };
+}
+
+function normalizeJobDescriptionAnalysis(analysis) {
+  if (!analysis) return null;
+
+  return {
+    ...analysis,
+    requiredSkills: Array.isArray(analysis?.requiredSkills) ? analysis.requiredSkills : [],
+    coveredSkills: Array.isArray(analysis?.coveredSkills) ? analysis.coveredSkills : [],
+    missingSkills: Array.isArray(analysis?.missingSkills) ? analysis.missingSkills : [],
+    practicePlan: Array.isArray(analysis?.practicePlan) ? analysis.practicePlan : [],
+  };
+}
+
+function buildResumeQuestionPrompts(resumeAnalysis, profile) {
+  if (!resumeAnalysis) return [];
+
+  const targetRole = profile?.position || resumeAnalysis.targetRole || "target role";
+  const skills = [
+    ...resumeAnalysis.matchedSkills.slice(0, 3),
+    ...resumeAnalysis.missingSkills.slice(0, 2),
+  ];
+
+  return skills.slice(0, 4).map((skill) => ({
+    skill: skill.name,
+    prompt: `My resume mentions or implies ${skill.name}. Ask me one realistic interviewer question for a ${targetRole}, wait for my answer, then review correctness, depth, examples, trade-offs, communication clarity, and follow-up readiness.`,
+  }));
+}
+
 export default function CareerToolkit({ profile, topics, messages, theme, onAction }) {
   const [ready, setReady] = useState(false);
   const [state, setState] = useState(EMPTY_STATE);
@@ -116,6 +172,13 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
     reviewedCount > 0 ? "Review finisher" : null,
     state.interviews.length > 0 ? "Tracker ready" : null,
   ].filter(Boolean);
+  const resumeAnalysis = normalizeResumeAnalysis(state.resumeAnalysis);
+  const jobDescriptionAnalysis = normalizeJobDescriptionAnalysis(state.jobDescriptionAnalysis);
+  const weakestScoreAreas = resumeAnalysis?.scoreBreakdown
+    .filter((item) => item.score < 80)
+    .sort((left, right) => left.score - right.score)
+    .slice(0, 2) || [];
+  const resumeQuestionPrompts = buildResumeQuestionPrompts(resumeAnalysis, profile);
 
   const rememberActivity = () => {
     setState((previous) => ({
@@ -134,6 +197,21 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
     setState((previous) => ({
       ...previous,
       resumeAnalysis: analysis,
+      activityDates: recordActivityDate(previous.activityDates),
+    }));
+  };
+
+  const runJobDescriptionAnalysis = () => {
+    const analysis = analyzeJobDescriptionFit({
+      jobDescriptionText: state.jobDescriptionText,
+      resumeText: state.resumeText,
+      profile,
+      topics,
+    });
+
+    setState((previous) => ({
+      ...previous,
+      jobDescriptionAnalysis: analysis,
       activityDates: recordActivityDate(previous.activityDates),
     }));
   };
@@ -172,7 +250,7 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
         throw new Error("InterviewIQ could not find readable text in this resume. Please paste the resume text below.");
       }
 
-      setState((previous) => ({ ...previous, resumeText: text, resumeAnalysis: null }));
+      setState((previous) => ({ ...previous, resumeText: text, resumeAnalysis: null, jobDescriptionAnalysis: null }));
       setResumeNotice(`${file.name} extracted inside InterviewIQ. Resume text was not sent to Gemini or any external AI service.`);
     } catch (error) {
       setResumeNotice(error.message || "InterviewIQ could not extract this resume. Please paste the resume text below.");
@@ -254,10 +332,10 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
           <div style={{ color: theme.accentText, fontSize: 12, fontWeight: 900, display: "flex", alignItems: "center", gap: 7, marginBottom: 8 }}>
             <i className="ti ti-file-cv" />Resume Gap Analysis
           </div>
-          <input type="file" accept=".txt,.md,.markdown,.pdf,.doc,.docx" onChange={handleResumeFile} disabled={resumeUploadBusy} style={{ color: "#9ca3af", fontSize: 11, marginBottom: 8, width: "100%", opacity: resumeUploadBusy ? .55 : 1 }} />
+          <input type="file" aria-label="Upload resume file" accept=".txt,.md,.markdown,.pdf,.doc,.docx" onChange={handleResumeFile} disabled={resumeUploadBusy} style={{ color: "#9ca3af", fontSize: 11, marginBottom: 8, width: "100%", opacity: resumeUploadBusy ? .55 : 1 }} />
           <textarea
             value={state.resumeText}
-            onChange={(event) => setState((previous) => ({ ...previous, resumeText: event.target.value }))}
+            onChange={(event) => setState((previous) => ({ ...previous, resumeText: event.target.value, resumeAnalysis: null, jobDescriptionAnalysis: null }))}
             rows={5}
             className="glass-input"
             placeholder="Upload PDF/DOCX/TXT/MD or paste resume text here. Gap analysis stays in InterviewIQ."
@@ -267,25 +345,176 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
           <button className="glass-button" onClick={runResumeAnalysis} disabled={!state.resumeText.trim() || resumeUploadBusy} style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: "7px 10px", color: theme.accentText, fontSize: 11.5, fontWeight: 800, cursor: state.resumeText.trim() && !resumeUploadBusy ? "pointer" : "not-allowed", opacity: state.resumeText.trim() && !resumeUploadBusy ? 1 : .45 }}>
             {resumeUploadBusy ? "Extracting..." : "Analyze gaps"}
           </button>
-          {state.resumeAnalysis && (
-            <div style={{ marginTop: 10, display: "grid", gap: 8 }}>
+          {resumeAnalysis && (
+            <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <strong style={{ color: theme.accentText, fontSize: 22 }}>{state.resumeAnalysis.score}%</strong>
-                <span style={{ color: "#9ca3af", fontSize: 11.3 }}>{state.resumeAnalysis.summary}</span>
+                <strong style={{ color: theme.accentText, fontSize: 22 }}>{resumeAnalysis.score}%</strong>
+                <span style={{ color: "#9ca3af", fontSize: 11.3 }}>{resumeAnalysis.summary}</span>
               </div>
+              {weakestScoreAreas.length > 0 && (
+                <div style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 8, background: "rgba(255,255,255,.025)" }}>
+                  <strong style={{ display: "block", color: theme.accentText, fontSize: 11.5, marginBottom: 4 }}>Why this score?</strong>
+                  <p style={{ color: "#cbd5e1", fontSize: 10.8, lineHeight: 1.45 }}>
+                    Lowest areas: {weakestScoreAreas.map((item) => `${item.label} ${item.score}%`).join(" and ")}. Improve these first to raise the resume match.
+                  </p>
+                </div>
+              )}
+
+              {resumeAnalysis.scoreBreakdown.length > 0 && (
+              <div>
+                <div style={{ color: theme.accentText, fontSize: 11.5, fontWeight: 900, marginBottom: 7 }}>
+                  Score Breakdown
+                </div>
+                <div style={{ display: "grid", gap: 7 }}>
+                  {resumeAnalysis.scoreBreakdown.map((item) => (
+                    <div key={item.id} style={{ display: "grid", gap: 4 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, color: "#cbd5e1", fontSize: 10.8 }}>
+                        <span>{item.label}</span>
+                        <strong style={{ color: scoreBandColor(item.score, theme) }}>{item.score}%</strong>
+                      </div>
+                      <div style={{ height: 5, borderRadius: 999, background: "rgba(255,255,255,.08)", overflow: "hidden" }}>
+                        <div style={{ width: `${item.score}%`, height: "100%", background: scoreBandColor(item.score, theme), borderRadius: 999 }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              )}
+
+              {resumeAnalysis.issues.length > 0 && (
+                <div>
+                  <div style={{ color: theme.accentText, fontSize: 11.5, fontWeight: 900, marginBottom: 7 }}>
+                    Priority Fixes
+                  </div>
+                  <div style={{ display: "grid", gap: 7 }}>
+                    {resumeAnalysis.issues.slice(0, 4).map((issue) => (
+                      <article key={`${issue.severity}-${issue.title}`} style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 8 }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
+                          <strong style={{ color: "#e8e8f0", fontSize: 11.5 }}>{issue.title}</strong>
+                          <span style={{ color: severityColor(issue.severity, theme), fontSize: 10, fontWeight: 900 }}>{issue.severity}</span>
+                        </div>
+                        <p style={{ color: "#9ca3af", fontSize: 10.8, lineHeight: 1.45, marginBottom: 5 }}>{issue.detail}</p>
+                        <p style={{ color: theme.accentStrong, fontSize: 10.5, lineHeight: 1.4 }}>{issue.action}</p>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {resumeAnalysis.rewriteSuggestions.length > 0 && (
+                <div>
+                  <div style={{ color: theme.accentText, fontSize: 11.5, fontWeight: 900, marginBottom: 7 }}>
+                    Rewrite Suggestions
+                  </div>
+                  <div style={{ display: "grid", gap: 7 }}>
+                    {resumeAnalysis.rewriteSuggestions.slice(0, 2).map((suggestion) => (
+                      <article key={suggestion.id} style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 8 }}>
+                        <strong style={{ display: "block", color: "#e8e8f0", fontSize: 11.5, marginBottom: 5 }}>{suggestion.title}</strong>
+                        <p style={{ color: "#6b7280", fontSize: 10.6, lineHeight: 1.4, marginBottom: 5 }}>{suggestion.original}</p>
+                        <p style={{ color: "#cbd5e1", fontSize: 10.8, lineHeight: 1.45, marginBottom: 5 }}>{suggestion.improved}</p>
+                        <p style={{ color: theme.accentStrong, fontSize: 10.5, lineHeight: 1.4 }}>{suggestion.reason}</p>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {state.resumeAnalysis.missingSkills.slice(0, 6).map((skill) => (
+                {resumeAnalysis.missingSkills.slice(0, 6).map((skill) => (
                   <span key={skill.name} style={{ color: theme.accentStrong, border: `1px solid ${theme.accentBorder}`, background: theme.accentMuted, borderRadius: 999, padding: "3px 7px", fontSize: 10.5, fontWeight: 700 }}>
                     {skill.name}
                   </span>
                 ))}
               </div>
-              {state.resumeAnalysis.practicePlan.slice(0, 3).map((item) => (
+              {resumeAnalysis.interviewProofGaps.length > 0 && (
+                <div>
+                  <div style={{ color: theme.accentText, fontSize: 11.5, fontWeight: 900, marginBottom: 7 }}>
+                    Interview Proof Gaps
+                  </div>
+                  <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+                    {resumeAnalysis.interviewProofGaps.slice(0, 4).map((gap) => (
+                      <button key={gap.skill} className="glass-button" onClick={() => practicePrompt(gap.prompt)} style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 999, padding: "5px 8px", color: theme.accentText, fontSize: 10.8, fontWeight: 800, cursor: "pointer" }}>
+                        <i className="ti ti-user-question" />{gap.skill}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {resumeQuestionPrompts.length > 0 && (
+                <div>
+                  <div style={{ color: theme.accentText, fontSize: 11.5, fontWeight: 900, marginBottom: 7 }}>
+                    Likely Resume Questions
+                  </div>
+                  <div style={{ display: "grid", gap: 7 }}>
+                    {resumeQuestionPrompts.map((item) => (
+                      <button key={item.skill} className="glass-button" onClick={() => practicePrompt(item.prompt)} style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 8, textAlign: "left", color: "#cbd5e1", fontSize: 11.2, cursor: "pointer" }}>
+                        <strong style={{ display: "block", color: theme.accentText, marginBottom: 3 }}>Ask me this: {item.skill}</strong>
+                        Practice a resume-based follow-up question.
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {resumeAnalysis.practicePlan.slice(0, 3).map((item) => (
                 <button key={item.id} className="glass-button" onClick={() => practicePrompt(item.prompt)} style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 8, textAlign: "left", color: "#e8e8f0", fontSize: 11.5, cursor: "pointer" }}>
                   <strong style={{ display: "block", color: theme.accentText, marginBottom: 3 }}>{item.title}</strong>
                   <span style={{ color: "#6b7280" }}>{item.focus}</span>
                 </button>
               ))}
+            </div>
+          )}
+        </div>
+
+        <div className="glass-card" style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 12 }}>
+          <div style={{ color: theme.accentText, fontSize: 12, fontWeight: 900, display: "flex", alignItems: "center", gap: 7, marginBottom: 8 }}>
+            <i className="ti ti-file-search" />Target Job Description
+          </div>
+          <textarea
+            value={state.jobDescriptionText}
+            onChange={(event) => setState((previous) => ({ ...previous, jobDescriptionText: event.target.value, jobDescriptionAnalysis: null }))}
+            rows={5}
+            className="glass-input"
+            placeholder="Paste the target job description to compare required skills with your resume evidence."
+            style={{ width: "100%", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, padding: 9, color: "#e8e8f0", fontSize: 12, lineHeight: 1.45, outline: "none", marginBottom: 8 }}
+          />
+          <button className="glass-button" onClick={runJobDescriptionAnalysis} disabled={!state.jobDescriptionText.trim()} style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: "7px 10px", color: theme.accentText, fontSize: 11.5, fontWeight: 800, cursor: state.jobDescriptionText.trim() ? "pointer" : "not-allowed", opacity: state.jobDescriptionText.trim() ? 1 : .45 }}>
+            Analyze role fit
+          </button>
+          {jobDescriptionAnalysis && (
+            <div style={{ marginTop: 10, display: "grid", gap: 9 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <strong style={{ color: scoreBandColor(jobDescriptionAnalysis.score, theme), fontSize: 22 }}>{jobDescriptionAnalysis.score}%</strong>
+                <span style={{ color: "#9ca3af", fontSize: 11.3 }}>{jobDescriptionAnalysis.summary}</span>
+              </div>
+              {[
+                ["Required signals", jobDescriptionAnalysis.requiredSkills, "#cbd5e1", "rgba(255,255,255,.07)", "rgba(255,255,255,.025)"],
+                ["Covered by resume", jobDescriptionAnalysis.coveredSkills, "#86efac", "rgba(134,239,172,.28)", "rgba(134,239,172,.08)"],
+                ["Missing from resume", jobDescriptionAnalysis.missingSkills, theme.accentStrong, theme.accentBorder, theme.accentMuted],
+              ].map(([label, skills, color, border, background]) => (
+                <div key={label}>
+                  <div style={{ color: theme.accentText, fontSize: 11.5, fontWeight: 900, marginBottom: 6 }}>{label}</div>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {(skills.length ? skills : [{ name: "None detected" }]).slice(0, 8).map((skill) => (
+                      <span key={`${label}-${skill.name}`} style={{ color, border: `1px solid ${border}`, background, borderRadius: 999, padding: "3px 7px", fontSize: 10.5, fontWeight: 700 }}>
+                        {skill.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              <div>
+                <div style={{ color: theme.accentText, fontSize: 11.5, fontWeight: 900, marginBottom: 7 }}>
+                  Role-specific mocks
+                </div>
+                <div style={{ display: "grid", gap: 7 }}>
+                  {jobDescriptionAnalysis.practicePlan.slice(0, 4).map((item) => (
+                    <button key={item.id} className="glass-button" onClick={() => practicePrompt(item.prompt)} style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 8, textAlign: "left", color: "#e8e8f0", fontSize: 11.5, cursor: "pointer" }}>
+                      <strong style={{ display: "block", color: theme.accentText, marginBottom: 3 }}>{item.title}</strong>
+                      <span style={{ color: "#6b7280" }}>{item.focus}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
         </div>

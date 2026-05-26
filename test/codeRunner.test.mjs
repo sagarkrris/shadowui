@@ -4,15 +4,23 @@ import test from "node:test";
 import {
   CODE_RUN_LIMITS,
   CODE_RUNNER_FEATURE_STATE,
+  DEFAULT_PISTON_EXECUTE_URL,
   buildCodeRunnerError,
   buildPistonPayload,
   extractPistonResult,
+  isCodeRunnerConfigured,
   normalizeRunCodeRequest,
 } from "../lib/codeRunner.mjs";
 
 test("marks the live code runner as an upcoming feature", () => {
   assert.equal(CODE_RUNNER_FEATURE_STATE.status, "upcoming");
   assert.match(CODE_RUNNER_FEATURE_STATE.title, /Upcoming feature/i);
+});
+
+test("keeps code execution disabled until an approved runner is configured", () => {
+  assert.equal(isCodeRunnerConfigured(""), false);
+  assert.equal(isCodeRunnerConfigured(DEFAULT_PISTON_EXECUTE_URL), false);
+  assert.equal(isCodeRunnerConfigured("https://runner.internal.example/api/v2/execute"), true);
 });
 
 test("normalizes supported code-run requests", () => {
@@ -96,5 +104,19 @@ test("classifies Piston whitelist failures as runner availability errors", () =>
   assert.equal(error.status, 503);
   assert.equal(error.runnerUnavailable, true);
   assert.match(error.error, /whitelist/i);
+  assert.match(error.error, /PISTON_EXECUTE_URL/);
+});
+
+test("classifies missing Piston configuration as paused execution", () => {
+  const error = buildCodeRunnerError({
+    status: 503,
+    body: {
+      message: "Code runner is not configured.",
+    },
+  });
+
+  assert.equal(error.status, 503);
+  assert.equal(error.runnerUnavailable, true);
+  assert.match(error.error, /paused/i);
   assert.match(error.error, /PISTON_EXECUTE_URL/);
 });

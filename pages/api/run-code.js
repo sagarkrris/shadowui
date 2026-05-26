@@ -3,6 +3,7 @@ import {
   buildPistonPayload,
   CODE_RUN_LIMITS,
   extractPistonResult,
+  isCodeRunnerConfigured,
   normalizeRunCodeRequest,
   PISTON_EXECUTE_URL,
 } from "../../lib/codeRunner.mjs";
@@ -24,6 +25,15 @@ export default async function handler(req, res) {
       reason: normalized.error,
     });
     return res.status(normalized.status).json({ error: normalized.error, requestId: logger.requestId });
+  }
+
+  if (!isCodeRunnerConfigured()) {
+    const runnerError = buildCodeRunnerError({
+      status: 503,
+      body: { message: "Code runner is not configured." },
+    });
+    logger.warn("runner.not_configured");
+    return res.status(runnerError.status).json({ ...runnerError, requestId: logger.requestId });
   }
 
   const { language, code, stdin } = normalized.value;

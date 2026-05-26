@@ -89,6 +89,8 @@ export default function Welcome({ onChip, onScreen, onVoice, selectedCat, select
         mockScores={mockScores}
         messages={messages}
         theme={theme}
+        selectedCat={selectedCat}
+        selectedSub={selectedSub}
         onAction={onChip}
       />
 

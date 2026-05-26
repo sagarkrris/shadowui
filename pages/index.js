@@ -25,6 +25,31 @@ import { canUseChatComposer, canUseInterviewTools, canUsePrepTopics, shouldShowC
 import { getStableViewportHeight, isCompactViewport } from "../lib/viewportMode.mjs";
 import { buildSpeechTranscript, getVoiceErrorMessage, getVoiceSupport } from "../lib/voiceSupport.mjs";
 
+const MOCK_ANSWER_SECONDS = 120;
+const INTERVIEW_MODES = [
+  { key: "strict", label: "Strict Interviewer" },
+  { key: "coach", label: "Coach Mode" },
+  { key: "barRaiser", label: "Bar Raiser" },
+  { key: "behavioralStar", label: "Behavioral STAR" },
+];
+const ROUND_STRATEGY_MODES = [
+  { key: "recruiter", label: "Recruiter" },
+  { key: "coding", label: "Coding" },
+  { key: "systemDesign", label: "System Design" },
+  { key: "manager", label: "Manager" },
+  { key: "final", label: "Final" },
+];
+
+function normalizeInterviewMode(value) {
+  if (INTERVIEW_MODES.some((item) => item.key === value)) return value;
+  return "strict";
+}
+
+function normalizeRoundStrategy(value) {
+  if (ROUND_STRATEGY_MODES.some((item) => item.key === value)) return value;
+  return "coding";
+}
+
 function toApiMessages(messages) {
   return messages.map((message) => ({
     role: message.role,
@@ -38,6 +63,8 @@ export default function Home() {
   const [selectedCat, setSelCat]      = useState(null);
   const [selectedSub, setSelSub]      = useState(null);
   const [mode, setMode]               = useState("interview");
+  const [interviewMode, setInterviewMode] = useState("strict");
+  const [roundStrategy, setRoundStrategy] = useState("coding");
   const [difficulty, setDifficulty]   = useState("Mid");
   const [input, setInput]             = useState("");
   const [codeInput, setCodeInput]     = useState("");
@@ -55,6 +82,9 @@ export default function Home() {
   const [candidateProfile, setCandidateProfile] = useState(null);
   const [profileDraft, setProfileDraft] = useState(DEFAULT_PROFILE);
   const [voiceHint, setVoiceHint]     = useState("");
+  const [mockTimerEndsAt, setMockTimerEndsAt] = useState(null);
+  const [mockTimerRemaining, setMockTimerRemaining] = useState(MOCK_ANSWER_SECONDS);
+  const [mockTimerStatus, setMockTimerStatus] = useState("idle");
 
   const chatRef    = useRef(null);
   const inputRef   = useRef(null);
@@ -76,6 +106,9 @@ export default function Home() {
   const showCodeTools = shouldShowCodeTools({ activeTab, candidateProfile, selectedCat });
   const canSend = Boolean(input.trim() || (showCodeTools && codeInput.trim()));
   const footerHint = showCodeTools ? "screen · voice · code · Enter to send" : "screen · voice · Enter to send";
+  const mockTimerLabel = mockTimerStatus === "answering"
+    ? `${Math.floor(mockTimerRemaining / 60)}:${String(mockTimerRemaining % 60).padStart(2, "0")}`
+    : "Review ready";
 
   // ── Local session persistence ────────────────────────────────────────────
   useEffect(() => {
@@ -88,6 +121,8 @@ export default function Home() {
       setSelSub(savedSession.selectedSub);
       setExpanded(savedSession.expandedCat);
       setMode(savedSession.mode);
+      setInterviewMode(normalizeInterviewMode(savedSession.interviewMode));
+      setRoundStrategy(normalizeRoundStrategy(savedSession.roundStrategy));
       setDifficulty(savedSession.difficulty);
       setActiveTab(savedSession.activeTab);
     }
@@ -107,11 +142,13 @@ export default function Home() {
         selectedSub,
         expandedCat,
         mode,
+        interviewMode,
+        roundStrategy,
         difficulty,
         activeTab,
       }),
     );
-  }, [sessionReady, candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, difficulty, activeTab]);
+  }, [sessionReady, candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, difficulty, activeTab]);
 
   // ── Viewport ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -145,7 +182,7 @@ export default function Home() {
     if (activeTab === "chat" && messages.length === 0 && !loading) {
       chatRef.current?.scrollTo({ top: 0, behavior: "auto" });
     }
-  }, [activeTab, messages.length, loading, candidateProfile, selectedCat, selectedSub, mode]);
+  }, [activeTab, messages.length, loading, candidateProfile, selectedCat, selectedSub, mode, interviewMode]);
 
   useEffect(() => {
     if (!showCodeTools) {
@@ -161,11 +198,34 @@ export default function Home() {
     toastTimer.current = setTimeout(() => setToast(null), 2800);
   }, []);
 
+  useEffect(() => {
+    if (mockTimerStatus !== "answering" || !mockTimerEndsAt) return undefined;
+
+    const tick = () => {
+      const remaining = Math.max(0, Math.ceil((mockTimerEndsAt - Date.now()) / 1000));
+      setMockTimerRemaining(remaining);
+      if (remaining > 0) return;
+      setMockTimerEndsAt(null);
+      setMockTimerStatus("review");
+      setMode("practice");
+      showToast("Time is up. Review ready - send what you have for feedback.", "info");
+    };
+
+    tick();
+    const timer = window.setInterval(tick, 1000);
+    return () => window.clearInterval(timer);
+  }, [mockTimerEndsAt, mockTimerStatus, showToast]);
+
   // ── API call ──────────────────────────────────────────────────────────────
   const callAPI = useCallback(async (userText, options = {}) => {
     const hasCode = showCodeTools ? codeInput.trim() : "";
     const promptText = String(userText || "").trim() || (hasCode ? "Please review this code." : "");
     if (loading || (!promptText && !hasCode)) return;
+    if (mockTimerStatus === "answering" && !options.startAnswerTimer) {
+      setMockTimerEndsAt(null);
+      setMockTimerStatus("review");
+      setMode("practice");
+    }
     setLoading(true);
 
     const codeLanguage = techTheme.key === "default" ? "text" : techTheme.key;
@@ -187,7 +247,7 @@ export default function Home() {
       abortRef.current = new AbortController();
       const res = await fetch("/api/chat", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ messages: apiMessages, profile: candidateProfile }), signal: abortRef.current.signal,
+        body: JSON.stringify({ messages: apiMessages, profile: candidateProfile, interviewMode: interviewMode, roundStrategy }), signal: abortRef.current.signal,
       });
       if (!res.ok) {
         const e = await res.json();
@@ -220,8 +280,15 @@ export default function Home() {
         setMessages(prev => { const u=[...prev]; u[u.length-1]={role:"assistant",content:"⚠️ "+(err.message||"Something went wrong."),streaming:false}; return u; });
         showToast(err.message || "API error", "error");
       }
-    } finally { setLoading(false); }
-  }, [messages, codeInput, loading, showToast, candidateProfile, techTheme.key, showCodeTools]);
+    } finally {
+      setLoading(false);
+      if (options.startAnswerTimer) {
+        setMockTimerRemaining(MOCK_ANSWER_SECONDS);
+        setMockTimerEndsAt(Date.now() + MOCK_ANSWER_SECONDS * 1000);
+        setMockTimerStatus("answering");
+      }
+    }
+  }, [messages, codeInput, loading, showToast, candidateProfile, techTheme.key, showCodeTools, mockTimerStatus, interviewMode, roundStrategy]);
 
   // ── Screen analyze ────────────────────────────────────────────────────────
   const analyzeScreen = useCallback(async (b64, ctx) => {
@@ -351,7 +418,14 @@ export default function Home() {
   }
 }, [callAPI, showToast]);
 
-  const toggleVoice = () => isListening ? stopVoice() : startVoice();
+  const toggleVoice = useCallback(() => {
+    if (isListening) {
+      stopVoice();
+      return;
+    }
+
+    startVoice();
+  }, [isListening, startVoice, stopVoice]);
 
   const startCompanyMock = (prompt) => {
     setActiveTab("chat");
@@ -409,20 +483,25 @@ export default function Home() {
   };
 
   // ── Session start ─────────────────────────────────────────────────────────
-  const startSession = () => {
+  const startSession = useCallback(() => {
     if (!candidateProfile || !selectedCat || loading) return;
     const topic = selectedSub || selectedCat;
+    const style = INTERVIEW_MODES.find((item) => item.key === interviewMode)?.label || "Strict Interviewer";
+    const round = ROUND_STRATEGY_MODES.find((item) => item.key === roundStrategy)?.label || "Coding";
     const prompt = mode === "interview"
-      ? `Start a mock full stack developer interview for ${displayName} on "${topic}". Difficulty: ${difficulty}. Ask your first question.`
+      ? `Start a ${style} mock interview for ${displayName} on "${topic}". Round Strategy Mode: ${round}. Difficulty: ${difficulty}. Ask your first question.`
       : `Give ${displayName} a comprehensive ${difficulty}-level practice session on "${topic}". Include working code when useful.`;
     setMessages([]);
     setActiveTab("chat");
-    setTimeout(() => callAPI(prompt), 50);
-  };
+    setMockTimerStatus("idle");
+    setMockTimerEndsAt(null);
+    setTimeout(() => callAPI(prompt, { startAnswerTimer: mode === "interview" }), 50);
+  }, [callAPI, candidateProfile, difficulty, displayName, interviewMode, loading, mode, roundStrategy, selectedCat, selectedSub]);
 
-  const clearChat = () => {
+  const clearChat = useCallback(() => {
     abortRef.current?.abort(); setMessages([]); setLoading(false);
-  };
+    setMockTimerStatus("idle"); setMockTimerEndsAt(null);
+  }, []);
 
   // ── Sidebar handlers ──────────────────────────────────────────────────────
   const showProfileRequired = () => {
@@ -434,7 +513,7 @@ export default function Home() {
       showProfileRequired();
       return;
     }
-    const workspaceState = createTopicSelectionNavigationState({ activeTab });
+    const workspaceState = createTopicSelectionNavigationState({ activeTab, preserveCompanyPrep: activeTab === "company" });
     setActiveTab(workspaceState.activeTab);
     setExpanded(p => p === cat ? null : cat);
     setSelCat(cat); setSelSub(null);
@@ -444,11 +523,48 @@ export default function Home() {
       showProfileRequired();
       return;
     }
-    const workspaceState = createTopicSelectionNavigationState({ activeTab });
+    const workspaceState = createTopicSelectionNavigationState({ activeTab, preserveCompanyPrep: activeTab === "company" });
     setActiveTab(workspaceState.activeTab);
     setSelCat(cat); setSelSub(sub);
     if (isMobile) setSidebar(false);
   };
+
+  useEffect(() => {
+    const handlePowerKeys = (event) => {
+      const target = event.target;
+      const isEditable = target?.tagName === "TEXTAREA" || target?.tagName === "INPUT" || target?.isContentEditable;
+      const hasCommand = event.ctrlKey || event.metaKey;
+
+      if (event.key === "/" && !isEditable) {
+        event.preventDefault();
+        inputRef.current?.focus();
+        return;
+      }
+
+      if (!hasCommand) return;
+
+      const key = event.key.toLowerCase();
+      if (key === "k") {
+        event.preventDefault();
+        setSidebar((previous) => !previous);
+      } else if (key === "enter") {
+        event.preventDefault();
+        startSession();
+      } else if (event.shiftKey && key === "c") {
+        event.preventDefault();
+        clearChat();
+      } else if (event.shiftKey && key === "v") {
+        event.preventDefault();
+        toggleVoice();
+      } else if (event.shiftKey && key === "s") {
+        event.preventDefault();
+        setShowScreen(true);
+      }
+    };
+
+    window.addEventListener("keydown", handlePowerKeys);
+    return () => window.removeEventListener("keydown", handlePowerKeys);
+  }, [clearChat, startSession, toggleVoice]);
 
   const currentLabel = selectedSub || selectedCat;
   const themeVars = {
@@ -557,6 +673,18 @@ export default function Home() {
                 style={{ fontSize:11, padding:"3px 6px", borderRadius:6, border:"1px solid rgba(255,255,255,.09)", color:"#9ca3af", outline:"none" }}>
                 {DIFFS.map(d => <option key={d}>{d}</option>)}
               </select>
+              <select value={interviewMode} onChange={e => setInterviewMode(e.target.value)}
+                aria-label="Interview calibration mode"
+                className="glass-input"
+                style={{ fontSize:11, padding:"3px 6px", borderRadius:6, border:"1px solid rgba(255,255,255,.09)", color:"#9ca3af", outline:"none", maxWidth:150 }}>
+                {INTERVIEW_MODES.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}
+              </select>
+              <select value={roundStrategy} onChange={e => setRoundStrategy(e.target.value)}
+                aria-label="Round Strategy Mode"
+                className="glass-input"
+                style={{ fontSize:11, padding:"3px 6px", borderRadius:6, border:"1px solid rgba(255,255,255,.09)", color:"#9ca3af", outline:"none", maxWidth:130 }}>
+                {ROUND_STRATEGY_MODES.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}
+              </select>
 
               <button className="glass-button" onClick={startSession} disabled={!candidateProfile || !selectedCat || loading}
                 style={{ padding:"4px 12px", fontSize:12, fontWeight:600, borderRadius:7, border:`1px solid ${techTheme.accentBorder}`, color:techTheme.accentText, cursor: candidateProfile&&selectedCat&&!loading?"pointer":"not-allowed", opacity: candidateProfile&&selectedCat&&!loading?1:.4, display:"flex", alignItems:"center", gap:5 }}>
@@ -574,11 +702,11 @@ export default function Home() {
           </header>
 
           {/* ── Chat area ── */}
-          <div ref={chatRef} style={{ flex:1, overflowY:"auto", padding: isMobile?"12px 10px":"20px 16px", display:"flex", flexDirection:"column" }}>
+          <div ref={chatRef} className="chat-scroll" role="log" aria-live="polite" aria-relevant="additions text" aria-label="Conversation messages" style={{ flex:1, overflowY:"auto", padding: isMobile?"12px 10px":"20px 16px", display:"flex", flexDirection:"column" }}>
             {activeTab === "course" ? (
               <AgenticUICourse theme={techTheme} variant="full" />
             ) : activeTab === "company" ? (
-              <CompanyPrep theme={techTheme} weakSpots={weakSpots} onMock={startCompanyMock} />
+              <CompanyPrep theme={techTheme} weakSpots={weakSpots} mockScores={mockScores} messages={messages} selectedCat={selectedCat} selectedSub={selectedSub} onMock={startCompanyMock} />
             ) : messages.length === 0 && !loading
               ? !candidateProfile
                 ? <ProfileSetup theme={techTheme} draft={profileDraft} onChange={setProfileDraft} onSubmit={saveProfile} />
@@ -602,11 +730,11 @@ export default function Home() {
               : (
                 <>
                   {messages.map((msg, idx) => (
-                    <div key={idx} className="msg-anim" style={{ display:"flex", gap: isMobile?8:10, marginBottom: isMobile?14:18, flexDirection: msg.role==="user"?"row-reverse":"row", alignItems:"flex-start" }}>
+                    <div key={idx} className="msg-anim" role="article" aria-label={msg.role==="user" ? "Your message" : "InterviewIQ response"} style={{ display:"flex", gap: isMobile?8:10, marginBottom: isMobile?14:18, flexDirection: msg.role==="user"?"row-reverse":"row", alignItems:"flex-start" }}>
                       <div style={{ width:28, height:28, borderRadius:"50%", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", background: msg.role==="user"?techTheme.accentSoft:"rgba(168,85,247,.12)", border: msg.role==="user"?`1px solid ${techTheme.accentBorder}`:"1px solid rgba(168,85,247,.25)", fontSize:13 }}>
                         <i className={`ti ${msg.role==="user"?"ti-user":"ti-robot"}`} style={{ color: msg.role==="user"?techTheme.accentStrong:"#c084fc" }} />
                       </div>
-                      <div className="glass-card" style={{ maxWidth: isMobile?"88%":"82%", border: msg.role==="user"?`1px solid ${techTheme.accentBorder}`:"1px solid rgba(255,255,255,.07)", borderRadius: msg.role==="user"?"12px 12px 4px 12px":"12px 12px 12px 4px", padding: isMobile?"9px 12px":"10px 14px" }}>
+                      <div className={`glass-card ${msg.role==="user" ? "user-message" : "assistant-message"}`} style={{ maxWidth: isMobile?"88%":"82%", border: msg.role==="user"?`1px solid ${techTheme.accentBorder}`:"1px solid rgba(255,255,255,.07)", borderRadius: msg.role==="user"?"12px 12px 4px 12px":"12px 12px 12px 4px", padding: isMobile?"9px 12px":"10px 14px" }}>
                         {msg.role==="assistant" && idx>0 && <ScoreBadge content={msg.content} />}
                         {msg.role==="user"
                           ? <div style={{ fontSize: isMobile?13:13.5, color:techTheme.accentText, lineHeight:1.65, whiteSpace:"pre-wrap", wordBreak:"break-word" }}>{msg.content}</div>
@@ -624,6 +752,14 @@ export default function Home() {
 
           {/* ── Input area ── */}
           {showComposer && <footer className="glass-chrome" style={{ padding: isMobile?"8px 10px 10px":"10px 12px 12px", borderTop:"1px solid rgba(255,255,255,.08)", flexShrink:0 }}>
+            {mockTimerStatus !== "idle" && (
+              <div role="status" aria-live="polite" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8, border: `1px solid ${techTheme.accentBorder}`, borderRadius: 8, padding: "6px 9px", background: techTheme.accentMuted }}>
+                <span style={{ color: techTheme.accentText, fontSize: 11.5, fontWeight: 800, display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <i className="ti ti-clock" />Mock answer timer
+                </span>
+                <strong style={{ color: mockTimerStatus === "answering" ? techTheme.accentStrong : "#86efac", fontSize: 12 }}>{mockTimerLabel}</strong>
+              </div>
+            )}
             {showCodeTools && showCode && (
               <div style={{ marginBottom:8 }}>
                 <div style={{ fontSize:11.5, color:"#6b7280", marginBottom:5, display:"flex", alignItems:"center", gap:6 }}>
@@ -638,6 +774,7 @@ export default function Home() {
               <textarea ref={inputRef} value={input} onChange={e => setInput(e.target.value)}
                 onKeyDown={e => { if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();callAPI(input);} }}
                 rows={2} disabled={loading}
+                aria-label="Message composer"
                 placeholder={mode==="interview" ? "Type your answer… or use 📸/🎤" : "Ask anything about frontend, backend, DSA, system design, or databases…"}
                 className="glass-input"
                 style={{ flex:1, border:"1px solid rgba(255,255,255,.09)", borderRadius:9, padding:"9px 12px", fontSize: isMobile?14:13, color:"#e8e8f0", outline:"none", lineHeight:1.5, maxHeight:120 }} />
@@ -668,6 +805,18 @@ export default function Home() {
                   style={{ fontSize:11, padding:"5px 6px", borderRadius:6, border:"1px solid rgba(255,255,255,.09)", color:"#9ca3af", outline:"none" }}>
                   {DIFFS.map(d => <option key={d}>{d}</option>)}
                 </select>
+                <select value={interviewMode} onChange={e => setInterviewMode(e.target.value)}
+                  aria-label="Interview calibration mode"
+                  className="glass-input"
+                  style={{ fontSize:11, padding:"5px 6px", borderRadius:6, border:"1px solid rgba(255,255,255,.09)", color:"#9ca3af", outline:"none", minWidth:96 }}>
+                  {INTERVIEW_MODES.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}
+                </select>
+                <select value={roundStrategy} onChange={e => setRoundStrategy(e.target.value)}
+                  aria-label="Round Strategy Mode"
+                  className="glass-input"
+                  style={{ fontSize:11, padding:"5px 6px", borderRadius:6, border:"1px solid rgba(255,255,255,.09)", color:"#9ca3af", outline:"none", minWidth:86 }}>
+                  {ROUND_STRATEGY_MODES.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}
+                </select>
                 <button className="glass-button" onClick={startSession} disabled={!candidateProfile||!selectedCat||loading}
                   style={{ padding:"5px 12px", fontSize:11, fontWeight:600, borderRadius:7, border:`1px solid ${techTheme.accentBorder}`, color:techTheme.accentText, cursor: candidateProfile&&selectedCat&&!loading?"pointer":"not-allowed", opacity: candidateProfile&&selectedCat&&!loading?1:.4, display:"flex", alignItems:"center", gap:4, whiteSpace:"nowrap" }}>
                   <i className="ti ti-player-play" style={{ fontSize:10 }} />Start
@@ -680,9 +829,9 @@ export default function Home() {
               </div>
             ) : (
               !isMobile && (
-              <div style={{ marginTop:5, display:"flex", justifyContent:"space-between", fontSize:10.5, color:"#1f2937" }}>
-                <span>{voiceHint || footerHint}</span>
-                <span>Powered by Gemini · Free</span>
+              <div style={{ marginTop:5, display:"flex", justifyContent:"space-between", fontSize:10.5, color:"#cbd5e1" }}>
+                <span>{voiceHint || `${footerHint} · Keyboard Power Mode: / focus, ⌘K topics, ⌘↵ mock`}</span>
+                <span style={{ color:"#9ca3af" }}>Powered by Gemini · Free</span>
               </div>
               )
             )}

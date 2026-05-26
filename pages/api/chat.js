@@ -2,7 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { buildSystemPrompt } from "../../lib/chatPrompt.mjs";
 import { normalizeChatMessages } from "../../lib/chatRequest.mjs";
 import { getGeminiModelCandidates } from "../../lib/geminiModels.mjs";
-import { getGeminiErrorStatus, withGeminiModelFallback } from "../../lib/geminiRetry.mjs";
+import { getGeminiErrorStatus, getSafeGeminiErrorMessage, withGeminiModelFallback } from "../../lib/geminiRetry.mjs";
 import { createRequestLogger } from "../../lib/serverLogger.mjs";
 
 export default async function handler(req, res) {
@@ -15,6 +15,8 @@ export default async function handler(req, res) {
   }
 
   const { profile } = req.body;
+  const interviewMode = req.body?.interviewMode;
+  const roundStrategy = req.body?.roundStrategy;
   const messages = normalizeChatMessages(req.body?.messages);
 
   if (!messages) {
@@ -56,7 +58,7 @@ export default async function handler(req, res) {
       (candidate) => {
         const model = genAI.getGenerativeModel({
           model: candidate,
-          systemInstruction: buildSystemPrompt(profile),
+          systemInstruction: buildSystemPrompt(profile, { interviewMode, roundStrategy }),
         });
         const chat = model.startChat({ history });
         return chat.sendMessageStream(lastMessage.content);
@@ -97,7 +99,7 @@ export default async function handler(req, res) {
       status: error.status,
       code: error.code,
     });
-    const safeError = "AI request failed. Please try again.";
+    const safeError = getSafeGeminiErrorMessage(error);
     if (!res.headersSent) {
       res.status(status).json({ error: safeError, requestId: logger.requestId });
     } else {
