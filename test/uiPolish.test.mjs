@@ -32,6 +32,15 @@ test("mobile glass styling is tuned for smoother scrolling", () => {
   assert.match(globalsSource, /prefers-reduced-motion: reduce/);
 });
 
+test("mobile keyboard mode trims chrome around the composer", () => {
+  assert.match(indexSource, /isKeyboardOpen/);
+  assert.match(indexSource, /appShellHeight/);
+  assert.match(indexSource, /isMobile && !isKeyboardOpen/);
+  assert.match(indexSource, /interactive-widget=resizes-content/);
+  assert.match(indexSource, /restorePageScroll/);
+  assert.match(indexSource, /position:"fixed", inset:0/);
+});
+
 test("resume analyzer explains why the score is not perfect", () => {
   assert.match(careerToolkitSource, /Why this score/);
   assert.match(careerToolkitSource, /weakestScoreAreas/);

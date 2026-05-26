@@ -22,7 +22,7 @@ import { DEFAULT_PROFILE, DIFFS } from "../lib/prompts.mjs";
 import { createSessionSnapshot, loadSessionSnapshot, saveSessionSnapshot } from "../lib/sessionPersistence.mjs";
 import { getTechTheme } from "../lib/techTheme.mjs";
 import { canUseChatComposer, canUseInterviewTools, canUsePrepTopics, shouldShowCodeTools } from "../lib/uiVisibility.mjs";
-import { getStableViewportHeight, isCompactViewport } from "../lib/viewportMode.mjs";
+import { getStableViewportHeight, getVisibleViewportHeight, isCompactViewport, isVirtualKeyboardOpen } from "../lib/viewportMode.mjs";
 import { buildSpeechTranscript, getVoiceErrorMessage, getVoiceSupport } from "../lib/voiceSupport.mjs";
 
 const MOCK_ANSWER_SECONDS = 120;
@@ -77,6 +77,7 @@ export default function Home() {
   const [showScreen, setShowScreen]   = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [activeTab, setActiveTab]     = useState("chat");
+  const [isKeyboardOpen, setKeyboardOpen] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
   const [toast, setToast]             = useState(null);
   const [candidateProfile, setCandidateProfile] = useState(null);
@@ -92,6 +93,10 @@ export default function Home() {
   const recogRef   = useRef(null);
   const voiceFinal = useRef("");
   const toastTimer = useRef(null);
+  const viewportBaselineHeight = useRef(0);
+  const viewportWidthRef = useRef(0);
+  const keyboardOpenRef = useRef(false);
+  const viewportRestoreTimers = useRef([]);
   const visibleTopics = getRecommendedTopics(candidateProfile);
   const techTheme = getTechTheme(candidateProfile?.stack || profileDraft.stack);
   const prepLabel = getPrepLabel(candidateProfile?.stack || profileDraft.stack);
@@ -159,19 +164,79 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    const clearViewportRestoreTimers = () => {
+      viewportRestoreTimers.current.forEach((timer) => window.clearTimeout(timer));
+      viewportRestoreTimers.current = [];
+    };
+    const restorePageScroll = () => {
+      window.requestAnimationFrame(() => {
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      });
+    };
     const setViewportHeight = () => {
+      const visualViewportHeight = window.visualViewport?.height;
+      const viewportWidth = window.innerWidth;
       const height = getStableViewportHeight({
         innerHeight: window.innerHeight,
-        visualViewportHeight: window.visualViewport?.height,
+        visualViewportHeight,
       });
-      document.documentElement.style.setProperty("--vh", `${height * 0.01}px`);
+      const visibleHeight = getVisibleViewportHeight({
+        innerHeight: window.innerHeight,
+        visualViewportHeight,
+      });
+      const activeElement = document.activeElement;
+      const widthChanged = viewportWidthRef.current && Math.abs(viewportWidth - viewportWidthRef.current) > 20;
+
+      if (widthChanged) {
+        viewportBaselineHeight.current = 0;
+      }
+      viewportWidthRef.current = viewportWidth;
+
+      const baselineHeight = Math.max(viewportBaselineHeight.current, height);
+      const keyboardOpen = isVirtualKeyboardOpen({
+        viewportWidth,
+        innerHeight: baselineHeight,
+        visualViewportHeight: visibleHeight,
+        activeElementTagName: activeElement?.tagName,
+        activeElementIsContentEditable: activeElement?.isContentEditable,
+      });
+
+      if (!keyboardOpen) {
+        viewportBaselineHeight.current = baselineHeight;
+      }
+
+      document.documentElement.style.setProperty("--vh", `${baselineHeight * 0.01}px`);
+      document.documentElement.style.setProperty("--vvh", `${visibleHeight * 0.01}px`);
+      if (keyboardOpenRef.current && !keyboardOpen) {
+        restorePageScroll();
+      }
+      keyboardOpenRef.current = keyboardOpen;
+      setKeyboardOpen(keyboardOpen);
+    };
+    const scheduleViewportRestore = () => {
+      clearViewportRestoreTimers();
+      [80, 220, 420].forEach((delay) => {
+        viewportRestoreTimers.current.push(window.setTimeout(() => {
+          setViewportHeight();
+          if (!keyboardOpenRef.current) restorePageScroll();
+        }, delay));
+      });
     };
     setViewportHeight();
     window.addEventListener("resize", setViewportHeight);
+    window.addEventListener("focusin", setViewportHeight);
+    window.addEventListener("focusout", scheduleViewportRestore);
     window.visualViewport?.addEventListener("resize", setViewportHeight);
+    window.visualViewport?.addEventListener("scroll", setViewportHeight);
     return () => {
+      clearViewportRestoreTimers();
       window.removeEventListener("resize", setViewportHeight);
+      window.removeEventListener("focusin", setViewportHeight);
+      window.removeEventListener("focusout", scheduleViewportRestore);
       window.visualViewport?.removeEventListener("resize", setViewportHeight);
+      window.visualViewport?.removeEventListener("scroll", setViewportHeight);
     };
   }, []);
 
@@ -586,6 +651,9 @@ export default function Home() {
     "--tech-glass-edge-soft": techTheme.glass.edgeSoft,
     "--tech-glass-shadow": techTheme.glass.shadow,
   };
+  const appShellHeight = isMobile && isKeyboardOpen
+    ? "calc(var(--vvh, var(--vh, 1vh)) * 100)"
+    : "calc(var(--vh, 1vh) * 100)";
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -594,7 +662,7 @@ export default function Home() {
         <title>InterviewIQ</title>
         <meta name="description" content="AI-powered interview intelligence for modern software engineers" />
         <meta name="theme-color" content={techTheme.surface} />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
       </Head>
@@ -612,7 +680,7 @@ export default function Home() {
       {showSettings && <SettingsModal theme={techTheme} onClose={() => setShowSettings(false)} />}
 
       {/* App shell */}
-      <div style={{ ...themeVars, position:"relative", isolation:"isolate", display:"flex", height:"calc(var(--vh, 1vh) * 100)", overflow:"hidden", background:techTheme.surface }}>
+      <div style={{ ...themeVars, position:"fixed", inset:0, isolation:"isolate", display:"flex", height:appShellHeight, overflow:"hidden", background:techTheme.surface }}>
         <TechBackground theme={techTheme} />
 
         {/* Sidebar */}
@@ -751,7 +819,7 @@ export default function Home() {
           </div>
 
           {/* ── Input area ── */}
-          {showComposer && <footer className="glass-chrome" style={{ padding: isMobile?"8px 10px 10px":"10px 12px 12px", borderTop:"1px solid rgba(255,255,255,.08)", flexShrink:0 }}>
+          {showComposer && <footer className="glass-chrome" style={{ padding: isMobile ? (isKeyboardOpen ? "8px 10px" : "8px 10px 10px") : "10px 12px 12px", borderTop:"1px solid rgba(255,255,255,.08)", flexShrink:0 }}>
             {mockTimerStatus !== "idle" && (
               <div role="status" aria-live="polite" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8, border: `1px solid ${techTheme.accentBorder}`, borderRadius: 8, padding: "6px 9px", background: techTheme.accentMuted }}>
                 <span style={{ color: techTheme.accentText, fontSize: 11.5, fontWeight: 800, display: "inline-flex", alignItems: "center", gap: 6 }}>
@@ -793,7 +861,7 @@ export default function Home() {
             </div>
 
             {/* Desktop hint / Mobile mode bar */}
-            {isMobile ? (
+            {isMobile && !isKeyboardOpen ? (
               <div style={{ marginTop:8, display:"flex", alignItems:"center", justifyContent:"space-between", gap:8 }}>
                 <div style={{ display:"flex", background:"rgba(255,255,255,.04)", borderRadius:7, padding:2, border:"1px solid rgba(255,255,255,.07)", flex:1 }}>
                   {["interview","practice"].map(m => (
@@ -823,7 +891,7 @@ export default function Home() {
                 </button>
               </div>
             ) : null}
-            {isMobile && voiceHint ? (
+            {isMobile && !isKeyboardOpen && voiceHint ? (
               <div style={{ marginTop:6, fontSize:10.5, color:"#6b7280", lineHeight:1.4 }}>
                 {voiceHint}
               </div>
@@ -838,7 +906,7 @@ export default function Home() {
           </footer>}
 
           {/* ── Mobile bottom nav ── */}
-          {isMobile && (
+          {isMobile && !isKeyboardOpen && (
             <nav className="glass-chrome" style={{ display:"flex", alignItems:"center", justifyContent:"space-around", padding:"6px 8px", borderTop:"1px solid rgba(255,255,255,.08)", flexShrink:0, paddingBottom:"max(6px, env(safe-area-inset-bottom))" }}>
               {[
                 { icon:"ti-home",           label:"Home",    action:goHome, active:activeTab==="chat" && messages.length===0 },
