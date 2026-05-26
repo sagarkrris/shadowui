@@ -23,6 +23,7 @@ test("falls back to a generic company prep shape for unknown companies", () => {
   assert.equal(prep.company, "Stripe");
   assert.equal(prep.isSeeded, false);
   assert.ok(prep.resources.some((resource) => resource.url.includes("leetcode.com")));
+  assert.ok(prep.resources.length >= 3);
 });
 
 test("builds a mock interview prompt from a company question", () => {

@@ -25,3 +25,19 @@ test("home navigation returns to personalized home without clearing profile deta
   assert.equal(nextState.candidateProfile, profile);
   assert.equal(nextState.profileDraft, profile);
 });
+
+test("topic selection from a secondary workspace returns to the chat workspace", async () => {
+  const navigation = await import("../lib/homeNavigation.mjs");
+
+  assert.equal(typeof navigation.createTopicSelectionNavigationState, "function");
+
+  const nextState = navigation.createTopicSelectionNavigationState({
+    activeTab: "company",
+    messages: [{ role: "user", content: "mock me" }],
+    loading: false,
+  });
+
+  assert.equal(nextState.activeTab, "chat");
+  assert.deepEqual(nextState.messages, [{ role: "user", content: "mock me" }]);
+  assert.equal(nextState.loading, false);
+});

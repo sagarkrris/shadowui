@@ -14,7 +14,7 @@ import VoiceBar from "../components/VoiceBar";
 import ProfileSetup from "../components/welcome/ProfileSetup";
 import Welcome from "../components/welcome/Welcome";
 import { deriveWeakSpots } from "../lib/companyPrep.mjs";
-import { createHomeNavigationState } from "../lib/homeNavigation.mjs";
+import { createHomeNavigationState, createTopicSelectionNavigationState } from "../lib/homeNavigation.mjs";
 import { buildUserPrepLabel, getDisplayName, getStackGreeting } from "../lib/personalization.mjs";
 import { deriveMockScores } from "../lib/prepCoach.mjs";
 import { getPrepLabel, getRecommendedTopics } from "../lib/prepTopics.mjs";
@@ -22,7 +22,7 @@ import { DEFAULT_PROFILE, DIFFS } from "../lib/prompts.mjs";
 import { createSessionSnapshot, loadSessionSnapshot, saveSessionSnapshot } from "../lib/sessionPersistence.mjs";
 import { getTechTheme } from "../lib/techTheme.mjs";
 import { canUseChatComposer, canUseInterviewTools, canUsePrepTopics, shouldShowCodeTools } from "../lib/uiVisibility.mjs";
-import { isCompactViewport } from "../lib/viewportMode.mjs";
+import { getStableViewportHeight, isCompactViewport } from "../lib/viewportMode.mjs";
 import { buildSpeechTranscript, getVoiceErrorMessage, getVoiceSupport } from "../lib/voiceSupport.mjs";
 
 function toApiMessages(messages) {
@@ -123,7 +123,10 @@ export default function Home() {
 
   useEffect(() => {
     const setViewportHeight = () => {
-      const height = window.visualViewport?.height || window.innerHeight;
+      const height = getStableViewportHeight({
+        innerHeight: window.innerHeight,
+        visualViewportHeight: window.visualViewport?.height,
+      });
       document.documentElement.style.setProperty("--vh", `${height * 0.01}px`);
     };
     setViewportHeight();
@@ -431,6 +434,8 @@ export default function Home() {
       showProfileRequired();
       return;
     }
+    const workspaceState = createTopicSelectionNavigationState({ activeTab });
+    setActiveTab(workspaceState.activeTab);
     setExpanded(p => p === cat ? null : cat);
     setSelCat(cat); setSelSub(null);
   };
@@ -439,6 +444,8 @@ export default function Home() {
       showProfileRequired();
       return;
     }
+    const workspaceState = createTopicSelectionNavigationState({ activeTab });
+    setActiveTab(workspaceState.activeTab);
     setSelCat(cat); setSelSub(sub);
     if (isMobile) setSidebar(false);
   };

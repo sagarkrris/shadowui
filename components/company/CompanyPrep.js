@@ -99,6 +99,13 @@ export default function CompanyPrep({ theme, weakSpots, onMock }) {
                 </div>
                 <span style={{ color: "#4b5563", fontSize: 11 }}>Updated {prep.lastUpdated}</span>
               </div>
+              <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginTop: 10 }}>
+                {prep.resources.slice(0, 3).map((resource) => (
+                  <a key={resource.url} href={resource.url} target="_blank" rel="noreferrer" className="glass-button" style={{ display: "inline-flex", alignItems: "center", gap: 6, border: `1px solid ${theme.accentBorder}`, borderRadius: 999, padding: "5px 9px", color: theme.accentText, textDecoration: "none", fontSize: 10.8, fontWeight: 800 }}>
+                    <i className="ti ti-external-link" />{resource.label}
+                  </a>
+                ))}
+              </div>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))", gap: 14 }}>

@@ -14,3 +14,15 @@ test("keeps desktop workflow layout for wide screens", () => {
   assert.equal(isCompactViewport(1440), false);
 });
 
+test("keeps iOS keyboard visual viewport changes from shrinking the app shell", async () => {
+  const viewport = await import("../lib/viewportMode.mjs");
+
+  assert.equal(typeof viewport.getStableViewportHeight, "function");
+  assert.equal(
+    viewport.getStableViewportHeight({
+      innerHeight: 844,
+      visualViewportHeight: 512,
+    }),
+    844,
+  );
+});

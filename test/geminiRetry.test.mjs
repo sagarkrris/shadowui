@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   getGeminiErrorStatus,
+  getSafeGeminiErrorMessage,
   isUnavailableGeminiModelError,
   isTransientGeminiError,
   withGeminiModelFallback,
@@ -57,6 +58,13 @@ test("does not retry the same Gemini model after rate limits", async () => {
 test("maps upstream Gemini failures to a gateway status", () => {
   assert.equal(getGeminiErrorStatus({ status: 429 }), 429);
   assert.equal(getGeminiErrorStatus(new Error("Error fetching from https://generativelanguage.googleapis.com")), 502);
+});
+
+test("maps provider safety blocks to a helpful app message", () => {
+  assert.equal(
+    getSafeGeminiErrorMessage({ code: "InvalidParameter", message: "Inappropriate content detected!!!" }),
+    "The AI provider blocked that request as inappropriate content. Please rephrase it or remove sensitive/problematic content and try again.",
+  );
 });
 
 test("falls back to the next Gemini model after retryable failures", async () => {
