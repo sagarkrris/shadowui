@@ -327,7 +327,7 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 10 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 10, alignItems: "start" }}>
         <div className="glass-card" style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 12 }}>
           <div style={{ color: theme.accentText, fontSize: 12, fontWeight: 900, display: "flex", alignItems: "center", gap: 7, marginBottom: 8 }}>
             <i className="ti ti-file-cv" />Resume Gap Analysis

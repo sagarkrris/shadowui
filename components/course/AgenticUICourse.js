@@ -230,7 +230,7 @@ export default function AgenticUICourse({ theme, variant = "full", onOpenCourse 
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 10 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 10, alignItems: "start" }}>
         {course.findings.map((finding) => (
           <div key={finding} className="glass-card" style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 11, display: "flex", alignItems: "flex-start", gap: 8, color: "#9ca3af", fontSize: 12, lineHeight: 1.5 }}>
             <i className="ti ti-check" style={{ color: theme.accentStrong, marginTop: 3, flexShrink: 0 }} />
@@ -251,7 +251,7 @@ export default function AgenticUICourse({ theme, variant = "full", onOpenCourse 
             Hands-on labs
           </span>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 10, alignItems: "start" }}>
           {course.stackTracks.map((track) => (
             <article key={track.id} className="glass-card" style={{ border: `1px solid ${track.id === "java-spring" ? theme.accentBorder : "rgba(255,255,255,.08)"}`, borderRadius: 8, padding: 12, display: "grid", gap: 10 }}>
               <div>

@@ -14,7 +14,8 @@ test("mock interview timer is visible and switches to review-ready state", () =>
 });
 
 test("company prep responds to selected drawer topic with focused prompts", () => {
-  assert.match(indexSource, /preserveCompanyPrep: activeTab === "company"/);
+  assert.doesNotMatch(indexSource, /preserveCompanyPrep: activeTab === "company"/);
+  assert.match(indexSource, /createTopicSelectionNavigationState\(\{ activeTab \}\)/);
   assert.match(indexSource, /selectedCat={selectedCat}/);
   assert.match(indexSource, /selectedSub={selectedSub}/);
   assert.match(companySource, /Topic Focus/);

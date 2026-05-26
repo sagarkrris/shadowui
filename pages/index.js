@@ -513,7 +513,7 @@ export default function Home() {
       showProfileRequired();
       return;
     }
-    const workspaceState = createTopicSelectionNavigationState({ activeTab, preserveCompanyPrep: activeTab === "company" });
+    const workspaceState = createTopicSelectionNavigationState({ activeTab });
     setActiveTab(workspaceState.activeTab);
     setExpanded(p => p === cat ? null : cat);
     setSelCat(cat); setSelSub(null);
@@ -523,7 +523,7 @@ export default function Home() {
       showProfileRequired();
       return;
     }
-    const workspaceState = createTopicSelectionNavigationState({ activeTab, preserveCompanyPrep: activeTab === "company" });
+    const workspaceState = createTopicSelectionNavigationState({ activeTab });
     setActiveTab(workspaceState.activeTab);
     setSelCat(cat); setSelSub(sub);
     if (isMobile) setSidebar(false);
@@ -831,7 +831,7 @@ export default function Home() {
               !isMobile && (
               <div style={{ marginTop:5, display:"flex", justifyContent:"space-between", fontSize:10.5, color:"#cbd5e1" }}>
                 <span>{voiceHint || `${footerHint} · Keyboard Power Mode: / focus, ⌘K topics, ⌘↵ mock`}</span>
-                <span style={{ color:"#9ca3af" }}>Powered by Gemini · Free</span>
+                <span style={{ color:"#9ca3af" }}>Created with love ❤️ by Sagar Krishna</span>
               </div>
               )
             )}
