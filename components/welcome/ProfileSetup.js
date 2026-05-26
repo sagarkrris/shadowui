@@ -1,6 +1,6 @@
 import { scrollFocusedControlIntoView } from "../../lib/focusViewport.mjs";
 
-export default function ProfileSetup({ draft, onChange, onSubmit, theme }) {
+export default function ProfileSetup({ draft, onChange, onSubmit, theme, keyboardOpen = false }) {
   const canContinue = draft.name.trim() && draft.position.trim() && draft.experience.trim() && draft.stack.trim();
   const unlockCards = [
     ["ti-list-check", "Stack Topics", "Sidebar topics change to match Java, Python, React, and more."],
@@ -22,7 +22,7 @@ export default function ProfileSetup({ draft, onChange, onSubmit, theme }) {
   };
 
   return (
-    <div className="welcome-screen profile-setup-screen" style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "28px 20px", textAlign: "center", overflowY: "auto", scrollPaddingTop: 18, scrollPaddingBottom: 160 }}>
+    <div className={`welcome-screen profile-setup-screen${keyboardOpen ? " keyboard-active" : ""}`} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: keyboardOpen ? "flex-start" : "center", padding: keyboardOpen ? "12px 20px 24px" : "28px 20px", textAlign: "center", overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain", scrollPaddingTop: 18, scrollPaddingBottom: keyboardOpen ? 32 : 48 }}>
       <div className="welcome-logo" style={{ width: 60, height: 60, borderRadius: "50%", background: theme.accentSoft, border: `1px solid ${theme.accentBorder}`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18 }}>
         <i className={`ti ${theme.icon}`} style={{ fontSize: 26, color: theme.accentStrong }} />
       </div>

@@ -74,3 +74,29 @@ test("builds speech text from the current recognition results without replaying 
   assert.equal(replayedEvent.finalText, "I use React");
   assert.equal(replayedEvent.displayText, "I use React and Node");
 });
+
+test("collapses progressive interim speech instead of repeating every partial phrase", () => {
+  const transcript = buildSpeechTranscript([
+    recognitionResult("hi", false),
+    recognitionResult("hi can", false),
+    recognitionResult("hi can you", false),
+    recognitionResult("hi can you write", false),
+    recognitionResult("hi can you write a program", false),
+    recognitionResult("hi can you write a program to find the prime number in Java", false),
+  ]);
+
+  assert.equal(transcript.finalText, "");
+  assert.equal(transcript.interimText, "hi can you write a program to find the prime number in Java");
+  assert.equal(transcript.displayText, "hi can you write a program to find the prime number in Java");
+});
+
+test("collapses progressive final speech without removing separate sentences", () => {
+  const transcript = buildSpeechTranscript([
+    recognitionResult("hi", true),
+    recognitionResult("hi can you write", true),
+    recognitionResult("a program to find prime numbers in Java", true),
+  ]);
+
+  assert.equal(transcript.finalText, "hi can you write a program to find prime numbers in Java");
+  assert.equal(transcript.displayText, "hi can you write a program to find prime numbers in Java");
+});

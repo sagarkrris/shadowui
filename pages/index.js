@@ -22,7 +22,7 @@ import { DEFAULT_PROFILE, DIFFS } from "../lib/prompts.mjs";
 import { createSessionSnapshot, loadSessionSnapshot, saveSessionSnapshot } from "../lib/sessionPersistence.mjs";
 import { getTechTheme } from "../lib/techTheme.mjs";
 import { canUseChatComposer, canUseInterviewTools, canUsePrepTopics, shouldShowCodeTools } from "../lib/uiVisibility.mjs";
-import { getStableViewportHeight, getVisibleViewportHeight, isCompactViewport, isVirtualKeyboardOpen } from "../lib/viewportMode.mjs";
+import { getAppShellHeight, getStableViewportHeight, getVisibleViewportHeight, isCompactViewport, isVirtualKeyboardOpen } from "../lib/viewportMode.mjs";
 import { buildSpeechTranscript, getVoiceErrorMessage, getVoiceSupport } from "../lib/voiceSupport.mjs";
 
 const MOCK_ANSWER_SECONDS = 120;
@@ -651,9 +651,11 @@ export default function Home() {
     "--tech-glass-edge-soft": techTheme.glass.edgeSoft,
     "--tech-glass-shadow": techTheme.glass.shadow,
   };
-  const appShellHeight = isMobile && isKeyboardOpen
-    ? "calc(var(--vvh, var(--vh, 1vh)) * 100)"
-    : "calc(var(--vh, 1vh) * 100)";
+  const appShellHeight = getAppShellHeight({
+    isCompact: isMobile,
+    keyboardOpen: isKeyboardOpen,
+    hasVisualViewport: true,
+  });
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -777,7 +779,7 @@ export default function Home() {
               <CompanyPrep theme={techTheme} weakSpots={weakSpots} mockScores={mockScores} messages={messages} selectedCat={selectedCat} selectedSub={selectedSub} onMock={startCompanyMock} />
             ) : messages.length === 0 && !loading
               ? !candidateProfile
-                ? <ProfileSetup theme={techTheme} draft={profileDraft} onChange={setProfileDraft} onSubmit={saveProfile} />
+                ? <ProfileSetup theme={techTheme} draft={profileDraft} onChange={setProfileDraft} onSubmit={saveProfile} keyboardOpen={isKeyboardOpen} />
                 : <Welcome
                   onChip={t => callAPI(t)}
                   onScreen={() => setShowScreen(true)}
@@ -960,7 +962,11 @@ export default function Home() {
           .profile-setup-screen {
             justify-content: flex-start !important;
             padding-top: 14px !important;
-            padding-bottom: 180px !important;
+            padding-bottom: 24px !important;
+          }
+          .profile-setup-screen.keyboard-active {
+            padding-top: 12px !important;
+            padding-bottom: 24px !important;
           }
         }
         @media (max-width: 380px), (max-height: 760px) {

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { isCompactViewport } from "../lib/viewportMode.mjs";
+import { getAppShellHeight, isCompactViewport } from "../lib/viewportMode.mjs";
 
 test("treats phone and tablet widths as compact workflow layouts", () => {
   assert.equal(isCompactViewport(390), true);
@@ -24,6 +24,36 @@ test("keeps iOS keyboard visual viewport changes from shrinking the app shell", 
       visualViewportHeight: 512,
     }),
     844,
+  );
+});
+
+test("sizes compact app shell to the visible viewport to avoid stale iOS keyboard gaps", () => {
+  assert.equal(
+    getAppShellHeight({
+      isCompact: true,
+      keyboardOpen: false,
+      hasVisualViewport: true,
+    }),
+    "calc(var(--vvh, var(--vh, 1vh)) * 100)",
+  );
+  assert.equal(
+    getAppShellHeight({
+      isCompact: true,
+      keyboardOpen: true,
+      hasVisualViewport: true,
+    }),
+    "calc(var(--vvh, var(--vh, 1vh)) * 100)",
+  );
+});
+
+test("keeps desktop app shell on the stable layout viewport", () => {
+  assert.equal(
+    getAppShellHeight({
+      isCompact: false,
+      keyboardOpen: false,
+      hasVisualViewport: true,
+    }),
+    "calc(var(--vh, 1vh) * 100)",
   );
 });
 

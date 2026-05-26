@@ -6,6 +6,7 @@ const globalsSource = readFileSync(new URL("../styles/globals.css", import.meta.
 const indexSource = readFileSync(new URL("../pages/index.js", import.meta.url), "utf8");
 const messageContentSource = readFileSync(new URL("../components/chat/MessageContent.js", import.meta.url), "utf8");
 const careerToolkitSource = readFileSync(new URL("../components/welcome/CareerToolkit.js", import.meta.url), "utf8");
+const profileSetupSource = readFileSync(new URL("../components/welcome/ProfileSetup.js", import.meta.url), "utf8");
 
 test("assistant part-wise answers render with readable section styling", () => {
   assert.match(messageContentSource, /message-part-heading/);
@@ -39,6 +40,13 @@ test("mobile keyboard mode trims chrome around the composer", () => {
   assert.match(indexSource, /interactive-widget=resizes-content/);
   assert.match(indexSource, /restorePageScroll/);
   assert.match(indexSource, /position:"fixed", inset:0/);
+});
+
+test("profile setup avoids oversized sticky iOS keyboard spacers", () => {
+  assert.match(profileSetupSource, /keyboardOpen/);
+  assert.match(indexSource, /<ProfileSetup[\s\S]*keyboardOpen=\{isKeyboardOpen\}/);
+  assert.doesNotMatch(indexSource, /padding-bottom:\s*180px/);
+  assert.doesNotMatch(profileSetupSource, /scrollPaddingBottom:\s*160/);
 });
 
 test("resume analyzer explains why the score is not perfect", () => {
