@@ -9,7 +9,7 @@
     "lint": "next lint",
     "android:sync": "cap sync android",
     "android:open": "cap open android",
-    "android:build": "cd android && gradlew.bat assembleDebug"
+    "android:build": "node scripts/android-build.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^5.2.3",

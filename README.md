@@ -73,7 +73,7 @@ npm run android:open
 npm run android:build
 ```
 
-Use Android Studio to install the Android SDK, run on an emulator/device, sign, and package the APK/AAB. Use Java 17 for the generated Capacitor 5 Gradle project. The app id is `com.sagarkrishna.interviewiq`, and the native shell requests microphone, camera, internet, and network-state permissions for voice input and upload-oriented WebView workflows.
+Use Android Studio to install the Android SDK, run on an emulator/device, sign, and package the APK/AAB. Use Java 17 for the generated Capacitor 5 Gradle project. `npm run android:build` is cross-platform and chooses `gradlew.bat` on Windows or `./gradlew` on macOS/Linux. The app id is `com.sagarkrishna.interviewiq`, and the native shell requests microphone, camera, internet, and network-state permissions for voice input and upload-oriented WebView workflows.
 
 ## Deploy To Vercel
 

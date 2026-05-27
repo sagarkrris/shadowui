@@ -8,6 +8,7 @@ const readOptional = (path) => {
   return existsSync(fileUrl) ? readFileSync(fileUrl, "utf8") : "";
 };
 const mainActivitySource = readOptional("../android/app/src/main/java/com/sagarkrishna/interviewiq/MainActivity.java");
+const androidBuildSource = readOptional("../scripts/android-build.mjs");
 
 test("configures Capacitor as a hosted InterviewIQ Android shell", () => {
   const configSource = readOptional("../capacitor.config.json");
@@ -28,7 +29,10 @@ test("declares Capacitor Android dependencies and scripts", () => {
   assert.equal(pkg.dependencies["@capacitor/android"], "^5.2.3");
   assert.equal(pkg.scripts["android:sync"], "cap sync android");
   assert.equal(pkg.scripts["android:open"], "cap open android");
-  assert.equal(pkg.scripts["android:build"], "cd android && gradlew.bat assembleDebug");
+  assert.equal(pkg.scripts["android:build"], "node scripts/android-build.mjs");
+  assert.match(androidBuildSource, /gradlew\.bat/);
+  assert.match(androidBuildSource, /\.\/gradlew/);
+  assert.match(androidBuildSource, /platform\(\) === "win32"/);
 });
 
 test("android manifest includes WebView workflow permissions", () => {
