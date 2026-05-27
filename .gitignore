@@ -18,6 +18,8 @@ node_modules/
 .env.test.local
 .env.production.local
 android/local.properties
+android/keystore.properties
+android/*.jks
 
 # Debug
 npm-debug.log*
