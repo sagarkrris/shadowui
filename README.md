@@ -58,7 +58,22 @@ The Live Code Runner is currently shown as an upcoming feature and `/api/run-cod
 npm run dev
 npm run build
 node --test test/*.test.mjs
+npm run android:sync
+npm run android:open
 ```
+
+## Android App
+
+The first Android version is a hosted WebView shell for `https://elevateprep.vercel.app`. This keeps Gemini, resume extraction, screen analysis, company prep, and other API workflows on the deployed Next.js server, so no AI keys are stored in the Android app.
+
+```bash
+npm install
+npm run android:sync
+npm run android:open
+npm run android:build
+```
+
+Use Android Studio to install the Android SDK, run on an emulator/device, sign, and package the APK/AAB. Use Java 17 for the generated Capacitor 5 Gradle project. The app id is `com.sagarkrishna.interviewiq`, and the native shell requests microphone, camera, internet, and network-state permissions for voice input and upload-oriented WebView workflows.
 
 ## Deploy To Vercel
 
@@ -124,6 +139,8 @@ shadowui/
 │   └── *.test.mjs
 ├── .env.example
 ├── next.config.js
+├── capacitor.config.json
+├── android/              # Android hosted WebView shell
 └── package.json
 ```
 

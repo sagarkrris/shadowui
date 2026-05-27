@@ -1,0 +1,9 @@
+{
+  "appId": "com.sagarkrishna.interviewiq",
+  "appName": "InterviewIQ",
+  "webDir": "public",
+  "server": {
+    "url": "https://elevateprep.vercel.app",
+    "cleartext": false
+  }
+}
