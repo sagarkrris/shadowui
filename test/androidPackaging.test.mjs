@@ -28,7 +28,7 @@ test("declares Capacitor Android dependencies and scripts", () => {
   assert.equal(pkg.dependencies["@capacitor/android"], "^5.2.3");
   assert.equal(pkg.scripts["android:sync"], "cap sync android");
   assert.equal(pkg.scripts["android:open"], "cap open android");
-  assert.equal(pkg.scripts["android:build"], "cd android && ./gradlew assembleDebug");
+  assert.equal(pkg.scripts["android:build"], "cd android && gradlew.bat assembleDebug");
 });
 
 test("android manifest includes WebView workflow permissions", () => {
