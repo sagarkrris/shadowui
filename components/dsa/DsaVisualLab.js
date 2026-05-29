@@ -8,8 +8,16 @@ import {
   listDsaVisualLessons,
 } from "../../lib/dsaVisualLab.mjs";
 import {
+  buildDsaProgressSummary,
+  createDsaConfidenceState,
+  DSA_CONFIDENCE_STORAGE_KEY,
+  filterBlind75Problems,
+  getDsaProblemProgress,
   listBlind75Problems,
   listBlind75Visualizers,
+  recordDsaMasteryStep,
+  recordDsaMistake,
+  recordDsaTestCaseMastery,
 } from "../../lib/blind75VisualTrack.mjs";
 
 const GUIDED_STAGES = ["Learn", "Visualize", "Dry run", "Code", "Quiz", "Practice as Mock"];
@@ -18,8 +26,14 @@ const TRACKS = [
   { id: "blind75", label: "Blind 75 Visual Track" },
 ];
 const BLIND75_FILTERS = [
-  { id: "featured", label: "Featured 15" },
-  { id: "all", label: "All 75" },
+  { id: "featured", label: "Featured 15", type: "scope" },
+  { id: "all", label: "All 75", type: "scope" },
+  { id: "Easy", label: "Easy", type: "difficulty" },
+  { id: "Medium", label: "Medium", type: "difficulty" },
+  { id: "Hard", label: "Hard", type: "difficulty" },
+  { id: "weak", label: "Weak", type: "status" },
+  { id: "not-started", label: "Not Started", type: "status" },
+  { id: "mastered", label: "Mastered", type: "status" },
 ];
 const SPEEDS = [
   { label: "Slow", value: 1800 },
@@ -39,8 +53,40 @@ function readSavedLessonId() {
   }
 }
 
+function readConfidenceState() {
+  try {
+    const raw = getStorage()?.getItem(DSA_CONFIDENCE_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : createDsaConfidenceState();
+  } catch {
+    return createDsaConfidenceState();
+  }
+}
+
 function formatInputValue(value) {
   return Array.isArray(value) ? value.join(", ") : String(value || "");
+}
+
+function resolveBlind75Filter(filter) {
+  const match = BLIND75_FILTERS.find((item) => item.id === filter) || BLIND75_FILTERS[0];
+  return {
+    featuredOnly: match.id === "featured",
+    difficulty: match.type === "difficulty" ? match.id : "all",
+    status: match.type === "status" ? match.id : "all",
+  };
+}
+
+function statusLabel(status) {
+  if (status === "weak") return "Weak";
+  if (status === "improving") return "Improving";
+  if (status === "mastered") return "Mastered";
+  return "Not Started";
+}
+
+function statusTone(status, accent) {
+  if (status === "weak") return "#fda4af";
+  if (status === "improving") return "#facc15";
+  if (status === "mastered") return "#a7f3d0";
+  return accent;
 }
 
 function ActionButton({ icon, label, onClick, disabled, tone = "#8bd3ff" }) {
@@ -239,6 +285,8 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
   });
   const [track, setTrack] = useState(() => defaultLessonId.startsWith("blind75-") ? "blind75" : "core");
   const [blind75Filter, setBlind75Filter] = useState("featured");
+  const [confidenceState, setConfidenceState] = useState(() => readConfidenceState());
+  const [revealedTestCases, setRevealedTestCases] = useState({});
   const [inputValue, setInputValue] = useState(() => formatInputValue(buildDsaVisualizationState(defaultLessonId).input));
   const [stepIndex, setStepIndex] = useState(0);
   const [stage, setStage] = useState("Visualize");
@@ -255,9 +303,13 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
   const stackText = profile?.stack || "";
   const selectedCode = useMemo(() => getDsaCodeTemplate(lesson, stackText), [lesson, stackText]);
   const mockPrompt = useMemo(() => buildDsaMockPrompt(lesson), [lesson]);
+  const progressSummary = useMemo(() => buildDsaProgressSummary(confidenceState), [confidenceState]);
   const visibleBlind75Problems = useMemo(
-    () => blind75Filter === "featured" ? blind75Problems.filter((problem) => problem.featured) : blind75Problems,
-    [blind75Filter, blind75Problems],
+    () => filterBlind75Problems({
+      ...resolveBlind75Filter(blind75Filter),
+      state: confidenceState,
+    }),
+    [blind75Filter, confidenceState],
   );
   const currentBlind75Problem = useMemo(
     () => lesson.blind75 ? blind75Problems.find((problem) => problem.id === lesson.problemId) : null,
@@ -267,6 +319,14 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
     () => currentBlind75Problem ? blind75Visualizers.find((visualizer) => visualizer.id === currentBlind75Problem.visualizerId) : null,
     [currentBlind75Problem, blind75Visualizers],
   );
+  const currentProblemProgress = useMemo(
+    () => currentBlind75Problem ? getDsaProblemProgress(confidenceState, currentBlind75Problem.id) : null,
+    [confidenceState, currentBlind75Problem],
+  );
+  const currentWalkthrough = useMemo(() => {
+    const steps = lesson.codeWalkthrough || [];
+    return steps.find((item) => item.visualStep === stepIndex) || steps[Math.min(stepIndex, steps.length - 1)] || null;
+  }, [lesson, stepIndex]);
 
   useEffect(() => {
     try {
@@ -275,6 +335,14 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
       // Local storage is optional for this standalone lab.
     }
   }, [selectedLessonId]);
+
+  useEffect(() => {
+    try {
+      getStorage()?.setItem(DSA_CONFIDENCE_STORAGE_KEY, JSON.stringify(confidenceState));
+    } catch {
+      // Local storage is optional; the lab still works as a read-only trainer.
+    }
+  }, [confidenceState]);
 
   useEffect(() => {
     setInputValue(formatInputValue(buildDsaVisualizationState(selectedLessonId).input));
@@ -341,6 +409,30 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
     onPractice?.(mockPrompt, { lesson, problem: currentBlind75Problem, visualizationState: state, language: selectedCode.language });
   };
 
+  const toggleMasteryStep = (stepId) => {
+    if (!currentBlind75Problem) return;
+    const completed = Boolean(currentProblemProgress?.mastery?.[stepId]);
+    setConfidenceState((value) => recordDsaMasteryStep(value, currentBlind75Problem.id, stepId, !completed));
+  };
+
+  const markWeakSpot = () => {
+    if (!currentBlind75Problem) return;
+    setConfidenceState((value) => recordDsaMistake(value, currentBlind75Problem.id, {
+      type: `Needs replay: ${currentStep?.title || currentBlind75Problem.pattern}`,
+      note: currentStep?.interviewScript || "Replay the invariant, dry run, and edge cases before retrying.",
+    }));
+  };
+
+  const markTestCaseMastered = (testCaseId) => {
+    if (!currentBlind75Problem) return;
+    setConfidenceState((value) => recordDsaTestCaseMastery(value, currentBlind75Problem.id, testCaseId));
+  };
+
+  const toggleExpected = (testCaseId) => {
+    const key = `${currentBlind75Problem?.id || "core"}:${testCaseId}`;
+    setRevealedTestCases((value) => ({ ...value, [key]: !value[key] }));
+  };
+
   return (
     <section
       className="glass-card"
@@ -351,8 +443,10 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
         color: "#edf4ff",
         display: "grid",
         gap: 14,
+        overflow: "visible",
         padding: 14,
         textAlign: "left",
+        touchAction: "pan-y",
         width: "100%",
       }}
     >
@@ -477,7 +571,16 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
                 Learn the roadmap through pattern visualizers first, then practice each problem as a mock.
               </p>
             </div>
-            <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+            <div style={{ alignItems: "center", display: "flex", gap: 7, flexWrap: "wrap" }}>
+              <span style={{ background: "rgba(167,243,208,.09)", border: "1px solid rgba(167,243,208,.3)", borderRadius: 999, color: "#a7f3d0", fontSize: 11, fontWeight: 900, padding: "7px 9px" }}>
+                {progressSummary.mastered}/75 mastered
+              </span>
+              <span style={{ background: "rgba(253,164,175,.09)", border: "1px solid rgba(253,164,175,.3)", borderRadius: 999, color: "#fda4af", fontSize: 11, fontWeight: 900, padding: "7px 9px" }}>
+                {progressSummary.weak} weak
+              </span>
+              <span style={{ background: "rgba(139,211,255,.08)", border: "1px solid rgba(139,211,255,.26)", borderRadius: 999, color: accent, fontSize: 11, fontWeight: 900, padding: "7px 9px" }}>
+                {progressSummary.notStarted} not started
+              </span>
               {BLIND75_FILTERS.map((item) => {
                 const active = blind75Filter === item.id;
                 return (
@@ -504,9 +607,11 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
             </div>
           </div>
 
-          <div style={{ display: "grid", gap: 9, gridTemplateColumns: "repeat(auto-fit, minmax(178px, 1fr))", maxHeight: blind75Filter === "all" ? 340 : "none", overflowY: blind75Filter === "all" ? "auto" : "visible", paddingRight: blind75Filter === "all" ? 4 : 0 }}>
+          <div style={{ display: "grid", gap: 9, gridTemplateColumns: "repeat(auto-fit, minmax(178px, 1fr))" }}>
             {visibleBlind75Problems.map((problem) => {
               const active = problem.lessonId === selectedLessonId;
+              const progress = getDsaProblemProgress(confidenceState, problem.id);
+              const tone = statusTone(progress.status, accent);
               return (
                 <button
                   key={problem.id}
@@ -534,6 +639,9 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
                   <span style={{ color: "#9ca3af", fontSize: 11, lineHeight: 1.45 }}>{problem.summary}</span>
                   <span style={{ color: active ? accent : "#7d8aa2", fontSize: 10.5, fontWeight: 850 }}>
                     Pattern visualizer: {problem.pattern}
+                  </span>
+                  <span style={{ color: tone, fontSize: 10.5, fontWeight: 900 }}>
+                    {statusLabel(progress.status)}
                   </span>
                 </button>
               );
@@ -566,6 +674,129 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
               <span style={{ color: "#cbd5e1", fontSize: 11.5, lineHeight: 1.45 }}>{currentBlind75Problem.edgeCases.join(" · ")}</span>
             </div>
           </div>
+        </section>
+      ) : null}
+
+      {currentBlind75Problem ? (
+        <section style={{ background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 12, padding: 12 }}>
+          <div style={{ alignItems: "center", display: "flex", gap: 8, justifyContent: "space-between", flexWrap: "wrap" }}>
+            <div>
+              <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Pattern Mastery Mode</div>
+              <p style={{ color: "#93a4bf", fontSize: 12, lineHeight: 1.45, margin: "4px 0 0" }}>
+                Mark each interview-ready behavior when you can do it without hesitation.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="glass-button"
+              onClick={markWeakSpot}
+              style={{
+                background: "rgba(253,164,175,.1)",
+                border: "1px solid rgba(253,164,175,.35)",
+                borderRadius: 7,
+                color: "#fda4af",
+                cursor: "pointer",
+                fontSize: 11,
+                fontWeight: 900,
+                padding: "8px 10px",
+              }}
+            >
+              <i className="ti ti-alert-triangle" /> Mark weak spot
+            </button>
+          </div>
+
+          <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(148px, 1fr))" }}>
+            {(lesson.masteryChecklist || []).map((item) => {
+              const completed = Boolean(currentProblemProgress?.mastery?.[item.id]);
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={completed ? "glass-button" : ""}
+                  onClick={() => toggleMasteryStep(item.id)}
+                  style={{
+                    background: completed ? "rgba(167,243,208,.11)" : "rgba(0,0,0,.14)",
+                    border: `1px solid ${completed ? "rgba(167,243,208,.38)" : "rgba(255,255,255,.08)"}`,
+                    borderRadius: 8,
+                    color: completed ? "#d1fae5" : "#dbeafe",
+                    cursor: "pointer",
+                    display: "grid",
+                    gap: 6,
+                    minHeight: 86,
+                    padding: 10,
+                    textAlign: "left",
+                  }}
+                >
+                  <span style={{ alignItems: "center", display: "flex", gap: 7, fontSize: 11.5, fontWeight: 900 }}>
+                    <i className={`ti ${completed ? "ti-circle-check" : "ti-circle"}`} style={{ color: completed ? "#a7f3d0" : "#7d8aa2" }} />
+                    {item.label}
+                  </span>
+                  <span style={{ color: completed ? "#a7f3d0" : "#93a4bf", fontSize: 10.8, lineHeight: 1.4 }}>{item.coach}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(min(230px, 100%), 1fr))" }}>
+            <section style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 8, padding: 11 }}>
+              <div style={{ color: "#fda4af", fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Mistake Replay</div>
+              {(currentProblemProgress?.mistakes || []).length ? (
+                <div style={{ display: "grid", gap: 7 }}>
+                  {currentProblemProgress.mistakes.slice(0, 3).map((mistake) => (
+                    <div key={mistake.id} style={{ background: "rgba(253,164,175,.07)", border: "1px solid rgba(253,164,175,.18)", borderRadius: 7, display: "grid", gap: 4, padding: 8 }}>
+                      <strong style={{ color: "#fecdd3", fontSize: 11.5, lineHeight: 1.35 }}>{mistake.type}</strong>
+                      <span style={{ color: "#dbeafe", fontSize: 10.8, lineHeight: 1.45 }}>{mistake.note}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ color: "#93a4bf", fontSize: 12, lineHeight: 1.45, margin: 0 }}>
+                  No mistakes saved yet. Use Mark weak spot when a dry run, invariant, or edge case feels shaky.
+                </p>
+              )}
+            </section>
+
+            <section style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 8, padding: 11 }}>
+              <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Code Walkthrough</div>
+              <strong style={{ color: "#f8fbff", fontSize: 12.5, lineHeight: 1.35 }}>
+                {currentWalkthrough?.title || "Current step"}: {currentWalkthrough?.codeCue || "Map the visual step to code"}
+              </strong>
+              <p style={{ color: "#dbeafe", fontSize: 11.5, lineHeight: 1.45, margin: 0 }}>{currentWalkthrough?.interviewCue}</p>
+              <div style={{ color: "#93a4bf", fontSize: 10.8, lineHeight: 1.45 }}>
+                {selectedCode.language} cue: {currentWalkthrough?.say}
+              </div>
+            </section>
+          </div>
+
+          <section style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 8, padding: 11 }}>
+            <div style={{ color: "#facc15", fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Test Case Trainer</div>
+            <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(min(210px, 100%), 1fr))" }}>
+              {(lesson.testCases || []).map((testCase) => {
+                const key = `${currentBlind75Problem.id}:${testCase.id}`;
+                const revealed = Boolean(revealedTestCases[key]);
+                const mastered = (currentProblemProgress?.testCasesMastered || []).includes(testCase.id);
+                return (
+                  <div key={testCase.id} style={{ border: `1px solid ${mastered ? "rgba(167,243,208,.34)" : "rgba(255,255,255,.08)"}`, borderRadius: 8, display: "grid", gap: 7, padding: 9 }}>
+                    <span style={{ color: mastered ? "#a7f3d0" : "#facc15", fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>{testCase.type}</span>
+                    <strong style={{ color: "#f8fbff", fontSize: 11.5, lineHeight: 1.35 }}>{testCase.input}</strong>
+                    {revealed ? (
+                      <span style={{ color: "#dbeafe", fontSize: 10.8, lineHeight: 1.45 }}>
+                        Expected: {testCase.expected}. {testCase.why}
+                      </span>
+                    ) : null}
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      <button type="button" onClick={() => toggleExpected(testCase.id)} style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 7, color: "#dbeafe", cursor: "pointer", fontSize: 10.5, fontWeight: 850, padding: "6px 8px" }}>
+                        Reveal expected
+                      </button>
+                      <button type="button" onClick={() => markTestCaseMastered(testCase.id)} style={{ background: mastered ? "rgba(167,243,208,.13)" : "rgba(167,243,208,.06)", border: "1px solid rgba(167,243,208,.24)", borderRadius: 7, color: "#a7f3d0", cursor: "pointer", fontSize: 10.5, fontWeight: 850, padding: "6px 8px" }}>
+                        {mastered ? "Mastered" : "Mark tested"}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
         </section>
       ) : null}
 

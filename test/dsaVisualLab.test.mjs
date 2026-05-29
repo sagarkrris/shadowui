@@ -104,6 +104,15 @@ test("builds Blind 75 visualization states with pattern panels", () => {
   assert.ok(binarySearch.steps.some((step) => step.highlight.mid !== undefined));
 });
 
+test("Blind 75 visual lessons expose trainer metadata", () => {
+  const lesson = getDsaVisualLesson("blind75-two-sum");
+
+  assert.equal(lesson.blind75, true);
+  assert.ok(lesson.masteryChecklist.some((step) => step.id === "visualize"));
+  assert.ok(lesson.testCases.some((testCase) => testCase.type === "edge"));
+  assert.ok(lesson.codeWalkthrough.some((step) => /Map|lookup|complement/i.test(step.codeCue)));
+});
+
 test("returns selected-stack code templates for Blind 75 problems", () => {
   const java = getDsaCodeTemplate("blind75-two-sum", "Java, Spring Boot");
   const python = getDsaCodeTemplate("blind75-valid-palindrome", "Python, FastAPI");

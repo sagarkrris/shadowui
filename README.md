@@ -1,6 +1,6 @@
 # InterviewIQ
 
-AI-powered interview intelligence for modern software engineers. It supports personalized stack-based prep, mock interviews, DSA Visual Lab lessons, system design practice, behavioral coaching, company-specific prep, PrepOS Today guidance, resume gap analysis, JD Copilot role targeting, spaced weak-spot reviews, an interview tracker, screen analysis, voice input, code review practice, and a visual Agentic UI Engineering course.
+AI-powered interview intelligence for modern software engineers. It supports personalized stack-based prep, mock interviews, DSA Visual Lab lessons, system design practice, behavioral coaching, company-specific prep, PrepOS Today guidance, resume gap analysis, JD Copilot role targeting, spaced weak-spot reviews, an interview tracker, screen analysis, voice input, answer rewrite coaching, code explanation judging, code review practice, and a visual Agentic UI Engineering course.
 
 ## Features
 
@@ -15,9 +15,11 @@ AI-powered interview intelligence for modern software engineers. It supports per
 - PrepOS Today dashboard that explains what to practice now, why it matters, upcoming risks, weak topics due, top saved story, and next mock recommendation.
 - Smart Prep Timeline that shows the journey from profile, resume, JD, mock baseline, weak spots, mastered questions, proof stories, scheduled interview, and final pack.
 - Guided Prep Mission board that converts resume gaps, JD gaps, weak spots, mock scores, proof stories, and upcoming interviews into three concrete next actions.
-- DSA Visual Lab with interview-focused animations, dry runs, memory hooks, code templates, quizzes, and "Practice as Mock" flows for Arrays, Strings, Hashing, Two Pointers, Stack/Queue, Trees, Graph BFS/DFS, and DP Basics.
-- Blind 75 Visual Track inside DSA Lab with Featured 15 and All 75 views, reusable pattern visualizers, original dry-run explanations, invariants, edge cases, quizzes, and selected-stack Java/Python/JavaScript code templates.
+- DSA Visual Lab with interview-focused animations, dry runs, memory hooks, code templates, quizzes, local mastery progress, mistake replay, test-case training, and "Practice as Mock" flows for Arrays, Strings, Hashing, Two Pointers, Stack/Queue, Trees, Graph BFS/DFS, and DP Basics.
+- Blind 75 Visual Track inside DSA Lab with Featured 15, All 75, difficulty, Weak, Not Started, and Mastered filters, reusable pattern visualizers, original dry-run explanations, invariants, edge cases, code walkthroughs, quizzes, and selected-stack Java/Python/JavaScript code templates.
 - Answer Coach actions for "make it concise", "make it senior-level", "add metrics", "add trade-offs", and "convert to STAR" rewrites from the latest mock answer.
+- Answer Rewrite Studio after completed chat answers with original, concise, senior, STAR, metrics-added, and interviewer-ready final versions.
+- Code Explanation Judge for dry-run/code explanations that checks invariant, edge cases, complexity, and trade-offs without running code.
 - Resume Bullet Generator that converts JD gaps and Proof Vault stories into ATS-friendly before/after resume bullets without inventing metrics.
 - Career Toolkit with PDF/DOCX/TXT/Markdown resume gap analysis, JD Copilot match analysis, Role Pack Builder, role-specific mock prompts, must-know skills, likely questions, resume proof rewrites, 7-day crash plan, 1/3/7-day weak-spot review queue, interview scheduling tracker, daily streaks, XP, and badges.
 - Question Memory and Mastery Map that remember answered practice cards locally, prioritize weak or stale questions, and show New, Needs Review, Improving, and Mastered status.
@@ -103,7 +105,7 @@ The app uses Next.js API routes so the Gemini key stays on the server.
 ```text
 shadowui/
 ├── components/
-│   ├── chat/              # Markdown messages, code blocks, typing dots, score badge and rubric UI
+│   ├── chat/              # Markdown messages, code blocks, post-answer rewrite/judge tools, typing dots, score badge and rubric UI
 │   ├── company/           # Company Prep dashboard
 │   ├── dsa/               # DSA Visual Lab learning workspace
 │   ├── modals/            # Screen analysis and settings modals

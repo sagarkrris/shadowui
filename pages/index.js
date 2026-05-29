@@ -2,6 +2,7 @@ import Head from "next/head";
 import { useState, useRef, useEffect, useCallback } from "react";
 import CompanyPrep from "../components/company/CompanyPrep";
 import MessageContent from "../components/chat/MessageContent";
+import PostAnswerTools from "../components/chat/PostAnswerTools";
 import ScoreBadge from "../components/chat/ScoreBadge";
 import TechBackground from "../components/TechBackground";
 import TypingDots from "../components/chat/TypingDots";
@@ -815,7 +816,7 @@ export default function Home() {
         />
 
         {/* Main */}
-        <main className="glass-panel" style={{ position:"relative", zIndex:1, flex:1, display:"flex", flexDirection:"column", overflow:"hidden", minWidth:0 }}>
+        <main className="glass-panel" style={{ position:"relative", zIndex:1, flex:1, display:"flex", flexDirection:"column", overflow:"hidden", minWidth:0, minHeight:0 }}>
 
           {/* ── Top bar ── */}
           <header className="glass-chrome" style={{ display:"flex", alignItems:"center", gap:8, padding:"9px 12px", borderBottom:"1px solid rgba(255,255,255,.08)", flexShrink:0, minHeight:52 }}>
@@ -899,11 +900,11 @@ export default function Home() {
           </header>
 
           {/* ── Chat area ── */}
-          <div ref={chatRef} className="chat-scroll" role="log" aria-live="polite" aria-relevant="additions text" aria-label="Conversation messages" style={{ flex:1, overflowY:"auto", padding: isMobile?"12px 10px":"20px 16px", display:"flex", flexDirection:"column" }}>
+          <div ref={chatRef} className="chat-scroll" role="log" aria-live="polite" aria-relevant="additions text" aria-label="Conversation messages" style={{ flex:1, minHeight:0, overflowY:"auto", padding: isMobile?"12px 10px":"20px 16px", display:"flex", flexDirection:"column" }}>
             {activeTab === "course" ? (
               <AgenticUICourse theme={techTheme} variant="full" />
             ) : activeTab==="dsaLab" ? (
-              <DsaVisualLab theme={techTheme} profile={candidateProfile} initialLessonId="arrays" onPractice={startDsaLabPractice} />
+              <DsaVisualLab theme={techTheme} profile={candidateProfile || profileDraft} initialLessonId="arrays" onPractice={startDsaLabPractice} />
             ) : activeTab === "canvas" ? (
               <SystemDesignCanvas
                 theme={techTheme}
@@ -955,6 +956,16 @@ export default function Home() {
                       </div>
                     </div>
                   ))}
+                  <PostAnswerTools
+                    profile={candidateProfile}
+                    messages={messages}
+                    selectedCat={selectedCat}
+                    selectedSub={selectedSub}
+                    weakSpots={weakSpots}
+                    theme={techTheme}
+                    loading={loading}
+                    onAction={(prompt) => callAPI(prompt, { skipQuestionMemory: true })}
+                  />
                 </>
               )
             }

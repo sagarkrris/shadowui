@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import * as prepInsights from "../lib/prepInsights.mjs";
 
 import {
   buildAnswerCoachActions,
@@ -213,6 +214,82 @@ test("builds deterministic answer coach actions for common answer rewrites", () 
   assert.match(actions.find((action) => action.label === "Add metrics").prompt, /metric|quant/i);
   assert.match(actions.find((action) => action.label === "Add trade-offs").prompt, /trade-off/i);
   assert.match(actions.find((action) => action.label === "Convert to STAR").prompt, /Situation|Task|Action|Result/);
+});
+
+test("builds an answer rewrite studio with six interview-ready versions", () => {
+  assert.equal(typeof prepInsights.buildAnswerRewriteStudio, "function");
+
+  const studio = prepInsights.buildAnswerRewriteStudio({
+    profile,
+    messages: [
+      { role: "assistant", content: "Question: Explain how you handled a production outage." },
+      { role: "user", content: "We had checkout latency and I added Redis caching but I did not mention metrics or trade-offs." },
+      { role: "assistant", content: "Score: 6/10\nGaps: Add metrics and trade-offs." },
+    ],
+    selectedCat: "Behavioral",
+    selectedSub: "Production incidents",
+    weakSpots: ["Trade-offs"],
+  });
+
+  assert.equal(studio.title, "Answer Rewrite Studio");
+  assert.equal(studio.versions.length, 6);
+  assert.deepEqual(
+    studio.versions.map((version) => version.label),
+    [
+      "Original answer",
+      "Concise version",
+      "Senior version",
+      "STAR version",
+      "Metrics-added version",
+      "Interviewer-ready final answer",
+    ],
+  );
+  assert.match(studio.versions[0].text, /checkout latency/i);
+  assert.ok(studio.versions[1].text.length < studio.versions[0].text.length);
+  assert.match(studio.versions[2].text, /owned|decision|stakeholder|risk/i);
+  assert.match(studio.versions[3].text, /Situation:|Task:|Action:|Result:/);
+  assert.match(studio.versions[4].text, /real metric|measurable|latency|impact/i);
+  assert.match(studio.versions[5].text, /trade-off|metric|interview-ready/i);
+  assert.ok(studio.versions.every((version) => version.prompt.includes("Answer Rewrite Studio")));
+});
+
+test("judges code explanations for invariant edge cases complexity and trade-offs", () => {
+  assert.equal(typeof prepInsights.buildCodeExplanationJudge, "function");
+
+  const strong = prepInsights.buildCodeExplanationJudge({
+    profile,
+    messages: [
+      {
+        role: "user",
+        content: "I use a HashSet and keep the invariant that seen contains only previous numbers. I handle empty input and duplicate values. Time is O(n), space O(n). The trade-off is extra memory for faster lookup compared with sorting.",
+      },
+    ],
+    selectedCat: "DSA",
+    selectedSub: "Arrays & Hashing",
+  });
+
+  assert.equal(strong.title, "Code Explanation Judge");
+  assert.deepEqual(
+    strong.checks.map((check) => check.label),
+    ["Invariant", "Edge cases", "Complexity", "Trade-offs"],
+  );
+  assert.ok(strong.checks.every((check) => check.covered));
+  assert.ok(strong.score >= 90);
+  assert.match(strong.verdict, /interviewer-ready|strong/i);
+
+  const weak = prepInsights.buildCodeExplanationJudge({
+    profile,
+    messages: [
+      { role: "user", content: "I loop over the array and use a set to return true when a duplicate appears." },
+    ],
+    selectedCat: "DSA",
+    selectedSub: "Arrays & Hashing",
+  });
+
+  assert.ok(weak.score < strong.score);
+  assert.ok(weak.checks.some((check) => check.label === "Edge cases" && !check.covered));
+  assert.ok(weak.checks.some((check) => check.label === "Complexity" && !check.covered));
+  assert.ok(weak.nextActionPrompt.includes("Code Explanation Judge"));
 });
 
 test("builds ATS-friendly resume bullet suggestions from JD gaps and proof stories", () => {

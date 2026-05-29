@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
 const indexSource = readFileSync(new URL("../pages/index.js", import.meta.url), "utf8");
 const companySource = readFileSync(new URL("../components/company/CompanyPrep.js", import.meta.url), "utf8");
 const insightsSource = readFileSync(new URL("../components/welcome/PrepInsightsPanel.js", import.meta.url), "utf8");
+const postAnswerToolsUrl = new URL("../components/chat/PostAnswerTools.js", import.meta.url);
+const postAnswerToolsSource = existsSync(postAnswerToolsUrl) ? readFileSync(postAnswerToolsUrl, "utf8") : "";
 const welcomeSource = readFileSync(new URL("../components/welcome/Welcome.js", import.meta.url), "utf8");
 const practicePackSource = readFileSync(new URL("../components/welcome/PracticePack.js", import.meta.url), "utf8");
 const careerToolkitSource = readFileSync(new URL("../components/welcome/CareerToolkit.js", import.meta.url), "utf8");
@@ -78,6 +80,27 @@ test("answer coach and resume bullet generator actions are wired into prep insig
   assert.match(insightsSource, /After/);
   assert.match(insightsSource, /onAction\(action\.prompt\)/);
   assert.match(insightsSource, /onAction\(suggestion\.prompt\)/);
+});
+
+test("answer rewrite studio and code explanation judge are visible after chat answers", () => {
+  assert.match(indexSource, /PostAnswerTools/);
+  assert.match(indexSource, /messages\.length > 0/);
+  assert.match(postAnswerToolsSource, /Answer Rewrite Studio/);
+  assert.match(postAnswerToolsSource, /buildAnswerRewriteStudio/);
+  assert.match(postAnswerToolsSource, /answerRewriteStudio\.versions/);
+  assert.match(postAnswerToolsSource, /Original answer/);
+  assert.match(postAnswerToolsSource, /Concise version/);
+  assert.match(postAnswerToolsSource, /Senior version/);
+  assert.match(postAnswerToolsSource, /STAR version/);
+  assert.match(postAnswerToolsSource, /Metrics-added version/);
+  assert.match(postAnswerToolsSource, /Interviewer-ready final answer/);
+  assert.match(postAnswerToolsSource, /Code Explanation Judge/);
+  assert.match(postAnswerToolsSource, /buildCodeExplanationJudge/);
+  assert.match(postAnswerToolsSource, /codeExplanationJudge\.checks/);
+  assert.match(postAnswerToolsSource, /Invariant/);
+  assert.match(postAnswerToolsSource, /Edge cases/);
+  assert.match(postAnswerToolsSource, /Complexity/);
+  assert.match(postAnswerToolsSource, /Trade-offs/);
 });
 
 test("company readiness score is wired into company prep", () => {
@@ -202,7 +225,7 @@ test("DSA Visual Lab is a first-class learning workspace", () => {
   assert.match(indexSource, /activeTab==="dsaLab"/);
   assert.match(indexSource, /DSA Lab/);
   assert.match(indexSource, /startDsaLabPractice/);
-  assert.match(indexSource, /profile={candidateProfile}/);
+  assert.match(indexSource, /profile={candidateProfile \|\| profileDraft}/);
   assert.match(dsaLabSource, /DSA Visual Lab/);
   assert.match(dsaLabSource, /Interview Pattern Theater/);
   assert.match(dsaLabSource, /Guided Mode/);
@@ -219,6 +242,26 @@ test("DSA Visual Lab is a first-class learning workspace", () => {
   assert.match(dsaLabSource, /All 75/);
   assert.match(dsaLabSource, /Pattern visualizer/);
   assert.match(dsaLabSource, /Edge cases/);
+  assert.match(dsaLabSource, /Pattern Mastery Mode/);
+  assert.match(dsaLabSource, /Mistake Replay/);
+  assert.match(dsaLabSource, /Code Walkthrough/);
+  assert.match(dsaLabSource, /Test Case Trainer/);
+  assert.match(dsaLabSource, /Not Started/);
+  assert.match(dsaLabSource, /Weak/);
+  assert.match(dsaLabSource, /Mastered/);
+  assert.match(dsaLabSource, /\/75 mastered/);
+  assert.match(dsaLabSource, /Mark weak spot/);
+  assert.match(dsaLabSource, /Reveal expected/);
+});
+
+test("DSA Visual Lab uses the main workspace scroller instead of trapping scroll", () => {
+  const dsaLabSource = readFileSync(new URL("../components/dsa/DsaVisualLab.js", import.meta.url), "utf8");
+
+  assert.match(indexSource, /className="chat-scroll"/);
+  assert.match(indexSource, /minHeight:\s*0/);
+  assert.match(dsaLabSource, /overflow:\s*"visible"/);
+  assert.doesNotMatch(dsaLabSource, /overflowY:\s*blind75Filter === "all" \? "auto"/);
+  assert.doesNotMatch(dsaLabSource, /maxHeight:\s*blind75Filter === "all" \? 340/);
 });
 
 test("PrepOS timeline skill graph and resume story matcher are connected to prep home", () => {
