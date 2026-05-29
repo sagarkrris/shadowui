@@ -16,6 +16,7 @@ AI-powered interview intelligence for modern software engineers. It supports per
 - Smart Prep Timeline that shows the journey from profile, resume, JD, mock baseline, weak spots, mastered questions, proof stories, scheduled interview, and final pack.
 - Guided Prep Mission board that converts resume gaps, JD gaps, weak spots, mock scores, proof stories, and upcoming interviews into three concrete next actions.
 - DSA Visual Lab with interview-focused animations, dry runs, memory hooks, code templates, quizzes, and "Practice as Mock" flows for Arrays, Strings, Hashing, Two Pointers, Stack/Queue, Trees, Graph BFS/DFS, and DP Basics.
+- Blind 75 Visual Track inside DSA Lab with Featured 15 and All 75 views, reusable pattern visualizers, original dry-run explanations, invariants, edge cases, quizzes, and selected-stack Java/Python/JavaScript code templates.
 - Answer Coach actions for "make it concise", "make it senior-level", "add metrics", "add trade-offs", and "convert to STAR" rewrites from the latest mock answer.
 - Resume Bullet Generator that converts JD gaps and Proof Vault stories into ATS-friendly before/after resume bullets without inventing metrics.
 - Career Toolkit with PDF/DOCX/TXT/Markdown resume gap analysis, JD Copilot match analysis, Role Pack Builder, role-specific mock prompts, must-know skills, likely questions, resume proof rewrites, 7-day crash plan, 1/3/7-day weak-spot review queue, interview scheduling tracker, daily streaks, XP, and badges.
@@ -119,6 +120,7 @@ shadowui/
 ├── lib/
 │   ├── careerToolkit.mjs
 │   ├── answerRubric.mjs
+│   ├── blind75VisualTrack.mjs
 │   ├── chatMarkdown.mjs
 │   ├── chatPrompt.mjs
 │   ├── chatRequest.mjs

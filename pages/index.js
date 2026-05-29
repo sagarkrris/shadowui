@@ -903,7 +903,7 @@ export default function Home() {
             {activeTab === "course" ? (
               <AgenticUICourse theme={techTheme} variant="full" />
             ) : activeTab==="dsaLab" ? (
-              <DsaVisualLab theme={techTheme} initialLessonId="arrays" onPractice={startDsaLabPractice} />
+              <DsaVisualLab theme={techTheme} profile={candidateProfile} initialLessonId="arrays" onPractice={startDsaLabPractice} />
             ) : activeTab === "canvas" ? (
               <SystemDesignCanvas
                 theme={techTheme}

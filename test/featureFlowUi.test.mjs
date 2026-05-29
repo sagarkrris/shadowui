@@ -202,10 +202,23 @@ test("DSA Visual Lab is a first-class learning workspace", () => {
   assert.match(indexSource, /activeTab==="dsaLab"/);
   assert.match(indexSource, /DSA Lab/);
   assert.match(indexSource, /startDsaLabPractice/);
+  assert.match(indexSource, /profile={candidateProfile}/);
   assert.match(dsaLabSource, /DSA Visual Lab/);
+  assert.match(dsaLabSource, /Interview Pattern Theater/);
+  assert.match(dsaLabSource, /Guided Mode/);
+  assert.match(dsaLabSource, /Play/);
+  assert.match(dsaLabSource, /Pause/);
+  assert.match(dsaLabSource, /Speed/);
+  assert.match(dsaLabSource, /State Panel/);
+  assert.match(dsaLabSource, /Selected stack code/);
   assert.match(dsaLabSource, /Visualize/);
   assert.match(dsaLabSource, /Dry Run/);
   assert.match(dsaLabSource, /Practice as Mock/);
+  assert.match(dsaLabSource, /Blind 75 Visual Track/);
+  assert.match(dsaLabSource, /Featured 15/);
+  assert.match(dsaLabSource, /All 75/);
+  assert.match(dsaLabSource, /Pattern visualizer/);
+  assert.match(dsaLabSource, /Edge cases/);
 });
 
 test("PrepOS timeline skill graph and resume story matcher are connected to prep home", () => {
