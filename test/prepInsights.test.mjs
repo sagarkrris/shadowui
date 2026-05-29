@@ -2,16 +2,20 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  buildAnswerCoachActions,
   buildInterviewDayPack,
   buildDailyPrepPlan,
+  buildGuidedPrepMissions,
   buildOfferReadinessScore,
   buildPrepProgressDashboard,
   buildInterviewRoadmap,
+  buildResumeBulletGenerator,
   deriveAnswerQualityHeatmap,
   deriveMockReplayTimelines,
   deriveMockSessionHistory,
   deriveMistakeBank,
   deriveProofVaultStories,
+  deriveWeakSpotRadar,
 } from "../lib/prepInsights.mjs";
 
 const profile = {
@@ -132,6 +136,12 @@ test("derives mock replay timelines with question answer gaps and improved answe
   assert.match(replays[0].idealAnswer, /read-through/);
   assert.match(replays[0].improvedAnswer, /fallback/);
   assert.match(replays[0].retryPrompt, /Design a cache/);
+  assert.deepEqual(
+    replays[0].steps.map((step) => step.label),
+    ["Question", "Your answer", "Score", "Gaps", "Ideal answer", "Improved answer"],
+  );
+  assert.ok(replays[0].actions.some((action) => action.label === "Save as proof story"));
+  assert.ok(replays[0].actions.some((action) => action.label === "Schedule weak-spot review"));
 });
 
 test("builds a thirty minute daily prep plan from weak spots and upcoming interviews", () => {
@@ -151,6 +161,90 @@ test("builds a thirty minute daily prep plan from weak spots and upcoming interv
   assert.ok(plan.items.some((item) => item.focus.includes("Trade-offs")));
   assert.ok(plan.items.some((item) => item.focus.includes("Testing strategy")));
   assert.ok(plan.items.every((item) => item.prompt.includes("30-minute daily prep plan")));
+});
+
+test("builds guided prep missions from resume JD mock and interview signals", () => {
+  const missions = buildGuidedPrepMissions({
+    profile,
+    topics,
+    weakSpots: ["Trade-offs"],
+    mockScores: [6, 7],
+    mistakeBank: [{ topic: "Testing strategy", correction: "Add test pyramid coverage." }],
+    interviews: [{ company: "Amazon", role: "SDE II", date: "2026-05-30", round: "System Design", status: "scheduled" }],
+    resumeAnalysis: { score: 68, missingSkills: [{ name: "AWS" }] },
+    jobDescriptionAnalysis: { score: 58, missingSkills: [{ name: "Message Queues" }] },
+    proofStories: [{ title: "Latency story" }],
+    activityDates: ["2026-05-28"],
+    now: "2026-05-29T00:00:00.000Z",
+  });
+
+  assert.equal(missions.title, "Guided Prep Mission");
+  assert.ok(missions.summary.includes("Amazon"));
+  assert.equal(missions.tasks.length, 3);
+  assert.ok(missions.tasks.every((task) => task.prompt.includes("Guided Prep Mission")));
+  assert.ok(missions.tasks.some((task) => task.signal === "JD Gap"));
+  assert.ok(missions.tasks.some((task) => task.focus.includes("Trade-offs") || task.focus.includes("Testing strategy")));
+  assert.ok(missions.why.length >= 3);
+  assert.ok(missions.completionImpact.offerReadinessDelta > 0);
+});
+
+test("builds deterministic answer coach actions for common answer rewrites", () => {
+  const actions = buildAnswerCoachActions({
+    profile,
+    messages: [
+      { role: "assistant", content: "Question: Explain how you handled a production outage." },
+      { role: "user", content: "We had checkout latency and I added Redis caching but I did not mention metrics." },
+      { role: "assistant", content: "Score: 6/10\nGaps: Add metrics and trade-offs." },
+    ],
+    selectedCat: "Behavioral",
+    selectedSub: "Production incidents",
+    weakSpots: ["Trade-offs"],
+  });
+
+  assert.deepEqual(
+    actions.map((action) => action.label),
+    ["Make it concise", "Make it senior-level", "Add metrics", "Add trade-offs", "Convert to STAR"],
+  );
+  assert.ok(actions.every((action) => action.prompt.includes("Answer Coach")));
+  assert.ok(actions.every((action) => action.prompt.includes("Backend Developer")));
+  assert.ok(actions.every((action) => action.prompt.includes("checkout latency")));
+  assert.match(actions.find((action) => action.label === "Make it concise").prompt, /concise|tight/i);
+  assert.match(actions.find((action) => action.label === "Make it senior-level").prompt, /senior-level|leadership/i);
+  assert.match(actions.find((action) => action.label === "Add metrics").prompt, /metric|quant/i);
+  assert.match(actions.find((action) => action.label === "Add trade-offs").prompt, /trade-off/i);
+  assert.match(actions.find((action) => action.label === "Convert to STAR").prompt, /Situation|Task|Action|Result/);
+});
+
+test("builds ATS-friendly resume bullet suggestions from JD gaps and proof stories", () => {
+  const generator = buildResumeBulletGenerator({
+    profile,
+    jobDescriptionAnalysis: {
+      missingSkills: [{ name: "AWS" }, { name: "Message Queues" }],
+    },
+    resumeAnalysis: {
+      missingSkills: [{ name: "System Design" }],
+    },
+    proofStories: [
+      {
+        title: "Checkout latency story",
+        action: "I added Redis caching, JUnit coverage, and dashboards.",
+        result: "Latency dropped 42% for 2M requests.",
+        impactMetrics: ["42%", "2M requests"],
+        skillsProven: ["Java", "Testing"],
+      },
+    ],
+  });
+
+  assert.equal(generator.title, "Resume Bullet Generator");
+  assert.ok(generator.summary.includes("Backend Developer"));
+  assert.equal(generator.suggestions.length, 3);
+  assert.ok(generator.suggestions.every((suggestion) => suggestion.before));
+  assert.ok(generator.suggestions.every((suggestion) => suggestion.after.includes("Backend Developer")));
+  assert.ok(generator.suggestions.every((suggestion) => suggestion.after.includes("ATS-friendly")));
+  assert.ok(generator.suggestions.every((suggestion) => suggestion.prompt.includes("Resume Bullet Generator")));
+  assert.ok(generator.suggestions.some((suggestion) => suggestion.gap === "AWS"));
+  assert.match(generator.suggestions[0].after, /42%|2M requests/);
+  assert.match(generator.suggestions[0].after, /AWS|Message Queues|System Design/);
 });
 
 test("derives a proof vault story bank from high-signal mock answers", () => {
@@ -208,6 +302,42 @@ test("derives an answer quality heatmap from rubric scores and feedback gaps", (
   assert.equal(heatmap.weakest.label, "Trade-offs");
   assert.ok(heatmap.dimensions.every((dimension) => Number.isFinite(dimension.score)));
   assert.match(heatmap.summary, /Trade-offs/);
+});
+
+test("derives a weak spot radar from repeated weakness feedback", () => {
+  const radar = deriveWeakSpotRadar([
+    {
+      role: "assistant",
+      content: [
+        "Score: 6/10",
+        "Gaps: Missing trade-offs, edge cases, and complexity.",
+        "Communication clarity: 5/10",
+      ].join("\n"),
+    },
+    {
+      role: "assistant",
+      content: [
+        "Score: 5/10",
+        "Gaps: Trade-offs still weak. Missing metrics and system design depth around scaling.",
+        "Communication clarity: 6/10",
+      ].join("\n"),
+    },
+  ], ["Trade-offs"]);
+
+  assert.equal(radar.categories.length, 6);
+  assert.deepEqual(
+    radar.categories.map((category) => category.label),
+    ["Trade-offs", "Edge cases", "Complexity", "Communication", "System design depth", "Missing metrics"],
+  );
+  assert.equal(radar.repeatedCount, 2);
+  assert.equal(radar.highestRisk.label, "Trade-offs");
+  assert.ok(radar.categories.every((category) => Number.isFinite(category.score)));
+  assert.ok(radar.categories.every((category) => Number.isFinite(category.count)));
+  assert.ok(radar.categories.every((category) => category.prompt.includes(category.label)));
+  assert.ok(radar.categories.every((category) => category.prompt.includes(category.correction)));
+  assert.match(radar.summary, /Trade-offs/);
+  assert.match(radar.actionPrompt, /Weak Spot Radar/);
+  assert.match(radar.actionPrompt, /hire\/no-hire/i);
 });
 
 test("builds an interview day pack from the next scheduled round", () => {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { buildCompanyMockPrompt, buildCompanyReadinessScore, buildQuestionBankRefreshState, markQuestionBankVerified } from "../../lib/companyPrep.mjs";
+import { buildCompanyMockPrompt, buildCompanyPrepRoom, buildCompanyReadinessScore, buildQuestionBankRefreshState, markQuestionBankVerified } from "../../lib/companyPrep.mjs";
 
 const QUESTION_BANK_REFRESH_KEY = "interviewiq.companyPrep.refresh.v1";
 const CAREER_TOOLKIT_STORAGE_KEY = "interviewiq.careerToolkit.v1";
@@ -64,6 +64,7 @@ function QuestionList({ title, icon, items, company, type, theme, onMock }) {
 
 export default function CompanyPrep({ theme, weakSpots, mockScores = [], messages = [], selectedCat, selectedSub, onMock }) {
   const [query, setQuery] = useState("Amazon");
+  const [roleContext, setRoleContext] = useState("");
   const [companyPrep, setCompanyPrep] = useState(null);
   const [refreshState, setRefreshState] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -128,6 +129,14 @@ export default function CompanyPrep({ theme, weakSpots, mockScores = [], message
   const topicFocus = selectedSub || selectedCat;
   const focusQuestions = focusedCompanyQuestions(prep, topicFocus);
   const careerToolkitState = readCareerToolkitState();
+  const prepRoom = prep ? buildCompanyPrepRoom({
+    prep,
+    roleContext,
+    selectedCat,
+    selectedSub,
+    careerToolkitState,
+    messages,
+  }) : null;
   const readiness = buildCompanyReadinessScore({
     prep,
     refreshState,
@@ -146,8 +155,9 @@ export default function CompanyPrep({ theme, weakSpots, mockScores = [], message
             <h1 style={{ fontSize: 18, color: "#e8e8f0", marginBottom: 4 }}>Company Prep</h1>
             <p style={{ fontSize: 12.5, color: "#6b7280", lineHeight: 1.5 }}>Publicly reported questions, mock interviews, weak spots, and source links.</p>
           </div>
-          <form onSubmit={(event) => { event.preventDefault(); loadCompany(); }} style={{ display: "flex", gap: 7, flex: "1 1 320px" }}>
-            <input className="glass-input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search company, e.g. Amazon" style={{ flex: 1, border: "1px solid rgba(255,255,255,.09)", borderRadius: 8, padding: "9px 11px", color: "#e8e8f0", outline: "none", fontSize: 13 }} />
+          <form onSubmit={(event) => { event.preventDefault(); loadCompany(); }} style={{ display: "grid", gridTemplateColumns: "minmax(130px, 1fr) minmax(150px, 1fr) auto", gap: 7, flex: "1 1 430px" }}>
+            <input className="glass-input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search company, e.g. Amazon" style={{ minWidth: 0, border: "1px solid rgba(255,255,255,.09)", borderRadius: 8, padding: "9px 11px", color: "#e8e8f0", outline: "none", fontSize: 13 }} />
+            <input className="glass-input" aria-label="Role context" value={roleContext} onChange={(event) => setRoleContext(event.target.value)} placeholder="Role context, e.g. SDE II backend" style={{ minWidth: 0, border: "1px solid rgba(255,255,255,.09)", borderRadius: 8, padding: "9px 11px", color: "#e8e8f0", outline: "none", fontSize: 13 }} />
             <button className="glass-button" disabled={loading} style={{ border: `1px solid ${theme.accentBorder}`, color: theme.accentText, borderRadius: 8, padding: "0 13px", fontSize: 12, fontWeight: 700 }}>
               {loading ? "Loading" : "Search"}
             </button>
@@ -200,6 +210,112 @@ export default function CompanyPrep({ theme, weakSpots, mockScores = [], message
                 </div>
               )}
             </div>
+
+            {prepRoom && (
+              <section className="glass-card" style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 12 }}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: 11 }}>
+                  <div>
+                    <h2 style={{ color: theme.accentText, fontSize: 15, display: "flex", alignItems: "center", gap: 7, marginBottom: 4 }}>
+                      <i className="ti ti-door" />{prepRoom.company} Prep Room
+                    </h2>
+                    <p style={{ color: "#9ca3af", fontSize: 11.8, lineHeight: 1.45 }}>Role context: {prepRoom.roleContext}</p>
+                  </div>
+                  <span style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 999, padding: "5px 9px", color: theme.accentStrong, fontSize: 10.8, fontWeight: 900 }}>
+                    {prepRoom.topicFocus}
+                  </span>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 8, marginBottom: 12 }}>
+                  {prepRoom.notes.map((note) => (
+                    <div key={note.id} style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 9 }}>
+                      <strong style={{ display: "block", color: theme.accentText, fontSize: 11.5, marginBottom: 4 }}>{note.label}</strong>
+                      <span style={{ display: "block", color: "#9ca3af", fontSize: 10.8, lineHeight: 1.45 }}>{note.detail}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 230px), 1fr))", gap: 12 }}>
+                  <section>
+                    <h3 style={{ color: "#e8e8f0", fontSize: 12.5, display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                      <i className="ti ti-route" style={{ color: theme.accentStrong }} />Interview Rounds
+                    </h3>
+                    <div style={{ display: "grid", gap: 7 }}>
+                      {prepRoom.interviewRounds.map((round) => (
+                        <div key={round.id} style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 8 }}>
+                          <strong style={{ display: "block", color: theme.accentText, fontSize: 11.5, marginBottom: 3 }}>{round.name}</strong>
+                          <span style={{ display: "block", color: "#cbd5e1", fontSize: 10.8, marginBottom: 3 }}>{round.focus}</span>
+                          <span style={{ display: "block", color: "#6b7280", fontSize: 10.5, lineHeight: 1.4 }}>{round.detail}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section>
+                    <h3 style={{ color: "#e8e8f0", fontSize: 12.5, display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                      <i className="ti ti-alert-hexagon" style={{ color: theme.accentStrong }} />JD Gaps
+                    </h3>
+                    <div style={{ display: "grid", gap: 7 }}>
+                      {prepRoom.jdGaps.length ? prepRoom.jdGaps.map((gap) => (
+                        <button key={gap.id} className="glass-button" onClick={() => onMock(`Mock me on this ${prepRoom.company} JD gap for ${prepRoom.roleContext}: ${gap.name}. ${gap.action}`)} style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 8, textAlign: "left", cursor: "pointer" }}>
+                          <strong style={{ display: "block", color: theme.accentText, fontSize: 11.5, marginBottom: 3 }}>{gap.name}</strong>
+                          <span style={{ display: "block", color: "#9ca3af", fontSize: 10.8, lineHeight: 1.4 }}>{gap.action}</span>
+                        </button>
+                      )) : (
+                        <p style={{ color: "#6b7280", fontSize: 11.3, lineHeight: 1.45 }}>Run JD analysis in Career Toolkit to fill company-specific gaps here.</p>
+                      )}
+                    </div>
+                  </section>
+
+                  <section>
+                    <h3 style={{ color: "#e8e8f0", fontSize: 12.5, display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                      <i className="ti ti-message-question" style={{ color: theme.accentStrong }} />Likely Questions
+                    </h3>
+                    <div style={{ display: "grid", gap: 7 }}>
+                      {prepRoom.likelyQuestions.slice(0, 5).map((question) => (
+                        <button key={question.id} className="glass-button" onClick={() => onMock(question.prompt)} style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 8, textAlign: "left", cursor: "pointer" }}>
+                          <strong style={{ display: "block", color: theme.accentText, fontSize: 11.5, marginBottom: 3 }}>{question.question}</strong>
+                          <span style={{ color: "#6b7280", fontSize: 10.5 }}>{question.source}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section>
+                    <h3 style={{ color: "#e8e8f0", fontSize: 12.5, display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                      <i className="ti ti-bookmarks" style={{ color: theme.accentStrong }} />Story References
+                    </h3>
+                    {prepRoom.storyReferences.length ? (
+                      <div style={{ display: "grid", gap: 7 }}>
+                        {prepRoom.storyReferences.map((story) => (
+                          <button key={story.id} className="glass-button" onClick={() => onMock(story.prompt)} style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 8, textAlign: "left", cursor: "pointer" }}>
+                            <strong style={{ display: "block", color: theme.accentText, fontSize: 11.5, marginBottom: 3 }}>{story.title}</strong>
+                            <span style={{ display: "block", color: "#9ca3af", fontSize: 10.8, lineHeight: 1.4 }}>{story.result}</span>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <p style={{ color: "#6b7280", fontSize: 11.3, lineHeight: 1.45 }}>No saved story references yet. Strong scored mocks will create reusable proof material.</p>
+                    )}
+                  </section>
+                </div>
+
+                <section style={{ borderTop: `1px solid ${theme.accentBorder}`, marginTop: 12, paddingTop: 11 }}>
+                  <h3 style={{ color: "#e8e8f0", fontSize: 12.5, display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                    <i className="ti ti-calendar-check" style={{ color: theme.accentStrong }} />Final-Day Checklist
+                  </h3>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 7, marginBottom: 10 }}>
+                    {prepRoom.finalDayChecklist.map((item) => (
+                      <div key={item} style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 8, color: "#9ca3af", fontSize: 10.8, lineHeight: 1.4 }}>
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                  <button className="glass-button" onClick={() => onMock(prepRoom.finalDayActionPrompt)} style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 8, color: theme.accentText, fontSize: 11.5, fontWeight: 800, cursor: "pointer", width: "100%", textAlign: "left" }}>
+                    <i className="ti ti-player-play" />Run final-day rehearsal
+                  </button>
+                </section>
+              </section>
+            )}
 
             <section className="glass-card" style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 12 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>

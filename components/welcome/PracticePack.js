@@ -1,16 +1,29 @@
 import { useEffect, useMemo, useState } from "react";
 import { getPracticePack } from "../../lib/practicePacks.mjs";
+import { loadQuestionMemory, recordQuestionAttempt } from "../../lib/questionMemory.mjs";
 
 function createRoundSeed(sectionKey) {
   return `${sectionKey}-${Date.now()}-${Math.random()}`;
 }
 
-export default function PracticePack({ profile, selectedCat, selectedSub, difficulty, theme, onPracticeMock }) {
+const MASTERY_STATUS_LABELS = {
+  New: "New",
+  "Needs Review": "Needs Review",
+  Improving: "Improving",
+  Mastered: "Mastered",
+};
+
+function getBrowserStorage() {
+  return typeof window !== "undefined" ? window.localStorage : null;
+}
+
+export default function PracticePack({ profile, selectedCat, selectedSub, difficulty, theme, questionMemory: externalQuestionMemory, onQuestionMemoryChange, onPracticeMock }) {
   const [openCard, setOpenCard] = useState(null);
   const sectionKey = `${profile?.stack || "stack"}|${selectedCat || "cat"}|${selectedSub || "sub"}|${difficulty || "difficulty"}`;
   const [roundSeed, setRoundSeed] = useState(() => createRoundSeed(sectionKey));
   const [roundExcludeIds, setRoundExcludeIds] = useState([]);
   const [seenBySection, setSeenBySection] = useState({});
+  const [questionMemory, setQuestionMemory] = useState(externalQuestionMemory || null);
   const pack = useMemo(
     () => getPracticePack({
       profile,
@@ -19,9 +32,14 @@ export default function PracticePack({ profile, selectedCat, selectedSub, diffic
       difficulty,
       seed: roundSeed,
       excludeIds: roundExcludeIds,
+      questionMemory,
     }),
-    [profile, selectedCat, selectedSub, difficulty, roundSeed, roundExcludeIds],
+    [profile, selectedCat, selectedSub, difficulty, roundSeed, roundExcludeIds, questionMemory],
   );
+
+  useEffect(() => {
+    setQuestionMemory(externalQuestionMemory || loadQuestionMemory(getBrowserStorage()));
+  }, [externalQuestionMemory]);
 
   useEffect(() => {
     setOpenCard(null);
@@ -58,6 +76,21 @@ export default function PracticePack({ profile, selectedCat, selectedSub, diffic
     setRoundSeed(createRoundSeed(sectionKey));
   };
 
+  const recordCardAttempt = (card, score) => {
+    const storage = getBrowserStorage();
+    const nextMemory = recordQuestionAttempt(storage, {
+      questionId: card.id,
+      question: card.question,
+      packId: pack.id,
+      topic: pack.topic,
+      stack: profile?.stack || "",
+      score,
+    });
+
+    setQuestionMemory(nextMemory);
+    onQuestionMemoryChange?.(nextMemory);
+  };
+
   return (
     <section style={{ width: "100%", maxWidth: 860, display: "grid", gap: 12, marginTop: 22, textAlign: "left" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
@@ -82,10 +115,20 @@ export default function PracticePack({ profile, selectedCat, selectedSub, diffic
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 10 }}>
         {pack.cards.map((card) => {
           const isOpen = openCard === card.id;
+          const memoryStatus = MASTERY_STATUS_LABELS[card.masteryStatus] || "New";
+          const masteryStatus = memoryStatus;
+          const statusTone = memoryStatus === "Mastered"
+            ? { color: "#86efac", background: "rgba(34,197,94,.12)", border: "rgba(34,197,94,.28)" }
+            : memoryStatus === "Needs Review"
+              ? { color: "#fca5a5", background: "rgba(239,68,68,.11)", border: "rgba(239,68,68,.26)" }
+              : { color: theme.accentText, background: theme.accentMuted, border: theme.accentBorder };
 
           return (
             <article key={card.id} className="glass-card" style={{ border: `1px solid ${isOpen ? theme.accentBorder : "rgba(255,255,255,.07)"}`, borderRadius: 8, padding: 12, display: "flex", flexDirection: "column", gap: 10 }}>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                <span style={{ color: statusTone.color, background: statusTone.background, border: `1px solid ${statusTone.border}`, borderRadius: 999, padding: "2px 7px", fontSize: 10, fontWeight: 800 }}>
+                  {masteryStatus}
+                </span>
                 {card.tags.slice(0, 3).map((tag) => (
                   <span key={tag} style={{ color: theme.accentStrong, background: theme.accentMuted, border: `1px solid ${theme.accentBorder}`, borderRadius: 999, padding: "2px 7px", fontSize: 10, fontWeight: 700 }}>
                     {tag}
@@ -116,7 +159,13 @@ export default function PracticePack({ profile, selectedCat, selectedSub, diffic
                 <button className="glass-button" onClick={() => setOpenCard(isOpen ? null : card.id)} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 10px", borderRadius: 8, border: `1px solid ${theme.accentBorder}`, color: theme.accentText, fontSize: 11.5, fontWeight: 700, cursor: "pointer" }}>
                   <i className={`ti ${isOpen ? "ti-eye-off" : "ti-eye"}`} />{isOpen ? "Hide Guide" : "Show Guide"}
                 </button>
-                <button className="glass-button" onClick={() => onPracticeMock?.({ prompt: card.mockPrompt, question: card.question })} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 10px", borderRadius: 8, border: `1px solid ${theme.accentBorder}`, color: theme.accentText, fontSize: 11.5, fontWeight: 700, cursor: "pointer" }}>
+                <button className="glass-button" onClick={() => recordCardAttempt(card, 4)} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 10px", borderRadius: 8, border: `1px solid ${theme.accentBorder}`, color: theme.accentText, fontSize: 11.5, fontWeight: 700, cursor: "pointer" }}>
+                  <i className="ti ti-rotate-clockwise" />Review Again
+                </button>
+                <button className="glass-button" onClick={() => recordCardAttempt(card, 8)} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 10px", borderRadius: 8, border: `1px solid ${theme.accentBorder}`, color: theme.accentText, fontSize: 11.5, fontWeight: 700, cursor: "pointer" }}>
+                  <i className="ti ti-circle-check" />Got It
+                </button>
+                <button className="glass-button" onClick={() => onPracticeMock?.({ prompt: card.mockPrompt, question: card.question, card, pack })} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 10px", borderRadius: 8, border: `1px solid ${theme.accentBorder}`, color: theme.accentText, fontSize: 11.5, fontWeight: 700, cursor: "pointer" }}>
                   <i className="ti ti-user-question" />Practice as Mock
                 </button>
               </div>

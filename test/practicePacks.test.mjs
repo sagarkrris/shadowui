@@ -1,10 +1,13 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
   buildPracticeMockPrompt,
   getPracticePack,
 } from "../lib/practicePacks.mjs";
+
+const practicePackSource = readFileSync(new URL("../components/welcome/PracticePack.js", import.meta.url), "utf8");
 
 test("returns Spring Boot practice cards for a Java Spring profile", () => {
   const pack = getPracticePack({
@@ -160,4 +163,51 @@ test("builds a mock prompt from a practice card without requiring generation", (
   assert.match(prompt, /SQL Design/);
   assert.match(prompt, /How do you tune/);
   assert.match(prompt, /Score:/);
+});
+
+test("orders practice cards with question memory and exposes mastery labels", () => {
+  const baseline = getPracticePack({
+    profile: { stack: "React, Next.js, TypeScript" },
+    selectedCat: "React Core",
+    selectedSub: "Performance",
+    difficulty: "Mid",
+    seed: "memory-aware-round",
+  });
+  const [mastered, needsReview] = baseline.cards;
+
+  const pack = getPracticePack({
+    profile: { stack: "React, Next.js, TypeScript" },
+    selectedCat: "React Core",
+    selectedSub: "Performance",
+    difficulty: "Mid",
+    seed: "memory-aware-round",
+    questionMemory: {
+      questions: {
+        [mastered.id]: {
+          questionId: mastered.id,
+          attempts: [
+            { score: 9, attemptedAt: "2026-05-28T08:00:00.000Z" },
+            { score: 9, attemptedAt: "2026-05-29T08:00:00.000Z" },
+          ],
+        },
+        [needsReview.id]: {
+          questionId: needsReview.id,
+          attempts: [{ score: 4, attemptedAt: "2026-05-29T08:00:00.000Z" }],
+        },
+      },
+    },
+    now: "2026-05-29T12:00:00.000Z",
+  });
+
+  assert.equal(pack.cards[0].id, needsReview.id);
+  assert.equal(pack.cards[0].masteryStatus, "Needs Review");
+  assert.equal(pack.cards.at(-1).id, mastered.id);
+  assert.equal(pack.cards.at(-1).masteryStatus, "Mastered");
+});
+
+test("practice pack UI renders visible mastery status labels", () => {
+  assert.match(practicePackSource, /masteryStatus/);
+  assert.match(practicePackSource, /recordQuestionAttempt/);
+  assert.match(practicePackSource, /Needs Review/);
+  assert.match(practicePackSource, /Mastered/);
 });

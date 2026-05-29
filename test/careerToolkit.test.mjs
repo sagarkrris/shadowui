@@ -57,6 +57,13 @@ test("compares a target job description with resume evidence and builds role-spe
   assert.ok(fit.missingSkills.some((skill) => skill.name === "Message Queues"));
   assert.ok(fit.practicePlan.length >= 3);
   assert.ok(fit.practicePlan[0].prompt.includes("job description"));
+  assert.ok(fit.mustKnowSkills.some((skill) => skill.name === "Message Queues"));
+  assert.ok(fit.likelyQuestions.length >= 5);
+  assert.ok(fit.likelyQuestions.some((question) => /Kafka|Message Queues|AWS|System Design/.test(question.question)));
+  assert.ok(fit.resumeRewriteSuggestions.length >= 2);
+  assert.ok(fit.gapUrgency[0].priority >= fit.gapUrgency.at(-1).priority);
+  assert.equal(fit.crashPlan.length, 7);
+  assert.ok(fit.crashPlan.every((day) => day.prompt.includes("JD Copilot")));
 });
 
 test("returns an empty job description fit when no target description is entered", () => {
@@ -65,6 +72,11 @@ test("returns an empty job description fit when no target description is entered
   assert.equal(fit.score, 0);
   assert.deepEqual(fit.requiredSkills, []);
   assert.deepEqual(fit.practicePlan, []);
+  assert.deepEqual(fit.mustKnowSkills, []);
+  assert.deepEqual(fit.likelyQuestions, []);
+  assert.deepEqual(fit.resumeRewriteSuggestions, []);
+  assert.deepEqual(fit.gapUrgency, []);
+  assert.deepEqual(fit.crashPlan, []);
 });
 
 test("does not score a thin resume as perfect when the target role has broader expectations", () => {

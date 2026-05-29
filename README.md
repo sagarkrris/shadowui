@@ -1,6 +1,6 @@
 # InterviewIQ
 
-AI-powered interview intelligence for modern software engineers. It supports personalized stack-based prep, mock interviews, DSA and system design practice, behavioral coaching, company-specific prep, resume gap analysis, spaced weak-spot reviews, an interview tracker, screen analysis, voice input, code review practice, and a visual Agentic UI Engineering course.
+AI-powered interview intelligence for modern software engineers. It supports personalized stack-based prep, mock interviews, DSA Visual Lab lessons, system design practice, behavioral coaching, company-specific prep, PrepOS Today guidance, resume gap analysis, JD Copilot role targeting, spaced weak-spot reviews, an interview tracker, screen analysis, voice input, code review practice, and a visual Agentic UI Engineering course.
 
 ## Features
 
@@ -10,15 +10,28 @@ AI-powered interview intelligence for modern software engineers. It supports per
 - Liquid Glass-inspired glossy panels, cards, controls, and modals that inherit the selected stack palette.
 - Stack-flavored greetings such as Python-style and Java-style welcome messages.
 - Locked first-run sidebar topics so users know they must complete target details before starting.
-- Company Prep dashboard with curated public interview patterns, mock buttons, weak-spot tracking, behavioral prompts, and source links.
-- Prep Command Center with offer readiness score, progress dashboard, answer quality heatmap, mock replay, daily plan, focus signal, and one-click drills.
-- Career Toolkit with PDF/DOCX/TXT/Markdown resume gap analysis, target job description match analysis, role-specific mock prompts, 1/3/7-day weak-spot review queue, interview scheduling tracker, daily streaks, XP, and badges.
+- Company Prep dashboard and Company-Specific Prep Room with role context, interview rounds, JD gaps, likely questions, story references, final-day checklist, mock buttons, weak-spot tracking, behavioral prompts, and source links.
+- Prep Command Center with offer readiness score, progress dashboard, answer quality heatmap, Weak Spot Radar, mock replay, daily plan, focus signal, and one-click drills.
+- PrepOS Today dashboard that explains what to practice now, why it matters, upcoming risks, weak topics due, top saved story, and next mock recommendation.
+- Smart Prep Timeline that shows the journey from profile, resume, JD, mock baseline, weak spots, mastered questions, proof stories, scheduled interview, and final pack.
+- Guided Prep Mission board that converts resume gaps, JD gaps, weak spots, mock scores, proof stories, and upcoming interviews into three concrete next actions.
+- DSA Visual Lab with interview-focused animations, dry runs, memory hooks, code templates, quizzes, and "Practice as Mock" flows for Arrays, Strings, Hashing, Two Pointers, Stack/Queue, Trees, Graph BFS/DFS, and DP Basics.
+- Answer Coach actions for "make it concise", "make it senior-level", "add metrics", "add trade-offs", and "convert to STAR" rewrites from the latest mock answer.
+- Resume Bullet Generator that converts JD gaps and Proof Vault stories into ATS-friendly before/after resume bullets without inventing metrics.
+- Career Toolkit with PDF/DOCX/TXT/Markdown resume gap analysis, JD Copilot match analysis, Role Pack Builder, role-specific mock prompts, must-know skills, likely questions, resume proof rewrites, 7-day crash plan, 1/3/7-day weak-spot review queue, interview scheduling tracker, daily streaks, XP, and badges.
+- Question Memory and Mastery Map that remember answered practice cards locally, prioritize weak or stale questions, and show New, Needs Review, Improving, and Mastered status.
+- Interview Recording Review for one-time transcript/coaching review without saving the raw transcript in local storage.
+- System Design Canvas workspace for requirements, APIs, data, architecture, scaling, failure modes, security, observability, and rollout planning with review/mock actions.
 - Proof Vault / Story Bank that turns strong mock answers into reusable STAR stories with skills proven, impact metrics, weak spots, and behavioral/system design/resume actions.
-- Interview Calibration Mode for Strict Interviewer, Coach Mode, Bar Raiser, and Behavioral STAR interview styles.
+- Interview Calibration Mode for Strict Interviewer, Coach Mode, Bar Raiser, Behavioral STAR, and Real Pressure interview styles.
 - Round Strategy Mode for Recruiter, Coding, System Design, Manager, and Final interview rounds.
+- AI Interview Panel Mode for Recruiter, Senior Engineer, Engineering Manager, System Design Architect, and Bar Raiser panel behavior with different follow-ups and rubrics.
 - Answer Review Mode with rubric sliders for correctness, depth, examples, trade-offs, communication clarity, and follow-up readiness.
+- Skill Graph that maps Java Core, Spring Boot, SQL, System Design, Behavioral, DSA, React, and stack-derived topics into New, Weak, Improving, Strong, and Mastered readiness nodes.
+- Resume Story Matcher that turns resume claims such as performance, APIs, migrations, leadership, reliability, and cost into proof-story prompts without inventing metrics.
+- Part-wise Mock Replay Timeline that breaks scored mocks into question, user answer, score, gaps, ideal answer, improved answer, and follow-up actions.
 - Interview Day Pack for scheduled interviews with company/role context, JD gaps, likely questions, saved proof stories, and warm-up drills.
-- Exportable prep report with candidate details, resume gaps, job description match, mock performance, roadmap, and next actions.
+- Exportable final interview report with candidate details, resume gaps, job description match, mock performance, mastery map, role pack, system design canvas summary, roadmap, and next actions.
 - Agentic UI Engineering course with Java/Spring Boot, React/Next.js, Node/Python, and enterprise adapter tracks for agent loops, tool calling, approvals, traces, streaming, and guardrails.
 - Chat-based interview and practice modes with difficulty levels.
 - Code paste/review tools shown only where useful, such as technical prep topics.
@@ -91,7 +104,9 @@ shadowui/
 ├── components/
 │   ├── chat/              # Markdown messages, code blocks, typing dots, score badge and rubric UI
 │   ├── company/           # Company Prep dashboard
+│   ├── dsa/               # DSA Visual Lab learning workspace
 │   ├── modals/            # Screen analysis and settings modals
+│   ├── system-design/     # System Design Canvas workspace
 │   ├── welcome/           # Profile setup, welcome screen, Career Toolkit, prep insights, practice pack
 │   │   ├── PrepCommandCenter.js
 │   │   └── PrepInsightsPanel.js
@@ -109,13 +124,21 @@ shadowui/
 │   ├── chatRequest.mjs
 │   ├── codeRunner.mjs
 │   ├── companyPrep.mjs
+│   ├── dsaVisualLab.mjs
+│   ├── interviewPanel.mjs
 │   ├── personalization.mjs
 │   ├── prepCoach.mjs
 │   ├── prepInsights.mjs
+│   ├── prepOperatingSystem.mjs
 │   ├── prepReport.mjs
+│   ├── questionMemory.mjs
+│   ├── resumeStoryMatcher.mjs
+│   ├── rolePacks.mjs
+│   ├── skillGraph.mjs
 │   ├── prepTopics.mjs
 │   ├── resumeExtract.mjs
 │   ├── sessionPersistence.mjs
+│   ├── systemDesignCanvas.mjs
 │   ├── prompts.mjs
 │   ├── techTheme.mjs
 │   ├── uiVisibility.mjs
@@ -161,4 +184,3 @@ The browser never receives the Gemini API key. Code execution requests are block
 - Resume gap analysis in the Career Toolkit supports `.pdf`, `.docx`, `.txt`, `.md`, and pasted text. Extraction runs through InterviewIQ's own API route and is not sent to Gemini or external AI services; legacy `.doc` files should be converted to `.docx` or pasted as text.
 - The Live Code Runner is paused in the UI for now. The API route returns `503` until a non-public, approved `PISTON_EXECUTE_URL` is configured; request-size safeguards remain in place for that future sandbox.
 - Voice input depends on browser support. iOS Safari may require microphone permissions, Siri/dictation support, or keyboard dictation fallback.
-- Build may warn about Google Font optimization if the font stylesheet cannot be fetched during build.

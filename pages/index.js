@@ -6,20 +6,27 @@ import ScoreBadge from "../components/chat/ScoreBadge";
 import TechBackground from "../components/TechBackground";
 import TypingDots from "../components/chat/TypingDots";
 import AgenticUICourse from "../components/course/AgenticUICourse";
+import DsaVisualLab from "../components/dsa/DsaVisualLab";
+import RecordingReviewModal from "../components/modals/RecordingReviewModal";
 import ScreenModal from "../components/modals/ScreenModal";
 import SettingsModal from "../components/modals/SettingsModal";
+import SystemDesignCanvas from "../components/system-design/SystemDesignCanvas";
 import Sidebar from "../components/Sidebar";
 import Toast from "../components/Toast";
 import VoiceBar from "../components/VoiceBar";
 import ProfileSetup from "../components/welcome/ProfileSetup";
 import Welcome from "../components/welcome/Welcome";
+import { buildInterviewRecordingReviewPrompt } from "../lib/interviewRecordingReview.mjs";
+import { INTERVIEW_PANELISTS, normalizeInterviewPanel } from "../lib/interviewPanel.mjs";
 import { deriveWeakSpots } from "../lib/companyPrep.mjs";
 import { createHomeNavigationState, createTopicSelectionNavigationState } from "../lib/homeNavigation.mjs";
 import { buildUserPrepLabel, getDisplayName, getStackGreeting } from "../lib/personalization.mjs";
 import { deriveMockScores } from "../lib/prepCoach.mjs";
 import { getPrepLabel, getRecommendedTopics } from "../lib/prepTopics.mjs";
+import { loadQuestionMemory, recordQuestionAttempt } from "../lib/questionMemory.mjs";
 import { DEFAULT_PROFILE, DIFFS } from "../lib/prompts.mjs";
 import { createSessionSnapshot, loadSessionSnapshot, saveSessionSnapshot } from "../lib/sessionPersistence.mjs";
+import { createSystemDesignCanvasState } from "../lib/systemDesignCanvas.mjs";
 import { getTechTheme } from "../lib/techTheme.mjs";
 import { canUseChatComposer, canUseInterviewTools, canUsePrepTopics, shouldShowCodeTools } from "../lib/uiVisibility.mjs";
 import { getAppShellHeight, getStableViewportHeight, getVisibleViewportHeight, isCompactViewport, isVirtualKeyboardOpen } from "../lib/viewportMode.mjs";
@@ -31,6 +38,7 @@ const INTERVIEW_MODES = [
   { key: "coach", label: "Coach Mode" },
   { key: "barRaiser", label: "Bar Raiser" },
   { key: "behavioralStar", label: "Behavioral STAR" },
+  { key: "realPressure", label: "Real Pressure" },
 ];
 const ROUND_STRATEGY_MODES = [
   { key: "recruiter", label: "Recruiter" },
@@ -39,6 +47,18 @@ const ROUND_STRATEGY_MODES = [
   { key: "manager", label: "Manager" },
   { key: "final", label: "Final" },
 ];
+const INTERVIEW_PANEL_OPTIONS = INTERVIEW_PANELISTS.filter((item) => [
+  "Recruiter",
+  "Senior Engineer",
+  "Engineering Manager",
+  "System Design Architect",
+  "Bar Raiser",
+].includes(item.label));
+
+function extractScoreFromFeedback(content) {
+  const match = String(content || "").match(/score:\s*(\d+(?:\.\d+)?)\s*\/\s*10/i);
+  return match ? Number(match[1]) : null;
+}
 
 function normalizeInterviewMode(value) {
   if (INTERVIEW_MODES.some((item) => item.key === value)) return value;
@@ -48,6 +68,10 @@ function normalizeInterviewMode(value) {
 function normalizeRoundStrategy(value) {
   if (ROUND_STRATEGY_MODES.some((item) => item.key === value)) return value;
   return "coding";
+}
+
+function normalizeInterviewPanelSelection(value) {
+  return normalizeInterviewPanel(value).key;
 }
 
 function toApiMessages(messages) {
@@ -65,6 +89,7 @@ export default function Home() {
   const [mode, setMode]               = useState("interview");
   const [interviewMode, setInterviewMode] = useState("strict");
   const [roundStrategy, setRoundStrategy] = useState("coding");
+  const [interviewPanel, setInterviewPanel] = useState("seniorEngineer");
   const [difficulty, setDifficulty]   = useState("Mid");
   const [input, setInput]             = useState("");
   const [codeInput, setCodeInput]     = useState("");
@@ -75,8 +100,11 @@ export default function Home() {
   const [isListening, setListening]   = useState(false);
   const [voiceText, setVoiceText]     = useState("");
   const [showScreen, setShowScreen]   = useState(false);
+  const [showRecordingReview, setShowRecordingReview] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [activeTab, setActiveTab]     = useState("chat");
+  const [questionMemory, setQuestionMemory] = useState({ questions: {} });
+  const [systemDesignCanvas, setSystemDesignCanvas] = useState(() => createSystemDesignCanvasState());
   const [isKeyboardOpen, setKeyboardOpen] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
   const [toast, setToast]             = useState(null);
@@ -92,6 +120,7 @@ export default function Home() {
   const abortRef   = useRef(null);
   const recogRef   = useRef(null);
   const voiceFinal = useRef("");
+  const pendingPracticeCard = useRef(null);
   const toastTimer = useRef(null);
   const viewportBaselineHeight = useRef(0);
   const viewportWidthRef = useRef(0);
@@ -116,6 +145,7 @@ export default function Home() {
     : "Review ready";
 
   // ── Local session persistence ────────────────────────────────────────────
+  // QUESTION_MEMORY_STORAGE_KEY is owned by lib/questionMemory.mjs; this shell loads the durable memory through its helpers.
   useEffect(() => {
     const savedSession = loadSessionSnapshot(window.localStorage);
     if (savedSession) {
@@ -128,9 +158,11 @@ export default function Home() {
       setMode(savedSession.mode);
       setInterviewMode(normalizeInterviewMode(savedSession.interviewMode));
       setRoundStrategy(normalizeRoundStrategy(savedSession.roundStrategy));
+      setInterviewPanel(normalizeInterviewPanelSelection(savedSession.interviewPanel));
       setDifficulty(savedSession.difficulty);
       setActiveTab(savedSession.activeTab);
     }
+    setQuestionMemory(loadQuestionMemory(window.localStorage));
     setSessionReady(true);
   }, []);
 
@@ -149,11 +181,12 @@ export default function Home() {
         mode,
         interviewMode,
         roundStrategy,
+        interviewPanel,
         difficulty,
         activeTab,
       }),
     );
-  }, [sessionReady, candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, difficulty, activeTab]);
+  }, [sessionReady, candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab]);
 
   // ── Viewport ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -312,7 +345,14 @@ export default function Home() {
       abortRef.current = new AbortController();
       const res = await fetch("/api/chat", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ messages: apiMessages, profile: candidateProfile, interviewMode: interviewMode, roundStrategy }), signal: abortRef.current.signal,
+        body: JSON.stringify({
+          messages: apiMessages,
+          profile: candidateProfile,
+          // Default request shape used to be interviewMode: interviewMode; options can now override it for canvas/review flows.
+          interviewMode: options.interviewMode || interviewMode,
+          roundStrategy: options.roundStrategy || roundStrategy,
+          interviewPanel: options.interviewPanel || interviewPanel,
+        }), signal: abortRef.current.signal,
       });
       if (!res.ok) {
         const e = await res.json();
@@ -340,12 +380,30 @@ export default function Home() {
         }
       }
       setMessages(prev => { const u=[...prev]; u[u.length-1]={role:"assistant",content:aiText,streaming:false}; return u; });
+      if (!options.skipQuestionMemory && pendingPracticeCard.current) {
+        const score = extractScoreFromFeedback(aiText);
+        if (score !== null) {
+          const { card, pack } = pendingPracticeCard.current;
+          const nextMemory = recordQuestionAttempt(window.localStorage, {
+            questionId: card.id,
+            question: card.question,
+            packId: pack?.id || card.packId || "",
+            topic: pack?.topic || selectedSub || selectedCat || "",
+            stack: candidateProfile?.stack || "",
+            score,
+          });
+          setQuestionMemory(nextMemory);
+        }
+      }
     } catch(err) {
       if (err.name !== "AbortError") {
         setMessages(prev => { const u=[...prev]; u[u.length-1]={role:"assistant",content:"⚠️ "+(err.message||"Something went wrong."),streaming:false}; return u; });
         showToast(err.message || "API error", "error");
       }
     } finally {
+      if (!options.skipQuestionMemory) {
+        pendingPracticeCard.current = null;
+      }
       setLoading(false);
       if (options.startAnswerTimer) {
         setMockTimerRemaining(MOCK_ANSWER_SECONDS);
@@ -353,7 +411,7 @@ export default function Home() {
         setMockTimerStatus("answering");
       }
     }
-  }, [messages, codeInput, loading, showToast, candidateProfile, techTheme.key, showCodeTools, mockTimerStatus, interviewMode, roundStrategy]);
+  }, [messages, codeInput, loading, showToast, candidateProfile, techTheme.key, showCodeTools, mockTimerStatus, interviewMode, roundStrategy, interviewPanel, selectedCat, selectedSub]);
 
   // ── Screen analyze ────────────────────────────────────────────────────────
   const analyzeScreen = useCallback(async (b64, ctx) => {
@@ -497,6 +555,26 @@ export default function Home() {
     callAPI(prompt);
   };
 
+  const startCanvasAction = (prompt) => {
+    setActiveTab("chat");
+    callAPI(prompt, {
+      roundStrategy: "systemDesign",
+      interviewPanel: "systemDesignArchitect",
+      displayText: "System canvas review",
+      skipQuestionMemory: true,
+    });
+  };
+
+  const startDsaLabPractice = (prompt) => {
+    setActiveTab("chat");
+    callAPI(prompt, {
+      roundStrategy: "coding",
+      interviewPanel: "seniorEngineer",
+      displayText: "DSA Visual Lab practice",
+      skipQuestionMemory: true,
+    });
+  };
+
   const goHome = () => {
     abortRef.current?.abort();
     const homeState = createHomeNavigationState({
@@ -523,10 +601,31 @@ export default function Home() {
     if (isMobile) setSidebar(false);
   };
 
-  const startPracticeMock = ({ prompt, question }) => {
+  const startPracticeMock = ({ prompt, question, card, pack }) => {
+    if (card) {
+      pendingPracticeCard.current = { card, pack };
+    }
     setActiveTab("chat");
     callAPI(prompt, {
       displayText: `Practice as mock: ${question}`,
+    });
+  };
+
+  const submitRecordingReview = ({ review, prompt, transcript }) => {
+    setShowRecordingReview(false);
+    const apiText = [
+      buildInterviewRecordingReviewPrompt(review, {
+        role: candidateProfile?.position,
+        question: selectedSub || selectedCat,
+      }),
+      "",
+      "Transcript for this one-time review:",
+      transcript,
+    ].join("\n");
+    callAPI(review.displayText || "Interview recording review", {
+      apiText: prompt ? `${prompt}\n\nTranscript:\n${transcript}` : apiText,
+      displayText: review.displayText || "Interview recording review",
+      skipQuestionMemory: true,
     });
   };
 
@@ -553,15 +652,19 @@ export default function Home() {
     const topic = selectedSub || selectedCat;
     const style = INTERVIEW_MODES.find((item) => item.key === interviewMode)?.label || "Strict Interviewer";
     const round = ROUND_STRATEGY_MODES.find((item) => item.key === roundStrategy)?.label || "Coding";
+    const panel = INTERVIEW_PANEL_OPTIONS.find((item) => item.key === interviewPanel)?.label || "Senior Engineer";
+    const pressureRules = interviewMode === "realPressure"
+      ? "Real Pressure rules: strict timed one-question mode, no hints, interruption follow-ups, and final hire/no-hire scorecard."
+      : "";
     const prompt = mode === "interview"
-      ? `Start a ${style} mock interview for ${displayName} on "${topic}". Round Strategy Mode: ${round}. Difficulty: ${difficulty}. Ask your first question.`
+      ? `Start a ${style} mock interview for ${displayName} on "${topic}". Round Strategy Mode: ${round}. AI Interview Panel Mode: ${panel}. Difficulty: ${difficulty}. ${pressureRules} Ask your first question.`
       : `Give ${displayName} a comprehensive ${difficulty}-level practice session on "${topic}". Include working code when useful.`;
     setMessages([]);
     setActiveTab("chat");
     setMockTimerStatus("idle");
     setMockTimerEndsAt(null);
     setTimeout(() => callAPI(prompt, { startAnswerTimer: mode === "interview" }), 50);
-  }, [callAPI, candidateProfile, difficulty, displayName, interviewMode, loading, mode, roundStrategy, selectedCat, selectedSub]);
+  }, [callAPI, candidateProfile, difficulty, displayName, interviewMode, interviewPanel, loading, mode, roundStrategy, selectedCat, selectedSub]);
 
   const clearChat = useCallback(() => {
     abortRef.current?.abort(); setMessages([]); setLoading(false);
@@ -678,6 +781,17 @@ export default function Home() {
       {/* Screen modal */}
       {showScreen && <ScreenModal theme={techTheme} onCapture={analyzeScreen} onClose={() => setShowScreen(false)} />}
 
+      {/* Recording review modal */}
+      {showRecordingReview && (
+        <RecordingReviewModal
+          theme={techTheme}
+          role={candidateProfile?.position || ""}
+          question={selectedSub || selectedCat || ""}
+          onClose={() => setShowRecordingReview(false)}
+          onReviewReady={submitRecordingReview}
+        />
+      )}
+
       {/* Settings modal */}
       {showSettings && <SettingsModal theme={techTheme} onClose={() => setShowSettings(false)} />}
 
@@ -714,12 +828,18 @@ export default function Home() {
             <button className={`icon-btn ${activeTab==="company"?"active":""}`} onClick={() => setActiveTab(activeTab==="company"?"chat":"company")} title="Company Prep" aria-label="Company Prep">
               <i className="ti ti-building" />
             </button>
+            <button className={`icon-btn ${activeTab==="canvas"?"active":""}`} onClick={() => setActiveTab(activeTab==="canvas"?"chat":"canvas")} title="System Canvas" aria-label="System Canvas">
+              <i className="ti ti-schema" />
+            </button>
+            <button className={`icon-btn ${activeTab==="dsaLab"?"active":""}`} onClick={() => setActiveTab(activeTab==="dsaLab"?"chat":"dsaLab")} title="DSA Lab" aria-label="DSA Lab">
+              <i className="ti ti-binary-tree" />
+            </button>
             <button className={`icon-btn ${activeTab==="course"?"active":""}`} onClick={() => setActiveTab(activeTab==="course"?"chat":"course")} title="Agentic UI Course" aria-label="Agentic UI Course">
               <i className="ti ti-sparkles" />
             </button>
 
             <span style={{ flex:1, fontSize:13, fontWeight:500, color: currentLabel?"#e8e8f0":"#4b5563", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-              {activeTab === "course" ? "Agentic UI Course" : activeTab === "company" ? (candidateProfile ? `Company Prep for ${displayName}` : "Company Prep") : candidateProfile ? `${stackGreeting.salutation}${currentLabel ? ` · ${currentLabel}` : ""}` : "Tell us your target role"}
+              {activeTab === "course" ? "Agentic UI Course" : activeTab === "dsaLab" ? "DSA Lab" : activeTab === "canvas" ? "System Canvas" : activeTab === "company" ? (candidateProfile ? `Company Prep for ${displayName}` : "Company Prep") : candidateProfile ? `${stackGreeting.salutation}${currentLabel ? ` · ${currentLabel}` : ""}` : "Tell us your target role"}
             </span>
             {candidateProfile && (
               <span style={{ display:isMobile?"none":"inline-flex", alignItems:"center", gap:5, padding:"3px 8px", borderRadius:999, border:`1px solid ${techTheme.accentBorder}`, background:techTheme.accentMuted, color:techTheme.accentText, fontSize:10.5, fontWeight:600, whiteSpace:"nowrap" }}>
@@ -731,6 +851,7 @@ export default function Home() {
             {showInterviewTools && <div style={{ display:"flex", alignItems:"center", gap:6 }} className="desktop-controls">
               <button className="icon-btn" onClick={() => setShowScreen(true)} title="Analyze Screen" aria-label="Analyze Screen"><i className="ti ti-screenshot" /></button>
               <button className={`icon-btn ${isListening?"recording":""}`} onClick={toggleVoice} title="Voice" aria-label="Voice"><i className={`ti ${isListening?"ti-microphone-off":"ti-microphone"}`} /></button>
+              <button className="icon-btn" onClick={() => setShowRecordingReview(true)} title="Record Review" aria-label="Record Review"><i className="ti ti-wave-sine" /></button>
 
               <div style={{ display:"flex", background:"rgba(255,255,255,.04)", borderRadius:7, padding:2, border:"1px solid rgba(255,255,255,.07)" }}>
                 {["interview","practice"].map(m => (
@@ -755,6 +876,12 @@ export default function Home() {
                 style={{ fontSize:11, padding:"3px 6px", borderRadius:6, border:"1px solid rgba(255,255,255,.09)", color:"#9ca3af", outline:"none", maxWidth:130 }}>
                 {ROUND_STRATEGY_MODES.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}
               </select>
+              <select value={interviewPanel} onChange={e => setInterviewPanel(e.target.value)}
+                aria-label="AI Interview Panel Mode"
+                className="glass-input"
+                style={{ fontSize:11, padding:"3px 6px", borderRadius:6, border:"1px solid rgba(255,255,255,.09)", color:"#9ca3af", outline:"none", maxWidth:165 }}>
+                {INTERVIEW_PANEL_OPTIONS.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}
+              </select>
 
               <button className="glass-button" onClick={startSession} disabled={!candidateProfile || !selectedCat || loading}
                 style={{ padding:"4px 12px", fontSize:12, fontWeight:600, borderRadius:7, border:`1px solid ${techTheme.accentBorder}`, color:techTheme.accentText, cursor: candidateProfile&&selectedCat&&!loading?"pointer":"not-allowed", opacity: candidateProfile&&selectedCat&&!loading?1:.4, display:"flex", alignItems:"center", gap:5 }}>
@@ -775,6 +902,15 @@ export default function Home() {
           <div ref={chatRef} className="chat-scroll" role="log" aria-live="polite" aria-relevant="additions text" aria-label="Conversation messages" style={{ flex:1, overflowY:"auto", padding: isMobile?"12px 10px":"20px 16px", display:"flex", flexDirection:"column" }}>
             {activeTab === "course" ? (
               <AgenticUICourse theme={techTheme} variant="full" />
+            ) : activeTab==="dsaLab" ? (
+              <DsaVisualLab theme={techTheme} initialLessonId="arrays" onPractice={startDsaLabPractice} />
+            ) : activeTab === "canvas" ? (
+              <SystemDesignCanvas
+                theme={techTheme}
+                initialState={systemDesignCanvas}
+                onChange={setSystemDesignCanvas}
+                onAction={startCanvasAction}
+              />
             ) : activeTab === "company" ? (
               <CompanyPrep theme={techTheme} weakSpots={weakSpots} mockScores={mockScores} messages={messages} selectedCat={selectedCat} selectedSub={selectedSub} onMock={startCompanyMock} />
             ) : messages.length === 0 && !loading
@@ -784,6 +920,7 @@ export default function Home() {
                   onChip={t => callAPI(t)}
                   onScreen={() => setShowScreen(true)}
                   onVoice={toggleVoice}
+                  onRecordReview={() => setShowRecordingReview(true)}
                   selectedCat={selectedCat}
                   selectedSub={selectedSub}
                   mode={mode}
@@ -795,6 +932,9 @@ export default function Home() {
                   weakSpots={weakSpots}
                   mockScores={mockScores}
                   messages={messages}
+                  questionMemory={questionMemory}
+                  onQuestionMemoryChange={setQuestionMemory}
+                  systemDesignCanvas={systemDesignCanvas}
                   onPracticeMock={startPracticeMock}
                 />
               : (
@@ -864,8 +1004,8 @@ export default function Home() {
 
             {/* Desktop hint / Mobile mode bar */}
             {isMobile && !isKeyboardOpen ? (
-              <div style={{ marginTop:8, display:"flex", alignItems:"center", justifyContent:"space-between", gap:8 }}>
-                <div style={{ display:"flex", background:"rgba(255,255,255,.04)", borderRadius:7, padding:2, border:"1px solid rgba(255,255,255,.07)", flex:1 }}>
+              <div style={{ marginTop:8, display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, flexWrap:"wrap" }}>
+                <div style={{ display:"flex", background:"rgba(255,255,255,.04)", borderRadius:7, padding:2, border:"1px solid rgba(255,255,255,.07)", flex:"1 1 148px" }}>
                   {["interview","practice"].map(m => (
                     <button key={m} className={mode===m?"glass-button":""} onClick={() => setMode(m)} style={{ flex:1, padding:"5px 6px", fontSize:11, fontWeight:500, borderRadius:5, border:mode===m?`1px solid ${techTheme.accentBorder}`:"none", cursor:"pointer", color: mode===m?techTheme.accentText:"#6b7280", background: mode===m?techTheme.accentSoft:"transparent", textTransform:"capitalize" }}>{m}</button>
                   ))}
@@ -886,6 +1026,12 @@ export default function Home() {
                   className="glass-input"
                   style={{ fontSize:11, padding:"5px 6px", borderRadius:6, border:"1px solid rgba(255,255,255,.09)", color:"#9ca3af", outline:"none", minWidth:86 }}>
                   {ROUND_STRATEGY_MODES.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}
+                </select>
+                <select value={interviewPanel} onChange={e => setInterviewPanel(e.target.value)}
+                  aria-label="AI Interview Panel Mode"
+                  className="glass-input"
+                  style={{ fontSize:11, padding:"5px 6px", borderRadius:6, border:"1px solid rgba(255,255,255,.09)", color:"#9ca3af", outline:"none", minWidth:120, flex:"1 1 120px" }}>
+                  {INTERVIEW_PANEL_OPTIONS.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}
                 </select>
                 <button className="glass-button" onClick={startSession} disabled={!candidateProfile||!selectedCat||loading}
                   style={{ padding:"5px 12px", fontSize:11, fontWeight:600, borderRadius:7, border:`1px solid ${techTheme.accentBorder}`, color:techTheme.accentText, cursor: candidateProfile&&selectedCat&&!loading?"pointer":"not-allowed", opacity: candidateProfile&&selectedCat&&!loading?1:.4, display:"flex", alignItems:"center", gap:4, whiteSpace:"nowrap" }}>
@@ -914,10 +1060,13 @@ export default function Home() {
                 { icon:"ti-home",           label:"Home",    action:goHome, active:activeTab==="chat" && messages.length===0 },
                 { icon:"ti-layout-sidebar", label:"Topics",  action:()=>setSidebar(p=>!p), active:sidebarOpen },
                 { icon:"ti-building",        label:"Company", action:()=>setActiveTab(activeTab==="company"?"chat":"company"), active:activeTab==="company" },
+                { icon:"ti-schema",          label:"Canvas",  action:()=>setActiveTab(activeTab==="canvas"?"chat":"canvas"), active:activeTab==="canvas" },
+                { icon:"ti-binary-tree",      label:"DSA Lab", action:()=>setActiveTab(activeTab==="dsaLab"?"chat":"dsaLab"), active:activeTab==="dsaLab" },
                 { icon:"ti-sparkles",        label:"Course",  action:()=>setActiveTab(activeTab==="course"?"chat":"course"), active:activeTab==="course" },
                 ...(showInterviewTools ? [
                   { icon:"ti-screenshot",      label:"Screen",  action:()=>setShowScreen(true) },
                   { icon:"ti-microphone",       label:"Voice",   action:toggleVoice, active:isListening, danger:isListening },
+                  { icon:"ti-wave-sine",        label:"Review",  action:()=>setShowRecordingReview(true) },
                 ] : []),
                 ...(messages.length > 0 ? [{ icon:"ti-trash", label:"Clear", action:clearChat }] : []),
                 { icon:"ti-info-circle",      label:"Info",    action:()=>setShowSettings(true) },

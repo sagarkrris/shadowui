@@ -17,6 +17,7 @@ export default async function handler(req, res) {
   const { profile } = req.body;
   const interviewMode = req.body?.interviewMode;
   const roundStrategy = req.body?.roundStrategy;
+  const interviewPanel = req.body?.interviewPanel;
   const messages = normalizeChatMessages(req.body?.messages);
 
   if (!messages) {
@@ -35,6 +36,7 @@ export default async function handler(req, res) {
     messageCount: messages.length,
     hasProfile: Boolean(profile),
     profileFields: profile ? Object.keys(profile).filter((key) => profile[key]).sort() : [],
+    interviewPanel: interviewPanel || "default",
     modelCandidateCount: modelCandidates.length,
   });
 
@@ -58,7 +60,7 @@ export default async function handler(req, res) {
       (candidate) => {
         const model = genAI.getGenerativeModel({
           model: candidate,
-          systemInstruction: buildSystemPrompt(profile, { interviewMode, roundStrategy }),
+          systemInstruction: buildSystemPrompt(profile, { interviewMode, roundStrategy, interviewPanel }),
         });
         const chat = model.startChat({ history });
         return chat.sendMessageStream(lastMessage.content);

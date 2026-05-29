@@ -49,6 +49,7 @@ test("chat system prompt calibrates interviewer mode behavior", () => {
   const coach = buildSystemPrompt({}, { interviewMode: "coach" });
   const barRaiser = buildSystemPrompt({}, { interviewMode: "barRaiser" });
   const behavioralStar = buildSystemPrompt({}, { interviewMode: "behavioralStar" });
+  const realPressure = buildSystemPrompt({}, { interviewMode: "realPressure" });
 
   assert.match(strict, /Strict Interviewer/i);
   assert.match(strict, /Ask exactly one question at a time/i);
@@ -62,6 +63,11 @@ test("chat system prompt calibrates interviewer mode behavior", () => {
   assert.match(behavioralStar, /Behavioral STAR Mode/i);
   assert.match(behavioralStar, /Situation, Task, Action, Result/i);
   assert.match(behavioralStar, /metrics/i);
+  assert.match(realPressure, /Real Pressure Mode/i);
+  assert.match(realPressure, /timed/i);
+  assert.match(realPressure, /no hints/i);
+  assert.match(realPressure, /interruption follow-ups/i);
+  assert.match(realPressure, /hire\/no-hire scorecard/i);
 });
 
 test("chat system prompt calibrates round strategy behavior", () => {
@@ -81,4 +87,16 @@ test("chat system prompt calibrates round strategy behavior", () => {
   assert.match(manager, /ownership, collaboration, conflict/i);
   assert.match(final, /Final Round/i);
   assert.match(final, /offer readiness/i);
+});
+
+test("chat system prompt adds AI interview panel behavior", () => {
+  const prompt = buildSystemPrompt(
+    { name: "Sagar", position: "Staff Engineer", stack: "Java, React" },
+    { roundStrategy: "systemDesign", interviewPanel: "systemDesignArchitect" },
+  );
+
+  assert.match(prompt, /AI Interview Panel Mode/i);
+  assert.match(prompt, /System Design Architect/i);
+  assert.match(prompt, /Architecture follow-ups/i);
+  assert.match(prompt, /Private rubric/i);
 });

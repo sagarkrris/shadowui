@@ -41,6 +41,7 @@ test("creates a refresh-safe snapshot without transient streaming messages", () 
     selectedSub: "Collections",
     expandedCat: "Java Core",
     mode: "interview",
+    interviewPanel: "barRaiser",
     difficulty: "Hard",
     activeTab: "chat",
   });
@@ -50,6 +51,7 @@ test("creates a refresh-safe snapshot without transient streaming messages", () 
   assert.deepEqual(snapshot.messages[0], { role: "user", content: "Explain collections" });
   assert.deepEqual(snapshot.messages[1], { role: "assistant", content: "Score: 8/10" });
   assert.equal(snapshot.selectedCat, "Java Core");
+  assert.equal(snapshot.interviewPanel, "barRaiser");
 });
 
 test("saves and loads a valid session snapshot from storage", () => {
@@ -81,6 +83,50 @@ test("preserves the course tab across refreshes", () => {
   saveSessionSnapshot(storage, snapshot);
 
   assert.equal(loadSessionSnapshot(storage).activeTab, "course");
+});
+
+test("preserves the system design canvas tab across refreshes", () => {
+  const storage = memoryStorage();
+  const snapshot = createSessionSnapshot({
+    activeTab: "canvas",
+  });
+
+  saveSessionSnapshot(storage, snapshot);
+
+  assert.equal(loadSessionSnapshot(storage).activeTab, "canvas");
+});
+
+test("preserves the DSA visual lab tab across refreshes", () => {
+  const storage = memoryStorage();
+  const snapshot = createSessionSnapshot({
+    activeTab: "dsaLab",
+  });
+
+  saveSessionSnapshot(storage, snapshot);
+
+  assert.equal(loadSessionSnapshot(storage).activeTab, "dsaLab");
+});
+
+test("preserves real pressure interview mode across refreshes", () => {
+  const storage = memoryStorage();
+  const snapshot = createSessionSnapshot({
+    interviewMode: "realPressure",
+  });
+
+  saveSessionSnapshot(storage, snapshot);
+
+  assert.equal(loadSessionSnapshot(storage).interviewMode, "realPressure");
+});
+
+test("preserves AI interview panel mode across refreshes", () => {
+  const storage = memoryStorage();
+  const snapshot = createSessionSnapshot({
+    interviewPanel: "systemDesignArchitect",
+  });
+
+  saveSessionSnapshot(storage, snapshot);
+
+  assert.equal(loadSessionSnapshot(storage).interviewPanel, "systemDesignArchitect");
 });
 
 test("returns null for missing or corrupt stored sessions", () => {

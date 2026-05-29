@@ -19,6 +19,11 @@ test("career toolkit exposes a target job description analysis workflow", () => 
   assert.match(source, /jobDescriptionAnalysis/);
   assert.match(source, /Analyze role fit/);
   assert.match(source, /Role-specific mocks/);
+  assert.match(source, /JD Copilot/);
+  assert.match(source, /Must-know skills/);
+  assert.match(source, /Top likely questions/);
+  assert.match(source, /Resume proof rewrites/);
+  assert.match(source, /7-day role crash plan/);
   assert.match(source, /analyzeJobDescriptionFit/);
 });
 

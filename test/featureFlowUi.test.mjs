@@ -5,6 +5,10 @@ import test from "node:test";
 const indexSource = readFileSync(new URL("../pages/index.js", import.meta.url), "utf8");
 const companySource = readFileSync(new URL("../components/company/CompanyPrep.js", import.meta.url), "utf8");
 const insightsSource = readFileSync(new URL("../components/welcome/PrepInsightsPanel.js", import.meta.url), "utf8");
+const welcomeSource = readFileSync(new URL("../components/welcome/Welcome.js", import.meta.url), "utf8");
+const practicePackSource = readFileSync(new URL("../components/welcome/PracticePack.js", import.meta.url), "utf8");
+const careerToolkitSource = readFileSync(new URL("../components/welcome/CareerToolkit.js", import.meta.url), "utf8");
+const chatPromptSource = readFileSync(new URL("../lib/chatPrompt.mjs", import.meta.url), "utf8");
 
 test("mock interview timer is visible and switches to review-ready state", () => {
   assert.match(indexSource, /MOCK_ANSWER_SECONDS/);
@@ -46,9 +50,34 @@ test("mock replay and daily prep plan are rendered from prep insights", () => {
   assert.match(insightsSource, /Mock Replay/);
   assert.match(insightsSource, /deriveMockReplayTimelines/);
   assert.match(insightsSource, /Replay mock/);
+  assert.match(insightsSource, /Part-wise Replay/);
+  assert.match(insightsSource, /replay\.steps/);
+  assert.match(insightsSource, /replay\.actions/);
   assert.match(insightsSource, /Today's 30-Minute Plan/);
   assert.match(insightsSource, /buildDailyPrepPlan/);
   assert.match(insightsSource, /Start step/);
+});
+
+test("guided prep mission board is rendered from connected prep signals", () => {
+  assert.match(insightsSource, /Guided Prep Mission/);
+  assert.match(insightsSource, /buildGuidedPrepMissions/);
+  assert.match(insightsSource, /missionBoard\.tasks/);
+  assert.match(insightsSource, /Offer readiness impact/);
+});
+
+test("answer coach and resume bullet generator actions are wired into prep insights", () => {
+  assert.match(insightsSource, /Answer Coach/);
+  assert.match(insightsSource, /buildAnswerCoachActions/);
+  assert.match(insightsSource, /answerCoachActions/);
+  assert.match(insightsSource, /Make it concise/);
+  assert.match(insightsSource, /Convert to STAR/);
+  assert.match(insightsSource, /Resume Bullet Generator/);
+  assert.match(insightsSource, /buildResumeBulletGenerator/);
+  assert.match(insightsSource, /resumeBulletGenerator\.suggestions/);
+  assert.match(insightsSource, /Before/);
+  assert.match(insightsSource, /After/);
+  assert.match(insightsSource, /onAction\(action\.prompt\)/);
+  assert.match(insightsSource, /onAction\(suggestion\.prompt\)/);
 });
 
 test("company readiness score is wired into company prep", () => {
@@ -57,6 +86,17 @@ test("company readiness score is wired into company prep", () => {
   assert.match(companySource, /readiness\.score/);
   assert.match(indexSource, /mockScores={mockScores}/);
   assert.match(indexSource, /messages={messages}/);
+});
+
+test("company prep room renders role context, JD gaps, story references, and final-day action", () => {
+  assert.match(companySource, /buildCompanyPrepRoom/);
+  assert.match(companySource, /Prep Room/);
+  assert.match(companySource, /Role context/);
+  assert.match(companySource, /JD Gaps/);
+  assert.match(companySource, /Likely Questions/);
+  assert.match(companySource, /Story References/);
+  assert.match(companySource, /Final-Day Checklist/);
+  assert.match(companySource, /Run final-day rehearsal/);
 });
 
 test("prep report export and keyboard power mode are wired into the UI", () => {
@@ -84,11 +124,13 @@ test("interview calibration modes and rubric sliders are wired into chat", () =>
   assert.match(indexSource, /System Design/);
   assert.match(indexSource, /Manager/);
   assert.match(indexSource, /Final/);
+  assert.match(indexSource, /Real Pressure/);
   assert.match(indexSource, /interviewMode: interviewMode/);
   assert.match(indexSource, /roundStrategy/);
   assert.match(apiChatSource, /req\.body\?\.interviewMode/);
   assert.match(apiChatSource, /req\.body\?\.roundStrategy/);
-  assert.match(apiChatSource, /buildSystemPrompt\(profile, \{ interviewMode, roundStrategy \}\)/);
+  assert.match(apiChatSource, /req\.body\?\.interviewPanel/);
+  assert.match(apiChatSource, /buildSystemPrompt\(profile, \{ interviewMode, roundStrategy, interviewPanel \}\)/);
   assert.match(scoreBadgeSource, /parseAnswerRubric/);
   assert.match(scoreBadgeSource, /type="range"/);
   assert.match(scoreBadgeSource, /Correctness/);
@@ -104,4 +146,84 @@ test("proof vault offer readiness heatmap and interview day pack are rendered", 
   assert.match(insightsSource, /deriveAnswerQualityHeatmap/);
   assert.match(insightsSource, /Interview Day Pack/);
   assert.match(insightsSource, /buildInterviewDayPack/);
+});
+
+test("weak spot radar is rendered from repeated prep insight signals", () => {
+  assert.match(insightsSource, /Weak Spot Radar/);
+  assert.match(insightsSource, /deriveWeakSpotRadar/);
+  assert.match(insightsSource, /radar\.categories/);
+  assert.match(insightsSource, /radar\.highestRisk/);
+  assert.match(insightsSource, /Repeated signals/);
+});
+
+test("question memory and mastery map are wired into practice and prep insights", () => {
+  assert.match(indexSource, /QUESTION_MEMORY_STORAGE_KEY/);
+  assert.match(indexSource, /recordQuestionAttempt/);
+  assert.match(welcomeSource, /questionMemory/);
+  assert.match(practicePackSource, /memoryStatus/);
+  assert.match(insightsSource, /Mastery Map/);
+  assert.match(insightsSource, /buildMasteryMap/);
+});
+
+test("interview recording review is wired into the home workflow without persisting raw transcript", () => {
+  assert.match(indexSource, /RecordingReviewModal/);
+  assert.match(indexSource, /showRecordingReview/);
+  assert.match(indexSource, /submitRecordingReview/);
+  assert.match(welcomeSource, /Record Review/);
+  assert.match(indexSource, /apiText/);
+  assert.match(indexSource, /displayText/);
+});
+
+test("system design canvas is a first-class workspace with review actions", () => {
+  const canvasSource = readFileSync(new URL("../components/system-design/SystemDesignCanvas.js", import.meta.url), "utf8");
+
+  assert.match(indexSource, /SystemDesignCanvas/);
+  assert.match(indexSource, /activeTab==="canvas"/);
+  assert.match(indexSource, /System Canvas/);
+  assert.match(indexSource, /startCanvasAction/);
+  assert.match(canvasSource, /System Design Canvas/);
+  assert.match(canvasSource, /buildCanvasReviewPrompt/);
+  assert.match(canvasSource, /onAction/);
+});
+
+test("role pack builder and final interview report are visible from prep surfaces", () => {
+  assert.match(careerToolkitSource, /Role Pack Builder/);
+  assert.match(careerToolkitSource, /buildRolePack/);
+  assert.match(insightsSource, /Final Interview Report/);
+  assert.match(insightsSource, /rolePack/);
+  assert.match(insightsSource, /masteryMap/);
+  assert.match(insightsSource, /systemDesignCanvas/);
+});
+
+test("DSA Visual Lab is a first-class learning workspace", () => {
+  const dsaLabSource = readFileSync(new URL("../components/dsa/DsaVisualLab.js", import.meta.url), "utf8");
+
+  assert.match(indexSource, /DsaVisualLab/);
+  assert.match(indexSource, /activeTab==="dsaLab"/);
+  assert.match(indexSource, /DSA Lab/);
+  assert.match(indexSource, /startDsaLabPractice/);
+  assert.match(dsaLabSource, /DSA Visual Lab/);
+  assert.match(dsaLabSource, /Visualize/);
+  assert.match(dsaLabSource, /Dry Run/);
+  assert.match(dsaLabSource, /Practice as Mock/);
+});
+
+test("PrepOS timeline skill graph and resume story matcher are connected to prep home", () => {
+  assert.match(welcomeSource, /PrepOSDashboard/);
+  assert.match(welcomeSource, /SmartPrepTimeline/);
+  assert.match(insightsSource, /SkillGraphPanel/);
+  assert.match(insightsSource, /ResumeStoryMatcherPanel/);
+  assert.match(insightsSource, /Skill Graph/);
+  assert.match(insightsSource, /Resume Story Matcher/);
+});
+
+test("AI Interview Panel Mode is wired into chat prompting", () => {
+  assert.match(indexSource, /INTERVIEW_PANEL_OPTIONS/);
+  assert.match(indexSource, /interviewPanel/);
+  assert.match(indexSource, /AI Interview Panel Mode/);
+  assert.match(indexSource, /Senior Engineer/);
+  assert.match(indexSource, /Engineering Manager/);
+  assert.match(indexSource, /System Design Architect/);
+  assert.match(indexSource, /Bar Raiser/);
+  assert.match(chatPromptSource, /buildInterviewPanelPrompt/);
 });

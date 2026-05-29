@@ -11,6 +11,7 @@ import {
   recordActivityDate,
   validateInterviewDraft,
 } from "../../lib/careerToolkit.mjs";
+import { buildRolePack } from "../../lib/rolePacks.mjs";
 
 const EMPTY_STATE = {
   resumeText: "",
@@ -117,6 +118,11 @@ function normalizeJobDescriptionAnalysis(analysis) {
     coveredSkills: Array.isArray(analysis?.coveredSkills) ? analysis.coveredSkills : [],
     missingSkills: Array.isArray(analysis?.missingSkills) ? analysis.missingSkills : [],
     practicePlan: Array.isArray(analysis?.practicePlan) ? analysis.practicePlan : [],
+    mustKnowSkills: Array.isArray(analysis?.mustKnowSkills) ? analysis.mustKnowSkills : [],
+    likelyQuestions: Array.isArray(analysis?.likelyQuestions) ? analysis.likelyQuestions : [],
+    resumeRewriteSuggestions: Array.isArray(analysis?.resumeRewriteSuggestions) ? analysis.resumeRewriteSuggestions : [],
+    gapUrgency: Array.isArray(analysis?.gapUrgency) ? analysis.gapUrgency : [],
+    crashPlan: Array.isArray(analysis?.crashPlan) ? analysis.crashPlan : [],
   };
 }
 
@@ -135,7 +141,7 @@ function buildResumeQuestionPrompts(resumeAnalysis, profile) {
   }));
 }
 
-export default function CareerToolkit({ profile, topics, messages, theme, onAction }) {
+export default function CareerToolkit({ profile, topics, messages, theme, onAction, onToolkitStateChange }) {
   const [ready, setReady] = useState(false);
   const [state, setState] = useState(EMPTY_STATE);
   const [interviewDraft, setInterviewDraft] = useState(EMPTY_INTERVIEW);
@@ -151,7 +157,8 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
   useEffect(() => {
     if (!ready) return;
     saveToolkitState(state);
-  }, [ready, state]);
+    onToolkitStateChange?.(state);
+  }, [ready, state, onToolkitStateChange]);
 
   const reviewQueue = useMemo(
     () => buildSpacedReviewQueue({ messages, reviewHistory: state.reviewHistory }),
@@ -179,6 +186,7 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
     .sort((left, right) => left.score - right.score)
     .slice(0, 2) || [];
   const resumeQuestionPrompts = buildResumeQuestionPrompts(resumeAnalysis, profile);
+  const rolePack = buildRolePack({ profile });
 
   const rememberActivity = () => {
     setState((previous) => ({
@@ -325,6 +333,36 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
             <i className="ti ti-award" /> {badge}
           </span>
         ))}
+      </div>
+
+      <div className="glass-card" style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 12 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
+          <span>
+            <span style={{ display: "flex", alignItems: "center", gap: 7, color: theme.accentText, fontSize: 12, fontWeight: 900 }}>
+              <i className="ti ti-briefcase-2" />Role Pack Builder
+            </span>
+            <p style={{ color: "#9ca3af", fontSize: 11.3, lineHeight: 1.45, marginTop: 5 }}>
+              {rolePack.title} tuned from your target role and stack.
+            </p>
+          </span>
+          <span style={{ border: `1px solid ${theme.accentBorder}`, background: theme.accentMuted, color: theme.accentStrong, borderRadius: 999, padding: "5px 9px", fontSize: 10.8, fontWeight: 900 }}>
+            {rolePack.rounds.length} rounds
+          </span>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8, marginBottom: 10 }}>
+          {rolePack.focusTopics.slice(0, 6).map((topic) => (
+            <button key={topic} className="glass-button" onClick={() => practicePrompt(`Role Pack Builder drill for ${rolePack.title}: ${topic}. Ask one realistic interview question, wait for my answer, then score it with the role-pack rubric.`)} style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 8, color: "#cbd5e1", fontSize: 10.8, textAlign: "left", cursor: "pointer" }}>
+              {topic}
+            </button>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {rolePack.priorityDrills.slice(0, 3).map((drill) => (
+            <button key={drill} className="glass-button" onClick={() => practicePrompt(`Role Pack Builder for ${rolePack.title}: ${drill}`)} style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 7, padding: "5px 8px", color: theme.accentText, fontSize: 10.6, fontWeight: 800, cursor: "pointer" }}>
+              {drill}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 10, alignItems: "start" }}>
@@ -485,6 +523,66 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <strong style={{ color: scoreBandColor(jobDescriptionAnalysis.score, theme), fontSize: 22 }}>{jobDescriptionAnalysis.score}%</strong>
                 <span style={{ color: "#9ca3af", fontSize: 11.3 }}>{jobDescriptionAnalysis.summary}</span>
+              </div>
+              <div style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 9, background: theme.accentMuted }}>
+                <div style={{ color: theme.accentText, fontSize: 11.8, fontWeight: 900, marginBottom: 7 }}>
+                  <i className="ti ti-sparkles" /> JD Copilot
+                </div>
+                <div style={{ display: "grid", gap: 9 }}>
+                  <div>
+                    <div style={{ color: theme.accentText, fontSize: 11.2, fontWeight: 900, marginBottom: 6 }}>Must-know skills</div>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      {jobDescriptionAnalysis.mustKnowSkills.slice(0, 6).map((skill) => (
+                        <span key={`must-${skill.name}`} style={{ color: skill.status === "missing" ? theme.accentStrong : "#86efac", border: `1px solid ${skill.status === "missing" ? theme.accentBorder : "rgba(134,239,172,.28)"}`, background: skill.status === "missing" ? "rgba(255,255,255,.035)" : "rgba(134,239,172,.08)", borderRadius: 999, padding: "3px 7px", fontSize: 10.3, fontWeight: 800 }}>
+                          {skill.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ color: theme.accentText, fontSize: 11.2, fontWeight: 900, marginBottom: 6 }}>Top likely questions</div>
+                    <div style={{ display: "grid", gap: 6 }}>
+                      {jobDescriptionAnalysis.likelyQuestions.slice(0, 3).map((item) => (
+                        <button key={item.id} className="glass-button" onClick={() => practicePrompt(item.prompt)} style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 7, padding: 7, textAlign: "left", color: "#cbd5e1", fontSize: 10.8, cursor: "pointer" }}>
+                          {item.question}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ color: theme.accentText, fontSize: 11.2, fontWeight: 900, marginBottom: 6 }}>Resume proof rewrites</div>
+                    <div style={{ display: "grid", gap: 6 }}>
+                      {jobDescriptionAnalysis.resumeRewriteSuggestions.slice(0, 2).map((item) => (
+                        <article key={item.id} style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 7, padding: 7 }}>
+                          <strong style={{ display: "block", color: "#e8e8f0", fontSize: 10.8, marginBottom: 4 }}>{item.title}</strong>
+                          <p style={{ color: "#cbd5e1", fontSize: 10.5, lineHeight: 1.4 }}>{item.after}</p>
+                        </article>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ color: theme.accentText, fontSize: 11.2, fontWeight: 900, marginBottom: 6 }}>Gap urgency</div>
+                    <div style={{ display: "grid", gap: 5 }}>
+                      {jobDescriptionAnalysis.gapUrgency.slice(0, 4).map((item) => (
+                        <div key={`urgency-${item.skill}`} style={{ display: "grid", gridTemplateColumns: "1fr 34px", gap: 8, color: "#9ca3af", fontSize: 10.6 }}>
+                          <span>{item.skill} · {item.action}</span>
+                          <strong style={{ color: item.status === "missing" ? theme.accentStrong : "#86efac", textAlign: "right" }}>{item.priority}</strong>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ color: theme.accentText, fontSize: 11.2, fontWeight: 900, marginBottom: 6 }}>7-day role crash plan</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 6 }}>
+                      {jobDescriptionAnalysis.crashPlan.slice(0, 7).map((day) => (
+                        <button key={day.day} className="glass-button" onClick={() => practicePrompt(day.prompt)} style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 7, padding: 7, textAlign: "left", cursor: "pointer" }}>
+                          <strong style={{ display: "block", color: theme.accentText, fontSize: 10.6, marginBottom: 3 }}>Day {day.day}: {day.title}</strong>
+                          <span style={{ display: "block", color: "#6b7280", fontSize: 10.2 }}>{day.focus}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
               {[
                 ["Required signals", jobDescriptionAnalysis.requiredSkills, "#cbd5e1", "rgba(255,255,255,.07)", "rgba(255,255,255,.025)"],

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  buildCompanyPrepRoom,
   buildCompanyReadinessScore,
   buildQuestionBankRefreshState,
   buildCompanyMockPrompt,
@@ -96,4 +97,83 @@ test("builds a company readiness score from refresh verification mocks and fit s
   assert.ok(readiness.factors.some((factor) => factor.label === "Verified local bank"));
   assert.ok(readiness.factors.some((factor) => factor.label === "Mock average"));
   assert.match(readiness.nextActionPrompt, /Amazon/);
+});
+
+test("builds a dedicated company prep room from role context and Career Toolkit analysis", () => {
+  const prep = getCompanyPrep("Amazon");
+  const room = buildCompanyPrepRoom({
+    prep,
+    roleContext: "Senior Backend Engineer",
+    selectedCat: "System Design",
+    selectedSub: "Message Queues",
+    careerToolkitState: {
+      jobDescriptionAnalysis: {
+        score: 58,
+        targetRole: "Senior Backend Engineer",
+        missingSkills: [
+          { name: "AWS", category: "Cloud" },
+          { name: "Message Queues", category: "Architecture" },
+        ],
+        likelyQuestions: [
+          {
+            id: "jd-question-aws",
+            skill: "AWS",
+            question: "How would you use AWS in this role?",
+            prompt: "Mock me on AWS for the target JD.",
+          },
+        ],
+        gapUrgency: [
+          { skill: "Message Queues", status: "missing", action: "Prepare one queue design proof." },
+        ],
+      },
+      proofStories: [
+        {
+          id: "story-latency",
+          title: "Latency reduction story",
+          skillsProven: ["AWS", "Message Queues"],
+          result: "Reduced checkout latency by 42%.",
+          actions: [{ label: "Use in system design", prompt: "Use this story in system design." }],
+        },
+      ],
+    },
+  });
+
+  assert.equal(room.company, "Amazon");
+  assert.equal(room.roleContext, "Senior Backend Engineer");
+  assert.ok(room.notes.some((note) => /Message Queues/.test(note.detail)));
+  assert.ok(room.interviewRounds.some((round) => round.name === "Coding screen"));
+  assert.ok(room.interviewRounds.some((round) => /System Design/.test(round.name)));
+  assert.deepEqual(room.jdGaps.map((gap) => gap.name), ["AWS", "Message Queues"]);
+  assert.ok(room.likelyQuestions.some((question) => question.question.includes("AWS")));
+  assert.ok(room.storyReferences.some((story) => story.title === "Latency reduction story"));
+  assert.ok(room.finalDayChecklist.length >= 5);
+  assert.match(room.finalDayActionPrompt, /Amazon/);
+  assert.match(room.finalDayActionPrompt, /Senior Backend Engineer/);
+});
+
+test("derives story references from scored local messages when saved stories are unavailable", () => {
+  const room = buildCompanyPrepRoom({
+    prep: getCompanyPrep("Stripe"),
+    roleContext: "Full Stack Engineer",
+    careerToolkitState: {
+      jobDescriptionAnalysis: {
+        missingSkills: [{ name: "React", category: "Frontend" }],
+        likelyQuestions: [],
+      },
+    },
+    messages: [
+      {
+        role: "user",
+        content: "Situation: Checkout was slow. Task: stabilize conversion. Action: added React profiling and API caching. Result: improved conversion by 12%.",
+      },
+      {
+        role: "assistant",
+        content: "Score: 8/10\nStrengths: Clear metric.\nGaps: Add trade-offs.\nImproved Version: Strong STAR story.",
+      },
+    ],
+  });
+
+  assert.ok(room.storyReferences.length > 0);
+  assert.ok(room.storyReferences[0].title.includes("proof story"));
+  assert.ok(room.storyReferences[0].skillsProven.length > 0);
 });

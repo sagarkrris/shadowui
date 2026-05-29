@@ -1,23 +1,42 @@
+import { useCallback, useEffect, useState } from "react";
 import { getQuickPrompts } from "../../lib/prompts.mjs";
 import { getStackGreeting } from "../../lib/personalization.mjs";
 import { buildPrepCommandCenter } from "../../lib/prepCoach.mjs";
+import { deriveProofVaultStories } from "../../lib/prepInsights.mjs";
+import { CAREER_TOOLKIT_STORAGE_KEY } from "../../lib/careerToolkit.mjs";
 import PrepCommandCenter from "./PrepCommandCenter";
 import PracticePack from "./PracticePack";
 import PrepInsightsPanel from "./PrepInsightsPanel";
 import CareerToolkit from "./CareerToolkit";
+import PrepOSDashboard from "./PrepOSDashboard";
+import SmartPrepTimeline from "./SmartPrepTimeline";
 import CodeRunner from "../CodeRunner";
 
-export default function Welcome({ onChip, onScreen, onVoice, selectedCat, selectedSub, mode, difficulty, theme, profile, showCodeTools, topics, weakSpots, mockScores, messages, onPracticeMock }) {
+export default function Welcome({ onChip, onScreen, onVoice, onRecordReview, selectedCat, selectedSub, mode, difficulty, theme, profile, showCodeTools, topics, weakSpots, mockScores, messages, questionMemory, onQuestionMemoryChange, systemDesignCanvas, onPracticeMock }) {
+  const [toolkitState, setToolkitState] = useState({});
   const topic = selectedSub || selectedCat;
   const quickPrompts = getQuickPrompts(selectedCat, selectedSub);
   const greeting = getStackGreeting(profile);
   const commandCenter = buildPrepCommandCenter({ profile, topics, weakSpots, mockScores });
+  const proofStories = deriveProofVaultStories(messages, profile);
+  const handleToolkitStateChange = useCallback((nextState) => setToolkitState(nextState || {}), []);
   const featureBadges = [
     ["ti-screenshot", "Screen AI"],
     ["ti-microphone", "Voice"],
+    ["ti-wave-sine", "Record Review"],
     ...(showCodeTools ? [["ti-code", "Code Help"]] : []),
     ["ti-bolt", "Streaming"],
   ];
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    try {
+      setToolkitState(JSON.parse(window.localStorage.getItem(CAREER_TOOLKIT_STORAGE_KEY) || "{}")?.state || {});
+    } catch {
+      setToolkitState({});
+    }
+  }, []);
 
   return (
     <div className="welcome-screen prep-home-screen" style={{ flex: 1, width: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "18px 20px 28px", textAlign: "center", overflowY: "visible" }}>
@@ -42,6 +61,9 @@ export default function Welcome({ onChip, onScreen, onVoice, selectedCat, select
         <button className="glass-button" onClick={onVoice} style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 18px", border: `1px solid ${theme.accentBorder}`, borderRadius: 10, color: theme.accentText, fontSize: 13, fontWeight: 500, cursor: "pointer" }}>
           <i className="ti ti-microphone" />Voice Input
         </button>
+        <button className="glass-button" onClick={onRecordReview} style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 18px", border: `1px solid ${theme.accentBorder}`, borderRadius: 10, color: theme.accentText, fontSize: 13, fontWeight: 500, cursor: "pointer" }}>
+          <i className="ti ti-wave-sine" />Record Review
+        </button>
       </div>
 
       <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", maxWidth: 500 }}>
@@ -59,6 +81,8 @@ export default function Welcome({ onChip, onScreen, onVoice, selectedCat, select
           selectedSub={selectedSub}
           difficulty={difficulty}
           theme={theme}
+          questionMemory={questionMemory}
+          onQuestionMemoryChange={onQuestionMemoryChange}
           onPracticeMock={onPracticeMock}
         />
       )}
@@ -74,12 +98,40 @@ export default function Welcome({ onChip, onScreen, onVoice, selectedCat, select
 
       <PrepCommandCenter center={commandCenter} theme={theme} onAction={onChip} />
 
+      <PrepOSDashboard
+        profile={profile}
+        topics={topics}
+        weakSpots={weakSpots}
+        mockScores={mockScores}
+        questionMemory={questionMemory}
+        proofStories={proofStories}
+        interviews={toolkitState.interviews || []}
+        theme={theme}
+        onAction={onChip}
+      />
+
       <CareerToolkit
         profile={profile}
         topics={topics}
         messages={messages}
         theme={theme}
         onAction={onChip}
+        onToolkitStateChange={handleToolkitStateChange}
+      />
+
+      <SmartPrepTimeline
+        profile={profile}
+        topics={topics}
+        weakSpots={weakSpots}
+        mockScores={mockScores}
+        questionMemory={questionMemory}
+        proofStories={proofStories}
+        interviews={toolkitState.interviews || []}
+        resumeAnalysis={toolkitState.resumeAnalysis || null}
+        jobDescriptionAnalysis={toolkitState.jobDescriptionAnalysis || null}
+        finalPack={toolkitState.finalPack || null}
+        theme={theme}
+        onAction={(milestone) => onChip(typeof milestone === "string" ? milestone : `Help me with this prep milestone: ${milestone.label}. ${milestone.detail}`)}
       />
 
       <PrepInsightsPanel
@@ -88,6 +140,8 @@ export default function Welcome({ onChip, onScreen, onVoice, selectedCat, select
         weakSpots={weakSpots}
         mockScores={mockScores}
         messages={messages}
+        questionMemory={questionMemory}
+        systemDesignCanvas={systemDesignCanvas}
         theme={theme}
         selectedCat={selectedCat}
         selectedSub={selectedSub}

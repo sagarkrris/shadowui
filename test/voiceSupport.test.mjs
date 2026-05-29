@@ -3,6 +3,8 @@ import test from "node:test";
 
 import {
   buildSpeechTranscript,
+  getRecordingErrorMessage,
+  getRecordingSupport,
   getVoiceErrorMessage,
   getVoiceSupport,
 } from "../lib/voiceSupport.mjs";
@@ -99,4 +101,46 @@ test("collapses progressive final speech without removing separate sentences", (
 
   assert.equal(transcript.finalText, "hi can you write a program to find prime numbers in Java");
   assert.equal(transcript.displayText, "hi can you write a program to find prime numbers in Java");
+});
+
+test("detects recording support when MediaRecorder and getUserMedia are available", () => {
+  function MediaRecorder() {}
+  MediaRecorder.isTypeSupported = (type) => type === "audio/webm";
+
+  const support = getRecordingSupport({
+    isSecureContext: true,
+    MediaRecorder,
+    navigator: {
+      mediaDevices: {
+        getUserMedia() {},
+      },
+      userAgent: "Mozilla/5.0",
+    },
+  });
+
+  assert.equal(support.supported, true);
+  assert.equal(support.type, "recording-supported");
+  assert.equal(support.mimeType, "audio/webm");
+  assert.equal(support.message, "");
+});
+
+test("returns typed fallback messaging when recording APIs are unavailable", () => {
+  const support = getRecordingSupport({
+    isSecureContext: true,
+    navigator: {
+      userAgent: "Mozilla/5.0 (iPhone) Version/16.0 Mobile Safari/604.1",
+    },
+  });
+
+  assert.equal(support.supported, false);
+  assert.equal(support.type, "typed-fallback");
+  assert.match(support.message, /type or paste/i);
+  assert.match(support.message, /recording review/i);
+});
+
+test("maps recording permission errors to a typed fallback", () => {
+  const message = getRecordingErrorMessage({ name: "NotAllowedError" });
+
+  assert.match(message, /microphone permission/i);
+  assert.match(message, /type or paste/i);
 });
