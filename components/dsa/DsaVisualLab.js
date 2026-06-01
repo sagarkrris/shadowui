@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  buildDsaExplainThenCodeCoach,
   buildDsaMockPrompt,
+  buildDsaThinkingSystem,
   buildDsaVisualizationState,
   DSA_VISUAL_LAB_STORAGE_KEY,
   getDsaCodeTemplate,
@@ -20,10 +22,21 @@ import {
   recordDsaTestCaseMastery,
 } from "../../lib/blind75VisualTrack.mjs";
 
-const GUIDED_STAGES = ["Learn", "Visualize", "Dry run", "Code", "Quiz", "Practice as Mock"];
+const GUIDED_STAGES = ["Learn", "Visualize", "Dry run", "Explain-Then-Code", "Code", "Quiz", "Practice as Mock"];
 const TRACKS = [
+  { id: "thinking", label: "How To Approach" },
   { id: "core", label: "Interview Core" },
   { id: "blind75", label: "Blind 75 Visual Track" },
+];
+const THINKING_METHOD_LABELS = [
+  "Understand the problem",
+  "Say brute force first",
+  "Detect the pattern",
+  "Build the invariant",
+  "Dry run before code",
+  "Write code skeleton",
+  "Test like an interviewer",
+  "Explain complexity",
 ];
 const BLIND75_FILTERS = [
   { id: "featured", label: "Featured 15", type: "scope" },
@@ -288,6 +301,8 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
   const [confidenceState, setConfidenceState] = useState(() => readConfidenceState());
   const [revealedTestCases, setRevealedTestCases] = useState({});
   const [inputValue, setInputValue] = useState(() => formatInputValue(buildDsaVisualizationState(defaultLessonId).input));
+  const [approachExplanation, setApproachExplanation] = useState("");
+  const [explanationJudged, setExplanationJudged] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [stage, setStage] = useState("Visualize");
   const [playing, setPlaying] = useState(false);
@@ -302,6 +317,18 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
   const currentStep = state.steps[Math.min(stepIndex, state.steps.length - 1)] || state.steps[0];
   const stackText = profile?.stack || "";
   const selectedCode = useMemo(() => getDsaCodeTemplate(lesson, stackText), [lesson, stackText]);
+  const thinkingSystem = useMemo(() => buildDsaThinkingSystem({
+    lesson,
+    stack: stackText,
+  }), [lesson, stackText]);
+  const thinkingSteps = thinkingSystem.steps.length
+    ? thinkingSystem.steps
+    : THINKING_METHOD_LABELS.map((label) => ({ label, coach: "Use this step before moving to code.", say: label }));
+  const explainThenCodeCoach = useMemo(() => buildDsaExplainThenCodeCoach({
+    lesson,
+    stack: stackText,
+    explanation: approachExplanation,
+  }), [lesson, stackText, approachExplanation]);
   const mockPrompt = useMemo(() => buildDsaMockPrompt(lesson), [lesson]);
   const progressSummary = useMemo(() => buildDsaProgressSummary(confidenceState), [confidenceState]);
   const visibleBlind75Problems = useMemo(
@@ -346,6 +373,8 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
 
   useEffect(() => {
     setInputValue(formatInputValue(buildDsaVisualizationState(selectedLessonId).input));
+    setApproachExplanation("");
+    setExplanationJudged(false);
     setStepIndex(0);
     setPlaying(false);
     setStage("Visualize");
@@ -372,11 +401,19 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
     setSelectedLessonId(lessonId);
   };
 
+  const chooseThinkingLesson = (lessonId) => {
+    setTrack("thinking");
+    setSelectedLessonId(lessonId);
+  };
+
   const chooseTrack = (nextTrack) => {
     setTrack(nextTrack);
     setSelectedLessonId((lessonId) => {
       if (nextTrack === "blind75") {
         return String(lessonId).startsWith("blind75-") ? lessonId : "blind75-two-sum";
+      }
+      if (nextTrack === "thinking") {
+        return isKnownLessonId(lessonId) ? lessonId : fallbackLessonId;
       }
       return String(lessonId).startsWith("blind75-") ? fallbackLessonId : lessonId;
     });
@@ -407,6 +444,16 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
   const practiceAsMock = () => {
     setStage("Practice as Mock");
     onPractice?.(mockPrompt, { lesson, problem: currentBlind75Problem, visualizationState: state, language: selectedCode.language });
+  };
+
+  const practiceThinkingAsMock = () => {
+    setStage("Practice as Mock");
+    onPractice?.(thinkingSystem.mockPrompt, { lesson, problem: currentBlind75Problem, thinkingSystem, language: thinkingSystem.code.language });
+  };
+
+  const judgeExplanation = () => {
+    setStage("Explain-Then-Code");
+    setExplanationJudged(true);
   };
 
   const toggleMasteryStep = (stepId) => {
@@ -526,7 +573,116 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
         </div>
       </header>
 
-      {track === "core" ? (
+      {track === "thinking" ? (
+        <section style={{ background: "rgba(255,255,255,.035)", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 12, padding: 12 }}>
+          <div style={{ alignItems: "start", display: "grid", gap: 12, gridTemplateColumns: "minmax(0, 1fr) auto" }}>
+            <div>
+              <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>DSA Thinking System</div>
+              <h3 style={{ color: "#f8fbff", fontSize: 16, lineHeight: 1.3, margin: "4px 0" }}>
+                Learn how to approach {thinkingSystem.lessonTitle} before touching code.
+              </h3>
+              <p style={{ color: "#93a4bf", fontSize: 12, lineHeight: 1.5, margin: 0 }}>
+                {thinkingSystem.subtitle}
+              </p>
+            </div>
+            <ActionButton icon="ti-user-question" label="Practice method" onClick={practiceThinkingAsMock} tone="#a7f3d0" />
+          </div>
+
+          <div style={{ display: "grid", gap: 8 }}>
+            <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Pick a pattern to learn</div>
+            <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(138px, 1fr))" }}>
+              {lessons.map((item) => {
+                const active = item.id === selectedLessonId;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={active ? "glass-button" : ""}
+                    onClick={() => chooseThinkingLesson(item.id)}
+                    style={{
+                      background: active ? `${accent}1f` : "rgba(0,0,0,.14)",
+                      border: `1px solid ${active ? accent : "rgba(255,255,255,.08)"}`,
+                      borderRadius: 8,
+                      color: active ? "#f8fbff" : "#93a4bf",
+                      cursor: "pointer",
+                      display: "grid",
+                      gap: 5,
+                      minHeight: 76,
+                      padding: 9,
+                      textAlign: "left",
+                    }}
+                  >
+                    <span style={{ alignItems: "center", display: "flex", gap: 7, fontSize: 11.5, fontWeight: 900 }}>
+                      <i className={`ti ${item.icon}`} style={{ color: active ? accent : "#7d8aa2" }} />
+                      {item.title}
+                    </span>
+                    <span style={{ color: active ? accent : "#7d8aa2", fontSize: 10.5, fontWeight: 850 }}>
+                      {item.complexity.time} / {item.complexity.space}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(min(230px, 100%), 1fr))" }}>
+            <section style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 8, padding: 11 }}>
+              <div style={{ color: "#a7f3d0", fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Pattern signals</div>
+              {thinkingSystem.patternSignals.map((signal) => (
+                <div key={signal} style={{ alignItems: "start", display: "grid", gap: 7, gridTemplateColumns: "18px 1fr" }}>
+                  <i className="ti ti-circle-check" style={{ color: "#a7f3d0", fontSize: 15, marginTop: 1 }} />
+                  <span style={{ color: "#dbeafe", fontSize: 11.5, lineHeight: 1.45 }}>{signal}</span>
+                </div>
+              ))}
+            </section>
+
+            <section style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 8, padding: 11 }}>
+              <div style={{ color: "#facc15", fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>What to say in interview</div>
+              <p style={{ color: "#dbeafe", fontSize: 11.5, lineHeight: 1.55, margin: 0, whiteSpace: "pre-line" }}>
+                {thinkingSystem.interviewScript}
+              </p>
+            </section>
+          </div>
+
+          <div style={{ display: "grid", gap: 9, gridTemplateColumns: "repeat(auto-fit, minmax(min(190px, 100%), 1fr))" }}>
+            {thinkingSteps.map((step, index) => (
+              <article key={step.label} style={{ background: "rgba(255,255,255,.045)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 7, minHeight: 138, padding: 11 }}>
+                <span style={{ color: accent, fontSize: 10.5, fontWeight: 900 }}>Step {index + 1}</span>
+                <strong style={{ color: "#f8fbff", fontSize: 12.5, lineHeight: 1.35 }}>{step.label}</strong>
+                <span style={{ color: "#93a4bf", fontSize: 11.2, lineHeight: 1.45 }}>{step.coach}</span>
+                <span style={{ borderTop: "1px solid rgba(255,255,255,.07)", color: "#dbeafe", fontSize: 10.8, lineHeight: 1.4, paddingTop: 7 }}>
+                  Say: {step.say}
+                </span>
+              </article>
+            ))}
+          </div>
+
+          <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(min(260px, 100%), 1fr))" }}>
+            <section style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 8, padding: 11 }}>
+              <div style={{ color: "#facc15", fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Test like an interviewer</div>
+              {thinkingSystem.edgeCases.map((edgeCase) => (
+                <div key={edgeCase} style={{ alignItems: "start", display: "grid", gap: 7, gridTemplateColumns: "18px 1fr" }}>
+                  <i className="ti ti-alert-circle" style={{ color: "#facc15", fontSize: 15, marginTop: 1 }} />
+                  <span style={{ color: "#dbeafe", fontSize: 11.2, lineHeight: 1.45 }}>{edgeCase}</span>
+                </div>
+              ))}
+            </section>
+
+            <section style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 8, minWidth: 0, padding: 11 }}>
+              <div style={{ alignItems: "center", color: accent, display: "flex", fontSize: 11, fontWeight: 900, gap: 7, justifyContent: "space-between", textTransform: "uppercase", flexWrap: "wrap" }}>
+                <span>Selected-stack code</span>
+                <span style={{ color: "#a7f3d0" }}>{thinkingSystem.code.language}</span>
+              </div>
+              <p style={{ color: "#93a4bf", fontSize: 11.5, lineHeight: 1.45, margin: 0 }}>
+                Use this after the invariant and dry run are clear, then explain the complexity out loud.
+              </p>
+              <pre style={{ color: "#dbeafe", fontSize: 11.5, lineHeight: 1.55, margin: 0, overflowX: "auto", whiteSpace: "pre" }}>
+                <code>{thinkingSystem.code.code}</code>
+              </pre>
+            </section>
+          </div>
+        </section>
+      ) : track === "core" ? (
         <div style={{ display: "grid", gap: 9, gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" }}>
           {lessons.map((item) => {
             const active = item.id === selectedLessonId;
@@ -673,6 +829,111 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
               <strong style={{ color: "#facc15", display: "block", fontSize: 11, marginBottom: 4 }}>Edge cases</strong>
               <span style={{ color: "#cbd5e1", fontSize: 11.5, lineHeight: 1.45 }}>{currentBlind75Problem.edgeCases.join(" · ")}</span>
             </div>
+          </div>
+        </section>
+      ) : null}
+
+      {stage === "Explain-Then-Code" ? (
+        <section style={{ background: "rgba(255,255,255,.04)", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 12, padding: 12 }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+            <div>
+              <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Explain-Then-Code Mode</div>
+              <h3 style={{ color: "#f8fbff", fontSize: 15.5, lineHeight: 1.3, margin: "4px 0" }}>Explain first. Code only after the approach is interview-ready.</h3>
+              <p style={{ color: "#93a4bf", fontSize: 12, lineHeight: 1.45, margin: 0 }}>{explainThenCodeCoach.summary}</p>
+            </div>
+            <strong style={{ background: explanationJudged ? "rgba(167,243,208,.1)" : "rgba(250,204,21,.1)", border: `1px solid ${explanationJudged ? "rgba(167,243,208,.35)" : "rgba(250,204,21,.28)"}`, borderRadius: 999, color: explanationJudged ? "#a7f3d0" : "#facc15", fontSize: 11, fontWeight: 900, padding: "7px 10px" }}>
+              {explanationJudged ? `${explainThenCodeCoach.judge.score}% explanation` : "Explain before code"}
+            </strong>
+          </div>
+
+          <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))" }}>
+            {explainThenCodeCoach.flow.map((item, index) => (
+              <div key={item.label} style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 6, padding: 10 }}>
+                <span style={{ color: accent, fontSize: 10.5, fontWeight: 900 }}>Step {index + 1}</span>
+                <strong style={{ color: "#f8fbff", fontSize: 12 }}>{item.label}</strong>
+                <span style={{ color: "#93a4bf", fontSize: 10.8, lineHeight: 1.4 }}>{item.detail}</span>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(min(260px, 100%), 1fr))" }}>
+            <label style={{ color: "#dbeafe", display: "grid", fontSize: 11, fontWeight: 900, gap: 7, textTransform: "uppercase" }}>
+              Explain approach
+              <textarea
+                value={approachExplanation}
+                onChange={(event) => {
+                  setApproachExplanation(event.target.value);
+                  setExplanationJudged(false);
+                }}
+                rows={7}
+                placeholder="Example: I use a HashMap. The invariant is... I handle empty and duplicate values... Time is O(n), space is O(n), and the trade-off is..."
+                style={{
+                  background: "rgba(0,0,0,.18)",
+                  border: "1px solid rgba(255,255,255,.1)",
+                  borderRadius: 8,
+                  color: "#f8fbff",
+                  fontSize: 12.5,
+                  lineHeight: 1.5,
+                  minHeight: 132,
+                  outline: "none",
+                  padding: "10px 11px",
+                  resize: "vertical",
+                }}
+              />
+              <button type="button" className="glass-button" onClick={judgeExplanation} disabled={!approachExplanation.trim()} style={{ border: `1px solid ${accentBorder}`, borderRadius: 8, color: approachExplanation.trim() ? "#f8fbff" : "#64748b", cursor: approachExplanation.trim() ? "pointer" : "not-allowed", fontSize: 11.5, fontWeight: 900, padding: "9px 10px", textAlign: "left" }}>
+                <i className="ti ti-scale" /> Judge explanation
+              </button>
+            </label>
+
+            <section style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 8, padding: 11 }}>
+              <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", gap: 8 }}>
+                <strong style={{ color: accent, fontSize: 11, textTransform: "uppercase" }}>Judge explanation</strong>
+                <span style={{ color: explanationJudged ? "#a7f3d0" : "#93a4bf", fontSize: 11, fontWeight: 900 }}>{explanationJudged ? `${explainThenCodeCoach.judge.score}%` : "Waiting"}</span>
+              </div>
+              <p style={{ color: "#dbeafe", fontSize: 11.5, lineHeight: 1.45, margin: 0 }}>
+                {explanationJudged ? explainThenCodeCoach.judge.verdict : "Write your approach, then judge it before opening the template."}
+              </p>
+              <div style={{ display: "grid", gap: 7 }}>
+                {explainThenCodeCoach.judge.checks.map((check) => (
+                  <div key={check.label} style={{ alignItems: "start", background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 7, display: "grid", gap: 7, gridTemplateColumns: "18px 1fr", padding: 8 }}>
+                    <i className={`ti ${explanationJudged && check.covered ? "ti-circle-check" : "ti-circle"}`} style={{ color: explanationJudged && check.covered ? "#a7f3d0" : "#7d8aa2", fontSize: 15, marginTop: 1 }} />
+                    <span>
+                      <strong style={{ color: "#f8fbff", display: "block", fontSize: 11.2 }}>{check.label}</strong>
+                      <span style={{ color: "#93a4bf", display: "block", fontSize: 10.6, lineHeight: 1.35 }}>{explanationJudged ? (check.covered ? check.evidence : check.coaching) : check.coaching}</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
+
+          <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(min(260px, 100%), 1fr))" }}>
+            <section style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 8, padding: 11, minWidth: 0 }}>
+              <div style={{ alignItems: "center", color: accent, display: "flex", fontSize: 11, fontWeight: 900, gap: 7, justifyContent: "space-between", textTransform: "uppercase", flexWrap: "wrap" }}>
+                <span>Show code template</span>
+                <span style={{ color: "#a7f3d0" }}>{explainThenCodeCoach.code.language}</span>
+              </div>
+              {explanationJudged ? (
+                <pre style={{ color: "#dbeafe", fontSize: 11.5, lineHeight: 1.55, margin: 0, overflowX: "auto", whiteSpace: "pre" }}>
+                  <code>{explainThenCodeCoach.code.code}</code>
+                </pre>
+              ) : (
+                <p style={{ color: "#93a4bf", fontSize: 12, lineHeight: 1.45, margin: 0 }}>
+                  Code locked until you judge the explanation. This keeps the interview habit: approach first, template second.
+                </p>
+              )}
+            </section>
+
+            <section style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 8, padding: 11 }}>
+              <div style={{ color: "#facc15", fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Quiz edge cases</div>
+              {explainThenCodeCoach.edgeQuiz.slice(0, 3).map((item) => (
+                <div key={item.id} style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 7, display: "grid", gap: 5, padding: 8 }}>
+                  <span style={{ color: item.type === "edge" ? "#facc15" : "#93c5fd", fontSize: 10.2, fontWeight: 900, textTransform: "uppercase" }}>{item.type}</span>
+                  <strong style={{ color: "#f8fbff", fontSize: 11.4, lineHeight: 1.35 }}>{item.prompt}</strong>
+                  <span style={{ color: "#93a4bf", fontSize: 10.8, lineHeight: 1.4 }}>{explanationJudged ? `Expected: ${item.expected}. ${item.why}` : "Judge explanation first, then answer this case out loud."}</span>
+                </div>
+              ))}
+            </section>
           </div>
         </section>
       ) : null}

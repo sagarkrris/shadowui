@@ -3,7 +3,9 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
+  buildDsaExplainThenCodeCoach,
   buildDsaMockPrompt,
+  buildDsaThinkingSystem,
   buildDsaVisualizationState,
   getDsaCodeTemplate,
   getDsaVisualLesson,
@@ -74,6 +76,8 @@ test("returns selected-stack code templates for DSA lessons", () => {
   const javascript = getDsaCodeTemplate("two-pointers", "React, Node.js");
   const ruby = getDsaCodeTemplate("two-pointers", "Ruby on Rails");
   const rust = getDsaCodeTemplate("two-pointers", "Rust");
+  const rubyHashing = getDsaCodeTemplate("hashing", "Ruby on Rails");
+  const rustHashing = getDsaCodeTemplate("hashing", "Rust");
 
   assert.match(java.language, /Java/);
   assert.match(java.code, /class Solution/);
@@ -88,6 +92,12 @@ test("returns selected-stack code templates for DSA lessons", () => {
   assert.match(rust.language, /Rust/);
   assert.match(rust.code, /impl Solution/);
   assert.match(rust.code, /Vec<i32>/);
+  assert.equal(rubyHashing.language, "Ruby");
+  assert.match(rubyHashing.code, /def two_sum/);
+  assert.doesNotMatch(rubyHashing.code, /function twoSum/);
+  assert.equal(rustHashing.language, "Rust");
+  assert.match(rustHashing.code, /HashMap/);
+  assert.doesNotMatch(rustHashing.code, /function twoSum/);
 });
 
 test("builds Blind 75 visualization states with pattern panels", () => {
@@ -127,10 +137,90 @@ test("returns selected-stack code templates for Blind 75 problems", () => {
   assert.match(javascript.code, /lengthOfLongestSubstring/);
 });
 
+test("builds Explain-Then-Code coaching from an approach explanation and selected stack", () => {
+  assert.equal(typeof buildDsaExplainThenCodeCoach, "function");
+
+  const strong = buildDsaExplainThenCodeCoach({
+    lesson: getDsaVisualLesson("blind75-two-sum"),
+    stack: "Java, Spring Boot",
+    explanation: "I use a HashMap. The invariant is that the map contains only previous numbers and their indexes. I handle empty input and duplicate values. Time is O(n), space is O(n), and the trade-off is memory for faster lookup compared with sorting.",
+  });
+
+  assert.equal(strong.title, "Explain-Then-Code Mode");
+  assert.deepEqual(
+    strong.flow.map((item) => item.label),
+    ["Explain approach", "Judge explanation", "Show code template", "Quiz edge cases"],
+  );
+  assert.equal(strong.code.language, "Java");
+  assert.match(strong.code.code, /HashMap|class Solution/);
+  assert.ok(strong.judge.score >= 90);
+  assert.ok(strong.judge.checks.every((check) => check.covered));
+  assert.ok(strong.edgeQuiz.length >= 3);
+  assert.ok(strong.edgeQuiz.some((item) => item.type === "edge"));
+
+  const weak = buildDsaExplainThenCodeCoach({
+    lesson: getDsaVisualLesson("blind75-two-sum"),
+    stack: "Java, Spring Boot",
+    explanation: "I loop and use a map.",
+  });
+
+  assert.ok(weak.judge.score < strong.judge.score);
+  assert.ok(weak.judge.checks.some((check) => !check.covered));
+  assert.match(weak.nextPrompt, /Explain-Then-Code Mode/);
+});
+
+test("builds a beginner DSA Thinking System with selected-stack approach and code", () => {
+  assert.equal(typeof buildDsaThinkingSystem, "function");
+
+  const thinkingSystem = buildDsaThinkingSystem({
+    lesson: getDsaVisualLesson("blind75-two-sum"),
+    stack: "Java, Spring Boot, React",
+  });
+
+  assert.equal(thinkingSystem.title, "DSA Thinking System");
+  assert.deepEqual(
+    thinkingSystem.steps.map((step) => step.label),
+    [
+      "Understand the problem",
+      "Say brute force first",
+      "Detect the pattern",
+      "Build the invariant",
+      "Dry run before code",
+      "Write code skeleton",
+      "Test like an interviewer",
+      "Explain complexity",
+    ],
+  );
+  assert.ok(thinkingSystem.steps.every((step) => step.coach.length > 20));
+  assert.ok(thinkingSystem.patternSignals.length >= 3);
+  assert.ok(thinkingSystem.patternSignals.some((signal) => /lookup|seen|map|hash/i.test(signal)));
+  assert.ok(thinkingSystem.edgeCases.length >= 3);
+  assert.equal(thinkingSystem.code.language, "Java");
+  assert.match(thinkingSystem.code.code, /class Solution|HashMap/);
+  assert.match(thinkingSystem.interviewScript, /input|output|constraints/i);
+  assert.match(thinkingSystem.interviewScript, /brute force/i);
+  assert.match(thinkingSystem.interviewScript, /pattern/i);
+  assert.match(thinkingSystem.interviewScript, /invariant/i);
+  assert.match(thinkingSystem.interviewScript, /dry run/i);
+  assert.match(thinkingSystem.interviewScript, /complexity/i);
+  assert.match(thinkingSystem.mockPrompt, /DSA Thinking System/);
+});
+
 test("DsaVisualLab source exposes the required learning surfaces", () => {
   const source = readFileSync(new URL("../components/dsa/DsaVisualLab.js", import.meta.url), "utf8");
 
   assert.match(source, /DSA Visual Lab/);
+  assert.match(source, /DSA Thinking System/);
+  assert.match(source, /buildDsaThinkingSystem/);
+  assert.match(source, /How To Approach/);
+  assert.match(source, /Understand the problem/);
+  assert.match(source, /Say brute force first/);
+  assert.match(source, /Detect the pattern/);
+  assert.match(source, /Build the invariant/);
+  assert.match(source, /Dry run before code/);
+  assert.match(source, /Write code skeleton/);
+  assert.match(source, /Test like an interviewer/);
+  assert.match(source, /Explain complexity/);
   assert.match(source, /Interview Pattern Theater/);
   assert.match(source, /Guided Mode/);
   assert.match(source, /Learn/);
