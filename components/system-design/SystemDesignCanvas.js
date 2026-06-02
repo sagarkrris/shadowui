@@ -109,8 +109,10 @@ export default function SystemDesignCanvas({
         boxShadow: "0 18px 46px rgba(0,0,0,.24)",
         color: "#eef4ff",
         display: "grid",
+        flexShrink: 0,
         gap: 12,
         padding: 14,
+        width: "100%",
       }}
     >
       <header

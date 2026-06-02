@@ -21,8 +21,21 @@ import {
   recordDsaMistake,
   recordDsaTestCaseMastery,
 } from "../../lib/blind75VisualTrack.mjs";
+import {
+  buildDsaDrillComparison,
+  buildDsaDrillMockPrompt,
+  listDsaDrillQuestions,
+} from "../../lib/dsaDrillRoom.mjs";
+import {
+  buildDsaBigOChart,
+  buildDsaPatternDecisionTree,
+  listDsaOperationComplexities,
+  listDsaComplexityCheats,
+  listDsaPatternAtlas,
+  listDsaVisualPlaygroundModules,
+} from "../../lib/dsaPatternAtlas.mjs";
 
-const GUIDED_STAGES = ["Learn", "Visualize", "Dry run", "Explain-Then-Code", "Code", "Quiz", "Practice as Mock"];
+const GUIDED_STAGES = ["Learn", "Pattern Atlas", "Visual Playground", "Big-O Board", "Visualize", "Dry run", "Explain-Then-Code", "Code", "Quiz", "Drill Room", "Practice as Mock"];
 const TRACKS = [
   { id: "thinking", label: "How To Approach" },
   { id: "core", label: "Interview Core" },
@@ -280,6 +293,556 @@ function StatePanel({ panel, accent }) {
   );
 }
 
+function DrillRoomPanel({
+  accent,
+  accentBorder,
+  drill,
+  drills,
+  answer,
+  comparison,
+  compared,
+  revealed,
+  onAnswerChange,
+  onChooseDrill,
+  onCompare,
+  onNext,
+  onPractice,
+  onReveal,
+}) {
+  return (
+    <section style={{ background: "rgba(255,255,255,.04)", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 12, padding: 12 }}>
+      <div style={{ alignItems: "start", display: "grid", gap: 12, gridTemplateColumns: "minmax(0, 1fr) auto" }}>
+        <div>
+          <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>DSA Drill Room</div>
+          <h3 style={{ color: "#f8fbff", fontSize: 16, lineHeight: 1.3, margin: "4px 0" }}>
+            {drill.title}
+          </h3>
+          <p style={{ color: "#93a4bf", fontSize: 12, lineHeight: 1.5, margin: 0 }}>
+            Answer first, then reveal the ideal structure or compare your approach against the rubric.
+          </p>
+        </div>
+        <strong style={{ background: "rgba(139,211,255,.08)", border: `1px solid ${accentBorder}`, borderRadius: 999, color: accent, fontSize: 11, fontWeight: 900, padding: "7px 10px", whiteSpace: "nowrap" }}>
+          {drill.difficulty}
+        </strong>
+      </div>
+
+      <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(145px, 1fr))" }}>
+        {drills.map((item) => {
+          const active = item.id === drill.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              className={active ? "glass-button" : ""}
+              onClick={() => onChooseDrill(item.id)}
+              style={{
+                background: active ? `${accent}1f` : "rgba(0,0,0,.14)",
+                border: `1px solid ${active ? accent : "rgba(255,255,255,.08)"}`,
+                borderRadius: 8,
+                color: active ? "#f8fbff" : "#93a4bf",
+                cursor: "pointer",
+                display: "grid",
+                gap: 4,
+                minHeight: 72,
+                padding: 9,
+                textAlign: "left",
+              }}
+            >
+              <span style={{ color: active ? accent : "#7dd3fc", fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>{item.difficulty}</span>
+              <strong style={{ color: "#f8fbff", fontSize: 11.5, lineHeight: 1.35 }}>{item.answer.pattern}</strong>
+            </button>
+          );
+        })}
+      </div>
+
+      <section style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 9, padding: 11 }}>
+        <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Question</div>
+        <strong style={{ color: "#f8fbff", fontSize: 13.5, lineHeight: 1.45 }}>{drill.question}</strong>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {drill.tags.map((tag) => (
+            <span key={tag} style={{ background: "rgba(255,255,255,.045)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 999, color: "#93a4bf", fontSize: 10.5, fontWeight: 850, padding: "3px 7px" }}>
+              {tag}
+            </span>
+          ))}
+        </div>
+      </section>
+
+      <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(min(270px, 100%), 1fr))" }}>
+        <label style={{ color: "#dbeafe", display: "grid", fontSize: 11, fontWeight: 900, gap: 7, textTransform: "uppercase" }}>
+          My answer
+          <textarea
+            value={answer}
+            onChange={(event) => onAnswerChange(event.target.value)}
+            rows={8}
+            placeholder="Write the pattern, brute force, optimal invariant, dry run, edge cases, and complexity..."
+            style={{
+              background: "rgba(0,0,0,.18)",
+              border: "1px solid rgba(255,255,255,.1)",
+              borderRadius: 8,
+              color: "#f8fbff",
+              fontSize: 12.5,
+              lineHeight: 1.5,
+              minHeight: 146,
+              outline: "none",
+              padding: "10px 11px",
+              resize: "vertical",
+            }}
+          />
+          <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+            <ActionButton icon="ti-scale" label="Compare my answer" onClick={onCompare} disabled={!answer.trim()} tone={accent} />
+            <ActionButton icon="ti-eye" label="Reveal answer" onClick={onReveal} tone="#facc15" />
+            <ActionButton icon="ti-user-question" label="Practice as Mock" onClick={onPractice} tone="#a7f3d0" />
+            <ActionButton icon="ti-arrow-right" label="Next question" onClick={onNext} tone="#93c5fd" />
+          </div>
+        </label>
+
+        <section style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 8, padding: 11 }}>
+          <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", gap: 8 }}>
+            <strong style={{ color: accent, fontSize: 11, textTransform: "uppercase" }}>Comparison</strong>
+            <span style={{ color: compared ? "#a7f3d0" : "#93a4bf", fontSize: 11, fontWeight: 900 }}>{compared ? `${comparison.score}%` : "Waiting"}</span>
+          </div>
+          <p style={{ color: "#dbeafe", fontSize: 11.5, lineHeight: 1.45, margin: 0 }}>
+            {compared ? comparison.summary : "Compare after writing your answer. The rubric checks pattern, brute force, invariant, dry run, edge cases, and complexity."}
+          </p>
+          <div style={{ display: "grid", gap: 7 }}>
+            {comparison.checks.map((check) => (
+              <div key={check.label} style={{ alignItems: "start", background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 7, display: "grid", gap: 7, gridTemplateColumns: "18px 1fr", padding: 8 }}>
+                <i className={`ti ${compared && check.covered ? "ti-circle-check" : "ti-circle"}`} style={{ color: compared && check.covered ? "#a7f3d0" : "#7d8aa2", fontSize: 15, marginTop: 1 }} />
+                <span>
+                  <strong style={{ color: "#f8fbff", display: "block", fontSize: 11.2 }}>{check.label}</strong>
+                  <span style={{ color: "#93a4bf", display: "block", fontSize: 10.6, lineHeight: 1.35 }}>{compared ? check.feedback : "Not checked yet."}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      {revealed ? (
+        <section style={{ background: "rgba(0,0,0,.16)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 10, padding: 11 }}>
+          <div style={{ color: "#facc15", fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Ideal answer</div>
+          <div style={{ display: "grid", gap: 9, gridTemplateColumns: "repeat(auto-fit, minmax(min(230px, 100%), 1fr))" }}>
+            {[
+              ["Pattern", drill.answer.pattern],
+              ["Brute force", drill.answer.bruteForce],
+              ["Optimal approach", drill.answer.optimalApproach],
+              ["Dry run", drill.answer.dryRun],
+              ["Complexity", drill.answer.complexity],
+            ].map(([label, value]) => (
+              <div key={label} style={{ border: "1px solid rgba(255,255,255,.075)", borderRadius: 7, display: "grid", gap: 5, padding: 9 }}>
+                <strong style={{ color: accent, fontSize: 10.8, textTransform: "uppercase" }}>{label}</strong>
+                <span style={{ color: "#dbeafe", fontSize: 11.4, lineHeight: 1.45 }}>{value}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ border: "1px solid rgba(255,255,255,.075)", borderRadius: 7, display: "grid", gap: 6, padding: 9 }}>
+            <strong style={{ color: "#facc15", fontSize: 10.8, textTransform: "uppercase" }}>Edge cases</strong>
+            <ul style={{ color: "#dbeafe", fontSize: 11.4, lineHeight: 1.5, margin: 0, paddingLeft: 17 }}>
+              {drill.answer.edgeCases.map((edgeCase) => <li key={edgeCase}>{edgeCase}</li>)}
+            </ul>
+          </div>
+          <div style={{ border: "1px solid rgba(255,255,255,.075)", borderRadius: 7, display: "grid", gap: 7, minWidth: 0, padding: 9 }}>
+            <strong style={{ color: "#a7f3d0", fontSize: 10.8, textTransform: "uppercase" }}>{drill.answer.code.language} code</strong>
+            <pre style={{ color: "#dbeafe", fontSize: 11.3, lineHeight: 1.55, margin: 0, overflowX: "auto", whiteSpace: "pre" }}>
+              <code>{drill.answer.code.code}</code>
+            </pre>
+          </div>
+        </section>
+      ) : null}
+    </section>
+  );
+}
+
+function PatternAtlasPanel({
+  accent,
+  accentBorder,
+  patterns,
+  selectedPattern,
+  selectedPatternId,
+  decisionTree,
+  complexityCheats,
+  onSelectPattern,
+  onPracticePattern,
+}) {
+  const visualItems = selectedPattern?.visualHint?.items || [];
+
+  return (
+    <section style={{ background: "rgba(255,255,255,.04)", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 12, padding: 12 }}>
+      <div style={{ alignItems: "start", display: "grid", gap: 12, gridTemplateColumns: "minmax(0, 1fr) auto" }}>
+        <div>
+          <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>DSA Pattern Atlas</div>
+          <h3 style={{ color: "#f8fbff", fontSize: 16, lineHeight: 1.3, margin: "4px 0" }}>
+            Pick the pattern first, then the code becomes much easier to explain.
+          </h3>
+          <p style={{ color: "#93a4bf", fontSize: 12, lineHeight: 1.5, margin: 0 }}>
+            A beginner-friendly map for choosing the right DSA idea from problem signals, examples, pitfalls, and complexity clues.
+          </p>
+        </div>
+        <ActionButton icon="ti-target-arrow" label="Practice this pattern" onClick={() => onPracticePattern(selectedPattern?.drillId)} tone="#a7f3d0" />
+      </div>
+
+      <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))" }}>
+        <section style={{ alignContent: "start", background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 9, padding: 11 }}>
+          <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Pattern menu</div>
+          <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(138px, 1fr))" }}>
+            {patterns.map((pattern) => {
+              const active = pattern.id === selectedPatternId;
+              return (
+                <button
+                  key={pattern.id}
+                  type="button"
+                  className={active ? "glass-button" : ""}
+                  onClick={() => onSelectPattern(pattern.id)}
+                  style={{
+                    background: active ? `${accent}1f` : "rgba(255,255,255,.035)",
+                    border: `1px solid ${active ? accent : "rgba(255,255,255,.075)"}`,
+                    borderRadius: 8,
+                    color: active ? "#f8fbff" : "#dbeafe",
+                    cursor: "pointer",
+                    display: "grid",
+                    gap: 6,
+                    minHeight: 106,
+                    padding: 10,
+                    textAlign: "left",
+                  }}
+                >
+                  <span style={{ alignItems: "center", display: "flex", gap: 7, fontSize: 11.5, fontWeight: 900 }}>
+                    <i className={`ti ${pattern.icon}`} style={{ color: active ? accent : "#7dd3fc", fontSize: 15 }} />
+                    {pattern.title}
+                  </span>
+                  <span style={{ color: active ? "#a7f3d0" : "#93a4bf", fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>{pattern.difficulty}</span>
+                  <span style={{ color: active ? "#dbeafe" : "#93a4bf", fontSize: 10.8, lineHeight: 1.4 }}>{pattern.memoryHook}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <section style={{ alignContent: "start", background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 11, padding: 11 }}>
+          <div style={{ alignItems: "start", display: "flex", gap: 10, justifyContent: "space-between", flexWrap: "wrap" }}>
+            <div>
+              <div style={{ alignItems: "center", color: accent, display: "flex", fontSize: 11, fontWeight: 900, gap: 7, textTransform: "uppercase" }}>
+                <i className={`ti ${selectedPattern?.icon || "ti-map"}`} />
+                {selectedPattern?.difficulty || "Beginner"}
+              </div>
+              <h4 style={{ color: "#f8fbff", fontSize: 16, lineHeight: 1.3, margin: "4px 0 0" }}>{selectedPattern?.title}</h4>
+            </div>
+            <span style={{ background: "rgba(139,211,255,.08)", border: `1px solid ${accentBorder}`, borderRadius: 999, color: accent, fontSize: 11, fontWeight: 900, padding: "7px 10px" }}>
+              Start here
+            </span>
+          </div>
+
+          <div style={{ display: "grid", gap: 8 }}>
+            <strong style={{ color: "#a7f3d0", fontSize: 11, textTransform: "uppercase" }}>Beginner meaning</strong>
+            <p style={{ color: "#dbeafe", fontSize: 12, lineHeight: 1.55, margin: 0 }}>{selectedPattern?.beginnerMeaning}</p>
+          </div>
+
+          <div style={{ background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, display: "grid", gap: 8, padding: 10 }}>
+            <strong style={{ color: "#facc15", fontSize: 11, textTransform: "uppercase" }}>Visual hint</strong>
+            <div style={{ display: "flex", gap: 7, overflowX: "auto", paddingBottom: 2 }}>
+              {visualItems.map((item, index) => (
+                <span
+                  key={`${item}-${index}`}
+                  style={{
+                    background: index === 0 || index === visualItems.length - 1 ? `${accent}1f` : "rgba(255,255,255,.045)",
+                    border: `1px solid ${index === 0 || index === visualItems.length - 1 ? accent : "rgba(255,255,255,.08)"}`,
+                    borderRadius: 7,
+                    color: "#f8fbff",
+                    display: "inline-grid",
+                    flex: "0 0 auto",
+                    fontSize: 11.5,
+                    fontWeight: 900,
+                    minHeight: 34,
+                    minWidth: 42,
+                    padding: "8px 9px",
+                    placeItems: "center",
+                  }}
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(min(190px, 100%), 1fr))" }}>
+            <section style={{ border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 7, padding: 10 }}>
+              <strong style={{ color: "#a7f3d0", fontSize: 11, textTransform: "uppercase" }}>When to use it</strong>
+              <ul style={{ color: "#dbeafe", fontSize: 11.4, lineHeight: 1.5, margin: 0, paddingLeft: 17 }}>
+                {(selectedPattern?.whenToUse || []).map((item) => <li key={item}>{item}</li>)}
+              </ul>
+            </section>
+            <section style={{ border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 7, padding: 10 }}>
+              <strong style={{ color: "#fda4af", fontSize: 11, textTransform: "uppercase" }}>Common pitfalls</strong>
+              <ul style={{ color: "#dbeafe", fontSize: 11.4, lineHeight: 1.5, margin: 0, paddingLeft: 17 }}>
+                {(selectedPattern?.pitfalls || []).map((item) => <li key={item}>{item}</li>)}
+              </ul>
+            </section>
+          </div>
+
+          <section style={{ border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 7, padding: 10 }}>
+            <strong style={{ color: accent, fontSize: 11, textTransform: "uppercase" }}>Example questions</strong>
+            <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+              {(selectedPattern?.examples || []).map((example) => (
+                <span key={example} style={{ background: "rgba(255,255,255,.045)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 999, color: "#dbeafe", fontSize: 10.8, fontWeight: 850, lineHeight: 1.35, padding: "5px 8px" }}>
+                  {example}
+                </span>
+              ))}
+            </div>
+          </section>
+        </section>
+      </div>
+
+      <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))" }}>
+        <section style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 9, padding: 11 }}>
+          <div>
+            <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Pattern Identifier</div>
+            <p style={{ color: "#93a4bf", fontSize: 11.5, lineHeight: 1.45, margin: "4px 0 0" }}>{decisionTree.subtitle}</p>
+          </div>
+          <div style={{ display: "grid", gap: 8 }}>
+            {decisionTree.steps.map((step, index) => (
+              <article key={step.question} style={{ background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, display: "grid", gap: 7, padding: 9 }}>
+                <span style={{ color: accent, fontSize: 10.5, fontWeight: 900 }}>Question {index + 1}</span>
+                <strong style={{ color: "#f8fbff", fontSize: 11.8, lineHeight: 1.4 }}>{step.question}</strong>
+                <span style={{ color: "#a7f3d0", fontSize: 10.8, lineHeight: 1.4 }}>Yes: {step.yes}</span>
+                <span style={{ color: "#facc15", fontSize: 10.8, lineHeight: 1.4 }}>No: {step.no}</span>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 9, padding: 11 }}>
+          <div>
+            <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Complexity board</div>
+            <p style={{ color: "#93a4bf", fontSize: 11.5, lineHeight: 1.45, margin: "4px 0 0" }}>
+              Use this to say time and space clearly before the interviewer asks.
+            </p>
+          </div>
+          <div style={{ display: "grid", gap: 8 }}>
+            {complexityCheats.map((row) => (
+              <article key={row.structure} style={{ border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 7, padding: 9 }}>
+                <strong style={{ color: "#f8fbff", fontSize: 12 }}>{row.structure}</strong>
+                <div style={{ display: "grid", gap: 6, gridTemplateColumns: "repeat(auto-fit, minmax(78px, 1fr))" }}>
+                  {[
+                    ["Access", row.access],
+                    ["Search", row.search],
+                    ["Insert", row.insert],
+                    ["Delete", row.delete],
+                  ].map(([label, value]) => (
+                    <span key={label} style={{ background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 7, color: "#dbeafe", display: "grid", fontSize: 10.5, gap: 2, padding: "6px 7px" }}>
+                      <strong style={{ color: accent, fontSize: 10, textTransform: "uppercase" }}>{label}</strong>
+                      {value}
+                    </span>
+                  ))}
+                </div>
+                <span style={{ color: "#93a4bf", fontSize: 10.8, lineHeight: 1.4 }}>{row.beginnerNote}</span>
+              </article>
+            ))}
+          </div>
+        </section>
+      </div>
+    </section>
+  );
+}
+
+function DsaVisualPlaygroundPanel({
+  accent,
+  accentBorder,
+  modules,
+  selectedModule,
+  selectedModuleId,
+  bigOChart,
+  operationComplexities,
+  onSelectModule,
+}) {
+  const visualItems = selectedModule?.visualModel?.items || [];
+
+  return (
+    <section style={{ background: "rgba(255,255,255,.04)", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 12, padding: 12 }}>
+      <div style={{ alignItems: "start", display: "grid", gap: 12, gridTemplateColumns: "minmax(0, 1fr) auto" }}>
+        <div>
+          <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>DSA Visual Playground</div>
+          <h3 style={{ color: "#f8fbff", fontSize: 16, lineHeight: 1.3, margin: "4px 0" }}>
+            Learn visually how each data structure behaves before memorizing the table.
+          </h3>
+          <p style={{ color: "#93a4bf", fontSize: 12, lineHeight: 1.5, margin: 0 }}>
+            Use the module map, growth curve, and operation matrix to connect what you see with the complexity you say in interviews.
+          </p>
+          <p style={{ color: "#dbeafe", fontSize: 11.5, lineHeight: 1.45, margin: "5px 0 0" }}>
+            Starter modules: ArrayList, Hash Table, Binary Heap, Union-Find, Sorting Algorithms.
+          </p>
+        </div>
+        <strong style={{ background: "rgba(167,243,208,.09)", border: "1px solid rgba(167,243,208,.3)", borderRadius: 999, color: "#a7f3d0", fontSize: 11, fontWeight: 900, padding: "7px 10px", whiteSpace: "nowrap" }}>
+          Learn visually
+        </strong>
+      </div>
+
+      <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))" }}>
+        <section style={{ alignContent: "start", background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 9, padding: 11 }}>
+          <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Module map</div>
+          <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(138px, 1fr))" }}>
+            {modules.map((module) => {
+              const active = module.id === selectedModuleId;
+              return (
+                <button
+                  key={module.id}
+                  type="button"
+                  className={active ? "glass-button" : ""}
+                  onClick={() => onSelectModule(module.id)}
+                  style={{
+                    background: active ? `${accent}1f` : "rgba(255,255,255,.035)",
+                    border: `1px solid ${active ? accent : "rgba(255,255,255,.075)"}`,
+                    borderRadius: 8,
+                    color: active ? "#f8fbff" : "#dbeafe",
+                    cursor: "pointer",
+                    display: "grid",
+                    gap: 6,
+                    minHeight: 104,
+                    padding: 10,
+                    textAlign: "left",
+                  }}
+                >
+                  <span style={{ alignItems: "center", display: "flex", gap: 7, fontSize: 11.5, fontWeight: 900 }}>
+                    <i className={`ti ${module.icon}`} style={{ color: active ? accent : "#7dd3fc", fontSize: 15 }} />
+                    {module.title}
+                  </span>
+                  <span style={{ color: active ? "#a7f3d0" : "#93a4bf", fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>{module.category}</span>
+                  <span style={{ color: active ? "#dbeafe" : "#93a4bf", fontSize: 10.8, lineHeight: 1.4 }}>{module.useWhen}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <section style={{ alignContent: "start", background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 11, padding: 11 }}>
+          <div style={{ alignItems: "start", display: "flex", gap: 10, justifyContent: "space-between", flexWrap: "wrap" }}>
+            <div>
+              <div style={{ alignItems: "center", color: accent, display: "flex", fontSize: 11, fontWeight: 900, gap: 7, textTransform: "uppercase" }}>
+                <i className={`ti ${selectedModule?.icon || "ti-layout-grid"}`} />
+                {selectedModule?.category}
+              </div>
+              <h4 style={{ color: "#f8fbff", fontSize: 16, lineHeight: 1.3, margin: "4px 0 0" }}>{selectedModule?.title}</h4>
+            </div>
+            <span style={{ background: "rgba(139,211,255,.08)", border: `1px solid ${accentBorder}`, borderRadius: 999, color: accent, fontSize: 11, fontWeight: 900, padding: "7px 10px" }}>
+              Visual model
+            </span>
+          </div>
+
+          <p style={{ color: "#dbeafe", fontSize: 12, lineHeight: 1.55, margin: 0 }}>{selectedModule?.beginnerMeaning}</p>
+
+          <div style={{ background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, display: "grid", gap: 8, minWidth: 0, padding: 10 }}>
+            <strong style={{ color: "#facc15", fontSize: 11, textTransform: "uppercase" }}>{selectedModule?.visualModel?.type || "visual"}</strong>
+            <div style={{ display: "flex", gap: 7, overflowX: "auto", paddingBottom: 2 }}>
+              {visualItems.map((item, index) => (
+                <span
+                  key={`${item}-${index}`}
+                  style={{
+                    background: index === 0 ? `${accent}1f` : "rgba(255,255,255,.045)",
+                    border: `1px solid ${index === 0 ? accent : "rgba(255,255,255,.08)"}`,
+                    borderRadius: 7,
+                    color: "#f8fbff",
+                    display: "inline-grid",
+                    flex: "0 0 auto",
+                    fontSize: 11.5,
+                    fontWeight: 900,
+                    minHeight: 36,
+                    minWidth: 46,
+                    padding: "8px 9px",
+                    placeItems: "center",
+                  }}
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(min(190px, 100%), 1fr))" }}>
+            <section style={{ border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 7, padding: 10 }}>
+              <strong style={{ color: "#a7f3d0", fontSize: 11, textTransform: "uppercase" }}>Operations to practice</strong>
+              <ul style={{ color: "#dbeafe", fontSize: 11.4, lineHeight: 1.5, margin: 0, paddingLeft: 17 }}>
+                {(selectedModule?.operations || []).map((operation) => <li key={operation}>{operation}</li>)}
+              </ul>
+            </section>
+            <section style={{ border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 7, padding: 10 }}>
+              <strong style={{ color: "#fda4af", fontSize: 11, textTransform: "uppercase" }}>Beginner trap</strong>
+              <span style={{ color: "#dbeafe", fontSize: 11.4, lineHeight: 1.5 }}>{selectedModule?.commonMistake}</span>
+            </section>
+          </div>
+
+          <section style={{ border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 7, padding: 10 }}>
+            <strong style={{ color: accent, fontSize: 11, textTransform: "uppercase" }}>Complexity hint</strong>
+            <span style={{ color: "#dbeafe", fontSize: 11.4, lineHeight: 1.5 }}>{selectedModule?.complexityHint}</span>
+          </section>
+        </section>
+      </div>
+
+      <section style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 10, padding: 11 }}>
+          <div>
+            <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Big-O Cheat Sheet</div>
+            <strong style={{ color: "#f8fbff", display: "block", fontSize: 12.5, lineHeight: 1.35, marginTop: 4 }}>Growth curve guide</strong>
+            <p style={{ color: "#93a4bf", fontSize: 11.5, lineHeight: 1.45, margin: "4px 0 0" }}>{bigOChart.subtitle}</p>
+          </div>
+        <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(132px, 1fr))" }}>
+          {bigOChart.curves.map((curve, index) => {
+            const tone = curve.rating === "Excellent" ? "#a7f3d0" : curve.rating === "Good" ? "#8bd3ff" : curve.rating === "Fair" ? "#facc15" : curve.rating === "Bad" ? "#fb923c" : "#fda4af";
+            return (
+              <article key={curve.label} style={{ background: "rgba(255,255,255,.035)", border: `1px solid ${tone}55`, borderRadius: 8, display: "grid", gap: 7, minHeight: 132, padding: 10 }}>
+                <div style={{ alignItems: "end", display: "grid", gap: 3, gridTemplateColumns: "repeat(5, 1fr)", minHeight: 42 }}>
+                  {[1, 2, 3, 4, 5].map((bar) => (
+                    <span key={bar} style={{ background: `${tone}55`, borderRadius: 5, display: "block", height: Math.min(42, 8 + (bar + index) * (index + 1.4)) }} />
+                  ))}
+                </div>
+                <strong style={{ color: "#f8fbff", fontSize: 13 }}>{curve.label}</strong>
+                <span style={{ color: tone, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>{curve.rating} growth curve</span>
+                <span style={{ color: "#93a4bf", fontSize: 10.8, lineHeight: 1.4 }}>{curve.example}: {curve.explanation}</span>
+              </article>
+            );
+          })}
+        </div>
+        <div style={{ display: "grid", gap: 7, gridTemplateColumns: "repeat(auto-fit, minmax(min(210px, 100%), 1fr))" }}>
+          {bigOChart.rules.map((rule) => (
+            <div key={rule} style={{ alignItems: "start", background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 7, display: "grid", gap: 7, gridTemplateColumns: "18px 1fr", padding: 8 }}>
+              <i className="ti ti-circle-check" style={{ color: "#a7f3d0", fontSize: 15, marginTop: 1 }} />
+              <span style={{ color: "#dbeafe", fontSize: 11.2, lineHeight: 1.45 }}>{rule}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 9, minWidth: 0, padding: 11 }}>
+        <div>
+          <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Operation matrix</div>
+          <p style={{ color: "#93a4bf", fontSize: 11.5, lineHeight: 1.45, margin: "4px 0 0" }}>
+            Average and worst-case costs for the structures beginners confuse most often.
+          </p>
+        </div>
+        <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(min(240px, 100%), 1fr))" }}>
+          {operationComplexities.map((row) => (
+            <article key={row.structure} style={{ border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 7, padding: 9 }}>
+              <strong style={{ color: "#f8fbff", fontSize: 12 }}>{row.structure}</strong>
+              <div style={{ display: "grid", gap: 6, gridTemplateColumns: "repeat(auto-fit, minmax(84px, 1fr))" }}>
+                {[
+                  ["Access", row.access],
+                  ["Search", row.search],
+                  ["Insert", row.insert],
+                  ["Delete", row.delete],
+                ].map(([label, value]) => (
+                  <span key={label} style={{ background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 7, color: "#dbeafe", display: "grid", fontSize: 10.5, gap: 2, padding: "6px 7px" }}>
+                    <strong style={{ color: accent, fontSize: 10, textTransform: "uppercase" }}>{label}</strong>
+                    Avg {value.average}
+                    <span style={{ color: "#93a4bf" }}>Worst {value.worst}</span>
+                  </span>
+                ))}
+              </div>
+              <span style={{ color: "#93a4bf", fontSize: 10.8, lineHeight: 1.4 }}>{row.note}</span>
+            </article>
+          ))}
+        </div>
+      </section>
+    </section>
+  );
+}
+
 export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, theme = {}, profile = {} }) {
   const lessons = useMemo(() => listDsaVisualLessons(), []);
   const blind75Problems = useMemo(() => listBlind75Problems(), []);
@@ -303,6 +866,12 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
   const [inputValue, setInputValue] = useState(() => formatInputValue(buildDsaVisualizationState(defaultLessonId).input));
   const [approachExplanation, setApproachExplanation] = useState("");
   const [explanationJudged, setExplanationJudged] = useState(false);
+  const [selectedDrillId, setSelectedDrillId] = useState("drill-arrays");
+  const [drillAnswer, setDrillAnswer] = useState("");
+  const [drillRevealed, setDrillRevealed] = useState(false);
+  const [drillCompared, setDrillCompared] = useState(false);
+  const [selectedPatternId, setSelectedPatternId] = useState("sliding-window");
+  const [selectedPlaygroundModuleId, setSelectedPlaygroundModuleId] = useState("array-list");
   const [stepIndex, setStepIndex] = useState(0);
   const [stage, setStage] = useState("Visualize");
   const [playing, setPlaying] = useState(false);
@@ -317,6 +886,29 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
   const currentStep = state.steps[Math.min(stepIndex, state.steps.length - 1)] || state.steps[0];
   const stackText = profile?.stack || "";
   const selectedCode = useMemo(() => getDsaCodeTemplate(lesson, stackText), [lesson, stackText]);
+  const drillQuestions = useMemo(() => listDsaDrillQuestions({ stack: stackText }), [stackText]);
+  const selectedDrill = useMemo(
+    () => drillQuestions.find((drill) => drill.id === selectedDrillId) || drillQuestions[0],
+    [drillQuestions, selectedDrillId],
+  );
+  const drillComparison = useMemo(
+    () => buildDsaDrillComparison({ drill: selectedDrill, response: drillAnswer }),
+    [selectedDrill, drillAnswer],
+  );
+  const patternAtlas = useMemo(() => listDsaPatternAtlas(), []);
+  const selectedPattern = useMemo(
+    () => patternAtlas.find((pattern) => pattern.id === selectedPatternId) || patternAtlas[0],
+    [patternAtlas, selectedPatternId],
+  );
+  const patternDecisionTree = useMemo(() => buildDsaPatternDecisionTree(), []);
+  const complexityCheats = useMemo(() => listDsaComplexityCheats(), []);
+  const playgroundModules = useMemo(() => listDsaVisualPlaygroundModules(), []);
+  const selectedPlaygroundModule = useMemo(
+    () => playgroundModules.find((module) => module.id === selectedPlaygroundModuleId) || playgroundModules[0],
+    [playgroundModules, selectedPlaygroundModuleId],
+  );
+  const bigOChart = useMemo(() => buildDsaBigOChart(), []);
+  const operationComplexities = useMemo(() => listDsaOperationComplexities(), []);
   const thinkingSystem = useMemo(() => buildDsaThinkingSystem({
     lesson,
     stack: stackText,
@@ -451,6 +1043,45 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
     onPractice?.(thinkingSystem.mockPrompt, { lesson, problem: currentBlind75Problem, thinkingSystem, language: thinkingSystem.code.language });
   };
 
+  const chooseDrill = (drillId) => {
+    setSelectedDrillId(drillId);
+    setDrillAnswer("");
+    setDrillRevealed(false);
+    setDrillCompared(false);
+    setStage("Drill Room");
+  };
+
+  const updateDrillAnswer = (value) => {
+    setDrillAnswer(value);
+    setDrillCompared(false);
+  };
+
+  const compareDrillAnswer = () => {
+    setStage("Drill Room");
+    setDrillCompared(true);
+  };
+
+  const revealDrillAnswer = () => {
+    setStage("Drill Room");
+    setDrillRevealed(true);
+  };
+
+  const nextDrill = () => {
+    const index = drillQuestions.findIndex((drill) => drill.id === selectedDrill.id);
+    const nextQuestion = drillQuestions[(index + 1) % drillQuestions.length] || drillQuestions[0];
+    chooseDrill(nextQuestion.id);
+  };
+
+  const practiceDrillAsMock = () => {
+    setStage("Practice as Mock");
+    onPractice?.(buildDsaDrillMockPrompt(selectedDrill), {
+      drill: selectedDrill,
+      response: drillAnswer,
+      comparison: drillComparison,
+      language: selectedDrill.answer.code.language,
+    });
+  };
+
   const judgeExplanation = () => {
     setStage("Explain-Then-Code");
     setExplanationJudged(true);
@@ -572,6 +1203,52 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
           </div>
         </div>
       </header>
+
+      {stage === "Drill Room" ? (
+        <DrillRoomPanel
+          accent={accent}
+          accentBorder={accentBorder}
+          drill={selectedDrill}
+          drills={drillQuestions}
+          answer={drillAnswer}
+          comparison={drillComparison}
+          compared={drillCompared}
+          revealed={drillRevealed}
+          onAnswerChange={updateDrillAnswer}
+          onChooseDrill={chooseDrill}
+          onCompare={compareDrillAnswer}
+          onNext={nextDrill}
+          onPractice={practiceDrillAsMock}
+          onReveal={revealDrillAnswer}
+        />
+      ) : null}
+
+      {stage === "Pattern Atlas" ? (
+        <PatternAtlasPanel
+          accent={accent}
+          accentBorder={accentBorder}
+          patterns={patternAtlas}
+          selectedPattern={selectedPattern}
+          selectedPatternId={selectedPatternId}
+          decisionTree={patternDecisionTree}
+          complexityCheats={complexityCheats}
+          onSelectPattern={setSelectedPatternId}
+          onPracticePattern={chooseDrill}
+        />
+      ) : null}
+
+      {stage === "Visual Playground" || stage === "Big-O Board" ? (
+        <DsaVisualPlaygroundPanel
+          accent={accent}
+          accentBorder={accentBorder}
+          modules={playgroundModules}
+          selectedModule={selectedPlaygroundModule}
+          selectedModuleId={selectedPlaygroundModuleId}
+          bigOChart={bigOChart}
+          operationComplexities={operationComplexities}
+          onSelectModule={setSelectedPlaygroundModuleId}
+        />
+      ) : null}
 
       {track === "thinking" ? (
         <section style={{ background: "rgba(255,255,255,.035)", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 12, padding: 12 }}>

@@ -11,6 +11,20 @@ import {
   getDsaVisualLesson,
   listDsaVisualLessons,
 } from "../lib/dsaVisualLab.mjs";
+import {
+  buildDsaDrillComparison,
+  buildDsaDrillMockPrompt,
+  getDsaDrillQuestion,
+  listDsaDrillQuestions,
+} from "../lib/dsaDrillRoom.mjs";
+import {
+  buildDsaBigOChart,
+  buildDsaPatternDecisionTree,
+  listDsaOperationComplexities,
+  listDsaComplexityCheats,
+  listDsaPatternAtlas,
+  listDsaVisualPlaygroundModules,
+} from "../lib/dsaPatternAtlas.mjs";
 
 test("lists the required interview DSA visual lessons", () => {
   const lessons = listDsaVisualLessons();
@@ -206,6 +220,88 @@ test("builds a beginner DSA Thinking System with selected-stack approach and cod
   assert.match(thinkingSystem.mockPrompt, /DSA Thinking System/);
 });
 
+test("builds deterministic DSA drill room questions with structured ideal answers", () => {
+  const drills = listDsaDrillQuestions({ stack: "Java, Spring Boot" });
+  const hashing = getDsaDrillQuestion("drill-hashing", { stack: "Java, Spring Boot" });
+
+  assert.ok(drills.length >= 8);
+  assert.equal(hashing.id, "drill-hashing");
+  assert.match(hashing.question, /Hashing/i);
+  assert.equal(hashing.answer.code.language, "Java");
+  assert.match(hashing.answer.pattern, /Hashing/);
+  assert.match(hashing.answer.bruteForce, /brute force/i);
+  assert.match(hashing.answer.optimalApproach, /invariant/i);
+  assert.ok(hashing.answer.edgeCases.length >= 3);
+  assert.match(hashing.answer.complexity, /O\(n\)/);
+  assert.match(buildDsaDrillMockPrompt(hashing), /wait for my answer/i);
+});
+
+test("compares a user's DSA drill answer against the local rubric", () => {
+  const drill = getDsaDrillQuestion("drill-hashing", { stack: "Java, Spring Boot" });
+  const strong = buildDsaDrillComparison({
+    drill,
+    response: "I would use a hash map. The invariant is that seen only contains previous values, then I dry run duplicates and empty input. Complexity is O(n) time and O(n) space.",
+  });
+  const weak = buildDsaDrillComparison({ drill, response: "I loop through the array." });
+
+  assert.ok(strong.score > weak.score);
+  assert.ok(strong.checks.some((check) => check.label === "Pattern" && check.covered));
+  assert.ok(strong.checks.some((check) => check.label === "Complexity" && check.covered));
+  assert.ok(weak.checks.some((check) => !check.covered));
+  assert.match(strong.summary, /ready|close/i);
+});
+
+test("builds a beginner-friendly DSA pattern atlas with decision and complexity guides", () => {
+  const patterns = listDsaPatternAtlas();
+  const tree = buildDsaPatternDecisionTree();
+  const complexity = listDsaComplexityCheats();
+  const slidingWindow = patterns.find((pattern) => pattern.id === "sliding-window");
+
+  assert.ok(patterns.length >= 12);
+  assert.ok(slidingWindow);
+  assert.match(slidingWindow.beginnerMeaning, /contiguous|window/i);
+  assert.ok(slidingWindow.visualHint.items.length >= 3);
+  assert.ok(slidingWindow.whenToUse.length >= 3);
+  assert.ok(slidingWindow.examples.some((example) => /substring|subarray/i.test(example)));
+  assert.ok(slidingWindow.pitfalls.length >= 2);
+  assert.equal(slidingWindow.drillId, "drill-two-pointers");
+  assert.match(tree.title, /Pattern Identifier/i);
+  assert.ok(tree.steps.some((step) => /pair|two pointers|hashing/i.test(`${step.question} ${step.yes} ${step.no}`)));
+  assert.ok(tree.steps.some((step) => /subarray|sliding window|prefix/i.test(`${step.question} ${step.yes} ${step.no}`)));
+  assert.ok(complexity.some((row) => row.structure === "Array"));
+  assert.ok(complexity.some((row) => row.structure === "HashMap"));
+});
+
+test("builds a visual playground and Big-O cheat sheet for data structures", () => {
+  const modules = listDsaVisualPlaygroundModules();
+  const bigO = buildDsaBigOChart();
+  const operations = listDsaOperationComplexities();
+  const moduleTitles = modules.map((module) => module.title);
+
+  assert.ok(modules.length >= 12);
+  assert.ok(moduleTitles.includes("ArrayList"));
+  assert.ok(moduleTitles.includes("Linked List"));
+  assert.ok(moduleTitles.includes("Hash Table"));
+  assert.ok(moduleTitles.includes("Binary Heap"));
+  assert.ok(moduleTitles.includes("Union-Find DS"));
+  assert.ok(moduleTitles.includes("Sorting Algorithms"));
+  assert.ok(modules.every((module) => module.beginnerMeaning.length > 20));
+  assert.ok(modules.every((module) => module.visualModel.items.length >= 3));
+  assert.ok(modules.every((module) => module.operations.length >= 2));
+
+  assert.match(bigO.title, /Big-O Cheat Sheet/i);
+  assert.ok(bigO.curves.some((curve) => curve.label === "O(1)" && /Excellent/i.test(curve.rating)));
+  assert.ok(bigO.curves.some((curve) => curve.label === "O(n log n)"));
+  assert.ok(bigO.curves.some((curve) => curve.label === "O(2^n)" && /Horrible/i.test(curve.rating)));
+  assert.ok(bigO.rules.some((rule) => /drop constants/i.test(rule.toLowerCase())));
+
+  assert.ok(operations.length >= 10);
+  assert.ok(operations.some((row) => row.structure === "ArrayList" && row.access.average === "O(1)"));
+  assert.ok(operations.some((row) => row.structure === "Hash Table" && row.search.average === "O(1) avg"));
+  assert.ok(operations.some((row) => row.structure === "Binary Heap" && row.insert.average === "O(log n)"));
+  assert.ok(operations.some((row) => row.structure === "Skip List"));
+});
+
 test("DsaVisualLab source exposes the required learning surfaces", () => {
   const source = readFileSync(new URL("../components/dsa/DsaVisualLab.js", import.meta.url), "utf8");
 
@@ -234,6 +330,28 @@ test("DsaVisualLab source exposes the required learning surfaces", () => {
   assert.match(source, /State Panel/);
   assert.match(source, /Selected stack code/);
   assert.match(source, /Quiz/);
+  assert.match(source, /Pattern Atlas/);
+  assert.match(source, /Pattern Identifier/);
+  assert.match(source, /Beginner meaning/);
+  assert.match(source, /When to use it/);
+  assert.match(source, /Common pitfalls/);
+  assert.match(source, /Complexity board/);
+  assert.match(source, /DSA Visual Playground/);
+  assert.match(source, /Learn visually/);
+  assert.match(source, /Module map/);
+  assert.match(source, /Big-O Cheat Sheet/);
+  assert.match(source, /Growth curve/);
+  assert.match(source, /Operation matrix/);
+  assert.match(source, /ArrayList/);
+  assert.match(source, /Hash Table/);
+  assert.match(source, /Binary Heap/);
+  assert.match(source, /Union-Find/);
+  assert.match(source, /Sorting Algorithms/);
+  assert.match(source, /Drill Room/);
+  assert.match(source, /Reveal answer/);
+  assert.match(source, /Compare my answer/);
+  assert.match(source, /Ideal answer/);
+  assert.match(source, /buildDsaDrillComparison/);
   assert.match(source, /Practice as Mock/);
   assert.match(source, /Blind 75 Visual Track/);
   assert.match(source, /Featured 15/);

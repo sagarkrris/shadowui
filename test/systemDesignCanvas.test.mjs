@@ -95,3 +95,9 @@ test("system design canvas component renders editable glass sections and action 
   assert.match(source, /gridTemplateColumns/);
   assert.match(source, /backdropFilter/);
 });
+
+test("system design canvas preserves its full height inside the workspace scroller", () => {
+  const source = readFileSync(new URL("../components/system-design/SystemDesignCanvas.js", import.meta.url), "utf8");
+
+  assert.match(source, /flexShrink:\s*0/);
+});
