@@ -107,6 +107,17 @@ test("preserves the DSA visual lab tab across refreshes", () => {
   assert.equal(loadSessionSnapshot(storage).activeTab, "dsaLab");
 });
 
+test("preserves the design lab tab across refreshes", () => {
+  const storage = memoryStorage();
+  const snapshot = createSessionSnapshot({
+    activeTab: "designLab",
+  });
+
+  saveSessionSnapshot(storage, snapshot);
+
+  assert.equal(loadSessionSnapshot(storage).activeTab, "designLab");
+});
+
 test("preserves real pressure interview mode across refreshes", () => {
   const storage = memoryStorage();
   const snapshot = createSessionSnapshot({

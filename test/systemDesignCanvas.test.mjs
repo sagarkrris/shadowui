@@ -5,10 +5,14 @@ import test from "node:test";
 import {
   buildCanvasMockPrompt,
   buildCanvasReviewPrompt,
+  buildSystemDesignStudioBlueprint,
+  buildSystemDesignStudioPrompt,
   buildSystemDesignMockPrompt,
   buildSystemDesignReviewPrompt,
   createSystemDesignCanvasState,
   exportSystemDesignCanvasMarkdown,
+  SYSTEM_DESIGN_LEARNING_CATALOG,
+  SYSTEM_DESIGN_PATTERN_LIBRARY,
   SYSTEM_DESIGN_CANVAS_SECTIONS,
 } from "../lib/systemDesignCanvas.mjs";
 
@@ -79,10 +83,53 @@ test("exports canvas state as interview-ready markdown", () => {
   assert.match(markdown, /_Not captured yet\._/);
 });
 
+test("builds a System Design Studio blueprint with HLD and LLD for ticket booking", () => {
+  const blueprint = buildSystemDesignStudioBlueprint("Implement Ticket Booking System");
+
+  assert.equal(blueprint.problem, "Implement Ticket Booking System");
+  assert.ok(blueprint.hld.requirements.some((item) => /booking/i.test(item)));
+  assert.ok(blueprint.hld.services.some((service) => /inventory/i.test(service.name)));
+  assert.ok(blueprint.hld.apis.some((api) => /reservations/i.test(api.path)));
+  assert.ok(blueprint.lld.classes.some((item) => /Reservation/i.test(item.name)));
+  assert.ok(blueprint.lld.patterns.some((item) => /Strategy|State|Observer/.test(item.pattern)));
+  assert.ok(blueprint.interviewBreakdown.questions.some((question) => /race|concurrency|payment/i.test(question)));
+});
+
+test("builds an AI prompt that asks for both HLD and LLD from the studio blueprint", () => {
+  const prompt = buildSystemDesignStudioPrompt("Implement Ticket Booking System");
+
+  assert.match(prompt, /HLD/i);
+  assert.match(prompt, /LLD/i);
+  assert.match(prompt, /Ticket Booking System/);
+  assert.match(prompt, /API/i);
+  assert.match(prompt, /classes/i);
+  assert.match(prompt, /trade-offs/i);
+});
+
+test("exposes a pattern library grouped by design intent with examples", () => {
+  assert.ok(SYSTEM_DESIGN_PATTERN_LIBRARY.creational.some((pattern) => pattern.name === "Factory Method"));
+  assert.ok(SYSTEM_DESIGN_PATTERN_LIBRARY.structural.some((pattern) => pattern.name === "Adapter"));
+  assert.ok(SYSTEM_DESIGN_PATTERN_LIBRARY.behavioral.some((pattern) => pattern.name === "Strategy"));
+  assert.ok(SYSTEM_DESIGN_PATTERN_LIBRARY.behavioral.every((pattern) => pattern.useCase && pattern.example));
+});
+
+test("exposes a system design learning catalog with separated HLD and LLD tracks", () => {
+  assert.equal(SYSTEM_DESIGN_LEARNING_CATALOG.systemDesign.label, "System Design");
+  assert.equal(SYSTEM_DESIGN_LEARNING_CATALOG.lowLevelDesign.label, "Low-Level Design");
+  assert.ok(SYSTEM_DESIGN_LEARNING_CATALOG.systemDesign.coreConcepts.some((item) => /scale|capacity|latency/i.test(item)));
+  assert.ok(SYSTEM_DESIGN_LEARNING_CATALOG.systemDesign.keyTechnologies.some((item) => /cache|queue|database/i.test(item)));
+  assert.ok(SYSTEM_DESIGN_LEARNING_CATALOG.systemDesign.questionBreakdowns.some((item) => /clarify|estimate|trade/i.test(item)));
+  assert.ok(SYSTEM_DESIGN_LEARNING_CATALOG.lowLevelDesign.commonPatterns.some((item) => /Strategy|State|Adapter/.test(item)));
+  assert.ok(SYSTEM_DESIGN_LEARNING_CATALOG.lowLevelDesign.practiceTasks.some((item) => /class|interface|sequence/i.test(item)));
+});
+
 test("system design canvas component renders editable glass sections and action buttons", () => {
   const source = readFileSync(new URL("../components/system-design/SystemDesignCanvas.js", import.meta.url), "utf8");
 
   assert.match(source, /createSystemDesignCanvasState/);
+  assert.match(source, /buildSystemDesignStudioBlueprint/);
+  assert.match(source, /buildSystemDesignStudioPrompt/);
+  assert.match(source, /SYSTEM_DESIGN_LEARNING_CATALOG/);
   assert.match(source, /SYSTEM_DESIGN_CANVAS_SECTIONS/);
   assert.match(source, /buildCanvasReviewPrompt/);
   assert.match(source, /buildCanvasMockPrompt/);
@@ -92,6 +139,19 @@ test("system design canvas component renders editable glass sections and action 
   assert.match(source, /Review/);
   assert.match(source, /Mock/);
   assert.match(source, /Export/);
+  assert.match(source, /Generate HLD \+ LLD/);
+  assert.match(source, /HLD/);
+  assert.match(source, /LLD/);
+  assert.match(source, /Patterns/);
+  assert.match(source, /Interview/);
+  assert.match(source, /Guide/);
+  assert.match(source, /Core Concepts/);
+  assert.match(source, /Key Technologies/);
+  assert.match(source, /Common Patterns/);
+  assert.match(source, /Question Breakdowns/);
+  assert.match(source, /overflowWrap/);
+  assert.match(source, /wordBreak/);
+  assert.match(source, /minWidth:\s*0/);
   assert.match(source, /gridTemplateColumns/);
   assert.match(source, /backdropFilter/);
 });

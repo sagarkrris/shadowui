@@ -7,6 +7,7 @@ import ScoreBadge from "../components/chat/ScoreBadge";
 import TechBackground from "../components/TechBackground";
 import TypingDots from "../components/chat/TypingDots";
 import AgenticUICourse from "../components/course/AgenticUICourse";
+import DesignLab from "../components/design-lab/DesignLab";
 import DsaVisualLab from "../components/dsa/DsaVisualLab";
 import RecordingReviewModal from "../components/modals/RecordingReviewModal";
 import ScreenModal from "../components/modals/ScreenModal";
@@ -127,7 +128,7 @@ export default function Home() {
   const viewportWidthRef = useRef(0);
   const keyboardOpenRef = useRef(false);
   const viewportRestoreTimers = useRef([]);
-  const visibleTopics = getRecommendedTopics(candidateProfile);
+  const visibleTopics = getRecommendedTopics(candidateProfile || profileDraft);
   const techTheme = getTechTheme(candidateProfile?.stack || profileDraft.stack);
   const prepLabel = getPrepLabel(candidateProfile?.stack || profileDraft.stack);
   const displayName = getDisplayName(candidateProfile);
@@ -566,6 +567,16 @@ export default function Home() {
     });
   };
 
+  const startDesignLabAction = (prompt) => {
+    setActiveTab("chat");
+    callAPI(prompt, {
+      roundStrategy: "systemDesign",
+      interviewPanel: "systemDesignArchitect",
+      displayText: "Design Lab practice",
+      skipQuestionMemory: true,
+    });
+  };
+
   const startDsaLabPractice = (prompt) => {
     setActiveTab("chat");
     callAPI(prompt, {
@@ -832,6 +843,9 @@ export default function Home() {
             <button className={`icon-btn ${activeTab==="canvas"?"active":""}`} onClick={() => setActiveTab(activeTab==="canvas"?"chat":"canvas")} title="System Canvas" aria-label="System Canvas">
               <i className="ti ti-schema" />
             </button>
+            <button className={`icon-btn ${activeTab==="designLab"?"active":""}`} onClick={() => setActiveTab(activeTab==="designLab"?"chat":"designLab")} title="Design Lab" aria-label="Design Lab">
+              <i className="ti ti-puzzle" />
+            </button>
             <button className={`icon-btn ${activeTab==="dsaLab"?"active":""}`} onClick={() => setActiveTab(activeTab==="dsaLab"?"chat":"dsaLab")} title="DSA Lab" aria-label="DSA Lab">
               <i className="ti ti-binary-tree" />
             </button>
@@ -840,7 +854,7 @@ export default function Home() {
             </button>
 
             <span style={{ flex:1, fontSize:13, fontWeight:500, color: currentLabel?"#e8e8f0":"#4b5563", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-              {activeTab === "course" ? "Agentic UI Course" : activeTab === "dsaLab" ? "DSA Lab" : activeTab === "canvas" ? "System Canvas" : activeTab === "company" ? (candidateProfile ? `Company Prep for ${displayName}` : "Company Prep") : candidateProfile ? `${stackGreeting.salutation}${currentLabel ? ` · ${currentLabel}` : ""}` : "Tell us your target role"}
+              {activeTab === "course" ? "Agentic UI Course" : activeTab === "dsaLab" ? "DSA Lab" : activeTab === "designLab" ? "Design Lab" : activeTab === "canvas" ? "System Canvas" : activeTab === "company" ? (candidateProfile ? `Company Prep for ${displayName}` : "Company Prep") : candidateProfile ? `${stackGreeting.salutation}${currentLabel ? ` · ${currentLabel}` : ""}` : "Tell us your target role"}
             </span>
             {candidateProfile && (
               <span style={{ display:isMobile?"none":"inline-flex", alignItems:"center", gap:5, padding:"3px 8px", borderRadius:999, border:`1px solid ${techTheme.accentBorder}`, background:techTheme.accentMuted, color:techTheme.accentText, fontSize:10.5, fontWeight:600, whiteSpace:"nowrap" }}>
@@ -861,6 +875,7 @@ export default function Home() {
               </div>
 
               <select value={difficulty} onChange={e => setDifficulty(e.target.value)}
+                aria-label="Difficulty level"
                 className="glass-input"
                 style={{ fontSize:11, padding:"3px 6px", borderRadius:6, border:"1px solid rgba(255,255,255,.09)", color:"#9ca3af", outline:"none" }}>
                 {DIFFS.map(d => <option key={d}>{d}</option>)}
@@ -884,7 +899,7 @@ export default function Home() {
                 {INTERVIEW_PANEL_OPTIONS.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}
               </select>
 
-              <button className="glass-button" onClick={startSession} disabled={!candidateProfile || !selectedCat || loading}
+              <button className="glass-button" aria-label="Start mock round" onClick={startSession} disabled={!candidateProfile || !selectedCat || loading}
                 style={{ padding:"4px 12px", fontSize:12, fontWeight:600, borderRadius:7, border:`1px solid ${techTheme.accentBorder}`, color:techTheme.accentText, cursor: candidateProfile&&selectedCat&&!loading?"pointer":"not-allowed", opacity: candidateProfile&&selectedCat&&!loading?1:.4, display:"flex", alignItems:"center", gap:5 }}>
                 <i className="ti ti-player-play" style={{ fontSize:11 }} />Start
               </button>
@@ -903,6 +918,8 @@ export default function Home() {
           <div ref={chatRef} className="chat-scroll" role="log" aria-live="polite" aria-relevant="additions text" aria-label="Conversation messages" style={{ flex:1, minHeight:0, overflowY:"auto", padding: isMobile?"12px 10px":"20px 16px", display:"flex", flexDirection:"column" }}>
             {activeTab === "course" ? (
               <AgenticUICourse theme={techTheme} variant="full" />
+            ) : activeTab==="designLab" ? (
+              <DesignLab theme={techTheme} onAction={startDesignLabAction} />
             ) : activeTab==="dsaLab" ? (
               <DsaVisualLab theme={techTheme} profile={candidateProfile || profileDraft} initialLessonId="arrays" onPractice={startDsaLabPractice} />
             ) : activeTab === "canvas" ? (
@@ -1022,6 +1039,7 @@ export default function Home() {
                   ))}
                 </div>
                 <select value={difficulty} onChange={e => setDifficulty(e.target.value)}
+                  aria-label="Difficulty level"
                   className="glass-input"
                   style={{ fontSize:11, padding:"5px 6px", borderRadius:6, border:"1px solid rgba(255,255,255,.09)", color:"#9ca3af", outline:"none" }}>
                   {DIFFS.map(d => <option key={d}>{d}</option>)}
@@ -1044,7 +1062,7 @@ export default function Home() {
                   style={{ fontSize:11, padding:"5px 6px", borderRadius:6, border:"1px solid rgba(255,255,255,.09)", color:"#9ca3af", outline:"none", minWidth:120, flex:"1 1 120px" }}>
                   {INTERVIEW_PANEL_OPTIONS.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}
                 </select>
-                <button className="glass-button" onClick={startSession} disabled={!candidateProfile||!selectedCat||loading}
+                <button className="glass-button" aria-label="Start mock round" onClick={startSession} disabled={!candidateProfile||!selectedCat||loading}
                   style={{ padding:"5px 12px", fontSize:11, fontWeight:600, borderRadius:7, border:`1px solid ${techTheme.accentBorder}`, color:techTheme.accentText, cursor: candidateProfile&&selectedCat&&!loading?"pointer":"not-allowed", opacity: candidateProfile&&selectedCat&&!loading?1:.4, display:"flex", alignItems:"center", gap:4, whiteSpace:"nowrap" }}>
                   <i className="ti ti-player-play" style={{ fontSize:10 }} />Start
                 </button>
@@ -1072,6 +1090,7 @@ export default function Home() {
                 { icon:"ti-layout-sidebar", label:"Topics",  action:()=>setSidebar(p=>!p), active:sidebarOpen },
                 { icon:"ti-building",        label:"Company", action:()=>setActiveTab(activeTab==="company"?"chat":"company"), active:activeTab==="company" },
                 { icon:"ti-schema",          label:"Canvas",  action:()=>setActiveTab(activeTab==="canvas"?"chat":"canvas"), active:activeTab==="canvas" },
+                { icon:"ti-puzzle",          label:"Design Lab", action:()=>setActiveTab(activeTab==="designLab"?"chat":"designLab"), active:activeTab==="designLab" },
                 { icon:"ti-binary-tree",      label:"DSA Lab", action:()=>setActiveTab(activeTab==="dsaLab"?"chat":"dsaLab"), active:activeTab==="dsaLab" },
                 { icon:"ti-sparkles",        label:"Course",  action:()=>setActiveTab(activeTab==="course"?"chat":"course"), active:activeTab==="course" },
                 ...(showInterviewTools ? [

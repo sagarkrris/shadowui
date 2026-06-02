@@ -7,6 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:browser-matrix": "E2E_BROWSER_MATRIX=1 playwright test",
     "android:sync": "cap sync android",
     "android:open": "cap open android",
     "android:build": "node scripts/android-build.mjs"
@@ -24,6 +27,7 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^5.2.3",
+    "@playwright/test": "^1.51.1",
     "eslint": "^8.57.1",
     "eslint-config-next": "^14.2.35"
   }

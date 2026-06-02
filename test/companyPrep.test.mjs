@@ -52,6 +52,17 @@ test("derives weak spots from assistant feedback messages", () => {
   assert.deepEqual(weakSpots.slice(0, 3), ["Edge cases", "Trade-offs", "Complexity analysis"]);
 });
 
+test("derives database weak spots from scored feedback", () => {
+  const weakSpots = deriveWeakSpots([
+    {
+      role: "assistant",
+      content: "Score: 3/10\nGaps: Databases were weak. Missing indexing, transactions, and SQL query tuning details.",
+    },
+  ]);
+
+  assert.ok(weakSpots.includes("Databases"));
+});
+
 test("builds local question bank refresh metadata without claiming live scraping", () => {
   const prep = getCompanyPrep("Amazon");
   const refresh = buildQuestionBankRefreshState({ prep, now: new Date("2026-05-26T12:00:00.000Z") });

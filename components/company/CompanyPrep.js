@@ -156,7 +156,7 @@ export default function CompanyPrep({ theme, weakSpots, mockScores = [], message
             <p style={{ fontSize: 12.5, color: "#6b7280", lineHeight: 1.5 }}>Publicly reported questions, mock interviews, weak spots, and source links.</p>
           </div>
           <form onSubmit={(event) => { event.preventDefault(); loadCompany(); }} style={{ display: "grid", gridTemplateColumns: "minmax(130px, 1fr) minmax(150px, 1fr) auto", gap: 7, flex: "1 1 430px" }}>
-            <input className="glass-input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search company, e.g. Amazon" style={{ minWidth: 0, border: "1px solid rgba(255,255,255,.09)", borderRadius: 8, padding: "9px 11px", color: "#e8e8f0", outline: "none", fontSize: 13 }} />
+            <input className="glass-input" aria-label="Company search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search company, e.g. Amazon" style={{ minWidth: 0, border: "1px solid rgba(255,255,255,.09)", borderRadius: 8, padding: "9px 11px", color: "#e8e8f0", outline: "none", fontSize: 13 }} />
             <input className="glass-input" aria-label="Role context" value={roleContext} onChange={(event) => setRoleContext(event.target.value)} placeholder="Role context, e.g. SDE II backend" style={{ minWidth: 0, border: "1px solid rgba(255,255,255,.09)", borderRadius: 8, padding: "9px 11px", color: "#e8e8f0", outline: "none", fontSize: 13 }} />
             <button className="glass-button" disabled={loading} style={{ border: `1px solid ${theme.accentBorder}`, color: theme.accentText, borderRadius: 8, padding: "0 13px", fontSize: 12, fontWeight: 700 }}>
               {loading ? "Loading" : "Search"}

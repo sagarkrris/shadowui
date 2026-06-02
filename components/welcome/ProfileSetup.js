@@ -1,7 +1,33 @@
 import { scrollFocusedControlIntoView } from "../../lib/focusViewport.mjs";
 
+const FIELD_LIMITS = {
+  name: 80,
+  position: 120,
+  stack: 160,
+};
+
+function getValidationMessages(draft) {
+  const messages = [];
+
+  if (!draft.name.trim() || !draft.position.trim() || !draft.experience.trim() || !draft.stack.trim()) {
+    messages.push("Complete name, position, experience, and tech stack to continue.");
+  }
+  if (draft.name.length > FIELD_LIMITS.name) {
+    messages.push(`Name must be ${FIELD_LIMITS.name} characters or fewer.`);
+  }
+  if (draft.position.length > FIELD_LIMITS.position) {
+    messages.push(`Position must be ${FIELD_LIMITS.position} characters or fewer.`);
+  }
+  if (draft.stack.length > FIELD_LIMITS.stack) {
+    messages.push(`Tech stack must be ${FIELD_LIMITS.stack} characters or fewer.`);
+  }
+
+  return messages;
+}
+
 export default function ProfileSetup({ draft, onChange, onSubmit, theme, keyboardOpen = false }) {
-  const canContinue = draft.name.trim() && draft.position.trim() && draft.experience.trim() && draft.stack.trim();
+  const validationMessages = getValidationMessages(draft);
+  const canContinue = validationMessages.length === 0;
   const unlockCards = [
     ["ti-list-check", "Stack Topics", "Sidebar topics change to match Java, Python, React, and more."],
     ["ti-building", "Company Prep", "Search a company and start mocks from reported interview patterns."],
@@ -57,6 +83,11 @@ export default function ProfileSetup({ draft, onChange, onSubmit, theme, keyboar
         <button className="glass-button" onClick={onSubmit} disabled={!canContinue} style={{ marginTop: 4, padding: "10px 14px", borderRadius: 9, border: `1px solid ${theme.accentBorder}`, color: canContinue ? theme.accentText : "#4b5563", fontSize: 13, fontWeight: 600, cursor: canContinue ? "pointer" : "not-allowed" }}>
           Personalize Prep
         </button>
+        {validationMessages.length ? (
+          <div role="alert" aria-live="polite" style={{ display: "grid", gap: 3, color: "#fca5a5", fontSize: 11.5, lineHeight: 1.4 }}>
+            {validationMessages.map((message) => <span key={message}>{message}</span>)}
+          </div>
+        ) : null}
       </div>
 
       <div style={{ width: "100%", maxWidth: 720, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10, marginTop: 20, textAlign: "left" }}>
