@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   buildDsaExplainThenCodeCoach,
   buildDsaMockPrompt,
@@ -24,6 +24,8 @@ import {
 import {
   buildDsaDrillComparison,
   buildDsaDrillMockPrompt,
+  buildDsaInterviewChallengeMockPrompt,
+  listDsaInterviewChallenges,
   listDsaDrillQuestions,
 } from "../../lib/dsaDrillRoom.mjs";
 import {
@@ -35,7 +37,14 @@ import {
   listDsaVisualPlaygroundModules,
 } from "../../lib/dsaPatternAtlas.mjs";
 
-const GUIDED_STAGES = ["Learn", "Pattern Atlas", "Visual Playground", "Big-O Board", "Visualize", "Dry run", "Explain-Then-Code", "Code", "Quiz", "Drill Room", "Practice as Mock"];
+const GUIDED_STAGES = ["Learn", "Pattern Atlas", "Visual Playground", "Big-O Board", "Visualize", "Dry run", "Explain-Then-Code", "Code", "Quiz", "Interview Challenges", "Drill Room", "Practice as Mock"];
+const CHALLENGE_FILTERS = [
+  { id: "all", label: "All" },
+  { id: "mcq", label: "MCQ" },
+  { id: "coding", label: "Coding" },
+  { id: "quantitative", label: "Quantitative" },
+  { id: "tricky", label: "Tricky" },
+];
 const TRACKS = [
   { id: "thinking", label: "How To Approach" },
   { id: "core", label: "Interview Core" },
@@ -449,6 +458,191 @@ function DrillRoomPanel({
           </div>
         </section>
       ) : null}
+    </section>
+  );
+}
+
+function InterviewChallengesPanel({
+  accent,
+  accentBorder,
+  challenge,
+  challenges,
+  choiceId,
+  error,
+  filter,
+  loading,
+  score,
+  source,
+  onChooseChallenge,
+  onChooseChoice,
+  onFilter,
+  onNext,
+  onPractice,
+  onRefresh,
+}) {
+  const answered = Boolean(choiceId);
+  const correct = answered && choiceId === challenge?.correctChoiceId;
+  const sourceLabel = loading ? "Generating" : source === "generated" ? "Generated" : source === "fallback" ? "Local fallback" : "Local bank";
+
+  return (
+    <section style={{ background: "rgba(255,255,255,.04)", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 12, padding: 12 }}>
+      <div style={{ alignItems: "start", display: "grid", gap: 12, gridTemplateColumns: "minmax(0, 1fr) auto" }}>
+        <div>
+          <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Interview Challenges</div>
+          <h3 style={{ color: "#f8fbff", fontSize: 16, lineHeight: 1.3, margin: "4px 0" }}>
+            Tricky interview coding, MCQ, and quantitative questions.
+          </h3>
+          <p style={{ color: "#93a4bf", fontSize: 12, lineHeight: 1.5, margin: 0 }}>
+            Pick the answer, read the trap, then move to the next pattern without leaving the visual lab.
+          </p>
+        </div>
+        <div style={{ alignItems: "end", display: "grid", gap: 6, justifyItems: "end" }}>
+          <strong style={{ background: "rgba(139,211,255,.08)", border: `1px solid ${accentBorder}`, borderRadius: 999, color: accent, fontSize: 11, fontWeight: 900, padding: "7px 10px", whiteSpace: "nowrap" }}>
+            {score.correct}/{score.answered || 0} correct
+          </strong>
+          <span style={{ color: source === "generated" ? "#a7f3d0" : source === "fallback" ? "#facc15" : "#93a4bf", fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>
+            {sourceLabel}
+          </span>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 7, flexWrap: "wrap", alignItems: "center" }}>
+        <ActionButton icon="ti-refresh" label={loading ? "Generating..." : "Refresh Questions"} onClick={onRefresh} disabled={loading} tone="#a7f3d0" />
+        {CHALLENGE_FILTERS.map((item) => {
+          const active = filter === item.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              className={active ? "glass-button" : ""}
+              onClick={() => onFilter(item.id)}
+              style={{
+                background: active ? `${accent}1f` : "rgba(0,0,0,.14)",
+                border: `1px solid ${active ? accent : "rgba(255,255,255,.08)"}`,
+                borderRadius: 7,
+                color: active ? "#f8fbff" : "#93a4bf",
+                cursor: "pointer",
+                fontSize: 11,
+                fontWeight: 850,
+                padding: "8px 10px",
+              }}
+            >
+              {item.label}
+            </button>
+          );
+        })}
+        {error ? (
+          <span style={{ color: "#facc15", fontSize: 11, fontWeight: 850 }}>
+            {error}
+          </span>
+        ) : null}
+      </div>
+
+      <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))" }}>
+        <section style={{ alignContent: "start", background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 9, padding: 11 }}>
+          <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Question bank</div>
+          <div style={{ display: "grid", gap: 8 }}>
+            {challenges.slice(0, 10).map((item) => {
+              const active = item.id === challenge?.id;
+              const tone = item.type === "coding" ? "#a7f3d0" : item.type === "quantitative" ? "#facc15" : accent;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={active ? "glass-button" : ""}
+                  onClick={() => onChooseChallenge(item.id)}
+                  style={{
+                    background: active ? `${tone}1f` : "rgba(255,255,255,.035)",
+                    border: `1px solid ${active ? tone : "rgba(255,255,255,.075)"}`,
+                    borderRadius: 8,
+                    color: active ? "#f8fbff" : "#dbeafe",
+                    cursor: "pointer",
+                    display: "grid",
+                    gap: 5,
+                    minHeight: 78,
+                    padding: 10,
+                    textAlign: "left",
+                  }}
+                >
+                  <span style={{ color: tone, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>
+                    {item.typeLabel} · {item.difficulty}
+                  </span>
+                  <strong style={{ color: "#f8fbff", fontSize: 11.7, lineHeight: 1.35 }}>{item.title}</strong>
+                  {item.tricky ? (
+                    <span style={{ color: "#fda4af", fontSize: 10.5, fontWeight: 850 }}>Tricky interview trap</span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <section style={{ alignContent: "start", background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 11, minWidth: 0, padding: 11 }}>
+          <div style={{ alignItems: "start", display: "flex", gap: 10, justifyContent: "space-between", flexWrap: "wrap" }}>
+            <div>
+              <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>{challenge?.typeLabel}</div>
+              <h4 style={{ color: "#f8fbff", fontSize: 16, lineHeight: 1.3, margin: "4px 0 0" }}>{challenge?.title}</h4>
+            </div>
+            <span style={{ background: correct ? "rgba(167,243,208,.1)" : answered ? "rgba(253,164,175,.1)" : "rgba(139,211,255,.08)", border: `1px solid ${correct ? "rgba(167,243,208,.35)" : answered ? "rgba(253,164,175,.3)" : accentBorder}`, borderRadius: 999, color: correct ? "#a7f3d0" : answered ? "#fda4af" : accent, fontSize: 11, fontWeight: 900, padding: "7px 10px" }}>
+              {answered ? (correct ? "Correct" : "Review") : "Choose one"}
+            </span>
+          </div>
+
+          <strong style={{ color: "#f8fbff", fontSize: 13.2, lineHeight: 1.45 }}>{challenge?.prompt}</strong>
+
+          {challenge?.codeSnippet ? (
+            <pre style={{ background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, color: "#dbeafe", fontSize: 11, lineHeight: 1.5, margin: 0, maxHeight: 220, overflow: "auto", padding: 10, whiteSpace: "pre" }}>
+              <code>{challenge.codeSnippet}</code>
+            </pre>
+          ) : null}
+
+          <div style={{ display: "grid", gap: 8 }}>
+            {(challenge?.choices || []).map((choice) => {
+              const selected = choice.id === choiceId;
+              const isCorrectChoice = answered && choice.id === challenge.correctChoiceId;
+              const tone = isCorrectChoice ? "#a7f3d0" : selected ? "#fda4af" : "rgba(255,255,255,.08)";
+              return (
+                <button
+                  key={choice.id}
+                  type="button"
+                  onClick={() => onChooseChoice(choice.id)}
+                  style={{
+                    background: selected || isCorrectChoice ? `${tone}14` : "rgba(255,255,255,.035)",
+                    border: `1px solid ${selected || isCorrectChoice ? tone : "rgba(255,255,255,.075)"}`,
+                    borderRadius: 8,
+                    color: "#dbeafe",
+                    cursor: "pointer",
+                    display: "grid",
+                    gap: 7,
+                    gridTemplateColumns: "24px 1fr",
+                    minHeight: 46,
+                    padding: 10,
+                    textAlign: "left",
+                  }}
+                >
+                  <strong style={{ color: selected || isCorrectChoice ? tone : accent, fontSize: 12, textTransform: "uppercase" }}>{choice.id}</strong>
+                  <span style={{ fontSize: 11.7, lineHeight: 1.4 }}>{choice.text}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {answered ? (
+            <section style={{ background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 7, padding: 10 }}>
+              <strong style={{ color: correct ? "#a7f3d0" : "#fda4af", fontSize: 11, textTransform: "uppercase" }}>
+                {correct ? "Why it works" : "Trick to catch"}
+              </strong>
+              <span style={{ color: "#dbeafe", fontSize: 11.5, lineHeight: 1.5 }}>{challenge?.explanation}</span>
+              <span style={{ color: "#facc15", fontSize: 11.2, lineHeight: 1.45 }}>Trick note: {challenge?.trick}</span>
+            </section>
+          ) : null}
+
+          <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+            <ActionButton icon="ti-arrow-right" label="Next question" onClick={onNext} tone="#93c5fd" />
+            <ActionButton icon="ti-user-question" label="Practice as Mock" onClick={onPractice} tone="#a7f3d0" />
+          </div>
+        </section>
+      </div>
     </section>
   );
 }
@@ -870,6 +1064,14 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
   const [drillAnswer, setDrillAnswer] = useState("");
   const [drillRevealed, setDrillRevealed] = useState(false);
   const [drillCompared, setDrillCompared] = useState(false);
+  const [selectedChallengeId, setSelectedChallengeId] = useState("challenge-arrays-mcq");
+  const [challengeChoiceId, setChallengeChoiceId] = useState("");
+  const [challengeFilter, setChallengeFilter] = useState("all");
+  const [challengeScore, setChallengeScore] = useState({ answered: 0, correct: 0 });
+  const [generatedChallenges, setGeneratedChallenges] = useState([]);
+  const [challengeSource, setChallengeSource] = useState("local");
+  const [challengeLoading, setChallengeLoading] = useState(false);
+  const [challengeError, setChallengeError] = useState("");
   const [selectedPatternId, setSelectedPatternId] = useState("sliding-window");
   const [selectedPlaygroundModuleId, setSelectedPlaygroundModuleId] = useState("array-list");
   const [stepIndex, setStepIndex] = useState(0);
@@ -894,6 +1096,20 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
   const drillComparison = useMemo(
     () => buildDsaDrillComparison({ drill: selectedDrill, response: drillAnswer }),
     [selectedDrill, drillAnswer],
+  );
+  const interviewChallenges = useMemo(() => listDsaInterviewChallenges({ stack: stackText }), [stackText]);
+  const activeInterviewChallenges = generatedChallenges.length ? generatedChallenges : interviewChallenges;
+  const filteredInterviewChallenges = useMemo(() => {
+    if (challengeFilter === "tricky") return activeInterviewChallenges.filter((challenge) => challenge.tricky);
+    if (challengeFilter === "all") return activeInterviewChallenges;
+    return activeInterviewChallenges.filter((challenge) => challenge.type === challengeFilter);
+  }, [activeInterviewChallenges, challengeFilter]);
+  const selectedChallenge = useMemo(
+    () => filteredInterviewChallenges.find((challenge) => challenge.id === selectedChallengeId)
+      || activeInterviewChallenges.find((challenge) => challenge.id === selectedChallengeId)
+      || filteredInterviewChallenges[0]
+      || activeInterviewChallenges[0],
+    [activeInterviewChallenges, filteredInterviewChallenges, selectedChallengeId],
   );
   const patternAtlas = useMemo(() => listDsaPatternAtlas(), []);
   const selectedPattern = useMemo(
@@ -946,6 +1162,44 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
     const steps = lesson.codeWalkthrough || [];
     return steps.find((item) => item.visualStep === stepIndex) || steps[Math.min(stepIndex, steps.length - 1)] || null;
   }, [lesson, stepIndex]);
+
+  const refreshGeneratedChallenges = useCallback(async () => {
+    setChallengeLoading(true);
+    setChallengeError("");
+
+    try {
+      const response = await fetch("/api/dsa-challenges", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stack: stackText || "JavaScript",
+          count: 12,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok || !Array.isArray(data.challenges) || !data.challenges.length) {
+        throw new Error(data.error || "Could not generate fresh questions.");
+      }
+
+      setGeneratedChallenges(data.challenges);
+      setSelectedChallengeId(data.challenges[0]?.id || "challenge-arrays-mcq");
+      setChallengeChoiceId("");
+      setChallengeSource("generated");
+    } catch (error) {
+      setGeneratedChallenges([]);
+      setSelectedChallengeId("challenge-arrays-mcq");
+      setChallengeChoiceId("");
+      setChallengeSource("fallback");
+      setChallengeError("Local fallback");
+    } finally {
+      setChallengeLoading(false);
+    }
+  }, [stackText]);
+
+  useEffect(() => {
+    refreshGeneratedChallenges();
+  }, [refreshGeneratedChallenges]);
 
   useEffect(() => {
     try {
@@ -1079,6 +1333,45 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
       response: drillAnswer,
       comparison: drillComparison,
       language: selectedDrill.answer.code.language,
+    });
+  };
+
+  const chooseChallenge = (challengeId) => {
+    setSelectedChallengeId(challengeId);
+    setChallengeChoiceId("");
+    setStage("Interview Challenges");
+  };
+
+  const filterChallenges = (filterId) => {
+    setChallengeFilter(filterId);
+    setChallengeChoiceId("");
+    setStage("Interview Challenges");
+  };
+
+  const chooseChallengeChoice = (choiceId) => {
+    if (challengeChoiceId || !selectedChallenge) return;
+    setChallengeChoiceId(choiceId);
+    setChallengeScore((value) => ({
+      answered: value.answered + 1,
+      correct: value.correct + (choiceId === selectedChallenge.correctChoiceId ? 1 : 0),
+    }));
+  };
+
+  const nextChallenge = () => {
+    const challengeList = filteredInterviewChallenges.length ? filteredInterviewChallenges : activeInterviewChallenges;
+    const index = challengeList.findIndex((challenge) => challenge.id === selectedChallenge?.id);
+    const nextItem = challengeList[(index + 1) % challengeList.length] || challengeList[0];
+    setSelectedChallengeId(nextItem?.id || "challenge-arrays-mcq");
+    setChallengeChoiceId("");
+    setStage("Interview Challenges");
+  };
+
+  const practiceChallengeAsMock = () => {
+    setStage("Practice as Mock");
+    onPractice?.(buildDsaInterviewChallengeMockPrompt(selectedChallenge), {
+      challenge: selectedChallenge,
+      response: challengeChoiceId,
+      language: stackText || "JavaScript",
     });
   };
 
@@ -1220,6 +1513,27 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
           onNext={nextDrill}
           onPractice={practiceDrillAsMock}
           onReveal={revealDrillAnswer}
+        />
+      ) : null}
+
+      {stage === "Interview Challenges" ? (
+        <InterviewChallengesPanel
+          accent={accent}
+          accentBorder={accentBorder}
+          challenge={selectedChallenge}
+          challenges={filteredInterviewChallenges}
+          choiceId={challengeChoiceId}
+          error={challengeError}
+          filter={challengeFilter}
+          loading={challengeLoading}
+          score={challengeScore}
+          source={challengeSource}
+          onChooseChallenge={chooseChallenge}
+          onChooseChoice={chooseChallengeChoice}
+          onFilter={filterChallenges}
+          onNext={nextChallenge}
+          onPractice={practiceChallengeAsMock}
+          onRefresh={refreshGeneratedChallenges}
         />
       ) : null}
 

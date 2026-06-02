@@ -14,7 +14,9 @@ import {
 import {
   buildDsaDrillComparison,
   buildDsaDrillMockPrompt,
+  buildDsaInterviewChallengeMockPrompt,
   getDsaDrillQuestion,
+  listDsaInterviewChallenges,
   listDsaDrillQuestions,
 } from "../lib/dsaDrillRoom.mjs";
 import {
@@ -251,6 +253,27 @@ test("compares a user's DSA drill answer against the local rubric", () => {
   assert.match(strong.summary, /ready|close/i);
 });
 
+test("builds deterministic DSA interview challenges across mcq coding and quantitative types", () => {
+  const challenges = listDsaInterviewChallenges({ stack: "Java, Spring Boot" });
+  const types = new Set(challenges.map((challenge) => challenge.type));
+  const hashingMcq = challenges.find((challenge) => challenge.lessonId === "hashing" && challenge.type === "mcq");
+  const codingChallenge = challenges.find((challenge) => challenge.type === "coding");
+  const quantitativeChallenge = challenges.find((challenge) => challenge.type === "quantitative");
+
+  assert.ok(challenges.length >= 40);
+  assert.ok(types.has("mcq"));
+  assert.ok(types.has("coding"));
+  assert.ok(types.has("quantitative"));
+  assert.ok(challenges.every((challenge) => challenge.choices.length === 4));
+  assert.ok(challenges.every((challenge) => challenge.choices.some((choice) => choice.id === challenge.correctChoiceId)));
+  assert.ok(challenges.every((challenge) => challenge.explanation.length > 20));
+  assert.ok(challenges.some((challenge) => challenge.tricky));
+  assert.match(hashingMcq.prompt, /Hashing|hash/i);
+  assert.match(codingChallenge.codeSnippet, /function|class|def|Map|for/i);
+  assert.match(quantitativeChallenge.prompt, /complexity|how many|Big-O|space/i);
+  assert.match(buildDsaInterviewChallengeMockPrompt(codingChallenge), /coding/i);
+});
+
 test("builds a beginner-friendly DSA pattern atlas with decision and complexity guides", () => {
   const patterns = listDsaPatternAtlas();
   const tree = buildDsaPatternDecisionTree();
@@ -330,6 +353,14 @@ test("DsaVisualLab source exposes the required learning surfaces", () => {
   assert.match(source, /State Panel/);
   assert.match(source, /Selected stack code/);
   assert.match(source, /Quiz/);
+  assert.match(source, /Interview Challenges/);
+  assert.match(source, /Refresh Questions/);
+  assert.match(source, /Generated/);
+  assert.match(source, /Local fallback/);
+  assert.match(source, /MCQ/);
+  assert.match(source, /Coding/);
+  assert.match(source, /Quantitative/);
+  assert.match(source, /Tricky interview/i);
   assert.match(source, /Pattern Atlas/);
   assert.match(source, /Pattern Identifier/);
   assert.match(source, /Beginner meaning/);
