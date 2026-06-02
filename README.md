@@ -38,7 +38,7 @@ AI-powered interview intelligence for modern software engineers. It supports per
 - Agentic UI Engineering course with Java/Spring Boot, React/Next.js, Node/Python, and enterprise adapter tracks for agent loops, tool calling, approvals, traces, streaming, and guardrails.
 - Chat-based interview and practice modes with difficulty levels.
 - Code paste/review tools shown only where useful, such as technical prep topics.
-- Live Code Runner marked as an upcoming feature while sandbox execution is paused.
+- Live Java Runner with Vercel Sandbox or Piston provider support, plus safe paused-state guidance when no runner is configured.
 - Screen capture/upload analysis for coding, design, database, and interview prompts.
 - Voice input with helpful iOS/Safari fallback guidance.
 - Responsive layout verified across phone, tablet, iPad, and desktop viewport sizes.
@@ -60,13 +60,20 @@ Create `.env.local` with:
 
 ```bash
 GEMINI_API_KEY=your-gemini-api-key
+# Optional: enable the Live Java Runner on Vercel Sandbox:
+# CODE_RUNNER_PROVIDER=vercel-sandbox
+# VERCEL_SANDBOX_JAVA_SNAPSHOT_ID=your-java-enabled-snapshot-id
+# Development only, slower: install Java in each fresh sandbox:
+# VERCEL_SANDBOX_AUTO_INSTALL_JAVA=1
 # Optional only when you are ready to enable live code execution:
 # PISTON_EXECUTE_URL=https://your-piston-host.example.com/api/v2/execute
 ```
 
 You can create a Gemini API key from Google AI Studio. Keep the key server-side only; browser requests go through the Next.js API routes.
 
-The Live Code Runner is currently shown as an upcoming feature and `/api/run-code` returns a paused response unless `PISTON_EXECUTE_URL` is explicitly set to a self-hosted or approved Piston runner. The old public Piston endpoint became whitelist-only in February 2026. Do not paste secrets, tokens, proprietary code, or private stdin into any external runner.
+The Live Java Runner can use Vercel Sandbox when `CODE_RUNNER_PROVIDER=vercel-sandbox` is set. On Vercel, Sandbox authentication is handled by the platform; for local development run `vercel link` and `vercel env pull`, or set `VERCEL_TEAM_ID`, `VERCEL_PROJECT_ID`, and `VERCEL_TOKEN`. For faster Java execution, create a Sandbox snapshot with a JDK installed and set `VERCEL_SANDBOX_JAVA_SNAPSHOT_ID`. Without a snapshot, `VERCEL_SANDBOX_AUTO_INSTALL_JAVA=1` can install Java in each fresh sandbox for development, but it is slower.
+
+The runner still supports Piston when `PISTON_EXECUTE_URL` is explicitly set to a self-hosted or approved Piston runner. The old public Piston endpoint became whitelist-only in February 2026. Do not paste secrets, tokens, proprietary code, or private stdin into any external runner.
 
 ## Useful Commands
 
@@ -176,15 +183,15 @@ shadowui/
 ```text
 Browser
   -> Next.js API route
-  -> Gemini API or Piston API
+  -> Gemini API, Vercel Sandbox, or Piston API
   -> streamed response back to the browser
 ```
 
-The browser never receives the Gemini API key. Code execution requests are blocked unless `PISTON_EXECUTE_URL` is explicitly configured, then proxied through `/api/run-code` to the configured Piston runner only when the user clicks Run.
+The browser never receives the Gemini API key. Code execution requests go through `/api/run-code` only when the user clicks Run, then execute through the configured provider: Vercel Sandbox when `CODE_RUNNER_PROVIDER=vercel-sandbox`, or Piston when `PISTON_EXECUTE_URL` is configured.
 
 ## Notes
 
 - Public company interview data is presented as reported/community-sourced, not official company material.
 - Resume gap analysis in the Career Toolkit supports `.pdf`, `.docx`, `.txt`, `.md`, and pasted text. Extraction runs through InterviewIQ's own API route and is not sent to Gemini or external AI services; legacy `.doc` files should be converted to `.docx` or pasted as text.
-- The Live Code Runner is paused in the UI for now. The API route returns `503` until a non-public, approved `PISTON_EXECUTE_URL` is configured; request-size safeguards remain in place for that future sandbox.
+- The Live Java Runner returns `503` until `CODE_RUNNER_PROVIDER=vercel-sandbox` or a non-public, approved `PISTON_EXECUTE_URL` is configured. Request-size safeguards remain in place for both providers.
 - Voice input depends on browser support. iOS Safari may require microphone permissions, Siri/dictation support, or keyboard dictation fallback.

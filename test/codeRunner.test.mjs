@@ -4,23 +4,45 @@ import test from "node:test";
 import {
   CODE_RUN_LIMITS,
   CODE_RUNNER_FEATURE_STATE,
+  CODE_RUNNER_PROVIDERS,
   DEFAULT_PISTON_EXECUTE_URL,
   buildCodeRunnerError,
   buildPistonPayload,
   extractPistonResult,
+  getCodeRunnerProvider,
   isCodeRunnerConfigured,
   normalizeRunCodeRequest,
 } from "../lib/codeRunner.mjs";
 
-test("marks the live code runner as an upcoming feature", () => {
-  assert.equal(CODE_RUNNER_FEATURE_STATE.status, "upcoming");
-  assert.match(CODE_RUNNER_FEATURE_STATE.title, /Upcoming feature/i);
+test("marks the live code runner as ready for configured cloud sandboxes", () => {
+  assert.equal(CODE_RUNNER_FEATURE_STATE.status, "ready");
+  assert.match(CODE_RUNNER_FEATURE_STATE.title, /sandbox/i);
 });
 
 test("keeps code execution disabled until an approved runner is configured", () => {
   assert.equal(isCodeRunnerConfigured(""), false);
   assert.equal(isCodeRunnerConfigured(DEFAULT_PISTON_EXECUTE_URL), false);
   assert.equal(isCodeRunnerConfigured("https://runner.internal.example/api/v2/execute"), true);
+});
+
+test("selects the configured code runner provider", () => {
+  assert.equal(
+    getCodeRunnerProvider({ provider: CODE_RUNNER_PROVIDERS.vercelSandbox }),
+    CODE_RUNNER_PROVIDERS.vercelSandbox,
+  );
+  assert.equal(
+    getCodeRunnerProvider({
+      provider: CODE_RUNNER_PROVIDERS.piston,
+      pistonUrl: "",
+    }),
+    "",
+  );
+  assert.equal(
+    getCodeRunnerProvider({
+      pistonUrl: "https://runner.internal.example/api/v2/execute",
+    }),
+    CODE_RUNNER_PROVIDERS.piston,
+  );
 });
 
 test("normalizes supported code-run requests", () => {
