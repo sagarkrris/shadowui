@@ -7,6 +7,7 @@ import {
   CODE_RUNNER_PROVIDERS,
   DEFAULT_PISTON_EXECUTE_URL,
   buildCodeRunnerError,
+  buildCodeRunnerHealth,
   buildPistonPayload,
   extractPistonResult,
   getCodeRunnerProvider,
@@ -14,21 +15,21 @@ import {
   normalizeRunCodeRequest,
 } from "../lib/codeRunner.mjs";
 
-test("marks the live code runner as ready for configured cloud sandboxes", () => {
-  assert.equal(CODE_RUNNER_FEATURE_STATE.status, "ready");
-  assert.match(CODE_RUNNER_FEATURE_STATE.title, /sandbox/i);
+test("marks the code runner as an upcoming feature", () => {
+  assert.equal(CODE_RUNNER_FEATURE_STATE.status, "upcoming");
+  assert.match(CODE_RUNNER_FEATURE_STATE.title, /coming soon/i);
 });
 
-test("keeps code execution disabled until an approved runner is configured", () => {
+test("keeps code execution disabled while the runner is upcoming", () => {
   assert.equal(isCodeRunnerConfigured(""), false);
   assert.equal(isCodeRunnerConfigured(DEFAULT_PISTON_EXECUTE_URL), false);
-  assert.equal(isCodeRunnerConfigured("https://runner.internal.example/api/v2/execute"), true);
+  assert.equal(isCodeRunnerConfigured("https://runner.internal.example/api/v2/execute"), false);
 });
 
-test("selects the configured code runner provider", () => {
+test("keeps provider routing paused while the runner is upcoming", () => {
   assert.equal(
     getCodeRunnerProvider({ provider: CODE_RUNNER_PROVIDERS.vercelSandbox }),
-    CODE_RUNNER_PROVIDERS.vercelSandbox,
+    "",
   );
   assert.equal(
     getCodeRunnerProvider({
@@ -41,8 +42,22 @@ test("selects the configured code runner provider", () => {
     getCodeRunnerProvider({
       pistonUrl: "https://runner.internal.example/api/v2/execute",
     }),
-    CODE_RUNNER_PROVIDERS.piston,
+    "",
   );
+});
+
+test("reports upcoming health instead of configured sandbox readiness", () => {
+  const health = buildCodeRunnerHealth({
+    provider: CODE_RUNNER_PROVIDERS.vercelSandbox,
+    javaSnapshotId: "snap_java_123",
+    pistonUrl: "https://runner.internal.example/api/v2/execute",
+  });
+
+  assert.equal(health.status, "upcoming");
+  assert.equal(health.configured, false);
+  assert.equal(health.runnable, false);
+  assert.deepEqual(health.supportedLanguages, ["java"]);
+  assert.match(health.summary, /upcoming/i);
 });
 
 test("normalizes supported code-run requests", () => {
@@ -139,6 +154,6 @@ test("classifies missing Piston configuration as paused execution", () => {
 
   assert.equal(error.status, 503);
   assert.equal(error.runnerUnavailable, true);
-  assert.match(error.error, /paused/i);
-  assert.match(error.error, /PISTON_EXECUTE_URL/);
+  assert.match(error.error, /upcoming/i);
+  assert.match(error.error, /AI code review/);
 });
