@@ -7,6 +7,7 @@ import {
   buildScenarioAnswerPrompt,
   buildScenarioMockPrompt,
   buildScenarioVariantPrompt,
+  buildLocalScenarioVariant,
   createScenarioBankState,
   getScenarioSeed,
   listScenarioBankTopics,
@@ -72,6 +73,28 @@ test("scenario seeds include detailed local answer guidance", () => {
   assert.ok(seed.traps.some((trap) => /TTL|lock|cache/i.test(trap)));
   assert.ok(seed.followUps.length >= 2);
   assert.ok(seed.rubric.some((item) => /trade|failure|correct/i.test(item)));
+});
+
+test("builds fresh local scenario variants without requiring AI", () => {
+  const seed = getScenarioSeed("java-thread-pool-saturation");
+  const variant = buildLocalScenarioVariant(seed, {
+    difficulty: "Senior",
+    mode: "Timed Drill",
+  }, {
+    variantIndex: 2,
+  });
+
+  assert.equal(variant.id, "java-thread-pool-saturation-local-variant-3");
+  assert.equal(variant.generated, true);
+  assert.equal(variant.track, seed.track);
+  assert.equal(variant.topic, seed.topic);
+  assert.equal(variant.difficulty, "Senior");
+  assert.match(variant.title, /Fresh Variant/);
+  assert.notEqual(variant.prompt, seed.prompt);
+  assert.match(variant.prompt, /thread pool|checkout|Spring Boot/i);
+  assert.ok(variant.answerOutline.length >= seed.answerOutline.length);
+  assert.ok(variant.traps.some((trap) => /original scenario/i.test(trap)));
+  assert.ok(variant.followUps.some((followUp) => /evidence/i.test(followUp)));
 });
 
 test("builds prompts for real-time variants, answer expansion, and mock practice", () => {

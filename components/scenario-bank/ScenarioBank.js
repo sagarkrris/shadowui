@@ -7,8 +7,8 @@ import {
   SCENARIO_BANK_TRACKS,
   buildScenarioInterviewPlan,
   buildScenarioAnswerPrompt,
+  buildLocalScenarioVariant,
   buildScenarioMockPrompt,
-  buildScenarioVariantPrompt,
   createScenarioBankProgress,
   createScenarioBankState,
   estimateScenarioCoverage,
@@ -118,9 +118,9 @@ function ProgressMetric({ label, value, accent }) {
   );
 }
 
-function ScenarioCard({ scenario, scenarioProgress, state, accent, onAction, onRecord }) {
+function ScenarioCard({ scenario, scenarioProgress, state, accent, onAction, onRecord, onGenerateFresh, generated = false }) {
   const askVariant = () => {
-    onAction?.(buildScenarioVariantPrompt(state), { type: "scenarioVariant", state, scenario });
+    onGenerateFresh?.(scenario);
   };
   const explainAnswer = () => {
     onAction?.(buildScenarioAnswerPrompt(scenario, state), { type: "scenarioAnswer", state, scenario });
@@ -133,8 +133,8 @@ function ScenarioCard({ scenario, scenarioProgress, state, accent, onAction, onR
     <article style={{ ...wrap, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 8, display: "grid", gap: 11, padding: 12 }}>
       <div style={{ display: "flex", gap: 8, justifyContent: "space-between", minWidth: 0 }}>
         <div style={wrap}>
-          <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>
-            {scenario.difficulty} Scenario
+          <div style={{ color: generated ? "#a7f3d0" : accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>
+            {generated ? "Fresh Local Scenario" : `${scenario.difficulty} Scenario`}
           </div>
           <h3 style={{ ...wrap, color: "#f8fbff", fontSize: 15, lineHeight: 1.25, marginTop: 4 }}>{scenario.title}</h3>
         </div>
@@ -191,6 +191,8 @@ function ScenarioCard({ scenario, scenarioProgress, state, accent, onAction, onR
 export default function ScenarioBank({ theme = {}, onAction }) {
   const [state, setState] = useState(() => createScenarioBankState());
   const [progress, setProgress] = useState(() => createScenarioBankProgress());
+  const [generatedScenario, setGeneratedScenario] = useState(null);
+  const [variantIndex, setVariantIndex] = useState(0);
   const [storageReady, setStorageReady] = useState(false);
   const accent = theme.accentStrong || "#8bd3ff";
   const accentBorder = theme.accentBorder || "rgba(139, 211, 255, .26)";
@@ -227,9 +229,15 @@ export default function ScenarioBank({ theme = {}, onAction }) {
 
   const updateState = (patch) => {
     setState((previous) => createScenarioBankState({ ...previous, ...patch }));
+    setGeneratedScenario(null);
   };
   const recordProgress = (scenario, outcome) => {
     setProgress((previous) => recordScenarioBankAttempt(previous, scenario, { outcome }));
+  };
+  const generateFreshScenario = (scenario) => {
+    const nextScenario = buildLocalScenarioVariant(scenario, state, { variantIndex });
+    setGeneratedScenario(nextScenario);
+    setVariantIndex((previous) => previous + 1);
   };
   const startDailyPlan = () => {
     onAction?.(interviewPlan.prompt, { type: "scenarioPlan", state, plan: interviewPlan });
@@ -332,6 +340,24 @@ export default function ScenarioBank({ theme = {}, onAction }) {
         </div>
       </section>
 
+      {generatedScenario && (
+        <section style={{ border: "1px solid rgba(167,243,208,.28)", borderRadius: 8, display: "grid", gap: 10, minWidth: 0, padding: 12, background: "rgba(16,185,129,.055)" }}>
+          <div style={{ ...wrap, color: "#a7f3d0", fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>
+            Fresh Local Scenario
+          </div>
+          <ScenarioCard
+            scenario={generatedScenario}
+            scenarioProgress={progress.scenarios[generatedScenario.id]}
+            state={state}
+            accent={accent}
+            onAction={onAction}
+            onRecord={recordProgress}
+            onGenerateFresh={generateFreshScenario}
+            generated
+          />
+        </section>
+      )}
+
       <div style={responsiveGrid(300, 10)}>
         {scenarios.map((scenario) => (
           <ScenarioCard
@@ -342,6 +368,7 @@ export default function ScenarioBank({ theme = {}, onAction }) {
             accent={accent}
             onAction={onAction}
             onRecord={recordProgress}
+            onGenerateFresh={generateFreshScenario}
           />
         ))}
       </div>
@@ -350,7 +377,7 @@ export default function ScenarioBank({ theme = {}, onAction }) {
         <section style={{ ...wrap, border: `1px solid ${accentBorder}`, borderRadius: 8, padding: 12 }}>
           <h3 style={{ color: "#f8fbff", fontSize: 14 }}>Generate Fresh Scenario</h3>
           <p style={{ color: "#9fb0c7", fontSize: 12, lineHeight: 1.5, marginTop: 6 }}>No local seed matches this filter yet. Generate a real-time scenario for this topic instead.</p>
-          <button type="button" className="glass-button" onClick={() => onAction?.(buildScenarioVariantPrompt(state), { type: "scenarioVariant", state })} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, marginTop: 10, padding: "7px 10px" }}>
+          <button type="button" className="glass-button" onClick={() => generateFreshScenario(null)} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, marginTop: 10, padding: "7px 10px" }}>
             <i className="ti ti-sparkles" style={{ color: accent, marginRight: 6 }} />
             Generate Fresh Scenario
           </button>
