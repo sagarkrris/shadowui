@@ -6,6 +6,7 @@ const componentUrl = new URL("../components/design-lab/DesignLab.js", import.met
 const componentSource = existsSync(componentUrl) ? readFileSync(componentUrl, "utf8") : "";
 const indexSource = readFileSync(new URL("../pages/index.js", import.meta.url), "utf8");
 const sessionSource = readFileSync(new URL("../lib/sessionPersistence.mjs", import.meta.url), "utf8");
+const workspaceSource = readFileSync(new URL("../lib/workspaces.mjs", import.meta.url), "utf8");
 
 test("design lab component renders catalog tabs and practice actions", () => {
   assert.match(componentSource, /DESIGN_LAB_CATALOG/);
@@ -25,8 +26,9 @@ test("design lab component renders catalog tabs and practice actions", () => {
 test("design lab is wired as a first-class workspace", () => {
   assert.match(indexSource, /DesignLab/);
   assert.match(indexSource, /activeTab==="designLab"/);
-  assert.match(indexSource, /Design Lab/);
-  assert.match(indexSource, /ti-puzzle/);
+  assert.match(workspaceSource, /Design Lab/);
+  assert.match(workspaceSource, /ti-puzzle/);
   assert.match(indexSource, /startDesignLabAction/);
-  assert.match(sessionSource, /designLab/);
+  assert.match(sessionSource, /normalizeWorkspaceTab/);
+  assert.match(workspaceSource, /designLab/);
 });

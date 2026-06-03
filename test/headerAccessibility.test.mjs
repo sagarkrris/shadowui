@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const indexSource = readFileSync(new URL("../pages/index.js", import.meta.url), "utf8");
+const navSource = readFileSync(new URL("../components/app/WorkspaceNav.js", import.meta.url), "utf8");
+const workspaceSource = readFileSync(new URL("../lib/workspaces.mjs", import.meta.url), "utf8");
 
 [
   "Home",
@@ -16,7 +18,6 @@ const indexSource = readFileSync(new URL("../pages/index.js", import.meta.url), 
   "Info",
 ].forEach((label) => {
   test(`top bar icon button exposes ${label} to assistive technology`, () => {
-    assert.match(indexSource, new RegExp(`aria-label="${label}"`));
+    assert.match(`${indexSource}\n${navSource}\n${workspaceSource}`, new RegExp(`aria-label=\\{?${label === "Company Prep" || label === "Agentic UI Course" ? "workspace\\.label" : `"${label}"`}`));
   });
 });
-

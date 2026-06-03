@@ -26,6 +26,13 @@ const codeStyle = {
   whiteSpace: "pre-wrap",
 };
 
+const responsiveGrid = (minColumnWidth, gap = 9) => ({
+  display: "grid",
+  gap,
+  gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${minColumnWidth}px), 1fr))`,
+  minWidth: 0,
+});
+
 function LabButton({ label, icon, active, onClick, accent }) {
   return (
     <button
@@ -44,6 +51,7 @@ function LabButton({ label, icon, active, onClick, accent }) {
         fontSize: 11,
         fontWeight: 800,
         gap: 6,
+        maxWidth: "100%",
         minHeight: 31,
         padding: "7px 10px",
       }}
@@ -122,7 +130,7 @@ function PatternCard({ pattern, accent, onAction }) {
 
 function TrackPanel({ track, icon, accent }) {
   return (
-    <div style={{ display: "grid", gap: 9, gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))" }}>
+    <div style={responsiveGrid(230)}>
       <LabPanel title="Core Concepts" icon={icon} accent={accent}>
         <BulletList items={track.coreConcepts} />
       </LabPanel>
@@ -163,16 +171,17 @@ export default function DesignLab({ theme = {}, onAction }) {
         display: "grid",
         flexShrink: 0,
         gap: 12,
+        minWidth: 0,
         padding: 14,
         width: "100%",
       }}
     >
       <header style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "space-between" }}>
-        <div>
+        <div style={wrap}>
           <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Design Lab</div>
-          <h2 style={{ color: "#f8fbff", fontSize: 19, lineHeight: 1.25, marginTop: 4 }}>Patterns, HLD, LLD, and interview practice</h2>
+          <h2 style={{ ...wrap, color: "#f8fbff", fontSize: 19, lineHeight: 1.25, marginTop: 4 }}>Patterns, HLD, LLD, and interview practice</h2>
         </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 7, minWidth: 0 }}>
           {tabs.map((tab) => (
             <LabButton
               key={tab.label}
@@ -189,9 +198,9 @@ export default function DesignLab({ theme = {}, onAction }) {
       {activeTab === "Patterns" && (
         <div style={{ display: "grid", gap: 10 }}>
           {Object.entries(DESIGN_LAB_CATALOG.patterns.groups).map(([intent, patterns]) => (
-            <section key={intent} style={{ border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 10, padding: 12 }}>
+            <section key={intent} style={{ border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 10, minWidth: 0, padding: 12 }}>
               <h3 style={{ color: "#f8fbff", fontSize: 13, textTransform: "capitalize" }}>{intent} Patterns</h3>
-              <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
+              <div style={responsiveGrid(260, 10)}>
                 {patterns.map((pattern) => <PatternCard key={pattern.id} pattern={pattern} accent={accent} onAction={onAction} />)}
               </div>
             </section>
@@ -203,7 +212,7 @@ export default function DesignLab({ theme = {}, onAction }) {
       {activeTab === "LLD" && <TrackPanel track={DESIGN_LAB_CATALOG.lld} icon="ti-code" accent={accent} />}
 
       {activeTab === "Practice" && (
-        <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(245px, 1fr))" }}>
+        <div style={responsiveGrid(245, 10)}>
           {practiceSystems.map((system) => (
             <LabPanel key={system.id} title={system.title} icon="ti-target-arrow" accent={accent}>
               <p style={{ ...wrap, color: "#cbd5e1", fontSize: 11.5, lineHeight: 1.45, marginBottom: 8 }}>{system.focus}</p>

@@ -1,8 +1,8 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getSafeConfigErrorPayload, runGeminiRouteOperation } from "../../lib/aiGateway.mjs";
 import { buildSystemPrompt } from "../../lib/chatPrompt.mjs";
 import { normalizeChatMessages } from "../../lib/chatRequest.mjs";
-import { getGeminiModelCandidates } from "../../lib/geminiModels.mjs";
-import { getGeminiErrorStatus, getSafeGeminiErrorMessage, withGeminiModelFallback } from "../../lib/geminiRetry.mjs";
+import { getGeminiErrorStatus, getSafeGeminiErrorMessage } from "../../lib/geminiRetry.mjs";
 import { createRequestLogger } from "../../lib/serverLogger.mjs";
 
 export default async function handler(req, res) {
@@ -25,39 +25,18 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "At least one chat message is required." });
   }
 
-  if (!process.env.GEMINI_API_KEY) {
-    logger.error("config.missing_api_key");
-    return res.status(500).json({ error: "GEMINI_API_KEY not configured" });
-  }
-
-  const apiKey = process.env.GEMINI_API_KEY;
-  const modelCandidates = await getGeminiModelCandidates(apiKey);
-  logger.info("request.accepted", {
-    messageCount: messages.length,
-    hasProfile: Boolean(profile),
-    profileFields: profile ? Object.keys(profile).filter((key) => profile[key]).sort() : [],
-    interviewPanel: interviewPanel || "default",
-    modelCandidateCount: modelCandidates.length,
-  });
-
-  if (!modelCandidates.length) {
-    logger.error("model.none_available");
-    return res.status(500).json({
-      error: "No supported Gemini models found. Please check your server API key configuration.",
-    });
-  }
-
   try {
-    const genAI = new GoogleGenerativeAI(apiKey);
     const history = messages.slice(0, -1).map((message) => ({
       role: message.role === "assistant" ? "model" : "user",
       parts: [{ text: message.content }],
     }));
     const lastMessage = messages[messages.length - 1];
 
-    const { modelName, result } = await withGeminiModelFallback(
-      modelCandidates,
-      (candidate) => {
+    const { modelCandidates, modelName, result } = await runGeminiRouteOperation({
+      noModelsMessage: "No supported Gemini models found. Please check your server API key configuration.",
+      onFallback: (details) => logger.warn("model.fallback", details),
+      operation: (candidate, { apiKey }) => {
+        const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
           model: candidate,
           systemInstruction: buildSystemPrompt(profile, { interviewMode, roundStrategy, interviewPanel }),
@@ -65,10 +44,15 @@ export default async function handler(req, res) {
         const chat = model.startChat({ history });
         return chat.sendMessageStream(lastMessage.content);
       },
-      {
-        onFallback: (details) => logger.warn("model.fallback", details),
-      },
-    );
+    });
+
+    logger.info("request.accepted", {
+      messageCount: messages.length,
+      hasProfile: Boolean(profile),
+      profileFields: profile ? Object.keys(profile).filter((key) => profile[key]).sort() : [],
+      interviewPanel: interviewPanel || "default",
+      modelCandidateCount: modelCandidates.length,
+    });
 
     logger.info("stream.start", { modelName });
 
@@ -94,6 +78,11 @@ export default async function handler(req, res) {
     res.end();
     logger.info("stream.done", { modelName, chunkCount, textChars });
   } catch (error) {
+    if (error.name === "AiConfigError") {
+      logger.error("config.failed", { code: error.code });
+      return res.status(error.status).json(getSafeConfigErrorPayload(error));
+    }
+
     const status = getGeminiErrorStatus(error);
     logger.error("request.failed", {
       error,

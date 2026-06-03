@@ -1,10 +1,10 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getSafeConfigErrorPayload, runGeminiRouteOperation } from "../../lib/aiGateway.mjs";
 import {
   buildDsaChallengeGenerationPrompt,
   parseGeneratedDsaChallenges,
 } from "../../lib/dsaChallengeGeneration.mjs";
-import { getGeminiModelCandidates } from "../../lib/geminiModels.mjs";
-import { getGeminiErrorStatus, getSafeGeminiErrorMessage, withGeminiModelFallback } from "../../lib/geminiRetry.mjs";
+import { getGeminiErrorStatus, getSafeGeminiErrorMessage } from "../../lib/geminiRetry.mjs";
 import { createRequestLogger } from "../../lib/serverLogger.mjs";
 
 export default async function handler(req, res) {
@@ -17,33 +17,15 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  if (!process.env.GEMINI_API_KEY) {
-    logger.error("config.missing_api_key");
-    return res.status(500).json({ error: "GEMINI_API_KEY not configured" });
-  }
-
   const stack = typeof req.body?.stack === "string" ? req.body.stack.slice(0, 120) : "JavaScript";
   const count = Math.max(6, Math.min(15, Number(req.body?.count) || 12));
   const prompt = buildDsaChallengeGenerationPrompt({ stack, count });
-  const apiKey = process.env.GEMINI_API_KEY;
-  const modelCandidates = await getGeminiModelCandidates(apiKey);
-
-  logger.info("request.accepted", {
-    stackLength: stack.length,
-    count,
-    modelCandidateCount: modelCandidates.length,
-  });
-
-  if (!modelCandidates.length) {
-    logger.error("model.none_available");
-    return res.status(500).json({ error: "No supported Gemini models found." });
-  }
 
   try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const { modelName, result } = await withGeminiModelFallback(
-      modelCandidates,
-      (candidate) => {
+    const { modelCandidates, modelName, result } = await runGeminiRouteOperation({
+      onFallback: (details) => logger.warn("model.fallback", details),
+      operation: (candidate, { apiKey }) => {
+        const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
           model: candidate,
           generationConfig: {
@@ -53,10 +35,13 @@ export default async function handler(req, res) {
         });
         return model.generateContent(prompt);
       },
-      {
-        onFallback: (details) => logger.warn("model.fallback", details),
-      },
-    );
+    });
+
+    logger.info("request.accepted", {
+      stackLength: stack.length,
+      count,
+      modelCandidateCount: modelCandidates.length,
+    });
 
     const text = result.response.text();
     const challenges = parseGeneratedDsaChallenges(text, { source: "generated" });
@@ -73,6 +58,11 @@ export default async function handler(req, res) {
       challenges: challenges.slice(0, count),
     });
   } catch (error) {
+    if (error.name === "AiConfigError") {
+      logger.error("config.failed", { code: error.code });
+      return res.status(error.status).json(getSafeConfigErrorPayload(error));
+    }
+
     const status = getGeminiErrorStatus(error);
     logger.error("request.failed", {
       error,

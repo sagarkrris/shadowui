@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { getGeminiModelCandidates } from "../../lib/geminiModels.mjs";
-import { getGeminiErrorStatus, getSafeGeminiErrorMessage, withGeminiModelFallback } from "../../lib/geminiRetry.mjs";
+import { getSafeConfigErrorPayload, runGeminiRouteOperation } from "../../lib/aiGateway.mjs";
+import { getGeminiErrorStatus, getSafeGeminiErrorMessage } from "../../lib/geminiRetry.mjs";
 import { createRequestLogger } from "../../lib/serverLogger.mjs";
 
 const SCREEN_PROMPT = `You are a full stack developer interview assistant analyzing a screenshot of a coding problem, system design prompt, UI task, database question, or interview scenario.
@@ -57,38 +57,29 @@ export default async function handler(req, res) {
     logger.warn("request.invalid", { reason: "missing_image" });
     return res.status(400).json({ error: "imageBase64 required" });
   }
-  if (!process.env.GEMINI_API_KEY) {
-    logger.error("config.missing_api_key");
-    return res.status(500).json({ error: "GEMINI_API_KEY not configured" });
-  }
-
-  const apiKey = process.env.GEMINI_API_KEY;
-  const modelCandidates = await getGeminiModelCandidates(apiKey, { vision: true });
-  logger.info("request.accepted", {
-    mimeType,
-    imageBytesApprox: Math.round((imageBase64.length * 3) / 4),
-    contextLength: context ? String(context).length : 0,
-    hasProfile: Boolean(profile),
-    modelCandidateCount: modelCandidates.length,
-  });
-
   try {
-    const genAI = new GoogleGenerativeAI(apiKey);
     const prompt = buildScreenPrompt(context, profile);
 
-    const { modelName, result } = await withGeminiModelFallback(
-      modelCandidates,
-      (candidate) => {
+    const { modelCandidates, modelName, result } = await runGeminiRouteOperation({
+      vision: true,
+      onFallback: (details) => logger.warn("model.fallback", details),
+      operation: (candidate, { apiKey }) => {
+        const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: candidate });
         return model.generateContentStream([
           { inlineData: { data: imageBase64, mimeType } },
           prompt,
         ]);
       },
-      {
-        onFallback: (details) => logger.warn("model.fallback", details),
-      },
-    );
+    });
+
+    logger.info("request.accepted", {
+      mimeType,
+      imageBytesApprox: Math.round((imageBase64.length * 3) / 4),
+      contextLength: context ? String(context).length : 0,
+      hasProfile: Boolean(profile),
+      modelCandidateCount: modelCandidates.length,
+    });
 
     logger.info("stream.start", { modelName });
 
@@ -112,6 +103,11 @@ export default async function handler(req, res) {
     res.end();
     logger.info("stream.done", { modelName, chunkCount, textChars });
   } catch (error) {
+    if (error.name === "AiConfigError") {
+      logger.error("config.failed", { code: error.code });
+      return res.status(error.status).json(getSafeConfigErrorPayload(error));
+    }
+
     const status = getGeminiErrorStatus(error);
     logger.error("request.failed", {
       error,

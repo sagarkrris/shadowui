@@ -8,11 +8,12 @@ import PrepCommandCenter from "./PrepCommandCenter";
 import PracticePack from "./PracticePack";
 import PrepInsightsPanel from "./PrepInsightsPanel";
 import CareerToolkit from "./CareerToolkit";
+import InterviewMissionControl from "./InterviewMissionControl";
 import PrepOSDashboard from "./PrepOSDashboard";
 import SmartPrepTimeline from "./SmartPrepTimeline";
 import CodeRunner from "../CodeRunner";
 
-export default function Welcome({ onChip, onScreen, onVoice, onRecordReview, selectedCat, selectedSub, mode, difficulty, theme, profile, showCodeTools, topics, weakSpots, mockScores, messages, questionMemory, onQuestionMemoryChange, systemDesignCanvas, onPracticeMock }) {
+export default function Welcome({ onChip, onScreen, onVoice, onRecordReview, selectedCat, selectedSub, mode, difficulty, theme, profile, showCodeTools, topics, weakSpots, mockScores, messages, questionMemory, onQuestionMemoryChange, systemDesignCanvas, onPracticeMock, onOpenWorkspace }) {
   const [toolkitState, setToolkitState] = useState({});
   const topic = selectedSub || selectedCat;
   const quickPrompts = getQuickPrompts(selectedCat, selectedSub);
@@ -73,6 +74,16 @@ export default function Welcome({ onChip, onScreen, onVoice, onRecordReview, sel
           </button>
         ))}
       </div>
+
+      <InterviewMissionControl
+        profile={profile}
+        topics={topics}
+        weakSpots={weakSpots}
+        systemDesignCanvas={systemDesignCanvas}
+        theme={theme}
+        onAction={onChip}
+        onOpenWorkspace={onOpenWorkspace}
+      />
 
       {mode === "practice" && (
         <PracticePack

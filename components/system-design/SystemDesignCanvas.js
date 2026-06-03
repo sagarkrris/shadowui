@@ -24,6 +24,13 @@ const wrappingCodeStyle = {
   whiteSpace: "pre-wrap",
 };
 
+const responsiveGrid = (minColumnWidth, gap = 9) => ({
+  display: "grid",
+  gap,
+  gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${minColumnWidth}px), 1fr))`,
+  minWidth: 0,
+});
+
 function ActionButton({ icon, label, onClick, tone = "#8bd3ff" }) {
   return (
     <button
@@ -42,6 +49,7 @@ function ActionButton({ icon, label, onClick, tone = "#8bd3ff" }) {
         fontWeight: 700,
         gap: 6,
         lineHeight: 1,
+        maxWidth: "100%",
         minHeight: 30,
         padding: "7px 10px",
         whiteSpace: "nowrap",
@@ -158,6 +166,7 @@ export default function SystemDesignCanvas({
         display: "grid",
         flexShrink: 0,
         gap: 12,
+        minWidth: 0,
         padding: 14,
         width: "100%",
       }}
@@ -165,12 +174,10 @@ export default function SystemDesignCanvas({
       <header
         style={{
           alignItems: "start",
-          display: "grid",
-          gap: 10,
-          gridTemplateColumns: "minmax(240px, 1fr) auto",
+          ...responsiveGrid(260, 10),
         }}
       >
-        <label style={{ display: "grid", gap: 6 }}>
+        <label style={{ display: "grid", gap: 6, minWidth: 0 }}>
           <span style={{ color: "#9fb0c7", fontSize: 11, fontWeight: 700, textTransform: "uppercase" }}>
             System Design Canvas + Studio
           </span>
@@ -191,11 +198,12 @@ export default function SystemDesignCanvas({
               outline: "none",
               padding: "8px 10px",
               resize: "vertical",
+              minWidth: 0,
               width: "100%",
             }}
           />
         </label>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 7, justifyContent: "flex-end" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 7, justifyContent: "flex-start", minWidth: 0 }}>
           <ActionButton icon="ti-wand" label="Generate HLD + LLD" onClick={generateStudio} tone="#a7f3d0" />
           <ActionButton icon="ti-robot" label="Ask AI for full design" onClick={askStudioAI} tone="#c4b5fd" />
           <ActionButton icon="ti-sparkles" label="Review" onClick={reviewCanvas} tone={accent} />
@@ -204,13 +212,13 @@ export default function SystemDesignCanvas({
         </div>
       </header>
 
-      <section style={{ border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 11, padding: 12, background: "rgba(139,211,255,.045)" }}>
+      <section style={{ border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 11, minWidth: 0, padding: 12, background: "rgba(139,211,255,.045)" }}>
         <div style={{ alignItems: "center", display: "flex", gap: 8, justifyContent: "space-between", flexWrap: "wrap" }}>
-          <div>
+          <div style={{ ...wrappingTextStyle }}>
             <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>HLD / LLD Blueprint</div>
-            <h2 style={{ color: "#f8fbff", fontSize: 18, lineHeight: 1.25, marginTop: 4 }}>{blueprint.title}</h2>
+            <h2 style={{ ...wrappingTextStyle, color: "#f8fbff", fontSize: 18, lineHeight: 1.25, marginTop: 4 }}>{blueprint.title}</h2>
           </div>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", minWidth: 0 }}>
             {["HLD", "LLD", "Guide", "Patterns", "Interview"].map((tab) => (
               <button
                 key={tab}
@@ -235,7 +243,7 @@ export default function SystemDesignCanvas({
         </div>
 
         {studioTab === "HLD" && (
-          <div style={{ display: "grid", gap: 9, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+          <div style={responsiveGrid(220)}>
             <ListPanel title="Functional Requirements" icon="ti-list-check" items={blueprint.hld.requirements} accent={accent} />
             <ListPanel title="Non-Functional Requirements" icon="ti-gauge" items={blueprint.hld.nonFunctional} accent={accent} />
             <ListPanel title="Services" icon="ti-topology-star" accent={accent}>
@@ -262,7 +270,7 @@ export default function SystemDesignCanvas({
         )}
 
         {studioTab === "LLD" && (
-          <div style={{ display: "grid", gap: 9, gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))" }}>
+          <div style={responsiveGrid(230)}>
             <ListPanel title="Classes / Components" icon="ti-box" accent={accent}>
               <div style={{ display: "grid", gap: 7 }}>
                 {blueprint.lld.classes.map((item) => (
@@ -285,7 +293,7 @@ export default function SystemDesignCanvas({
         )}
 
         {studioTab === "Guide" && (
-          <div style={{ display: "grid", gap: 9, gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}>
+          <div style={responsiveGrid(240)}>
             {Object.values(SYSTEM_DESIGN_LEARNING_CATALOG).map((track) => (
               <ListPanel key={track.label} title={track.label} icon={track.label === "System Design" ? "ti-sitemap" : "ti-code"} accent={accent}>
                 <div style={{ display: "grid", gap: 10 }}>
@@ -322,7 +330,7 @@ export default function SystemDesignCanvas({
         )}
 
         {studioTab === "Patterns" && (
-          <div style={{ display: "grid", gap: 9, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+          <div style={responsiveGrid(220)}>
             {Object.entries(SYSTEM_DESIGN_PATTERN_LIBRARY).map(([intent, patterns]) => (
               <ListPanel key={intent} title={`${intent.charAt(0).toUpperCase()}${intent.slice(1)} Patterns`} icon="ti-puzzle" accent={accent}>
                 <div style={{ display: "grid", gap: 9 }}>
@@ -350,7 +358,7 @@ export default function SystemDesignCanvas({
         )}
 
         {studioTab === "Interview" && (
-          <div style={{ display: "grid", gap: 9, gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))" }}>
+          <div style={responsiveGrid(230)}>
             <ListPanel title="Clarify First" icon="ti-message-question" items={blueprint.interviewBreakdown.clarify} accent={accent} />
             <ListPanel title="Deep-Dive Map" icon="ti-route" items={blueprint.interviewBreakdown.deepDives} accent={accent} />
             <ListPanel title="Likely Follow-ups" icon="ti-messages" items={blueprint.interviewBreakdown.questions} accent={accent} />
@@ -360,9 +368,7 @@ export default function SystemDesignCanvas({
 
       <div
         style={{
-          display: "grid",
-          gap: 9,
-          gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+          ...responsiveGrid(210),
         }}
       >
         {SYSTEM_DESIGN_CANVAS_SECTIONS.map((section) => (
@@ -375,6 +381,7 @@ export default function SystemDesignCanvas({
               display: "grid",
               gap: 7,
               minHeight: 146,
+              minWidth: 0,
               padding: 10,
             }}
           >
@@ -395,6 +402,7 @@ export default function SystemDesignCanvas({
                 fontSize: 12,
                 lineHeight: 1.45,
                 minHeight: 92,
+                minWidth: 0,
                 outline: "none",
                 padding: 9,
                 resize: "vertical",

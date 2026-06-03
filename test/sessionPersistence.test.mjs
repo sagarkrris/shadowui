@@ -118,6 +118,17 @@ test("preserves the design lab tab across refreshes", () => {
   assert.equal(loadSessionSnapshot(storage).activeTab, "designLab");
 });
 
+test("preserves the scenario bank tab across refreshes", () => {
+  const storage = memoryStorage();
+  const snapshot = createSessionSnapshot({
+    activeTab: "scenarioBank",
+  });
+
+  saveSessionSnapshot(storage, snapshot);
+
+  assert.equal(loadSessionSnapshot(storage).activeTab, "scenarioBank");
+});
+
 test("preserves real pressure interview mode across refreshes", () => {
   const storage = memoryStorage();
   const snapshot = createSessionSnapshot({

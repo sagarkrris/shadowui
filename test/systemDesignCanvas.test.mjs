@@ -16,7 +16,7 @@ import {
   SYSTEM_DESIGN_CANVAS_SECTIONS,
 } from "../lib/systemDesignCanvas.mjs";
 
-test("creates a normalized system design canvas state with stable editable sections", () => {
+test("creates a system design canvas state with stable editable sections", () => {
   const state = createSystemDesignCanvasState({
     problem: "  Design Instagram  ",
     sections: {
@@ -26,12 +26,26 @@ test("creates a normalized system design canvas state with stable editable secti
     },
   });
 
-  assert.equal(state.problem, "Design Instagram");
+  assert.equal(state.problem, "  Design Instagram  ");
   assert.deepEqual(Object.keys(state.sections), SYSTEM_DESIGN_CANVAS_SECTIONS.map((section) => section.key));
   assert.equal(state.sections.requirements, "Feed, follows, likes");
   assert.equal(state.sections.scaling, "42");
   assert.equal(state.sections.api, "");
   assert.equal(state.sections.unknown, undefined);
+});
+
+test("preserves editable spacing while users type in canvas text boxes", () => {
+  const state = createSystemDesignCanvasState({
+    problem: "Design ticket booking ",
+    sections: {
+      requirements: "Users can reserve seats ",
+      api: "POST /reservations creates a hold",
+    },
+  });
+
+  assert.equal(state.problem, "Design ticket booking ");
+  assert.equal(state.sections.requirements, "Users can reserve seats ");
+  assert.equal(state.sections.api, "POST /reservations creates a hold");
 });
 
 test("builds review and mock prompts from the normalized canvas", () => {

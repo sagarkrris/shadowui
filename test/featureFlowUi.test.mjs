@@ -11,6 +11,7 @@ const welcomeSource = readFileSync(new URL("../components/welcome/Welcome.js", i
 const practicePackSource = readFileSync(new URL("../components/welcome/PracticePack.js", import.meta.url), "utf8");
 const careerToolkitSource = readFileSync(new URL("../components/welcome/CareerToolkit.js", import.meta.url), "utf8");
 const chatPromptSource = readFileSync(new URL("../lib/chatPrompt.mjs", import.meta.url), "utf8");
+const workspaceSource = readFileSync(new URL("../lib/workspaces.mjs", import.meta.url), "utf8");
 
 test("mock interview timer is visible and switches to review-ready state", () => {
   assert.match(indexSource, /MOCK_ANSWER_SECONDS/);
@@ -201,8 +202,8 @@ test("system design canvas is a first-class workspace with review actions", () =
   const canvasSource = readFileSync(new URL("../components/system-design/SystemDesignCanvas.js", import.meta.url), "utf8");
 
   assert.match(indexSource, /SystemDesignCanvas/);
-  assert.match(indexSource, /activeTab==="canvas"/);
-  assert.match(indexSource, /System Canvas/);
+  assert.match(indexSource, /activeTab\s*===\s*"canvas"/);
+  assert.match(workspaceSource, /System Canvas/);
   assert.match(indexSource, /startCanvasAction/);
   assert.match(canvasSource, /System Design Canvas/);
   assert.match(canvasSource, /buildCanvasReviewPrompt/);
@@ -223,7 +224,7 @@ test("DSA Visual Lab is a first-class learning workspace", () => {
 
   assert.match(indexSource, /DsaVisualLab/);
   assert.match(indexSource, /activeTab==="dsaLab"/);
-  assert.match(indexSource, /DSA Lab/);
+  assert.match(workspaceSource, /DSA Lab/);
   assert.match(indexSource, /startDsaLabPractice/);
   assert.match(indexSource, /profile={candidateProfile \|\| profileDraft}/);
   assert.match(dsaLabSource, /DSA Visual Lab/);

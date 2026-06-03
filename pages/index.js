@@ -6,9 +6,11 @@ import PostAnswerTools from "../components/chat/PostAnswerTools";
 import ScoreBadge from "../components/chat/ScoreBadge";
 import TechBackground from "../components/TechBackground";
 import TypingDots from "../components/chat/TypingDots";
+import { DesktopWorkspaceNav, MobileBottomNav } from "../components/app/WorkspaceNav";
 import AgenticUICourse from "../components/course/AgenticUICourse";
 import DesignLab from "../components/design-lab/DesignLab";
 import DsaVisualLab from "../components/dsa/DsaVisualLab";
+import ScenarioBank from "../components/scenario-bank/ScenarioBank";
 import RecordingReviewModal from "../components/modals/RecordingReviewModal";
 import ScreenModal from "../components/modals/ScreenModal";
 import SettingsModal from "../components/modals/SettingsModal";
@@ -33,6 +35,7 @@ import { getTechTheme } from "../lib/techTheme.mjs";
 import { canUseChatComposer, canUseInterviewTools, canUsePrepTopics, shouldShowCodeTools } from "../lib/uiVisibility.mjs";
 import { getAppShellHeight, getStableViewportHeight, getVisibleViewportHeight, isCompactViewport, isVirtualKeyboardOpen } from "../lib/viewportMode.mjs";
 import { buildSpeechTranscript, getVoiceErrorMessage, getVoiceSupport } from "../lib/voiceSupport.mjs";
+import { getWorkspaceTitle, listDesktopWorkspaces, listMobileWorkspaces, normalizeWorkspaceTab } from "../lib/workspaces.mjs";
 
 const MOCK_ANSWER_SECONDS = 120;
 const INTERVIEW_MODES = [
@@ -113,6 +116,7 @@ export default function Home() {
   const [candidateProfile, setCandidateProfile] = useState(null);
   const [profileDraft, setProfileDraft] = useState(DEFAULT_PROFILE);
   const [voiceHint, setVoiceHint]     = useState("");
+  const [aiHealth, setAiHealth]       = useState(null);
   const [mockTimerEndsAt, setMockTimerEndsAt] = useState(null);
   const [mockTimerRemaining, setMockTimerRemaining] = useState(MOCK_ANSWER_SECONDS);
   const [mockTimerStatus, setMockTimerStatus] = useState("idle");
@@ -145,6 +149,23 @@ export default function Home() {
   const mockTimerLabel = mockTimerStatus === "answering"
     ? `${Math.floor(mockTimerRemaining / 60)}:${String(mockTimerRemaining % 60).padStart(2, "0")}`
     : "Review ready";
+  const currentLabel = selectedSub || selectedCat;
+  const headerTitle = getWorkspaceTitle({
+    activeTab,
+    candidateProfile,
+    currentLabel,
+    displayName,
+    stackGreeting,
+  });
+  const desktopWorkspaces = listDesktopWorkspaces();
+  const mobileWorkspaces = listMobileWorkspaces();
+  const toggleWorkspace = (workspaceId) => {
+    setActiveTab(activeTab === workspaceId ? "chat" : workspaceId);
+  };
+  const openWorkspace = (workspaceId) => {
+    setActiveTab(normalizeWorkspaceTab(workspaceId));
+    if (isMobile) setSidebar(false);
+  };
 
   // ── Local session persistence ────────────────────────────────────────────
   // QUESTION_MEMORY_STORAGE_KEY is owned by lib/questionMemory.mjs; this shell loads the durable memory through its helpers.
@@ -189,6 +210,22 @@ export default function Home() {
       }),
     );
   }, [sessionReady, candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab]);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/models")
+      .then((response) => response.json())
+      .then((data) => {
+        if (active) setAiHealth(data);
+      })
+      .catch(() => {
+        if (active) setAiHealth({ configured: true });
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // ── Viewport ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -577,6 +614,16 @@ export default function Home() {
     });
   };
 
+  const startScenarioBankAction = (prompt, metadata = {}) => {
+    setActiveTab("chat");
+    callAPI(prompt, {
+      roundStrategy: metadata?.state?.track === "database" ? "systemDesign" : "coding",
+      interviewPanel: metadata?.state?.track === "database" ? "systemDesignArchitect" : "seniorEngineer",
+      displayText: "Scenario Bank practice",
+      skipQuestionMemory: true,
+    });
+  };
+
   const startDsaLabPractice = (prompt) => {
     setActiveTab("chat");
     callAPI(prompt, {
@@ -746,7 +793,6 @@ export default function Home() {
     return () => window.removeEventListener("keydown", handlePowerKeys);
   }, [clearChat, startSession, toggleVoice]);
 
-  const currentLabel = selectedSub || selectedCat;
   const themeVars = {
     "--tech-accent": techTheme.accent,
     "--tech-accent-soft": techTheme.accentSoft,
@@ -837,24 +883,16 @@ export default function Home() {
             <button className="icon-btn" onClick={() => setSidebar(p => !p)} title="Topics" aria-label="Topics">
               <i className="ti ti-menu-2" />
             </button>
-            <button className={`icon-btn ${activeTab==="company"?"active":""}`} onClick={() => setActiveTab(activeTab==="company"?"chat":"company")} title="Company Prep" aria-label="Company Prep">
-              <i className="ti ti-building" />
-            </button>
-            <button className={`icon-btn ${activeTab==="canvas"?"active":""}`} onClick={() => setActiveTab(activeTab==="canvas"?"chat":"canvas")} title="System Canvas" aria-label="System Canvas">
-              <i className="ti ti-schema" />
-            </button>
-            <button className={`icon-btn ${activeTab==="designLab"?"active":""}`} onClick={() => setActiveTab(activeTab==="designLab"?"chat":"designLab")} title="Design Lab" aria-label="Design Lab">
-              <i className="ti ti-puzzle" />
-            </button>
-            <button className={`icon-btn ${activeTab==="dsaLab"?"active":""}`} onClick={() => setActiveTab(activeTab==="dsaLab"?"chat":"dsaLab")} title="DSA Lab" aria-label="DSA Lab">
-              <i className="ti ti-binary-tree" />
-            </button>
-            <button className={`icon-btn ${activeTab==="course"?"active":""}`} onClick={() => setActiveTab(activeTab==="course"?"chat":"course")} title="Agentic UI Course" aria-label="Agentic UI Course">
-              <i className="ti ti-sparkles" />
-            </button>
+            {!isMobile && (
+              <DesktopWorkspaceNav
+                activeTab={activeTab}
+                workspaces={desktopWorkspaces}
+                onToggleWorkspace={toggleWorkspace}
+              />
+            )}
 
             <span style={{ flex:1, fontSize:13, fontWeight:500, color: currentLabel?"#e8e8f0":"#4b5563", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-              {activeTab === "course" ? "Agentic UI Course" : activeTab === "dsaLab" ? "DSA Lab" : activeTab === "designLab" ? "Design Lab" : activeTab === "canvas" ? "System Canvas" : activeTab === "company" ? (candidateProfile ? `Company Prep for ${displayName}` : "Company Prep") : candidateProfile ? `${stackGreeting.salutation}${currentLabel ? ` · ${currentLabel}` : ""}` : "Tell us your target role"}
+              {headerTitle}
             </span>
             {candidateProfile && (
               <span style={{ display:isMobile?"none":"inline-flex", alignItems:"center", gap:5, padding:"3px 8px", borderRadius:999, border:`1px solid ${techTheme.accentBorder}`, background:techTheme.accentMuted, color:techTheme.accentText, fontSize:10.5, fontWeight:600, whiteSpace:"nowrap" }}>
@@ -914,10 +952,21 @@ export default function Home() {
             <button className="icon-btn" onClick={() => setShowSettings(true)} title="Info" aria-label="Info"><i className="ti ti-info-circle" /></button>
           </header>
 
+          {aiHealth?.configured === false && (
+            <div role="status" style={{ alignItems: "center", background: "rgba(250,204,21,.09)", borderBottom: "1px solid rgba(250,204,21,.18)", color: "#fde68a", display: "flex", flexShrink: 0, fontSize: 11.5, gap: 8, lineHeight: 1.4, padding: "7px 12px" }}>
+              <i className="ti ti-alert-triangle" style={{ color: "#facc15", flexShrink: 0 }} />
+              <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>
+                AI provider not configured. Local Scenario Bank, DSA, Canvas, and Design Lab still work; set GEMINI_API_KEY to enable chat, screen, and generated drills.
+              </span>
+            </div>
+          )}
+
           {/* ── Chat area ── */}
           <div ref={chatRef} className="chat-scroll" role="log" aria-live="polite" aria-relevant="additions text" aria-label="Conversation messages" style={{ flex:1, minHeight:0, overflowY:"auto", padding: isMobile?"12px 10px":"20px 16px", display:"flex", flexDirection:"column" }}>
             {activeTab === "course" ? (
               <AgenticUICourse theme={techTheme} variant="full" />
+            ) : activeTab==="scenarioBank" ? (
+              <ScenarioBank theme={techTheme} onAction={startScenarioBankAction} />
             ) : activeTab==="designLab" ? (
               <DesignLab theme={techTheme} onAction={startDesignLabAction} />
             ) : activeTab==="dsaLab" ? (
@@ -954,6 +1003,7 @@ export default function Home() {
                   onQuestionMemoryChange={setQuestionMemory}
                   systemDesignCanvas={systemDesignCanvas}
                   onPracticeMock={startPracticeMock}
+                  onOpenWorkspace={openWorkspace}
                 />
               : (
                 <>
@@ -1084,15 +1134,17 @@ export default function Home() {
 
           {/* ── Mobile bottom nav ── */}
           {isMobile && !isKeyboardOpen && (
-            <nav className="glass-chrome" style={{ display:"flex", alignItems:"center", justifyContent:"space-around", padding:"6px 8px", borderTop:"1px solid rgba(255,255,255,.08)", flexShrink:0, paddingBottom:"max(6px, env(safe-area-inset-bottom))" }}>
-              {[
+            <MobileBottomNav
+              accent={techTheme.accentStrong}
+              items={[
                 { icon:"ti-home",           label:"Home",    action:goHome, active:activeTab==="chat" && messages.length===0 },
                 { icon:"ti-layout-sidebar", label:"Topics",  action:()=>setSidebar(p=>!p), active:sidebarOpen },
-                { icon:"ti-building",        label:"Company", action:()=>setActiveTab(activeTab==="company"?"chat":"company"), active:activeTab==="company" },
-                { icon:"ti-schema",          label:"Canvas",  action:()=>setActiveTab(activeTab==="canvas"?"chat":"canvas"), active:activeTab==="canvas" },
-                { icon:"ti-puzzle",          label:"Design Lab", action:()=>setActiveTab(activeTab==="designLab"?"chat":"designLab"), active:activeTab==="designLab" },
-                { icon:"ti-binary-tree",      label:"DSA Lab", action:()=>setActiveTab(activeTab==="dsaLab"?"chat":"dsaLab"), active:activeTab==="dsaLab" },
-                { icon:"ti-sparkles",        label:"Course",  action:()=>setActiveTab(activeTab==="course"?"chat":"course"), active:activeTab==="course" },
+                ...mobileWorkspaces.map((workspace) => ({
+                  icon: workspace.icon,
+                  label: workspace.shortLabel,
+                  action:()=>toggleWorkspace(workspace.id),
+                  active:activeTab===workspace.id,
+                })),
                 ...(showInterviewTools ? [
                   { icon:"ti-screenshot",      label:"Screen",  action:()=>setShowScreen(true) },
                   { icon:"ti-microphone",       label:"Voice",   action:toggleVoice, active:isListening, danger:isListening },
@@ -1100,15 +1152,8 @@ export default function Home() {
                 ] : []),
                 ...(messages.length > 0 ? [{ icon:"ti-trash", label:"Clear", action:clearChat }] : []),
                 { icon:"ti-info-circle",      label:"Info",    action:()=>setShowSettings(true) },
-              ].map(({ icon, label, action, active, danger, disabled }) => (
-                <button key={label} onClick={action} disabled={disabled}
-                  aria-label={label}
-                  style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:3, background:"none", border:"none", color: danger?"#f87171":active?techTheme.accentStrong:"#6b7280", fontSize:10, padding:"6px 10px", borderRadius:8, cursor:disabled?"not-allowed":"pointer", opacity:disabled?.35:1, minWidth:48, transition:"all .15s" }}>
-                  <i className={`ti ${icon}`} style={{ fontSize:20 }} />
-                  {label}
-                </button>
-              ))}
-            </nav>
+              ]}
+            />
           )}
 
         </main>

@@ -4,15 +4,12 @@ import {
   buildDsaMockPrompt,
   buildDsaThinkingSystem,
   buildDsaVisualizationState,
-  DSA_VISUAL_LAB_STORAGE_KEY,
   getDsaCodeTemplate,
   getDsaVisualLesson,
   listDsaVisualLessons,
 } from "../../lib/dsaVisualLab.mjs";
 import {
   buildDsaProgressSummary,
-  createDsaConfidenceState,
-  DSA_CONFIDENCE_STORAGE_KEY,
   filterBlind75Problems,
   getDsaProblemProgress,
   listBlind75Problems,
@@ -36,6 +33,12 @@ import {
   listDsaPatternAtlas,
   listDsaVisualPlaygroundModules,
 } from "../../lib/dsaPatternAtlas.mjs";
+import {
+  loadDsaConfidenceState,
+  loadDsaLessonId,
+  saveDsaConfidenceState,
+  saveDsaLessonId,
+} from "../../lib/dsaLabPersistence.mjs";
 
 const GUIDED_STAGES = ["Learn", "Pattern Atlas", "Visual Playground", "Big-O Board", "Visualize", "Dry run", "Explain-Then-Code", "Code", "Quiz", "Interview Challenges", "Drill Room", "Practice as Mock"];
 const CHALLENGE_FILTERS = [
@@ -78,23 +81,6 @@ const SPEEDS = [
 
 function getStorage() {
   return typeof window !== "undefined" ? window.localStorage : null;
-}
-
-function readSavedLessonId() {
-  try {
-    return getStorage()?.getItem(DSA_VISUAL_LAB_STORAGE_KEY) || null;
-  } catch {
-    return null;
-  }
-}
-
-function readConfidenceState() {
-  try {
-    const raw = getStorage()?.getItem(DSA_CONFIDENCE_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : createDsaConfidenceState();
-  } catch {
-    return createDsaConfidenceState();
-  }
 }
 
 function formatInputValue(value) {
@@ -1047,7 +1033,7 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
     || blind75Problems.some((problem) => problem.lessonId === lessonId)
   );
   const defaultLessonId = (() => {
-    const savedLessonId = readSavedLessonId();
+    const savedLessonId = loadDsaLessonId(getStorage());
     return isKnownLessonId(savedLessonId) ? savedLessonId : fallbackLessonId;
   })();
   const [selectedLessonId, setSelectedLessonId] = useState(() => {
@@ -1055,7 +1041,7 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
   });
   const [track, setTrack] = useState(() => defaultLessonId.startsWith("blind75-") ? "blind75" : "core");
   const [blind75Filter, setBlind75Filter] = useState("featured");
-  const [confidenceState, setConfidenceState] = useState(() => readConfidenceState());
+  const [confidenceState, setConfidenceState] = useState(() => loadDsaConfidenceState(getStorage()));
   const [revealedTestCases, setRevealedTestCases] = useState({});
   const [inputValue, setInputValue] = useState(() => formatInputValue(buildDsaVisualizationState(defaultLessonId).input));
   const [approachExplanation, setApproachExplanation] = useState("");
@@ -1202,19 +1188,11 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
   }, [refreshGeneratedChallenges]);
 
   useEffect(() => {
-    try {
-      getStorage()?.setItem(DSA_VISUAL_LAB_STORAGE_KEY, selectedLessonId);
-    } catch {
-      // Local storage is optional for this standalone lab.
-    }
+    saveDsaLessonId(getStorage(), selectedLessonId);
   }, [selectedLessonId]);
 
   useEffect(() => {
-    try {
-      getStorage()?.setItem(DSA_CONFIDENCE_STORAGE_KEY, JSON.stringify(confidenceState));
-    } catch {
-      // Local storage is optional; the lab still works as a read-only trainer.
-    }
+    saveDsaConfidenceState(getStorage(), confidenceState);
   }, [confidenceState]);
 
   useEffect(() => {
