@@ -35,6 +35,7 @@ import { getTechTheme } from "../lib/techTheme.mjs";
 import { canUseChatComposer, canUseInterviewTools, canUsePrepTopics, shouldShowCodeTools } from "../lib/uiVisibility.mjs";
 import { getAppShellHeight, getStableViewportHeight, getVisibleViewportHeight, isCompactViewport, isVirtualKeyboardOpen } from "../lib/viewportMode.mjs";
 import { buildSpeechTranscript, getVoiceErrorMessage, getVoiceSupport } from "../lib/voiceSupport.mjs";
+import { buildWorkspaceActionDisplayText } from "../lib/workspaceActionDisplay.mjs";
 import { getWorkspaceTitle, listDesktopWorkspaces, listMobileWorkspaces, normalizeWorkspaceTab } from "../lib/workspaces.mjs";
 
 const MOCK_ANSWER_SECONDS = 120;
@@ -594,22 +595,22 @@ export default function Home() {
     callAPI(prompt);
   };
 
-  const startCanvasAction = (prompt) => {
+  const startCanvasAction = (prompt, metadata = {}) => {
     setActiveTab("chat");
     callAPI(prompt, {
       roundStrategy: "systemDesign",
       interviewPanel: "systemDesignArchitect",
-      displayText: "System canvas review",
+      displayText: buildWorkspaceActionDisplayText(prompt, metadata),
       skipQuestionMemory: true,
     });
   };
 
-  const startDesignLabAction = (prompt) => {
+  const startDesignLabAction = (prompt, metadata = {}) => {
     setActiveTab("chat");
     callAPI(prompt, {
       roundStrategy: "systemDesign",
       interviewPanel: "systemDesignArchitect",
-      displayText: "Design Lab practice",
+      displayText: buildWorkspaceActionDisplayText(prompt, metadata),
       skipQuestionMemory: true,
     });
   };
@@ -619,17 +620,17 @@ export default function Home() {
     callAPI(prompt, {
       roundStrategy: metadata?.state?.track === "database" ? "systemDesign" : "coding",
       interviewPanel: metadata?.state?.track === "database" ? "systemDesignArchitect" : "seniorEngineer",
-      displayText: "Scenario Bank practice",
+      displayText: buildWorkspaceActionDisplayText(prompt, metadata),
       skipQuestionMemory: true,
     });
   };
 
-  const startDsaLabPractice = (prompt) => {
+  const startDsaLabPractice = (prompt, metadata = {}) => {
     setActiveTab("chat");
     callAPI(prompt, {
       roundStrategy: "coding",
       interviewPanel: "seniorEngineer",
-      displayText: "DSA Visual Lab practice",
+      displayText: buildWorkspaceActionDisplayText(prompt, metadata),
       skipQuestionMemory: true,
     });
   };
