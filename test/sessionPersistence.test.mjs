@@ -129,6 +129,17 @@ test("preserves the scenario bank tab across refreshes", () => {
   assert.equal(loadSessionSnapshot(storage).activeTab, "scenarioBank");
 });
 
+test("preserves the java digest tab across refreshes", () => {
+  const storage = memoryStorage();
+  const snapshot = createSessionSnapshot({
+    activeTab: "javaDigest",
+  });
+
+  saveSessionSnapshot(storage, snapshot);
+
+  assert.equal(loadSessionSnapshot(storage).activeTab, "javaDigest");
+});
+
 test("preserves real pressure interview mode across refreshes", () => {
   const storage = memoryStorage();
   const snapshot = createSessionSnapshot({

@@ -18,6 +18,10 @@ test("catalog separates design patterns HLD LLD and practice tracks", () => {
   assert.ok(DESIGN_LAB_CATALOG.patterns.groups.behavioral.length > 0);
   assert.ok(DESIGN_LAB_CATALOG.hld.questionBreakdowns.some((item) => /clarify|estimate|trade/i.test(item)));
   assert.ok(DESIGN_LAB_CATALOG.lld.practiceTasks.some((item) => /class|interface|sequence/i.test(item)));
+  assert.equal(DESIGN_LAB_CATALOG.hld.workflowDiagram.title, "High-Level Request Workflow");
+  assert.equal(DESIGN_LAB_CATALOG.lld.workflowDiagram.title, "Low-Level Collaboration Workflow");
+  assert.ok(DESIGN_LAB_CATALOG.hld.workflowDiagram.stages.some((stage) => stage.title === "Core Services"));
+  assert.ok(DESIGN_LAB_CATALOG.lld.workflowDiagram.stages.some((stage) => stage.title === "Domain Layer"));
 });
 
 test("patterns expose intent Java examples Spring Boot examples and interview traps", () => {

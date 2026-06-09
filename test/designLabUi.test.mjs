@@ -15,6 +15,9 @@ test("design lab component renders catalog tabs and practice actions", () => {
   assert.match(componentSource, /HLD/);
   assert.match(componentSource, /LLD/);
   assert.match(componentSource, /Practice/);
+  assert.match(componentSource, /WorkflowDiagram/);
+  assert.match(componentSource, /Pictorial Workflow/);
+  assert.match(componentSource, /Step \{index \+ 1\}/);
   assert.match(componentSource, /Java Example/);
   assert.match(componentSource, /Spring Boot Example/);
   assert.match(componentSource, /Interview Traps/);

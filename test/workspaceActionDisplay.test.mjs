@@ -53,3 +53,38 @@ test("design lab practice displays the selected model system", () => {
   assert.match(displayText, /Design Lab Practice: Ticket Booking System/);
   assert.match(displayText, /Seat inventory/);
 });
+
+test("java digest actions display selected article and roadmap context", () => {
+  const coachText = buildWorkspaceActionDisplayText("full model prompt", {
+    type: "javaDigestCoach",
+    article: {
+      title: "HashMap Internals Before an Interview",
+      summary: "Review hashing, buckets, collisions, resizing, and equals/hashCode contracts.",
+    },
+  });
+  const roadmapText = buildWorkspaceActionDisplayText("full model prompt", {
+    type: "javaDigestRoadmap",
+    roadmap: {
+      title: "14-Day Java Backend Interview Sprint",
+      days: ["Core Java collections", "Spring Boot REST"],
+    },
+  });
+
+  assert.match(coachText, /Java Digest Coach: HashMap Internals/);
+  assert.match(coachText, /equals\/hashCode/);
+  assert.match(roadmapText, /Java Digest Roadmap: 14-Day Java Backend Interview Sprint/);
+  assert.match(roadmapText, /Core Java collections/);
+});
+
+test("cses java practice displays the selected track context", () => {
+  const displayText = buildWorkspaceActionDisplayText("full model prompt", {
+    type: "csesJavaTrack",
+    csesTrack: {
+      title: "Shortest Paths",
+      focus: "Graph Algorithms: Bellman-Ford, Dijkstra, Floyd-Warshall.",
+    },
+  });
+
+  assert.match(displayText, /Handbook Java Study: Shortest Paths/);
+  assert.match(displayText, /Dijkstra/);
+});

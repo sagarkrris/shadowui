@@ -82,6 +82,49 @@ function BulletList({ items, color = "#9fb0c7" }) {
   );
 }
 
+function WorkflowDiagram({ diagram, accent }) {
+  if (!diagram?.stages?.length) return null;
+
+  return (
+    <section style={{ ...wrap, background: "rgba(139,211,255,.055)", border: `1px solid ${accent}38`, borderRadius: 8, display: "grid", gap: 11, padding: 12 }}>
+      <div style={wrap}>
+        <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Pictorial Workflow</div>
+        <h3 style={{ ...wrap, color: "#f8fbff", fontSize: 15, lineHeight: 1.25, marginTop: 4 }}>{diagram.title}</h3>
+        <p style={{ ...wrap, color: "#9fb0c7", fontSize: 11.5, lineHeight: 1.45, marginTop: 5 }}>{diagram.summary}</p>
+      </div>
+
+      <div style={{ display: "grid", gap: 9, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 170px), 1fr))", minWidth: 0 }}>
+        {diagram.stages.map((stage, index) => (
+          <article key={stage.title} style={{ ...wrap, background: "rgba(0,0,0,.16)", border: "1px solid rgba(255,255,255,.085)", borderRadius: 8, display: "grid", gap: 8, minHeight: 176, padding: 10, position: "relative" }}>
+            <div style={{ alignItems: "center", display: "flex", gap: 7, minWidth: 0 }}>
+              <span style={{ alignItems: "center", background: `${accent}18`, border: `1px solid ${accent}44`, borderRadius: 8, color: accent, display: "inline-flex", flexShrink: 0, height: 30, justifyContent: "center", width: 30 }}>
+                <i className={`ti ${stage.icon}`} style={{ fontSize: 16 }} />
+              </span>
+              <div style={wrap}>
+                <div style={{ color: accent, fontSize: 10, fontWeight: 900 }}>Step {index + 1}</div>
+                <h4 style={{ ...wrap, color: "#f8fbff", fontSize: 12.5, lineHeight: 1.25 }}>{stage.title}</h4>
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gap: 6 }}>
+              {stage.nodes.map((node) => (
+                <div key={node} style={{ ...wrap, background: "rgba(255,255,255,.045)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 7, color: "#dbeafe", fontSize: 11.2, fontWeight: 800, lineHeight: 1.3, minHeight: 30, padding: "7px 8px" }}>
+                  {node}
+                </div>
+              ))}
+            </div>
+
+            <div style={{ ...wrap, alignItems: "center", alignSelf: "end", background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 7, color: "#9fb0c7", display: "flex", fontSize: 10.8, gap: 6, lineHeight: 1.35, padding: "7px 8px" }}>
+              <i className="ti ti-arrow-narrow-right" style={{ color: accent, flexShrink: 0, fontSize: 14 }} />
+              {stage.signal}
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function PatternCard({ pattern, accent, onAction }) {
   const prompt = [
     `Teach and quiz me on the ${pattern.name} design pattern.`,
@@ -130,19 +173,22 @@ function PatternCard({ pattern, accent, onAction }) {
 
 function TrackPanel({ track, icon, accent }) {
   return (
-    <div style={responsiveGrid(230)}>
-      <LabPanel title="Core Concepts" icon={icon} accent={accent}>
-        <BulletList items={track.coreConcepts} />
-      </LabPanel>
-      <LabPanel title="Key Technologies" icon="ti-stack-2" accent={accent}>
-        <BulletList items={track.keyTechnologies} />
-      </LabPanel>
-      <LabPanel title="Common Patterns" icon="ti-route" accent={accent}>
-        <BulletList items={track.commonPatterns} />
-      </LabPanel>
-      <LabPanel title={track.questionBreakdowns ? "Question Breakdowns" : "Practice Tasks"} icon="ti-message-question" accent={accent}>
-        <BulletList items={track.questionBreakdowns || track.practiceTasks} />
-      </LabPanel>
+    <div style={{ display: "grid", gap: 10, minWidth: 0 }}>
+      <WorkflowDiagram diagram={track.workflowDiagram} accent={accent} />
+      <div style={responsiveGrid(230)}>
+        <LabPanel title="Core Concepts" icon={icon} accent={accent}>
+          <BulletList items={track.coreConcepts} />
+        </LabPanel>
+        <LabPanel title="Key Technologies" icon="ti-stack-2" accent={accent}>
+          <BulletList items={track.keyTechnologies} />
+        </LabPanel>
+        <LabPanel title="Common Patterns" icon="ti-route" accent={accent}>
+          <BulletList items={track.commonPatterns} />
+        </LabPanel>
+        <LabPanel title={track.questionBreakdowns ? "Question Breakdowns" : "Practice Tasks"} icon="ti-message-question" accent={accent}>
+          <BulletList items={track.questionBreakdowns || track.practiceTasks} />
+        </LabPanel>
+      </div>
     </div>
   );
 }

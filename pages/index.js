@@ -10,6 +10,7 @@ import { DesktopWorkspaceNav, MobileBottomNav } from "../components/app/Workspac
 import AgenticUICourse from "../components/course/AgenticUICourse";
 import DesignLab from "../components/design-lab/DesignLab";
 import DsaVisualLab from "../components/dsa/DsaVisualLab";
+import JavaDigest from "../components/java-digest/JavaDigest";
 import ScenarioBank from "../components/scenario-bank/ScenarioBank";
 import RecordingReviewModal from "../components/modals/RecordingReviewModal";
 import ScreenModal from "../components/modals/ScreenModal";
@@ -625,6 +626,16 @@ export default function Home() {
     });
   };
 
+  const startJavaDigestAction = (prompt, metadata = {}) => {
+    setActiveTab("chat");
+    callAPI(prompt, {
+      roundStrategy: metadata?.type === "javaDigestRoadmap" ? "manager" : "coding",
+      interviewPanel: metadata?.type === "javaDigestRoadmap" ? "engineeringManager" : "seniorEngineer",
+      displayText: buildWorkspaceActionDisplayText(prompt, metadata),
+      skipQuestionMemory: true,
+    });
+  };
+
   const startDsaLabPractice = (prompt, metadata = {}) => {
     setActiveTab("chat");
     callAPI(prompt, {
@@ -957,7 +968,7 @@ export default function Home() {
             <div role="status" style={{ alignItems: "center", background: "rgba(250,204,21,.09)", borderBottom: "1px solid rgba(250,204,21,.18)", color: "#fde68a", display: "flex", flexShrink: 0, fontSize: 11.5, gap: 8, lineHeight: 1.4, padding: "7px 12px" }}>
               <i className="ti ti-alert-triangle" style={{ color: "#facc15", flexShrink: 0 }} />
               <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>
-                AI provider not configured. Local Scenario Bank, DSA, Canvas, and Design Lab still work; set GEMINI_API_KEY to enable chat, screen, and generated drills.
+                AI provider not configured. Local Scenario Bank, Java Digest, DSA, Canvas, and Design Lab still work; set GEMINI_API_KEY to enable chat, screen, and generated drills.
               </span>
             </div>
           )}
@@ -968,6 +979,8 @@ export default function Home() {
               <AgenticUICourse theme={techTheme} variant="full" />
             ) : activeTab==="scenarioBank" ? (
               <ScenarioBank theme={techTheme} onAction={startScenarioBankAction} />
+            ) : activeTab==="javaDigest" ? (
+              <JavaDigest theme={techTheme} onAction={startJavaDigestAction} profile={candidateProfile || profileDraft} />
             ) : activeTab==="designLab" ? (
               <DesignLab theme={techTheme} onAction={startDesignLabAction} />
             ) : activeTab==="dsaLab" ? (

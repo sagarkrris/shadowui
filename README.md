@@ -25,6 +25,8 @@ AI-powered interview intelligence for modern software engineers. It supports per
 - Question Memory and Mastery Map that remember answered practice cards locally, prioritize weak or stale questions, and show New, Needs Review, Improving, and Mastered status.
 - Interview Recording Review for one-time transcript/coaching review without saving the raw transcript in local storage.
 - System Design Canvas workspace for requirements, APIs, data, architecture, scaling, failure modes, security, observability, and rollout planning with review/mock actions.
+- Design Lab with design patterns, HLD and LLD tracks, pictorial workflow diagrams, Java/Spring examples, interview traps, and practice systems.
+- Java Digest workspace inspired by developer tutorial blogs, with AI-generated interview-ready topic search, Java/Spring Boot/concurrency/SQL/architecture tracks, CSES handbook-inspired Java-only competitive programming tracks, article-style cards, interview questions, roadmap plans, and coach/mock handoffs.
 - Proof Vault / Story Bank that turns strong mock answers into reusable STAR stories with skills proven, impact metrics, weak spots, and behavioral/system design/resume actions.
 - Interview Calibration Mode for Strict Interviewer, Coach Mode, Bar Raiser, Behavioral STAR, and Real Pressure interview styles.
 - Round Strategy Mode for Recruiter, Coding, System Design, Manager, and Final interview rounds.
@@ -115,6 +117,7 @@ shadowui/
 │   ├── chat/              # Markdown messages, code blocks, post-answer rewrite/judge tools, typing dots, score badge and rubric UI
 │   ├── company/           # Company Prep dashboard
 │   ├── dsa/               # DSA Visual Lab learning workspace
+│   ├── java-digest/       # Java tutorial-style topic hub and interview drills
 │   ├── modals/            # Screen analysis and settings modals
 │   ├── system-design/     # System Design Canvas workspace
 │   ├── welcome/           # Profile setup, welcome screen, Career Toolkit, prep insights, practice pack
@@ -136,6 +139,7 @@ shadowui/
 │   ├── codeRunner.mjs
 │   ├── companyPrep.mjs
 │   ├── dsaVisualLab.mjs
+│   ├── javaDigest.mjs
 │   ├── interviewPanel.mjs
 │   ├── personalization.mjs
 │   ├── prepCoach.mjs
