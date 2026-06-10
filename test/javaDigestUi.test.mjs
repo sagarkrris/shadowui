@@ -22,6 +22,10 @@ test("java digest component renders topic, article, and roadmap sections", () =>
   assert.match(componentSource, /CsesPartSection/);
   assert.match(componentSource, /Book-style table of contents/);
   assert.match(componentSource, /Detailed Explanation/);
+  assert.match(componentSource, /Beginner Explainer/);
+  assert.match(componentSource, /What is this\?/);
+  assert.match(componentSource, /Why does it matter\?/);
+  assert.match(componentSource, /Where is it used\?/);
   assert.match(componentSource, /How To Think About It/);
   assert.match(componentSource, /Java Implementation Notes/);
   assert.match(componentSource, /Worked Example/);

@@ -27,7 +27,7 @@ test("catalog separates design patterns HLD LLD and practice tracks", () => {
   assert.equal(DESIGN_LAB_CATALOG.practice.label, "Practice Studio");
   assert.equal(DESIGN_LAB_CATALOG.ood.label, "OOD / UML");
   assert.equal(DESIGN_LAB_CATALOG.agenticAi.label, "Agentic AI");
-  assert.equal(DESIGN_LAB_CATALOG.references.label, "Reference Playbooks");
+  assert.equal(DESIGN_LAB_CATALOG.references.label, "Practice Curriculum");
   assert.ok(DESIGN_LAB_CATALOG.patterns.groups.creational.length > 0);
   assert.ok(DESIGN_LAB_CATALOG.patterns.groups.structural.length > 0);
   assert.ok(DESIGN_LAB_CATALOG.patterns.groups.behavioral.length > 0);
@@ -39,7 +39,7 @@ test("catalog separates design patterns HLD LLD and practice tracks", () => {
   assert.ok(DESIGN_LAB_CATALOG.lld.workflowDiagram.stages.some((stage) => stage.title === "Domain Layer"));
 });
 
-test("reference playbooks capture system design primer build-your-own-x and handbook drills", () => {
+test("practice curriculum captures architecture build internals and interview readiness drills", () => {
   const playbooks = listReferencePlaybooks();
   const prompt = buildReferencePlaybookPrompt("build-your-own-x");
   const buildTracks = listBuildYourOwnTracks();
@@ -47,32 +47,48 @@ test("reference playbooks capture system design primer build-your-own-x and hand
   const topics = listReferenceTopicCatalog();
   const topicPrompt = buildReferenceTopicImportPrompt();
 
-  assert.ok(playbooks.some((item) => item.source === "donnemartin/system-design-primer"));
-  assert.ok(playbooks.some((item) => item.source === "codecrafters-io/build-your-own-x"));
-  assert.ok(playbooks.some((item) => item.source === "yangshun/tech-interview-handbook"));
-  assert.ok(playbooks.every((item) => item.url.startsWith("https://github.com/")));
+  assert.ok(playbooks.some((item) => item.title === "System Design Foundations"));
+  assert.ok(playbooks.some((item) => item.title === "Build Internals Lab"));
+  assert.ok(playbooks.some((item) => item.title === "Interview Readiness Sprint"));
+  assert.ok(playbooks.every((item) => !("source" in item) && !("url" in item)));
+  assert.ok(playbooks.every((item) => item.outcomes.length >= 3));
   assert.ok(buildTracks.some((track) => track.title === "Search Engine"));
   assert.ok(buildTracks.some((track) => track.title === "Docker-like Runtime"));
   assert.ok(buildTracks.some((track) => track.title === "Web Server"));
   assert.ok(handbook.some((checkpoint) => checkpoint.title === "Coding Interview Patterns"));
   assert.ok(handbook.some((checkpoint) => checkpoint.title === "Behavioral Story Bank"));
   assert.ok(handbook.some((checkpoint) => checkpoint.title === "Resume and Recruiter Screen"));
-  assert.match(prompt, /Build Your Own X Lab/);
+  assert.match(prompt, /Build Internals Lab/);
   assert.match(prompt, /build-from-scratch/i);
   assert.match(prompt, /Search Engine/);
   assert.match(prompt, /Web Server/);
   assert.match(prompt, /Behavioral Story Bank/);
   assert.match(prompt, /diagrammatic coaching session/i);
-  assert.ok(topics.some((group) => group.source === "System Design Primer" && group.topics.includes("CAP theorem")));
-  assert.ok(topics.some((group) => group.source === "System Design Primer" && group.topics.includes("Message queues")));
-  assert.ok(topics.some((group) => group.source === "Build Your Own X" && group.topics.includes("3D Renderer")));
-  assert.ok(topics.some((group) => group.source === "Build Your Own X" && group.topics.includes("Web Browser")));
-  assert.ok(topics.some((group) => group.source === "Tech Interview Handbook" && group.topics.includes("Grind 75")));
-  assert.ok(topics.some((group) => group.source === "Tech Interview Handbook" && group.topics.includes("Behavioral questions")));
-  assert.match(topicPrompt, /Imported main topic catalog/i);
+  assert.doesNotMatch(prompt, /github\.com|donnemartin|codecrafters|yangshun/i);
+  assert.ok(topics.some((group) => group.title === "Architecture Practice Map" && group.topics.includes("CAP theorem")));
+  assert.ok(topics.some((group) => group.title === "Architecture Practice Map" && group.topics.includes("Message queues")));
+  assert.ok(topics.some((group) => group.title === "Build Internals Practice Map" && group.topics.includes("3D Renderer")));
+  assert.ok(topics.some((group) => group.title === "Build Internals Practice Map" && group.topics.includes("Web Browser")));
+  assert.ok(topics.some((group) => group.title === "Interview Readiness Practice Map" && group.topics.includes("Grind 75")));
+  assert.ok(topics.some((group) => group.title === "Interview Readiness Practice Map" && group.topics.includes("Behavioral questions")));
+  assert.ok(topics.every((group) => group.practiceDrills.length >= 3));
+  assert.ok(topics.every((group) => group.outcomes.length >= 2));
+  assert.ok(topics.every((group) => group.startHere.length >= 3));
+  assert.ok(topics.every((group) => group.beginnerExplainers.length >= 3));
+  assert.ok(topics.every((group) => group.beginnerExplainers.every((item) => item.what && item.why && item.whereUsed)));
+  assert.ok(topics.every((group) => group.visualFlow.length >= 4));
+  assert.ok(topics.every((group) => group.difficultyPath.map((item) => item.level).join(" ") === "Beginner Intermediate Interview-ready"));
+  assert.ok(topics.every((group) => group.guidedPractice.steps.length >= 4));
+  assert.ok(topics.every((group) => group.commonConfusions.length >= 2));
+  assert.match(topicPrompt, /Practice topic catalog/i);
+  assert.match(topicPrompt, /Start here/i);
+  assert.match(topicPrompt, /Beginner explanation/i);
+  assert.match(topicPrompt, /Visual flow/i);
+  assert.match(topicPrompt, /Common confusions/i);
   assert.match(topicPrompt, /CAP theorem/);
   assert.match(topicPrompt, /Docker/);
   assert.match(topicPrompt, /Resume guide/);
+  assert.doesNotMatch(topicPrompt, /github\.com|donnemartin|codecrafters|yangshun/i);
 });
 
 test("OOD UML practice exposes class diagrams relationships and sequence prompts", () => {

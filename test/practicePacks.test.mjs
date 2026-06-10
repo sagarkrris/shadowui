@@ -210,4 +210,13 @@ test("practice pack UI renders visible mastery status labels", () => {
   assert.match(practicePackSource, /recordQuestionAttempt/);
   assert.match(practicePackSource, /Needs Review/);
   assert.match(practicePackSource, /Mastered/);
+  assert.match(practicePackSource, /Beginner Explanation/);
+  assert.match(practicePackSource, /What is this\?/);
+  assert.match(practicePackSource, /Why does it matter\?/);
+  assert.match(practicePackSource, /Where is it used\?/);
+  assert.match(practicePackSource, /Interview-ready answer/);
+  assert.match(practicePackSource, /Practice example/);
+  assert.match(practicePackSource, /Common confusion/);
+  assert.match(practicePackSource, /Full Guide Shown/);
+  assert.doesNotMatch(practicePackSource, /Show Guide/);
 });

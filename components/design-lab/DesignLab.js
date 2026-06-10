@@ -278,22 +278,35 @@ function AgenticAiBoard({ problems, accent, onAction }) {
 function ReferencePlaybookBoard({ playbooks, buildTracks, handbookCheckpoints, topicCatalog, accent, onAction }) {
   return (
     <div style={{ display: "grid", gap: 10 }}>
-      <div style={responsiveGrid(260, 10)}>
+      <section style={{ ...wrap, background: `linear-gradient(135deg, ${accent}14, rgba(255,255,255,.035))`, border: `1px solid ${accent}30`, borderRadius: 8, display: "grid", gap: 10, padding: 12 }}>
+        <div style={wrap}>
+          <div style={{ color: accent, fontSize: 10.5, fontWeight: 950, textTransform: "uppercase" }}>Practice Curriculum</div>
+          <h3 style={{ ...wrap, color: "#f8fbff", fontSize: 16, lineHeight: 1.25, marginTop: 3 }}>Full-context practice maps</h3>
+          <p style={{ ...wrap, color: "#9fb0c7", fontSize: 11.5, lineHeight: 1.45, marginTop: 5 }}>Use these tracks as complete practice sessions: learn the context, sketch the system, practice the internals, then finish with outcomes you can review.</p>
+        </div>
         {playbooks.map((playbook) => (
-          <LabPanel key={playbook.id} title={playbook.title} icon="ti-book-2" accent={accent}>
-            <a href={playbook.url} target="_blank" rel="noreferrer" style={{ ...wrap, color: accent, display: "inline-flex", fontSize: 10.8, fontWeight: 900, lineHeight: 1.35, marginBottom: 7, textDecoration: "none" }}>
-              {playbook.source}
-            </a>
-            <p style={{ ...wrap, color: "#cbd5e1", fontSize: 11.5, lineHeight: 1.45, marginBottom: 9 }}>{playbook.focus}</p>
-            <strong style={{ color: "#eaf2ff", fontSize: 11.5 }}>Diagrammatic Drills</strong>
-            <BulletList items={playbook.drills} />
-            <button type="button" className="glass-button" onClick={() => onAction?.(buildReferencePlaybookPrompt(playbook.id), { type: "referencePlaybook", playbook })} title={`Practice ${playbook.title}`} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, marginTop: 10, padding: "7px 10px" }}>
+          <article key={playbook.id} style={{ ...wrap, background: "rgba(0,0,0,.13)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 10, padding: 11 }}>
+            <div style={wrap}>
+              <h4 style={{ ...wrap, color: "#f8fbff", fontSize: 14, lineHeight: 1.25 }}>{playbook.title}</h4>
+              <p style={{ ...wrap, color: "#cbd5e1", fontSize: 11.5, lineHeight: 1.45, marginTop: 5 }}>{playbook.focus}</p>
+            </div>
+            <div style={responsiveGrid(230, 10)}>
+              <div>
+                <strong style={{ color: "#eaf2ff", display: "block", fontSize: 11.5, marginBottom: 6 }}>Diagrammatic Drills</strong>
+                <BulletList items={playbook.drills} />
+              </div>
+              <div>
+                <strong style={{ color: "#eaf2ff", display: "block", fontSize: 11.5, marginBottom: 6 }}>Practice Outcomes</strong>
+                <BulletList items={playbook.outcomes} color="#a7f3d0" />
+              </div>
+            </div>
+            <button type="button" className="glass-button" onClick={() => onAction?.(buildReferencePlaybookPrompt(playbook.id), { type: "practiceCurriculum", playbook })} title={`Practice ${playbook.title}`} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, justifySelf: "start", padding: "7px 10px" }}>
               <i className="ti ti-player-play" style={{ color: accent, marginRight: 6 }} />
-              Practice Playbook
+              Practice Track
             </button>
-          </LabPanel>
+          </article>
         ))}
-      </div>
+      </section>
       <div style={responsiveGrid(260, 10)}>
         <LabPanel title="Build-from-Scratch Tracks" icon="ti-tools" accent={accent}>
           <div style={{ display: "grid", gap: 8 }}>
@@ -325,23 +338,90 @@ function ReferencePlaybookBoard({ playbooks, buildTracks, handbookCheckpoints, t
           ]} />
         </LabPanel>
       </div>
-      <LabPanel title="Imported Main Topics" icon="ti-folders" accent={accent}>
+      <section style={{ ...wrap, border: `1px solid ${accent}30`, borderRadius: 8, display: "grid", gap: 12, padding: 12 }}>
+        <div style={wrap}>
+          <div style={{ color: accent, fontSize: 10.5, fontWeight: 950, textTransform: "uppercase" }}>Practice Topic Maps</div>
+          <h3 style={{ ...wrap, color: "#f8fbff", fontSize: 16, lineHeight: 1.25, marginTop: 3 }}>Full context by practice area</h3>
+          <p style={{ ...wrap, color: "#9fb0c7", fontSize: 11.5, lineHeight: 1.45, marginTop: 5 }}>Each map is meant to become a session, not a flashcard: read the context, choose the topics, perform the drills, and review the outcomes.</p>
+        </div>
         <div style={{ display: "grid", gap: 10 }}>
           {topicCatalog.map((group) => (
-            <article key={group.source} style={{ ...wrap, background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 7, padding: 9 }}>
-              <div style={{ alignItems: "center", display: "flex", gap: 7, justifyContent: "space-between", minWidth: 0 }}>
-                <strong style={{ ...wrap, color: "#f8fbff", fontSize: 12 }}>{group.source}</strong>
-                <a href={group.url} target="_blank" rel="noreferrer" style={{ color: accent, flexShrink: 0, fontSize: 10.5, fontWeight: 900, textDecoration: "none" }}>Source</a>
+            <article key={group.title} style={{ ...wrap, background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 10, padding: 11 }}>
+              <div style={wrap}>
+                <strong style={{ ...wrap, color: "#f8fbff", display: "block", fontSize: 13 }}>{group.title}</strong>
+                <p style={{ ...wrap, color: "#cbd5e1", fontSize: 11.5, lineHeight: 1.45, marginTop: 5 }}>{group.focus}</p>
+                <p style={{ ...wrap, color: "#9fb0c7", fontSize: 11.2, lineHeight: 1.45, marginTop: 5 }}>{group.practiceContext}</p>
               </div>
-              <p style={{ ...wrap, color: "#9fb0c7", fontSize: 11.2, lineHeight: 1.45 }}>{group.usefulFor}</p>
+              <div style={responsiveGrid(230, 10)}>
+                <div>
+                  <strong style={{ color: "#eaf2ff", display: "block", fontSize: 11.5, marginBottom: 6 }}>Start Here</strong>
+                  <BulletList items={group.startHere} />
+                </div>
+                <div>
+                  <strong style={{ color: "#eaf2ff", display: "block", fontSize: 11.5, marginBottom: 6 }}>Visual Flow</strong>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5, minWidth: 0 }}>
+                    {group.visualFlow.map((step, index) => (
+                      <span key={`${group.title}-${step}`} style={{ alignItems: "center", background: index === 0 ? `${accent}18` : "rgba(255,255,255,.045)", border: `1px solid ${index === 0 ? `${accent}40` : "rgba(255,255,255,.08)"}`, borderRadius: 7, color: "#dbeafe", display: "inline-flex", fontSize: 10.5, fontWeight: 850, gap: 5, lineHeight: 1.25, padding: "5px 7px" }}>
+                        {step}
+                        {index < group.visualFlow.length - 1 && <i className="ti ti-arrow-right" style={{ color: accent, fontSize: 12 }} />}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div>
+                <strong style={{ color: "#eaf2ff", display: "block", fontSize: 11.5, marginBottom: 6 }}>Beginner Explainer</strong>
+                <div style={responsiveGrid(220, 8)}>
+                  {group.beginnerExplainers.map((item) => (
+                    <div key={`${group.title}-${item.topic}`} style={{ ...wrap, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 5, padding: 8 }}>
+                      <strong style={{ color: "#f8fbff", fontSize: 11.5 }}>{item.topic}</strong>
+                      <span style={{ color: "#cbd5e1", fontSize: 11, lineHeight: 1.4 }}>{item.what}</span>
+                      <span style={{ color: "#9fb0c7", fontSize: 10.8, lineHeight: 1.4 }}>{item.why}</span>
+                      <span style={{ color: "#a7f3d0", fontSize: 10.8, lineHeight: 1.4 }}>{item.whereUsed}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div style={responsiveGrid(230, 10)}>
+                <div>
+                  <strong style={{ color: "#eaf2ff", display: "block", fontSize: 11.5, marginBottom: 6 }}>Difficulty Path</strong>
+                  <div style={{ display: "grid", gap: 7 }}>
+                    {group.difficultyPath.map((item) => (
+                      <div key={`${group.title}-${item.level}`} style={{ ...wrap, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 7, color: "#9fb0c7", fontSize: 11, lineHeight: 1.4, padding: 8 }}>
+                        <strong style={{ color: "#eaf2ff" }}>{item.level}</strong>: {item.goal}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <strong style={{ color: "#eaf2ff", display: "block", fontSize: 11.5, marginBottom: 6 }}>Try This Practice</strong>
+                  <div style={{ ...wrap, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 7, padding: 8 }}>
+                    <strong style={{ color: "#f8fbff", display: "block", fontSize: 11.5, marginBottom: 6 }}>{group.guidedPractice.title}</strong>
+                    <BulletList items={group.guidedPractice.steps} />
+                  </div>
+                </div>
+              </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 5, minWidth: 0 }}>
                 {group.topics.map((topic) => (
-                  <span key={`${group.source}-${topic}`} style={{ ...wrap, background: `${accent}12`, border: `1px solid ${accent}2f`, borderRadius: 7, color: "#dbeafe", fontSize: 10.5, fontWeight: 800, lineHeight: 1.25, padding: "4px 6px" }}>
+                  <span key={`${group.title}-${topic}`} style={{ ...wrap, background: `${accent}12`, border: `1px solid ${accent}2f`, borderRadius: 7, color: "#dbeafe", fontSize: 10.5, fontWeight: 800, lineHeight: 1.25, padding: "4px 6px" }}>
                     {topic}
                   </span>
                 ))}
               </div>
-              <div style={{ ...wrap, color: "#a7f3d0", fontSize: 11, lineHeight: 1.4 }}>{group.practiceUse}</div>
+              <div style={responsiveGrid(230, 10)}>
+                <div>
+                  <strong style={{ color: "#eaf2ff", display: "block", fontSize: 11.5, marginBottom: 6 }}>Practice Drills</strong>
+                  <BulletList items={group.practiceDrills} />
+                </div>
+                <div>
+                  <strong style={{ color: "#eaf2ff", display: "block", fontSize: 11.5, marginBottom: 6 }}>Practice Outcomes</strong>
+                  <BulletList items={group.outcomes} color="#a7f3d0" />
+                </div>
+              </div>
+              <div>
+                <strong style={{ color: "#eaf2ff", display: "block", fontSize: 11.5, marginBottom: 6 }}>Common Confusions</strong>
+                <BulletList items={group.commonConfusions} color="#fcd34d" />
+              </div>
             </article>
           ))}
           <button type="button" className="glass-button" onClick={() => onAction?.(buildReferenceTopicImportPrompt(), { type: "referenceTopicPlan", topicCatalog })} title="Build a topic-based practice plan" style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 850, justifySelf: "start", padding: "7px 10px" }}>
@@ -349,7 +429,7 @@ function ReferencePlaybookBoard({ playbooks, buildTracks, handbookCheckpoints, t
             Build Topic Plan
           </button>
         </div>
-      </LabPanel>
+      </section>
     </div>
   );
 }
@@ -437,7 +517,7 @@ export default function DesignLab({ theme = {}, onAction, beginnerMode = false, 
     { label: "LLD", icon: "ti-code" },
     { label: "OOD / UML", icon: "ti-hierarchy-3" },
     { label: "Agentic AI", icon: "ti-sparkles" },
-    { label: "References", icon: "ti-book-2" },
+    { label: "Curriculum", icon: "ti-book-2" },
     { label: "Practice", icon: "ti-target-arrow" },
   ];
   const handleDesignSearch = (event) => {
@@ -519,7 +599,7 @@ export default function DesignLab({ theme = {}, onAction, beginnerMode = false, 
       {activeTab === "LLD" && <TrackPanel track={DESIGN_LAB_CATALOG.lld} icon="ti-code" accent={accent} />}
       {activeTab === "OOD / UML" && <UmlClassBoard systems={umlSystems} accent={accent} onAction={onAction} />}
       {activeTab === "Agentic AI" && <AgenticAiBoard problems={agenticProblems} accent={accent} onAction={onAction} />}
-      {activeTab === "References" && <ReferencePlaybookBoard playbooks={referencePlaybooks} buildTracks={buildTracks} handbookCheckpoints={handbookCheckpoints} topicCatalog={topicCatalog} accent={accent} onAction={onAction} />}
+      {activeTab === "Curriculum" && <ReferencePlaybookBoard playbooks={referencePlaybooks} buildTracks={buildTracks} handbookCheckpoints={handbookCheckpoints} topicCatalog={topicCatalog} accent={accent} onAction={onAction} />}
 
       {activeTab === "Practice" && (
         <div style={responsiveGrid(245, 10)}>

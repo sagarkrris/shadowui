@@ -209,6 +209,7 @@ test("system design canvas is a first-class workspace with review actions", () =
   assert.match(indexSource, /startCanvasAction/);
   assert.match(canvasSource, /System Design Canvas/);
   assert.match(canvasSource, /Interactive Whiteboard/);
+  assert.match(canvasSource, /Beginner System Design Context/);
   assert.match(canvasSource, /Evaluate Diagram/);
   assert.match(canvasSource, /buildCanvasReviewPrompt/);
   assert.match(canvasSource, /onAction/);

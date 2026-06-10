@@ -234,6 +234,11 @@ function ScenarioCard({ scenario, scenarioProgress, state, accent, onAction, onR
   const practiceMock = () => {
     onAction?.(buildScenarioMockPrompt(scenario, state), { type: "scenarioMock", state, scenario });
   };
+  const beginnerContext = {
+    what: "This is a production-style interview scenario. It is testing whether you can diagnose a realistic situation, not recite a definition.",
+    why: `It matters because interviewers use scenarios like this to see how you reason about ${scenario.title}, trade-offs, risks, and operational evidence.`,
+    where: "You will use this thinking during debugging, design reviews, incident response, stakeholder explanations, and senior technical interviews.",
+  };
 
   return (
     <article style={{ ...wrap, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 8, display: "grid", gap: 11, padding: 12 }}>
@@ -252,6 +257,12 @@ function ScenarioCard({ scenario, scenarioProgress, state, accent, onAction, onR
       </div>
 
       <p style={{ ...wrap, color: "#cbd5e1", fontSize: 12, lineHeight: 1.55 }}>{scenario.prompt}</p>
+      <section style={{ ...wrap, background: `${accent}10`, border: `1px solid ${accent}2f`, borderRadius: 8, display: "grid", gap: 6, padding: 10 }}>
+        <div style={{ color: accent, fontSize: 10.8, fontWeight: 900, textTransform: "uppercase" }}>Beginner Context</div>
+        <p style={{ color: "#dbeafe", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}><strong style={{ color: "#f8fbff" }}>What is this?</strong> {beginnerContext.what}</p>
+        <p style={{ color: "#dbeafe", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}><strong style={{ color: "#f8fbff" }}>Why does it matter?</strong> {beginnerContext.why}</p>
+        <p style={{ color: "#dbeafe", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}><strong style={{ color: "#f8fbff" }}>Where is it used?</strong> {beginnerContext.where}</p>
+      </section>
       <p style={{ ...wrap, color: "#a7f3d0", fontSize: 11.4, lineHeight: 1.45 }}>
         <strong>Interviewer Signal:</strong> {scenario.interviewerIntent}
       </p>
@@ -264,7 +275,7 @@ function ScenarioCard({ scenario, scenarioProgress, state, accent, onAction, onR
       </div>
 
       <section style={{ ...wrap, background: "rgba(0,0,0,.16)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 10 }}>
-        <h4 style={{ color: "#f8fbff", fontSize: 12, marginBottom: 6 }}>Deep-Dive Answer</h4>
+        <h4 style={{ color: "#f8fbff", fontSize: 12, marginBottom: 6 }}>Interview-ready answer</h4>
         <p style={{ ...wrap, color: "#cbd5e1", fontSize: 11.6, lineHeight: 1.55 }}>{scenario.deepDive}</p>
       </section>
 

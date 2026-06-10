@@ -25,7 +25,11 @@ test("scenario bank workspace renders tracks engines drills and detailed answers
   assert.match(componentSource, /Generated Variant/);
   assert.match(componentSource, /buildLocalScenarioVariant/);
   assert.match(componentSource, /setGeneratedScenario/);
-  assert.match(componentSource, /Deep-Dive Answer/);
+  assert.match(componentSource, /Beginner Context/);
+  assert.match(componentSource, /What is this\?/);
+  assert.match(componentSource, /Why does it matter\?/);
+  assert.match(componentSource, /Where is it used\?/);
+  assert.match(componentSource, /Interview-ready answer/);
   assert.match(componentSource, /Common Traps/);
   assert.match(componentSource, /Follow-ups/);
   assert.match(componentSource, /onAction/);

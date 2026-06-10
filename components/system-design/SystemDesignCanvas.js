@@ -151,6 +151,13 @@ function DiagramBoard({ board, roadmap, accent, onEvaluate }) {
         <ActionButton icon="ti-sparkles" label="Evaluate Diagram" onClick={onEvaluate} tone={accent} />
       </div>
 
+      <section style={{ ...wrappingTextStyle, background: `${accent}10`, border: `1px solid ${accent}2f`, borderRadius: 8, display: "grid", gap: 6, padding: 10 }}>
+        <div style={{ color: accent, fontSize: 10.8, fontWeight: 900, textTransform: "uppercase" }}>Beginner System Design Context</div>
+        <p style={{ color: "#dbeafe", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}><strong style={{ color: "#f8fbff" }}>What is this?</strong> A system design board is a visual explanation of how users, services, data, async work, and operations connect.</p>
+        <p style={{ color: "#dbeafe", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}><strong style={{ color: "#f8fbff" }}>Why does it matter?</strong> Interviewers use it to see whether you can reason about scale, reliability, correctness, and trade-offs before writing code.</p>
+        <p style={{ color: "#dbeafe", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}><strong style={{ color: "#f8fbff" }}>Where is it used?</strong> Architecture reviews, incident planning, backend design, migrations, and senior engineering interviews.</p>
+      </section>
+
       <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 210px), 1fr))", minWidth: 0 }}>
         {board.lanes.map((lane, laneIndex) => (
           <article key={lane.title} style={{ ...wrappingTextStyle, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.085)", borderRadius: 8, display: "grid", gap: 9, minHeight: 210, padding: 10 }}>
@@ -187,11 +194,11 @@ function DiagramBoard({ board, roadmap, accent, onEvaluate }) {
           </div>
         </ListPanel>
         <ListPanel title="Whiteboard Prompts" icon="ti-chalkboard" items={board.whiteboardPrompts} accent={accent} />
-        <ListPanel title="Reference Moves" icon="ti-book-2" accent={accent}>
+        <ListPanel title="Practice Moves" icon="ti-book-2" accent={accent}>
           <div style={{ display: "grid", gap: 8 }}>
-            {board.referenceMoves.map((item) => (
-              <div key={item.source} style={{ color: "#9fb0c7", fontSize: 11.2, lineHeight: 1.45 }}>
-                <strong style={{ color: "#eaf2ff" }}>{item.source}</strong>: {item.moves.join(" -> ")}
+            {board.referenceMoves.map((item, index) => (
+              <div key={`${index}-${item.moves.join("-")}`} style={{ color: "#9fb0c7", fontSize: 11.2, lineHeight: 1.45 }}>
+                <strong style={{ color: "#eaf2ff" }}>Practice move {index + 1}</strong>: {item.moves.join(" -> ")}
               </div>
             ))}
           </div>

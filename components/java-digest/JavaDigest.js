@@ -180,6 +180,11 @@ function GeneratedAnswerPanel({ answer, error, loading, query, accent, onRetry }
 
 function ArticleCard({ article, accent, onAction }) {
   const track = getJavaDigestTrack(article.trackId);
+  const beginnerContext = {
+    what: `${article.title} is a focused Java/interview concept. Start by understanding the idea before memorizing syntax.`,
+    why: `It matters because interviewers expect you to connect ${article.title} to correctness, complexity, maintainability, or production behavior.`,
+    where: `You will use it in ${track.label} practice, code reviews, debugging, and interview explanations.`,
+  };
   const coach = () => {
     onAction?.(buildJavaDigestCoachPrompt(article.id), { type: "javaDigestCoach", article, track });
   };
@@ -202,6 +207,12 @@ function ArticleCard({ article, accent, onAction }) {
       </div>
 
       <p style={{ ...wrap, color: "#cbd5e1", fontSize: 12, lineHeight: 1.55 }}>{article.summary}</p>
+      <section style={{ ...wrap, background: `${accent}10`, border: `1px solid ${accent}2f`, borderRadius: 8, display: "grid", gap: 6, padding: 10 }}>
+        <div style={{ color: accent, fontSize: 10.8, fontWeight: 900, textTransform: "uppercase" }}>Beginner Explainer</div>
+        <p style={{ color: "#dbeafe", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}><strong style={{ color: "#f8fbff" }}>What is this?</strong> {beginnerContext.what}</p>
+        <p style={{ color: "#dbeafe", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}><strong style={{ color: "#f8fbff" }}>Why does it matter?</strong> {beginnerContext.why}</p>
+        <p style={{ color: "#dbeafe", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}><strong style={{ color: "#f8fbff" }}>Where is it used?</strong> {beginnerContext.where}</p>
+      </section>
 
       <div style={responsiveGrid(220, 9)}>
         <DetailList title="What To Learn" icon="ti-list-check" items={article.learn} accent={accent} />

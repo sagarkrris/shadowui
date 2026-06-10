@@ -197,12 +197,16 @@ test("system design canvas component renders editable glass sections and action 
   assert.match(source, /Export/);
   assert.match(source, /Generate HLD \+ LLD/);
   assert.match(source, /Interactive Whiteboard/);
+  assert.match(source, /Beginner System Design Context/);
+  assert.match(source, /What is this\?/);
+  assert.match(source, /Why does it matter\?/);
+  assert.match(source, /Where is it used\?/);
   assert.match(source, /Evaluate Diagram/);
   assert.match(source, /AI Evaluation Rubric/);
   assert.match(source, /Whiteboard Prompts/);
   assert.match(source, /Primer Topic Map/);
   assert.match(source, /Sample Design Boards/);
-  assert.match(source, /Reference Moves/);
+  assert.match(source, /Practice Moves/);
   assert.match(source, /Diagram/);
   assert.match(source, /HLD/);
   assert.match(source, /LLD/);
