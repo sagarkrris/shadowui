@@ -8,6 +8,7 @@ const indexSource = readFileSync(new URL("../pages/index.js", import.meta.url), 
 
 test("workspace navigation chrome is extracted from the page shell", () => {
   assert.match(navSource, /DesktopWorkspaceNav/);
+  assert.match(navSource, /TabletWorkspaceMenu/);
   assert.match(navSource, /MobileBottomNav/);
   assert.match(navSource, /workspaces\.map/);
   assert.match(navSource, /items\.map/);
@@ -17,5 +18,10 @@ test("workspace navigation chrome is extracted from the page shell", () => {
   assert.match(navSource, /compactLabel/);
   assert.match(navSource, /quickItems/);
   assert.match(indexSource, /DesktopWorkspaceNav/);
+  assert.match(indexSource, /TabletWorkspaceMenu/);
+  assert.match(indexSource, /desktop-workspace-nav/);
+  assert.match(indexSource, /tablet-workspace-menu/);
+  assert.match(indexSource, /phone-bottom-nav/);
+  assert.match(indexSource, /min-width: 761px\) and \(max-width: 1023px\)/);
   assert.match(indexSource, /MobileBottomNav/);
 });

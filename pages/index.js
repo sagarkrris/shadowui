@@ -6,7 +6,7 @@ import PostAnswerTools from "../components/chat/PostAnswerTools";
 import ScoreBadge from "../components/chat/ScoreBadge";
 import TechBackground from "../components/TechBackground";
 import TypingDots from "../components/chat/TypingDots";
-import { DesktopWorkspaceNav, MobileBottomNav } from "../components/app/WorkspaceNav";
+import { DesktopWorkspaceNav, MobileBottomNav, TabletWorkspaceMenu } from "../components/app/WorkspaceNav";
 import AgenticUICourse from "../components/course/AgenticUICourse";
 import DesignLab from "../components/design-lab/DesignLab";
 import DsaVisualLab from "../components/dsa/DsaVisualLab";
@@ -1071,13 +1071,19 @@ export default function Home() {
             <button className="icon-btn" onClick={() => setSidebar(p => !p)} title="Topics" aria-label="Topics">
               <i className="ti ti-menu-2" />
             </button>
-            {!isMobile && (
+            <div className="desktop-workspace-nav">
               <DesktopWorkspaceNav
                 activeTab={activeTab}
                 workspaces={desktopWorkspaces}
                 onToggleWorkspace={toggleWorkspace}
               />
-            )}
+            </div>
+            <TabletWorkspaceMenu
+              activeTab={activeTab}
+              accent={techTheme.accentStrong}
+              workspaces={desktopWorkspaces}
+              onToggleWorkspace={toggleWorkspace}
+            />
 
             <span style={{ flex:1, fontSize:13, fontWeight:500, color: currentLabel?"#e8e8f0":"#4b5563", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
               {headerTitle}
@@ -1400,26 +1406,28 @@ export default function Home() {
 
           {/* ── Mobile bottom nav ── */}
           {isMobile && !isKeyboardOpen && (
-            <MobileBottomNav
-              accent={techTheme.accentStrong}
-              items={[
-                { icon:"ti-home",           label:"Home",    action:goHome, active:activeTab==="chat" && messages.length===0 },
-                { icon:"ti-layout-sidebar", label:"Topics",  action:()=>setSidebar(p=>!p), active:sidebarOpen },
-                ...mobileWorkspaces.map((workspace) => ({
-                  icon: workspace.icon,
-                  label: workspace.shortLabel,
-                  action:()=>toggleWorkspace(workspace.id),
-                  active:activeTab===workspace.id,
-                })),
-                ...(showInterviewTools ? [
-                  { icon:"ti-screenshot",      label:"Screen",  action:()=>setShowScreen(true) },
-                  { icon:"ti-microphone",       label:"Voice",   action:toggleVoice, active:isListening, danger:isListening },
-                  { icon:"ti-wave-sine",        label:"Review",  action:()=>setShowRecordingReview(true) },
-                ] : []),
-                ...(messages.length > 0 ? [{ icon:"ti-trash", label:"Clear", action:clearChat }] : []),
-                { icon:"ti-info-circle",      label:"Info",    action:()=>setShowSettings(true) },
-              ]}
-            />
+            <div className="phone-bottom-nav">
+              <MobileBottomNav
+                accent={techTheme.accentStrong}
+                items={[
+                  { icon:"ti-home",           label:"Home",    action:goHome, active:activeTab==="chat" && messages.length===0 },
+                  { icon:"ti-layout-sidebar", label:"Topics",  action:()=>setSidebar(p=>!p), active:sidebarOpen },
+                  ...mobileWorkspaces.map((workspace) => ({
+                    icon: workspace.icon,
+                    label: workspace.shortLabel,
+                    action:()=>toggleWorkspace(workspace.id),
+                    active:activeTab===workspace.id,
+                  })),
+                  ...(showInterviewTools ? [
+                    { icon:"ti-screenshot",      label:"Screen",  action:()=>setShowScreen(true) },
+                    { icon:"ti-microphone",       label:"Voice",   action:toggleVoice, active:isListening, danger:isListening },
+                    { icon:"ti-wave-sine",        label:"Review",  action:()=>setShowRecordingReview(true) },
+                  ] : []),
+                  ...(messages.length > 0 ? [{ icon:"ti-trash", label:"Clear", action:clearChat }] : []),
+                  { icon:"ti-info-circle",      label:"Info",    action:()=>setShowSettings(true) },
+                ]}
+              />
+            </div>
           )}
 
         </main>
@@ -1427,11 +1435,31 @@ export default function Home() {
 
       {/* Responsive CSS injected via style tag */}
       <style>{`
-        @media (max-width: 1023px) {
-          .desktop-controls { display: none !important; }
+        .desktop-workspace-nav,
+        .tablet-workspace-menu {
+          display: none !important;
+        }
+        @media (max-width: 760px) {
+          .desktop-controls,
+          .desktop-workspace-nav,
+          .tablet-workspace-menu {
+            display: none !important;
+          }
+        }
+        @media (min-width: 761px) and (max-width: 1023px) {
+          .desktop-controls,
+          .desktop-workspace-nav,
+          .phone-bottom-nav {
+            display: none !important;
+          }
+          .tablet-workspace-menu {
+            display: block !important;
+          }
         }
         @media (min-width: 1024px) {
           .desktop-controls { display: flex !important; }
+          .desktop-workspace-nav { display: contents !important; }
+          .tablet-workspace-menu { display: none !important; }
         }
         @media (hover: hover) {
           button:hover { opacity: .9; }

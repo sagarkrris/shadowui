@@ -19,6 +19,72 @@ export function DesktopWorkspaceNav({ activeTab, onToggleWorkspace, workspaces }
   );
 }
 
+export function TabletWorkspaceMenu({ activeTab, accent = "#8bd3ff", onToggleWorkspace, workspaces }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const activeWorkspace = workspaces.find((workspace) => workspace.id === activeTab);
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [menuOpen]);
+
+  const selectWorkspace = (workspaceId) => {
+    onToggleWorkspace(workspaceId);
+    setMenuOpen(false);
+  };
+
+  return (
+    <div className="tablet-workspace-menu" style={{ flexShrink: 0, minWidth: 0, position: "relative" }}>
+      <button
+        type="button"
+        className={`glass-button ${activeWorkspace ? "active" : ""}`}
+        aria-label="Workspace menu"
+        aria-haspopup="menu"
+        aria-expanded={menuOpen}
+        onClick={() => setMenuOpen((value) => !value)}
+        style={{ alignItems: "center", border: `1px solid ${activeWorkspace ? `${accent}55` : "rgba(255,255,255,.09)"}`, borderRadius: 8, color: activeWorkspace ? accent : "#cbd5e1", cursor: "pointer", display: "inline-flex", fontSize: 11.5, fontWeight: 850, gap: 7, maxWidth: 170, minHeight: 34, padding: "7px 10px", whiteSpace: "nowrap" }}
+      >
+        <i className={`ti ${activeWorkspace?.icon || "ti-layout-grid"}`} style={{ fontSize: 15 }} />
+        <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>{activeWorkspace?.shortLabel || "Workspaces"}</span>
+        <i className={`ti ${menuOpen ? "ti-chevron-up" : "ti-chevron-down"}`} style={{ color: "#6b7280", fontSize: 13 }} />
+      </button>
+      {menuOpen && (
+        <section
+          aria-label="Tablet workspace menu"
+          className="glass-card"
+          style={{ background: "rgba(8,12,22,.97)", border: "1px solid rgba(255,255,255,.11)", borderRadius: 10, boxShadow: "0 16px 40px rgba(0,0,0,.42)", display: "grid", gap: 8, minWidth: 260, padding: 10, position: "absolute", right: 0, top: "calc(100% + 8px)", zIndex: 40 }}
+        >
+          <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", gap: 8 }}>
+            <strong style={{ color: "#f8fbff", fontSize: 11, fontWeight: 950, textTransform: "uppercase" }}>Workspaces</strong>
+            <button type="button" aria-label="Close workspace menu" onClick={() => setMenuOpen(false)} style={{ alignItems: "center", background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 7, color: "#9ca3af", cursor: "pointer", display: "inline-flex", height: 28, justifyContent: "center", width: 28 }}>
+              <i className="ti ti-x" />
+            </button>
+          </div>
+          <div style={{ display: "grid", gap: 7, gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}>
+            {workspaces.map((workspace) => (
+              <button
+                key={workspace.id}
+                type="button"
+                aria-current={activeTab === workspace.id ? "page" : undefined}
+                onClick={() => selectWorkspace(workspace.id)}
+                style={{ alignItems: "center", background: activeTab === workspace.id ? "rgba(139,211,255,.11)" : "rgba(255,255,255,.035)", border: `1px solid ${activeTab === workspace.id ? `${accent}55` : "rgba(255,255,255,.075)"}`, borderRadius: 8, color: activeTab === workspace.id ? "#f8fbff" : "#cbd5e1", cursor: "pointer", display: "flex", fontSize: 11, fontWeight: 850, gap: 7, minHeight: 34, minWidth: 0, padding: "7px 8px", textAlign: "left" }}
+              >
+                <i className={`ti ${workspace.icon}`} style={{ color: activeTab === workspace.id ? accent : "currentColor", flexShrink: 0, fontSize: 15 }} />
+                <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{workspace.shortLabel || workspace.label}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
 function compactLabel(label = "") {
   return String(label).length > 12 ? `${String(label).slice(0, 11)}...` : label;
 }
