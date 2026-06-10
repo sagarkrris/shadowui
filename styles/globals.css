@@ -75,6 +75,18 @@ a:focus-visible,
   font-size: 13.5px;
 }
 
+.message-list {
+  margin: 0 0 9px;
+  padding-left: 18px;
+  color: inherit;
+  line-height: 1.68;
+  font-size: 13.3px;
+}
+
+.message-list li {
+  margin-bottom: 5px;
+}
+
 .message-part-heading {
   margin: 10px 0 6px;
   padding-top: 2px;

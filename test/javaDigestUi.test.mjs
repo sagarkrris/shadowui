@@ -16,6 +16,7 @@ test("java digest component renders topic, article, and roadmap sections", () =>
   assert.match(componentSource, /Search Interview Topic/);
   assert.match(componentSource, /buildJavaDigestGeneratedTopicPrompt/);
   assert.match(componentSource, /\/api\/chat/);
+  assert.match(componentSource, /directAnswer/);
   assert.match(componentSource, /AI Interview Explainer/);
   assert.match(componentSource, /CsesChapterCard/);
   assert.match(componentSource, /CsesPartSection/);

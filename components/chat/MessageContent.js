@@ -10,6 +10,56 @@ function isComparisonHeading(line) {
     /^(Your Answer|Ideal Answer|Improved Version):/i.test(line.trim());
 }
 
+function isBulletLine(line) {
+  return /^\s*[-*]\s+/.test(line);
+}
+
+function cleanBulletLine(line) {
+  return line.replace(/^\s*[-*]\s+/, "");
+}
+
+function renderTextLines(part, keyPrefix) {
+  const nodes = [];
+  let bulletItems = [];
+
+  const flushBullets = () => {
+    if (!bulletItems.length) return;
+    const listKey = `${keyPrefix}-list-${nodes.length}`;
+    nodes.push(
+      <ul key={listKey} className="message-list">
+        {bulletItems.map((item, index) => (
+          <li key={`${listKey}-${index}`} dangerouslySetInnerHTML={{ __html: renderInline(item) }} />
+        ))}
+      </ul>
+    );
+    bulletItems = [];
+  };
+
+  part.split("\n").filter((line) => line.trim()).forEach((line, index) => {
+    if (isBulletLine(line)) {
+      bulletItems.push(cleanBulletLine(line));
+      return;
+    }
+
+    flushBullets();
+
+    if (isPartHeading(line)) {
+      nodes.push(<h3 key={`${keyPrefix}-${index}`} className="message-part-heading" dangerouslySetInnerHTML={{ __html: renderInline(line) }} />);
+      return;
+    }
+
+    if (isComparisonHeading(line)) {
+      nodes.push(<h3 key={`${keyPrefix}-${index}`} className="message-comparison-heading" dangerouslySetInnerHTML={{ __html: renderInline(line) }} />);
+      return;
+    }
+
+    nodes.push(<p key={`${keyPrefix}-${index}`} className="message-line" dangerouslySetInnerHTML={{ __html: renderInline(line) }} />);
+  });
+
+  flushBullets();
+  return nodes;
+}
+
 export default function MessageContent({ content }) {
   return (
     <div className="message-content">
@@ -21,13 +71,7 @@ export default function MessageContent({ content }) {
         }
         return (
           <div key={i}>
-            {part.split("\n").filter((line) => line.trim()).map((line, j) => (
-              isPartHeading(line)
-                ? <h3 key={j} className="message-part-heading" dangerouslySetInnerHTML={{ __html: renderInline(line) }} />
-                : isComparisonHeading(line)
-                  ? <h3 key={j} className="message-comparison-heading" dangerouslySetInnerHTML={{ __html: renderInline(line) }} />
-                : <p key={j} className="message-line" dangerouslySetInnerHTML={{ __html: renderInline(line) }} />
-            ))}
+            {renderTextLines(part, `message-${i}`)}
           </div>
         );
       })}

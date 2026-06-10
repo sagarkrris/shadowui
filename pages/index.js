@@ -390,9 +390,9 @@ export default function Home() {
           messages: apiMessages,
           profile: candidateProfile,
           // Default request shape used to be interviewMode: interviewMode; options can now override it for canvas/review flows.
-          interviewMode: options.interviewMode || interviewMode,
-          roundStrategy: options.roundStrategy || roundStrategy,
-          interviewPanel: options.interviewPanel || interviewPanel,
+          interviewMode: options.interviewMode === undefined ? interviewMode : options.interviewMode,
+          roundStrategy: options.roundStrategy === undefined ? roundStrategy : options.roundStrategy,
+          interviewPanel: options.interviewPanel === undefined ? interviewPanel : options.interviewPanel,
         }), signal: abortRef.current.signal,
       });
       if (!res.ok) {
@@ -629,8 +629,9 @@ export default function Home() {
   const startJavaDigestAction = (prompt, metadata = {}) => {
     setActiveTab("chat");
     callAPI(prompt, {
-      roundStrategy: metadata?.type === "javaDigestRoadmap" ? "manager" : "coding",
-      interviewPanel: metadata?.type === "javaDigestRoadmap" ? "engineeringManager" : "seniorEngineer",
+      interviewMode: metadata?.type === "javaDigestMock" ? "strict" : "directAnswer",
+      roundStrategy: metadata?.type === "javaDigestMock" ? "coding" : "directAnswer",
+      interviewPanel: metadata?.type === "javaDigestMock" ? "seniorEngineer" : null,
       displayText: buildWorkspaceActionDisplayText(prompt, metadata),
       skipQuestionMemory: true,
     });

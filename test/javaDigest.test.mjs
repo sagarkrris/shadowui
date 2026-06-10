@@ -61,6 +61,8 @@ test("java digest generated search prompt supports any topic and candidate conte
   assert.match(prompt, /Tech stack: Java, Spring Boot/);
   assert.match(prompt, /Interview-Ready Answer/);
   assert.match(prompt, /Competitive Programmer's Handbook/);
+  assert.match(prompt, /direct polished answer/);
+  assert.match(prompt, /Avoid LaTeX syntax/);
   assert.match(prompt, /Do not quote or reproduce book text/);
 });
 
@@ -77,6 +79,9 @@ test("cses java tracks expose java-only competitive programming practice prompts
   assert.match(prompt, /Java-only competitive programming track/);
   assert.match(prompt, /Shortest Paths/);
   assert.match(prompt, /CSES handbook-inspired topic themes/);
+  assert.match(prompt, /direct polished study answer/);
+  assert.match(prompt, /Do not greet the user/);
+  assert.match(prompt, /plain text math/);
   assert.match(prompt, /Do not quote or reproduce the handbook text/);
 });
 

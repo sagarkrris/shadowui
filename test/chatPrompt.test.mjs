@@ -71,12 +71,17 @@ test("chat system prompt calibrates interviewer mode behavior", () => {
 });
 
 test("chat system prompt calibrates round strategy behavior", () => {
+  const directAnswer = buildSystemPrompt({}, { interviewMode: "directAnswer", roundStrategy: "directAnswer" });
   const recruiter = buildSystemPrompt({}, { roundStrategy: "recruiter" });
   const coding = buildSystemPrompt({}, { roundStrategy: "coding" });
   const systemDesign = buildSystemPrompt({}, { roundStrategy: "systemDesign" });
   const manager = buildSystemPrompt({}, { roundStrategy: "manager" });
   const final = buildSystemPrompt({}, { roundStrategy: "final" });
 
+  assert.match(directAnswer, /Direct answer mode/i);
+  assert.match(directAnswer, /not a mock interview/i);
+  assert.match(directAnswer, /Do not ask one question at a time/i);
+  assert.match(directAnswer, /do not use LaTeX/i);
   assert.match(recruiter, /Recruiter Round/i);
   assert.match(recruiter, /motivation, resume alignment, compensation-safe expectations/i);
   assert.match(coding, /Coding Round/i);

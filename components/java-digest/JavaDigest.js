@@ -329,9 +329,9 @@ export default function JavaDigest({ theme = {}, onAction, profile = null }) {
         body: JSON.stringify({
           messages: [{ role: "user", content: buildJavaDigestGeneratedTopicPrompt(trimmedTopic, profile || {}) }],
           profile,
-          interviewMode: "coach",
-          roundStrategy: "coding",
-          interviewPanel: "seniorEngineer",
+          interviewMode: "directAnswer",
+          roundStrategy: "directAnswer",
+          interviewPanel: null,
         }),
       });
 
