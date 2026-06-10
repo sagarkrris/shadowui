@@ -5,12 +5,18 @@ import test from "node:test";
 import {
   buildCanvasMockPrompt,
   buildCanvasReviewPrompt,
+  buildSystemDesignDiagramBoard,
+  buildSystemDesignDiagramEvaluationPrompt,
+  buildSystemDesignReferenceRoadmap,
   buildSystemDesignStudioBlueprint,
   buildSystemDesignStudioPrompt,
   buildSystemDesignMockPrompt,
   buildSystemDesignReviewPrompt,
   createSystemDesignCanvasState,
   exportSystemDesignCanvasMarkdown,
+  SYSTEM_DESIGN_PRIMER_EXERCISES,
+  SYSTEM_DESIGN_PRIMER_TOPIC_GROUPS,
+  SYSTEM_DESIGN_REFERENCE_PLAYBOOK,
   SYSTEM_DESIGN_LEARNING_CATALOG,
   SYSTEM_DESIGN_PATTERN_LIBRARY,
   SYSTEM_DESIGN_CANVAS_SECTIONS,
@@ -120,6 +126,40 @@ test("builds an AI prompt that asks for both HLD and LLD from the studio bluepri
   assert.match(prompt, /trade-offs/i);
 });
 
+test("builds a diagram board and AI evaluation prompt for visual system design", () => {
+  const board = buildSystemDesignDiagramBoard("Implement Ticket Booking System");
+  const prompt = buildSystemDesignDiagramEvaluationPrompt({
+    problem: "Implement Ticket Booking System",
+    sections: { requirements: "Users reserve seats", architecture: "Gateway, inventory, reservations" },
+  });
+
+  assert.equal(board.title, "Ticket Booking System Diagram Board");
+  assert.ok(board.lanes.some((lane) => lane.title === "Core Services"));
+  assert.ok(board.edges.some((edge) => /Gateway|Queue/.test(edge)));
+  assert.ok(board.evaluationRubric.some((item) => item.label === "Consistency"));
+  assert.ok(board.whiteboardPrompts.some((item) => /source of truth/i.test(item)));
+  assert.ok(board.referenceMoves.some((item) => item.source === "System Design Primer"));
+  assert.ok(SYSTEM_DESIGN_REFERENCE_PLAYBOOK.some((item) => /build-your-own-x/.test(item.url)));
+  assert.match(prompt, /Evaluate this system design diagram board/i);
+  assert.match(prompt, /Reference-inspired checks/i);
+  assert.match(prompt, /Tech Interview Handbook/i);
+  assert.match(prompt, /Mermaid/i);
+  assert.match(prompt, /missing boxes/i);
+});
+
+test("builds a primer-style roadmap with topic groups and sample design boards", () => {
+  const roadmap = buildSystemDesignReferenceRoadmap("Design a social feed");
+
+  assert.ok(SYSTEM_DESIGN_PRIMER_TOPIC_GROUPS.some((group) => group.title === "Scalability Foundations"));
+  assert.ok(SYSTEM_DESIGN_PRIMER_TOPIC_GROUPS.some((group) => group.concepts.includes("Availability vs consistency")));
+  assert.ok(SYSTEM_DESIGN_PRIMER_TOPIC_GROUPS.some((group) => group.concepts.includes("Cache-aside")));
+  assert.ok(SYSTEM_DESIGN_PRIMER_EXERCISES.some((exercise) => /Pastebin|Bitly|URL/i.test(exercise.title)));
+  assert.ok(SYSTEM_DESIGN_PRIMER_EXERCISES.some((exercise) => /Twitter|feed|search/i.test(exercise.title)));
+  assert.ok(roadmap.topicGroups.length >= 5);
+  assert.ok(roadmap.sampleBoards.some((board) => board.diagramFocus.some((item) => /cache|queue|sharding|crawler|feed/i.test(item))));
+  assert.match(roadmap.practicePrompt, /clarify.*draw.*deep dive.*scale/i);
+});
+
 test("exposes a pattern library grouped by design intent with examples", () => {
   assert.ok(SYSTEM_DESIGN_PATTERN_LIBRARY.creational.some((pattern) => pattern.name === "Factory Method"));
   assert.ok(SYSTEM_DESIGN_PATTERN_LIBRARY.structural.some((pattern) => pattern.name === "Adapter"));
@@ -143,6 +183,8 @@ test("system design canvas component renders editable glass sections and action 
   assert.match(source, /createSystemDesignCanvasState/);
   assert.match(source, /buildSystemDesignStudioBlueprint/);
   assert.match(source, /buildSystemDesignStudioPrompt/);
+  assert.match(source, /buildSystemDesignDiagramBoard/);
+  assert.match(source, /buildSystemDesignDiagramEvaluationPrompt/);
   assert.match(source, /SYSTEM_DESIGN_LEARNING_CATALOG/);
   assert.match(source, /SYSTEM_DESIGN_CANVAS_SECTIONS/);
   assert.match(source, /buildCanvasReviewPrompt/);
@@ -154,6 +196,14 @@ test("system design canvas component renders editable glass sections and action 
   assert.match(source, /Mock/);
   assert.match(source, /Export/);
   assert.match(source, /Generate HLD \+ LLD/);
+  assert.match(source, /Interactive Whiteboard/);
+  assert.match(source, /Evaluate Diagram/);
+  assert.match(source, /AI Evaluation Rubric/);
+  assert.match(source, /Whiteboard Prompts/);
+  assert.match(source, /Primer Topic Map/);
+  assert.match(source, /Sample Design Boards/);
+  assert.match(source, /Reference Moves/);
+  assert.match(source, /Diagram/);
   assert.match(source, /HLD/);
   assert.match(source, /LLD/);
   assert.match(source, /Patterns/);

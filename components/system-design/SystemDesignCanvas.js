@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import {
   buildCanvasMockPrompt,
   buildCanvasReviewPrompt,
+  buildSystemDesignDiagramBoard,
+  buildSystemDesignDiagramEvaluationPrompt,
+  buildSystemDesignReferenceRoadmap,
   buildSystemDesignStudioBlueprint,
   buildSystemDesignStudioPrompt,
   createSystemDesignCanvasState,
@@ -134,6 +137,94 @@ function ArchitectureFlow({ blueprint, activeIndex, accent }) {
   );
 }
 
+function DiagramBoard({ board, roadmap, accent, onEvaluate }) {
+  if (!board?.lanes?.length) return null;
+
+  return (
+    <section style={{ border: `1px solid ${accent}34`, borderRadius: 8, background: "rgba(0,0,0,.16)", display: "grid", gap: 12, padding: 12 }}>
+      <div style={{ alignItems: "center", display: "flex", gap: 9, justifyContent: "space-between", flexWrap: "wrap" }}>
+        <div style={wrappingTextStyle}>
+          <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Interactive Whiteboard</div>
+          <h3 style={{ ...wrappingTextStyle, color: "#f8fbff", fontSize: 16, lineHeight: 1.25, marginTop: 4 }}>{board.title}</h3>
+          <p style={{ ...wrappingTextStyle, color: "#9fb0c7", fontSize: 11.5, lineHeight: 1.45, marginTop: 5 }}>Diagram the system in layers, then ask for AI evaluation on missing boxes, arrows, and trade-offs.</p>
+        </div>
+        <ActionButton icon="ti-sparkles" label="Evaluate Diagram" onClick={onEvaluate} tone={accent} />
+      </div>
+
+      <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 210px), 1fr))", minWidth: 0 }}>
+        {board.lanes.map((lane, laneIndex) => (
+          <article key={lane.title} style={{ ...wrappingTextStyle, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.085)", borderRadius: 8, display: "grid", gap: 9, minHeight: 210, padding: 10 }}>
+            <div style={{ alignItems: "center", display: "flex", gap: 8 }}>
+              <span style={{ alignItems: "center", background: `${accent}18`, border: `1px solid ${accent}44`, borderRadius: 8, color: accent, display: "inline-flex", flexShrink: 0, fontSize: 11, fontWeight: 950, height: 30, justifyContent: "center", width: 30 }}>
+                {laneIndex + 1}
+              </span>
+              <div style={wrappingTextStyle}>
+                <h4 style={{ color: "#f8fbff", fontSize: 12.5, lineHeight: 1.25 }}>{lane.title}</h4>
+                <p style={{ color: "#9fb0c7", fontSize: 10.7, lineHeight: 1.35, marginTop: 2 }}>{lane.intent}</p>
+              </div>
+            </div>
+            <div style={{ display: "grid", gap: 7 }}>
+              {lane.nodes.map((node, index) => (
+                <div key={`${lane.title}-${node}`} style={{ ...wrappingTextStyle, alignItems: "center", background: index === 0 ? `${accent}12` : "rgba(0,0,0,.16)", border: `1px solid ${index === 0 ? `${accent}44` : "rgba(255,255,255,.075)"}`, borderRadius: 8, color: "#eaf2ff", display: "flex", fontSize: 11.3, fontWeight: 850, gap: 7, justifyContent: "space-between", lineHeight: 1.3, minHeight: 34, padding: "7px 8px" }}>
+                  <span>{node}</span>
+                  {index < lane.nodes.length - 1 && <i className="ti ti-arrow-down" style={{ color: accent, flexShrink: 0, fontSize: 14 }} />}
+                </div>
+              ))}
+            </div>
+          </article>
+        ))}
+      </div>
+
+      <div style={responsiveGrid(220)}>
+        <ListPanel title="Diagram Edges" icon="ti-route" items={board.edges} accent={accent} />
+        <ListPanel title="AI Evaluation Rubric" icon="ti-clipboard-check" accent={accent}>
+          <div style={{ display: "grid", gap: 7 }}>
+            {board.evaluationRubric.map((item) => (
+              <div key={item.label} style={{ color: "#9fb0c7", fontSize: 11.3, lineHeight: 1.45 }}>
+                <strong style={{ color: "#eaf2ff" }}>{item.label}</strong>: {item.check}
+              </div>
+            ))}
+          </div>
+        </ListPanel>
+        <ListPanel title="Whiteboard Prompts" icon="ti-chalkboard" items={board.whiteboardPrompts} accent={accent} />
+        <ListPanel title="Reference Moves" icon="ti-book-2" accent={accent}>
+          <div style={{ display: "grid", gap: 8 }}>
+            {board.referenceMoves.map((item) => (
+              <div key={item.source} style={{ color: "#9fb0c7", fontSize: 11.2, lineHeight: 1.45 }}>
+                <strong style={{ color: "#eaf2ff" }}>{item.source}</strong>: {item.moves.join(" -> ")}
+              </div>
+            ))}
+          </div>
+        </ListPanel>
+      </div>
+
+      <div style={responsiveGrid(230)}>
+        <ListPanel title="Primer Topic Map" icon="ti-map" accent={accent}>
+          <div style={{ display: "grid", gap: 8 }}>
+            {roadmap.topicGroups.map((group) => (
+              <div key={group.title} style={{ color: "#9fb0c7", fontSize: 11.2, lineHeight: 1.45 }}>
+                <strong style={{ color: "#eaf2ff" }}>{group.title}</strong>
+                <div>{group.concepts.join(", ")}</div>
+                <div style={{ color: "#a7f3d0", marginTop: 2 }}>{group.diagramCue}</div>
+              </div>
+            ))}
+          </div>
+        </ListPanel>
+        <ListPanel title="Sample Design Boards" icon="ti-layout-board" accent={accent}>
+          <div style={{ display: "grid", gap: 8 }}>
+            {roadmap.sampleBoards.slice(0, 4).map((boardItem) => (
+              <div key={boardItem.title} style={{ color: "#9fb0c7", fontSize: 11.2, lineHeight: 1.45 }}>
+                <strong style={{ color: "#eaf2ff" }}>{boardItem.title}</strong>
+                <div>{boardItem.diagramFocus.join(" -> ")}</div>
+              </div>
+            ))}
+          </div>
+        </ListPanel>
+      </div>
+    </section>
+  );
+}
+
 export default function SystemDesignCanvas({
   initialState,
   onChange,
@@ -152,10 +243,12 @@ export default function SystemDesignCanvas({
   );
   const [canvasState, setCanvasState] = useState(normalizedInitialState);
   const [blueprint, setBlueprint] = useState(() => buildSystemDesignStudioBlueprint(normalizedInitialState));
-  const [studioTab, setStudioTab] = useState("HLD");
+  const [studioTab, setStudioTab] = useState("Diagram");
   const [flowIndex, setFlowIndex] = useState(0);
   const accent = theme.accentStrong || "#8bd3ff";
   const accentBorder = theme.accentBorder || "rgba(139, 211, 255, .26)";
+  const diagramBoard = useMemo(() => buildSystemDesignDiagramBoard(canvasState), [canvasState]);
+  const referenceRoadmap = useMemo(() => buildSystemDesignReferenceRoadmap(canvasState.problem), [canvasState.problem]);
 
   useEffect(() => {
     setCanvasState(normalizedInitialState);
@@ -183,12 +276,17 @@ export default function SystemDesignCanvas({
   const generateStudio = () => {
     const nextBlueprint = buildSystemDesignStudioBlueprint(canvasState);
     setBlueprint(nextBlueprint);
-    setStudioTab("HLD");
+    setStudioTab("Diagram");
   };
 
   const askStudioAI = () => {
     const prompt = buildSystemDesignStudioPrompt(canvasState);
     onAction?.(prompt, { type: "studio", canvasState, blueprint });
+  };
+
+  const evaluateDiagram = () => {
+    const prompt = buildSystemDesignDiagramEvaluationPrompt(canvasState);
+    onAction?.(prompt, { type: "diagramEvaluation", canvasState, diagramBoard });
   };
 
   const updateSection = (key, value) => {
@@ -296,7 +394,7 @@ export default function SystemDesignCanvas({
             <h2 style={{ ...wrappingTextStyle, color: "#f8fbff", fontSize: 18, lineHeight: 1.25, marginTop: 4 }}>{blueprint.title}</h2>
           </div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", minWidth: 0 }}>
-            {["HLD", "LLD", "Guide", "Patterns", "Interview"].map((tab) => (
+            {["Diagram", "HLD", "LLD", "Guide", "Patterns", "Interview"].map((tab) => (
               <button
                 key={tab}
                 type="button"
@@ -318,6 +416,10 @@ export default function SystemDesignCanvas({
             ))}
           </div>
         </div>
+
+        {studioTab === "Diagram" && (
+          <DiagramBoard board={diagramBoard} roadmap={referenceRoadmap} accent={accent} onEvaluate={evaluateDiagram} />
+        )}
 
         {studioTab === "HLD" && (
           <div style={{ display: "grid", gap: 11 }}>

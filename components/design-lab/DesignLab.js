@@ -1,9 +1,19 @@
 import { useMemo, useState } from "react";
 import {
   DESIGN_LAB_CATALOG,
+  buildAgenticAiDesignPrompt,
   buildDesignLabPracticePrompt,
   buildDesignSystemSearchPrompt,
+  buildReferencePlaybookPrompt,
+  buildReferenceTopicImportPrompt,
+  buildUmlClassDesignPrompt,
+  listBuildYourOwnTracks,
+  listAgenticAiDesignProblems,
   listDesignLabPracticeSystems,
+  listInterviewHandbookCheckpoints,
+  listReferencePlaybooks,
+  listReferenceTopicCatalog,
+  listUmlClassPracticeSystems,
   normalizeDesignSystemSearchQuery,
 } from "../../lib/designLab.mjs";
 import BeginnerGuideBanner from "../BeginnerGuideBanner";
@@ -198,6 +208,152 @@ function TrackPanel({ track, icon, accent }) {
   );
 }
 
+function UmlClassBoard({ systems, accent, onAction }) {
+  return (
+    <div style={{ display: "grid", gap: 10 }}>
+      {systems.map((system) => (
+        <LabPanel key={system.id} title={system.title} icon="ti-hierarchy-3" accent={accent}>
+          <p style={{ ...wrap, color: "#cbd5e1", fontSize: 11.5, lineHeight: 1.45, marginBottom: 9 }}>{system.system}</p>
+          <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 190px), 1fr))", minWidth: 0 }}>
+            {system.classes.map((item) => (
+              <article key={item.name} style={{ ...wrap, background: "rgba(0,0,0,.16)", border: `1px solid ${accent}30`, borderRadius: 8, overflow: "hidden" }}>
+                <div style={{ background: `${accent}14`, borderBottom: `1px solid ${accent}28`, color: "#f8fbff", fontSize: 12, fontWeight: 900, padding: "7px 8px" }}>{item.name}</div>
+                <div style={{ color: "#9fb0c7", display: "grid", fontSize: 10.8, gap: 5, lineHeight: 1.35, padding: 8 }}>
+                  <span><strong style={{ color: "#eaf2ff" }}>Fields:</strong> {item.fields}</span>
+                  <span><strong style={{ color: "#eaf2ff" }}>Methods:</strong> {item.methods}</span>
+                </div>
+              </article>
+            ))}
+          </div>
+          <div style={responsiveGrid(220, 9)}>
+            <div>
+              <strong style={{ color: "#eaf2ff", display: "block", fontSize: 11.5, margin: "10px 0 6px" }}>Relationships</strong>
+              <BulletList items={system.relationships} />
+            </div>
+            <div>
+              <strong style={{ color: "#eaf2ff", display: "block", fontSize: 11.5, margin: "10px 0 6px" }}>Sequence Diagram Steps</strong>
+              <BulletList items={system.sequence} />
+            </div>
+          </div>
+          <button type="button" className="glass-button" onClick={() => onAction?.(buildUmlClassDesignPrompt(system.id), { type: "umlClassPractice", system })} title={`Practice ${system.title}`} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, marginTop: 10, padding: "7px 10px" }}>
+            <i className="ti ti-player-play" style={{ color: accent, marginRight: 6 }} />
+            Practice UML
+          </button>
+        </LabPanel>
+      ))}
+    </div>
+  );
+}
+
+function AgenticAiBoard({ problems, accent, onAction }) {
+  return (
+    <div style={responsiveGrid(250, 10)}>
+      {problems.map((problem) => (
+        <LabPanel key={problem.id} title={problem.title} icon="ti-sparkles" accent={accent}>
+          <div style={{ color: "#a7f3d0", fontSize: 11, fontWeight: 900, marginBottom: 6 }}>{problem.difficulty}</div>
+          <p style={{ ...wrap, color: "#cbd5e1", fontSize: 11.5, lineHeight: 1.45, marginBottom: 9 }}>{problem.goal}</p>
+          <strong style={{ color: "#eaf2ff", fontSize: 11.5 }}>Agent Architecture</strong>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, margin: "7px 0 10px" }}>
+            {problem.architecture.map((node, index) => (
+              <span key={node} style={{ alignItems: "center", background: index === 0 ? `${accent}16` : "rgba(255,255,255,.045)", border: `1px solid ${index === 0 ? `${accent}44` : "rgba(255,255,255,.08)"}`, borderRadius: 999, color: "#dbeafe", display: "inline-flex", fontSize: 10.5, fontWeight: 850, gap: 5, padding: "5px 8px" }}>
+                {node}
+                {index < problem.architecture.length - 1 && <i className="ti ti-arrow-right" style={{ color: accent }} />}
+              </span>
+            ))}
+          </div>
+          <strong style={{ color: "#eaf2ff", fontSize: 11.5 }}>Safety Guardrails</strong>
+          <BulletList items={problem.guardrails} color="#fcd34d" />
+          <strong style={{ color: "#eaf2ff", display: "block", fontSize: 11.5, marginTop: 8 }}>Evaluation</strong>
+          <BulletList items={problem.evaluation} />
+          <button type="button" className="glass-button" onClick={() => onAction?.(buildAgenticAiDesignPrompt(problem.id), { type: "agenticAiDesign", problem })} title={`Practice ${problem.title}`} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, marginTop: 10, padding: "7px 10px" }}>
+            <i className="ti ti-player-play" style={{ color: accent, marginRight: 6 }} />
+            Practice Agent Design
+          </button>
+        </LabPanel>
+      ))}
+    </div>
+  );
+}
+
+function ReferencePlaybookBoard({ playbooks, buildTracks, handbookCheckpoints, topicCatalog, accent, onAction }) {
+  return (
+    <div style={{ display: "grid", gap: 10 }}>
+      <div style={responsiveGrid(260, 10)}>
+        {playbooks.map((playbook) => (
+          <LabPanel key={playbook.id} title={playbook.title} icon="ti-book-2" accent={accent}>
+            <a href={playbook.url} target="_blank" rel="noreferrer" style={{ ...wrap, color: accent, display: "inline-flex", fontSize: 10.8, fontWeight: 900, lineHeight: 1.35, marginBottom: 7, textDecoration: "none" }}>
+              {playbook.source}
+            </a>
+            <p style={{ ...wrap, color: "#cbd5e1", fontSize: 11.5, lineHeight: 1.45, marginBottom: 9 }}>{playbook.focus}</p>
+            <strong style={{ color: "#eaf2ff", fontSize: 11.5 }}>Diagrammatic Drills</strong>
+            <BulletList items={playbook.drills} />
+            <button type="button" className="glass-button" onClick={() => onAction?.(buildReferencePlaybookPrompt(playbook.id), { type: "referencePlaybook", playbook })} title={`Practice ${playbook.title}`} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, marginTop: 10, padding: "7px 10px" }}>
+              <i className="ti ti-player-play" style={{ color: accent, marginRight: 6 }} />
+              Practice Playbook
+            </button>
+          </LabPanel>
+        ))}
+      </div>
+      <div style={responsiveGrid(260, 10)}>
+        <LabPanel title="Build-from-Scratch Tracks" icon="ti-tools" accent={accent}>
+          <div style={{ display: "grid", gap: 8 }}>
+            {buildTracks.map((track) => (
+              <div key={track.title} style={{ ...wrap, color: "#9fb0c7", fontSize: 11.2, lineHeight: 1.45 }}>
+                <strong style={{ color: "#eaf2ff" }}>{track.title}</strong>
+                <div>{track.buildLoop.join(" -> ")}</div>
+                <div style={{ color: "#a7f3d0", marginTop: 2 }}>{track.interviewTransfer}</div>
+              </div>
+            ))}
+          </div>
+        </LabPanel>
+        <LabPanel title="Handbook Sprint Checklist" icon="ti-list-check" accent={accent}>
+          <div style={{ display: "grid", gap: 8 }}>
+            {handbookCheckpoints.map((checkpoint) => (
+              <div key={checkpoint.title} style={{ ...wrap, color: "#9fb0c7", fontSize: 11.2, lineHeight: 1.45 }}>
+                <strong style={{ color: "#eaf2ff" }}>{checkpoint.title}</strong>
+                <div>{checkpoint.actions.join(" -> ")}</div>
+              </div>
+            ))}
+          </div>
+        </LabPanel>
+        <LabPanel title="Primer Topic Map" icon="ti-map" accent={accent}>
+          <BulletList items={[
+            "Foundations: scalability, latency, throughput, availability, consistency.",
+            "Edge: DNS, CDN, load balancing, reverse proxy, routing.",
+            "Data: replication, sharding, denormalization, SQL tuning, NoSQL choices.",
+            "Async: queues, task workers, back pressure, retries, and observability.",
+          ]} />
+        </LabPanel>
+      </div>
+      <LabPanel title="Imported Main Topics" icon="ti-folders" accent={accent}>
+        <div style={{ display: "grid", gap: 10 }}>
+          {topicCatalog.map((group) => (
+            <article key={group.source} style={{ ...wrap, background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 7, padding: 9 }}>
+              <div style={{ alignItems: "center", display: "flex", gap: 7, justifyContent: "space-between", minWidth: 0 }}>
+                <strong style={{ ...wrap, color: "#f8fbff", fontSize: 12 }}>{group.source}</strong>
+                <a href={group.url} target="_blank" rel="noreferrer" style={{ color: accent, flexShrink: 0, fontSize: 10.5, fontWeight: 900, textDecoration: "none" }}>Source</a>
+              </div>
+              <p style={{ ...wrap, color: "#9fb0c7", fontSize: 11.2, lineHeight: 1.45 }}>{group.usefulFor}</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 5, minWidth: 0 }}>
+                {group.topics.map((topic) => (
+                  <span key={`${group.source}-${topic}`} style={{ ...wrap, background: `${accent}12`, border: `1px solid ${accent}2f`, borderRadius: 7, color: "#dbeafe", fontSize: 10.5, fontWeight: 800, lineHeight: 1.25, padding: "4px 6px" }}>
+                    {topic}
+                  </span>
+                ))}
+              </div>
+              <div style={{ ...wrap, color: "#a7f3d0", fontSize: 11, lineHeight: 1.4 }}>{group.practiceUse}</div>
+            </article>
+          ))}
+          <button type="button" className="glass-button" onClick={() => onAction?.(buildReferenceTopicImportPrompt(), { type: "referenceTopicPlan", topicCatalog })} title="Build a topic-based practice plan" style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 850, justifySelf: "start", padding: "7px 10px" }}>
+            <i className="ti ti-calendar-plus" style={{ color: accent, marginRight: 6 }} />
+            Build Topic Plan
+          </button>
+        </div>
+      </LabPanel>
+    </div>
+  );
+}
+
 function DesignSearchPanel({ query, onQueryChange, onSubmit, accent, accentBorder }) {
   return (
     <form
@@ -266,6 +422,12 @@ export default function DesignLab({ theme = {}, onAction, beginnerMode = false, 
   const [activeTab, setActiveTab] = useState("Patterns");
   const [searchQuery, setSearchQuery] = useState("");
   const practiceSystems = useMemo(() => listDesignLabPracticeSystems(), []);
+  const umlSystems = useMemo(() => listUmlClassPracticeSystems(), []);
+  const agenticProblems = useMemo(() => listAgenticAiDesignProblems(), []);
+  const referencePlaybooks = useMemo(() => listReferencePlaybooks(), []);
+  const buildTracks = useMemo(() => listBuildYourOwnTracks(), []);
+  const handbookCheckpoints = useMemo(() => listInterviewHandbookCheckpoints(), []);
+  const topicCatalog = useMemo(() => listReferenceTopicCatalog(), []);
   const accent = theme.accentStrong || "#8bd3ff";
   const accentBorder = theme.accentBorder || "rgba(139, 211, 255, .26)";
 
@@ -273,6 +435,9 @@ export default function DesignLab({ theme = {}, onAction, beginnerMode = false, 
     { label: "Patterns", icon: "ti-puzzle" },
     { label: "HLD", icon: "ti-sitemap" },
     { label: "LLD", icon: "ti-code" },
+    { label: "OOD / UML", icon: "ti-hierarchy-3" },
+    { label: "Agentic AI", icon: "ti-sparkles" },
+    { label: "References", icon: "ti-book-2" },
     { label: "Practice", icon: "ti-target-arrow" },
   ];
   const handleDesignSearch = (event) => {
@@ -352,6 +517,9 @@ export default function DesignLab({ theme = {}, onAction, beginnerMode = false, 
 
       {activeTab === "HLD" && <TrackPanel track={DESIGN_LAB_CATALOG.hld} icon="ti-sitemap" accent={accent} />}
       {activeTab === "LLD" && <TrackPanel track={DESIGN_LAB_CATALOG.lld} icon="ti-code" accent={accent} />}
+      {activeTab === "OOD / UML" && <UmlClassBoard systems={umlSystems} accent={accent} onAction={onAction} />}
+      {activeTab === "Agentic AI" && <AgenticAiBoard problems={agenticProblems} accent={accent} onAction={onAction} />}
+      {activeTab === "References" && <ReferencePlaybookBoard playbooks={referencePlaybooks} buildTracks={buildTracks} handbookCheckpoints={handbookCheckpoints} topicCatalog={topicCatalog} accent={accent} onAction={onAction} />}
 
       {activeTab === "Practice" && (
         <div style={responsiveGrid(245, 10)}>
