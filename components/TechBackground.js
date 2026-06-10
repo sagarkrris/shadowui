@@ -27,11 +27,11 @@ export default function TechBackground({ theme }) {
           position: "absolute",
           inset: 0,
           backgroundImage: [
-            "linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px)",
-            "linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px)",
+            "linear-gradient(rgba(255,255,255,.026) 1px, transparent 1px)",
+            "linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px)",
           ].join(", "),
-          backgroundSize: "42px 42px",
-          maskImage: "linear-gradient(to bottom, rgba(0,0,0,.72), rgba(0,0,0,.16))",
+          backgroundSize: "48px 48px",
+          maskImage: "linear-gradient(to bottom, rgba(0,0,0,.58), rgba(0,0,0,.12))",
         }}
       />
       <div
@@ -39,7 +39,7 @@ export default function TechBackground({ theme }) {
           position: "absolute",
           inset: 0,
           background:
-            "radial-gradient(circle at center, transparent 0, rgba(0,0,0,.42) 68%, rgba(0,0,0,.78) 100%)",
+            "linear-gradient(180deg, rgba(2,6,23,.08), rgba(2,6,23,.52))",
         }}
       />
       {glyphStyles.map((style, index) => (
@@ -49,13 +49,13 @@ export default function TechBackground({ theme }) {
             position: "absolute",
             ...style,
             color: index % 2 === 0 ? theme.accentStrong : theme.accentText,
-            opacity: index % 2 === 0 ? 0.09 : 0.07,
+            opacity: index % 2 === 0 ? 0.055 : 0.045,
             fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace',
             fontWeight: 800,
             letterSpacing: 0,
             lineHeight: 1,
             whiteSpace: "nowrap",
-            textShadow: `0 0 42px ${theme.accentSoft}`,
+            textShadow: `0 0 28px ${theme.accentSoft}`,
           }}
         >
           {glyphs[index % glyphs.length]}

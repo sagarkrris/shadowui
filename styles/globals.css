@@ -7,7 +7,7 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   color-scheme: dark;
   background:
-    linear-gradient(180deg, #151812 0%, #10150f 48%, #121416 100%);
+    linear-gradient(180deg, #151b24 0%, #111827 52%, #151923 100%);
   color: #e8e8f0;
   overflow: hidden;
 }
@@ -112,7 +112,7 @@ a:focus-visible,
   color: var(--tech-accent-text, #bbf7d0);
 }
 
-/* ─── Liquid-glass inspired surfaces ─────────────────────────────────────── */
+/* ─── Corporate glass surfaces ───────────────────────────────────────────── */
 .glass-chrome,
 .glass-panel,
 .glass-card,
@@ -121,14 +121,14 @@ a:focus-visible,
   position: relative;
   border-color: var(--tech-glass-edge-soft, rgba(255,255,255,.08));
   box-shadow: var(--tech-glass-shadow, 0 18px 50px rgba(0,0,0,.38));
-  backdrop-filter: blur(18px) saturate(1.35);
-  -webkit-backdrop-filter: blur(18px) saturate(1.35);
+  backdrop-filter: blur(16px) saturate(1.18);
+  -webkit-backdrop-filter: blur(16px) saturate(1.18);
 }
 
 .glass-chrome {
   background:
-    linear-gradient(135deg, var(--tech-glass-shine, rgba(255,255,255,.16)), transparent 34%),
-    linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.018)),
+    linear-gradient(135deg, var(--tech-glass-shine, rgba(255,255,255,.12)), transparent 38%),
+    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.018)),
     var(--tech-glass-panel-strong, rgba(16,19,15,.86)) !important;
 }
 
@@ -144,7 +144,7 @@ a:focus-visible,
 .glass-input {
   overflow: hidden;
   background:
-    linear-gradient(145deg, rgba(255,255,255,.07), rgba(255,255,255,.018) 42%, var(--tech-glass-tint, rgba(34,197,94,.12))),
+    linear-gradient(145deg, rgba(255,255,255,.062), rgba(255,255,255,.018) 46%, var(--tech-glass-tint, rgba(34,197,94,.12))),
     var(--tech-glass-panel, rgba(16,19,15,.68)) !important;
 }
 
@@ -157,9 +157,9 @@ a:focus-visible,
   pointer-events: none;
   border-radius: inherit;
   background:
-    linear-gradient(135deg, var(--tech-glass-shine, rgba(255,255,255,.18)), transparent 28%),
-    linear-gradient(315deg, transparent 66%, rgba(255,255,255,.05));
-  opacity: .82;
+    linear-gradient(135deg, var(--tech-glass-shine, rgba(255,255,255,.13)), transparent 30%),
+    linear-gradient(315deg, transparent 68%, rgba(255,255,255,.04));
+  opacity: .62;
 }
 
 .glass-card > *,
@@ -176,7 +176,7 @@ a:focus-visible,
 .glass-button:hover {
   transform: translateY(-1px);
   border-color: var(--tech-glass-edge, rgba(255,255,255,.16)) !important;
-  box-shadow: 0 14px 34px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.18);
+  box-shadow: 0 12px 28px rgba(2,6,23,.32), inset 0 1px 0 rgba(255,255,255,.14);
 }
 
 .glass-input {
@@ -264,19 +264,24 @@ a:focus-visible,
 
 .privacyPage {
   min-height: 100vh;
-  background: #111827;
-  color: #f8fafc;
+  background: linear-gradient(180deg, #f7f9fc 0%, #eef4fb 52%, #e7eef8 100%);
+  color: #102033;
   padding: 48px 18px;
 }
 
 .privacyShell {
   width: min(820px, 100%);
   margin: 0 auto;
+  background: #ffffff;
+  border: 1px solid #d6e1ee;
+  border-radius: 8px;
+  box-shadow: 0 22px 52px rgba(31, 48, 71, .12);
+  padding: clamp(22px, 4vw, 42px);
 }
 
 .privacyEyebrow,
 .privacyUpdated {
-  color: #93c5fd;
+  color: #1f6feb;
   font-size: 14px;
   margin: 0 0 10px;
 }
@@ -284,16 +289,18 @@ a:focus-visible,
 .privacyPage h1 {
   font-size: 42px;
   line-height: 1.1;
+  color: #102033;
   margin: 0 0 10px;
 }
 
 .privacyPage h2 {
   font-size: 20px;
+  color: #102033;
   margin: 32px 0 10px;
 }
 
 .privacyPage p {
-  color: #dbeafe;
+  color: #516173;
   font-size: 16px;
   line-height: 1.75;
   margin: 0 0 16px;

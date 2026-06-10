@@ -118,6 +118,7 @@ export default function Home() {
   const [showScreen, setShowScreen]   = useState(false);
   const [showRecordingReview, setShowRecordingReview] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [topControlsOpen, setTopControlsOpen] = useState(false);
   const [activeTab, setActiveTab]     = useState("chat");
   const [questionMemory, setQuestionMemory] = useState({ questions: {} });
   const [systemDesignCanvas, setSystemDesignCanvas] = useState(() => createSystemDesignCanvasState());
@@ -323,6 +324,16 @@ export default function Home() {
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
+
+  useEffect(() => {
+    if (!topControlsOpen) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setTopControlsOpen(false);
+    };
+
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [topControlsOpen]);
 
   useEffect(() => {
     const clearViewportRestoreTimers = () => {
@@ -1137,6 +1148,73 @@ export default function Home() {
               </button>
             </div>}
 
+            {showInterviewTools && (
+              <div className="compact-controls-menu" style={{ flexShrink: 0, position: "relative" }}>
+                <button
+                  type="button"
+                  className="glass-button"
+                  aria-label="Prep controls"
+                  aria-haspopup="menu"
+                  aria-expanded={topControlsOpen}
+                  onClick={() => setTopControlsOpen((value) => !value)}
+                  style={{ alignItems: "center", border: "1px solid rgba(255,255,255,.09)", borderRadius: 8, color: "#cbd5e1", cursor: "pointer", display: "inline-flex", fontSize: 11.5, fontWeight: 850, gap: 7, minHeight: 34, padding: "7px 10px", whiteSpace: "nowrap" }}
+                >
+                  <i className="ti ti-adjustments-horizontal" style={{ color: techTheme.accentStrong, fontSize: 15 }} />
+                  <span>Prep controls</span>
+                  <i className={`ti ${topControlsOpen ? "ti-chevron-up" : "ti-chevron-down"}`} style={{ color: "#6b7280", fontSize: 13 }} />
+                </button>
+                {topControlsOpen && (
+                  <section
+                    aria-label="Compact prep controls menu"
+                    className="glass-card"
+                    style={{ background: "rgba(8,12,22,.97)", border: "1px solid rgba(255,255,255,.11)", borderRadius: 10, boxShadow: "0 16px 40px rgba(0,0,0,.42)", display: "grid", gap: 10, minWidth: 292, padding: 10, position: "absolute", right: 0, top: "calc(100% + 8px)", zIndex: 45 }}
+                  >
+                    <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", gap: 8 }}>
+                      <strong style={{ color: "#f8fbff", fontSize: 11, fontWeight: 950, textTransform: "uppercase" }}>Prep Controls</strong>
+                      <button type="button" aria-label="Close prep controls" onClick={() => setTopControlsOpen(false)} style={{ alignItems: "center", background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 7, color: "#9ca3af", cursor: "pointer", display: "inline-flex", height: 28, justifyContent: "center", width: 28 }}>
+                        <i className="ti ti-x" />
+                      </button>
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 7 }}>
+                      <button className="glass-button" onClick={() => { setShowScreen(true); setTopControlsOpen(false); }} title="Analyze Screen" aria-label="Analyze Screen" style={{ alignItems: "center", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, color: techTheme.accentText, cursor: "pointer", display: "grid", fontSize: 10.5, fontWeight: 800, gap: 5, justifyItems: "center", minHeight: 50, padding: 7 }}>
+                        <i className="ti ti-screenshot" style={{ fontSize: 17 }} />Screen
+                      </button>
+                      <button className={`glass-button ${isListening ? "recording" : ""}`} onClick={() => { toggleVoice(); setTopControlsOpen(false); }} title="Voice" aria-label="Voice" style={{ alignItems: "center", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, color: isListening ? "#f87171" : techTheme.accentText, cursor: "pointer", display: "grid", fontSize: 10.5, fontWeight: 800, gap: 5, justifyItems: "center", minHeight: 50, padding: 7 }}>
+                        <i className={`ti ${isListening ? "ti-microphone-off" : "ti-microphone"}`} style={{ fontSize: 17 }} />Voice
+                      </button>
+                      <button className="glass-button" onClick={() => { setShowRecordingReview(true); setTopControlsOpen(false); }} title="Record Review" aria-label="Record Review" style={{ alignItems: "center", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, color: techTheme.accentText, cursor: "pointer", display: "grid", fontSize: 10.5, fontWeight: 800, gap: 5, justifyItems: "center", minHeight: 50, padding: 7 }}>
+                        <i className="ti ti-wave-sine" style={{ fontSize: 17 }} />Review
+                      </button>
+                    </div>
+
+                    <div style={{ display: "grid", gap: 8 }}>
+                      <div style={{ display: "flex", background: "rgba(255,255,255,.04)", borderRadius: 8, padding: 2, border: "1px solid rgba(255,255,255,.07)" }}>
+                        {["interview","practice"].map(m => (
+                          <button key={m} className={mode===m?"glass-button":""} onClick={() => setMode(m)} style={{ flex: 1, padding: "6px 10px", fontSize: 11, fontWeight: 800, borderRadius: 6, border: mode===m?`1px solid ${techTheme.accentBorder}`:"none", cursor: "pointer", color: mode===m?techTheme.accentText:"#9ca3af", background: mode===m?techTheme.accentSoft:"transparent", textTransform:"capitalize" }}>{m}</button>
+                        ))}
+                      </div>
+                      <select value={difficulty} onChange={e => setDifficulty(e.target.value)} aria-label="Difficulty level" className="glass-input" style={{ fontSize: 12, padding: "8px 9px", borderRadius: 7, border: "1px solid rgba(255,255,255,.09)", color:"#cbd5e1", outline:"none" }}>
+                        {DIFFS.map(d => <option key={d}>{d}</option>)}
+                      </select>
+                      <select value={interviewMode} onChange={e => setInterviewMode(e.target.value)} aria-label="Interview calibration mode" className="glass-input" style={{ fontSize: 12, padding: "8px 9px", borderRadius: 7, border: "1px solid rgba(255,255,255,.09)", color:"#cbd5e1", outline:"none" }}>
+                        {INTERVIEW_MODES.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}
+                      </select>
+                      <select value={roundStrategy} onChange={e => setRoundStrategy(e.target.value)} aria-label="Round Strategy Mode" className="glass-input" style={{ fontSize: 12, padding: "8px 9px", borderRadius: 7, border: "1px solid rgba(255,255,255,.09)", color:"#cbd5e1", outline:"none" }}>
+                        {ROUND_STRATEGY_MODES.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}
+                      </select>
+                      <select value={interviewPanel} onChange={e => setInterviewPanel(e.target.value)} aria-label="AI Interview Panel Mode" className="glass-input" style={{ fontSize: 12, padding: "8px 9px", borderRadius: 7, border: "1px solid rgba(255,255,255,.09)", color:"#cbd5e1", outline:"none" }}>
+                        {INTERVIEW_PANEL_OPTIONS.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}
+                      </select>
+                      <button className="glass-button" aria-label="Start mock round" onClick={() => { startSession(); setTopControlsOpen(false); }} disabled={!candidateProfile || !selectedCat || loading} style={{ alignItems: "center", border: `1px solid ${techTheme.accentBorder}`, borderRadius: 8, color: techTheme.accentText, cursor: candidateProfile&&selectedCat&&!loading ? "pointer" : "not-allowed", display: "flex", fontSize: 12, fontWeight: 900, gap: 6, justifyContent: "center", minHeight: 39, opacity: candidateProfile&&selectedCat&&!loading ? 1 : .4, padding: "8px 12px" }}>
+                        <i className="ti ti-player-play" style={{ fontSize: 12 }} />Start mock
+                      </button>
+                    </div>
+                  </section>
+                )}
+              </div>
+            )}
+
             {messages.length > 0 && (
               <button className="icon-btn" onClick={clearChat} title="Clear" aria-label="Clear"><i className="ti ti-trash" /></button>
             )}
@@ -1436,30 +1514,34 @@ export default function Home() {
       {/* Responsive CSS injected via style tag */}
       <style>{`
         .desktop-workspace-nav,
-        .tablet-workspace-menu {
+        .tablet-workspace-menu,
+        .compact-controls-menu {
           display: none !important;
         }
         @media (max-width: 760px) {
           .desktop-controls,
           .desktop-workspace-nav,
-          .tablet-workspace-menu {
+          .tablet-workspace-menu,
+          .compact-controls-menu {
             display: none !important;
           }
         }
-        @media (min-width: 761px) and (max-width: 1023px) {
+        @media (min-width: 761px) and (max-width: 1439px) {
           .desktop-controls,
           .desktop-workspace-nav,
           .phone-bottom-nav {
             display: none !important;
           }
-          .tablet-workspace-menu {
+          .tablet-workspace-menu,
+          .compact-controls-menu {
             display: block !important;
           }
         }
-        @media (min-width: 1024px) {
+        @media (min-width: 1440px) {
           .desktop-controls { display: flex !important; }
           .desktop-workspace-nav { display: contents !important; }
-          .tablet-workspace-menu { display: none !important; }
+          .tablet-workspace-menu,
+          .compact-controls-menu { display: none !important; }
         }
         @media (hover: hover) {
           button:hover { opacity: .9; }

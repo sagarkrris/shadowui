@@ -25,9 +25,15 @@ function getValidationMessages(draft) {
   return messages;
 }
 
+function getPrimaryStack(stack = "") {
+  return String(stack).split(/[,+/|]/).map((part) => part.trim()).filter(Boolean)[0] || "Stack";
+}
+
 export default function ProfileSetup({ draft, onChange, onSubmit, theme, keyboardOpen = false }) {
   const validationMessages = getValidationMessages(draft);
   const canContinue = validationMessages.length === 0;
+  const stackPreviewLabel = getPrimaryStack(draft.stack);
+  const rolePreviewLabel = draft.position.trim() || "Target role";
   const readinessStats = [
     ["Role-aware plan", "5 paths"],
     ["Practice signals", "12 checks"],
@@ -35,9 +41,9 @@ export default function ProfileSetup({ draft, onChange, onSubmit, theme, keyboar
   ];
   const prepWorkflow = ["Profile", "Plan", "Practice", "Review"];
   const previewTracks = [
-    ["DSA", "72%", "#1f6feb"],
-    ["System", "58%", "#0f766e"],
-    ["Behavioral", "81%", "#b45309"],
+    [stackPreviewLabel, "Personalized", "ti-stack-2", "#1f6feb"],
+    ["DSA Visual Lab", "Next lesson", "ti-binary-tree", "#0f766e"],
+    [rolePreviewLabel, "Mock focus", "ti-user-check", "#b45309"],
   ];
   const howItWorks = [
     ["01", "Set the target", "Enter role, level, and stack so the prep path starts from your real interview goal."],
@@ -57,11 +63,11 @@ export default function ProfileSetup({ draft, onChange, onSubmit, theme, keyboar
     ["ti-briefcase", "Corporate-ready flow", "A calmer landing page builds trust before the darker, high-energy practice console opens."],
   ];
   const mobilePreviewItems = [
-    ["Watch", "Animated lesson"],
-    ["Predict", "Choose next move"],
-    ["Explain", "Say the why"],
-    ["Practice", "Run the drill"],
-    ["Review", "Log the signal"],
+    ["Watch", "Animated lesson", "done"],
+    ["Predict", "Choose next move", "active"],
+    ["Explain", "Say the why", "idle"],
+    ["Practice", "Run the drill", "idle"],
+    ["Review", "Log the signal", "idle"],
   ];
   const fieldStyle = {
     width: "100%",
@@ -126,22 +132,20 @@ export default function ProfileSetup({ draft, onChange, onSubmit, theme, keyboar
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 14 }}>
                 <div>
                   <div style={{ color: "#0f2844", fontSize: 13, fontWeight: 800 }}>Product dashboard preview</div>
-                  <div style={{ color: "#64748b", fontSize: 11, marginTop: 2 }}>Today&apos;s readiness plan</div>
+                  <div style={{ color: "#64748b", fontSize: 11, marginTop: 2 }}>Sample plan generated from your profile inputs</div>
                 </div>
                 <div style={{ width: 36, height: 36, borderRadius: 8, background: "#e8f0fb", color: "#1f6feb", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <i className="ti ti-chart-line" style={{ fontSize: 18 }} />
                 </div>
               </div>
-              <div style={{ display: "grid", gap: 10 }}>
-                {previewTracks.map(([label, value, color]) => (
-                  <div key={label} style={{ display: "grid", gap: 5 }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, color: "#334155", fontSize: 11, fontWeight: 800 }}>
-                      <span>{label}</span>
-                      <span>{value}</span>
+              <div style={{ display: "grid", gap: 9 }}>
+                {previewTracks.map(([label, value, icon, color]) => (
+                  <div key={label} style={{ alignItems: "center", border: "1px solid #e1e8f0", borderRadius: 8, background: "#fbfdff", display: "grid", gridTemplateColumns: "30px minmax(0, 1fr) auto", gap: 9, minHeight: 44, padding: "8px 9px" }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 8, background: `${color}16`, color, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <i className={`ti ${icon}`} style={{ fontSize: 15 }} />
                     </div>
-                    <div style={{ height: 8, borderRadius: 8, background: "#eef2f7", overflow: "hidden" }}>
-                      <div style={{ width: value, height: "100%", background: color, borderRadius: 8 }} />
-                    </div>
+                    <span style={{ color: "#102033", fontSize: 12, fontWeight: 850, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
+                    <span style={{ border: "1px solid #d9e4f1", borderRadius: 999, color: "#475569", fontSize: 10.5, fontWeight: 850, padding: "4px 7px", whiteSpace: "nowrap" }}>{value}</span>
                   </div>
                 ))}
               </div>
@@ -261,26 +265,44 @@ export default function ProfileSetup({ draft, onChange, onSubmit, theme, keyboar
             </div>
           </div>
 
-          <div style={{ border: "1px solid #cbd8e8", borderRadius: 8, background: "#102033", color: "#ffffff", padding: 18, display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(160px, 220px)", gap: 16, alignItems: "center" }}>
-            <div>
-              <p style={{ color: "#93c5fd", fontSize: 11, fontWeight: 900, textTransform: "uppercase", marginBottom: 7 }}>Mobile app preview</p>
-              <h2 style={{ color: "#ffffff", fontSize: 24, lineHeight: 1.15, fontWeight: 900, marginBottom: 10 }}>Beginner Mode stays trackable on phone.</h2>
-              <p style={{ color: "#cbd5e1", fontSize: 13, lineHeight: 1.55 }}>The mobile view keeps Watch, Predict, Explain, Practice, and Review visible as a practical flow instead of dense desktop panels.</p>
-            </div>
-            <div style={{ border: "1px solid rgba(255,255,255,.18)", borderRadius: 8, background: "#f8fbff", padding: 10, minHeight: 280 }}>
-              <div style={{ height: 18, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10 }}>
-                <span style={{ width: 46, height: 5, borderRadius: 8, background: "#cbd5e1" }} />
-              </div>
-              <div style={{ display: "grid", gap: 8 }}>
-                {mobilePreviewItems.map(([title, copy], index) => (
-                  <div key={title} style={{ border: "1px solid #dbe5f1", borderRadius: 8, background: index === 1 ? "#eaf3ff" : "#ffffff", padding: 9 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                      <span style={{ width: 18, height: 18, borderRadius: 6, background: index === 1 ? "#1f6feb" : "#dbe5f1", color: index === 1 ? "#ffffff" : "#475569", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 900 }}>{index + 1}</span>
-                      <strong style={{ color: "#102033", fontSize: 12 }}>{title}</strong>
-                    </div>
-                    <p style={{ color: "#64748b", fontSize: 11, lineHeight: 1.35, marginTop: 5 }}>{copy}</p>
-                  </div>
+          <div style={{ border: "1px solid #d6e1ee", borderRadius: 8, background: "#ffffff", color: "#102033", padding: 18, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 210px), 1fr))", gap: 16, alignItems: "center" }}>
+            <div style={{ minWidth: 0 }}>
+              <p style={{ color: "#1f6feb", fontSize: 11, fontWeight: 900, textTransform: "uppercase", marginBottom: 7 }}>Mobile app preview</p>
+              <h2 style={{ color: "#102033", fontSize: 24, lineHeight: 1.15, fontWeight: 900, marginBottom: 10 }}>A clean guided flow for phone screens.</h2>
+              <p style={{ color: "#64748b", fontSize: 13, lineHeight: 1.55 }}>Beginner Mode is shown as a compact stepper, so learners always know the current step without reading a dense panel.</p>
+              <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginTop: 12 }}>
+                {["Current step", "Practice cue", "Review signal"].map((label) => (
+                  <span key={label} style={{ border: "1px solid #d9e4f1", borderRadius: 999, color: "#475569", fontSize: 10.5, fontWeight: 850, padding: "5px 8px" }}>{label}</span>
                 ))}
+              </div>
+            </div>
+            <div style={{ border: "1px solid #cbd8e8", borderRadius: 8, background: "#102033", boxShadow: "0 18px 38px rgba(31,48,71,.16)", justifySelf: "center", maxWidth: 236, padding: 10, width: "100%" }}>
+              <div style={{ height: 18, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 9 }}>
+                <span style={{ width: 44, height: 5, borderRadius: 8, background: "rgba(255,255,255,.25)" }} />
+              </div>
+              <div style={{ background: "#f8fbff", borderRadius: 8, padding: 10 }}>
+                <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 10 }}>
+                  <div>
+                    <strong style={{ color: "#102033", display: "block", fontSize: 12 }}>Beginner Mode</strong>
+                    <span style={{ color: "#64748b", display: "block", fontSize: 10.5, marginTop: 2 }}>Step 2 of 5</span>
+                  </div>
+                  <span style={{ background: "#eaf3ff", borderRadius: 999, color: "#1f6feb", fontSize: 10, fontWeight: 900, padding: "4px 7px" }}>Predict</span>
+                </div>
+                <div style={{ display: "grid", gap: 7 }}>
+                  {mobilePreviewItems.map(([title, copy, state], index) => {
+                    const active = state === "active";
+                    const done = state === "done";
+                    return (
+                      <div key={title} style={{ alignItems: "center", border: `1px solid ${active ? "#bfdbfe" : "#e1e8f0"}`, borderRadius: 8, background: active ? "#eff6ff" : "#ffffff", display: "grid", gridTemplateColumns: "24px minmax(0, 1fr)", gap: 8, padding: 8 }}>
+                        <span style={{ width: 22, height: 22, borderRadius: 7, background: active ? "#1f6feb" : done ? "#0f766e" : "#e2e8f0", color: active || done ? "#ffffff" : "#64748b", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 900 }}>{done ? <i className="ti ti-check" /> : index + 1}</span>
+                        <span style={{ minWidth: 0 }}>
+                          <strong style={{ color: "#102033", display: "block", fontSize: 11.5, lineHeight: 1.2 }}>{title}</strong>
+                          <span style={{ color: "#64748b", display: "block", fontSize: 10.3, lineHeight: 1.25, marginTop: 2 }}>{copy}</span>
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>

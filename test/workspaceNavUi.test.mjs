@@ -21,7 +21,9 @@ test("workspace navigation chrome is extracted from the page shell", () => {
   assert.match(indexSource, /TabletWorkspaceMenu/);
   assert.match(indexSource, /desktop-workspace-nav/);
   assert.match(indexSource, /tablet-workspace-menu/);
+  assert.match(indexSource, /compact-controls-menu/);
+  assert.match(indexSource, /Prep controls/);
   assert.match(indexSource, /phone-bottom-nav/);
-  assert.match(indexSource, /min-width: 761px\) and \(max-width: 1023px\)/);
+  assert.match(indexSource, /min-width: 761px\) and \(max-width: 1439px\)/);
   assert.match(indexSource, /MobileBottomNav/);
 });

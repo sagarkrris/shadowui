@@ -61,6 +61,22 @@ test("profile setup uses a corporate onboarding entry", () => {
   assert.match(profileSetupSource, /Corporate trust/);
   assert.match(profileSetupSource, /Mobile app preview/);
   assert.match(profileSetupSource, /Personalize Prep/);
+  assert.match(profileSetupSource, /Sample plan generated from your profile inputs/);
+  assert.match(profileSetupSource, /getPrimaryStack/);
+  assert.doesNotMatch(profileSetupSource, /72%|58%|81%/);
+});
+
+test("public pages share the corporate light theme", () => {
+  assert.match(globalsSource, /\.privacyPage[\s\S]*#f7f9fc/);
+  assert.match(globalsSource, /\.privacyShell[\s\S]*box-shadow/);
+  assert.match(globalsSource, /\.privacyPage h1[\s\S]*#102033/);
+});
+
+test("app shell uses restrained corporate glass surfaces", () => {
+  assert.match(globalsSource, /Corporate glass surfaces/);
+  assert.match(globalsSource, /#151b24/);
+  assert.match(globalsSource, /blur\(16px\) saturate\(1\.18\)/);
+  assert.doesNotMatch(globalsSource, /saturate\(1\.35\)/);
 });
 
 test("resume analyzer explains why the score is not perfect", () => {

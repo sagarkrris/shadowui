@@ -11,7 +11,7 @@ test("returns the Java theme when Java is the selected stack", () => {
 
   assert.equal(theme.key, "java");
   assert.equal(theme.icon, "ti-brand-java");
-  assert.equal(theme.accent, "#f89820");
+  assert.equal(theme.accent, "#b56b2c");
 });
 
 test("returns the Python theme when Python is the selected stack", () => {
@@ -19,7 +19,7 @@ test("returns the Python theme when Python is the selected stack", () => {
 
   assert.equal(theme.key, "python");
   assert.equal(theme.icon, "ti-brand-python");
-  assert.equal(theme.accent, "#3776ab");
+  assert.equal(theme.accent, "#2f6f9f");
 });
 
 test("uses the first strong tech match for multi-stack input", () => {
@@ -57,10 +57,22 @@ test("detects SAP, Ruby, and Rust as first-class stack themes", () => {
 test("uses a non-blue default landing theme", () => {
   const theme = getTechTheme("");
 
-  assert.equal(theme.accent, "#22c55e");
-  assert.equal(theme.accentStrong, "#fb7185");
-  assert.equal(theme.accentText, "#bbf7d0");
-  assert.equal(theme.surface, "#10130f");
+  assert.equal(theme.accent, "#2f6f73");
+  assert.equal(theme.accentStrong, "#b78b4b");
+  assert.equal(theme.accentText, "#d9e6e3");
+  assert.equal(theme.surface, "#151b24");
+});
+
+test("uses varied corporate palettes across stack themes", () => {
+  const java = getTechTheme("Java");
+  const react = getTechTheme("React");
+  const sap = getTechTheme("SAP");
+
+  assert.notEqual(java.surface, react.surface);
+  assert.notEqual(java.accent, react.accent);
+  assert.notEqual(react.accent, sap.accent);
+  assert.match(java.surface, /^#1/);
+  assert.match(react.surface, /^#0|^#1/);
 });
 
 test("provides stack-specific background artwork for known themes", () => {
@@ -77,9 +89,9 @@ test("provides stack-specific background artwork for known themes", () => {
 test("provides glossy glass tokens derived from the selected stack", () => {
   const theme = getTechTheme("Java, Spring Boot");
 
-  assert.equal(theme.glass.panel, "rgba(27,18,8,.68)");
-  assert.equal(theme.glass.panelStrong, "rgba(27,18,8,.86)");
-  assert.equal(theme.glass.tint, "rgba(248,152,32,.18)");
-  assert.equal(theme.glass.shine, "rgba(255,183,74,.26)");
-  assert.match(theme.glass.shadow, /rgba\(0,0,0/);
+  assert.equal(theme.glass.panel, "rgba(29,26,23,.74)");
+  assert.equal(theme.glass.panelStrong, "rgba(29,26,23,.90)");
+  assert.equal(theme.glass.tint, "rgba(181,107,44,.12)");
+  assert.equal(theme.glass.shine, "rgba(224,161,92,.16)");
+  assert.match(theme.glass.shadow, /rgba\(2,6,23/);
 });
