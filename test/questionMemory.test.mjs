@@ -45,6 +45,8 @@ test("saves and loads question memory with the versioned localStorage key", () =
 
 test("records question attempts and updates mastery metadata", () => {
   const storage = memoryStorage();
+  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const today = new Date().toISOString();
 
   const first = recordQuestionAttempt(storage, {
     questionId: "spring-security-jwt",
@@ -53,12 +55,12 @@ test("records question attempts and updates mastery metadata", () => {
     topic: "Spring Security",
     stack: "Java, Spring Boot",
     score: 4,
-    attemptedAt: "2026-05-28T10:00:00.000Z",
+    attemptedAt: yesterday,
   });
   const second = recordQuestionAttempt(storage, {
     questionId: "spring-security-jwt",
     score: 8,
-    attemptedAt: "2026-05-29T10:00:00.000Z",
+    attemptedAt: today,
   });
 
   assert.equal(first.questions["spring-security-jwt"].status, "Needs Review");

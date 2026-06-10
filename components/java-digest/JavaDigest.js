@@ -12,6 +12,7 @@ import {
   getJavaDigestTrack,
   listJavaDigestArticles,
 } from "../../lib/javaDigest.mjs";
+import BeginnerGuideBanner from "../BeginnerGuideBanner";
 import MessageContent from "../chat/MessageContent";
 
 const wrap = {
@@ -66,6 +67,61 @@ function DetailList({ title, icon, items, accent }) {
       <ul style={{ ...wrap, color: "#9fb0c7", display: "grid", fontSize: 11.4, gap: 6, lineHeight: 1.45, margin: 0, paddingLeft: 17 }}>
         {items.map((item) => <li key={item}>{item}</li>)}
       </ul>
+    </section>
+  );
+}
+
+function buildArticleDrill(article) {
+  const primaryLearn = article.learn?.[0] || article.summary;
+  const trap = article.questions?.[0] || "Explain the hidden trade-off before coding.";
+  const followUp = article.questions?.[1] || "How would this change under production constraints?";
+  const snippet = article.trackId === "dsa"
+    ? "for (int i = 0; i < n; i++) {\n    // update state, prove invariant\n}"
+    : "interface ServicePort {\n    Result execute(Command command);\n}";
+
+  return {
+    explain: primaryLearn,
+    snippet,
+    trap,
+    followUp,
+  };
+}
+
+function InterviewDrillCard({ article, accent, onAction }) {
+  const drill = buildArticleDrill(article);
+  const start = () => {
+    onAction?.([
+      `Run a Java interview drill for: ${article.title}.`,
+      `Explain target: ${drill.explain}`,
+      `Code snippet to discuss:\n${drill.snippet}`,
+      `Trap to test: ${drill.trap}`,
+      `Follow-up: ${drill.followUp}`,
+      "Ask me to explain first, then ask for code or trade-offs, then score my answer.",
+    ].join("\n"), { type: "javaDigestDrillCard", article, drill });
+  };
+
+  return (
+    <section style={{ ...wrap, background: "rgba(0,0,0,.16)", border: `1px solid ${accent}28`, borderRadius: 8, display: "grid", gap: 8, padding: 10 }}>
+      <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Interview Drill Card</div>
+      <div style={responsiveGrid(170, 8)}>
+        <div style={{ border: "1px solid rgba(255,255,255,.075)", borderRadius: 7, padding: 8 }}>
+          <strong style={{ color: "#a7f3d0", display: "block", fontSize: 10.5, marginBottom: 4, textTransform: "uppercase" }}>Explain</strong>
+          <span style={{ color: "#dbeafe", fontSize: 11.2, lineHeight: 1.4 }}>{drill.explain}</span>
+        </div>
+        <div style={{ border: "1px solid rgba(255,255,255,.075)", borderRadius: 7, padding: 8 }}>
+          <strong style={{ color: "#facc15", display: "block", fontSize: 10.5, marginBottom: 4, textTransform: "uppercase" }}>Trap</strong>
+          <span style={{ color: "#dbeafe", fontSize: 11.2, lineHeight: 1.4 }}>{drill.trap}</span>
+        </div>
+        <div style={{ border: "1px solid rgba(255,255,255,.075)", borderRadius: 7, padding: 8 }}>
+          <strong style={{ color: "#c4b5fd", display: "block", fontSize: 10.5, marginBottom: 4, textTransform: "uppercase" }}>Follow-up</strong>
+          <span style={{ color: "#dbeafe", fontSize: 11.2, lineHeight: 1.4 }}>{drill.followUp}</span>
+        </div>
+      </div>
+      <code style={{ ...wrap, background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 7, color: "#d1fae5", display: "block", fontSize: 11, lineHeight: 1.45, padding: 8, whiteSpace: "pre-wrap" }}>{drill.snippet}</code>
+      <button type="button" className="glass-button" onClick={start} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, justifySelf: "start", padding: "7px 10px" }}>
+        <i className="ti ti-player-play" style={{ color: accent, marginRight: 6 }} />
+        Start Drill Card
+      </button>
     </section>
   );
 }
@@ -151,6 +207,8 @@ function ArticleCard({ article, accent, onAction }) {
         <DetailList title="What To Learn" icon="ti-list-check" items={article.learn} accent={accent} />
         <DetailList title="Interview Questions" icon="ti-message-question" items={article.questions} accent="#c4b5fd" />
       </div>
+
+      <InterviewDrillCard article={article} accent={accent} onAction={onAction} />
 
       <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 7, minWidth: 0 }}>
         <span style={{ border: "1px solid rgba(250,204,21,.3)", borderRadius: 999, color: "#fde68a", fontSize: 10.5, fontWeight: 900, padding: "3px 7px" }}>{article.level}</span>
@@ -295,7 +353,7 @@ function CsesPartSection({ part, accent, onAction }) {
   );
 }
 
-export default function JavaDigest({ theme = {}, onAction, profile = null }) {
+export default function JavaDigest({ theme = {}, onAction, profile = null, beginnerMode = false, beginnerStep = "watch", onBeginnerStepChange, onActivity }) {
   const [activeTrack, setActiveTrack] = useState("all");
   const [activeView, setActiveView] = useState("Handbook Java");
   const [searchDraft, setSearchDraft] = useState("");
@@ -321,6 +379,12 @@ export default function JavaDigest({ theme = {}, onAction, profile = null }) {
     setGeneratedAnswer("");
     setSearchError("");
     setSearchLoading(true);
+    onActivity?.({
+      workspaceId: "javaDigest",
+      type: "generate",
+      label: "Generated Java topic answer",
+      detail: trimmedTopic,
+    });
 
     try {
       const response = await fetch("/api/chat", {
@@ -398,6 +462,14 @@ export default function JavaDigest({ theme = {}, onAction, profile = null }) {
         width: "100%",
       }}
     >
+      <BeginnerGuideBanner
+        enabled={beginnerMode}
+        accent={accent}
+        currentStep={beginnerStep}
+        onStepSelect={onBeginnerStepChange}
+        detail="For Java: read one concept, predict the interview trap, explain the code cue, practice one drill card, then review the follow-up."
+      />
+
       <header style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "space-between" }}>
         <div style={wrap}>
           <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Java Digest</div>

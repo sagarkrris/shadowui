@@ -10,6 +10,7 @@ import {
   SYSTEM_DESIGN_PATTERN_LIBRARY,
   SYSTEM_DESIGN_CANVAS_SECTIONS,
 } from "../../lib/systemDesignCanvas.mjs";
+import BeginnerGuideBanner from "../BeginnerGuideBanner";
 
 const wrappingTextStyle = {
   minWidth: 0,
@@ -77,6 +78,62 @@ function ListPanel({ title, icon, items, accent, children }) {
   );
 }
 
+function buildArchitectureFlow(blueprint) {
+  const serviceNames = (blueprint?.hld?.services || []).map((service) => service.name);
+  const storage = (blueprint?.lld?.schema || []).length ? "Primary DB" : "Storage";
+  return [
+    { id: "client", label: "Client", icon: "ti-device-laptop", detail: "User request enters the system." },
+    { id: "gateway", label: "Gateway", icon: "ti-shield-lock", detail: "Auth, routing, rate limit, and request shaping." },
+    { id: "service", label: serviceNames[0] || "API Service", icon: "ti-server", detail: "Validates and orchestrates the core workflow." },
+    { id: "cache", label: "Cache", icon: "ti-bolt", detail: "Hot reads, locks, sessions, or derived projections." },
+    { id: "db", label: storage, icon: "ti-database", detail: "Durable source of truth and indexes." },
+    { id: "queue", label: "Queue", icon: "ti-messages", detail: "Async fanout, retries, and slow side effects." },
+  ];
+}
+
+function ArchitectureFlow({ blueprint, activeIndex, accent }) {
+  const steps = buildArchitectureFlow(blueprint);
+  const active = steps[activeIndex % steps.length] || steps[0];
+  const bottleneck = blueprint?.hld?.risks?.[0] || "Watch the highest-contention write path.";
+  const tradeoff = blueprint?.hld?.scaling?.[0] || "Use cache and queues carefully; keep critical writes durable.";
+
+  return (
+    <section style={{ border: `1px solid ${accent}30`, borderRadius: 8, background: "rgba(0,0,0,.16)", display: "grid", gap: 11, padding: 11 }}>
+      <div style={{ alignItems: "center", display: "flex", gap: 8, justifyContent: "space-between", flexWrap: "wrap" }}>
+        <div>
+          <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Animated Architecture Flow</div>
+          <p style={{ color: "#9fb0c7", fontSize: 11.4, lineHeight: 1.45, marginTop: 4 }}>Request path with bottleneck and trade-off callouts.</p>
+        </div>
+        <span style={{ color: "#a7f3d0", fontSize: 10.8, fontWeight: 900 }}>{active.label}</span>
+      </div>
+
+      <div style={{ alignItems: "stretch", display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(92px, 1fr))" }}>
+        {steps.map((step, index) => {
+          const isActive = index === activeIndex % steps.length;
+          return (
+            <div key={step.id} style={{ background: isActive ? `${accent}18` : "rgba(255,255,255,.035)", border: `1px solid ${isActive ? accent : "rgba(255,255,255,.075)"}`, borderRadius: 8, display: "grid", gap: 6, minHeight: 98, padding: 9, transform: isActive ? "translateY(-3px)" : "translateY(0)", transition: "transform .25s ease, border-color .25s ease, background .25s ease" }}>
+              <i className={`ti ${step.icon}`} style={{ color: isActive ? accent : "#9fb0c7", fontSize: 17 }} />
+              <strong style={{ color: "#f8fbff", fontSize: 11.5, lineHeight: 1.3 }}>{step.label}</strong>
+              <span style={{ color: "#9fb0c7", fontSize: 10.5, lineHeight: 1.35 }}>{step.detail}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))" }}>
+        <div style={{ border: "1px solid rgba(250,204,21,.22)", borderRadius: 8, color: "#fde68a", fontSize: 11.2, lineHeight: 1.45, padding: 9 }}>
+          <strong style={{ display: "block", fontSize: 10.5, marginBottom: 4, textTransform: "uppercase" }}>Bottleneck</strong>
+          {bottleneck}
+        </div>
+        <div style={{ border: "1px solid rgba(167,243,208,.22)", borderRadius: 8, color: "#d1fae5", fontSize: 11.2, lineHeight: 1.45, padding: 9 }}>
+          <strong style={{ display: "block", fontSize: 10.5, marginBottom: 4, textTransform: "uppercase" }}>Trade-off</strong>
+          {tradeoff}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function SystemDesignCanvas({
   initialState,
   onChange,
@@ -85,6 +142,9 @@ export default function SystemDesignCanvas({
   onExport,
   onAction,
   theme = {},
+  beginnerMode = false,
+  beginnerStep = "watch",
+  onBeginnerStepChange,
 }) {
   const normalizedInitialState = useMemo(
     () => createSystemDesignCanvasState(initialState),
@@ -93,6 +153,7 @@ export default function SystemDesignCanvas({
   const [canvasState, setCanvasState] = useState(normalizedInitialState);
   const [blueprint, setBlueprint] = useState(() => buildSystemDesignStudioBlueprint(normalizedInitialState));
   const [studioTab, setStudioTab] = useState("HLD");
+  const [flowIndex, setFlowIndex] = useState(0);
   const accent = theme.accentStrong || "#8bd3ff";
   const accentBorder = theme.accentBorder || "rgba(139, 211, 255, .26)";
 
@@ -100,6 +161,14 @@ export default function SystemDesignCanvas({
     setCanvasState(normalizedInitialState);
     setBlueprint(buildSystemDesignStudioBlueprint(normalizedInitialState));
   }, [normalizedInitialState]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setFlowIndex((value) => (value + 1) % 6);
+    }, 1500);
+
+    return () => window.clearInterval(timer);
+  }, []);
 
   const commitState = (nextState) => {
     const normalized = createSystemDesignCanvasState(nextState);
@@ -171,6 +240,14 @@ export default function SystemDesignCanvas({
         width: "100%",
       }}
     >
+      <BeginnerGuideBanner
+        enabled={beginnerMode}
+        accent={accent}
+        currentStep={beginnerStep}
+        onStepSelect={onBeginnerStepChange}
+        detail="For system design: capture requirements, predict the request flow, explain one trade-off, practice a mock question, then review missing scale and failure details."
+      />
+
       <header
         style={{
           alignItems: "start",
@@ -243,29 +320,32 @@ export default function SystemDesignCanvas({
         </div>
 
         {studioTab === "HLD" && (
-          <div style={responsiveGrid(220)}>
-            <ListPanel title="Functional Requirements" icon="ti-list-check" items={blueprint.hld.requirements} accent={accent} />
-            <ListPanel title="Non-Functional Requirements" icon="ti-gauge" items={blueprint.hld.nonFunctional} accent={accent} />
-            <ListPanel title="Services" icon="ti-topology-star" accent={accent}>
-              <div style={{ display: "grid", gap: 7 }}>
-                {blueprint.hld.services.map((service) => (
-                  <div key={service.name} style={{ color: "#9fb0c7", fontSize: 11.4, lineHeight: 1.45 }}>
-                    <strong style={{ color: "#eaf2ff" }}>{service.name}</strong>: {service.responsibility}
-                  </div>
-                ))}
-              </div>
-            </ListPanel>
-            <ListPanel title="APIs" icon="ti-api" accent={accent}>
-              <div style={{ display: "grid", gap: 7 }}>
-                {blueprint.hld.apis.map((api) => (
-                  <div key={`${api.method}-${api.path}`} style={{ color: "#9fb0c7", fontSize: 11.4, lineHeight: 1.45 }}>
-                    <strong style={{ color: "#a7f3d0" }}>{api.method}</strong> <span style={{ color: "#eaf2ff" }}>{api.path}</span> - {api.purpose}
-                  </div>
-                ))}
-              </div>
-            </ListPanel>
-            <ListPanel title="Scaling & Reliability" icon="ti-chart-arrows" items={blueprint.hld.scaling} accent={accent} />
-            <ListPanel title="Risks / Trade-offs" icon="ti-alert-triangle" items={blueprint.hld.risks} accent={accent} />
+          <div style={{ display: "grid", gap: 11 }}>
+            <ArchitectureFlow blueprint={blueprint} activeIndex={flowIndex} accent={accent} />
+            <div style={responsiveGrid(220)}>
+              <ListPanel title="Functional Requirements" icon="ti-list-check" items={blueprint.hld.requirements} accent={accent} />
+              <ListPanel title="Non-Functional Requirements" icon="ti-gauge" items={blueprint.hld.nonFunctional} accent={accent} />
+              <ListPanel title="Services" icon="ti-topology-star" accent={accent}>
+                <div style={{ display: "grid", gap: 7 }}>
+                  {blueprint.hld.services.map((service) => (
+                    <div key={service.name} style={{ color: "#9fb0c7", fontSize: 11.4, lineHeight: 1.45 }}>
+                      <strong style={{ color: "#eaf2ff" }}>{service.name}</strong>: {service.responsibility}
+                    </div>
+                  ))}
+                </div>
+              </ListPanel>
+              <ListPanel title="APIs" icon="ti-api" accent={accent}>
+                <div style={{ display: "grid", gap: 7 }}>
+                  {blueprint.hld.apis.map((api) => (
+                    <div key={`${api.method}-${api.path}`} style={{ color: "#9fb0c7", fontSize: 11.4, lineHeight: 1.45 }}>
+                      <strong style={{ color: "#a7f3d0" }}>{api.method}</strong> <span style={{ color: "#eaf2ff" }}>{api.path}</span> - {api.purpose}
+                    </div>
+                  ))}
+                </div>
+              </ListPanel>
+              <ListPanel title="Scaling & Reliability" icon="ti-chart-arrows" items={blueprint.hld.scaling} accent={accent} />
+              <ListPanel title="Risks / Trade-offs" icon="ti-alert-triangle" items={blueprint.hld.risks} accent={accent} />
+            </div>
           </div>
         )}
 

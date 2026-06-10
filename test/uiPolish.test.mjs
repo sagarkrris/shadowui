@@ -49,6 +49,20 @@ test("profile setup avoids oversized sticky iOS keyboard spacers", () => {
   assert.doesNotMatch(profileSetupSource, /scrollPaddingBottom:\s*160/);
 });
 
+test("profile setup uses a corporate onboarding entry", () => {
+  assert.match(profileSetupSource, /corporate-entry/);
+  assert.match(profileSetupSource, /Corporate interview prep/);
+  assert.match(profileSetupSource, /Product dashboard preview/);
+  assert.match(profileSetupSource, /How it works/);
+  assert.match(profileSetupSource, /DSA Visual Lab/);
+  assert.match(profileSetupSource, /Progress Brain/);
+  assert.match(profileSetupSource, /Scenario Bank/);
+  assert.match(profileSetupSource, /Company Prep/);
+  assert.match(profileSetupSource, /Corporate trust/);
+  assert.match(profileSetupSource, /Mobile app preview/);
+  assert.match(profileSetupSource, /Personalize Prep/);
+});
+
 test("resume analyzer explains why the score is not perfect", () => {
   assert.match(careerToolkitSource, /Why this score/);
   assert.match(careerToolkitSource, /weakestScoreAreas/);

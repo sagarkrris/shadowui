@@ -54,6 +54,73 @@ function MissionButton({ children, icon, onClick, tone, disabled = false }) {
   );
 }
 
+function DailyPrepPath({ missionControl, accent, accentBorder, onAction, onOpenWorkspace }) {
+  const visualMission = missionControl.missions.find((mission) => mission.workspaceId === "dsaLab" || mission.workspaceId === "canvas") || missionControl.missions[0];
+  const mockMission = missionControl.missions.find((mission) => /mock/i.test(mission.actionLabel)) || missionControl.missions[1] || missionControl.missions[0];
+  const reviewMission = missionControl.missions.find((mission) => mission.workspaceId === "canvas") || missionControl.missions[2] || missionControl.missions[0];
+  const steps = [
+    {
+      id: "weakest",
+      icon: "ti-target-arrow",
+      title: "Weakest Topic",
+      detail: missionControl.summary.weakSpot,
+      action: () => onOpenWorkspace?.(visualMission?.workspaceId || "dsaLab"),
+      label: "Open workspace",
+    },
+    {
+      id: "visual",
+      icon: "ti-route",
+      title: "One Visual Drill",
+      detail: visualMission?.title || "Run a focused visual drill.",
+      action: () => visualMission?.prompt ? onAction?.(visualMission.prompt) : onOpenWorkspace?.("dsaLab"),
+      label: "Start drill",
+    },
+    {
+      id: "mock",
+      icon: "ti-player-play",
+      title: "One Mock",
+      detail: mockMission?.title || "Run one scored mock.",
+      action: () => mockMission?.prompt ? onAction?.(mockMission.prompt) : undefined,
+      label: "Start mock",
+    },
+    {
+      id: "review",
+      icon: "ti-notes",
+      title: "One Review",
+      detail: reviewMission?.evidence || "Review the misses and update tomorrow's focus.",
+      action: () => onOpenWorkspace?.(reviewMission?.workspaceId || "canvas"),
+      label: "Review",
+    },
+  ];
+
+  return (
+    <section className="glass-card" style={{ border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 10, padding: 12 }}>
+      <div>
+        <div style={{ alignItems: "center", color: accent, display: "flex", fontSize: 11, fontWeight: 950, gap: 7, textTransform: "uppercase" }}>
+          <i className="ti ti-calendar-bolt" />Daily Prep Path
+        </div>
+        <p style={{ ...wrap, color: "#9ca3af", fontSize: 11.3, lineHeight: 1.45, marginTop: 5 }}>
+          Today: weakest topic, one visual drill, one mock, one review.
+        </p>
+      </div>
+      <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 170px), 1fr))" }}>
+        {steps.map((step, index) => (
+          <article key={step.id} style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 7, minHeight: 128, padding: 10 }}>
+            <span style={{ color: accent, fontSize: 10.5, fontWeight: 950, textTransform: "uppercase" }}>
+              <i className={`ti ${step.icon}`} /> Step {index + 1}
+            </span>
+            <strong style={{ ...wrap, color: "#f8fbff", fontSize: 12.5, lineHeight: 1.35 }}>{step.title}</strong>
+            <span style={{ ...wrap, color: "#cbd5e1", fontSize: 11, lineHeight: 1.4 }}>{step.detail}</span>
+            <button type="button" className="glass-button" onClick={step.action} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", cursor: "pointer", fontSize: 10.6, fontWeight: 850, marginTop: "auto", padding: "6px 8px", textAlign: "left" }}>
+              {step.label}
+            </button>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default function InterviewMissionControl({
   profile,
   topics,
@@ -126,6 +193,14 @@ export default function InterviewMissionControl({
           {missionControl.summary.completedToday}/{missionControl.summary.total} today
         </div>
       </header>
+
+      <DailyPrepPath
+        missionControl={missionControl}
+        accent={accent}
+        accentBorder={accentBorder}
+        onAction={onAction}
+        onOpenWorkspace={onOpenWorkspace}
+      />
 
       <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 245px), 1fr))", minWidth: 0 }}>
         {missionControl.missions.map((mission) => (

@@ -47,6 +47,14 @@ async function expectNoMobileHorizontalOverflow(page, label) {
   });
 }
 
+async function openMobileMenuItem(page, name) {
+  await page.getByRole("button", { name: "More" }).click();
+  const menu = page.getByLabel("Mobile workspace menu");
+  await expect(menu).toBeVisible();
+  await menu.getByRole("button", { name, exact: true }).click();
+  await expect(menu).toHaveCount(0);
+}
+
 const viewports = [
   { name: "mobile", width: 375, height: 812 },
   { name: "tablet", width: 768, height: 1024 },
@@ -65,7 +73,7 @@ test.describe("Non-functional UI/UX, responsiveness, and state management", () =
 
       if (viewport.name === "mobile") {
         await expect(page.getByRole("navigation")).toBeVisible();
-        await page.getByRole("button", { name: "Company", exact: true }).click();
+        await openMobileMenuItem(page, "Company");
         await expect(page.getByRole("heading", { name: "Company Prep" })).toBeVisible();
       } else {
         await page.getByRole("button", { name: "Company Prep" }).click();
@@ -85,15 +93,15 @@ test.describe("Non-functional UI/UX, responsiveness, and state management", () =
       ],
     });
 
-    await page.getByRole("navigation").getByRole("button", { name: "Canvas" }).click();
+    await openMobileMenuItem(page, "Canvas");
     await expect(page.getByText("System Design Canvas + Studio")).toBeVisible();
     await expectNoMobileHorizontalOverflow(page, "System Canvas");
 
-    await page.getByRole("navigation").getByRole("button", { name: "Design Lab" }).click();
+    await openMobileMenuItem(page, "Design Lab");
     await expect(page.getByRole("heading", { name: "Patterns, HLD, LLD, and interview practice" })).toBeVisible();
     await expectNoMobileHorizontalOverflow(page, "Design Lab");
 
-    await page.getByRole("navigation").getByRole("button", { name: "Scenario Bank" }).click();
+    await openMobileMenuItem(page, "Scenario Bank");
     await expect(page.getByText("Scenario Bank")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Java and database real-time interview scenarios" })).toBeVisible();
     await expectNoMobileHorizontalOverflow(page, "Scenario Bank");

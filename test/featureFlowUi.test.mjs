@@ -8,6 +8,8 @@ const insightsSource = readFileSync(new URL("../components/welcome/PrepInsightsP
 const postAnswerToolsUrl = new URL("../components/chat/PostAnswerTools.js", import.meta.url);
 const postAnswerToolsSource = existsSync(postAnswerToolsUrl) ? readFileSync(postAnswerToolsUrl, "utf8") : "";
 const welcomeSource = readFileSync(new URL("../components/welcome/Welcome.js", import.meta.url), "utf8");
+const progressBrainSource = readFileSync(new URL("../components/welcome/UnifiedProgressBrain.js", import.meta.url), "utf8");
+const beginnerGuideSource = readFileSync(new URL("../components/BeginnerGuideBanner.js", import.meta.url), "utf8");
 const practicePackSource = readFileSync(new URL("../components/welcome/PracticePack.js", import.meta.url), "utf8");
 const careerToolkitSource = readFileSync(new URL("../components/welcome/CareerToolkit.js", import.meta.url), "utf8");
 const chatPromptSource = readFileSync(new URL("../lib/chatPrompt.mjs", import.meta.url), "utf8");
@@ -217,6 +219,65 @@ test("role pack builder and final interview report are visible from prep surface
   assert.match(insightsSource, /rolePack/);
   assert.match(insightsSource, /masteryMap/);
   assert.match(insightsSource, /systemDesignCanvas/);
+});
+
+test("unified progress brain beginner mode and replay timeline are wired into prep home", () => {
+  assert.match(welcomeSource, /UnifiedProgressBrain/);
+  assert.match(progressBrainSource, /buildUnifiedPrepProgress/);
+  assert.match(progressBrainSource, /prepProgressState/);
+  assert.match(progressBrainSource, /Unified Progress Brain/);
+  assert.match(progressBrainSource, /Beginner Guided Mode/);
+  assert.match(progressBrainSource, /Practice Replay Timeline/);
+  assert.match(progressBrainSource, /Beginner Path/);
+  assert.match(progressBrainSource, /Export Daily Prep Plan/);
+  assert.match(progressBrainSource, /Copy Plan/);
+  assert.match(progressBrainSource, /Download/);
+  assert.match(progressBrainSource, /repeat\(auto-fit, minmax\(min\(100%, 260px\), 1fr\)\)/);
+  assert.match(progressBrainSource, /maxWidth:\s*"100%"/);
+  assert.match(welcomeSource, /onBeginnerStepChange/);
+  assert.match(welcomeSource, /onExportPlan/);
+  assert.match(indexSource, /BEGINNER_GUIDED_MODE_KEY/);
+  assert.match(indexSource, /PREP_PROGRESS_STORAGE_KEY/);
+  assert.match(indexSource, /loadVersionedState/);
+  assert.match(indexSource, /recordPrepActivity/);
+  assert.match(indexSource, /recordBeginnerStep/);
+  assert.match(indexSource, /recordWorkspaceActivity/);
+  assert.match(indexSource, /onActivity={recordWorkspaceActivity}/);
+  assert.match(indexSource, /exportPrepPlan/);
+  assert.match(indexSource, /beginnerMode/);
+  assert.match(indexSource, /setBeginnerMode/);
+  assert.match(indexSource, /prepProgressState/);
+});
+
+test("beginner guide banner is reusable across upgraded workspaces", () => {
+  const dsaSource = readFileSync(new URL("../components/dsa/DsaVisualLab.js", import.meta.url), "utf8");
+  const scenarioSource = readFileSync(new URL("../components/scenario-bank/ScenarioBank.js", import.meta.url), "utf8");
+  const javaSource = readFileSync(new URL("../components/java-digest/JavaDigest.js", import.meta.url), "utf8");
+  const canvasSource = readFileSync(new URL("../components/system-design/SystemDesignCanvas.js", import.meta.url), "utf8");
+  const designSource = readFileSync(new URL("../components/design-lab/DesignLab.js", import.meta.url), "utf8");
+
+  assert.match(beginnerGuideSource, /Beginner Guided Mode/);
+  assert.match(beginnerGuideSource, /currentStep/);
+  assert.match(beginnerGuideSource, /onStepSelect/);
+  assert.match(beginnerGuideSource, /aria-pressed/);
+  assert.match(dsaSource, /BeginnerGuideBanner/);
+  assert.match(dsaSource, /onActivity/);
+  assert.match(scenarioSource, /BeginnerGuideBanner/);
+  assert.match(scenarioSource, /onActivity/);
+  assert.match(javaSource, /BeginnerGuideBanner/);
+  assert.match(javaSource, /onActivity/);
+  assert.match(canvasSource, /BeginnerGuideBanner/);
+  assert.match(designSource, /BeginnerGuideBanner/);
+  assert.match(companySource, /BeginnerGuideBanner/);
+  assert.match(companySource, /onActivity/);
+  assert.match(indexSource, /beginnerStep={prepProgressState\.beginnerStep}/);
+  assert.match(indexSource, /onBeginnerStepChange={setBeginnerStep}/);
+});
+
+test("new progress panels avoid dense fixed columns on phone width", () => {
+  assert.match(companySource, /repeat\(auto-fit, minmax\(min\(100%, 150px\), 1fr\)\)/);
+  assert.match(progressBrainSource, /repeat\(auto-fit, minmax\(min\(100%, 160px\), 1fr\)\)/);
+  assert.match(progressBrainSource, /flexWrap:\s*"wrap"/);
 });
 
 test("DSA Visual Lab is a first-class learning workspace", () => {

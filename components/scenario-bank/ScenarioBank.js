@@ -17,6 +17,7 @@ import {
   recordScenarioBankAttempt,
 } from "../../lib/scenarioBank.mjs";
 import { loadVersionedState, saveVersionedState } from "../../lib/localStateStore.mjs";
+import BeginnerGuideBanner from "../BeginnerGuideBanner";
 
 const wrap = {
   minWidth: 0,
@@ -32,6 +33,16 @@ const responsiveGrid = (minColumnWidth, gap = 10) => ({
 });
 
 const supportedDatabaseCopy = "PostgreSQL, MySQL, MongoDB, Redis";
+const ANSWER_STYLES = [
+  { key: "concise", label: "Concise", icon: "ti-align-left", guidance: "Direct answer, trade-off, one example, no wandering." },
+  { key: "star", label: "STAR", icon: "ti-stars", guidance: "Situation, task, action, result, then technical lesson." },
+  { key: "senior", label: "Senior Engineer", icon: "ti-badge", guidance: "Diagnosis, options, chosen trade-off, failure modes, observability." },
+  { key: "barRaiser", label: "Bar Raiser", icon: "ti-diamond", guidance: "High ownership, ambiguity handling, measurable impact, follow-up depth." },
+];
+
+function escapeRegExp(value) {
+  return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
 function getBrowserStorage() {
   return typeof window !== "undefined" ? window.localStorage : null;
@@ -119,6 +130,100 @@ function ProgressMetric({ label, value, accent }) {
   );
 }
 
+function scoreScenarioAnswer(answer, style, scenario) {
+  const text = String(answer || "").toLowerCase();
+  const trapTerms = String(scenario?.traps?.[0] || "trap")
+    .split(/\s+/)
+    .slice(0, 3)
+    .map(escapeRegExp)
+    .filter(Boolean)
+    .join("|");
+  const styleChecks = {
+    concise: [
+      ["Direct answer", /\b(i would|use|choose|because|trade[- ]?off)\b/i],
+      ["Example", /\b(example|for instance|case)\b/i],
+      ["Trap awareness", new RegExp(trapTerms || "trap", "i")],
+    ],
+    star: [
+      ["Situation", /\bsituation|context|when\b/i],
+      ["Task", /\btask|goal|needed\b/i],
+      ["Action", /\baction|i did|implemented|changed\b/i],
+      ["Result", /\bresult|impact|reduced|improved|saved|increased\b/i],
+    ],
+    senior: [
+      ["Diagnosis", /\bdiagnose|root cause|bottleneck|latency|failure\b/i],
+      ["Options", /\boption|alternative|trade[- ]?off|choose\b/i],
+      ["Operations", /\bmetric|log|trace|alert|observability|rollback\b/i],
+      ["Risk", /\brisk|failure|edge|fallback|degrad/i],
+    ],
+    barRaiser: [
+      ["Ownership", /\bowned|ownership|led|drove|decided\b/i],
+      ["Ambiguity", /\bambiguous|unclear|incomplete|trade[- ]?off\b/i],
+      ["Impact", /\bimpact|customer|business|measur|percent|%|revenue\b/i],
+      ["Follow-up depth", /\bfollow[- ]?up|next|learned|prevent\b/i],
+    ],
+  };
+  const checks = styleChecks[style] || styleChecks.concise;
+  const results = checks.map(([label, pattern]) => ({
+    label,
+    covered: pattern.test(text),
+  }));
+  const score = results.length ? Math.round((results.filter((item) => item.covered).length / results.length) * 100) : 0;
+
+  return {
+    score,
+    checks: results,
+    summary: score >= 75
+      ? "This answer fits the selected style. Tighten with one sharper metric or trade-off."
+      : score >= 45
+        ? "Good base. Add the missing style markers before using it in a mock."
+        : "Not interview-ready yet. Start with the style structure, then add technical evidence.",
+  };
+}
+
+function AnswerStyleLab({ scenario, accent }) {
+  const [style, setStyle] = useState("concise");
+  const [answer, setAnswer] = useState("");
+  const assessment = useMemo(() => scoreScenarioAnswer(answer, style, scenario), [answer, style, scenario]);
+  const selectedStyle = ANSWER_STYLES.find((item) => item.key === style) || ANSWER_STYLES[0];
+
+  return (
+    <section style={{ ...wrap, background: "rgba(0,0,0,.16)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, display: "grid", gap: 9, padding: 10 }}>
+      <div style={{ alignItems: "center", display: "flex", gap: 8, justifyContent: "space-between", flexWrap: "wrap" }}>
+        <h4 style={{ color: "#f8fbff", fontSize: 12, margin: 0 }}>Answer Style Lab</h4>
+        <span style={{ color: assessment.score >= 75 ? "#a7f3d0" : accent, fontSize: 11, fontWeight: 900 }}>{assessment.score}%</span>
+      </div>
+      <div style={{ display: "grid", gap: 7, gridTemplateColumns: "repeat(auto-fit, minmax(116px, 1fr))" }}>
+        {ANSWER_STYLES.map((item) => {
+          const active = item.key === style;
+          return (
+            <button key={item.key} type="button" className={active ? "glass-button" : ""} onClick={() => setStyle(item.key)} style={{ alignItems: "center", background: active ? "rgba(139,211,255,.12)" : "rgba(255,255,255,.035)", border: `1px solid ${active ? accent : "rgba(255,255,255,.075)"}`, borderRadius: 7, color: active ? "#f8fbff" : "#9fb0c7", cursor: "pointer", display: "flex", fontSize: 10.5, fontWeight: 850, gap: 6, justifyContent: "center", padding: "7px 8px" }}>
+              <i className={`ti ${item.icon}`} style={{ color: active ? accent : "#9fb0c7" }} />
+              {item.label}
+            </button>
+          );
+        })}
+      </div>
+      <p style={{ color: "#9fb0c7", fontSize: 11.2, lineHeight: 1.45, margin: 0 }}>{selectedStyle.guidance}</p>
+      <textarea
+        value={answer}
+        onChange={(event) => setAnswer(event.target.value)}
+        rows={4}
+        placeholder={`Draft a ${selectedStyle.label.toLowerCase()} answer for this scenario...`}
+        style={{ background: "rgba(255,255,255,.045)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 7, color: "#f8fbff", fontSize: 12, lineHeight: 1.45, minHeight: 92, outline: "none", padding: 9, resize: "vertical" }}
+      />
+      <div style={{ color: "#dbeafe", fontSize: 11.4, lineHeight: 1.45 }}>{assessment.summary}</div>
+      <div style={{ display: "grid", gap: 6, gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))" }}>
+        {assessment.checks.map((check) => (
+          <span key={check.label} style={{ border: `1px solid ${check.covered ? "rgba(167,243,208,.26)" : "rgba(255,255,255,.08)"}`, borderRadius: 7, color: check.covered ? "#a7f3d0" : "#9fb0c7", fontSize: 10.6, fontWeight: 850, padding: "6px 8px" }}>
+            <i className={`ti ${check.covered ? "ti-circle-check" : "ti-circle"}`} /> {check.label}
+          </span>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function ScenarioCard({ scenario, scenarioProgress, state, accent, onAction, onRecord, onGenerateFresh, generated = false }) {
   const askVariant = () => {
     onGenerateFresh?.(scenario);
@@ -163,6 +268,8 @@ function ScenarioCard({ scenario, scenarioProgress, state, accent, onAction, onR
         <p style={{ ...wrap, color: "#cbd5e1", fontSize: 11.6, lineHeight: 1.55 }}>{scenario.deepDive}</p>
       </section>
 
+      <AnswerStyleLab scenario={scenario} accent={accent} />
+
       <div style={{ display: "flex", flexWrap: "wrap", gap: 7, minWidth: 0 }}>
         <button type="button" className="glass-button" onClick={askVariant} title="Generate Fresh Scenario" style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
           <i className="ti ti-sparkles" style={{ color: accent, marginRight: 6 }} />
@@ -189,7 +296,7 @@ function ScenarioCard({ scenario, scenarioProgress, state, accent, onAction, onR
   );
 }
 
-export default function ScenarioBank({ theme = {}, onAction }) {
+export default function ScenarioBank({ theme = {}, onAction, beginnerMode = false, beginnerStep = "watch", onBeginnerStepChange, onActivity }) {
   const [state, setState] = useState(() => createScenarioBankState());
   const [progress, setProgress] = useState(() => createScenarioBankProgress());
   const [generatedScenario, setGeneratedScenario] = useState(null);
@@ -234,11 +341,23 @@ export default function ScenarioBank({ theme = {}, onAction }) {
   };
   const recordProgress = (scenario, outcome) => {
     setProgress((previous) => recordScenarioBankAttempt(previous, scenario, { outcome }));
+    onActivity?.({
+      workspaceId: "scenarioBank",
+      type: outcome === "mastered" ? "practice" : "review",
+      label: outcome === "mastered" ? "Marked scenario mastered" : "Marked scenario for review",
+      detail: scenario?.title || scenario?.prompt || "Scenario progress updated.",
+    });
   };
   const generateFreshScenario = (scenario) => {
     const nextScenario = buildLocalScenarioVariant(scenario, state, { variantIndex });
     setGeneratedScenario(nextScenario);
     setVariantIndex((previous) => previous + 1);
+    onActivity?.({
+      workspaceId: "scenarioBank",
+      type: "generate",
+      label: "Generated scenario variant",
+      detail: nextScenario.title,
+    });
   };
   const startDailyPlan = () => {
     onAction?.(interviewPlan.prompt, { type: "scenarioPlan", state, plan: interviewPlan });
@@ -265,6 +384,14 @@ export default function ScenarioBank({ theme = {}, onAction }) {
         width: "100%",
       }}
     >
+      <BeginnerGuideBanner
+        enabled={beginnerMode}
+        accent={accent}
+        currentStep={beginnerStep}
+        onStepSelect={onBeginnerStepChange}
+        detail="For scenarios: read the prompt, predict the interviewer signal, explain with one structure, practice one answer, then review the missing rubric item."
+      />
+
       <header style={{ alignItems: "start", display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "space-between", minWidth: 0 }}>
         <div style={wrap}>
           <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Scenario Bank</div>

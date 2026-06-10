@@ -6,6 +6,7 @@ import {
   listDesignLabPracticeSystems,
   normalizeDesignSystemSearchQuery,
 } from "../../lib/designLab.mjs";
+import BeginnerGuideBanner from "../BeginnerGuideBanner";
 
 const wrap = {
   minWidth: 0,
@@ -261,7 +262,7 @@ function DesignSearchPanel({ query, onQueryChange, onSubmit, accent, accentBorde
   );
 }
 
-export default function DesignLab({ theme = {}, onAction }) {
+export default function DesignLab({ theme = {}, onAction, beginnerMode = false, beginnerStep = "watch", onBeginnerStepChange }) {
   const [activeTab, setActiveTab] = useState("Patterns");
   const [searchQuery, setSearchQuery] = useState("");
   const practiceSystems = useMemo(() => listDesignLabPracticeSystems(), []);
@@ -301,6 +302,14 @@ export default function DesignLab({ theme = {}, onAction }) {
         width: "100%",
       }}
     >
+      <BeginnerGuideBanner
+        enabled={beginnerMode}
+        accent={accent}
+        currentStep={beginnerStep}
+        onStepSelect={onBeginnerStepChange}
+        detail="For design: watch one pattern, predict the trade-off, explain the API shape, practice a design prompt, then review the missing constraint."
+      />
+
       <header style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "space-between" }}>
         <div style={wrap}>
           <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Design Lab</div>

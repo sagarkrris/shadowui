@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { buildCompanyMockPrompt, buildCompanyPrepRoom, buildCompanyReadinessScore, buildQuestionBankRefreshState, markQuestionBankVerified } from "../../lib/companyPrep.mjs";
+import BeginnerGuideBanner from "../BeginnerGuideBanner";
 
 const QUESTION_BANK_REFRESH_KEY = "interviewiq.companyPrep.refresh.v1";
 const CAREER_TOOLKIT_STORAGE_KEY = "interviewiq.careerToolkit.v1";
+const COMPANY_ROUND_MAP_KEY = "interviewiq.companyPrep.roundMap.v1";
 
 function readCareerToolkitState() {
   if (typeof window === "undefined") return {};
@@ -62,13 +64,142 @@ function QuestionList({ title, icon, items, company, type, theme, onMock }) {
   );
 }
 
-export default function CompanyPrep({ theme, weakSpots, mockScores = [], messages = [], selectedCat, selectedSub, onMock }) {
+function readRoundMapState(company) {
+  if (typeof window === "undefined") return {};
+
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(COMPANY_ROUND_MAP_KEY) || "{}");
+    return parsed?.[company] || {};
+  } catch {
+    return {};
+  }
+}
+
+function saveRoundMapState(company, state) {
+  if (typeof window === "undefined" || !company) return;
+
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(COMPANY_ROUND_MAP_KEY) || "{}");
+    window.localStorage.setItem(COMPANY_ROUND_MAP_KEY, JSON.stringify({ ...parsed, [company]: state }));
+  } catch {
+    // Round tracking is local-only; prep content should keep working without storage.
+  }
+}
+
+function buildDefaultRoundMap(prepRoom, weakSpots = []) {
+  const rounds = prepRoom?.interviewRounds?.length ? prepRoom.interviewRounds : [
+    { id: "recruiter", name: "Recruiter", focus: "Role fit", detail: "Clarify background, motivation, and logistics." },
+    { id: "coding", name: "Coding", focus: "DSA", detail: "Solve a coding prompt with dry run, edge cases, and complexity." },
+    { id: "system-design", name: "System Design", focus: "Architecture", detail: "Discuss requirements, APIs, storage, scaling, and trade-offs." },
+    { id: "manager", name: "Manager", focus: "Behavioral", detail: "Show ownership, conflict handling, and delivery judgment." },
+  ];
+
+  return rounds.map((round, index) => {
+    const text = `${round.name} ${round.focus} ${round.detail}`.toLowerCase();
+    const weakMatches = weakSpots.filter((spot) => text.includes(String(spot).toLowerCase()));
+
+    return {
+      ...round,
+      order: index + 1,
+      weakMatches,
+      defaultStatus: weakMatches.length ? "weak" : "planned",
+    };
+  });
+}
+
+function RoundMap({ prep, prepRoom, weakSpots, state, theme, onUpdate, onMock, onActivity }) {
+  const rounds = buildDefaultRoundMap(prepRoom, weakSpots);
+  const statusTone = {
+    planned: theme.accentStrong,
+    practiced: "#a7f3d0",
+    weak: "#fda4af",
+  };
+
+  const setStatus = (round, status) => {
+    const next = {
+      ...state,
+      [round.id]: {
+        ...(state[round.id] || {}),
+        status,
+        updatedAt: new Date().toISOString(),
+      },
+    };
+    onUpdate(next);
+    onActivity?.({
+      workspaceId: "company",
+      type: status === "weak" ? "review" : "practice",
+      label: status === "weak" ? "Marked company round weak" : "Marked company round practiced",
+      detail: `${prep.company} ${round.name}`,
+    });
+  };
+
+  return (
+    <section className="glass-card" style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, display: "grid", gap: 11, padding: 12 }}>
+      <div style={{ alignItems: "start", display: "flex", gap: 10, justifyContent: "space-between", flexWrap: "wrap" }}>
+        <div>
+          <h2 style={{ color: theme.accentText, fontSize: 14, display: "flex", alignItems: "center", gap: 7, marginBottom: 4 }}>
+            <i className="ti ti-route" />Round Map
+          </h2>
+          <p style={{ color: "#9ca3af", fontSize: 11.5, lineHeight: 1.45 }}>
+            Recruiter to final loop, with local weak-spot status per round.
+          </p>
+        </div>
+        <span style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 999, color: theme.accentStrong, fontSize: 10.5, fontWeight: 900, padding: "5px 8px" }}>
+          {prep.company}
+        </span>
+      </div>
+
+      <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 190px), 1fr))" }}>
+        {rounds.map((round) => {
+          const saved = state[round.id] || {};
+          const status = saved.status || round.defaultStatus;
+          const tone = statusTone[status] || theme.accentStrong;
+          const mockPrompt = [
+            `Run a ${prep.company} ${round.name} round for ${prepRoom?.roleContext || "my target role"}.`,
+            `Round focus: ${round.focus}.`,
+            `Round detail: ${round.detail}.`,
+            round.weakMatches.length ? `Pay special attention to weak spots: ${round.weakMatches.join(", ")}.` : "Score clarity, depth, and interview readiness.",
+          ].join("\n");
+
+          return (
+            <article key={round.id} style={{ background: "rgba(0,0,0,.14)", border: `1px solid ${tone}40`, borderRadius: 8, display: "grid", gap: 8, padding: 10 }}>
+              <div style={{ alignItems: "center", display: "flex", gap: 7, justifyContent: "space-between" }}>
+                <span style={{ color: tone, fontSize: 10.5, fontWeight: 950, textTransform: "uppercase" }}>Round {round.order}</span>
+                <span style={{ color: tone, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>{status}</span>
+              </div>
+              <strong style={{ color: "#f8fbff", fontSize: 12.5, lineHeight: 1.35 }}>{round.name}</strong>
+              <span style={{ color: "#cbd5e1", fontSize: 11.2, lineHeight: 1.4 }}>{round.focus}</span>
+              <span style={{ color: "#9ca3af", fontSize: 10.8, lineHeight: 1.4 }}>{round.detail}</span>
+              {round.weakMatches.length ? (
+                <span style={{ color: "#fecdd3", fontSize: 10.5, lineHeight: 1.35 }}>Weak spot: {round.weakMatches.join(", ")}</span>
+              ) : null}
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                <button type="button" className="glass-button" onClick={() => onMock(mockPrompt)} style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 7, color: theme.accentText, cursor: "pointer", fontSize: 10.5, fontWeight: 850, padding: "6px 8px" }}>
+                  <i className="ti ti-player-play" />Mock
+                </button>
+                <button type="button" onClick={() => setStatus(round, "practiced")} style={{ background: "rgba(167,243,208,.07)", border: "1px solid rgba(167,243,208,.24)", borderRadius: 7, color: "#a7f3d0", cursor: "pointer", fontSize: 10.5, fontWeight: 850, padding: "6px 8px" }}>
+                  Practiced
+                </button>
+                <button type="button" onClick={() => setStatus(round, "weak")} style={{ background: "rgba(253,164,175,.07)", border: "1px solid rgba(253,164,175,.24)", borderRadius: 7, color: "#fda4af", cursor: "pointer", fontSize: 10.5, fontWeight: 850, padding: "6px 8px" }}>
+                  Weak
+                </button>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+export default function CompanyPrep({ theme, weakSpots, mockScores = [], messages = [], selectedCat, selectedSub, onMock, beginnerMode = false, beginnerStep = "watch", onBeginnerStepChange, onActivity }) {
   const [query, setQuery] = useState("Amazon");
   const [roleContext, setRoleContext] = useState("");
   const [companyPrep, setCompanyPrep] = useState(null);
   const [refreshState, setRefreshState] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [roundMapState, setRoundMapState] = useState({});
 
   const loadCompany = async (company = query) => {
     const trimmed = company.trim() || "Amazon";
@@ -80,6 +211,7 @@ export default function CompanyPrep({ theme, weakSpots, mockScores = [], message
       const data = await response.json();
       setCompanyPrep(data);
       setRefreshState(readRefreshState(data.company));
+      setRoundMapState(readRoundMapState(data.company));
     } catch (err) {
       setError(err.message || "Could not load company prep");
     } finally {
@@ -116,6 +248,12 @@ export default function CompanyPrep({ theme, weakSpots, mockScores = [], message
     const nextState = buildQuestionBankRefreshState({ prep });
     setRefreshState(nextState);
     saveRefreshState(nextState);
+    onActivity?.({
+      workspaceId: "company",
+      type: "refresh",
+      label: "Refreshed company question bank",
+      detail: prep?.company || "Company prep",
+    });
   };
 
   const markVerified = (questionId) => {
@@ -123,6 +261,16 @@ export default function CompanyPrep({ theme, weakSpots, mockScores = [], message
     const nextState = markQuestionBankVerified(baseState, { questionId });
     setRefreshState(nextState);
     saveRefreshState(nextState);
+    onActivity?.({
+      workspaceId: "company",
+      type: "review",
+      label: "Verified company question",
+      detail: questionId,
+    });
+  };
+  const updateRoundMapState = (nextState) => {
+    setRoundMapState(nextState);
+    saveRoundMapState(prep?.company, nextState);
   };
 
   const prep = companyPrep;
@@ -150,12 +298,20 @@ export default function CompanyPrep({ theme, weakSpots, mockScores = [], message
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: "18px 16px 22px" }}>
       <div style={{ maxWidth: 1100, margin: "0 auto", display: "grid", gap: 14 }}>
+        <BeginnerGuideBanner
+          enabled={beginnerMode}
+          accent={theme.accentStrong}
+          currentStep={beginnerStep}
+          onStepSelect={onBeginnerStepChange}
+          detail="For company prep: pick one round, predict what the interviewer wants, explain one answer, practice a mock, then mark the round Practiced or Weak."
+        />
+
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <div style={{ flex: "1 1 260px" }}>
             <h1 style={{ fontSize: 18, color: "#e8e8f0", marginBottom: 4 }}>Company Prep</h1>
             <p style={{ fontSize: 12.5, color: "#6b7280", lineHeight: 1.5 }}>Publicly reported questions, mock interviews, weak spots, and source links.</p>
           </div>
-          <form onSubmit={(event) => { event.preventDefault(); loadCompany(); }} style={{ display: "grid", gridTemplateColumns: "minmax(130px, 1fr) minmax(150px, 1fr) auto", gap: 7, flex: "1 1 430px" }}>
+          <form onSubmit={(event) => { event.preventDefault(); loadCompany(); }} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 150px), 1fr))", gap: 7, flex: "1 1 430px", minWidth: 0 }}>
             <input className="glass-input" aria-label="Company search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search company, e.g. Amazon" style={{ minWidth: 0, border: "1px solid rgba(255,255,255,.09)", borderRadius: 8, padding: "9px 11px", color: "#e8e8f0", outline: "none", fontSize: 13 }} />
             <input className="glass-input" aria-label="Role context" value={roleContext} onChange={(event) => setRoleContext(event.target.value)} placeholder="Role context, e.g. SDE II backend" style={{ minWidth: 0, border: "1px solid rgba(255,255,255,.09)", borderRadius: 8, padding: "9px 11px", color: "#e8e8f0", outline: "none", fontSize: 13 }} />
             <button className="glass-button" disabled={loading} style={{ border: `1px solid ${theme.accentBorder}`, color: theme.accentText, borderRadius: 8, padding: "0 13px", fontSize: 12, fontWeight: 700 }}>
@@ -315,6 +471,19 @@ export default function CompanyPrep({ theme, weakSpots, mockScores = [], message
                   </button>
                 </section>
               </section>
+            )}
+
+            {prepRoom && (
+              <RoundMap
+                prep={prep}
+                prepRoom={prepRoom}
+                weakSpots={weakSpots}
+                state={roundMapState}
+                theme={theme}
+                onUpdate={updateRoundMapState}
+                onMock={onMock}
+                onActivity={onActivity}
+              />
             )}
 
             <section className="glass-card" style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 12 }}>

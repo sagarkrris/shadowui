@@ -11,9 +11,10 @@ import CareerToolkit from "./CareerToolkit";
 import InterviewMissionControl from "./InterviewMissionControl";
 import PrepOSDashboard from "./PrepOSDashboard";
 import SmartPrepTimeline from "./SmartPrepTimeline";
+import UnifiedProgressBrain from "./UnifiedProgressBrain";
 import CodeRunner from "../CodeRunner";
 
-export default function Welcome({ onChip, onScreen, onVoice, onRecordReview, selectedCat, selectedSub, mode, difficulty, theme, profile, showCodeTools, topics, weakSpots, mockScores, messages, questionMemory, onQuestionMemoryChange, systemDesignCanvas, onPracticeMock, onOpenWorkspace }) {
+export default function Welcome({ onChip, onScreen, onVoice, onRecordReview, selectedCat, selectedSub, mode, difficulty, theme, profile, showCodeTools, topics, weakSpots, mockScores, messages, questionMemory, onQuestionMemoryChange, systemDesignCanvas, onPracticeMock, onOpenWorkspace, beginnerMode, onBeginnerModeChange, prepProgressState, onBeginnerStepChange, onExportPlan }) {
   const [toolkitState, setToolkitState] = useState({});
   const topic = selectedSub || selectedCat;
   const quickPrompts = getQuickPrompts(selectedCat, selectedSub);
@@ -83,6 +84,23 @@ export default function Welcome({ onChip, onScreen, onVoice, onRecordReview, sel
         theme={theme}
         onAction={onChip}
         onOpenWorkspace={onOpenWorkspace}
+      />
+
+      <UnifiedProgressBrain
+        profile={profile}
+        weakSpots={weakSpots}
+        mockScores={mockScores}
+        questionMemory={questionMemory}
+        systemDesignCanvas={systemDesignCanvas}
+        messages={messages}
+        prepProgressState={prepProgressState}
+        theme={theme}
+        beginnerMode={beginnerMode}
+        onBeginnerModeChange={onBeginnerModeChange}
+        onBeginnerStepChange={onBeginnerStepChange}
+        onAction={onChip}
+        onOpenWorkspace={onOpenWorkspace}
+        onExportPlan={onExportPlan}
       />
 
       {mode === "practice" && (

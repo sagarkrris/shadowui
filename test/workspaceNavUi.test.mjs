@@ -11,6 +11,11 @@ test("workspace navigation chrome is extracted from the page shell", () => {
   assert.match(navSource, /MobileBottomNav/);
   assert.match(navSource, /workspaces\.map/);
   assert.match(navSource, /items\.map/);
+  assert.match(navSource, /aria-current/);
+  assert.match(navSource, /Workspace Menu/);
+  assert.match(navSource, /aria-haspopup/);
+  assert.match(navSource, /compactLabel/);
+  assert.match(navSource, /quickItems/);
   assert.match(indexSource, /DesktopWorkspaceNav/);
   assert.match(indexSource, /MobileBottomNav/);
 });

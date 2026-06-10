@@ -25,8 +25,16 @@ import { buildInterviewRecordingReviewPrompt } from "../lib/interviewRecordingRe
 import { INTERVIEW_PANELISTS, normalizeInterviewPanel } from "../lib/interviewPanel.mjs";
 import { deriveWeakSpots } from "../lib/companyPrep.mjs";
 import { createHomeNavigationState, createTopicSelectionNavigationState } from "../lib/homeNavigation.mjs";
+import { loadVersionedState, saveVersionedState } from "../lib/localStateStore.mjs";
 import { buildUserPrepLabel, getDisplayName, getStackGreeting } from "../lib/personalization.mjs";
 import { deriveMockScores } from "../lib/prepCoach.mjs";
+import {
+  PREP_PROGRESS_STORAGE_KEY,
+  PREP_PROGRESS_STORAGE_VERSION,
+  createPrepProgressState,
+  recordBeginnerStep,
+  recordPrepActivity,
+} from "../lib/prepProgressBrain.mjs";
 import { getPrepLabel, getRecommendedTopics } from "../lib/prepTopics.mjs";
 import { loadQuestionMemory, recordQuestionAttempt } from "../lib/questionMemory.mjs";
 import { DEFAULT_PROFILE, DIFFS } from "../lib/prompts.mjs";
@@ -37,9 +45,10 @@ import { canUseChatComposer, canUseInterviewTools, canUsePrepTopics, shouldShowC
 import { getAppShellHeight, getStableViewportHeight, getVisibleViewportHeight, isCompactViewport, isVirtualKeyboardOpen } from "../lib/viewportMode.mjs";
 import { buildSpeechTranscript, getVoiceErrorMessage, getVoiceSupport } from "../lib/voiceSupport.mjs";
 import { buildWorkspaceActionDisplayText } from "../lib/workspaceActionDisplay.mjs";
-import { getWorkspaceTitle, listDesktopWorkspaces, listMobileWorkspaces, normalizeWorkspaceTab } from "../lib/workspaces.mjs";
+import { getWorkspaceById, getWorkspaceTitle, listDesktopWorkspaces, listMobileWorkspaces, normalizeWorkspaceTab } from "../lib/workspaces.mjs";
 
 const MOCK_ANSWER_SECONDS = 120;
+const BEGINNER_GUIDED_MODE_KEY = "interviewiq.beginnerGuidedMode.v1";
 const INTERVIEW_MODES = [
   { key: "strict", label: "Strict Interviewer" },
   { key: "coach", label: "Coach Mode" },
@@ -112,6 +121,8 @@ export default function Home() {
   const [activeTab, setActiveTab]     = useState("chat");
   const [questionMemory, setQuestionMemory] = useState({ questions: {} });
   const [systemDesignCanvas, setSystemDesignCanvas] = useState(() => createSystemDesignCanvasState());
+  const [beginnerMode, setBeginnerMode] = useState(false);
+  const [prepProgressState, setPrepProgressState] = useState(() => createPrepProgressState());
   const [isKeyboardOpen, setKeyboardOpen] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
   const [toast, setToast]             = useState(null);
@@ -134,6 +145,7 @@ export default function Home() {
   const viewportWidthRef = useRef(0);
   const keyboardOpenRef = useRef(false);
   const viewportRestoreTimers = useRef([]);
+  const activityThrottleRef = useRef({});
   const visibleTopics = getRecommendedTopics(candidateProfile || profileDraft);
   const techTheme = getTechTheme(candidateProfile?.stack || profileDraft.stack);
   const prepLabel = getPrepLabel(candidateProfile?.stack || profileDraft.stack);
@@ -161,11 +173,74 @@ export default function Home() {
   });
   const desktopWorkspaces = listDesktopWorkspaces();
   const mobileWorkspaces = listMobileWorkspaces();
+  const recordWorkspaceActivity = useCallback((event = {}) => {
+    const key = event.dedupeKey || `${event.workspaceId || "chat"}:${event.type || "activity"}`;
+    const dedupeMs = Number(event.dedupeMs || 0);
+    const currentTime = Date.now();
+
+    if (dedupeMs > 0 && currentTime - (activityThrottleRef.current[key] || 0) < dedupeMs) return;
+    activityThrottleRef.current[key] = currentTime;
+
+    setPrepProgressState((previous) => {
+      const next = recordPrepActivity(previous, {
+        ...event,
+        happenedAt: event.happenedAt || new Date().toISOString(),
+      });
+
+      if (typeof window !== "undefined") {
+        saveVersionedState(window.localStorage, {
+          key: PREP_PROGRESS_STORAGE_KEY,
+          version: PREP_PROGRESS_STORAGE_VERSION,
+          value: next,
+          normalize: createPrepProgressState,
+        });
+      }
+
+      return next;
+    });
+  }, []);
+  const setBeginnerStep = useCallback((stepId) => {
+    setPrepProgressState((previous) => {
+      const next = recordBeginnerStep(previous, stepId);
+
+      if (typeof window !== "undefined") {
+        saveVersionedState(window.localStorage, {
+          key: PREP_PROGRESS_STORAGE_KEY,
+          version: PREP_PROGRESS_STORAGE_VERSION,
+          value: next,
+          normalize: createPrepProgressState,
+        });
+      }
+
+      return next;
+    });
+  }, []);
   const toggleWorkspace = (workspaceId) => {
-    setActiveTab(activeTab === workspaceId ? "chat" : workspaceId);
+    const normalized = normalizeWorkspaceTab(workspaceId);
+    const nextTab = activeTab === normalized ? "chat" : normalized;
+    setActiveTab(nextTab);
+    if (nextTab !== "chat") {
+      recordWorkspaceActivity({
+        workspaceId: nextTab,
+        type: "open",
+        label: `Opened ${getWorkspaceById(nextTab)?.label || "workspace"}`,
+        detail: "Opened from the workspace navigation.",
+        dedupeMs: 12000,
+      });
+    }
   };
   const openWorkspace = (workspaceId) => {
-    setActiveTab(normalizeWorkspaceTab(workspaceId));
+    const normalized = normalizeWorkspaceTab(workspaceId);
+    setActiveTab(normalized);
+    if (normalized !== "chat") {
+      recordWorkspaceActivity({
+        workspaceId: normalized,
+        type: "open",
+        label: `Opened ${getWorkspaceById(normalized)?.label || "workspace"}`,
+        detail: "Opened from a progress recommendation.",
+        dedupeMs: 12000,
+      });
+    }
     if (isMobile) setSidebar(false);
   };
 
@@ -188,8 +263,20 @@ export default function Home() {
       setActiveTab(savedSession.activeTab);
     }
     setQuestionMemory(loadQuestionMemory(window.localStorage));
+    setBeginnerMode(window.localStorage.getItem(BEGINNER_GUIDED_MODE_KEY) === "1");
+    setPrepProgressState(loadVersionedState(window.localStorage, {
+      key: PREP_PROGRESS_STORAGE_KEY,
+      version: PREP_PROGRESS_STORAGE_VERSION,
+      fallback: createPrepProgressState(),
+      normalize: createPrepProgressState,
+    }));
     setSessionReady(true);
   }, []);
+
+  useEffect(() => {
+    if (!sessionReady) return;
+    window.localStorage.setItem(BEGINNER_GUIDED_MODE_KEY, beginnerMode ? "1" : "0");
+  }, [beginnerMode, sessionReady]);
 
   useEffect(() => {
     if (!sessionReady) return;
@@ -354,6 +441,40 @@ export default function Home() {
     const timer = window.setInterval(tick, 1000);
     return () => window.clearInterval(timer);
   }, [mockTimerEndsAt, mockTimerStatus, showToast]);
+
+  const exportPrepPlan = useCallback(async (markdown, mode = "copy") => {
+    const text = String(markdown || "").trim();
+    if (!text) {
+      showToast("No daily prep plan is ready yet.", "info");
+      return;
+    }
+
+    const downloadPlan = () => {
+      const blob = new Blob([text], { type: "text/markdown;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "interviewiq-daily-prep-plan.md";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    };
+
+    if (mode === "download") {
+      downloadPlan();
+      showToast("Daily prep plan downloaded.", "info");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast("Daily prep plan copied.", "info");
+    } catch {
+      downloadPlan();
+      showToast("Clipboard unavailable, downloaded the plan instead.", "info");
+    }
+  }, [showToast]);
 
   // ── API call ──────────────────────────────────────────────────────────────
   const callAPI = useCallback(async (userText, options = {}) => {
@@ -593,11 +714,23 @@ export default function Home() {
 
   const startCompanyMock = (prompt) => {
     setActiveTab("chat");
+    recordWorkspaceActivity({
+      workspaceId: "company",
+      type: "mock",
+      label: "Started company mock",
+      detail: "Launched a company-focused practice prompt.",
+    });
     callAPI(prompt);
   };
 
   const startCanvasAction = (prompt, metadata = {}) => {
     setActiveTab("chat");
+    recordWorkspaceActivity({
+      workspaceId: "canvas",
+      type: metadata?.type || "action",
+      label: "Ran System Canvas action",
+      detail: buildWorkspaceActionDisplayText(prompt, metadata),
+    });
     callAPI(prompt, {
       roundStrategy: "systemDesign",
       interviewPanel: "systemDesignArchitect",
@@ -608,6 +741,12 @@ export default function Home() {
 
   const startDesignLabAction = (prompt, metadata = {}) => {
     setActiveTab("chat");
+    recordWorkspaceActivity({
+      workspaceId: "designLab",
+      type: metadata?.type || "action",
+      label: "Ran Design Lab action",
+      detail: buildWorkspaceActionDisplayText(prompt, metadata),
+    });
     callAPI(prompt, {
       roundStrategy: "systemDesign",
       interviewPanel: "systemDesignArchitect",
@@ -618,6 +757,12 @@ export default function Home() {
 
   const startScenarioBankAction = (prompt, metadata = {}) => {
     setActiveTab("chat");
+    recordWorkspaceActivity({
+      workspaceId: "scenarioBank",
+      type: metadata?.type || "scenario",
+      label: "Started scenario practice",
+      detail: buildWorkspaceActionDisplayText(prompt, metadata),
+    });
     callAPI(prompt, {
       roundStrategy: metadata?.state?.track === "database" ? "systemDesign" : "coding",
       interviewPanel: metadata?.state?.track === "database" ? "systemDesignArchitect" : "seniorEngineer",
@@ -628,6 +773,12 @@ export default function Home() {
 
   const startJavaDigestAction = (prompt, metadata = {}) => {
     setActiveTab("chat");
+    recordWorkspaceActivity({
+      workspaceId: "javaDigest",
+      type: metadata?.type || "java",
+      label: "Started Java drill",
+      detail: buildWorkspaceActionDisplayText(prompt, metadata),
+    });
     callAPI(prompt, {
       interviewMode: metadata?.type === "javaDigestMock" ? "strict" : "directAnswer",
       roundStrategy: metadata?.type === "javaDigestMock" ? "coding" : "directAnswer",
@@ -639,6 +790,12 @@ export default function Home() {
 
   const startDsaLabPractice = (prompt, metadata = {}) => {
     setActiveTab("chat");
+    recordWorkspaceActivity({
+      workspaceId: "dsaLab",
+      type: "practice",
+      label: "Started DSA visual practice",
+      detail: buildWorkspaceActionDisplayText(prompt, metadata),
+    });
     callAPI(prompt, {
       roundStrategy: "coding",
       interviewPanel: "seniorEngineer",
@@ -678,6 +835,12 @@ export default function Home() {
       pendingPracticeCard.current = { card, pack };
     }
     setActiveTab("chat");
+    recordWorkspaceActivity({
+      workspaceId: "chat",
+      type: "mock",
+      label: "Started practice pack mock",
+      detail: question || "Practice pack question started.",
+    });
     callAPI(prompt, {
       displayText: `Practice as mock: ${question}`,
     });
@@ -685,6 +848,12 @@ export default function Home() {
 
   const submitRecordingReview = ({ review, prompt, transcript }) => {
     setShowRecordingReview(false);
+    recordWorkspaceActivity({
+      workspaceId: "chat",
+      type: "review",
+      label: "Submitted recording review",
+      detail: review.displayText || "Interview recording review",
+    });
     const apiText = [
       buildInterviewRecordingReviewPrompt(review, {
         role: candidateProfile?.position,
@@ -735,8 +904,14 @@ export default function Home() {
     setActiveTab("chat");
     setMockTimerStatus("idle");
     setMockTimerEndsAt(null);
+    recordWorkspaceActivity({
+      workspaceId: "chat",
+      type: mode === "interview" ? "mock" : "practice",
+      label: mode === "interview" ? "Started mock interview" : "Started practice session",
+      detail: `${difficulty} ${topic}`,
+    });
     setTimeout(() => callAPI(prompt, { startAnswerTimer: mode === "interview" }), 50);
-  }, [callAPI, candidateProfile, difficulty, displayName, interviewMode, interviewPanel, loading, mode, roundStrategy, selectedCat, selectedSub]);
+  }, [callAPI, candidateProfile, difficulty, displayName, interviewMode, interviewPanel, loading, mode, recordWorkspaceActivity, roundStrategy, selectedCat, selectedSub]);
 
   const clearChat = useCallback(() => {
     abortRef.current?.abort(); setMessages([]); setLoading(false);
@@ -979,27 +1154,98 @@ export default function Home() {
             {activeTab === "course" ? (
               <AgenticUICourse theme={techTheme} variant="full" />
             ) : activeTab==="scenarioBank" ? (
-              <ScenarioBank theme={techTheme} onAction={startScenarioBankAction} />
+              <ScenarioBank
+                theme={techTheme}
+                onAction={startScenarioBankAction}
+                beginnerMode={beginnerMode}
+                beginnerStep={prepProgressState.beginnerStep}
+                onBeginnerStepChange={setBeginnerStep}
+                onActivity={recordWorkspaceActivity}
+              />
             ) : activeTab==="javaDigest" ? (
-              <JavaDigest theme={techTheme} onAction={startJavaDigestAction} profile={candidateProfile || profileDraft} />
+              <JavaDigest
+                theme={techTheme}
+                onAction={startJavaDigestAction}
+                profile={candidateProfile || profileDraft}
+                beginnerMode={beginnerMode}
+                beginnerStep={prepProgressState.beginnerStep}
+                onBeginnerStepChange={setBeginnerStep}
+                onActivity={recordWorkspaceActivity}
+              />
             ) : activeTab==="designLab" ? (
-              <DesignLab theme={techTheme} onAction={startDesignLabAction} />
+              <DesignLab
+                theme={techTheme}
+                onAction={startDesignLabAction}
+                beginnerMode={beginnerMode}
+                beginnerStep={prepProgressState.beginnerStep}
+                onBeginnerStepChange={setBeginnerStep}
+              />
             ) : activeTab==="dsaLab" ? (
-              <DsaVisualLab theme={techTheme} profile={candidateProfile || profileDraft} initialLessonId="arrays" onPractice={startDsaLabPractice} />
+              <DsaVisualLab
+                theme={techTheme}
+                profile={candidateProfile || profileDraft}
+                initialLessonId="arrays"
+                onPractice={startDsaLabPractice}
+                beginnerMode={beginnerMode}
+                beginnerStep={prepProgressState.beginnerStep}
+                onBeginnerStepChange={setBeginnerStep}
+                onActivity={recordWorkspaceActivity}
+              />
             ) : activeTab === "canvas" ? (
               <SystemDesignCanvas
                 theme={techTheme}
                 initialState={systemDesignCanvas}
-                onChange={setSystemDesignCanvas}
+                onChange={(nextCanvasState) => {
+                  setSystemDesignCanvas(nextCanvasState);
+                  recordWorkspaceActivity({
+                    workspaceId: "canvas",
+                    type: "edit",
+                    label: "Updated System Design Canvas",
+                    detail: "Captured requirements, architecture, scale, or failure notes.",
+                    dedupeKey: "canvas:edit",
+                    dedupeMs: 30000,
+                  });
+                }}
                 onAction={startCanvasAction}
+                onExport={() => {
+                  recordWorkspaceActivity({
+                    workspaceId: "canvas",
+                    type: "export",
+                    label: "Exported System Design Canvas",
+                    detail: "Copied system design notes as Markdown.",
+                  });
+                }}
+                beginnerMode={beginnerMode}
+                beginnerStep={prepProgressState.beginnerStep}
+                onBeginnerStepChange={setBeginnerStep}
               />
             ) : activeTab === "company" ? (
-              <CompanyPrep theme={techTheme} weakSpots={weakSpots} mockScores={mockScores} messages={messages} selectedCat={selectedCat} selectedSub={selectedSub} onMock={startCompanyMock} />
+              <CompanyPrep
+                theme={techTheme}
+                weakSpots={weakSpots}
+                mockScores={mockScores}
+                messages={messages}
+                selectedCat={selectedCat}
+                selectedSub={selectedSub}
+                onMock={startCompanyMock}
+                beginnerMode={beginnerMode}
+                beginnerStep={prepProgressState.beginnerStep}
+                onBeginnerStepChange={setBeginnerStep}
+                onActivity={recordWorkspaceActivity}
+              />
             ) : messages.length === 0 && !loading
               ? !candidateProfile
                 ? <ProfileSetup theme={techTheme} draft={profileDraft} onChange={setProfileDraft} onSubmit={saveProfile} keyboardOpen={isKeyboardOpen} />
                 : <Welcome
-                  onChip={t => callAPI(t)}
+                  onChip={(text) => {
+                    recordWorkspaceActivity({
+                      workspaceId: "chat",
+                      type: "prompt",
+                      label: "Started guided home prompt",
+                      detail: String(text || "").slice(0, 180),
+                    });
+                    callAPI(text);
+                  }}
                   onScreen={() => setShowScreen(true)}
                   onVoice={toggleVoice}
                   onRecordReview={() => setShowRecordingReview(true)}
@@ -1019,6 +1265,11 @@ export default function Home() {
                   systemDesignCanvas={systemDesignCanvas}
                   onPracticeMock={startPracticeMock}
                   onOpenWorkspace={openWorkspace}
+                  beginnerMode={beginnerMode}
+                  onBeginnerModeChange={setBeginnerMode}
+                  prepProgressState={prepProgressState}
+                  onBeginnerStepChange={setBeginnerStep}
+                  onExportPlan={exportPrepPlan}
                 />
               : (
                 <>

@@ -28,78 +28,279 @@ function getValidationMessages(draft) {
 export default function ProfileSetup({ draft, onChange, onSubmit, theme, keyboardOpen = false }) {
   const validationMessages = getValidationMessages(draft);
   const canContinue = validationMessages.length === 0;
-  const unlockCards = [
-    ["ti-list-check", "Stack Topics", "Sidebar topics change to match Java, Python, React, and more."],
-    ["ti-building", "Company Prep", "Search a company and start mocks from reported interview patterns."],
-    ["ti-message-circle", "Mock Rounds", "Practice interview or learning mode with calibrated difficulty."],
-    ["ti-target-arrow", "Weak Spots", "Feedback gaps are tracked automatically after mock answers."],
+  const readinessStats = [
+    ["Role-aware plan", "5 paths"],
+    ["Practice signals", "12 checks"],
+    ["Beginner flow", "5 steps"],
+  ];
+  const prepWorkflow = ["Profile", "Plan", "Practice", "Review"];
+  const previewTracks = [
+    ["DSA", "72%", "#1f6feb"],
+    ["System", "58%", "#0f766e"],
+    ["Behavioral", "81%", "#b45309"],
+  ];
+  const howItWorks = [
+    ["01", "Set the target", "Enter role, level, and stack so the prep path starts from your real interview goal."],
+    ["02", "Train visually", "Use animated DSA, scenario prompts, and workspace practice instead of static notes."],
+    ["03", "Track progress", "Progress Brain turns activity into current step, weak spots, and a daily plan."],
+    ["04", "Review like a pro", "Mocks, answer rewrites, and company prep keep the final run focused."],
+  ];
+  const featureCards = [
+    ["ti-binary-tree", "DSA Visual Lab", "Watch algorithms move through reel-style diagrams, then predict and practice the next step."],
+    ["ti-brain", "Progress Brain", "Unified progress events convert activity into readiness, beginner state, and daily prep plans."],
+    ["ti-stack-2", "Scenario Bank", "Practice production-style situations with prompts for debugging, design, and stakeholder tradeoffs."],
+    ["ti-building-skyscraper", "Company Prep", "Build company-specific mock rounds from role context, likely questions, and final-day checklists."],
+  ];
+  const trustSignals = [
+    ["ti-shield-check", "Profile-first personalization", "Your landing setup drives recommendations before any workspace noise appears."],
+    ["ti-lock", "Focused private practice", "Prep tools are built around local state and explicit actions rather than public social feeds."],
+    ["ti-briefcase", "Corporate-ready flow", "A calmer landing page builds trust before the darker, high-energy practice console opens."],
+  ];
+  const mobilePreviewItems = [
+    ["Watch", "Animated lesson"],
+    ["Predict", "Choose next move"],
+    ["Explain", "Say the why"],
+    ["Practice", "Run the drill"],
+    ["Review", "Log the signal"],
   ];
   const fieldStyle = {
     width: "100%",
-    border: "1px solid rgba(255,255,255,.09)",
-    borderRadius: 9,
-    padding: "10px 12px",
+    border: "1px solid #d8e2ef",
+    borderRadius: 8,
+    padding: "11px 12px",
     fontSize: 13,
-    color: "#e8e8f0",
+    color: "#172033",
+    background: "#ffffff",
     outline: "none",
+    boxShadow: "0 1px 0 rgba(15,23,42,.03)",
   };
+  const labelStyle = { display: "grid", gap: 6, fontSize: 12, color: "#475569", fontWeight: 700 };
   const handleFieldFocus = (event) => {
     scrollFocusedControlIntoView(event.currentTarget);
   };
+  const focusProfileForm = () => {
+    if (typeof document === "undefined") return;
+    document.getElementById("profile-name")?.focus();
+  };
 
   return (
-    <div className={`welcome-screen profile-setup-screen${keyboardOpen ? " keyboard-active" : ""}`} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: keyboardOpen ? "flex-start" : "center", padding: keyboardOpen ? "12px 20px 24px" : "28px 20px", textAlign: "center", overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain", scrollPaddingTop: 18, scrollPaddingBottom: keyboardOpen ? 32 : 48 }}>
-      <div className="welcome-logo" style={{ width: 60, height: 60, borderRadius: "50%", background: theme.accentSoft, border: `1px solid ${theme.accentBorder}`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18 }}>
-        <i className={`ti ${theme.icon}`} style={{ fontSize: 26, color: theme.accentStrong }} />
-      </div>
-      <h1 className="welcome-title" style={{ fontSize: 20, fontWeight: 600, color: "#e8e8f0", marginBottom: 8 }}>Tell me your interview target</h1>
-      <p className="welcome-copy" style={{ fontSize: 13.5, color: "#6b7280", marginBottom: 22, maxWidth: 380, lineHeight: 1.65 }}>
-        I will tailor sections and questions to your role, experience, and stack.
-      </p>
-
-      <div style={{ width: "100%", maxWidth: 430, display: "grid", gap: 10, textAlign: "left" }}>
-        <label style={{ display: "grid", gap: 5, fontSize: 12, color: "#9ca3af" }}>
-          Name
-          <input className="glass-input" value={draft.name} onFocus={handleFieldFocus} onChange={(event) => onChange({ ...draft, name: event.target.value })} placeholder="e.g. Sagar" style={fieldStyle} />
-        </label>
-        <label style={{ display: "grid", gap: 5, fontSize: 12, color: "#9ca3af" }}>
-          Position
-          <input className="glass-input" value={draft.position} onFocus={handleFieldFocus} onChange={(event) => onChange({ ...draft, position: event.target.value })} placeholder="e.g. Full Stack Developer, Frontend Developer" style={fieldStyle} />
-        </label>
-        <label style={{ display: "grid", gap: 5, fontSize: 12, color: "#9ca3af" }}>
-          Years of experience
-          <select className="glass-input" value={draft.experience} onFocus={handleFieldFocus} onChange={(event) => onChange({ ...draft, experience: event.target.value })} style={fieldStyle}>
-            <option value="">Select experience</option>
-            <option>0-1 years</option>
-            <option>2-4 years</option>
-            <option>5-7 years</option>
-            <option>8+ years</option>
-          </select>
-        </label>
-        <label style={{ display: "grid", gap: 5, fontSize: 12, color: "#9ca3af" }}>
-          Tech stack
-          <input className="glass-input" value={draft.stack} onFocus={handleFieldFocus} onChange={(event) => onChange({ ...draft, stack: event.target.value })} placeholder="e.g. Java, React, SQL, SAP, Ruby, Rust, AWS" style={fieldStyle} />
-        </label>
-        <button className="glass-button" onClick={onSubmit} disabled={!canContinue} style={{ marginTop: 4, padding: "10px 14px", borderRadius: 9, border: `1px solid ${theme.accentBorder}`, color: canContinue ? theme.accentText : "#4b5563", fontSize: 13, fontWeight: 600, cursor: canContinue ? "pointer" : "not-allowed" }}>
-          Personalize Prep
-        </button>
-        {validationMessages.length ? (
-          <div role="alert" aria-live="polite" style={{ display: "grid", gap: 3, color: "#fca5a5", fontSize: 11.5, lineHeight: 1.4 }}>
-            {validationMessages.map((message) => <span key={message}>{message}</span>)}
-          </div>
-        ) : null}
-      </div>
-
-      <div style={{ width: "100%", maxWidth: 720, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10, marginTop: 20, textAlign: "left" }}>
-        {unlockCards.map(([icon, title, copy]) => (
-          <div key={title} className="glass-card" style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 11, minHeight: 96 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 7, color: theme.accentText, fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
-              <i className={`ti ${icon}`} style={{ color: theme.accentStrong }} />{title}
+    <div className={`welcome-screen profile-setup-screen corporate-entry${keyboardOpen ? " keyboard-active" : ""}`} style={{ flex: 1, width: "100%", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: keyboardOpen ? "12px 16px 24px" : "20px", overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain", scrollPaddingTop: 18, scrollPaddingBottom: keyboardOpen ? 32 : 48, background: "linear-gradient(180deg, #f7f9fc 0%, #eef4fb 48%, #e7eef8 100%)", color: "#172033" }}>
+      <main style={{ width: "100%", maxWidth: 1180, display: "grid", gap: 22, textAlign: "left" }}>
+        <section style={{ minHeight: keyboardOpen ? "auto" : "min(720px, calc(100vh - 40px))", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 342px), 1fr))", gap: 18, alignItems: "center" }}>
+          <div style={{ display: "grid", gap: 18, padding: "clamp(4px, 1.8vw, 16px)", minWidth: 0 }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 9, justifySelf: "start", minHeight: 34, padding: "6px 10px", border: "1px solid #cad7e6", borderRadius: 8, background: "#ffffff", color: "#1e3a5f", fontSize: 12, fontWeight: 800 }}>
+              <span style={{ width: 21, height: 21, borderRadius: 6, background: "#123252", color: "#ffffff", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                <i className={`ti ${theme.icon}`} style={{ fontSize: 13 }} />
+              </span>
+              InterviewIQ
             </div>
-            <p style={{ color: "#6b7280", fontSize: 11.5, lineHeight: 1.45 }}>{copy}</p>
+            <div>
+              <h1 style={{ maxWidth: 620, fontSize: "clamp(42px, 7vw, 78px)", lineHeight: .96, fontWeight: 900, color: "#0f2035", marginBottom: 12 }}>
+                InterviewIQ
+              </h1>
+              <p style={{ maxWidth: 610, fontSize: "clamp(18px, 2.3vw, 26px)", color: "#26384f", lineHeight: 1.28, fontWeight: 800, marginBottom: 13 }}>
+                Corporate interview prep that turns practice into a guided readiness system.
+              </p>
+              <p style={{ maxWidth: 580, fontSize: 15, color: "#516173", lineHeight: 1.65 }}>
+                Build a polished first impression, then move into a darker focused workspace for visual DSA, mock rounds, company prep, and measurable progress.
+              </p>
+            </div>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <button type="button" onClick={focusProfileForm} style={{ display: "inline-flex", alignItems: "center", gap: 8, minHeight: 42, padding: "10px 15px", borderRadius: 8, border: "1px solid #123252", background: "#123252", color: "#ffffff", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
+                <i className="ti ti-arrow-right" />Build my plan
+              </button>
+              <button type="button" onClick={focusProfileForm} style={{ display: "inline-flex", alignItems: "center", gap: 8, minHeight: 42, padding: "10px 15px", borderRadius: 8, border: "1px solid #cbd8e8", background: "#ffffff", color: "#123252", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
+                <i className="ti ti-layout-dashboard" />Open workspace preview
+              </button>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(116px, 1fr))", gap: 10, maxWidth: 520 }}>
+              {readinessStats.map(([label, value]) => (
+                <div key={label} style={{ border: "1px solid #d5e0ed", borderRadius: 8, background: "rgba(255,255,255,.78)", padding: "12px 13px" }}>
+                  <div style={{ color: "#0f2844", fontSize: 22, fontWeight: 800, lineHeight: 1 }}>{value}</div>
+                  <div style={{ color: "#64748b", fontSize: 11, fontWeight: 700, marginTop: 6 }}>{label}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ border: "1px solid #ccd9e8", borderRadius: 8, background: "#ffffff", boxShadow: "0 18px 42px rgba(31,48,71,.12)", padding: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 14 }}>
+                <div>
+                  <div style={{ color: "#0f2844", fontSize: 13, fontWeight: 800 }}>Product dashboard preview</div>
+                  <div style={{ color: "#64748b", fontSize: 11, marginTop: 2 }}>Today&apos;s readiness plan</div>
+                </div>
+                <div style={{ width: 36, height: 36, borderRadius: 8, background: "#e8f0fb", color: "#1f6feb", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <i className="ti ti-chart-line" style={{ fontSize: 18 }} />
+                </div>
+              </div>
+              <div style={{ display: "grid", gap: 10 }}>
+                {previewTracks.map(([label, value, color]) => (
+                  <div key={label} style={{ display: "grid", gap: 5 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, color: "#334155", fontSize: 11, fontWeight: 800 }}>
+                      <span>{label}</span>
+                      <span>{value}</span>
+                    </div>
+                    <div style={{ height: 8, borderRadius: 8, background: "#eef2f7", overflow: "hidden" }}>
+                      <div style={{ width: value, height: "100%", background: color, borderRadius: 8 }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 7, marginTop: 16 }}>
+                {prepWorkflow.map((step, index) => (
+                  <div key={step} style={{ minHeight: 54, border: "1px solid #e1e8f0", borderRadius: 8, padding: 8, background: index === 0 ? "#f0f6ff" : "#fbfdff" }}>
+                    <div style={{ width: 18, height: 18, borderRadius: 6, background: index === 0 ? "#1f6feb" : "#dbe5f1", color: index === 0 ? "#ffffff" : "#475569", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800 }}>{index + 1}</div>
+                    <div style={{ color: "#334155", fontSize: 10.5, fontWeight: 800, marginTop: 7, overflowWrap: "anywhere" }}>{step}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-        ))}
-      </div>
+
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", minWidth: 0 }}>
+            <div style={{ width: "100%", border: "1px solid #cbd8e8", borderRadius: 8, background: "#ffffff", boxShadow: "0 22px 52px rgba(31,48,71,.14)", padding: "clamp(18px, 3.2vw, 30px)", textAlign: "left" }}>
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 14, marginBottom: 18 }}>
+                <div>
+                  <div style={{ color: "#1f6feb", fontSize: 11, fontWeight: 800, letterSpacing: 0, textTransform: "uppercase", marginBottom: 7 }}>Profile setup</div>
+                  <h2 style={{ color: "#102033", fontSize: 24, lineHeight: 1.15, fontWeight: 800, marginBottom: 8 }}>Tell me your interview target</h2>
+                  <p style={{ color: "#64748b", fontSize: 13, lineHeight: 1.55 }}>I will tailor sections and questions to your role, experience, and stack.</p>
+                </div>
+                <div style={{ width: 42, height: 42, borderRadius: 8, background: "#123252", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", flex: "0 0 auto" }}>
+                  <i className="ti ti-user-check" style={{ fontSize: 20 }} />
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gap: 12 }}>
+                <label style={labelStyle}>
+                  Name
+                  <input id="profile-name" value={draft.name} onFocus={handleFieldFocus} onChange={(event) => onChange({ ...draft, name: event.target.value })} placeholder="e.g. Sagar" style={fieldStyle} />
+                </label>
+                <label style={labelStyle}>
+                  Position
+                  <input id="profile-position" value={draft.position} onFocus={handleFieldFocus} onChange={(event) => onChange({ ...draft, position: event.target.value })} placeholder="e.g. Full Stack Developer, Frontend Developer" style={fieldStyle} />
+                </label>
+                <label style={labelStyle}>
+                  Years of experience
+                  <select id="profile-experience" value={draft.experience} onFocus={handleFieldFocus} onChange={(event) => onChange({ ...draft, experience: event.target.value })} style={fieldStyle}>
+                    <option value="">Select experience</option>
+                    <option>0-1 years</option>
+                    <option>2-4 years</option>
+                    <option>5-7 years</option>
+                    <option>8+ years</option>
+                  </select>
+                </label>
+                <label style={labelStyle}>
+                  Tech stack
+                  <input id="profile-stack" value={draft.stack} onFocus={handleFieldFocus} onChange={(event) => onChange({ ...draft, stack: event.target.value })} placeholder="e.g. Java, React, SQL, SAP, Ruby, Rust, AWS" style={fieldStyle} />
+                </label>
+                <button onClick={onSubmit} disabled={!canContinue} style={{ marginTop: 2, minHeight: 44, padding: "11px 14px", borderRadius: 8, border: "1px solid #123252", background: canContinue ? "#123252" : "#e5ebf3", color: canContinue ? "#ffffff" : "#64748b", fontSize: 13, fontWeight: 800, cursor: canContinue ? "pointer" : "not-allowed" }}>
+                  Personalize Prep
+                </button>
+                {validationMessages.length ? (
+                  <div role="alert" aria-live="polite" style={{ display: "grid", gap: 3, color: "#b42318", fontSize: 11.5, lineHeight: 1.4 }}>
+                    {validationMessages.map((message) => <span key={message}>{message}</span>)}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section style={{ borderTop: "1px solid #d8e2ef", paddingTop: 22 }}>
+          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 14 }}>
+            <div>
+              <p style={{ color: "#1f6feb", fontSize: 11, fontWeight: 900, textTransform: "uppercase", marginBottom: 7 }}>How it works</p>
+              <h2 style={{ color: "#102033", fontSize: "clamp(24px, 3.2vw, 36px)", lineHeight: 1.1, fontWeight: 900 }}>From first profile to final review.</h2>
+            </div>
+            <button type="button" onClick={focusProfileForm} style={{ minHeight: 40, padding: "9px 13px", borderRadius: 8, border: "1px solid #cbd8e8", background: "#ffffff", color: "#123252", fontSize: 12, fontWeight: 800, cursor: "pointer" }}>
+              Start setup
+            </button>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 205px), 1fr))", gap: 10 }}>
+            {howItWorks.map(([step, title, copy]) => (
+              <div key={title} style={{ border: "1px solid #d6e1ee", borderRadius: 8, background: "#ffffff", padding: 14, minHeight: 150 }}>
+                <div style={{ color: "#1f6feb", fontSize: 12, fontWeight: 900, marginBottom: 18 }}>{step}</div>
+                <h3 style={{ color: "#102033", fontSize: 14, lineHeight: 1.25, fontWeight: 900, marginBottom: 8 }}>{title}</h3>
+                <p style={{ color: "#64748b", fontSize: 12, lineHeight: 1.5 }}>{copy}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <p style={{ color: "#1f6feb", fontSize: 11, fontWeight: 900, textTransform: "uppercase", marginBottom: 7 }}>Feature grid</p>
+          <h2 style={{ color: "#102033", fontSize: "clamp(24px, 3.2vw, 36px)", lineHeight: 1.1, fontWeight: 900, marginBottom: 14 }}>Everything needed for a modern interview loop.</h2>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: 10 }}>
+            {featureCards.map(([icon, title, copy]) => (
+              <div key={title} style={{ border: "1px solid #d6e1ee", borderRadius: 8, background: "#ffffff", padding: 15, minHeight: 150 }}>
+                <div style={{ width: 34, height: 34, borderRadius: 8, background: "#eef5ff", color: "#1f6feb", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 14 }}>
+                  <i className={`ti ${icon}`} style={{ fontSize: 18 }} />
+                </div>
+                <h3 style={{ color: "#102033", fontSize: 15, fontWeight: 900, marginBottom: 8 }}>{title}</h3>
+                <p style={{ color: "#64748b", fontSize: 12.5, lineHeight: 1.5 }}>{copy}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 310px), 1fr))", gap: 14, alignItems: "stretch" }}>
+          <div style={{ border: "1px solid #d6e1ee", borderRadius: 8, background: "#ffffff", padding: 18 }}>
+            <p style={{ color: "#1f6feb", fontSize: 11, fontWeight: 900, textTransform: "uppercase", marginBottom: 7 }}>Corporate trust</p>
+            <h2 style={{ color: "#102033", fontSize: 24, lineHeight: 1.15, fontWeight: 900, marginBottom: 14 }}>A calmer first impression before intense practice.</h2>
+            <div style={{ display: "grid", gap: 10 }}>
+              {trustSignals.map(([icon, title, copy]) => (
+                <div key={title} style={{ display: "grid", gridTemplateColumns: "34px 1fr", gap: 10, alignItems: "start" }}>
+                  <div style={{ width: 32, height: 32, borderRadius: 8, background: "#f0f6ff", color: "#1f6feb", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <i className={`ti ${icon}`} />
+                  </div>
+                  <div>
+                    <h3 style={{ color: "#102033", fontSize: 13, fontWeight: 900, marginBottom: 4 }}>{title}</h3>
+                    <p style={{ color: "#64748b", fontSize: 12, lineHeight: 1.45 }}>{copy}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ border: "1px solid #cbd8e8", borderRadius: 8, background: "#102033", color: "#ffffff", padding: 18, display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(160px, 220px)", gap: 16, alignItems: "center" }}>
+            <div>
+              <p style={{ color: "#93c5fd", fontSize: 11, fontWeight: 900, textTransform: "uppercase", marginBottom: 7 }}>Mobile app preview</p>
+              <h2 style={{ color: "#ffffff", fontSize: 24, lineHeight: 1.15, fontWeight: 900, marginBottom: 10 }}>Beginner Mode stays trackable on phone.</h2>
+              <p style={{ color: "#cbd5e1", fontSize: 13, lineHeight: 1.55 }}>The mobile view keeps Watch, Predict, Explain, Practice, and Review visible as a practical flow instead of dense desktop panels.</p>
+            </div>
+            <div style={{ border: "1px solid rgba(255,255,255,.18)", borderRadius: 8, background: "#f8fbff", padding: 10, minHeight: 280 }}>
+              <div style={{ height: 18, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10 }}>
+                <span style={{ width: 46, height: 5, borderRadius: 8, background: "#cbd5e1" }} />
+              </div>
+              <div style={{ display: "grid", gap: 8 }}>
+                {mobilePreviewItems.map(([title, copy], index) => (
+                  <div key={title} style={{ border: "1px solid #dbe5f1", borderRadius: 8, background: index === 1 ? "#eaf3ff" : "#ffffff", padding: 9 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                      <span style={{ width: 18, height: 18, borderRadius: 6, background: index === 1 ? "#1f6feb" : "#dbe5f1", color: index === 1 ? "#ffffff" : "#475569", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 900 }}>{index + 1}</span>
+                      <strong style={{ color: "#102033", fontSize: 12 }}>{title}</strong>
+                    </div>
+                    <p style={{ color: "#64748b", fontSize: 11, lineHeight: 1.35, marginTop: 5 }}>{copy}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section style={{ border: "1px solid #cbd8e8", borderRadius: 8, background: "#ffffff", padding: "clamp(18px, 3vw, 28px)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 4 }}>
+          <div>
+            <h2 style={{ color: "#102033", fontSize: 24, lineHeight: 1.2, fontWeight: 900, marginBottom: 7 }}>Ready to personalize InterviewIQ?</h2>
+            <p style={{ color: "#64748b", fontSize: 13, lineHeight: 1.5 }}>Start with your target role and the internal prep workspace will stay focused around it.</p>
+          </div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <button type="button" onClick={focusProfileForm} style={{ minHeight: 42, padding: "10px 15px", borderRadius: 8, border: "1px solid #123252", background: "#123252", color: "#ffffff", fontSize: 13, fontWeight: 900, cursor: "pointer" }}>
+              Create prep profile
+            </button>
+            <button type="button" onClick={focusProfileForm} style={{ minHeight: 42, padding: "10px 15px", borderRadius: 8, border: "1px solid #cbd8e8", background: "#f8fbff", color: "#123252", fontSize: 13, fontWeight: 900, cursor: "pointer" }}>
+              View guided flow
+            </button>
+          </div>
+        </section>
+      </main>
     </div>
   );
 }
