@@ -9,11 +9,18 @@ const indexSource = readFileSync(new URL("../pages/index.js", import.meta.url), 
 test("workspace navigation chrome is extracted from the page shell", () => {
   assert.match(navSource, /DesktopWorkspaceNav/);
   assert.match(navSource, /TabletWorkspaceMenu/);
+  assert.match(navSource, /WORKSPACE_MENU_DETAILS/);
   assert.match(navSource, /MobileBottomNav/);
   assert.match(navSource, /workspaces\.map/);
   assert.match(navSource, /items\.map/);
   assert.match(navSource, /aria-current/);
   assert.match(navSource, /Workspace Menu/);
+  assert.match(navSource, /Choose a focused prep room/);
+  assert.match(navSource, /Visual algorithms, beginner flow, and guided practice/);
+  assert.match(navSource, /width: "min\(420px, calc\(100vw - 24px\)\)"/);
+  assert.match(navSource, /left: 0/);
+  assert.match(navSource, /maxHeight: "min\(72vh, 540px\)"/);
+  assert.match(navSource, /overflowY: "auto"/);
   assert.match(navSource, /aria-haspopup/);
   assert.match(navSource, /compactLabel/);
   assert.match(navSource, /quickItems/);
