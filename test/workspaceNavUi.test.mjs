@@ -21,6 +21,8 @@ test("workspace navigation chrome is extracted from the page shell", () => {
   assert.match(navSource, /left: 0/);
   assert.match(navSource, /maxHeight: "min\(72vh, 540px\)"/);
   assert.match(navSource, /overflowY: "auto"/);
+  assert.match(navSource, /pointerEvents: "auto"/);
+  assert.match(navSource, /zIndex: 120/);
   assert.match(navSource, /aria-haspopup/);
   assert.match(navSource, /compactLabel/);
   assert.match(navSource, /quickItems/);
@@ -29,6 +31,7 @@ test("workspace navigation chrome is extracted from the page shell", () => {
   assert.match(indexSource, /desktop-workspace-nav/);
   assert.match(indexSource, /tablet-workspace-menu/);
   assert.match(indexSource, /compact-controls-menu/);
+  assert.match(indexSource, /position:"relative", zIndex:130/);
   assert.match(indexSource, /Prep controls/);
   assert.match(indexSource, /phone-bottom-nav/);
   assert.match(indexSource, /min-width: 761px\) and \(max-width: 1439px\)/);

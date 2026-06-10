@@ -67,7 +67,7 @@ export function TabletWorkspaceMenu({ activeTab, accent = "#8bd3ff", onToggleWor
         <section
           aria-label="Tablet workspace menu"
           className="glass-card"
-          style={{ background: "rgba(7,11,20,.985)", border: "1px solid rgba(255,255,255,.13)", borderRadius: 10, boxShadow: "0 22px 54px rgba(0,0,0,.52)", display: "grid", gap: 10, left: 0, maxHeight: "min(72vh, 540px)", overflowY: "auto", padding: 12, position: "absolute", top: "calc(100% + 10px)", width: "min(420px, calc(100vw - 24px))", zIndex: 60 }}
+          style={{ background: "rgba(7,11,20,.985)", border: "1px solid rgba(255,255,255,.13)", borderRadius: 10, boxShadow: "0 22px 54px rgba(0,0,0,.52)", display: "grid", gap: 10, left: 0, maxHeight: "min(72vh, 540px)", overflowY: "auto", padding: 12, pointerEvents: "auto", position: "absolute", top: "calc(100% + 10px)", width: "min(420px, calc(100vw - 24px))", zIndex: 120 }}
         >
           <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", gap: 8 }}>
             <div style={{ display: "grid", gap: 2, minWidth: 0 }}>
@@ -85,7 +85,7 @@ export function TabletWorkspaceMenu({ activeTab, accent = "#8bd3ff", onToggleWor
                 type="button"
                 aria-current={activeTab === workspace.id ? "page" : undefined}
                 onClick={() => selectWorkspace(workspace.id)}
-                style={{ alignItems: "center", background: activeTab === workspace.id ? "rgba(139,211,255,.12)" : "rgba(255,255,255,.04)", border: `1px solid ${activeTab === workspace.id ? `${accent}66` : "rgba(255,255,255,.085)"}`, borderRadius: 8, color: activeTab === workspace.id ? "#f8fbff" : "#dbe6f4", cursor: "pointer", display: "grid", gap: 10, gridTemplateColumns: "32px minmax(0, 1fr) auto", minHeight: 58, minWidth: 0, padding: "10px 11px", textAlign: "left" }}
+                style={{ alignItems: "center", background: activeTab === workspace.id ? "rgba(139,211,255,.12)" : "rgba(255,255,255,.04)", border: `1px solid ${activeTab === workspace.id ? `${accent}66` : "rgba(255,255,255,.085)"}`, borderRadius: 8, color: activeTab === workspace.id ? "#f8fbff" : "#dbe6f4", cursor: "pointer", display: "grid", gap: 10, gridTemplateColumns: "32px minmax(0, 1fr) auto", minHeight: 58, minWidth: 0, padding: "10px 11px", pointerEvents: "auto", textAlign: "left" }}
               >
                 <span style={{ alignItems: "center", background: activeTab === workspace.id ? `${accent}18` : "rgba(255,255,255,.045)", border: `1px solid ${activeTab === workspace.id ? `${accent}55` : "rgba(255,255,255,.07)"}`, borderRadius: 8, color: activeTab === workspace.id ? accent : "#94a3b8", display: "inline-flex", height: 32, justifyContent: "center", width: 32 }}>
                   <i className={`ti ${workspace.icon}`} style={{ fontSize: 16 }} />

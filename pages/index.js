@@ -40,7 +40,7 @@ import { loadQuestionMemory, recordQuestionAttempt } from "../lib/questionMemory
 import { DEFAULT_PROFILE, DIFFS } from "../lib/prompts.mjs";
 import { createSessionSnapshot, loadSessionSnapshot, saveSessionSnapshot } from "../lib/sessionPersistence.mjs";
 import { createSystemDesignCanvasState } from "../lib/systemDesignCanvas.mjs";
-import { getTechTheme } from "../lib/techTheme.mjs";
+import { getTechTheme, getWorkspaceTheme } from "../lib/techTheme.mjs";
 import { canUseChatComposer, canUseInterviewTools, canUsePrepTopics, shouldShowCodeTools } from "../lib/uiVisibility.mjs";
 import { getAppShellHeight, getStableViewportHeight, getVisibleViewportHeight, isCompactViewport, isVirtualKeyboardOpen } from "../lib/viewportMode.mjs";
 import { buildSpeechTranscript, getVoiceErrorMessage, getVoiceSupport } from "../lib/voiceSupport.mjs";
@@ -148,7 +148,8 @@ export default function Home() {
   const viewportRestoreTimers = useRef([]);
   const activityThrottleRef = useRef({});
   const visibleTopics = getRecommendedTopics(candidateProfile || profileDraft);
-  const techTheme = getTechTheme(candidateProfile?.stack || profileDraft.stack);
+  const stackTheme = getTechTheme(candidateProfile?.stack || profileDraft.stack);
+  const techTheme = getWorkspaceTheme(stackTheme, activeTab);
   const prepLabel = getPrepLabel(candidateProfile?.stack || profileDraft.stack);
   const displayName = getDisplayName(candidateProfile);
   const stackGreeting = getStackGreeting(candidateProfile);
@@ -1075,7 +1076,7 @@ export default function Home() {
         <main className="glass-panel" style={{ position:"relative", zIndex:1, flex:1, display:"flex", flexDirection:"column", overflow:"hidden", minWidth:0, minHeight:0 }}>
 
           {/* ── Top bar ── */}
-          <header className="glass-chrome" style={{ display:"flex", alignItems:"center", gap:8, padding:"9px 12px", borderBottom:"1px solid rgba(255,255,255,.08)", flexShrink:0, minHeight:52 }}>
+          <header className="glass-chrome" style={{ position:"relative", zIndex:130, display:"flex", alignItems:"center", gap:8, padding:"9px 12px", borderBottom:"1px solid rgba(255,255,255,.08)", flexShrink:0, minHeight:52 }}>
             <button className={`icon-btn ${activeTab==="chat" && messages.length===0 ? "active" : ""}`} onClick={goHome} title="Home" aria-label="Home">
               <i className="ti ti-home" />
             </button>

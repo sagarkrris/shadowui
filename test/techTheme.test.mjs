@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   DEFAULT_TECH_THEME,
   getTechTheme,
+  getWorkspaceTheme,
 } from "../lib/techTheme.mjs";
 
 test("returns the Java theme when Java is the selected stack", () => {
@@ -11,7 +12,8 @@ test("returns the Java theme when Java is the selected stack", () => {
 
   assert.equal(theme.key, "java");
   assert.equal(theme.icon, "ti-brand-java");
-  assert.equal(theme.accent, "#b56b2c");
+  assert.equal(theme.accent, "#9a6a2f");
+  assert.equal(theme.accentStrong, "#c89a5a");
 });
 
 test("returns the Python theme when Python is the selected stack", () => {
@@ -19,7 +21,8 @@ test("returns the Python theme when Python is the selected stack", () => {
 
   assert.equal(theme.key, "python");
   assert.equal(theme.icon, "ti-brand-python");
-  assert.equal(theme.accent, "#2f6f9f");
+  assert.equal(theme.accent, "#315f8d");
+  assert.equal(theme.accentStrong, "#82a9cc");
 });
 
 test("uses the first strong tech match for multi-stack input", () => {
@@ -75,6 +78,30 @@ test("uses varied corporate palettes across stack themes", () => {
   assert.match(react.surface, /^#0|^#1/);
 });
 
+test("uses refined enterprise color families for major stack groups", () => {
+  assert.deepEqual(
+    ["java", "python", "azure", "docker", "react", "go", "node", "mongodb", "sql", "aws", "rust", "sap", "postgresql"].map((stack) => {
+      const theme = getTechTheme(stack);
+      return [theme.key, theme.accent, theme.accentStrong, theme.surface];
+    }),
+    [
+      ["java", "#9a6a2f", "#c89a5a", "#1b1814"],
+      ["python", "#315f8d", "#82a9cc", "#101823"],
+      ["azure", "#2e6694", "#83add1", "#101823"],
+      ["docker", "#2f6e9c", "#7fb2d6", "#101824"],
+      ["react", "#25768d", "#71b9c8", "#0f1a21"],
+      ["go", "#247984", "#72bdc7", "#0f1a1f"],
+      ["node", "#4d7752", "#91b58f", "#111a15"],
+      ["mongodb", "#4b7654", "#90b58f", "#111a15"],
+      ["sql", "#94672f", "#c59a58", "#1b1711"],
+      ["aws", "#9c6b2e", "#d0a261", "#1b1710"],
+      ["rust", "#9b6544", "#c9966f", "#1d1612"],
+      ["sap", "#426f86", "#8fb4c8", "#111922"],
+      ["postgresql", "#466b88", "#8baec8", "#111923"],
+    ],
+  );
+});
+
 test("provides stack-specific background artwork for known themes", () => {
   const java = getTechTheme("Java, Spring Boot");
   const python = getTechTheme("Python, Django");
@@ -89,9 +116,42 @@ test("provides stack-specific background artwork for known themes", () => {
 test("provides glossy glass tokens derived from the selected stack", () => {
   const theme = getTechTheme("Java, Spring Boot");
 
-  assert.equal(theme.glass.panel, "rgba(29,26,23,.74)");
-  assert.equal(theme.glass.panelStrong, "rgba(29,26,23,.90)");
-  assert.equal(theme.glass.tint, "rgba(181,107,44,.12)");
-  assert.equal(theme.glass.shine, "rgba(224,161,92,.16)");
+  assert.equal(theme.glass.panel, "rgba(27,24,20,.74)");
+  assert.equal(theme.glass.panelStrong, "rgba(27,24,20,.90)");
+  assert.equal(theme.glass.tint, "rgba(154,106,47,.12)");
+  assert.equal(theme.glass.shine, "rgba(200,154,90,.16)");
   assert.match(theme.glass.shadow, /rgba\(2,6,23/);
+});
+
+test("keeps stack identity while giving each workspace a different room theme", () => {
+  const baseTheme = getTechTheme("Java, Spring Boot");
+  const workspaceThemes = ["chat", "company", "canvas", "designLab", "scenarioBank", "javaDigest", "dsaLab", "course"]
+    .map((activeTab) => getWorkspaceTheme(baseTheme, activeTab));
+
+  assert.deepEqual(workspaceThemes.map((theme) => theme.key), Array(8).fill("java"));
+  assert.deepEqual(workspaceThemes.map((theme) => theme.icon), Array(8).fill("ti-brand-java"));
+  assert.equal(new Set(workspaceThemes.map((theme) => theme.accent)).size, workspaceThemes.length);
+  assert.equal(new Set(workspaceThemes.map((theme) => theme.surface)).size, workspaceThemes.length);
+  assert.equal(workspaceThemes[0].stackAccent, "#9a6a2f");
+});
+
+test("uses polished room palettes for major workspace windows", () => {
+  const baseTheme = getTechTheme("Python, Azure");
+
+  assert.deepEqual(
+    ["chat", "company", "canvas", "designLab", "scenarioBank", "javaDigest", "dsaLab", "course"].map((activeTab) => {
+      const theme = getWorkspaceTheme(baseTheme, activeTab);
+      return [theme.workspaceKey, theme.accent, theme.accentStrong, theme.surface, theme.background.glyphs[0]];
+    }),
+    [
+      ["chat", "#5b6f8f", "#9fb2d1", "#121824", "Mock Round"],
+      ["company", "#7a6836", "#d0b76f", "#191811", "Company Prep"],
+      ["canvas", "#3f6f86", "#8eb8ca", "#111a22", "Architecture"],
+      ["designLab", "#6d678f", "#aaa4ce", "#171722", "HLD"],
+      ["scenarioBank", "#58744d", "#a0ba8c", "#131a12", "Scenarios"],
+      ["javaDigest", "#936734", "#c89d61", "#1a1711", "Java Digest"],
+      ["dsaLab", "#287c7d", "#79c2bd", "#0f1a1c", "DSA Lab"],
+      ["course", "#7b5d79", "#c09bbb", "#1a151d", "Course"],
+    ],
+  );
 });
