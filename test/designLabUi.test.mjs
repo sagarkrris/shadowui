@@ -16,6 +16,12 @@ test("design lab component renders catalog tabs and practice actions", () => {
   assert.match(componentSource, /LLD/);
   assert.match(componentSource, /Practice/);
   assert.match(componentSource, /WorkflowDiagram/);
+  assert.match(componentSource, /DesignSearchPanel/);
+  assert.match(componentSource, /Search Any System/);
+  assert.match(componentSource, /Search any design system/);
+  assert.match(componentSource, /Generate Answer/);
+  assert.match(componentSource, /buildDesignSystemSearchPrompt/);
+  assert.match(componentSource, /designSystemSearch/);
   assert.match(componentSource, /Pictorial Workflow/);
   assert.match(componentSource, /Step \{index \+ 1\}/);
   assert.match(componentSource, /Java Example/);

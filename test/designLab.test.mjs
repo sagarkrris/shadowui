@@ -4,8 +4,10 @@ import test from "node:test";
 import {
   DESIGN_LAB_CATALOG,
   buildDesignLabPracticePrompt,
+  buildDesignSystemSearchPrompt,
   getDesignLabPattern,
   listDesignLabPracticeSystems,
+  normalizeDesignSystemSearchQuery,
 } from "../lib/designLab.mjs";
 
 test("catalog separates design patterns HLD LLD and practice tracks", () => {
@@ -54,4 +56,19 @@ test("practice prompt falls back to the first system for unknown ids", () => {
   const prompt = buildDesignLabPracticePrompt("unknown-system");
 
   assert.match(prompt, new RegExp(first.title));
+});
+
+test("builds polished HLD LLD search prompts for custom systems", () => {
+  assert.equal(normalizeDesignSystemSearchQuery("  URL   shortener  "), "URL shortener");
+  assert.equal(normalizeDesignSystemSearchQuery("x".repeat(140)).length, 120);
+
+  const prompt = buildDesignSystemSearchPrompt("Food delivery marketplace");
+
+  assert.match(prompt, /Food delivery marketplace/);
+  assert.match(prompt, /HLD \+ LLD/i);
+  assert.match(prompt, /Architecture diagram/i);
+  assert.match(prompt, /API contracts/i);
+  assert.match(prompt, /Data model/i);
+  assert.match(prompt, /Low-level design/i);
+  assert.match(prompt, /90-second summary/i);
 });

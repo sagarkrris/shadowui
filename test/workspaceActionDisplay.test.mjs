@@ -54,6 +54,16 @@ test("design lab practice displays the selected model system", () => {
   assert.match(displayText, /Seat inventory/);
 });
 
+test("design lab search displays the searched system name", () => {
+  const displayText = buildWorkspaceActionDisplayText("Create a polished interview-ready system design answer.", {
+    type: "designSystemSearch",
+    query: "Food delivery marketplace",
+  });
+
+  assert.match(displayText, /Design Lab Search: Food delivery marketplace/);
+  assert.match(displayText, /polished interview-ready/);
+});
+
 test("java digest actions display selected article and roadmap context", () => {
   const coachText = buildWorkspaceActionDisplayText("full model prompt", {
     type: "javaDigestCoach",

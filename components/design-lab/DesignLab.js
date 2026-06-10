@@ -2,7 +2,9 @@ import { useMemo, useState } from "react";
 import {
   DESIGN_LAB_CATALOG,
   buildDesignLabPracticePrompt,
+  buildDesignSystemSearchPrompt,
   listDesignLabPracticeSystems,
+  normalizeDesignSystemSearchQuery,
 } from "../../lib/designLab.mjs";
 
 const wrap = {
@@ -40,6 +42,7 @@ function LabButton({ label, icon, active, onClick, accent }) {
       className={active ? "glass-button" : ""}
       onClick={onClick}
       aria-label={label}
+      title={label}
       style={{
         alignItems: "center",
         background: active ? "rgba(139,211,255,.12)" : "rgba(0,0,0,.14)",
@@ -66,7 +69,7 @@ function LabPanel({ title, icon, accent, children }) {
   return (
     <section style={{ ...wrap, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, overflow: "hidden", padding: 12 }}>
       <h3 style={{ ...wrap, alignItems: "center", color: "#f8fbff", display: "flex", fontSize: 13, gap: 7, marginBottom: 8 }}>
-        <i className={`ti ${icon}`} style={{ color: accent }} />
+        <i className={`ti ${icon}`} title={title} style={{ color: accent }} />
         {title}
       </h3>
       {children}
@@ -98,7 +101,7 @@ function WorkflowDiagram({ diagram, accent }) {
           <article key={stage.title} style={{ ...wrap, background: "rgba(0,0,0,.16)", border: "1px solid rgba(255,255,255,.085)", borderRadius: 8, display: "grid", gap: 8, minHeight: 176, padding: 10, position: "relative" }}>
             <div style={{ alignItems: "center", display: "flex", gap: 7, minWidth: 0 }}>
               <span style={{ alignItems: "center", background: `${accent}18`, border: `1px solid ${accent}44`, borderRadius: 8, color: accent, display: "inline-flex", flexShrink: 0, height: 30, justifyContent: "center", width: 30 }}>
-                <i className={`ti ${stage.icon}`} style={{ fontSize: 16 }} />
+                <i className={`ti ${stage.icon}`} title={stage.title} style={{ fontSize: 16 }} />
               </span>
               <div style={wrap}>
                 <div style={{ color: accent, fontSize: 10, fontWeight: 900 }}>Step {index + 1}</div>
@@ -162,6 +165,7 @@ function PatternCard({ pattern, accent, onAction }) {
         type="button"
         className="glass-button"
         onClick={() => onAction?.(prompt, { type: "designPattern", pattern })}
+        title={`Practice ${pattern.name}`}
         style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, marginTop: 10, padding: "7px 10px" }}
       >
         <i className="ti ti-player-play" style={{ color: accent, marginRight: 6 }} />
@@ -193,8 +197,73 @@ function TrackPanel({ track, icon, accent }) {
   );
 }
 
+function DesignSearchPanel({ query, onQueryChange, onSubmit, accent, accentBorder }) {
+  return (
+    <form
+      onSubmit={onSubmit}
+      style={{
+        alignItems: "end",
+        border: `1px solid ${accentBorder}`,
+        borderRadius: 8,
+        display: "grid",
+        gap: 9,
+        gridTemplateColumns: "minmax(0, 1fr) auto",
+        minWidth: 0,
+        padding: 10,
+      }}
+    >
+      <label style={{ ...wrap, display: "grid", gap: 5 }}>
+        <span style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Search Any System</span>
+        <span style={{ alignItems: "center", background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 7, display: "flex", gap: 8, minWidth: 0, padding: "0 9px" }}>
+          <i className="ti ti-search" title="Search" style={{ color: accent, flexShrink: 0, fontSize: 15 }} />
+          <input
+            aria-label="Search any design system"
+            className="glass-input"
+            maxLength={120}
+            onChange={(event) => onQueryChange(event.target.value)}
+            placeholder="Search a system: URL shortener, food delivery, design system platform..."
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "#f8fbff",
+              fontSize: 12,
+              minHeight: 36,
+              minWidth: 0,
+              outline: "none",
+              width: "100%",
+            }}
+            value={query}
+          />
+        </span>
+      </label>
+      <button
+        type="submit"
+        className="glass-button"
+        disabled={!normalizeDesignSystemSearchQuery(query)}
+        title="Generate interview-ready HLD, LLD, and architecture answer"
+        style={{
+          border: `1px solid ${accent}55`,
+          borderRadius: 7,
+          color: "#f8fbff",
+          cursor: normalizeDesignSystemSearchQuery(query) ? "pointer" : "not-allowed",
+          fontSize: 11,
+          fontWeight: 900,
+          minHeight: 36,
+          opacity: normalizeDesignSystemSearchQuery(query) ? 1 : 0.48,
+          padding: "8px 11px",
+          whiteSpace: "nowrap",
+        }}
+      >
+        <i className="ti ti-sparkles" title="Generate Answer" style={{ color: accent, marginRight: 6 }} />
+        Generate Answer
+      </button>
+    </form>
+  );
+}
+
 export default function DesignLab({ theme = {}, onAction }) {
   const [activeTab, setActiveTab] = useState("Patterns");
+  const [searchQuery, setSearchQuery] = useState("");
   const practiceSystems = useMemo(() => listDesignLabPracticeSystems(), []);
   const accent = theme.accentStrong || "#8bd3ff";
   const accentBorder = theme.accentBorder || "rgba(139, 211, 255, .26)";
@@ -205,6 +274,16 @@ export default function DesignLab({ theme = {}, onAction }) {
     { label: "LLD", icon: "ti-code" },
     { label: "Practice", icon: "ti-target-arrow" },
   ];
+  const handleDesignSearch = (event) => {
+    event.preventDefault();
+    const query = normalizeDesignSystemSearchQuery(searchQuery);
+    if (!query) return;
+
+    onAction?.(buildDesignSystemSearchPrompt(query), {
+      type: "designSystemSearch",
+      query,
+    });
+  };
 
   return (
     <section
@@ -241,6 +320,14 @@ export default function DesignLab({ theme = {}, onAction }) {
         </div>
       </header>
 
+      <DesignSearchPanel
+        query={searchQuery}
+        onQueryChange={setSearchQuery}
+        onSubmit={handleDesignSearch}
+        accent={accent}
+        accentBorder={accentBorder}
+      />
+
       {activeTab === "Patterns" && (
         <div style={{ display: "grid", gap: 10 }}>
           {Object.entries(DESIGN_LAB_CATALOG.patterns.groups).map(([intent, patterns]) => (
@@ -274,6 +361,7 @@ export default function DesignLab({ theme = {}, onAction }) {
                 type="button"
                 className="glass-button"
                 onClick={() => onAction?.(buildDesignLabPracticePrompt(system.id), { type: "designLabPractice", system })}
+                title={`Start ${system.title} practice`}
                 style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, marginTop: 10, padding: "7px 10px" }}
               >
                 <i className="ti ti-player-play" style={{ color: accent, marginRight: 6 }} />

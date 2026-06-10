@@ -44,6 +44,7 @@ function ControlButton({ label, icon, active, onClick, accent }) {
       className={active ? "glass-button" : ""}
       onClick={onClick}
       aria-label={label}
+      title={label}
       style={{
         alignItems: "center",
         background: active ? "rgba(139,211,255,.12)" : "rgba(0,0,0,.14)",
@@ -99,7 +100,7 @@ function DetailList({ title, icon, items, accent, color = "#9fb0c7" }) {
   return (
     <section style={{ ...wrap, border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, background: "rgba(255,255,255,.035)", padding: 10 }}>
       <h4 style={{ ...wrap, alignItems: "center", color: "#f8fbff", display: "flex", fontSize: 12, gap: 6, marginBottom: 7 }}>
-        <i className={`ti ${icon}`} style={{ color: accent }} />
+        <i className={`ti ${icon}`} title={title} style={{ color: accent }} />
         {title}
       </h4>
       <ul style={{ ...wrap, color, display: "grid", fontSize: 11.4, gap: 6, lineHeight: 1.45, margin: 0, paddingLeft: 17 }}>
@@ -163,23 +164,23 @@ function ScenarioCard({ scenario, scenarioProgress, state, accent, onAction, onR
       </section>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 7, minWidth: 0 }}>
-        <button type="button" className="glass-button" onClick={askVariant} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
+        <button type="button" className="glass-button" onClick={askVariant} title="Generate Fresh Scenario" style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
           <i className="ti ti-sparkles" style={{ color: accent, marginRight: 6 }} />
           Generate Fresh Scenario
         </button>
-        <button type="button" className="glass-button" onClick={explainAnswer} style={{ border: "1px solid rgba(167,243,208,.36)", borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
+        <button type="button" className="glass-button" onClick={explainAnswer} title="Explain Answer" style={{ border: "1px solid rgba(167,243,208,.36)", borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
           <i className="ti ti-notes" style={{ color: "#a7f3d0", marginRight: 6 }} />
           Explain Answer
         </button>
-        <button type="button" className="glass-button" onClick={practiceMock} style={{ border: "1px solid rgba(196,181,253,.38)", borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
+        <button type="button" className="glass-button" onClick={practiceMock} title="Practice as Mock" style={{ border: "1px solid rgba(196,181,253,.38)", borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
           <i className="ti ti-player-play" style={{ color: "#c4b5fd", marginRight: 6 }} />
           Practice as Mock
         </button>
-        <button type="button" onClick={() => onRecord?.(scenario, "needsReview")} style={{ background: "rgba(0,0,0,.12)", border: "1px solid rgba(250,204,21,.32)", borderRadius: 7, color: "#facc15", cursor: "pointer", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
+        <button type="button" onClick={() => onRecord?.(scenario, "needsReview")} title="Mark Needs Review" style={{ background: "rgba(0,0,0,.12)", border: "1px solid rgba(250,204,21,.32)", borderRadius: 7, color: "#facc15", cursor: "pointer", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
           <i className="ti ti-refresh-alert" style={{ marginRight: 6 }} />
           Needs Review
         </button>
-        <button type="button" onClick={() => onRecord?.(scenario, "mastered")} style={{ background: "rgba(0,0,0,.12)", border: "1px solid rgba(167,243,208,.34)", borderRadius: 7, color: "#a7f3d0", cursor: "pointer", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
+        <button type="button" onClick={() => onRecord?.(scenario, "mastered")} title="Mark Mastered" style={{ background: "rgba(0,0,0,.12)", border: "1px solid rgba(167,243,208,.34)", borderRadius: 7, color: "#a7f3d0", cursor: "pointer", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
           <i className="ti ti-circle-check" style={{ marginRight: 6 }} />
           Mastered
         </button>
@@ -286,7 +287,7 @@ export default function ScenarioBank({ theme = {}, onAction }) {
               onClick={() => updateState({ track: track.key })}
             />
           ))}
-          <button type="button" className="glass-button" onClick={startDailyPlan} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 900, padding: "7px 10px" }}>
+          <button type="button" className="glass-button" onClick={startDailyPlan} title="Daily Plan" style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 900, padding: "7px 10px" }}>
             <i className="ti ti-calendar-bolt" style={{ color: accent, marginRight: 6 }} />
             Daily Plan
           </button>
@@ -343,7 +344,7 @@ export default function ScenarioBank({ theme = {}, onAction }) {
       {generatedScenario && (
         <section style={{ border: "1px solid rgba(167,243,208,.28)", borderRadius: 8, display: "grid", gap: 10, minWidth: 0, padding: 12, background: "rgba(16,185,129,.055)" }}>
           <div style={{ ...wrap, color: "#a7f3d0", fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>
-            Fresh Local Scenario
+            Generated Variant
           </div>
           <ScenarioCard
             scenario={generatedScenario}
@@ -377,7 +378,7 @@ export default function ScenarioBank({ theme = {}, onAction }) {
         <section style={{ ...wrap, border: `1px solid ${accentBorder}`, borderRadius: 8, padding: 12 }}>
           <h3 style={{ color: "#f8fbff", fontSize: 14 }}>Generate Fresh Scenario</h3>
           <p style={{ color: "#9fb0c7", fontSize: 12, lineHeight: 1.5, marginTop: 6 }}>No local seed matches this filter yet. Generate a real-time scenario for this topic instead.</p>
-          <button type="button" className="glass-button" onClick={() => generateFreshScenario(null)} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, marginTop: 10, padding: "7px 10px" }}>
+          <button type="button" className="glass-button" onClick={() => generateFreshScenario(null)} title="Generate Fresh Scenario" style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, marginTop: 10, padding: "7px 10px" }}>
             <i className="ti ti-sparkles" style={{ color: accent, marginRight: 6 }} />
             Generate Fresh Scenario
           </button>

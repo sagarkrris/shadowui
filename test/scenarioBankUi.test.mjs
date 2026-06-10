@@ -22,6 +22,7 @@ test("scenario bank workspace renders tracks engines drills and detailed answers
   assert.match(componentSource, /Practice as Mock/);
   assert.match(componentSource, /Generate Fresh Scenario/);
   assert.match(componentSource, /Fresh Local Scenario/);
+  assert.match(componentSource, /Generated Variant/);
   assert.match(componentSource, /buildLocalScenarioVariant/);
   assert.match(componentSource, /setGeneratedScenario/);
   assert.match(componentSource, /Deep-Dive Answer/);
