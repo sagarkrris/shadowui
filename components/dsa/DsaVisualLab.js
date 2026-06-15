@@ -91,6 +91,193 @@ const EXPLAIN_READINESS_ITEMS = [
   { id: "edge", label: "Edge cases", cue: "Mention empty, duplicate, boundary, or no-answer cases.", pattern: /\b(edge|empty|duplicate|single|null|boundary|no answer)\b/i },
   { id: "complexity", label: "Complexity", cue: "Close with time, space, and the trade-off.", pattern: /\b(o\(|time|space|complexity|trade[- ]?off)\b/i },
 ];
+const BEGINNER_LEARNING_PATHS = [
+  {
+    title: "Start With The Picture",
+    icon: "ti-route-square",
+    source: "System Thinking",
+    lesson: "Clarify what the problem is asking, draw the request or data flow, then name the bottleneck before choosing a tool.",
+    beginnerSteps: [
+      "Write the input and output in plain English.",
+      "Draw the values, users, or services as boxes.",
+      "Mark which box changes when the algorithm takes one step.",
+      "Name the constraint that makes the simple solution too slow or too large.",
+    ],
+    practice: "For any DSA pattern, draw the moving pointers or state table before writing code.",
+  },
+  {
+    title: "Build One Tiny Version",
+    icon: "ti-tools",
+    source: "Build From Scratch",
+    lesson: "Learn internals by recreating a small working piece: a cache, queue, parser, hash table, or search index.",
+    beginnerSteps: [
+      "Start with a tiny input, not the full interview problem.",
+      "Implement only one operation, such as insert, lookup, push, pop, or traverse.",
+      "Print the state after every operation.",
+      "Compare the printed state with the visual frame.",
+    ],
+    practice: "Implement the smallest version of the data structure, then compare it with the visualizer state.",
+  },
+  {
+    title: "Answer Like An Interviewer Expects",
+    icon: "ti-message-2-check",
+    source: "Interview Method",
+    lesson: "Use a repeatable answer shape: clarify, brute force, optimize, dry run, code, test, and explain trade-offs.",
+    beginnerSteps: [
+      "Say the brute force solution even if it is slow.",
+      "Explain what repeated work the better pattern removes.",
+      "Dry run one normal case before coding.",
+      "Close with time, space, and one trade-off.",
+    ],
+    practice: "After each visual frame, say the invariant and one edge case in plain English.",
+  },
+];
+const BEGINNER_LEARNING_LADDER = [
+  "Watch the visual frame and name only the highlighted state.",
+  "Say what changed in one sentence.",
+  "Explain why the invariant is still true.",
+  "Try one edge case before opening the code template.",
+];
+const BEGINNER_LEARNING_MODULES = [
+  {
+    title: "Arrays and Hashing",
+    picture: "Think of an array as numbered boxes and a hash map as a notebook where lookup is fast.",
+    why: "Use this when remembering something you already saw is cheaper than searching again.",
+    drill: "For Two Sum, write each value into the notebook only after checking whether its complement is already there.",
+  },
+  {
+    title: "Two Pointers and Windows",
+    picture: "Think of two fingers on a line. A window is the section between the fingers.",
+    why: "Use this when the answer depends on a contiguous range or when sorting lets you safely discard one side.",
+    drill: "Move one boundary at a time and say exactly why the discarded values cannot be part of a better answer.",
+  },
+  {
+    title: "Stacks, Trees, and Graphs",
+    picture: "A stack remembers unfinished work; a tree asks one node to solve one subtree; a graph needs visited state.",
+    why: "Use these when the problem has nesting, parent-child structure, or connected things that can loop.",
+    drill: "Before coding DFS or BFS, say what goes into visited and what goes into the frontier.",
+  },
+  {
+    title: "Dynamic Programming",
+    picture: "DP is a table of smaller answers. Each new cell is built from answers you already trust.",
+    why: "Use this when brute force repeats the same subproblem many times.",
+    drill: "Define the state in one sentence, then fill the smallest examples by hand.",
+  },
+];
+const PROBLEM_TEACHING_PLAYBOOK = {
+  "arrays-hashing": {
+    picture: "Draw the array on the left and a small notebook on the right. The notebook stores facts you have already proven.",
+    recognize: "The prompt asks about duplicates, complements, frequencies, grouping, or fast membership.",
+    solve: ["Read one value", "Ask the notebook a question", "Update the answer or notebook", "Move to the next value"],
+    say: "I trade extra memory for fast lookup, and my invariant is that the map only contains facts from earlier positions.",
+    trap: "Do not store the current value before checking when the answer must use two different positions.",
+  },
+  "two-pointers": {
+    picture: "Draw a sorted line with one finger at the left and one at the right. Each move discards a side safely.",
+    recognize: "The prompt asks for a pair, palindrome, container, sorted array, or comparison from both ends.",
+    solve: ["Place left and right", "Evaluate the pair", "Move the side that can no longer help", "Stop when the pointers cross"],
+    say: "Each pointer move eliminates choices that cannot beat or satisfy the answer.",
+    trap: "Do not move both pointers unless you can prove both sides are safe to discard.",
+  },
+  "sliding-window": {
+    picture: "Draw a window over a contiguous stretch. Expand to learn more; shrink to repair the rule.",
+    recognize: "The prompt says substring, subarray, longest, shortest, at most, exactly, or contiguous.",
+    solve: ["Expand the right edge", "Update counts or sum", "Shrink the left edge while the rule is broken", "Record the best valid window"],
+    say: "The window is always the current candidate, and I only shrink when it violates the rule.",
+    trap: "Do not restart the scan; the left edge should move forward, never backward.",
+  },
+  stack: {
+    picture: "Draw a vertical stack of unfinished work. The top is the most recent thing that must be resolved first.",
+    recognize: "The prompt has parentheses, next greater element, monotonic order, undo behavior, or nested structure.",
+    solve: ["Read the next item", "Compare it with the top", "Pop resolved work", "Push unresolved work"],
+    say: "The stack contains exactly the unresolved items that future values may close or improve.",
+    trap: "Do not inspect old items below the top unless the top has been resolved first.",
+  },
+  "binary-search": {
+    picture: "Draw a low-to-high range. The answer, if it exists, must stay inside the range after every cut.",
+    recognize: "The prompt asks for search in sorted data, first/last valid value, minimum feasible answer, or a monotonic yes/no condition.",
+    solve: ["Set low and high", "Check the middle", "Keep the half that can still contain the answer", "Return the surviving value or not-found result"],
+    say: "Every middle check proves one side impossible, so the answer remains inside the range.",
+    trap: "Do not update low or high without deciding whether mid itself can still be the answer.",
+  },
+  "linked-list": {
+    picture: "Draw nodes as boxes with arrows. Before changing an arrow, keep a handle to the rest of the list.",
+    recognize: "The prompt asks to reverse, merge, detect a cycle, remove a node, or move references.",
+    solve: ["Keep previous/current/next references", "Save next before rewiring", "Change one pointer", "Advance references"],
+    say: "I move references, not values, and I never lose access to the remaining list.",
+    trap: "Do not overwrite current.next before saving the next node.",
+  },
+  trees: {
+    picture: "Draw one node as the current teacher and its children as smaller copies of the same problem.",
+    recognize: "The prompt mentions root, subtree, depth, path, ancestor, traversal, or recursive structure.",
+    solve: ["Define one node's job", "Solve left child", "Solve right child", "Combine child answers at the parent"],
+    say: "If each child returns a correct subtree answer, the parent only has to combine them correctly.",
+    trap: "Do not write traversal code before deciding what each recursive call returns.",
+  },
+  graphs: {
+    picture: "Draw nodes connected by roads. Visited is your memory; frontier is where you are going next.",
+    recognize: "The prompt has islands, courses, dependencies, connected components, shortest path, or cycles.",
+    solve: ["Choose DFS or BFS", "Add a start node", "Mark visited before revisiting is possible", "Explore neighbors from the frontier"],
+    say: "Visited prevents loops and double counting; frontier controls the traversal order.",
+    trap: "Do not mark visited too late, or the same node may be scheduled many times.",
+  },
+  dp: {
+    picture: "Draw a table of smaller answers. Each new cell is allowed to use only cells already trusted.",
+    recognize: "The brute force repeats choices, asks for number of ways, best score, subsequence, or optimal decision.",
+    solve: ["Define the state", "Write the base case", "Write the transition", "Fill states in dependency order"],
+    say: "I store repeated subproblem answers so each state is solved once.",
+    trap: "Do not code before the state sentence is clear.",
+  },
+  heap: {
+    picture: "Draw a small tournament where the next best candidate stays at the top.",
+    recognize: "The prompt asks for top K, kth largest, merge many sorted streams, or repeatedly choosing the smallest/largest item.",
+    solve: ["Choose min heap or max heap", "Push candidates", "Pop the best candidate", "Keep heap size or candidate set under control"],
+    say: "The heap keeps only candidates that can still become the next answer.",
+    trap: "Do not sort everything when only the next best item is needed repeatedly.",
+  },
+  trie: {
+    picture: "Draw a character tree where each edge consumes one letter of the word.",
+    recognize: "The prompt asks for prefix search, dictionary words, autocomplete, or word board lookup.",
+    solve: ["Start at root", "Follow or create one character edge", "Mark word endings", "Use prefixes to prune impossible searches"],
+    say: "The current trie node represents exactly the prefix consumed so far.",
+    trap: "Do not scan every full word when the prefix path already proves failure.",
+  },
+  intervals: {
+    picture: "Draw start and end points on a timeline. Sorting makes overlaps visible.",
+    recognize: "The prompt asks to merge, insert, schedule, attend meetings, or detect overlaps.",
+    solve: ["Sort by start", "Keep the active merged interval", "Extend it on overlap", "Start a new interval when separated"],
+    say: "After sorting, I only compare the current interval with the last merged interval.",
+    trap: "Do not compare every interval with every other interval after sorting removes that need.",
+  },
+  matrix: {
+    picture: "Draw rows and columns as coordinates. A cell is just a graph node with up/down/left/right neighbors.",
+    recognize: "The prompt has grid, island, path, word search, rotation, or row-column constraints.",
+    solve: ["Translate each cell to row and column", "Check boundaries", "Mark visited when needed", "Move through valid neighboring cells"],
+    say: "Every visited cell has a known coordinate meaning and is processed at most once.",
+    trap: "Do not forget boundary checks before reading a neighbor.",
+  },
+  bit: {
+    picture: "Draw each bit as a switch. A mask chooses which switch to inspect or flip.",
+    recognize: "The prompt mentions xor, missing number, single number, powers of two, masks, or binary representation.",
+    solve: ["Choose the relevant bit operation", "Apply it consistently", "Track the meaning of each bit", "Return the encoded result"],
+    say: "Each operation changes or reads only the intended bit position.",
+    trap: "Do not use bit tricks unless you can explain the switch meaning.",
+  },
+  greedy: {
+    picture: "Draw choices in order and mark the locally safe move that cannot block the future.",
+    recognize: "The prompt asks for minimum jumps, scheduling, maximizing profit, or making the best current choice.",
+    solve: ["Sort or scan in useful order", "Pick the locally safe choice", "Prove it does not hurt future choices", "Update the best reachable state"],
+    say: "The greedy choice is safe because any better solution can be transformed to include it.",
+    trap: "Do not choose greedily without a safety proof.",
+  },
+  backtracking: {
+    picture: "Draw a decision tree. Each path is a partial answer; undo when the path stops working.",
+    recognize: "The prompt asks for all combinations, permutations, subsets, boards, or constraint search.",
+    solve: ["Choose one option", "Add it to the path", "Explore deeper", "Undo the choice before trying the next option"],
+    say: "The path contains only choices that are valid up to the current depth.",
+    trap: "Do not forget the undo step, or later branches inherit the wrong state.",
+  },
+};
 
 function getStorage() {
   return typeof window !== "undefined" ? window.localStorage : null;
@@ -309,6 +496,37 @@ function buildChallengeVisualSteps(challenge) {
   ];
 }
 
+function getProblemTeaching(problem) {
+  const playbook = PROBLEM_TEACHING_PLAYBOOK[problem?.visualizerId] || PROBLEM_TEACHING_PLAYBOOK["arrays-hashing"];
+  return {
+    picture: playbook.picture,
+    recognize: playbook.recognize,
+    solve: playbook.solve,
+    say: playbook.say,
+    trap: playbook.trap,
+    problemLens: `For ${problem.title}, visualize this as: ${problem.summary}`,
+    invariant: problem.invariant,
+    edgeCase: (problem.edgeCases || [])[0] || "Test the smallest input and the no-answer case.",
+  };
+}
+
+function filterTeachingProblems(problems = [], query = "", pattern = "all") {
+  const normalizedQuery = String(query || "").trim().toLowerCase();
+  return problems.filter((problem) => {
+    const matchesPattern = pattern === "all" || problem.visualizerId === pattern;
+    if (!matchesPattern) return false;
+    if (!normalizedQuery) return true;
+
+    return [
+      problem.title,
+      problem.summary,
+      problem.category,
+      problem.pattern,
+      problem.difficulty,
+    ].some((value) => String(value || "").toLowerCase().includes(normalizedQuery));
+  });
+}
+
 function VisualInput({ input, highlight, accent, isPlaying }) {
   const itemCount = Array.isArray(input) ? input.length : String(input).length;
   const active = activeIndexes(highlight, itemCount);
@@ -504,6 +722,58 @@ function ReelPredictor({ currentStep, stepIndex, accent }) {
   );
 }
 
+function formatFrameState(step, fallback) {
+  const items = step?.sidePanel?.items || [];
+  if (items.length) return items.map((item) => `${item.label}: ${item.value}`).join(" | ");
+  return fallback || step?.changed || "No tracked state yet";
+}
+
+function FrameDebugger({ previousStep, currentStep, stepIndex, accent }) {
+  const rows = [
+    {
+      label: "Before state",
+      icon: "ti-history",
+      tone: "#93c5fd",
+      value: stepIndex === 0 ? "No prior state. Set up the variables and the invariant." : formatFrameState(previousStep, "Carry forward the last proven state."),
+    },
+    {
+      label: "Move",
+      icon: "ti-arrow-narrow-right",
+      tone: accent,
+      value: currentStep?.changed || "Apply the next safe update.",
+    },
+    {
+      label: "After state",
+      icon: "ti-checkup-list",
+      tone: "#a7f3d0",
+      value: formatFrameState(currentStep, "The state now reflects this frame."),
+    },
+  ];
+
+  return (
+    <section style={{ background: "rgba(0,0,0,.18)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 9, padding: 11 }}>
+      <div style={{ alignItems: "center", color: accent, display: "flex", fontSize: 10.5, fontWeight: 900, gap: 7, textTransform: "uppercase" }}>
+        <i className="ti ti-adjustments-search" />
+        Frame Debugger
+      </div>
+      <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" }}>
+        {rows.map((row) => (
+          <article key={row.label} style={{ background: `${row.tone}0f`, border: `1px solid ${row.tone}33`, borderRadius: 8, display: "grid", gap: 6, minHeight: 94, padding: 9 }}>
+            <span style={{ alignItems: "center", color: row.tone, display: "flex", fontSize: 10.5, fontWeight: 900, gap: 6, textTransform: "uppercase" }}>
+              <i className={`ti ${row.icon}`} />
+              {row.label}
+            </span>
+            <span style={{ color: "#dbeafe", fontSize: 11.2, lineHeight: 1.45 }}>{row.value}</span>
+          </article>
+        ))}
+      </div>
+      <div style={{ color: "#93a4bf", fontSize: 11.2, lineHeight: 1.45 }}>
+        Beginner checkpoint: if the after state does not match the invariant, pause and replay this frame before moving to code.
+      </div>
+    </section>
+  );
+}
+
 function buildBeginnerBeat(lesson, currentStep, stepIndex, totalSteps) {
   const stepName = String(currentStep?.title || "this move").toLowerCase();
   const changed = currentStep?.changed || "The algorithm updates one small piece of state.";
@@ -592,6 +862,7 @@ function BeginnerDirectorCard({ lesson, currentStep, stepIndex, totalSteps, acce
 function DsaReelView({ lesson, state, currentStep, stepIndex, accent, playing, lessonTone, onSelectStep }) {
   const sceneNumber = stepIndex + 1;
   const progress = state.steps.length ? ((sceneNumber) / state.steps.length) * 100 : 0;
+  const previousStep = state.steps[Math.max(stepIndex - 1, 0)] || null;
 
   return (
     <section style={{ background: "linear-gradient(135deg, rgba(15,23,42,.82), rgba(2,6,23,.72))", border: `1px solid ${accent}55`, borderRadius: 8, boxShadow: playing ? `0 0 0 4px ${accent}12` : "none", display: "grid", gap: 12, overflow: "hidden", padding: 12, position: "relative" }}>
@@ -633,6 +904,7 @@ function DsaReelView({ lesson, state, currentStep, stepIndex, accent, playing, l
       </div>
 
       <ReelPredictor currentStep={currentStep} stepIndex={stepIndex} accent={accent} />
+      <FrameDebugger previousStep={previousStep} currentStep={currentStep} stepIndex={stepIndex} accent={accent} />
 
       <div style={{ background: "rgba(0,0,0,.18)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 8, padding: 11 }}>
         <div style={{ color: "#93a4bf", fontSize: 11.5, lineHeight: 1.45 }}>
@@ -1330,6 +1602,280 @@ function PatternAtlasPanel({
   );
 }
 
+function LearningSectionPanel({
+  accent,
+  accentBorder,
+  lesson,
+  thinkingSystem,
+  selectedModule,
+  blind75Problems,
+  visualizers,
+  filteredProblems,
+  selectedProblem,
+  learningQuery,
+  learningPatternFilter,
+  onLearningQueryChange,
+  onLearningPatternFilterChange,
+  onSelectLearningProblem,
+  onOpenLearningProblem,
+  onVisualize,
+  onApproach,
+}) {
+  const activeProblem = selectedProblem || (blind75Problems || [])[0];
+  const activeTeaching = activeProblem ? getProblemTeaching(activeProblem) : null;
+  const patternSummary = (blind75Problems || []).reduce((summary, problem) => {
+    summary[problem.visualizerId] = (summary[problem.visualizerId] || 0) + 1;
+    return summary;
+  }, {});
+
+  return (
+    <section style={{ background: "rgba(255,255,255,.04)", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 12, padding: 12 }}>
+      <div style={{ alignItems: "start", display: "grid", gap: 12, gridTemplateColumns: "minmax(0, 1fr) auto" }}>
+        <div>
+          <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Learning Path</div>
+          <h3 style={{ color: "#f8fbff", fontSize: 16, lineHeight: 1.3, margin: "4px 0" }}>
+            Learn the idea like a beginner, then practice it like an interview.
+          </h3>
+          <p style={{ color: "#93a4bf", fontSize: 12, lineHeight: 1.5, margin: 0 }}>
+            This section teaches the underlying patterns through pictures, tiny builds, repeatable interview answers, and step-by-step visual reasoning.
+          </p>
+        </div>
+        <strong style={{ background: "rgba(167,243,208,.09)", border: "1px solid rgba(167,243,208,.3)", borderRadius: 999, color: "#a7f3d0", fontSize: 11, fontWeight: 900, padding: "7px 10px", whiteSpace: "nowrap" }}>
+          Beginner friendly
+        </strong>
+      </div>
+
+      <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(min(230px, 100%), 1fr))" }}>
+        {BEGINNER_LEARNING_PATHS.map((path) => (
+          <article key={path.title} style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 8, minHeight: 250, padding: 11 }}>
+            <div style={{ alignItems: "center", color: accent, display: "flex", fontSize: 10.5, fontWeight: 900, gap: 7, textTransform: "uppercase" }}>
+              <i className={`ti ${path.icon}`} />
+              {path.source}
+            </div>
+            <strong style={{ color: "#f8fbff", fontSize: 13, lineHeight: 1.35 }}>{path.title}</strong>
+            <span style={{ color: "#dbeafe", fontSize: 11.4, lineHeight: 1.45 }}>{path.lesson}</span>
+            <div style={{ display: "grid", gap: 6 }}>
+              {path.beginnerSteps.map((step, index) => (
+                <div key={step} style={{ alignItems: "start", display: "grid", gap: 7, gridTemplateColumns: "18px 1fr" }}>
+                  <span style={{ background: `${accent}18`, border: `1px solid ${accent}44`, borderRadius: 999, color: accent, display: "inline-grid", fontSize: 9.5, fontWeight: 900, height: 18, placeItems: "center", width: 18 }}>{index + 1}</span>
+                  <span style={{ color: "#cbd5e1", fontSize: 10.8, lineHeight: 1.4 }}>{step}</span>
+                </div>
+              ))}
+            </div>
+            <span style={{ borderTop: "1px solid rgba(255,255,255,.07)", color: "#a7f3d0", fontSize: 11, lineHeight: 1.4, paddingTop: 7 }}>{path.practice}</span>
+          </article>
+        ))}
+      </div>
+
+      <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))" }}>
+        <section style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 9, padding: 11 }}>
+          <div style={{ color: "#facc15", fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Beginner ladder</div>
+          {BEGINNER_LEARNING_LADDER.map((step, index) => (
+            <div key={step} style={{ alignItems: "start", display: "grid", gap: 8, gridTemplateColumns: "22px 1fr" }}>
+              <span style={{ background: `${accent}18`, border: `1px solid ${accent}44`, borderRadius: 999, color: accent, display: "inline-grid", fontSize: 10.5, fontWeight: 900, height: 22, placeItems: "center", width: 22 }}>{index + 1}</span>
+              <span style={{ color: "#dbeafe", fontSize: 11.5, lineHeight: 1.45 }}>{step}</span>
+            </div>
+          ))}
+        </section>
+
+        <section style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 9, padding: 11 }}>
+          <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Apply to current lesson</div>
+          <strong style={{ color: "#f8fbff", fontSize: 13.2, lineHeight: 1.35 }}>{lesson.title}</strong>
+          <p style={{ color: "#dbeafe", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}>
+            Picture: {lesson.memoryHook} Approach: {thinkingSystem.steps?.[0]?.say || "clarify input, output, and constraints first."}
+          </p>
+          <p style={{ color: "#93a4bf", fontSize: 11.2, lineHeight: 1.45, margin: 0 }}>
+            Data structure lens: {selectedModule?.title || "Visual model"} helps you connect what changes on screen with what changes in memory.
+          </p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+            <ActionButton icon="ti-player-play" label="Open visual frame" onClick={onVisualize} tone={accent} />
+            <ActionButton icon="ti-brain" label="Use approach system" onClick={onApproach} tone="#a7f3d0" />
+          </div>
+        </section>
+      </div>
+
+      <section style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 10, padding: 11 }}>
+        <div>
+          <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Most-Asked DSA Classroom</div>
+          <h4 style={{ color: "#f8fbff", fontSize: 14, lineHeight: 1.35, margin: "4px 0 0" }}>A teacher-style visual script for the highest-frequency interview problem set.</h4>
+          <p style={{ color: "#93a4bf", fontSize: 11.5, lineHeight: 1.45, margin: "4px 0 0" }}>
+            Read each card like a mini lesson: recognize the signal, draw the state, follow the solve steps, say the invariant, then check the trap.
+          </p>
+        </div>
+
+        <div style={{ display: "grid", gap: 9, gridTemplateColumns: "minmax(0, 1fr) auto" }}>
+          <label style={{ color: "#dbeafe", display: "grid", fontSize: 11, fontWeight: 900, gap: 6, textTransform: "uppercase" }}>
+            Search problem
+            <input
+              value={learningQuery}
+              onChange={(event) => onLearningQueryChange(event.target.value)}
+              placeholder="Try: graph, window, palindrome, dp..."
+              style={{
+                background: "rgba(0,0,0,.18)",
+                border: "1px solid rgba(255,255,255,.1)",
+                borderRadius: 7,
+                color: "#f8fbff",
+                fontSize: 12.5,
+                minHeight: 34,
+                outline: "none",
+                padding: "8px 10px",
+              }}
+            />
+          </label>
+          <strong style={{ alignSelf: "end", background: "rgba(139,211,255,.08)", border: `1px solid ${accentBorder}`, borderRadius: 999, color: accent, fontSize: 11, fontWeight: 900, padding: "9px 11px", whiteSpace: "nowrap" }}>
+            {(filteredProblems || []).length}/{(blind75Problems || []).length} shown
+          </strong>
+        </div>
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+          {[{ id: "all", title: "All Patterns" }, ...(visualizers || [])].map((visualizer) => {
+            const active = learningPatternFilter === visualizer.id;
+            const count = visualizer.id === "all" ? (blind75Problems || []).length : patternSummary[visualizer.id] || 0;
+            return (
+              <button
+                key={visualizer.id}
+                type="button"
+                className={active ? "glass-button" : ""}
+                onClick={() => onLearningPatternFilterChange(visualizer.id)}
+                style={{
+                  background: active ? `${accent}1f` : "rgba(255,255,255,.035)",
+                  border: `1px solid ${active ? accent : "rgba(255,255,255,.075)"}`,
+                  borderRadius: 7,
+                  color: active ? "#f8fbff" : "#93a4bf",
+                  cursor: "pointer",
+                  fontSize: 10.8,
+                  fontWeight: 850,
+                  padding: "7px 9px",
+                }}
+              >
+                {visualizer.title} · {count}
+              </button>
+            );
+          })}
+        </div>
+
+        {activeProblem && activeTeaching ? (
+          <section style={{ background: `${accent}0f`, border: `1px solid ${accent}34`, borderRadius: 8, display: "grid", gap: 10, padding: 11 }}>
+            <div style={{ alignItems: "start", display: "flex", gap: 10, justifyContent: "space-between", flexWrap: "wrap" }}>
+              <div>
+                <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Teacher board · #{activeProblem.order} · {activeProblem.difficulty}</div>
+                <h4 style={{ color: "#f8fbff", fontSize: 16, lineHeight: 1.3, margin: "4px 0 0" }}>{activeProblem.title}</h4>
+              </div>
+              <ActionButton icon="ti-player-play" label="Open visualizer" onClick={() => onOpenLearningProblem(activeProblem)} tone="#a7f3d0" />
+            </div>
+            <p style={{ color: "#dbeafe", fontSize: 12, lineHeight: 1.5, margin: 0 }}>{activeTeaching.problemLens}</p>
+            <div style={{ display: "grid", gap: 9, gridTemplateColumns: "repeat(auto-fit, minmax(min(180px, 100%), 1fr))" }}>
+              {[
+                ["Recognize", activeTeaching.recognize, "#93c5fd"],
+                ["Visualize", activeTeaching.picture, accent],
+                ["Invariant", activeTeaching.invariant, "#a7f3d0"],
+                ["Trap", activeTeaching.trap, "#fda4af"],
+              ].map(([label, value, tone]) => (
+                <div key={label} style={{ background: "rgba(0,0,0,.14)", border: `1px solid ${tone}30`, borderRadius: 8, display: "grid", gap: 5, padding: 9 }}>
+                  <strong style={{ color: tone, fontSize: 10.5, textTransform: "uppercase" }}>{label}</strong>
+                  <span style={{ color: "#dbeafe", fontSize: 11, lineHeight: 1.4 }}>{value}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: "grid", gap: 6 }}>
+              <strong style={{ color: "#a7f3d0", fontSize: 10.5, textTransform: "uppercase" }}>Classroom solve script</strong>
+              <div style={{ display: "grid", gap: 6, gridTemplateColumns: "repeat(auto-fit, minmax(min(150px, 100%), 1fr))" }}>
+                {activeTeaching.solve.map((step, index) => (
+                  <span key={step} style={{ background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 7, color: "#dbeafe", fontSize: 11, fontWeight: 800, lineHeight: 1.35, padding: 8 }}>
+                    {index + 1}. {step}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        <div style={{ display: "grid", gap: 9, gridTemplateColumns: "repeat(auto-fit, minmax(min(260px, 100%), 1fr))" }}>
+          {(filteredProblems || []).map((problem) => {
+            const teaching = getProblemTeaching(problem);
+            const selected = activeProblem?.id === problem.id;
+            return (
+              <article key={problem.id} style={{ background: selected ? `${accent}13` : "rgba(255,255,255,.035)", border: `1px solid ${selected ? accent : "rgba(255,255,255,.075)"}`, borderRadius: 8, display: "grid", gap: 8, minHeight: 310, padding: 11 }}>
+                <div style={{ alignItems: "center", display: "flex", gap: 7, justifyContent: "space-between" }}>
+                  <span style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>#{problem.order} · {problem.difficulty}</span>
+                  <span style={{ color: "#a7f3d0", fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>{problem.pattern}</span>
+                </div>
+                <strong style={{ color: "#f8fbff", fontSize: 12.8, lineHeight: 1.35 }}>{problem.title}</strong>
+                <span style={{ color: "#dbeafe", fontSize: 11.1, lineHeight: 1.45 }}>{teaching.problemLens}</span>
+                <div style={{ background: "rgba(147,197,253,.06)", border: "1px solid rgba(147,197,253,.16)", borderRadius: 7, display: "grid", gap: 4, padding: 8 }}>
+                  <span style={{ color: "#93c5fd", fontSize: 10.3, fontWeight: 900, textTransform: "uppercase" }}>When you see it</span>
+                  <span style={{ color: "#cbd5e1", fontSize: 10.8, lineHeight: 1.4 }}>{teaching.recognize}</span>
+                </div>
+                <div style={{ background: "rgba(139,211,255,.055)", border: `1px solid ${accent}30`, borderRadius: 7, display: "grid", gap: 4, padding: 8 }}>
+                  <span style={{ color: accent, fontSize: 10.3, fontWeight: 900, textTransform: "uppercase" }}>Visualize</span>
+                  <span style={{ color: "#dbeafe", fontSize: 10.8, lineHeight: 1.4 }}>{teaching.picture}</span>
+                </div>
+                <div style={{ display: "grid", gap: 5 }}>
+                  <span style={{ color: "#a7f3d0", fontSize: 10.3, fontWeight: 900, textTransform: "uppercase" }}>Solve it like this</span>
+                  {teaching.solve.map((step, index) => (
+                    <div key={step} style={{ alignItems: "start", display: "grid", gap: 7, gridTemplateColumns: "18px 1fr" }}>
+                      <span style={{ background: "rgba(167,243,208,.1)", border: "1px solid rgba(167,243,208,.25)", borderRadius: 999, color: "#a7f3d0", display: "inline-grid", fontSize: 9.5, fontWeight: 900, height: 18, placeItems: "center", width: 18 }}>{index + 1}</span>
+                      <span style={{ color: "#dbeafe", fontSize: 10.8, lineHeight: 1.35 }}>{step}</span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ borderTop: "1px solid rgba(255,255,255,.07)", display: "grid", gap: 5, paddingTop: 8 }}>
+                  <span style={{ color: "#facc15", fontSize: 10.3, fontWeight: 900, textTransform: "uppercase" }}>Say out loud</span>
+                  <span style={{ color: "#dbeafe", fontSize: 10.8, lineHeight: 1.4 }}>{teaching.say}</span>
+                  <span style={{ color: "#fda4af", fontSize: 10.8, lineHeight: 1.4 }}>Trap: {teaching.trap}</span>
+                  <span style={{ color: "#93a4bf", fontSize: 10.6, lineHeight: 1.35 }}>Edge check: {teaching.edgeCase}</span>
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+                  <button type="button" onClick={() => onSelectLearningProblem(problem.id)} style={{ background: selected ? `${accent}20` : "rgba(255,255,255,.045)", border: `1px solid ${selected ? accent : "rgba(255,255,255,.08)"}`, borderRadius: 7, color: "#dbeafe", cursor: "pointer", fontSize: 10.8, fontWeight: 850, padding: "6px 8px" }}>
+                    {selected ? "Selected" : "Teach this"}
+                  </button>
+                  <button type="button" onClick={() => onOpenLearningProblem(problem)} style={{ background: "rgba(167,243,208,.07)", border: "1px solid rgba(167,243,208,.25)", borderRadius: 7, color: "#a7f3d0", cursor: "pointer", fontSize: 10.8, fontWeight: 850, padding: "6px 8px" }}>
+                    Open visualizer
+                  </button>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <section style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 9, padding: 11 }}>
+        <div>
+          <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Pattern modules</div>
+          <p style={{ color: "#93a4bf", fontSize: 11.5, lineHeight: 1.45, margin: "4px 0 0" }}>
+            Move from a mental picture to a concrete drill. The goal is to understand the state change before memorizing code.
+          </p>
+        </div>
+        <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(min(220px, 100%), 1fr))" }}>
+          {BEGINNER_LEARNING_MODULES.map((module) => (
+            <article
+              key={module.title}
+              style={{
+                background: "rgba(255,255,255,.035)",
+                border: "1px solid rgba(255,255,255,.075)",
+                borderRadius: 8,
+                color: "#dbeafe",
+                display: "grid",
+                gap: 7,
+                minHeight: 172,
+                padding: 10,
+              }}
+            >
+              <strong style={{ color: "#f8fbff", fontSize: 12.4, lineHeight: 1.35 }}>{module.title}</strong>
+              <span style={{ color: "#93c5fd", fontSize: 10.8, fontWeight: 900, lineHeight: 1.4, textTransform: "uppercase" }}>Picture</span>
+              <span style={{ color: "#dbeafe", fontSize: 11, lineHeight: 1.45 }}>{module.picture}</span>
+              <span style={{ color: "#a7f3d0", fontSize: 10.8, fontWeight: 900, lineHeight: 1.4, textTransform: "uppercase" }}>Why</span>
+              <span style={{ color: "#cbd5e1", fontSize: 11, lineHeight: 1.45 }}>{module.why}</span>
+              <span style={{ color: "#facc15", fontSize: 10.8, fontWeight: 900, lineHeight: 1.4, textTransform: "uppercase" }}>Drill</span>
+              <span style={{ color: "#dbeafe", fontSize: 11, lineHeight: 1.45 }}>{module.drill}</span>
+            </article>
+          ))}
+        </div>
+      </section>
+    </section>
+  );
+}
+
 function DsaVisualPlaygroundPanel({
   accent,
   accentBorder,
@@ -1566,6 +2112,9 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
   const [challengeError, setChallengeError] = useState("");
   const [selectedPatternId, setSelectedPatternId] = useState("sliding-window");
   const [selectedPlaygroundModuleId, setSelectedPlaygroundModuleId] = useState("array-list");
+  const [learningQuery, setLearningQuery] = useState("");
+  const [learningPatternFilter, setLearningPatternFilter] = useState("all");
+  const [selectedLearningProblemId, setSelectedLearningProblemId] = useState("two-sum");
   const [stepIndex, setStepIndex] = useState(0);
   const [stage, setStage] = useState("Visualize");
   const [playing, setPlaying] = useState(false);
@@ -1657,6 +2206,14 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
     const steps = lesson.codeWalkthrough || [];
     return steps.find((item) => item.visualStep === stepIndex) || steps[Math.min(stepIndex, steps.length - 1)] || null;
   }, [lesson, stepIndex]);
+  const selectedLearningProblem = useMemo(
+    () => blind75Problems.find((problem) => problem.id === selectedLearningProblemId) || blind75Problems[0],
+    [blind75Problems, selectedLearningProblemId],
+  );
+  const filteredLearningProblems = useMemo(
+    () => filterTeachingProblems(blind75Problems, learningQuery, learningPatternFilter),
+    [blind75Problems, learningQuery, learningPatternFilter],
+  );
 
   const refreshGeneratedChallenges = useCallback(async () => {
     setChallengeLoading(true);
@@ -1827,6 +2384,13 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
     setSelectedChallengeId(challengeId);
     setChallengeChoiceId("");
     setStage("Interview Challenges");
+  };
+
+  const openLearningProblem = (problem) => {
+    if (!problem) return;
+    setSelectedLearningProblemId(problem.id);
+    chooseLesson(problem.lessonId);
+    setStage("Visualize");
   };
 
   const filterChallenges = (filterId) => {
@@ -2047,6 +2611,28 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
           onNext={nextChallenge}
           onPractice={practiceChallengeAsMock}
           onRefresh={refreshGeneratedChallenges}
+        />
+      ) : null}
+
+      {stage === "Learn" ? (
+        <LearningSectionPanel
+          accent={accent}
+          accentBorder={accentBorder}
+          lesson={lesson}
+          thinkingSystem={thinkingSystem}
+          selectedModule={selectedPlaygroundModule}
+          blind75Problems={blind75Problems}
+          visualizers={blind75Visualizers}
+          filteredProblems={filteredLearningProblems}
+          selectedProblem={selectedLearningProblem}
+          learningQuery={learningQuery}
+          learningPatternFilter={learningPatternFilter}
+          onLearningQueryChange={setLearningQuery}
+          onLearningPatternFilterChange={setLearningPatternFilter}
+          onSelectLearningProblem={setSelectedLearningProblemId}
+          onOpenLearningProblem={openLearningProblem}
+          onVisualize={visualize}
+          onApproach={() => chooseTrack("thinking")}
         />
       ) : null}
 

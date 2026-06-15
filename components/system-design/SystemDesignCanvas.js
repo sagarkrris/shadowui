@@ -81,47 +81,618 @@ function ListPanel({ title, icon, items, accent, children }) {
   );
 }
 
+const SYSTEM_SCENARIOS = [
+  {
+    id: "cache-hit",
+    label: "Cache hit",
+    path: ["client", "gateway", "controller", "service", "cache", "observability"],
+    symptom: "The hot read returns from cache, so DB and MQ stay out of the synchronous path.",
+    teaching: "Say the cache key, TTL, freshness tolerance, and the fallback path if the value is missing.",
+    recovery: "Still emit metrics for hit rate and stale reads; a high hit rate is only useful if the data is safe to serve.",
+  },
+  {
+    id: "cache-miss",
+    label: "Cache miss",
+    path: ["client", "gateway", "controller", "service", "cache", "index", "db", "cache", "observability"],
+    symptom: "The cache has no value, so the service queries DB through the right index and refills cache.",
+    teaching: "Explain cache-aside: read cache, miss, query source of truth, set value with TTL, return response.",
+    recovery: "Protect the DB with request coalescing, short TTLs for negative results, and stampede prevention.",
+  },
+  {
+    id: "db-slow",
+    label: "DB slow",
+    path: ["client", "gateway", "controller", "service", "index", "db", "observability"],
+    symptom: "Latency spikes because the query scans too much data or waits on locks.",
+    teaching: "Connect access pattern to index order, selectivity, pagination, and transaction duration.",
+    recovery: "Inspect query plan, add or reshape composite index, move heavy reads to replicas, and alert on p95.",
+  },
+  {
+    id: "queue-lag",
+    label: "Queue lag",
+    path: ["client", "gateway", "controller", "service", "db", "mq", "worker", "observability"],
+    symptom: "The user gets a response, but async work falls behind and freshness drops.",
+    teaching: "Separate request latency from background completion and name the user-visible consistency promise.",
+    recovery: "Scale workers, tune batch size, add backoff, watch DLQ, and shed low-priority jobs if needed.",
+  },
+  {
+    id: "worker-failure",
+    label: "Worker failure",
+    path: ["mq", "worker", "mq", "observability"],
+    symptom: "Messages retry because the worker crashes or a downstream dependency fails.",
+    teaching: "At-least-once delivery means the worker must be idempotent and safe to retry.",
+    recovery: "Use retry budgets, poison-message isolation, DLQ replay, idempotency keys, and dependency alerts.",
+  },
+  {
+    id: "duplicate-request",
+    label: "Duplicate request",
+    path: ["client", "gateway", "controller", "service", "db", "observability"],
+    symptom: "The same command arrives twice from retries, double clicks, or network uncertainty.",
+    teaching: "Use an idempotency key and unique constraint so the operation completes once.",
+    recovery: "Return the stored result for repeated keys and make side effects publish only after the winning commit.",
+  },
+  {
+    id: "rate-limited",
+    label: "Rate limited",
+    path: ["client", "gateway", "observability"],
+    symptom: "The gateway rejects excess traffic before it consumes app, cache, or DB capacity.",
+    teaching: "Rate limits protect shared systems; explain user key, IP key, burst size, and retry-after behavior.",
+    recovery: "Return 429, log abuse signals, expose retry-after, and keep dashboards for limit saturation.",
+  },
+];
+
+const FAILURE_RECOVERY_CASES = [
+  {
+    id: "retries",
+    label: "Retries",
+    steps: ["Detect transient failure", "Retry with exponential backoff", "Stop at retry budget", "Surface error or enqueue recovery"],
+    lesson: "Retries help only when bounded; unbounded retries create traffic storms.",
+  },
+  {
+    id: "idempotency",
+    label: "Idempotency keys",
+    steps: ["Client sends key", "Service checks prior result", "Unique DB constraint wins", "Duplicate returns stored response"],
+    lesson: "Idempotency turns uncertain retries into one safe operation.",
+  },
+  {
+    id: "outbox",
+    label: "Outbox pattern",
+    steps: ["Write business row", "Write outbox row in same transaction", "Publisher sends event", "Mark event delivered"],
+    lesson: "Outbox prevents the classic DB commit succeeded but event publish failed gap.",
+  },
+  {
+    id: "dlq",
+    label: "DLQ",
+    steps: ["Worker fails repeatedly", "Message exceeds retry budget", "Move to DLQ", "Alert and replay after fix"],
+    lesson: "A dead-letter queue keeps poison messages from blocking healthy work.",
+  },
+  {
+    id: "rollback",
+    label: "Rollback",
+    steps: ["Detect failed step", "Undo local transaction", "Run compensating action", "Record audit trail"],
+    lesson: "Rollback is simple inside one DB transaction; distributed workflows often need compensation.",
+  },
+  {
+    id: "cache-race",
+    label: "Cache invalidation race",
+    steps: ["Write DB", "Delete cache", "Concurrent reader refills stale value", "Use version or delayed double delete"],
+    lesson: "Cache invalidation needs a race story, not just a delete call.",
+  },
+  {
+    id: "eventual",
+    label: "Eventual consistency",
+    steps: ["Commit source of truth", "Publish event", "Read model catches up", "UI shows pending or stale state safely"],
+    lesson: "Eventual consistency is acceptable when the user experience names the freshness promise.",
+  },
+];
+
+const INDEX_QUERY_CASES = [
+  {
+    id: "works",
+    label: "Works well",
+    query: "WHERE user_id = ? ORDER BY created_at DESC LIMIT 20",
+    index: "(user_id, created_at)",
+    verdict: "Excellent fit",
+    explanation: "The B-tree can jump to one user's range, then read newest rows in index order.",
+    scan: ["Root: user_id range", "Branch: matching user_id", "Leaf: created_at descending", "Stop after LIMIT 20"],
+  },
+  {
+    id: "partial",
+    label: "Partial fit",
+    query: "WHERE user_id = ? AND status = ? ORDER BY created_at DESC",
+    index: "(user_id, created_at)",
+    verdict: "Needs filtering",
+    explanation: "The index finds the user quickly, but status is not in the index prefix, so extra rows are filtered.",
+    scan: ["Root: user_id range", "Leaf: created_at order", "Filter: status", "Consider (user_id, status, created_at)"],
+  },
+  {
+    id: "wrong-order",
+    label: "Wrong order",
+    query: "WHERE created_at > ? ORDER BY user_id",
+    index: "(user_id, created_at)",
+    verdict: "Poor fit",
+    explanation: "The leading column is user_id, so a range only on created_at cannot use the index efficiently.",
+    scan: ["Cannot seek by created_at first", "Many user_id ranges scanned", "Sort may be needed", "Consider (created_at, user_id)"],
+  },
+  {
+    id: "write-cost",
+    label: "Write trade-off",
+    query: "INSERT new activity row",
+    index: "(user_id, created_at)",
+    verdict: "Read speed costs writes",
+    explanation: "Every insert also updates the index, so each extra index improves reads but slows writes and uses storage.",
+    scan: ["Insert table row", "Update B-tree leaf", "Maybe split page", "Replicate index change"],
+  },
+];
+
+const SYSTEM_PRACTICE_TEMPLATES = [
+  {
+    id: "url-shortener",
+    label: "URL shortener",
+    problem: "Design URL Shortener",
+    sections: {
+      requirements: "Shorten long URLs, redirect quickly, support custom aliases, track basic analytics.",
+      architecture: "Client -> Gateway -> Link Controller -> Link Service -> Cache -> Link DB -> Analytics Queue -> Worker.",
+      data: "links(code, original_url, owner_id, expires_at, created_at), indexes on code and owner_id_created_at.",
+      scaling: "Cache hot redirects, pre-generate codes, shard by code prefix, async analytics.",
+      risks: "Hot links, malicious URLs, custom alias conflicts, cache staleness, analytics lag.",
+    },
+  },
+  {
+    id: "ticket-booking",
+    label: "Ticket booking",
+    problem: "Implement Ticket Booking System",
+    sections: {
+      requirements: "Search events, hold seats, reserve inventory, pay, confirm booking, notify user.",
+      architecture: "Gateway -> Booking Controller -> Inventory Service -> Reservation DB -> Payment Adapter -> Notification Queue.",
+      data: "seats(event_id, seat_id, status, hold_expires_at), reservations(user_id, event_id, status), unique index on event_id_seat_id.",
+      scaling: "Use seat holds, optimistic locking, short TTL cache for seat maps, async notifications.",
+      risks: "Double booking, payment timeout, hold expiry race, hot events, queue retry duplication.",
+    },
+  },
+  {
+    id: "chat",
+    label: "Chat",
+    problem: "Design Chat System",
+    sections: {
+      requirements: "Send messages, show conversation history, deliver realtime updates, support read receipts.",
+      architecture: "Client -> Gateway -> Message Controller -> Chat Service -> Message DB -> Fanout Queue -> WebSocket Workers.",
+      data: "messages(conversation_id, message_id, sender_id, created_at), index on conversation_id_created_at.",
+      scaling: "Partition by conversation, cache recent messages, use queue fanout, track delivery separately.",
+      risks: "Ordering, duplicate sends, offline delivery, hot group chats, eventual read receipts.",
+    },
+  },
+  {
+    id: "feed",
+    label: "Social feed",
+    problem: "Design Social Feed",
+    sections: {
+      requirements: "Post content, follow users, build home feed, rank recent items, notify followers.",
+      architecture: "Post Controller -> Feed Service -> Post DB -> Fanout Queue -> Feed Cache -> Ranking Worker.",
+      data: "posts(author_id, post_id, created_at), follows(follower_id, followee_id), feed_items(user_id, score, created_at).",
+      scaling: "Fanout-on-write for normal users, fanout-on-read for celebrities, cache home timelines.",
+      risks: "Celebrity accounts, ranking freshness, cache invalidation, queue lag, backfill correctness.",
+    },
+  },
+  {
+    id: "payment",
+    label: "Payment",
+    problem: "Design Payment Workflow",
+    sections: {
+      requirements: "Authorize payment, capture funds, handle retries, refunds, webhooks, and audit trails.",
+      architecture: "Payment Controller -> Payment Service -> Idempotency Store -> Provider Adapter -> Payment DB -> Event Queue.",
+      data: "payments(idempotency_key, user_id, status, amount, provider_ref), unique index on idempotency_key.",
+      scaling: "Keep provider calls isolated, use outbox events, reconcile async webhooks, cache no critical money state.",
+      risks: "Duplicate charge, provider timeout, webhook replay, partial failure, audit and compliance.",
+    },
+  },
+  {
+    id: "notification",
+    label: "Notification",
+    problem: "Design Notification System",
+    sections: {
+      requirements: "Send email, push, and in-app notifications with preferences and retries.",
+      architecture: "Notification API -> Preference Service -> Template Service -> Queue -> Channel Workers -> Delivery Log DB.",
+      data: "notification_jobs(user_id, channel, status, next_retry_at), index on status_next_retry_at.",
+      scaling: "Queue by channel, batch sends, cache preferences, backoff failed providers.",
+      risks: "Provider outage, duplicate sends, user opt-out race, queue backlog, template rollback.",
+    },
+  },
+  {
+    id: "search-autocomplete",
+    label: "Search autocomplete",
+    problem: "Design Search Autocomplete",
+    sections: {
+      requirements: "Return low-latency suggestions as users type, personalize lightly, update popular queries.",
+      architecture: "Client -> Gateway -> Suggest Controller -> Suggest Service -> Prefix Cache -> Search Index -> Update Queue.",
+      data: "suggestions(prefix, term, score, locale), index on prefix_score and locale_prefix.",
+      scaling: "Cache top prefixes, precompute popular suggestions, async index refresh, regional replicas.",
+      risks: "Stale suggestions, typo handling, hot prefixes, index rebuild lag, personalization privacy.",
+    },
+  },
+];
+
+function scoreDrillAnswer(answer, expectedPoints) {
+  const normalized = answer.toLowerCase();
+  return expectedPoints.map((point) => ({
+    ...point,
+    matched: point.keywords.some((keyword) => normalized.includes(keyword.toLowerCase())),
+  }));
+}
+
+function mermaidLabel(value) {
+  return String(value || "").replaceAll('"', "'");
+}
+
+function buildMermaidDiagram(blueprint, mode = "hld", scenario = SYSTEM_SCENARIOS[0]) {
+  const serviceName = blueprint?.hld?.services?.[0]?.name || "Application Service";
+  if (mode === "lld") {
+    return [
+      "flowchart LR",
+      "  Controller[\"Controller\"] --> Service[\"Service\"]",
+      "  Service --> CacheClient[\"CacheClient\"]",
+      "  Service --> Repository[\"Repository\"]",
+      "  Repository --> Index[\"DB Index\"]",
+      "  Index --> Database[\"Database\"]",
+      "  Service --> EventPublisher[\"EventPublisher\"]",
+      "  EventPublisher --> Queue[\"Message Queue\"]",
+      "  Queue --> Worker[\"Worker\"]",
+      "  Worker --> Operations[\"Logs, Metrics, Traces\"]",
+    ].join("\n");
+  }
+
+  const scenarioNodeMap = {
+    client: "Client",
+    gateway: "Gateway",
+    controller: "Controller",
+    service: "Service",
+    cache: "Cache",
+    index: "Index",
+    db: "Database",
+    mq: "Queue",
+    worker: "Worker",
+    invalidation: "Invalidation",
+    observability: "Observability",
+  };
+  const scenarioEdges = scenario?.path?.length
+    ? scenario.path.slice(0, -1).map((step, index) => `  ${scenarioNodeMap[step] || "Service"} -. "${mermaidLabel(scenario.label)}" .-> ${scenarioNodeMap[scenario.path[index + 1]] || "Service"}`)
+    : [];
+
+  return [
+    "flowchart LR",
+    "  Client[\"Client\"] --> Gateway[\"API Gateway\"]",
+    "  Gateway --> Controller[\"Controller\"]",
+    `  Controller --> Service["${mermaidLabel(serviceName)}"]`,
+    "  Service --> Cache[\"Cache\"]",
+    "  Cache --> Index[\"DB Index\"]",
+    "  Index --> Database[\"Database\"]",
+    "  Service --> Queue[\"Message Queue\"]",
+    "  Queue --> Worker[\"Worker\"]",
+    "  Service --> Invalidation[\"Cache Invalidation\"]",
+    "  Worker --> Observability[\"Observability\"]",
+    "  Service --> Observability",
+    ...scenarioEdges,
+  ].join("\n");
+}
+
+function buildJavaClassPrefix(blueprint) {
+  const raw = blueprint?.problem || blueprint?.title || "Application";
+  const cleaned = raw
+    .replace(/\b(design|implement|system|workflow|service)\b/gi, " ")
+    .replace(/[^a-z0-9]+/gi, " ")
+    .trim();
+  const words = cleaned.split(/\s+/).filter(Boolean).slice(0, 3);
+  return words.length
+    ? words.map((word) => `${word.charAt(0).toUpperCase()}${word.slice(1).toLowerCase()}`).join("")
+    : "Application";
+}
+
 function buildArchitectureFlow(blueprint) {
   const serviceNames = (blueprint?.hld?.services || []).map((service) => service.name);
   const storage = (blueprint?.lld?.schema || []).length ? "Primary DB" : "Storage";
+  const service = serviceNames[0] || "Application Service";
   return [
-    { id: "client", label: "Client", icon: "ti-device-laptop", detail: "User request enters the system." },
-    { id: "gateway", label: "Gateway", icon: "ti-shield-lock", detail: "Auth, routing, rate limit, and request shaping." },
-    { id: "service", label: serviceNames[0] || "API Service", icon: "ti-server", detail: "Validates and orchestrates the core workflow." },
-    { id: "cache", label: "Cache", icon: "ti-bolt", detail: "Hot reads, locks, sessions, or derived projections." },
-    { id: "db", label: storage, icon: "ti-database", detail: "Durable source of truth and indexes." },
-    { id: "queue", label: "Queue", icon: "ti-messages", detail: "Async fanout, retries, and slow side effects." },
+    {
+      id: "client",
+      label: "Client",
+      icon: "ti-device-laptop",
+      phase: "entry",
+      detail: "User action creates a request with headers, auth token, payload, timeout, and retry behavior.",
+      teacher: "Start by saying who calls the system, what they send, and what answer they expect.",
+      interviewCue: "Define request shape, idempotency key, timeout, and mobile/web retry behavior.",
+      drillPoints: [
+        { label: "Request shape", keywords: ["request", "payload", "headers"] },
+        { label: "Timeout/retry behavior", keywords: ["timeout", "retry"] },
+        { label: "Idempotency when needed", keywords: ["idempotency", "idempotent", "duplicate"] },
+      ],
+    },
+    {
+      id: "gateway",
+      label: "API Gateway",
+      icon: "ti-shield-lock",
+      phase: "edge",
+      detail: "Terminates TLS, authenticates, rate limits, routes, applies request size limits, and adds trace IDs.",
+      teacher: "The gateway protects the inside of the system before business logic runs.",
+      interviewCue: "Mention auth, throttling, routing, versioning, request correlation, and edge caching when useful.",
+      drillPoints: [
+        { label: "Auth and routing", keywords: ["auth", "route", "routing"] },
+        { label: "Rate limiting", keywords: ["rate", "limit", "throttle"] },
+        { label: "Trace ID", keywords: ["trace", "correlation"] },
+      ],
+    },
+    {
+      id: "controller",
+      label: "Controller",
+      icon: "ti-route",
+      phase: "api",
+      detail: "Parses the route, validates DTOs, maps errors, and delegates to services without owning business rules.",
+      teacher: "The controller is a traffic director; it should not become the place where all decisions live.",
+      interviewCue: "Call out validation, status codes, request DTOs, response DTOs, and consistent error handling.",
+      drillPoints: [
+        { label: "DTO validation", keywords: ["dto", "validate", "validation"] },
+        { label: "Thin controller", keywords: ["thin", "delegate", "service"] },
+        { label: "Status/error mapping", keywords: ["status", "error", "response"] },
+      ],
+    },
+    {
+      id: "service",
+      label: service,
+      icon: "ti-server",
+      phase: "business",
+      detail: "Owns business rules, permissions, orchestration, transactions, and calls cache, repository, or MQ clients.",
+      teacher: "The service answers: what must be true before this operation is allowed to happen?",
+      interviewCue: "Explain invariants, transaction boundary, retries, circuit breakers, and dependency order.",
+      drillPoints: [
+        { label: "Business invariants", keywords: ["invariant", "rule", "permission"] },
+        { label: "Transaction boundary", keywords: ["transaction", "commit"] },
+        { label: "Dependency order", keywords: ["order", "orchestrate", "dependency"] },
+      ],
+    },
+    {
+      id: "cache",
+      label: "Cache",
+      icon: "ti-bolt",
+      phase: "speed",
+      detail: "Checks hot keys, TTLs, read-through/cache-aside behavior, negative caching, and stampede protection.",
+      teacher: "Cache is a speed layer, not the source of truth. Always say how it refreshes or expires.",
+      interviewCue: "Name cache key, TTL, hit/miss path, eviction, invalidation, and stale-read tolerance.",
+      drillPoints: [
+        { label: "Cache key and TTL", keywords: ["key", "ttl"] },
+        { label: "Hit/miss path", keywords: ["hit", "miss"] },
+        { label: "Invalidation/staleness", keywords: ["invalidate", "stale", "fresh"] },
+      ],
+    },
+    {
+      id: "index",
+      label: "DB Index",
+      icon: "ti-list-search",
+      phase: "lookup",
+      detail: "Narrows the scan using equality/range columns, sort order, selectivity, and query-plan awareness.",
+      teacher: "Indexes are how the database avoids searching every row when the request needs one slice of data.",
+      interviewCue: "Connect access pattern to composite index order, write overhead, cardinality, and pagination.",
+      drillPoints: [
+        { label: "Access pattern", keywords: ["access", "query", "filter"] },
+        { label: "Composite index order", keywords: ["composite", "order", "prefix"] },
+        { label: "Write overhead", keywords: ["write", "storage", "overhead"] },
+      ],
+    },
+    {
+      id: "db",
+      label: storage,
+      icon: "ti-database",
+      phase: "truth",
+      detail: "Persists durable state with constraints, transactions, isolation level, replication, and backup strategy.",
+      teacher: "This is the source of truth. If cache and DB disagree, the DB usually wins.",
+      interviewCue: "Discuss schema, constraints, transactions, consistency, replicas, sharding, and migration safety.",
+      drillPoints: [
+        { label: "Source of truth", keywords: ["truth", "durable", "persist"] },
+        { label: "Constraints/transactions", keywords: ["constraint", "transaction", "isolation"] },
+        { label: "Scale choice", keywords: ["replica", "shard", "migration"] },
+      ],
+    },
+    {
+      id: "mq",
+      label: "Message Queue",
+      icon: "ti-messages",
+      phase: "async",
+      detail: "Stores side-effect work for email, notifications, search indexing, analytics, or downstream fanout.",
+      teacher: "Queues keep the user request fast by moving slow work to a reliable background path.",
+      interviewCue: "Mention outbox, delivery semantics, ordering, retries, backoff, dead-letter queue, and lag.",
+      drillPoints: [
+        { label: "Async side effects", keywords: ["async", "side effect", "fanout"] },
+        { label: "Delivery semantics", keywords: ["at-least-once", "delivery", "ordering"] },
+        { label: "Retries and DLQ", keywords: ["retry", "dlq", "dead-letter"] },
+      ],
+    },
+    {
+      id: "worker",
+      label: "Worker",
+      icon: "ti-settings-automation",
+      phase: "background",
+      detail: "Consumes messages, performs side effects, deduplicates jobs, retries safely, and records progress.",
+      teacher: "A worker must be safe to run twice because real systems retry when networks fail.",
+      interviewCue: "Call out idempotency, poison messages, batch size, concurrency, and operational ownership.",
+      drillPoints: [
+        { label: "Idempotent processing", keywords: ["idempotent", "idempotency", "dedupe"] },
+        { label: "Retry safety", keywords: ["retry", "poison", "dlq"] },
+        { label: "Concurrency/batch tuning", keywords: ["batch", "concurrency", "parallel"] },
+      ],
+    },
+    {
+      id: "invalidation",
+      label: "Cache Invalidation",
+      icon: "ti-refresh",
+      phase: "freshness",
+      detail: "Deletes or refreshes affected keys after writes so future reads do not serve stale data forever.",
+      teacher: "Every write path needs a freshness answer: update cache, delete cache, or accept staleness.",
+      interviewCue: "Explain write-through vs cache-aside, event-based invalidation, TTL fallback, and race handling.",
+      drillPoints: [
+        { label: "Freshness strategy", keywords: ["fresh", "stale", "ttl"] },
+        { label: "Delete/update cache", keywords: ["delete", "update", "invalidate"] },
+        { label: "Race handling", keywords: ["race", "version", "double delete"] },
+      ],
+    },
+    {
+      id: "observability",
+      label: "Observability",
+      icon: "ti-activity",
+      phase: "operate",
+      detail: "Traces the request, logs structured events, emits metrics, alerts on latency, errors, cache misses, and queue lag.",
+      teacher: "If production breaks, observability is how the team finds the failing hop quickly.",
+      interviewCue: "Add trace IDs, RED metrics, SLOs, dashboards, alarms, slow-query logs, and DLQ monitoring.",
+      drillPoints: [
+        { label: "Trace/log/metrics", keywords: ["trace", "log", "metric"] },
+        { label: "SLO and alerts", keywords: ["slo", "alert", "dashboard"] },
+        { label: "Failure signals", keywords: ["latency", "queue lag", "slow query", "error"] },
+      ],
+    },
   ];
 }
 
-function ArchitectureFlow({ blueprint, activeIndex, accent }) {
+function ArchitectureFlow({ blueprint, activeIndex, accent, onSelectStep, selectedScenarioId, onScenarioSelect }) {
+  const [drillAnswer, setDrillAnswer] = useState("");
+  const [scenarioCursor, setScenarioCursor] = useState(0);
   const steps = buildArchitectureFlow(blueprint);
-  const active = steps[activeIndex % steps.length] || steps[0];
+  const activePosition = activeIndex % steps.length;
+  const active = steps[activePosition] || steps[0];
+  const selectedScenario = SYSTEM_SCENARIOS.find((scenario) => scenario.id === selectedScenarioId) || SYSTEM_SCENARIOS[0];
+  const scenarioStepSet = new Set(selectedScenario.path);
+  const drillScore = scoreDrillAnswer(drillAnswer, active.drillPoints || []);
   const bottleneck = blueprint?.hld?.risks?.[0] || "Watch the highest-contention write path.";
   const tradeoff = blueprint?.hld?.scaling?.[0] || "Use cache and queues carefully; keep critical writes durable.";
+  const failurePaths = [
+    "Cache miss: go to DB through the right DB index, then refill the cache with a bounded TTL.",
+    "Slow query: inspect query plan, composite index order, pagination, and whether the read belongs on a replica.",
+    "Queue lag: autoscale workers, tune batch size, watch retries, and move poison messages to a DLQ.",
+  ];
+  const moveScenarioStep = (direction) => {
+    const nextCursor = (scenarioCursor + direction + selectedScenario.path.length) % selectedScenario.path.length;
+    const nextStepId = selectedScenario.path[nextCursor];
+    const nextStepIndex = steps.findIndex((step) => step.id === nextStepId);
+    setScenarioCursor(nextCursor);
+    if (nextStepIndex >= 0) onSelectStep?.(nextStepIndex);
+  };
+
+  useEffect(() => {
+    setDrillAnswer("");
+  }, [active.id]);
+
+  useEffect(() => {
+    setScenarioCursor(0);
+  }, [selectedScenario.id]);
 
   return (
     <section style={{ border: `1px solid ${accent}30`, borderRadius: 8, background: "rgba(0,0,0,.16)", display: "grid", gap: 11, padding: 11 }}>
       <div style={{ alignItems: "center", display: "flex", gap: 8, justifyContent: "space-between", flexWrap: "wrap" }}>
         <div>
-          <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Animated Architecture Flow</div>
-          <p style={{ color: "#9fb0c7", fontSize: 11.4, lineHeight: 1.45, marginTop: 4 }}>Request path with bottleneck and trade-off callouts.</p>
+          <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Request Lifecycle Studio</div>
+          <p style={{ color: "#9fb0c7", fontSize: 11.4, lineHeight: 1.45, marginTop: 4 }}>Client to API Gateway, Controller, Service, Cache, DB Index, Database, MQ, Worker, Cache Invalidation, Observability.</p>
         </div>
-        <span style={{ color: "#a7f3d0", fontSize: 10.8, fontWeight: 900 }}>{active.label}</span>
+        <span style={{ color: "#a7f3d0", fontSize: 10.8, fontWeight: 900 }}>{activePosition + 1}/{steps.length} {active.label}</span>
+      </div>
+
+      <div style={{ background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 9, padding: 10 }}>
+        <div style={{ alignItems: "center", display: "flex", gap: 8, justifyContent: "space-between", flexWrap: "wrap" }}>
+          <div>
+            <strong style={{ color: "#f8fbff", fontSize: 12 }}>Scenario Mode</strong>
+            <p style={{ color: "#9fb0c7", fontSize: 11.1, lineHeight: 1.4, marginTop: 3 }}>{selectedScenario.symptom}</p>
+          </div>
+          <span style={{ color: "#fde68a", fontSize: 10.8, fontWeight: 900 }}>{selectedScenario.label}</span>
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {SYSTEM_SCENARIOS.map((scenario) => (
+            <button
+              key={scenario.id}
+              type="button"
+              onClick={() => {
+                onScenarioSelect?.(scenario.id);
+                setScenarioCursor(0);
+                const firstStep = steps.findIndex((step) => step.id === scenario.path[0]);
+                if (firstStep >= 0) onSelectStep?.(firstStep);
+              }}
+              style={{
+                background: selectedScenario.id === scenario.id ? `${accent}18` : "rgba(0,0,0,.16)",
+                border: `1px solid ${selectedScenario.id === scenario.id ? accent : "rgba(255,255,255,.08)"}`,
+                borderRadius: 999,
+                color: selectedScenario.id === scenario.id ? "#f8fbff" : "#9fb0c7",
+                cursor: "pointer",
+                fontSize: 10.5,
+                fontWeight: 850,
+                padding: "6px 9px",
+              }}
+            >
+              {scenario.label}
+            </button>
+          ))}
+        </div>
+        <div style={{ alignItems: "center", display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <ActionButton icon="ti-chevron-left" label="Previous Scenario Step" onClick={() => moveScenarioStep(-1)} tone="#a7f3d0" />
+          <span style={{ color: "#a7f3d0", fontSize: 10.8, fontWeight: 900 }}>{scenarioCursor + 1}/{selectedScenario.path.length} {selectedScenario.path[scenarioCursor]}</span>
+          <ActionButton icon="ti-chevron-right" label="Next Scenario Step" onClick={() => moveScenarioStep(1)} tone="#a7f3d0" />
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+          {selectedScenario.path.map((stepId, index) => (
+            <span key={`${stepId}-${index}`} style={{ background: index === scenarioCursor ? "rgba(167,243,208,.16)" : "rgba(0,0,0,.16)", border: `1px solid ${index === scenarioCursor ? "rgba(167,243,208,.38)" : "rgba(255,255,255,.08)"}`, borderRadius: 999, color: index === scenarioCursor ? "#d1fae5" : "#9fb0c7", fontSize: 10.1, fontWeight: 850, padding: "4px 7px" }}>
+              {index + 1}. {stepId}
+            </span>
+          ))}
+        </div>
+        <div style={responsiveGrid(230, 8)}>
+          <div style={{ color: "#dbeafe", fontSize: 11.2, lineHeight: 1.45 }}><strong style={{ color: "#f8fbff" }}>Teaching path:</strong> {selectedScenario.teaching}</div>
+          <div style={{ color: "#d1fae5", fontSize: 11.2, lineHeight: 1.45 }}><strong style={{ color: "#f8fbff" }}>Recovery move:</strong> {selectedScenario.recovery}</div>
+        </div>
       </div>
 
       <div style={{ alignItems: "stretch", display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(92px, 1fr))" }}>
         {steps.map((step, index) => {
-          const isActive = index === activeIndex % steps.length;
+          const isActive = index === activePosition;
+          const isInScenario = scenarioStepSet.has(step.id);
           return (
-            <div key={step.id} style={{ background: isActive ? `${accent}18` : "rgba(255,255,255,.035)", border: `1px solid ${isActive ? accent : "rgba(255,255,255,.075)"}`, borderRadius: 8, display: "grid", gap: 6, minHeight: 98, padding: 9, transform: isActive ? "translateY(-3px)" : "translateY(0)", transition: "transform .25s ease, border-color .25s ease, background .25s ease" }}>
+            <button
+              key={step.id}
+              type="button"
+              onClick={() => onSelectStep?.(index)}
+              style={{ background: isActive ? `${accent}18` : isInScenario ? "rgba(167,243,208,.055)" : "rgba(255,255,255,.035)", border: `1px solid ${isActive ? accent : isInScenario ? "rgba(167,243,208,.3)" : "rgba(255,255,255,.075)"}`, borderRadius: 8, cursor: "pointer", display: "grid", gap: 6, minHeight: 112, padding: 9, textAlign: "left", transform: isActive ? "translateY(-3px)" : "translateY(0)", transition: "transform .25s ease, border-color .25s ease, background .25s ease" }}
+            >
               <i className={`ti ${step.icon}`} style={{ color: isActive ? accent : "#9fb0c7", fontSize: 17 }} />
               <strong style={{ color: "#f8fbff", fontSize: 11.5, lineHeight: 1.3 }}>{step.label}</strong>
+              <span style={{ color: isActive ? "#d1fae5" : "#7f91aa", fontSize: 9.8, fontWeight: 900, textTransform: "uppercase" }}>{step.phase}</span>
+              {isInScenario && <span style={{ color: "#a7f3d0", fontSize: 9.7, fontWeight: 900, textTransform: "uppercase" }}>Scenario path</span>}
               <span style={{ color: "#9fb0c7", fontSize: 10.5, lineHeight: 1.35 }}>{step.detail}</span>
-            </div>
+            </button>
           );
         })}
       </div>
+
+      <div style={{ background: `${accent}0f`, border: `1px solid ${accent}28`, borderRadius: 8, display: "grid", gap: 8, padding: 10 }}>
+        <div style={{ alignItems: "center", display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <i className={`ti ${active.icon}`} style={{ color: accent, fontSize: 17 }} />
+          <strong style={{ color: "#f8fbff", fontSize: 13 }}>{active.label}</strong>
+          <span style={{ color: "#a7f3d0", fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>{active.phase}</span>
+        </div>
+        <p style={{ color: "#dbeafe", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}><strong style={{ color: "#f8fbff" }}>Teacher narration:</strong> {active.teacher}</p>
+        <p style={{ color: "#bfdbfe", fontSize: 11.3, lineHeight: 1.5, margin: 0 }}><strong style={{ color: "#f8fbff" }}>Interview cue:</strong> {active.interviewCue}</p>
+      </div>
+
+      <section style={{ border: "1px solid rgba(196,181,253,.22)", borderRadius: 8, display: "grid", gap: 8, padding: 10 }}>
+        <div>
+          <strong style={{ color: "#ddd6fe", display: "block", fontSize: 11, textTransform: "uppercase" }}>Interview Drill Mode</strong>
+          <p style={{ color: "#c4b5fd", fontSize: 11.2, lineHeight: 1.45, marginTop: 4 }}>What would you say to the interviewer about <strong style={{ color: "#f8fbff" }}>{active.label}</strong>?</p>
+        </div>
+        <textarea
+          value={drillAnswer}
+          onChange={(event) => setDrillAnswer(event.target.value)}
+          placeholder="Type your explanation, then compare the covered points below."
+          rows={3}
+          style={{ background: "rgba(0,0,0,.18)", border: "1px solid rgba(196,181,253,.22)", borderRadius: 7, color: "#f8fbff", fontSize: 11.5, lineHeight: 1.45, minWidth: 0, outline: "none", padding: 9, resize: "vertical", width: "100%" }}
+        />
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {drillScore.map((point) => (
+            <span key={point.label} style={{ background: point.matched ? "rgba(167,243,208,.12)" : "rgba(248,113,113,.1)", border: `1px solid ${point.matched ? "rgba(167,243,208,.28)" : "rgba(248,113,113,.25)"}`, borderRadius: 999, color: point.matched ? "#d1fae5" : "#fecaca", fontSize: 10.3, fontWeight: 850, padding: "5px 8px" }}>
+              {point.matched ? "Covered" : "Missing"}: {point.label}
+            </span>
+          ))}
+        </div>
+      </section>
 
       <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))" }}>
         <div style={{ border: "1px solid rgba(250,204,21,.22)", borderRadius: 8, color: "#fde68a", fontSize: 11.2, lineHeight: 1.45, padding: 9 }}>
@@ -132,6 +703,364 @@ function ArchitectureFlow({ blueprint, activeIndex, accent }) {
           <strong style={{ display: "block", fontSize: 10.5, marginBottom: 4, textTransform: "uppercase" }}>Trade-off</strong>
           {tradeoff}
         </div>
+      </div>
+
+      <div style={{ border: "1px solid rgba(248,113,113,.2)", borderRadius: 8, display: "grid", gap: 7, padding: 9 }}>
+        <strong style={{ color: "#fecaca", fontSize: 10.8, textTransform: "uppercase" }}>Failure paths to practice</strong>
+        {failurePaths.map((path) => (
+          <div key={path} style={{ color: "#fca5a5", fontSize: 11.1, lineHeight: 1.45 }}>{path}</div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function RequestLifecycleDeepDive({ blueprint, accent }) {
+  const [activeSliceIndex, setActiveSliceIndex] = useState(0);
+  const [drillAnswer, setDrillAnswer] = useState("");
+  const serviceName = blueprint?.hld?.services?.[0]?.name || "Application Service";
+  const schemaLine = blueprint?.lld?.schema?.[0] || "Entity(id, owner_id, status, created_at) with indexes for the highest-volume reads";
+  const implementationSlices = [
+    {
+      id: "controller",
+      title: "Controller / API Layer",
+      icon: "ti-route",
+      detail: "Validate path params and request body, reject bad input early, call one service method, and translate domain errors into clear HTTP responses.",
+      input: "HTTP request, auth principal, headers, body DTO",
+      output: "Validated command/query object or 4xx response",
+      trace: "Request enters route handler -> DTO validation runs -> auth principal is attached -> service method is called.",
+      say: "I keep controllers thin so validation and transport concerns stay separate from business rules.",
+      drillPoints: [
+        { label: "Thin controller", keywords: ["thin", "delegate", "service"] },
+        { label: "DTO validation", keywords: ["dto", "validate", "validation"] },
+        { label: "Error mapping", keywords: ["error", "status", "response"] },
+      ],
+      checks: ["DTO validation", "Auth principal", "Idempotency key", "Error mapping"],
+    },
+    {
+      id: "service",
+      title: `${serviceName} / Business Rules`,
+      icon: "ti-server",
+      detail: "Load the required state, enforce invariants, choose sync vs async work, keep the transaction boundary small, and return a stable response model.",
+      input: "Validated command/query plus caller context",
+      output: "Domain decision, persisted state request, events to publish",
+      trace: "Service checks permissions -> loads required records -> applies invariants -> decides cache, DB, and async work.",
+      say: "I put transaction and invariant decisions here because this is the layer that understands the use case.",
+      drillPoints: [
+        { label: "Invariants", keywords: ["invariant", "rule"] },
+        { label: "Transaction scope", keywords: ["transaction", "commit"] },
+        { label: "Dependency orchestration", keywords: ["orchestrate", "cache", "repository", "queue"] },
+      ],
+      checks: ["Permissions", "Invariants", "Transaction scope", "Retry policy"],
+    },
+    {
+      id: "repository",
+      title: "Repository + DB Index and Query Plan",
+      icon: "ti-list-search",
+      detail: `Model the data around access patterns. Example schema cue: ${schemaLine}. Use indexes for common filters, ordering, joins, uniqueness, and pagination.`,
+      input: "Repository method with filters, sort, limit, and consistency needs",
+      output: "Rows/entities loaded through the intended index",
+      trace: "Repository builds query -> query planner picks index -> DB scans the smallest useful range -> results map back to domain objects.",
+      say: "I explain indexes from access patterns first, then mention write cost and slow-query monitoring.",
+      drillPoints: [
+        { label: "Access pattern", keywords: ["access", "query", "filter"] },
+        { label: "Composite index", keywords: ["composite", "index", "prefix"] },
+        { label: "Query plan", keywords: ["plan", "scan", "selectivity"] },
+      ],
+      checks: ["Composite index order", "Uniqueness", "Cursor pagination", "Slow-query log"],
+    },
+    {
+      id: "cache",
+      title: "Cache Strategy",
+      icon: "ti-bolt",
+      detail: "Use cache-aside for hot reads, choose stable keys, prevent stampedes, and define what happens after writes before you claim the system is fast.",
+      input: "Cache key, freshness requirement, and fallback query",
+      output: "Cached value, cache miss decision, or invalidation event",
+      trace: "Service computes key -> cache hit returns quickly, miss calls repository -> value is stored with TTL -> write path deletes or refreshes affected keys.",
+      say: "I always pair cache with an invalidation or TTL story so the design does not hide stale-data bugs.",
+      drillPoints: [
+        { label: "Cache key", keywords: ["key"] },
+        { label: "TTL and miss path", keywords: ["ttl", "miss"] },
+        { label: "Invalidation", keywords: ["invalidate", "stale", "fresh"] },
+      ],
+      checks: ["Key format", "TTL", "Hit/miss path", "Invalidation"],
+    },
+    {
+      id: "queue-worker",
+      title: "Message Queue + Worker",
+      icon: "ti-messages",
+      detail: "Publish durable events after the DB commit, then let workers handle slow side effects with retries, idempotency, and DLQ monitoring.",
+      input: "Durable event or outbox row after commit",
+      output: "Side effect completed, retry scheduled, or DLQ item",
+      trace: "Outbox records event -> publisher sends message -> worker consumes -> idempotency check runs -> side effect commits -> offset/ack is saved.",
+      say: "I move slow side effects off the request path and make workers safe for at-least-once delivery.",
+      drillPoints: [
+        { label: "Outbox after commit", keywords: ["outbox", "commit"] },
+        { label: "At-least-once delivery", keywords: ["at-least-once", "delivery", "retry"] },
+        { label: "Idempotent worker", keywords: ["idempotent", "idempotency", "dedupe"] },
+      ],
+      checks: ["Outbox", "At-least-once", "Worker idempotency", "DLQ"],
+    },
+    {
+      id: "ops",
+      title: "Observability + Operations",
+      icon: "ti-activity",
+      detail: "Attach the same trace ID from gateway to worker, then monitor latency, error rate, cache misses, DB slow queries, queue lag, and worker failures.",
+      input: "Logs, metrics, traces, audit events, and health checks",
+      output: "Dashboards, alerts, SLO burn-rate signals, incident breadcrumbs",
+      trace: "Trace ID follows each hop -> metrics record latency/error/cache miss/queue lag -> alerts fire before users report the incident.",
+      say: "I include operations because a design is incomplete if the team cannot debug it in production.",
+      drillPoints: [
+        { label: "Trace ID", keywords: ["trace", "correlation"] },
+        { label: "Metrics and SLO", keywords: ["metric", "slo", "latency"] },
+        { label: "Alerts", keywords: ["alert", "dashboard", "error"] },
+      ],
+      checks: ["Trace ID", "SLO", "Dashboard", "Alert"],
+    },
+  ];
+  const activeSlice = implementationSlices[activeSliceIndex] || implementationSlices[0];
+  const drillScore = scoreDrillAnswer(drillAnswer, activeSlice.drillPoints || []);
+  const previousSlice = () => setActiveSliceIndex((value) => (value - 1 + implementationSlices.length) % implementationSlices.length);
+  const nextSlice = () => setActiveSliceIndex((value) => (value + 1) % implementationSlices.length);
+
+  useEffect(() => {
+    setDrillAnswer("");
+  }, [activeSlice.id]);
+
+  return (
+    <section style={{ border: `1px solid ${accent}30`, borderRadius: 8, background: "rgba(0,0,0,.15)", display: "grid", gap: 10, padding: 11 }}>
+      <div style={{ alignItems: "center", display: "flex", gap: 8, justifyContent: "space-between", flexWrap: "wrap" }}>
+        <div>
+          <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>LLD Implementation Simulator</div>
+          <p style={{ color: "#9fb0c7", fontSize: 11.4, lineHeight: 1.45, marginTop: 4 }}>Step through how code executes: controller, service, repository/query plan, cache, queue/worker, and operations.</p>
+        </div>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <ActionButton icon="ti-chevron-left" label="Previous LLD Step" onClick={previousSlice} tone={accent} />
+          <ActionButton icon="ti-chevron-right" label="Next LLD Step" onClick={nextSlice} tone={accent} />
+        </div>
+      </div>
+
+      <section style={{ background: `${accent}0f`, border: `1px solid ${accent}30`, borderRadius: 8, display: "grid", gap: 9, padding: 10 }}>
+        <div style={{ alignItems: "center", display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <span style={{ alignItems: "center", background: `${accent}18`, border: `1px solid ${accent}44`, borderRadius: 8, color: accent, display: "inline-flex", fontSize: 11, fontWeight: 950, height: 30, justifyContent: "center", width: 30 }}>{activeSliceIndex + 1}</span>
+          <i className={`ti ${activeSlice.icon}`} style={{ color: accent, fontSize: 16 }} />
+          <strong style={{ color: "#f8fbff", fontSize: 13 }}>{activeSlice.title}</strong>
+        </div>
+        <p style={{ color: "#dbeafe", fontSize: 11.4, lineHeight: 1.5, margin: 0 }}>{activeSlice.detail}</p>
+        <div style={responsiveGrid(190, 8)}>
+          <div style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, padding: 8 }}>
+            <strong style={{ color: "#a7f3d0", display: "block", fontSize: 10.5, marginBottom: 4, textTransform: "uppercase" }}>Input</strong>
+            <span style={{ color: "#d1fae5", fontSize: 11.1, lineHeight: 1.45 }}>{activeSlice.input}</span>
+          </div>
+          <div style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, padding: 8 }}>
+            <strong style={{ color: "#bfdbfe", display: "block", fontSize: 10.5, marginBottom: 4, textTransform: "uppercase" }}>Execution Trace</strong>
+            <span style={{ color: "#dbeafe", fontSize: 11.1, lineHeight: 1.45 }}>{activeSlice.trace}</span>
+          </div>
+          <div style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, padding: 8 }}>
+            <strong style={{ color: "#fde68a", display: "block", fontSize: 10.5, marginBottom: 4, textTransform: "uppercase" }}>Output</strong>
+            <span style={{ color: "#fef3c7", fontSize: 11.1, lineHeight: 1.45 }}>{activeSlice.output}</span>
+          </div>
+        </div>
+        <div style={{ border: "1px solid rgba(167,243,208,.2)", borderRadius: 8, color: "#d1fae5", fontSize: 11.2, lineHeight: 1.45, padding: 8 }}>
+          <strong style={{ color: "#f8fbff" }}>What to say in interview:</strong> {activeSlice.say}
+        </div>
+        <div style={{ border: "1px solid rgba(196,181,253,.22)", borderRadius: 8, display: "grid", gap: 8, padding: 8 }}>
+          <strong style={{ color: "#ddd6fe", fontSize: 10.8, textTransform: "uppercase" }}>Interview Drill Mode</strong>
+          <textarea
+            value={drillAnswer}
+            onChange={(event) => setDrillAnswer(event.target.value)}
+            placeholder={`Explain ${activeSlice.title} like you are answering an interviewer.`}
+            rows={3}
+            style={{ background: "rgba(0,0,0,.18)", border: "1px solid rgba(196,181,253,.22)", borderRadius: 7, color: "#f8fbff", fontSize: 11.5, lineHeight: 1.45, minWidth: 0, outline: "none", padding: 9, resize: "vertical", width: "100%" }}
+          />
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {drillScore.map((point) => (
+              <span key={point.label} style={{ background: point.matched ? "rgba(167,243,208,.12)" : "rgba(248,113,113,.1)", border: `1px solid ${point.matched ? "rgba(167,243,208,.28)" : "rgba(248,113,113,.25)"}`, borderRadius: 999, color: point.matched ? "#d1fae5" : "#fecaca", fontSize: 10.3, fontWeight: 850, padding: "5px 8px" }}>
+                {point.matched ? "Covered" : "Missing"}: {point.label}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <div style={responsiveGrid(230, 8)}>
+        {implementationSlices.map((slice, index) => {
+          const isActive = index === activeSliceIndex;
+          return (
+          <button key={slice.id} type="button" onClick={() => setActiveSliceIndex(index)} style={{ background: isActive ? `${accent}18` : "rgba(255,255,255,.04)", border: `1px solid ${isActive ? accent : "rgba(255,255,255,.08)"}`, borderRadius: 8, cursor: "pointer", display: "grid", gap: 8, padding: 10, textAlign: "left" }}>
+            <div style={{ alignItems: "center", display: "flex", gap: 7 }}>
+              <i className={`ti ${slice.icon}`} style={{ color: accent, fontSize: 15 }} />
+              <strong style={{ color: "#f8fbff", fontSize: 12.3, lineHeight: 1.25 }}>{slice.title}</strong>
+            </div>
+            <p style={{ color: "#9fb0c7", fontSize: 11.2, lineHeight: 1.45, margin: 0 }}>{slice.detail}</p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+              {slice.checks.map((check) => (
+                <span key={check} style={{ background: `${accent}12`, border: `1px solid ${accent}28`, borderRadius: 999, color: "#dbeafe", fontSize: 10.2, fontWeight: 800, padding: "4px 7px" }}>{check}</span>
+              ))}
+            </div>
+          </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function MermaidExportPanel({ title, mermaid, accent }) {
+  const [copied, setCopied] = useState(false);
+  const copyMermaid = async () => {
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(mermaid);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1300);
+    }
+  };
+
+  return (
+    <section style={{ border: `1px solid ${accent}30`, borderRadius: 8, background: "rgba(0,0,0,.15)", display: "grid", gap: 9, padding: 11 }}>
+      <div style={{ alignItems: "center", display: "flex", gap: 8, justifyContent: "space-between", flexWrap: "wrap" }}>
+        <div>
+          <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Mermaid/System Diagram Export</div>
+          <p style={{ color: "#9fb0c7", fontSize: 11.3, lineHeight: 1.45, marginTop: 4 }}>{title}</p>
+        </div>
+        <ActionButton icon={copied ? "ti-check" : "ti-copy"} label={copied ? "Copied Mermaid" : "Copy Mermaid"} onClick={copyMermaid} tone={accent} />
+      </div>
+      <pre style={{ ...wrappingCodeStyle, background: "rgba(0,0,0,.24)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, color: "#d1fae5", fontSize: 10.8, lineHeight: 1.45, margin: 0, padding: 10 }}>{mermaid}</pre>
+    </section>
+  );
+}
+
+function FailureRecoverySimulator({ accent }) {
+  const [caseId, setCaseId] = useState(FAILURE_RECOVERY_CASES[0].id);
+  const selectedCase = FAILURE_RECOVERY_CASES.find((item) => item.id === caseId) || FAILURE_RECOVERY_CASES[0];
+
+  return (
+    <section style={{ border: "1px solid rgba(248,113,113,.22)", borderRadius: 8, background: "rgba(127,29,29,.08)", display: "grid", gap: 10, padding: 11 }}>
+      <div>
+        <div style={{ color: "#fca5a5", fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Failure Recovery Simulator</div>
+        <p style={{ color: "#fecaca", fontSize: 11.3, lineHeight: 1.45, marginTop: 4 }}>Practice retries, idempotency keys, outbox, DLQ, rollback, cache invalidation race, and eventual consistency.</p>
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        {FAILURE_RECOVERY_CASES.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => setCaseId(item.id)}
+            style={{ background: item.id === selectedCase.id ? "rgba(248,113,113,.18)" : "rgba(0,0,0,.16)", border: `1px solid ${item.id === selectedCase.id ? "rgba(248,113,113,.55)" : "rgba(255,255,255,.08)"}`, borderRadius: 999, color: item.id === selectedCase.id ? "#fff1f2" : "#fca5a5", cursor: "pointer", fontSize: 10.5, fontWeight: 850, padding: "6px 9px" }}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+      <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 150px), 1fr))" }}>
+        {selectedCase.steps.map((step, index) => (
+          <div key={step} style={{ background: index === 0 ? "rgba(248,113,113,.14)" : "rgba(255,255,255,.04)", border: "1px solid rgba(248,113,113,.18)", borderRadius: 8, display: "grid", gap: 6, padding: 9 }}>
+            <span style={{ color: "#fecaca", fontSize: 10, fontWeight: 950, textTransform: "uppercase" }}>Step {index + 1}</span>
+            <span style={{ color: "#fff1f2", fontSize: 11.2, lineHeight: 1.4 }}>{step}</span>
+          </div>
+        ))}
+      </div>
+      <div style={{ border: "1px solid rgba(248,113,113,.25)", borderRadius: 8, color: "#fecaca", fontSize: 11.3, lineHeight: 1.45, padding: 9 }}>
+        <strong style={{ color: "#fff1f2" }}>Recovery lesson:</strong> {selectedCase.lesson}
+      </div>
+    </section>
+  );
+}
+
+function DbIndexVisualizer({ accent }) {
+  const [queryId, setQueryId] = useState(INDEX_QUERY_CASES[0].id);
+  const selectedQuery = INDEX_QUERY_CASES.find((item) => item.id === queryId) || INDEX_QUERY_CASES[0];
+
+  return (
+    <section style={{ border: `1px solid ${accent}30`, borderRadius: 8, background: "rgba(0,0,0,.15)", display: "grid", gap: 10, padding: 11 }}>
+      <div>
+        <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>DB Index Visualizer</div>
+        <p style={{ color: "#9fb0c7", fontSize: 11.3, lineHeight: 1.45, marginTop: 4 }}>See why a composite B-tree index like <code style={{ color: "#d1fae5" }}>(user_id, created_at)</code> works for one query but not another.</p>
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        {INDEX_QUERY_CASES.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => setQueryId(item.id)}
+            style={{ background: item.id === selectedQuery.id ? `${accent}18` : "rgba(0,0,0,.16)", border: `1px solid ${item.id === selectedQuery.id ? accent : "rgba(255,255,255,.08)"}`, borderRadius: 999, color: item.id === selectedQuery.id ? "#f8fbff" : "#9fb0c7", cursor: "pointer", fontSize: 10.5, fontWeight: 850, padding: "6px 9px" }}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+      <div style={responsiveGrid(230, 8)}>
+        <div style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 6, padding: 9 }}>
+          <strong style={{ color: "#f8fbff", fontSize: 11 }}>Query</strong>
+          <code style={{ ...wrappingCodeStyle, color: "#d1fae5", fontSize: 11 }}>{selectedQuery.query}</code>
+          <span style={{ color: "#9fb0c7", fontSize: 11 }}>Index: <code style={{ color: "#bfdbfe" }}>{selectedQuery.index}</code></span>
+        </div>
+        <div style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 6, padding: 9 }}>
+          <strong style={{ color: "#f8fbff", fontSize: 11 }}>Verdict</strong>
+          <span style={{ color: selectedQuery.id === "wrong-order" ? "#fecaca" : "#d1fae5", fontSize: 12, fontWeight: 900 }}>{selectedQuery.verdict}</span>
+          <span style={{ color: "#9fb0c7", fontSize: 11.2, lineHeight: 1.45 }}>{selectedQuery.explanation}</span>
+        </div>
+      </div>
+      <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 130px), 1fr))" }}>
+        {selectedQuery.scan.map((step, index) => (
+          <div key={step} style={{ background: `${accent}${index === 0 ? "18" : "0f"}`, border: `1px solid ${accent}28`, borderRadius: 8, color: "#dbeafe", fontSize: 11.1, lineHeight: 1.4, minHeight: 64, padding: 9 }}>
+            <strong style={{ color: accent, display: "block", fontSize: 10.2, marginBottom: 5, textTransform: "uppercase" }}>B-tree hop {index + 1}</strong>
+            {step}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function CodeMappingView({ blueprint, accent }) {
+  const classPrefix = buildJavaClassPrefix(blueprint);
+  const mappings = [
+    { layer: "Controller", className: `${classPrefix}Controller`, method: "handle(request)", purpose: "Accept HTTP request, validate DTO, call service." },
+    { layer: "Service", className: `${classPrefix}Service`, method: "execute(command)", purpose: "Apply business rules, transaction scope, idempotency." },
+    { layer: "Repository", className: `${classPrefix}Repository`, method: "findByAccessPattern(query)", purpose: "Run indexed queries and persist domain state." },
+    { layer: "CacheClient", className: `${classPrefix}CacheClient`, method: "getOrLoad(cacheKey)", purpose: "Handle cache hit, miss, TTL, and invalidation." },
+    { layer: "EventPublisher", className: `${classPrefix}EventPublisher`, method: "publishOutboxEvents()", purpose: "Publish durable events after DB commit." },
+    { layer: "Worker", className: `${classPrefix}Worker`, method: "handle(message)", purpose: "Consume messages, dedupe, retry, and record progress." },
+  ];
+
+  return (
+    <section style={{ border: `1px solid ${accent}30`, borderRadius: 8, background: "rgba(0,0,0,.15)", display: "grid", gap: 10, padding: 11 }}>
+      <div>
+        <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Code Mapping View</div>
+        <p style={{ color: "#9fb0c7", fontSize: 11.3, lineHeight: 1.45, marginTop: 4 }}>Map each LLD simulator node to Java-style classes so the diagram turns into code responsibilities.</p>
+      </div>
+      <div style={responsiveGrid(220, 8)}>
+        {mappings.map((item) => (
+          <article key={item.layer} style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 6, padding: 9 }}>
+            <strong style={{ color: "#f8fbff", fontSize: 12 }}>{item.layer}</strong>
+            <code style={{ ...wrappingCodeStyle, color: "#d1fae5", fontSize: 11 }}>{item.className}.{item.method}</code>
+            <span style={{ color: "#9fb0c7", fontSize: 11.1, lineHeight: 1.4 }}>{item.purpose}</span>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function PracticeTemplateLauncher({ templates, activeTemplateId, onApply, accent }) {
+  return (
+    <section style={{ border: `1px solid ${accent}24`, borderRadius: 8, background: "rgba(255,255,255,.035)", display: "grid", gap: 8, padding: 10 }}>
+      <div>
+        <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Practice Templates</div>
+        <p style={{ color: "#9fb0c7", fontSize: 11.2, lineHeight: 1.45, marginTop: 3 }}>One-click load common systems with starter requirements, architecture, data, scaling, and risk notes.</p>
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        {templates.map((template) => (
+          <button
+            key={template.id}
+            type="button"
+            onClick={() => onApply(template)}
+            style={{ background: template.id === activeTemplateId ? `${accent}18` : "rgba(0,0,0,.16)", border: `1px solid ${template.id === activeTemplateId ? accent : "rgba(255,255,255,.08)"}`, borderRadius: 999, color: template.id === activeTemplateId ? "#f8fbff" : "#9fb0c7", cursor: "pointer", fontSize: 10.6, fontWeight: 850, padding: "6px 9px" }}
+          >
+            {template.label}
+          </button>
+        ))}
       </div>
     </section>
   );
@@ -252,10 +1181,15 @@ export default function SystemDesignCanvas({
   const [blueprint, setBlueprint] = useState(() => buildSystemDesignStudioBlueprint(normalizedInitialState));
   const [studioTab, setStudioTab] = useState("Diagram");
   const [flowIndex, setFlowIndex] = useState(0);
+  const [selectedScenarioId, setSelectedScenarioId] = useState(SYSTEM_SCENARIOS[0].id);
+  const [activeTemplateId, setActiveTemplateId] = useState(null);
   const accent = theme.accentStrong || "#8bd3ff";
   const accentBorder = theme.accentBorder || "rgba(139, 211, 255, .26)";
   const diagramBoard = useMemo(() => buildSystemDesignDiagramBoard(canvasState), [canvasState]);
   const referenceRoadmap = useMemo(() => buildSystemDesignReferenceRoadmap(canvasState.problem), [canvasState.problem]);
+  const selectedScenario = SYSTEM_SCENARIOS.find((scenario) => scenario.id === selectedScenarioId) || SYSTEM_SCENARIOS[0];
+  const hldMermaid = useMemo(() => buildMermaidDiagram(blueprint, "hld", selectedScenario), [blueprint, selectedScenario]);
+  const lldMermaid = useMemo(() => buildMermaidDiagram(blueprint, "lld", selectedScenario), [blueprint, selectedScenario]);
 
   useEffect(() => {
     setCanvasState(normalizedInitialState);
@@ -263,12 +1197,13 @@ export default function SystemDesignCanvas({
   }, [normalizedInitialState]);
 
   useEffect(() => {
+    const stepCount = buildArchitectureFlow(blueprint).length || 1;
     const timer = window.setInterval(() => {
-      setFlowIndex((value) => (value + 1) % 6);
+      setFlowIndex((value) => (value + 1) % stepCount);
     }, 1500);
 
     return () => window.clearInterval(timer);
-  }, []);
+  }, [blueprint]);
 
   const commitState = (nextState) => {
     const normalized = createSystemDesignCanvasState(nextState);
@@ -284,6 +1219,18 @@ export default function SystemDesignCanvas({
     const nextBlueprint = buildSystemDesignStudioBlueprint(canvasState);
     setBlueprint(nextBlueprint);
     setStudioTab("Diagram");
+  };
+
+  const applyPracticeTemplate = (template) => {
+    const nextState = createSystemDesignCanvasState({
+      problem: template.problem,
+      sections: template.sections,
+    });
+    setCanvasState(nextState);
+    setBlueprint(buildSystemDesignStudioBlueprint(nextState));
+    setActiveTemplateId(template.id);
+    setStudioTab("HLD");
+    onChange?.(nextState);
   };
 
   const askStudioAI = () => {
@@ -395,6 +1342,8 @@ export default function SystemDesignCanvas({
       </header>
 
       <section style={{ border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 11, minWidth: 0, padding: 12, background: "rgba(139,211,255,.045)" }}>
+        <PracticeTemplateLauncher templates={SYSTEM_PRACTICE_TEMPLATES} activeTemplateId={activeTemplateId} onApply={applyPracticeTemplate} accent={accent} />
+
         <div style={{ alignItems: "center", display: "flex", gap: 8, justifyContent: "space-between", flexWrap: "wrap" }}>
           <div style={{ ...wrappingTextStyle }}>
             <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>HLD / LLD Blueprint</div>
@@ -430,7 +1379,16 @@ export default function SystemDesignCanvas({
 
         {studioTab === "HLD" && (
           <div style={{ display: "grid", gap: 11 }}>
-            <ArchitectureFlow blueprint={blueprint} activeIndex={flowIndex} accent={accent} />
+            <ArchitectureFlow
+              blueprint={blueprint}
+              activeIndex={flowIndex}
+              accent={accent}
+              onSelectStep={setFlowIndex}
+              selectedScenarioId={selectedScenarioId}
+              onScenarioSelect={setSelectedScenarioId}
+            />
+            <MermaidExportPanel title="Export the active HLD scenario as a clean Mermaid flowchart." mermaid={hldMermaid} accent={accent} />
+            <FailureRecoverySimulator accent={accent} />
             <div style={responsiveGrid(220)}>
               <ListPanel title="Functional Requirements" icon="ti-list-check" items={blueprint.hld.requirements} accent={accent} />
               <ListPanel title="Non-Functional Requirements" icon="ti-gauge" items={blueprint.hld.nonFunctional} accent={accent} />
@@ -459,25 +1417,31 @@ export default function SystemDesignCanvas({
         )}
 
         {studioTab === "LLD" && (
-          <div style={responsiveGrid(230)}>
-            <ListPanel title="Classes / Components" icon="ti-box" accent={accent}>
-              <div style={{ display: "grid", gap: 7 }}>
-                {blueprint.lld.classes.map((item) => (
-                  <div key={item.name} style={{ color: "#9fb0c7", fontSize: 11.4, lineHeight: 1.45 }}>
-                    <strong style={{ color: "#eaf2ff" }}>{item.name}</strong>: {item.responsibility}
-                  </div>
-                ))}
-              </div>
-            </ListPanel>
-            <ListPanel title="Interfaces" icon="ti-plug-connected" items={blueprint.lld.interfaces} accent={accent} />
-            <ListPanel title="Schema / Indexes" icon="ti-database" accent={accent}>
-              <div style={{ display: "grid", gap: 7 }}>
-                {blueprint.lld.schema.map((line) => (
-                  <code key={line} style={{ ...wrappingCodeStyle, color: "#d1fae5", fontSize: 11, lineHeight: 1.45 }}>{line}</code>
-                ))}
-              </div>
-            </ListPanel>
-            <ListPanel title="Testing Strategy" icon="ti-test-pipe" items={blueprint.lld.testing} accent={accent} />
+          <div style={{ display: "grid", gap: 11 }}>
+            <RequestLifecycleDeepDive blueprint={blueprint} accent={accent} />
+            <MermaidExportPanel title="Export the LLD code-layer simulator as a Mermaid sequence-style flowchart." mermaid={lldMermaid} accent={accent} />
+            <DbIndexVisualizer accent={accent} />
+            <CodeMappingView blueprint={blueprint} accent={accent} />
+            <div style={responsiveGrid(230)}>
+              <ListPanel title="Classes / Components" icon="ti-box" accent={accent}>
+                <div style={{ display: "grid", gap: 7 }}>
+                  {blueprint.lld.classes.map((item) => (
+                    <div key={item.name} style={{ color: "#9fb0c7", fontSize: 11.4, lineHeight: 1.45 }}>
+                      <strong style={{ color: "#eaf2ff" }}>{item.name}</strong>: {item.responsibility}
+                    </div>
+                  ))}
+                </div>
+              </ListPanel>
+              <ListPanel title="Interfaces" icon="ti-plug-connected" items={blueprint.lld.interfaces} accent={accent} />
+              <ListPanel title="Schema / Indexes" icon="ti-database" accent={accent}>
+                <div style={{ display: "grid", gap: 7 }}>
+                  {blueprint.lld.schema.map((line) => (
+                    <code key={line} style={{ ...wrappingCodeStyle, color: "#d1fae5", fontSize: 11, lineHeight: 1.45 }}>{line}</code>
+                  ))}
+                </div>
+              </ListPanel>
+              <ListPanel title="Testing Strategy" icon="ti-test-pipe" items={blueprint.lld.testing} accent={accent} />
+            </div>
           </div>
         )}
 
