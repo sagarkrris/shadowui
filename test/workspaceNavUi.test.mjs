@@ -16,6 +16,7 @@ test("workspace navigation chrome is extracted from the page shell", () => {
   assert.match(navSource, /aria-current/);
   assert.match(navSource, /Workspace Menu/);
   assert.match(navSource, /Choose a focused prep room/);
+  assert.match(navSource, /Most-asked questions with polished answers and follow-up drills/);
   assert.match(navSource, /Visual algorithms, beginner flow, and guided practice/);
   assert.match(navSource, /width: "min\(420px, calc\(100vw - 24px\)\)"/);
   assert.match(navSource, /left: 0/);

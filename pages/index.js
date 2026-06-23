@@ -10,6 +10,7 @@ import { DesktopWorkspaceNav, MobileBottomNav, TabletWorkspaceMenu } from "../co
 import AgenticUICourse from "../components/course/AgenticUICourse";
 import DesignLab from "../components/design-lab/DesignLab";
 import DsaVisualLab from "../components/dsa/DsaVisualLab";
+import InterviewReadyQA from "../components/interview-ready/InterviewReadyQA";
 import JavaDigest from "../components/java-digest/JavaDigest";
 import ScenarioBank from "../components/scenario-bank/ScenarioBank";
 import RecordingReviewModal from "../components/modals/RecordingReviewModal";
@@ -800,6 +801,23 @@ export default function Home() {
     });
   };
 
+  const startInterviewReadyAction = (prompt, metadata = {}) => {
+    setActiveTab("chat");
+    recordWorkspaceActivity({
+      workspaceId: "interviewReady",
+      type: metadata?.type || "answer",
+      label: "Started interview-ready Q&A action",
+      detail: buildWorkspaceActionDisplayText(prompt, metadata),
+    });
+    callAPI(prompt, {
+      interviewMode: metadata?.type === "interviewReadyMock" ? "strict" : "directAnswer",
+      roundStrategy: metadata?.type === "interviewReadyMock" ? "manager" : "directAnswer",
+      interviewPanel: metadata?.type === "interviewReadyMock" ? "seniorEngineer" : null,
+      displayText: buildWorkspaceActionDisplayText(prompt, metadata),
+      skipQuestionMemory: true,
+    });
+  };
+
   const startDsaLabPractice = (prompt, metadata = {}) => {
     setActiveTab("chat");
     recordWorkspaceActivity({
@@ -1242,6 +1260,16 @@ export default function Home() {
               <ScenarioBank
                 theme={techTheme}
                 onAction={startScenarioBankAction}
+                beginnerMode={beginnerMode}
+                beginnerStep={prepProgressState.beginnerStep}
+                onBeginnerStepChange={setBeginnerStep}
+                onActivity={recordWorkspaceActivity}
+              />
+            ) : activeTab==="interviewReady" ? (
+              <InterviewReadyQA
+                theme={techTheme}
+                profile={candidateProfile || profileDraft}
+                onAction={startInterviewReadyAction}
                 beginnerMode={beginnerMode}
                 beginnerStep={prepProgressState.beginnerStep}
                 onBeginnerStepChange={setBeginnerStep}

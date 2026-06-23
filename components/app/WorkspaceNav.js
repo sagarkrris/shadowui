@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 const WORKSPACE_MENU_DETAILS = {
+  interviewReady: "Most-asked questions with polished answers and follow-up drills.",
   company: "Company-specific questions, notes, and final-day prep.",
   canvas: "System design canvas with review and export flow.",
   designLab: "HLD, LLD, and pattern practice in one focused room.",
