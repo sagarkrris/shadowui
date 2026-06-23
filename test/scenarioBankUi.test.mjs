@@ -11,9 +11,16 @@ const workspaceSource = readFileSync(new URL("../lib/workspaces.mjs", import.met
 test("scenario bank workspace renders tracks engines drills and detailed answers", () => {
   assert.match(componentSource, /SCENARIO_BANK_TRACKS/);
   assert.match(componentSource, /DATABASE_ENGINES/);
+  assert.match(componentSource, /RECENT_SCENARIO_BANK_ROUNDS/);
+  assert.match(componentSource, /RECENT_SCENARIO_BANK_LEVELS/);
   assert.match(componentSource, /Scenario Bank/);
   assert.match(componentSource, /Java/);
   assert.match(componentSource, /Database/);
+  assert.match(componentSource, /Recent Trap Bank/);
+  assert.match(componentSource, /source-backed, manually refreshed scenarios/i);
+  assert.match(componentSource, /Public-source pointers/);
+  assert.match(componentSource, /Why candidates get trapped/);
+  assert.match(componentSource, /Trap Learned/);
   assert.match(componentSource, /PostgreSQL/);
   assert.match(componentSource, /MySQL/);
   assert.match(componentSource, /MongoDB/);
@@ -24,6 +31,9 @@ test("scenario bank workspace renders tracks engines drills and detailed answers
   assert.match(componentSource, /Fresh Local Scenario/);
   assert.match(componentSource, /Generated Variant/);
   assert.match(componentSource, /buildLocalScenarioVariant/);
+  assert.match(componentSource, /buildRecentScenarioAnswerPrompt/);
+  assert.match(componentSource, /buildRecentScenarioMockPrompt/);
+  assert.match(componentSource, /listRecentScenarioReports/);
   assert.match(componentSource, /setGeneratedScenario/);
   assert.match(componentSource, /Beginner Context/);
   assert.match(componentSource, /What is this\?/);

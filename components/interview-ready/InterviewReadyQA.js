@@ -36,6 +36,29 @@ const responsiveGrid = (minColumnWidth, gap = 10) => ({
   minWidth: 0,
 });
 
+function SectionToggle({ title, eyebrow, open, accent, onToggle, children, defaultOpenNote = "" }) {
+  return (
+    <section style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 8, display: "grid", gap: open ? 12 : 0, padding: 12 }}>
+      <button
+        type="button"
+        onClick={onToggle}
+        style={{ alignItems: "center", background: "transparent", border: "none", color: "#f8fbff", cursor: "pointer", display: "flex", gap: 10, justifyContent: "space-between", padding: 0, textAlign: "left", width: "100%" }}
+      >
+        <div style={{ minWidth: 0 }}>
+          {eyebrow ? <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>{eyebrow}</div> : null}
+          <h3 style={{ ...wrap, color: "#f8fbff", fontSize: 15.5, lineHeight: 1.25, marginTop: eyebrow ? 4 : 0 }}>{title}</h3>
+          {!open && defaultOpenNote ? <p style={{ color: "#9fb0c7", fontSize: 11.2, lineHeight: 1.45, margin: "4px 0 0" }}>{defaultOpenNote}</p> : null}
+        </div>
+        <span style={{ alignItems: "center", border: `1px solid ${accent}44`, borderRadius: 999, color: accent, display: "inline-flex", flexShrink: 0, fontSize: 10.5, fontWeight: 900, gap: 5, padding: "4px 8px" }}>
+          <i className={`ti ${open ? "ti-chevron-up" : "ti-chevron-down"}`} />
+          {open ? "Hide" : "Show"}
+        </span>
+      </button>
+      {open ? children : null}
+    </section>
+  );
+}
+
 function formatTimer(seconds) {
   const safe = Math.max(0, Number(seconds) || 0);
   return `${Math.floor(safe / 60)}:${String(safe % 60).padStart(2, "0")}`;
@@ -276,6 +299,10 @@ export default function InterviewReadyQA({
   const [timerSeconds, setTimerSeconds] = useState(90);
   const [timerRemaining, setTimerRemaining] = useState(90);
   const [timerRunning, setTimerRunning] = useState(false);
+  const [practiceStudioOpen, setPracticeStudioOpen] = useState(true);
+  const [companyPackOpen, setCompanyPackOpen] = useState(false);
+  const [questionBankOpen, setQuestionBankOpen] = useState(true);
+  const [customPracticeItem, setCustomPracticeItem] = useState(null);
   const accent = theme.accentStrong || "#8bd3ff";
   const accentBorder = theme.accentBorder || "rgba(139, 211, 255, .26)";
   const questions = useMemo(() => listInterviewReadyQuestions({
@@ -285,9 +312,16 @@ export default function InterviewReadyQA({
   }), [activeCategory, difficulty, searchDraft]);
   const activeQuestionId = practiceState.selectedQuestionId || questions[0]?.id || "";
   const activeQuestion = getInterviewReadyQuestion(activeQuestionId) || questions[0] || null;
-  const activeSavedAnswer = activeQuestion ? practiceState.answers[activeQuestion.id] || null : null;
-  const evaluation = activeQuestion ? evaluateInterviewReadyAnswer(draftAnswer, activeQuestion) : null;
+  const activePracticeKey = customPracticeItem ? `company-pack:${practiceState.company}:${customPracticeItem.id}` : activeQuestion?.id || "";
+  const activeSavedAnswer = activePracticeKey ? practiceState.answers[activePracticeKey] || null : null;
+  const evaluation = (activeQuestion || customPracticeItem)
+    ? evaluateInterviewReadyAnswer(draftAnswer, customPracticeItem ? { question: customPracticeItem.prompt } : activeQuestion)
+    : null;
   const companyPack = useMemo(() => buildInterviewReadyCompanyPack(practiceState.company), [practiceState.company]);
+  const activePracticeTitle = customPracticeItem
+    ? `${customPracticeItem.type}: ${customPracticeItem.title}`
+    : activeQuestion?.question || "Choose a question to practice";
+  const activePracticePromptDetail = customPracticeItem?.prompt || "";
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -351,7 +385,9 @@ export default function InterviewReadyQA({
 
   const selectPracticeQuestion = (question) => {
     if (!question?.id) return;
+    setCustomPracticeItem(null);
     setPracticeState((previous) => setInterviewReadySelectedQuestion(previous, question.id));
+    setPracticeStudioOpen(true);
     onActivity?.({
       workspaceId: "interviewReady",
       type: "select",
@@ -361,9 +397,9 @@ export default function InterviewReadyQA({
   };
 
   const saveCurrentAnswer = () => {
-    if (!activeQuestion) return;
+    if (!activePracticeKey) return;
     setPracticeState((previous) => saveInterviewReadyAnswer(previous, {
-      questionId: activeQuestion.id,
+      questionId: activePracticeKey,
       draft: draftAnswer,
       company: practiceState.company,
       evaluation,
@@ -373,11 +409,11 @@ export default function InterviewReadyQA({
       workspaceId: "interviewReady",
       type: "save",
       label: "Saved personal interview answer",
-      detail: activeQuestion.question,
+      detail: activePracticeTitle,
     });
   };
 
-  const useCompanyPrompt = (item) => {
+  const runCompanyPrompt = (item) => {
     const prompt = [
       `Turn this ${companyPack.company} interview prompt into an interview-ready answer I can say naturally.`,
       `Prompt type: ${item.type}.`,
@@ -394,7 +430,9 @@ export default function InterviewReadyQA({
   };
 
   const useCompanyPromptInStudio = (item) => {
-    setDraftAnswer(item.prompt);
+    setCustomPracticeItem(item);
+    setDraftAnswer("");
+    setPracticeStudioOpen(true);
     setPracticeState((previous) => setInterviewReadyCompany(previous, companyPack.company));
     onActivity?.({
       workspaceId: "interviewReady",
@@ -452,16 +490,20 @@ export default function InterviewReadyQA({
         </section>
       </header>
 
-      <section style={{ ...wrap, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 8, display: "grid", gap: 12, padding: 12 }}>
-        <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between" }}>
-          <div>
-            <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Practice studio</div>
-            <h3 style={{ color: "#f8fbff", fontSize: 15.5, lineHeight: 1.25, marginTop: 4 }}>{activeQuestion?.question || "Choose a question to practice"}</h3>
-          </div>
-          {activeSavedAnswer?.practicedAt ? (
-            <span style={{ color: "#9fb0c7", fontSize: 10.8 }}>Saved locally: {new Date(activeSavedAnswer.practicedAt).toLocaleDateString()}</span>
-          ) : null}
-        </div>
+      <SectionToggle
+        title={activePracticeTitle}
+        eyebrow="Practice studio"
+        open={practiceStudioOpen}
+        accent={accent}
+        onToggle={() => setPracticeStudioOpen((value) => !value)}
+        defaultOpenNote={activeSavedAnswer?.practicedAt ? `Saved locally on ${new Date(activeSavedAnswer.practicedAt).toLocaleDateString()}` : "Write, time, and score your own version here."}
+      >
+        {customPracticeItem ? (
+          <section style={{ ...wrap, background: `${accent}10`, border: `1px solid ${accent}33`, borderRadius: 8, display: "grid", gap: 6, padding: 10 }}>
+            <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Company practice prompt</div>
+            <p style={{ color: "#dbeafe", fontSize: 11.6, lineHeight: 1.55, margin: 0 }}>{activePracticePromptDetail}</p>
+          </section>
+        ) : null}
 
         <div style={responsiveGrid(220, 8)}>
           <label style={{ ...wrap, display: "grid", gap: 6 }}>
@@ -502,29 +544,53 @@ export default function InterviewReadyQA({
           value={draftAnswer}
           onChange={(event) => setDraftAnswer(event.target.value)}
           placeholder="Write the answer in your own words. Lead with the answer, add why, trade-offs, and one concrete example."
-          className="glass-input"
-          style={{ border: `1px solid ${accentBorder}`, borderRadius: 8, color: "#f8fbff", fontSize: 12.5, lineHeight: 1.6, minHeight: 150, outline: "none", padding: 12, resize: "vertical", width: "100%" }}
+          className="glass-input interview-ready-answer-input"
+          style={{ border: `1px solid ${accentBorder}`, borderRadius: 8, color: "#f8fbff", fontSize: 12.5, lineHeight: 1.6, minHeight: 150, outline: "none", overflowY: "auto", padding: 12, width: "100%" }}
         />
 
         <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 7 }}>
-          <button type="button" className="glass-button" onClick={saveCurrentAnswer} disabled={!activeQuestion || !draftAnswer.trim()} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", cursor: !activeQuestion || !draftAnswer.trim() ? "not-allowed" : "pointer", fontSize: 11, fontWeight: 800, opacity: !activeQuestion || !draftAnswer.trim() ? .45 : 1, padding: "7px 10px" }}>
+          <button type="button" className="glass-button" onClick={saveCurrentAnswer} disabled={!activePracticeKey || !draftAnswer.trim()} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", cursor: !activePracticeKey || !draftAnswer.trim() ? "not-allowed" : "pointer", fontSize: 11, fontWeight: 800, opacity: !activePracticeKey || !draftAnswer.trim() ? .45 : 1, padding: "7px 10px" }}>
             <i className="ti ti-device-floppy" style={{ color: accent, marginRight: 6 }} />
             Save my answer
           </button>
-          {activeQuestion ? (
-            <button type="button" className="glass-button" onClick={() => onAction?.(buildInterviewReadyTailorPrompt(activeQuestion.id, profile || {}), {
-              type: "interviewReadyTailor",
-              question: activeQuestion,
-            })} style={{ border: "1px solid rgba(134,239,172,.35)", borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
+          {(activeQuestion || customPracticeItem) ? (
+            <button type="button" className="glass-button" onClick={() => {
+              if (customPracticeItem) {
+                runCompanyPrompt(customPracticeItem);
+                return;
+              }
+
+              onAction?.(buildInterviewReadyTailorPrompt(activeQuestion.id, profile || {}), {
+                type: "interviewReadyTailor",
+                question: activeQuestion,
+              });
+            }} style={{ border: "1px solid rgba(134,239,172,.35)", borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
               <i className="ti ti-magic-wand" style={{ color: "#86efac", marginRight: 6 }} />
               Improve with AI
             </button>
           ) : null}
-          {activeQuestion ? (
-            <button type="button" className="glass-button" onClick={() => onAction?.(buildInterviewReadyMockPrompt(activeQuestion.id), {
-              type: "interviewReadyMock",
-              question: activeQuestion,
-            })} style={{ border: "1px solid rgba(196,181,253,.35)", borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
+          {(activeQuestion || customPracticeItem) ? (
+            <button type="button" className="glass-button" onClick={() => {
+              if (customPracticeItem) {
+                onAction?.([
+                  `Run a focused mock interview for ${companyPack.company}.`,
+                  `Prompt type: ${customPracticeItem.type}.`,
+                  `First question: ${customPracticeItem.title}.`,
+                  `Prompt detail: ${customPracticeItem.prompt}.`,
+                  "Ask one question at a time, wait for my answer, then score clarity, depth, trade-offs, and communication.",
+                ].join("\n"), {
+                  type: "interviewReadyCompanyPackMock",
+                  company: companyPack.company,
+                  item: customPracticeItem,
+                });
+                return;
+              }
+
+              onAction?.(buildInterviewReadyMockPrompt(activeQuestion.id), {
+                type: "interviewReadyMock",
+                question: activeQuestion,
+              });
+            }} style={{ border: "1px solid rgba(196,181,253,.35)", borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
               <i className="ti ti-player-play" style={{ color: "#c4b5fd", marginRight: 6 }} />
               Run mock on this answer
             </button>
@@ -532,95 +598,113 @@ export default function InterviewReadyQA({
         </div>
 
         <RubricPanel evaluation={evaluation} accent={accent} />
-      </section>
+      </SectionToggle>
 
-      <CompanyPackPanel companyPack={companyPack} accent={accent} onUsePackPrompt={useCompanyPrompt} onSelectQuestion={useCompanyPromptInStudio} />
+      <SectionToggle
+        title={`${companyPack.company} prep packs`}
+        eyebrow="Company-wise packs"
+        open={companyPackOpen}
+        accent={accent}
+        onToggle={() => setCompanyPackOpen((value) => !value)}
+        defaultOpenNote="Open when you want company-specific behavioral, coding, and design prompts."
+      >
+        <CompanyPackPanel companyPack={companyPack} accent={accent} onUsePackPrompt={runCompanyPrompt} onSelectQuestion={useCompanyPromptInStudio} />
+      </SectionToggle>
 
-      <section style={{ border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 10, padding: 12 }}>
-        <div style={{ ...wrap, display: "grid", gap: 6 }}>
-          <span style={{ color: "#9fb0c7", fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Search question bank</span>
-          <div style={{ alignItems: "center", background: "rgba(0,0,0,.16)", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "flex", gap: 8, minWidth: 0, padding: "8px 10px" }}>
-            <i className="ti ti-search" style={{ color: accent, flexShrink: 0, fontSize: 15 }} />
-            <input
-              type="search"
-              value={searchDraft}
-              onChange={(event) => setSearchDraft(event.target.value)}
-              placeholder="Search HashMap, idempotency, race condition, N+1, index..."
-              className="glass-input"
-              style={{ background: "transparent", border: "none", color: "#f8fbff", flex: 1, fontSize: 13, minWidth: 0, outline: "none", padding: 0 }}
-            />
+      <SectionToggle
+        title={`${questions.length} interview-ready question${questions.length === 1 ? "" : "s"} found`}
+        eyebrow="Question bank"
+        open={questionBankOpen}
+        accent={accent}
+        onToggle={() => setQuestionBankOpen((value) => !value)}
+        defaultOpenNote="Search, filter, and open polished answers when you need them."
+      >
+        <section style={{ border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 10, padding: 12 }}>
+          <div style={{ ...wrap, display: "grid", gap: 6 }}>
+            <span style={{ color: "#9fb0c7", fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Search question bank</span>
+            <div style={{ alignItems: "center", background: "rgba(0,0,0,.16)", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "flex", gap: 8, minWidth: 0, padding: "8px 10px" }}>
+              <i className="ti ti-search" style={{ color: accent, flexShrink: 0, fontSize: 15 }} />
+              <input
+                type="search"
+                value={searchDraft}
+                onChange={(event) => setSearchDraft(event.target.value)}
+                placeholder="Search HashMap, idempotency, race condition, N+1, index..."
+                className="glass-input"
+                style={{ background: "transparent", border: "none", color: "#f8fbff", flex: 1, fontSize: 13, minWidth: 0, outline: "none", padding: 0 }}
+              />
+            </div>
           </div>
-        </div>
 
-        <div style={{ display: "grid", gap: 8 }}>
-          <span style={{ color: "#9fb0c7", fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Categories</span>
-          <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 7 }}>
-            <FilterChip label="All Categories" icon="ti-layout-grid" active={activeCategory === "all"} accent={accent} onClick={() => setActiveCategory("all")} />
-            {INTERVIEW_READY_QA_CATEGORIES.map((category) => (
-              <FilterChip
-                key={category.id}
-                label={category.label}
-                icon={category.icon}
-                active={activeCategory === category.id}
+          <div style={{ display: "grid", gap: 8 }}>
+            <span style={{ color: "#9fb0c7", fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Categories</span>
+            <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 7 }}>
+              <FilterChip label="All Categories" icon="ti-layout-grid" active={activeCategory === "all"} accent={accent} onClick={() => setActiveCategory("all")} />
+              {INTERVIEW_READY_QA_CATEGORIES.map((category) => (
+                <FilterChip
+                  key={category.id}
+                  label={category.label}
+                  icon={category.icon}
+                  active={activeCategory === category.id}
+                  accent={accent}
+                  onClick={() => setActiveCategory(category.id)}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div style={responsiveGrid(220, 8)}>
+            <label style={{ ...wrap, display: "grid", gap: 6 }}>
+              <span style={{ color: "#9fb0c7", fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Difficulty</span>
+              <select
+                value={difficulty}
+                onChange={(event) => setDifficulty(event.target.value)}
+                className="glass-input"
+                style={{ border: `1px solid ${accentBorder}`, borderRadius: 7, color: "#f8fbff", fontSize: 12, outline: "none", padding: "8px 9px", width: "100%" }}
+              >
+                {INTERVIEW_READY_QA_DIFFICULTIES.map((item) => <option key={item} value={item}>{item}</option>)}
+              </select>
+            </label>
+            <label style={{ ...wrap, alignItems: "center", background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, color: "#dbeafe", cursor: "pointer", display: "flex", gap: 9, minHeight: 42, padding: "0 12px" }}>
+              <input
+                type="checkbox"
+                checked={questionFirstMode}
+                onChange={(event) => setQuestionFirstMode(event.target.checked)}
+                style={{ accentColor: accent, height: 14, width: 14 }}
+              />
+              <span style={{ fontSize: 11.5, fontWeight: 700 }}>Question-first mode</span>
+            </label>
+          </div>
+        </section>
+
+        <section style={{ ...wrap, alignItems: "center", display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between" }}>
+          <span style={{ color: "#cbd5e1", fontSize: 11.5 }}>{questions.length} interview-ready question{questions.length === 1 ? "" : "s"} found</span>
+          <span style={{ color: "#9fb0c7", fontSize: 11 }}>Reveal answer, save your version, score it, then run the follow-up.</span>
+        </section>
+
+        {questions.length ? (
+          <div style={responsiveGrid(320, 10)}>
+            {questions.map((question) => (
+              <InterviewAnswerCard
+                key={question.id}
+                question={question}
                 accent={accent}
-                onClick={() => setActiveCategory(category.id)}
+                profile={profile}
+                onAction={onAction}
+                onActivity={onActivity}
+                questionFirstMode={questionFirstMode}
+                onPractice={selectPracticeQuestion}
               />
             ))}
           </div>
-        </div>
-
-        <div style={responsiveGrid(220, 8)}>
-          <label style={{ ...wrap, display: "grid", gap: 6 }}>
-            <span style={{ color: "#9fb0c7", fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Difficulty</span>
-            <select
-              value={difficulty}
-              onChange={(event) => setDifficulty(event.target.value)}
-              className="glass-input"
-              style={{ border: `1px solid ${accentBorder}`, borderRadius: 7, color: "#f8fbff", fontSize: 12, outline: "none", padding: "8px 9px", width: "100%" }}
-            >
-              {INTERVIEW_READY_QA_DIFFICULTIES.map((item) => <option key={item} value={item}>{item}</option>)}
-            </select>
-          </label>
-          <label style={{ ...wrap, alignItems: "center", background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, color: "#dbeafe", cursor: "pointer", display: "flex", gap: 9, minHeight: 42, padding: "0 12px" }}>
-            <input
-              type="checkbox"
-              checked={questionFirstMode}
-              onChange={(event) => setQuestionFirstMode(event.target.checked)}
-              style={{ accentColor: accent, height: 14, width: 14 }}
-            />
-            <span style={{ fontSize: 11.5, fontWeight: 700 }}>Question-first mode</span>
-          </label>
-        </div>
-      </section>
-
-      <section style={{ ...wrap, alignItems: "center", display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between" }}>
-        <span style={{ color: "#cbd5e1", fontSize: 11.5 }}>{questions.length} interview-ready question{questions.length === 1 ? "" : "s"} found</span>
-        <span style={{ color: "#9fb0c7", fontSize: 11 }}>Reveal answer, save your version, score it, then run the follow-up.</span>
-      </section>
-
-      {questions.length ? (
-        <div style={responsiveGrid(320, 10)}>
-          {questions.map((question) => (
-            <InterviewAnswerCard
-              key={question.id}
-              question={question}
-              accent={accent}
-              profile={profile}
-              onAction={onAction}
-              onActivity={onActivity}
-              questionFirstMode={questionFirstMode}
-              onPractice={selectPracticeQuestion}
-            />
-          ))}
-        </div>
-      ) : (
-        <section style={{ ...wrap, background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, color: "#cbd5e1", display: "grid", gap: 6, padding: 14 }}>
-          <div style={{ color: "#f8fbff", fontSize: 12.5, fontWeight: 800 }}>No questions match this filter yet.</div>
-          <p style={{ fontSize: 11.6, lineHeight: 1.5, margin: 0 }}>
-            Try a broader keyword or switch the category and difficulty filters. Broad terms like concurrency, API, SQL, or ownership work best.
-          </p>
-        </section>
-      )}
+        ) : (
+          <section style={{ ...wrap, background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, color: "#cbd5e1", display: "grid", gap: 6, padding: 14 }}>
+            <div style={{ color: "#f8fbff", fontSize: 12.5, fontWeight: 800 }}>No questions match this filter yet.</div>
+            <p style={{ fontSize: 11.6, lineHeight: 1.5, margin: 0 }}>
+              Try a broader keyword or switch the category and difficulty filters. Broad terms like concurrency, API, SQL, or ownership work best.
+            </p>
+          </section>
+        )}
+      </SectionToggle>
     </section>
   );
 }

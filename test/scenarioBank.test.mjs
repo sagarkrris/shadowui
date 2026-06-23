@@ -3,13 +3,20 @@ import test from "node:test";
 
 import {
   DATABASE_ENGINES,
+  RECENT_SCENARIO_BANK_LEVELS,
+  RECENT_SCENARIO_BANK_ROUNDS,
   SCENARIO_BANK_TRACKS,
+  buildRecentScenarioAnswerPrompt,
+  buildRecentScenarioMockPrompt,
   buildScenarioAnswerPrompt,
   buildScenarioMockPrompt,
   buildScenarioVariantPrompt,
   buildLocalScenarioVariant,
   createScenarioBankState,
+  getRecentScenarioReport,
   getScenarioSeed,
+  listRecentScenarioCompanies,
+  listRecentScenarioReports,
   listScenarioBankTopics,
   listScenarioSeeds,
 } from "../lib/scenarioBank.mjs";
@@ -125,4 +132,32 @@ test("builds prompts for real-time variants, answer expansion, and mock practice
   assert.match(mockPrompt, /mock interview/i);
   assert.match(mockPrompt, /one question at a time/i);
   assert.match(mockPrompt, /PostgreSQL/);
+});
+
+test("recent trap bank exposes company round and level filters with source-backed reports", () => {
+  assert.ok(RECENT_SCENARIO_BANK_ROUNDS.includes("Coding"));
+  assert.ok(RECENT_SCENARIO_BANK_LEVELS.includes("Senior"));
+  assert.ok(listRecentScenarioCompanies().includes("Amazon"));
+
+  const amazonReports = listRecentScenarioReports({ company: "Amazon", round: "All", level: "All" });
+  assert.ok(amazonReports.length >= 1);
+  assert.ok(amazonReports.every((item) => item.sourceLinks.length >= 1));
+
+  const googleCoding = listRecentScenarioReports({ company: "Google", round: "Coding", level: "Junior" });
+  assert.ok(googleCoding.some((item) => item.id === "google-ai-code-comprehension-2026"));
+});
+
+test("recent trap bank prompts preserve trap type follow-up and polished answer expectations", () => {
+  const report = getRecentScenarioReport("amazon-idempotency-bar-raiser-2026");
+
+  const answerPrompt = buildRecentScenarioAnswerPrompt(report);
+  assert.match(answerPrompt, /recent public-report scenario/i);
+  assert.match(answerPrompt, /Bar Raiser/);
+  assert.match(answerPrompt, /Trap type/i);
+  assert.match(answerPrompt, /follow-up/i);
+
+  const mockPrompt = buildRecentScenarioMockPrompt(report);
+  assert.match(mockPrompt, /mock interview/i);
+  assert.match(mockPrompt, /one question at a time/i);
+  assert.match(mockPrompt, /Watch for this candidate trap/i);
 });

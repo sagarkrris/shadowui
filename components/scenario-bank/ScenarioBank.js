@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   DATABASE_ENGINES,
+  RECENT_SCENARIO_BANK_LEVELS,
+  RECENT_SCENARIO_BANK_ROUNDS,
   SCENARIO_BANK_DIFFICULTIES,
   SCENARIO_BANK_MODES,
   SCENARIO_BANK_STORAGE_KEY,
   SCENARIO_BANK_TRACKS,
+  buildRecentScenarioAnswerPrompt,
+  buildRecentScenarioMockPrompt,
   buildScenarioInterviewPlan,
   buildScenarioAnswerPrompt,
   buildLocalScenarioVariant,
@@ -12,6 +16,8 @@ import {
   createScenarioBankProgress,
   createScenarioBankState,
   estimateScenarioCoverage,
+  listRecentScenarioCompanies,
+  listRecentScenarioReports,
   listScenarioBankTopics,
   listScenarioSeeds,
   recordScenarioBankAttempt,
@@ -307,17 +313,108 @@ function ScenarioCard({ scenario, scenarioProgress, state, accent, onAction, onR
   );
 }
 
+function RecentScenarioCard({ report, progressItem, accent, onAction, onRecord }) {
+  const explainAnswer = () => {
+    onAction?.(buildRecentScenarioAnswerPrompt(report), { type: "recentScenarioAnswer", report });
+  };
+  const practiceMock = () => {
+    onAction?.(buildRecentScenarioMockPrompt(report), { type: "recentScenarioMock", report });
+  };
+
+  return (
+    <article style={{ ...wrap, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 8, display: "grid", gap: 11, padding: 12 }}>
+      <div style={{ alignItems: "flex-start", display: "flex", gap: 8, justifyContent: "space-between", minWidth: 0 }}>
+        <div style={wrap}>
+          <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>
+            {report.company} · {report.round} · {report.level}
+          </div>
+          <h3 style={{ ...wrap, color: "#f8fbff", fontSize: 15, lineHeight: 1.25, marginTop: 4 }}>{report.title}</h3>
+        </div>
+        {progressItem?.attempts ? (
+          <span style={{ alignSelf: "start", border: `1px solid ${progressItem.mastered ? "rgba(167,243,208,.38)" : "rgba(250,204,21,.36)"}`, borderRadius: 999, color: progressItem.mastered ? "#a7f3d0" : "#facc15", flexShrink: 0, fontSize: 10.5, fontWeight: 900, padding: "3px 7px", whiteSpace: "nowrap" }}>
+            {progressItem.mastered ? "Trap learned" : "Needs review"} · {progressItem.attempts}
+          </span>
+        ) : null}
+      </div>
+
+      <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 7 }}>
+        <span style={{ border: `1px solid ${accent}44`, borderRadius: 999, color: accent, fontSize: 10.2, fontWeight: 900, padding: "3px 7px" }}>{report.freshnessLabel}</span>
+        <span style={{ border: "1px solid rgba(167,243,208,.24)", borderRadius: 999, color: "#a7f3d0", fontSize: 10.2, fontWeight: 900, padding: "3px 7px" }}>{report.confidence}</span>
+        <span style={{ border: "1px solid rgba(250,204,21,.26)", borderRadius: 999, color: "#facc15", fontSize: 10.2, fontWeight: 900, padding: "3px 7px" }}>{report.trapType}</span>
+      </div>
+
+      <p style={{ ...wrap, color: "#cbd5e1", fontSize: 12, lineHeight: 1.55 }}>{report.prompt}</p>
+
+      <section style={{ ...wrap, background: "rgba(250,204,21,.08)", border: "1px solid rgba(250,204,21,.24)", borderRadius: 8, display: "grid", gap: 6, padding: 10 }}>
+        <div style={{ color: "#facc15", fontSize: 10.8, fontWeight: 900, textTransform: "uppercase" }}>Why candidates get trapped</div>
+        <p style={{ color: "#fef3c7", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}>{report.candidateTrap}</p>
+      </section>
+
+      <section style={{ ...wrap, background: "rgba(0,0,0,.16)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 10 }}>
+        <h4 style={{ color: "#f8fbff", fontSize: 12, marginBottom: 6 }}>Interview-ready answer</h4>
+        <p style={{ ...wrap, color: "#d1fae5", fontSize: 11.6, lineHeight: 1.55 }}>{report.polishedAnswer}</p>
+      </section>
+
+      <div style={responsiveGrid(220, 9)}>
+        <DetailList title="Strong answer points" icon="ti-list-check" items={report.answerOutline} accent={accent} />
+        <DetailList title="Likely follow-ups" icon="ti-messages" items={report.followUps} accent="#c4b5fd" />
+        <DetailList title="Rubric" icon="ti-chart-radar" items={report.rubric} accent="#facc15" />
+      </div>
+
+      <section style={{ ...wrap, background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 6, padding: 10 }}>
+        <div style={{ color: "#9fb0c7", fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Public-source pointers</div>
+        <div style={{ display: "grid", gap: 6 }}>
+          {report.sourceLinks.map((link) => (
+            <a key={link.url} href={link.url} target="_blank" rel="noreferrer" style={{ color: "#dbeafe", fontSize: 11.3, lineHeight: 1.45, textDecoration: "none" }}>
+              <strong style={{ color: accent }}>{link.label}</strong> - {link.note}
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 7, minWidth: 0 }}>
+        <button type="button" className="glass-button" onClick={explainAnswer} title="Explain Answer" style={{ border: "1px solid rgba(167,243,208,.36)", borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
+          <i className="ti ti-notes" style={{ color: "#a7f3d0", marginRight: 6 }} />
+          Explain Answer
+        </button>
+        <button type="button" className="glass-button" onClick={practiceMock} title="Practice as Mock" style={{ border: "1px solid rgba(196,181,253,.38)", borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
+          <i className="ti ti-player-play" style={{ color: "#c4b5fd", marginRight: 6 }} />
+          Practice as Mock
+        </button>
+        <button type="button" onClick={() => onRecord?.(report, "needsReview")} title="Mark Needs Review" style={{ background: "rgba(0,0,0,.12)", border: "1px solid rgba(250,204,21,.32)", borderRadius: 7, color: "#facc15", cursor: "pointer", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
+          <i className="ti ti-refresh-alert" style={{ marginRight: 6 }} />
+          Needs Review
+        </button>
+        <button type="button" onClick={() => onRecord?.(report, "mastered")} title="Mark Trap Learned" style={{ background: "rgba(0,0,0,.12)", border: "1px solid rgba(167,243,208,.34)", borderRadius: 7, color: "#a7f3d0", cursor: "pointer", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
+          <i className="ti ti-circle-check" style={{ marginRight: 6 }} />
+          Trap Learned
+        </button>
+      </div>
+    </article>
+  );
+}
+
 export default function ScenarioBank({ theme = {}, onAction, beginnerMode = false, beginnerStep = "watch", onBeginnerStepChange, onActivity }) {
+  const [view, setView] = useState("core");
   const [state, setState] = useState(() => createScenarioBankState());
   const [progress, setProgress] = useState(() => createScenarioBankProgress());
   const [generatedScenario, setGeneratedScenario] = useState(null);
   const [variantIndex, setVariantIndex] = useState(0);
   const [storageReady, setStorageReady] = useState(false);
+  const [recentCompany, setRecentCompany] = useState("All");
+  const [recentRound, setRecentRound] = useState("All");
+  const [recentLevel, setRecentLevel] = useState("All");
   const accent = theme.accentStrong || "#8bd3ff";
   const accentBorder = theme.accentBorder || "rgba(139, 211, 255, .26)";
 
   const topics = useMemo(() => listScenarioBankTopics(state.track, state.engine), [state.track, state.engine]);
   const scenarios = useMemo(() => listScenarioSeeds(state), [state]);
+  const recentCompanies = useMemo(() => listRecentScenarioCompanies(), []);
+  const recentReports = useMemo(() => listRecentScenarioReports({
+    company: recentCompany,
+    round: recentRound,
+    level: recentLevel,
+  }), [recentCompany, recentRound, recentLevel]);
   const selectedTrack = SCENARIO_BANK_TRACKS.find((track) => track.key === state.track) || SCENARIO_BANK_TRACKS[0];
   const coverage = useMemo(() => estimateScenarioCoverage(state), [state]);
   const interviewPlan = useMemo(() => buildScenarioInterviewPlan({ progress, state, count: 5 }), [progress, state]);
@@ -406,15 +503,33 @@ export default function ScenarioBank({ theme = {}, onAction, beginnerMode = fals
       <header style={{ alignItems: "start", display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "space-between", minWidth: 0 }}>
         <div style={wrap}>
           <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Scenario Bank</div>
-          <h2 style={{ ...wrap, color: "#f8fbff", fontSize: 19, lineHeight: 1.25, marginTop: 4 }}>Java and database real-time interview scenarios</h2>
+          <h2 style={{ ...wrap, color: "#f8fbff", fontSize: 19, lineHeight: 1.25, marginTop: 4 }}>Java, database, and recent public-report trap scenarios</h2>
           <p style={{ ...wrap, color: "#9fb0c7", fontSize: 11.5, lineHeight: 1.45, marginTop: 6 }}>
-            {coverageLabel}: curated seeds plus AI variants for {coverage.total.toLocaleString()}+ scenario paths.
+            {view === "core"
+              ? `${coverageLabel}: curated seeds plus AI variants for ${coverage.total.toLocaleString()}+ scenario paths.`
+              : "Recent Trap Bank: source-backed, manually refreshed scenarios that commonly trap candidates in modern interview loops."}
           </p>
           <p style={{ ...wrap, color: "#cbd5e1", fontSize: 11.2, lineHeight: 1.45, marginTop: 4 }}>
-            Database tracks: {supportedDatabaseCopy}. Modes: Learn, Timed Drill, Mock Interview.
+            {view === "core"
+              ? `Database tracks: ${supportedDatabaseCopy}. Modes: Learn, Timed Drill, Mock Interview.`
+              : "Recent items are based on public reports and prep guides, with freshness and confidence labels instead of claiming direct live scraping."}
           </p>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 7, minWidth: 0 }}>
+          <ControlButton
+            label="Core Drills"
+            icon="ti-layout-grid"
+            active={view === "core"}
+            accent={accent}
+            onClick={() => setView("core")}
+          />
+          <ControlButton
+            label="Recent Trap Bank"
+            icon="ti-radar-2"
+            active={view === "recent"}
+            accent={accent}
+            onClick={() => setView("recent")}
+          />
           {SCENARIO_BANK_TRACKS.map((track) => (
             <ControlButton
               key={track.key}
@@ -436,9 +551,10 @@ export default function ScenarioBank({ theme = {}, onAction, beginnerMode = fals
         <ProgressMetric label="Attempted" value={progress.summary.attempted} accent={accent} />
         <ProgressMetric label="Mastered" value={progress.summary.mastered} accent="#a7f3d0" />
         <ProgressMetric label="Needs Review" value={progress.summary.needsReview} accent="#facc15" />
-        <ProgressMetric label="Coverage" value={`${coverage.total.toLocaleString()}+`} accent="#c4b5fd" />
+        <ProgressMetric label={view === "core" ? "Coverage" : "Recent items"} value={view === "core" ? `${coverage.total.toLocaleString()}+` : recentReports.length} accent="#c4b5fd" />
       </section>
 
+      {view === "core" ? (
       <section style={{ border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 10, minWidth: 0, padding: 12 }}>
         <div style={responsiveGrid(160, 9)}>
           {state.track === "database" && (
@@ -478,8 +594,39 @@ export default function ScenarioBank({ theme = {}, onAction, beginnerMode = fals
           {state.mode === "Timed Drill" && <span style={{ color: "#facc15", fontWeight: 800 }}>Timed Drill mode</span>}
         </div>
       </section>
+      ) : (
+      <section style={{ border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 10, minWidth: 0, padding: 12 }}>
+        <div style={responsiveGrid(160, 9)}>
+          <SelectControl
+            label="Company"
+            value={recentCompany}
+            options={recentCompanies}
+            accentBorder={accentBorder}
+            onChange={setRecentCompany}
+          />
+          <SelectControl
+            label="Round"
+            value={recentRound}
+            options={RECENT_SCENARIO_BANK_ROUNDS}
+            accentBorder={accentBorder}
+            onChange={setRecentRound}
+          />
+          <SelectControl
+            label="Level"
+            value={recentLevel}
+            options={RECENT_SCENARIO_BANK_LEVELS}
+            accentBorder={accentBorder}
+            onChange={setRecentLevel}
+          />
+        </div>
+        <div style={{ ...wrap, alignItems: "center", color: "#cbd5e1", display: "flex", flexWrap: "wrap", fontSize: 11.5, gap: 8, lineHeight: 1.45 }}>
+          <span style={{ color: accent, fontWeight: 900 }}>Recent Trap Bank</span>
+          <span>Questions and scenario themes that frequently surface in public reports and trap candidates when answers stay shallow or generic.</span>
+        </div>
+      </section>
+      )}
 
-      {generatedScenario && (
+      {view === "core" && generatedScenario && (
         <section style={{ border: "1px solid rgba(167,243,208,.28)", borderRadius: 8, display: "grid", gap: 10, minWidth: 0, padding: 12, background: "rgba(16,185,129,.055)" }}>
           <div style={{ ...wrap, color: "#a7f3d0", fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>
             Generated Variant
@@ -497,22 +644,24 @@ export default function ScenarioBank({ theme = {}, onAction, beginnerMode = fals
         </section>
       )}
 
-      <div style={responsiveGrid(300, 10)}>
-        {scenarios.map((scenario) => (
-          <ScenarioCard
-            key={scenario.id}
-            scenario={scenario}
-            scenarioProgress={progress.scenarios[scenario.id]}
-            state={state}
-            accent={accent}
-            onAction={onAction}
-            onRecord={recordProgress}
-            onGenerateFresh={generateFreshScenario}
-          />
-        ))}
-      </div>
+      {view === "core" ? (
+      <>
+        <div style={responsiveGrid(300, 10)}>
+          {scenarios.map((scenario) => (
+            <ScenarioCard
+              key={scenario.id}
+              scenario={scenario}
+              scenarioProgress={progress.scenarios[scenario.id]}
+              state={state}
+              accent={accent}
+              onAction={onAction}
+              onRecord={recordProgress}
+              onGenerateFresh={generateFreshScenario}
+            />
+          ))}
+        </div>
 
-      {!scenarios.length && (
+        {!scenarios.length && (
         <section style={{ ...wrap, border: `1px solid ${accentBorder}`, borderRadius: 8, padding: 12 }}>
           <h3 style={{ color: "#f8fbff", fontSize: 14 }}>Generate Fresh Scenario</h3>
           <p style={{ color: "#9fb0c7", fontSize: 12, lineHeight: 1.5, marginTop: 6 }}>No local seed matches this filter yet. Generate a real-time scenario for this topic instead.</p>
@@ -521,6 +670,29 @@ export default function ScenarioBank({ theme = {}, onAction, beginnerMode = fals
             Generate Fresh Scenario
           </button>
         </section>
+        )}
+      </>
+      ) : (
+      <>
+        <div style={responsiveGrid(300, 10)}>
+          {recentReports.map((report) => (
+            <RecentScenarioCard
+              key={report.id}
+              report={report}
+              progressItem={progress.scenarios[report.id]}
+              accent={accent}
+              onAction={onAction}
+              onRecord={recordProgress}
+            />
+          ))}
+        </div>
+        {!recentReports.length && (
+          <section style={{ ...wrap, border: `1px solid ${accentBorder}`, borderRadius: 8, padding: 12 }}>
+            <h3 style={{ color: "#f8fbff", fontSize: 14 }}>No recent reports match this filter</h3>
+            <p style={{ color: "#9fb0c7", fontSize: 12, lineHeight: 1.5, marginTop: 6 }}>Try broadening the company, round, or level filters. The recent bank is intentionally curated instead of inflated with low-signal items.</p>
+          </section>
+        )}
+      </>
       )}
     </section>
   );

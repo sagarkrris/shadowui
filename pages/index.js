@@ -12,6 +12,7 @@ import DesignLab from "../components/design-lab/DesignLab";
 import DsaVisualLab from "../components/dsa/DsaVisualLab";
 import InterviewReadyQA from "../components/interview-ready/InterviewReadyQA";
 import JavaDigest from "../components/java-digest/JavaDigest";
+import OfferWarRoom from "../components/offer-war-room/OfferWarRoom";
 import ScenarioBank from "../components/scenario-bank/ScenarioBank";
 import RecordingReviewModal from "../components/modals/RecordingReviewModal";
 import ScreenModal from "../components/modals/ScreenModal";
@@ -818,6 +819,23 @@ export default function Home() {
     });
   };
 
+  const startOfferWarRoomAction = (prompt, metadata = {}) => {
+    setActiveTab("chat");
+    recordWorkspaceActivity({
+      workspaceId: "offerWarRoom",
+      type: metadata?.type || "warRoom",
+      label: "Started Offer War Room action",
+      detail: buildWorkspaceActionDisplayText(prompt, metadata),
+    });
+    callAPI(prompt, {
+      interviewMode: metadata?.type?.includes("Story") || metadata?.type?.includes("Speech") ? "coach" : "strict",
+      roundStrategy: metadata?.type?.includes("Round") || metadata?.type?.includes("Loop") ? "final" : "manager",
+      interviewPanel: metadata?.type?.includes("Story") ? "engineeringManager" : "barRaiser",
+      displayText: buildWorkspaceActionDisplayText(prompt, metadata),
+      skipQuestionMemory: true,
+    });
+  };
+
   const startDsaLabPractice = (prompt, metadata = {}) => {
     setActiveTab("chat");
     recordWorkspaceActivity({
@@ -1263,6 +1281,22 @@ export default function Home() {
                 beginnerMode={beginnerMode}
                 beginnerStep={prepProgressState.beginnerStep}
                 onBeginnerStepChange={setBeginnerStep}
+                onActivity={recordWorkspaceActivity}
+              />
+            ) : activeTab==="offerWarRoom" ? (
+              <OfferWarRoom
+                theme={techTheme}
+                profile={candidateProfile || profileDraft}
+                topics={visibleTopics}
+                weakSpots={weakSpots}
+                mockScores={mockScores}
+                messages={messages}
+                selectedCat={selectedCat}
+                selectedSub={selectedSub}
+                beginnerMode={beginnerMode}
+                beginnerStep={prepProgressState.beginnerStep}
+                onBeginnerStepChange={setBeginnerStep}
+                onAction={startOfferWarRoomAction}
                 onActivity={recordWorkspaceActivity}
               />
             ) : activeTab==="interviewReady" ? (

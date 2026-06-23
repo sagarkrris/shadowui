@@ -33,6 +33,10 @@ body {
 pre { white-space: pre-wrap; word-break: break-word; }
 button, select, textarea, input { font-family: inherit; cursor: pointer; }
 textarea { resize: none; }
+.interview-ready-answer-input {
+  resize: vertical;
+  max-height: 320px;
+}
 .glass-input::placeholder { color: rgba(203,213,225,.72); opacity: 1; }
 
 button:focus-visible,

@@ -3,6 +3,7 @@ import BrandLogo from "./BrandLogo";
 
 export default function Sidebar({ topics, open, onClose, expandedCat, selectedCat, selectedSub, onToggleCat, onSelectSub, isMobile, theme, prepLabel, userPrepLabel, topicsLocked, onLockedTopic, onOpenCourse }) {
   const drawerWidth = isMobile ? "min(340px, 88vw)" : (open ? 320 : 0);
+  const mobileClosedTransform = "translateX(calc(-100% - 14px))";
 
   return (
     <>
@@ -17,13 +18,15 @@ export default function Sidebar({ topics, open, onClose, expandedCat, selectedCa
         left: isMobile ? 0 : undefined,
         height: isMobile ? "100%" : undefined,
         zIndex: isMobile ? 50 : undefined,
-        transform: isMobile ? (open ? "translateX(0)" : "translateX(-100%)") : undefined,
+        transform: isMobile ? (open ? "translateX(0)" : mobileClosedTransform) : undefined,
         borderRight: "1px solid rgba(255,255,255,.06)",
         display: "flex",
         flexDirection: "column",
         transition: "all .25s cubic-bezier(.4,0,.2,1)",
         overflow: "hidden",
         flexShrink: 0,
+        pointerEvents: isMobile && !open ? "none" : "auto",
+        visibility: isMobile && !open ? "hidden" : "visible",
       }}>
         <div style={{ padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,.06)", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
@@ -38,7 +41,7 @@ export default function Sidebar({ topics, open, onClose, expandedCat, selectedCa
           )}
         </div>
 
-        <div style={{ flex: 1, overflowY: "auto", padding: "5px 0" }}>
+        <div style={{ flex: 1, overflowX: "hidden", overflowY: "auto", padding: "5px 0" }}>
           <div style={{ padding: "8px 12px 12px" }}>
             <AgenticUICourse theme={theme} variant="drawer" onOpenCourse={onOpenCourse} />
           </div>
