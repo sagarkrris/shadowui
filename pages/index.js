@@ -99,6 +99,15 @@ function toApiMessages(messages) {
   }));
 }
 
+async function readJsonIfAvailable(response) {
+  const contentType = String(response.headers.get("content-type") || "").toLowerCase();
+  if (!contentType.includes("application/json")) {
+    throw new Error("Expected JSON response");
+  }
+
+  return response.json();
+}
+
 export default function Home() {
   const [messages, setMessages]       = useState([]);
   const [expandedCat, setExpanded]    = useState(null);
@@ -307,7 +316,10 @@ export default function Home() {
   useEffect(() => {
     let active = true;
     fetch("/api/models")
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) throw new Error("Model diagnostics unavailable");
+        return readJsonIfAvailable(response);
+      })
       .then((data) => {
         if (active) setAiHealth(data);
       })

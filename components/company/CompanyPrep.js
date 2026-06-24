@@ -6,6 +6,15 @@ const QUESTION_BANK_REFRESH_KEY = "interviewiq.companyPrep.refresh.v1";
 const CAREER_TOOLKIT_STORAGE_KEY = "interviewiq.careerToolkit.v1";
 const COMPANY_ROUND_MAP_KEY = "interviewiq.companyPrep.roundMap.v1";
 
+async function readJsonIfAvailable(response) {
+  const contentType = String(response.headers.get("content-type") || "").toLowerCase();
+  if (!contentType.includes("application/json")) {
+    throw new Error("Expected JSON response");
+  }
+
+  return response.json();
+}
+
 function readCareerToolkitState() {
   if (typeof window === "undefined") return {};
 
@@ -208,7 +217,7 @@ export default function CompanyPrep({ theme, weakSpots, mockScores = [], message
     try {
       const response = await fetch(`/api/company-prep?company=${encodeURIComponent(trimmed)}`);
       if (!response.ok) throw new Error("Company prep lookup failed");
-      const data = await response.json();
+      const data = await readJsonIfAvailable(response);
       setCompanyPrep(data);
       setRefreshState(readRefreshState(data.company));
       setRoundMapState(readRoundMapState(data.company));
