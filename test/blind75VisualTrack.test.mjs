@@ -64,6 +64,13 @@ test("returns a complete featured problem", () => {
   assert.equal(problem.visualizerId, "arrays-hashing");
   assert.ok(problem.mockPrompt.includes("Two Sum"));
   assert.ok(problem.edgeCases.some((edgeCase) => /duplicate|negative|target|pair/i.test(edgeCase)));
+  assert.match(problem.statement, /Given|Return|Find/i);
+  assert.ok(Array.isArray(problem.examples));
+  assert.ok(problem.examples.length >= 2);
+  assert.ok(problem.examples.every((example) => example.input && example.output && example.explanation));
+  assert.ok(Array.isArray(problem.constraints));
+  assert.ok(problem.constraints.length >= 2);
+  assert.ok(problem.tags.includes("LeetCode-style"));
 });
 
 test("returns selected-stack Blind 75 code templates", () => {

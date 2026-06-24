@@ -859,6 +859,137 @@ function BeginnerDirectorCard({ lesson, currentStep, stepIndex, totalSteps, acce
   );
 }
 
+function formatReplayItems(items = []) {
+  if (!items.length) return "No tracked internal state for this frame yet.";
+  return items.map((item) => `${item.label}: ${item.value}`).join(" | ");
+}
+
+function buildReplayLanes({ lesson, state, currentStep, previousStep }) {
+  const highlight = currentStep?.highlight || {};
+  const previousHighlight = previousStep?.highlight || {};
+  const sidePanel = currentStep?.sidePanel || { kind: "state", items: [] };
+  const previousItems = previousStep?.sidePanel?.items || [];
+  const pointerParts = [
+    ["Left", highlight.left],
+    ["Right", highlight.right],
+    ["Index", highlight.index],
+    ["Low", highlight.low],
+    ["Mid", highlight.mid],
+    ["High", highlight.high],
+    ["From", highlight.from],
+    ["To", highlight.to],
+  ].filter(([, value]) => value !== undefined && value !== null);
+  const pointerMovement = pointerParts.length
+    ? pointerParts.map(([label, value]) => `${label} ${value}`).join(" | ")
+    : `Current highlight: ${Object.keys(highlight).length ? JSON.stringify(highlight) : "single focused frame"}`;
+  const pointerReason = previousStep
+    ? `Previous focus: ${Object.keys(previousHighlight).length ? JSON.stringify(previousHighlight) : "setup frame"}`
+    : "Setup frame: establish the first pointers, indices, or active position.";
+
+  const stackQueueKinds = new Set(["stack", "queue", "heap"]);
+  const recursionKinds = new Set(["tree", "backtracking", "matrix"]);
+  const dpKinds = new Set(["table"]);
+  const stackQueueValue = stackQueueKinds.has(sidePanel.kind)
+    ? formatReplayItems(sidePanel.items)
+    : "This algorithm is not using a stack, queue, or heap in the active frame.";
+  const recursionValue = recursionKinds.has(sidePanel.kind)
+    ? `${formatReplayItems(sidePanel.items)} | Current call focus: ${currentStep?.title || "active node"}`
+    : "This frame does not use a recursive call stack.";
+  const dpValue = dpKinds.has(sidePanel.kind)
+    ? `${formatReplayItems(sidePanel.items)} | Fill order: ${highlight.from !== undefined || highlight.to !== undefined ? `from ${highlight.from ?? "base"} to ${highlight.to ?? "target"}` : "base cases -> transition -> answer"}`
+    : "This algorithm is not filling a DP table in the active frame.";
+  const growthDelta = sidePanel.items.length - previousItems.length;
+  const stackQueueReason = stackQueueKinds.has(sidePanel.kind)
+    ? (growthDelta > 0
+      ? `Structure grew by ${growthDelta} item${growthDelta === 1 ? "" : "s"} in this frame.`
+      : growthDelta < 0
+        ? `Structure shrank by ${Math.abs(growthDelta)} item${Math.abs(growthDelta) === 1 ? "" : "s"} in this frame.`
+        : "The structure size stayed stable while the top/front item changed meaning.")
+    : "No push, pop, enqueue, dequeue, or heap rebalance happened here.";
+
+  return [
+    {
+      title: "Pointer movement",
+      icon: "ti-arrows-horizontal",
+      tone: "#93c5fd",
+      value: pointerMovement,
+      note: pointerReason,
+    },
+    {
+      title: "Stack/queue growth",
+      icon: "ti-stack-2",
+      tone: "#a7f3d0",
+      value: stackQueueValue,
+      note: stackQueueReason,
+    },
+    {
+      title: "Recursion call stack",
+      icon: "ti-git-merge",
+      tone: "#c4b5fd",
+      value: recursionValue,
+      note: recursionKinds.has(sidePanel.kind)
+        ? "Think of each frame as one call proving a smaller subproblem before returning upward."
+        : "Recursion is not the active execution model here.",
+    },
+    {
+      title: "DP table filling",
+      icon: "ti-table",
+      tone: "#facc15",
+      value: dpValue,
+      note: dpKinds.has(sidePanel.kind)
+        ? "Each filled cell must depend only on already trusted cells."
+        : "No dynamic-programming table is being filled in this frame.",
+    },
+    {
+      title: "Why this step happened",
+      icon: "ti-message-circle-2",
+      tone: "#fda4af",
+      value: currentStep?.narration || currentStep?.explanation || "Advance the state while keeping the invariant true.",
+      note: currentStep?.changed || lesson.memoryHook,
+    },
+  ];
+}
+
+function DsaExecutionReplay({ lesson, state, currentStep, previousStep, stepIndex, playing, speed, accent }) {
+  const lanes = useMemo(
+    () => buildReplayLanes({ lesson, state, currentStep, previousStep }),
+    [lesson, state, currentStep, previousStep],
+  );
+  const progress = state.steps.length ? Math.round(((stepIndex + 1) / state.steps.length) * 100) : 0;
+  const speedLabel = SPEEDS.find((item) => item.value === speed)?.label || "Normal";
+
+  return (
+    <section style={{ background: "rgba(0,0,0,.18)", border: `1px solid ${accent}35`, borderRadius: 8, display: "grid", gap: 10, padding: 11 }}>
+      <div style={{ alignItems: "center", display: "flex", gap: 8, justifyContent: "space-between", flexWrap: "wrap" }}>
+        <div>
+          <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>DSA Execution Replay</div>
+          <p style={{ color: "#9fb0c7", fontSize: 11.3, lineHeight: 1.45, marginTop: 4 }}>Time-based playback for pointer movement, stack/queue growth, recursion call stack, DP table filling, and why this step happened.</p>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <span style={{ color: playing ? "#a7f3d0" : "#93a4bf", fontSize: 10.8, fontWeight: 900 }}>{playing ? "Replay running" : "Replay paused"}</span>
+          <span style={{ color: accent, fontSize: 10.8, fontWeight: 900 }}>Speed control: {speedLabel}</span>
+          <span style={{ color: "#dbeafe", fontSize: 10.8, fontWeight: 900 }}>{progress}% complete</span>
+        </div>
+      </div>
+      <div style={{ background: "rgba(255,255,255,.045)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 999, height: 7, overflow: "hidden" }}>
+        <div style={{ background: accent, height: "100%", transition: "width .25s ease", width: `${progress}%` }} />
+      </div>
+      <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(min(210px, 100%), 1fr))" }}>
+        {lanes.map((lane) => (
+          <article key={lane.title} style={{ background: `${lane.tone}0f`, border: `1px solid ${lane.tone}33`, borderRadius: 8, display: "grid", gap: 6, minHeight: 116, padding: 9 }}>
+            <span style={{ alignItems: "center", color: lane.tone, display: "flex", fontSize: 10.4, fontWeight: 900, gap: 6, textTransform: "uppercase" }}>
+              <i className={`ti ${lane.icon}`} />
+              {lane.title}
+            </span>
+            <strong style={{ color: "#f8fbff", fontSize: 11.4, lineHeight: 1.4 }}>{lane.value}</strong>
+            <span style={{ color: "#cbd5e1", fontSize: 10.7, lineHeight: 1.4 }}>{lane.note}</span>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function DsaReelView({ lesson, state, currentStep, stepIndex, accent, playing, lessonTone, onSelectStep }) {
   const sceneNumber = stepIndex + 1;
   const progress = state.steps.length ? ((sceneNumber) / state.steps.length) * 100 : 0;
@@ -1617,6 +1748,7 @@ function LearningSectionPanel({
   onLearningQueryChange,
   onLearningPatternFilterChange,
   onSelectLearningProblem,
+  onOpenProblemReader,
   onOpenLearningProblem,
   onVisualize,
   onApproach,
@@ -1761,7 +1893,10 @@ function LearningSectionPanel({
                 <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Teacher board · #{activeProblem.order} · {activeProblem.difficulty}</div>
                 <h4 style={{ color: "#f8fbff", fontSize: 16, lineHeight: 1.3, margin: "4px 0 0" }}>{activeProblem.title}</h4>
               </div>
-              <ActionButton icon="ti-player-play" label="Open visualizer" onClick={() => onOpenLearningProblem(activeProblem)} tone="#a7f3d0" />
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+                <ActionButton icon="ti-book-2" label="Open problem reader" onClick={() => onOpenProblemReader(activeProblem)} tone={accent} />
+                <ActionButton icon="ti-player-play" label="Open visualizer" onClick={() => onOpenLearningProblem(activeProblem)} tone="#a7f3d0" />
+              </div>
             </div>
             <p style={{ color: "#dbeafe", fontSize: 12, lineHeight: 1.5, margin: 0 }}>{activeTeaching.problemLens}</p>
             <div style={{ display: "grid", gap: 9, gridTemplateColumns: "repeat(auto-fit, minmax(min(180px, 100%), 1fr))" }}>
@@ -1828,6 +1963,9 @@ function LearningSectionPanel({
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
                   <button type="button" onClick={() => onSelectLearningProblem(problem.id)} style={{ background: selected ? `${accent}20` : "rgba(255,255,255,.045)", border: `1px solid ${selected ? accent : "rgba(255,255,255,.08)"}`, borderRadius: 7, color: "#dbeafe", cursor: "pointer", fontSize: 10.8, fontWeight: 850, padding: "6px 8px" }}>
                     {selected ? "Selected" : "Teach this"}
+                  </button>
+                  <button type="button" onClick={() => onOpenProblemReader(problem)} style={{ background: `${accent}14`, border: `1px solid ${accent}30`, borderRadius: 7, color: "#dbeafe", cursor: "pointer", fontSize: 10.8, fontWeight: 850, padding: "6px 8px" }}>
+                    Open problem reader
                   </button>
                   <button type="button" onClick={() => onOpenLearningProblem(problem)} style={{ background: "rgba(167,243,208,.07)", border: "1px solid rgba(167,243,208,.25)", borderRadius: 7, color: "#a7f3d0", cursor: "pointer", fontSize: 10.8, fontWeight: 850, padding: "6px 8px" }}>
                     Open visualizer
@@ -2321,6 +2459,12 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
     setStage("Visualize");
   };
 
+  const rewind = () => {
+    setPlaying(false);
+    setStepIndex(0);
+    setStage("Visualize");
+  };
+
   const previous = () => {
     setPlaying(false);
     setStepIndex((value) => Math.max(0, value - 1));
@@ -2391,6 +2535,14 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
     setSelectedLearningProblemId(problem.id);
     chooseLesson(problem.lessonId);
     setStage("Visualize");
+  };
+
+  const openProblemReader = (problem) => {
+    if (!problem) return;
+    setSelectedLearningProblemId(problem.id);
+    setTrack("blind75");
+    setSelectedLessonId(problem.lessonId);
+    setStage("Learn");
   };
 
   const filterChallenges = (filterId) => {
@@ -2630,6 +2782,7 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
           onLearningQueryChange={setLearningQuery}
           onLearningPatternFilterChange={setLearningPatternFilter}
           onSelectLearningProblem={setSelectedLearningProblemId}
+          onOpenProblemReader={openProblemReader}
           onOpenLearningProblem={openLearningProblem}
           onVisualize={visualize}
           onApproach={() => chooseTrack("thinking")}
@@ -2920,6 +3073,53 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
               <span style={{ color: "#cbd5e1", fontSize: 11.5, lineHeight: 1.45 }}>{currentBlind75Problem.edgeCases.join(" · ")}</span>
             </div>
           </div>
+
+          <section style={{ background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 10, padding: 11 }}>
+            <div style={{ alignItems: "start", display: "flex", gap: 10, justifyContent: "space-between", flexWrap: "wrap" }}>
+              <div>
+                <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Problem Explorer</div>
+                <h4 style={{ color: "#f8fbff", fontSize: 15, lineHeight: 1.3, margin: "4px 0 0" }}>LeetCode-style prompt</h4>
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+                <ActionButton icon="ti-book-2" label="Open problem reader" onClick={() => setStage("Learn")} tone={accent} />
+                <ActionButton icon="ti-player-play" label="Open visualizer" onClick={visualize} tone="#a7f3d0" />
+              </div>
+            </div>
+
+            <p style={{ color: "#dbeafe", fontSize: 12.5, lineHeight: 1.55, margin: 0 }}>{currentBlind75Problem.statement}</p>
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+              {(currentBlind75Problem.tags || []).map((tag) => (
+                <span key={tag} style={{ background: "rgba(139,211,255,.08)", border: `1px solid ${accentBorder}`, borderRadius: 999, color: tag === "LeetCode-style" ? accent : "#dbeafe", fontSize: 10.5, fontWeight: 900, padding: "6px 9px" }}>
+                  {tag}
+                </span>
+              ))}
+            </div>
+
+            <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(min(240px, 100%), 1fr))" }}>
+              <section style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 8, padding: 10 }}>
+                <strong style={{ color: "#a7f3d0", fontSize: 11, textTransform: "uppercase" }}>Examples</strong>
+                {(currentBlind75Problem.examples || []).map((example, index) => (
+                  <div key={`${currentBlind75Problem.id}-example-${index + 1}`} style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 7, display: "grid", gap: 4, padding: 8 }}>
+                    <span style={{ color: accent, fontSize: 10.2, fontWeight: 900, textTransform: "uppercase" }}>Example {index + 1}</span>
+                    <span style={{ color: "#f8fbff", fontSize: 11.2, lineHeight: 1.4 }}>Input: {example.input}</span>
+                    <span style={{ color: "#dbeafe", fontSize: 11, lineHeight: 1.4 }}>Output: {example.output}</span>
+                    <span style={{ color: "#93a4bf", fontSize: 10.6, lineHeight: 1.4 }}>{example.explanation}</span>
+                  </div>
+                ))}
+              </section>
+
+              <section style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 8, padding: 10 }}>
+                <strong style={{ color: "#facc15", fontSize: 11, textTransform: "uppercase" }}>Constraints</strong>
+                {(currentBlind75Problem.constraints || []).map((constraint) => (
+                  <div key={constraint} style={{ alignItems: "start", display: "grid", gap: 7, gridTemplateColumns: "16px 1fr" }}>
+                    <span style={{ color: "#facc15", fontSize: 12, lineHeight: 1.2 }}>•</span>
+                    <span style={{ color: "#dbeafe", fontSize: 11, lineHeight: 1.45 }}>{constraint}</span>
+                  </div>
+                ))}
+              </section>
+            </div>
+          </section>
         </section>
       ) : null}
 
@@ -3179,6 +3379,7 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
             </label>
             <div style={{ alignItems: "end", display: "flex", gap: 7, flexWrap: "wrap" }}>
               <ActionButton icon={playing ? "ti-player-pause" : "ti-player-play"} label={playing ? "Pause" : "Play"} onClick={() => setPlaying((value) => !value)} tone="#a7f3d0" />
+              <ActionButton icon="ti-player-track-prev-filled" label="Rewind" onClick={rewind} disabled={stepIndex === 0} tone="#c4b5fd" />
               <ActionButton icon="ti-player-track-prev" label="Previous" onClick={previous} disabled={stepIndex === 0} tone={accent} />
               <ActionButton icon="ti-arrow-right" label="Next" onClick={next} disabled={stepIndex >= state.steps.length - 1} tone={accent} />
               <ActionButton icon="ti-refresh" label="Reset" onClick={reset} tone="#facc15" />
@@ -3277,6 +3478,17 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
           ) : (
             <VisualInput input={state.input} highlight={currentStep?.highlight || {}} accent={accent} isPlaying={playing} />
           )}
+
+          <DsaExecutionReplay
+            lesson={lesson}
+            state={state}
+            currentStep={currentStep}
+            previousStep={state.steps[Math.max(stepIndex - 1, 0)] || null}
+            stepIndex={Math.min(stepIndex, state.steps.length - 1)}
+            playing={playing}
+            speed={speed}
+            accent={accent}
+          />
 
           <div style={{ background: "rgba(0,0,0,.16)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 8, padding: 11 }}>
             <div style={{ alignItems: "center", color: accent, display: "flex", fontSize: 11, fontWeight: 900, gap: 7 }}>

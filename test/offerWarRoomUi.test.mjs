@@ -24,6 +24,10 @@ test("offer war room workspace renders serious offer-focused prep sections", () 
   assert.match(componentSource, /Target companies/);
   assert.match(componentSource, /Run this round/);
   assert.match(componentSource, /Pressure test/);
+  assert.match(componentSource, /flexShrink:\s*0/);
+  assert.match(componentSource, /flexWrap:\s*"wrap"/);
+  assert.match(componentSource, /whiteSpace:\s*"normal"/);
+  assert.match(componentSource, /maxWidth:\s*"100%"/);
 });
 
 test("offer war room is wired as a first-class workspace", () => {

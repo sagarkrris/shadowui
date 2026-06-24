@@ -39,7 +39,7 @@ function ActionButton({ label, icon, tone, onClick }) {
       type="button"
       className="glass-button"
       onClick={onClick}
-      style={{ alignItems: "center", border: `1px solid ${tone}55`, borderRadius: 7, color: "#f8fbff", cursor: "pointer", display: "inline-flex", fontSize: 10.8, fontWeight: 850, gap: 6, padding: "7px 10px" }}
+      style={{ alignItems: "center", border: `1px solid ${tone}55`, borderRadius: 7, color: "#f8fbff", cursor: "pointer", display: "inline-flex", fontSize: 10.8, fontWeight: 850, gap: 6, maxWidth: "100%", minWidth: 0, padding: "7px 10px", textAlign: "left", whiteSpace: "normal" }}
     >
       <i className={`ti ${icon}`} style={{ color: tone }} />
       {label}
@@ -86,8 +86,8 @@ function OverviewPanel({ overview, accent }) {
 function CompanyLaneCard({ lane, accent, onAction, onSelect }) {
   return (
     <article style={{ background: "rgba(0,0,0,.15)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 8, padding: 10 }}>
-      <div style={{ alignItems: "center", display: "flex", gap: 8, justifyContent: "space-between" }}>
-        <strong style={{ color: "#f8fbff", fontSize: 12.5 }}>{lane.company}</strong>
+      <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between", minWidth: 0 }}>
+        <strong style={{ ...wrap, color: "#f8fbff", fontSize: 12.5 }}>{lane.company}</strong>
         <button type="button" onClick={onSelect} style={{ background: "rgba(255,255,255,.035)", border: `1px solid ${accent}44`, borderRadius: 999, color: accent, cursor: "pointer", fontSize: 10.2, fontWeight: 900, padding: "4px 8px" }}>
           Use for loop
         </button>
@@ -108,8 +108,8 @@ function RoundCard({ round, onAction }) {
   const tone = round.pressure === "very high" ? "#fda4af" : round.pressure === "high" ? "#facc15" : "#8bd3ff";
   return (
     <article style={{ background: "rgba(0,0,0,.15)", border: `1px solid ${tone}33`, borderRadius: 8, display: "grid", gap: 8, padding: 10 }}>
-      <div style={{ alignItems: "center", display: "flex", gap: 8, justifyContent: "space-between" }}>
-        <strong style={{ color: "#f8fbff", fontSize: 12.4 }}>{round.round}</strong>
+      <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between", minWidth: 0 }}>
+        <strong style={{ ...wrap, color: "#f8fbff", fontSize: 12.4 }}>{round.round}</strong>
         <span style={{ color: tone, fontSize: 10.4, fontWeight: 900, textTransform: "uppercase" }}>{round.pressure}</span>
       </div>
       <p style={{ ...wrap, color: "#dbeafe", fontSize: 11, lineHeight: 1.45, margin: 0 }}>{round.objective}</p>
@@ -122,8 +122,8 @@ function SimulatorRoundCard({ round, onAction }) {
   const tone = round.round === "Coding" || round.round === "System Design" ? "#c4b5fd" : "#8bd3ff";
   return (
     <article style={{ background: "rgba(0,0,0,.15)", border: `1px solid ${tone}33`, borderRadius: 8, display: "grid", gap: 8, padding: 10 }}>
-      <div style={{ alignItems: "center", display: "flex", gap: 8, justifyContent: "space-between" }}>
-        <strong style={{ color: "#f8fbff", fontSize: 12.4 }}>{`${round.slot}. ${round.round}`}</strong>
+      <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between", minWidth: 0 }}>
+        <strong style={{ ...wrap, color: "#f8fbff", fontSize: 12.4 }}>{`${round.slot}. ${round.round}`}</strong>
         <span style={{ color: tone, fontSize: 10.4, fontWeight: 900 }}>{round.durationMinutes}m</span>
       </div>
       <p style={{ ...wrap, color: "#dbeafe", fontSize: 11, lineHeight: 1.45, margin: 0 }}>{round.objective}</p>
@@ -136,8 +136,8 @@ function SimulatorRoundCard({ round, onAction }) {
 function StoryCard({ story, accent, onAction }) {
   return (
     <article style={{ background: "rgba(0,0,0,.15)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 8, padding: 10 }}>
-      <div style={{ alignItems: "center", display: "flex", gap: 8, justifyContent: "space-between" }}>
-        <strong style={{ color: "#f8fbff", fontSize: 12.4 }}>{story.title}</strong>
+      <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between", minWidth: 0 }}>
+        <strong style={{ ...wrap, color: "#f8fbff", fontSize: 12.4 }}>{story.title}</strong>
         <span style={{ color: accent, fontSize: 10.4, fontWeight: 900 }}>{story.score}/10</span>
       </div>
       <span style={{ color: "#a7f3d0", fontSize: 10.5, fontWeight: 850 }}>{story.bestFor}</span>
@@ -156,8 +156,8 @@ function RevengeCard({ category, onAction }) {
   const tone = category.count >= 2 ? "#fda4af" : category.count === 1 ? "#facc15" : "#8bd3ff";
   return (
     <article style={{ background: "rgba(0,0,0,.15)", border: `1px solid ${tone}33`, borderRadius: 8, display: "grid", gap: 7, padding: 10 }}>
-      <div style={{ alignItems: "center", display: "flex", gap: 8, justifyContent: "space-between" }}>
-        <strong style={{ color: "#f8fbff", fontSize: 12.3 }}>{category.label}</strong>
+      <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between", minWidth: 0 }}>
+        <strong style={{ ...wrap, color: "#f8fbff", fontSize: 12.3 }}>{category.label}</strong>
         <span style={{ color: tone, fontSize: 10.3, fontWeight: 900 }}>{category.status}</span>
       </div>
       <p style={{ ...wrap, color: "#cbd5e1", fontSize: 10.9, lineHeight: 1.42, margin: 0 }}>{category.correction}</p>
@@ -230,7 +230,7 @@ export default function OfferWarRoom({
   };
 
   return (
-    <section className="glass-card" style={{ background: "linear-gradient(180deg, rgba(14,18,30,.82), rgba(7,10,18,.74))", border: "1px solid rgba(255,255,255,.1)", borderRadius: 8, color: "#eef4ff", display: "grid", gap: 12, minWidth: 0, padding: 14, width: "100%" }}>
+    <section className="glass-card" style={{ background: "linear-gradient(180deg, rgba(14,18,30,.82), rgba(7,10,18,.74))", border: "1px solid rgba(255,255,255,.1)", borderRadius: 8, color: "#eef4ff", display: "grid", flexShrink: 0, gap: 12, minWidth: 0, padding: 14, width: "100%" }}>
       <BeginnerGuideBanner
         enabled={beginnerMode}
         accent={accent}
@@ -355,7 +355,7 @@ export default function OfferWarRoom({
         <div style={responsiveGrid(220, 10)}>
           {model.dayPack.warmups.map((item) => (
             <article key={item.title} style={{ background: "rgba(0,0,0,.15)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 8, padding: 10 }}>
-              <strong style={{ color: "#f8fbff", fontSize: 12.3 }}>{item.title}</strong>
+              <strong style={{ ...wrap, color: "#f8fbff", fontSize: 12.3 }}>{item.title}</strong>
               <span style={{ color: accent, fontSize: 10.4, fontWeight: 900 }}>{item.minutes}m</span>
               <ActionButton label="Run warmup" icon="ti-player-play" tone={accent} onClick={() => runAction(item.prompt, { type: "offerWarRoomDayPack", item })} />
             </article>
@@ -375,8 +375,8 @@ export default function OfferWarRoom({
         <div style={responsiveGrid(220, 10)}>
           {model.missionBoard.tasks.map((task) => (
             <article key={task.id} style={{ background: "rgba(0,0,0,.15)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 8, padding: 10 }}>
-              <div style={{ alignItems: "center", display: "flex", gap: 8, justifyContent: "space-between" }}>
-                <strong style={{ color: "#f8fbff", fontSize: 12.3 }}>{task.title}</strong>
+              <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between", minWidth: 0 }}>
+                <strong style={{ ...wrap, color: "#f8fbff", fontSize: 12.3 }}>{task.title}</strong>
                 <span style={{ color: accent, fontSize: 10.4, fontWeight: 900 }}>{task.minutes}m</span>
               </div>
               <span style={{ color: "#cbd5e1", fontSize: 11 }}>{task.focus}</span>

@@ -211,17 +211,18 @@ test("system design canvas is a first-class workspace with review actions", () =
   assert.match(canvasSource, /Interactive Whiteboard/);
   assert.match(canvasSource, /Beginner System Design Context/);
   assert.match(canvasSource, /Request Lifecycle Studio/);
-  assert.match(canvasSource, /Scenario Mode/);
+  assert.match(canvasSource, /HLD Request Playback/);
   assert.match(canvasSource, /Interview Drill Mode/);
   assert.match(canvasSource, /Mermaid\/System Diagram Export/);
   assert.match(canvasSource, /API Gateway/);
   assert.match(canvasSource, /Controller/);
   assert.match(canvasSource, /DB Index/);
   assert.match(canvasSource, /Message Queue/);
-  assert.match(canvasSource, /LLD Implementation Simulator/);
+  assert.match(canvasSource, /LLD Code-to-Flow Playback/);
   assert.match(canvasSource, /Execution Trace/);
   assert.match(canvasSource, /DB Index Visualizer/);
-  assert.match(canvasSource, /Failure Recovery Simulator/);
+  assert.match(canvasSource, /Failure Mode Playback/);
+  assert.match(canvasSource, /Implementation Mode/);
   assert.match(canvasSource, /Code Mapping View/);
   assert.match(canvasSource, /Practice Templates/);
   assert.match(canvasSource, /Evaluate Diagram/);
@@ -326,6 +327,7 @@ test("DSA Visual Lab is a first-class learning workspace", () => {
   assert.match(dsaLabSource, /Teacher board/);
   assert.match(dsaLabSource, /Solve it like this/);
   assert.match(dsaLabSource, /Frame Debugger/);
+  assert.match(dsaLabSource, /DSA Execution Replay/);
   assert.match(dsaLabSource, /Explain-Then-Code/);
   assert.match(dsaLabSource, /buildDsaExplainThenCodeCoach/);
   assert.match(dsaLabSource, /Explain approach/);
@@ -335,6 +337,7 @@ test("DSA Visual Lab is a first-class learning workspace", () => {
   assert.match(dsaLabSource, /explainThenCodeCoach\.judge\.checks/);
   assert.match(dsaLabSource, /Play/);
   assert.match(dsaLabSource, /Pause/);
+  assert.match(dsaLabSource, /Rewind/);
   assert.match(dsaLabSource, /Speed/);
   assert.match(dsaLabSource, /State Panel/);
   assert.match(dsaLabSource, /Selected stack code/);

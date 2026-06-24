@@ -362,11 +362,18 @@ test("DsaVisualLab source exposes the required learning surfaces", () => {
   assert.match(source, /Edge check/);
   assert.match(source, /Visualize/);
   assert.match(source, /Frame Debugger/);
+  assert.match(source, /DSA Execution Replay/);
+  assert.match(source, /pointer movement/i);
+  assert.match(source, /stack\/queue growth/i);
+  assert.match(source, /recursion call stack/i);
+  assert.match(source, /DP table filling/i);
+  assert.match(source, /Why this step happened/);
   assert.match(source, /Before state/);
   assert.match(source, /After state/);
   assert.match(source, /Dry Run/);
   assert.match(source, /Play/);
   assert.match(source, /Pause/);
+  assert.match(source, /Rewind/);
   assert.match(source, /Speed/);
   assert.match(source, /What changed/);
   assert.match(source, /What to say in interview/);
@@ -409,4 +416,9 @@ test("DsaVisualLab source exposes the required learning surfaces", () => {
   assert.match(source, /All 75/);
   assert.match(source, /Pattern visualizer/);
   assert.match(source, /Edge cases/);
+  assert.match(source, /Problem Explorer/);
+  assert.match(source, /Examples/);
+  assert.match(source, /Constraints/);
+  assert.match(source, /LeetCode-style prompt/);
+  assert.match(source, /Open problem reader/);
 });

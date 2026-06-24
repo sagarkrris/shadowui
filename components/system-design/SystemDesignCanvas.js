@@ -35,6 +35,12 @@ const responsiveGrid = (minColumnWidth, gap = 9) => ({
   minWidth: 0,
 });
 
+const PLAYBACK_SPEEDS = [
+  { label: "Slow", value: 1800 },
+  { label: "Normal", value: 1200 },
+  { label: "Fast", value: 700 },
+];
+
 function ActionButton({ icon, label, onClick, tone = "#8bd3ff" }) {
   return (
     <button
@@ -311,6 +317,64 @@ const SYSTEM_PRACTICE_TEMPLATES = [
   },
 ];
 
+function getPlaybackSpeedLabel(value) {
+  return PLAYBACK_SPEEDS.find((item) => item.value === value)?.label || "Normal";
+}
+
+function buildImplementationTimeline(blueprint) {
+  const classPrefix = buildJavaClassPrefix(blueprint);
+  return [
+    {
+      id: "schema",
+      title: "Schema creation",
+      icon: "ti-database-plus",
+      detail: "Define durable entities, ownership, statuses, timestamps, and transactional boundaries before writing service code.",
+      artifact: `${classPrefix.toLowerCase()}_schema.sql`,
+      output: "Source-of-truth tables and constraints exist before the request path starts using them.",
+    },
+    {
+      id: "index",
+      title: "Index selection",
+      icon: "ti-list-search",
+      detail: "Choose composite indexes from real read patterns, ordering needs, uniqueness, and expected write volume.",
+      artifact: `CREATE INDEX idx_${classPrefix.toLowerCase()}_access_pattern`,
+      output: "Hot reads use a predictable query plan instead of accidental full scans.",
+    },
+    {
+      id: "endpoint",
+      title: "Endpoint wiring",
+      icon: "ti-api",
+      detail: "Create routes, DTO validation, auth checks, idempotency keys, and consistent status/error mapping.",
+      artifact: `${classPrefix}Controller.handle(requestDto)`,
+      output: "External requests enter through a stable HTTP contract with safe validation.",
+    },
+    {
+      id: "service",
+      title: "Service orchestration",
+      icon: "ti-server",
+      detail: "Implement business invariants, transactions, repository calls, cache reads/writes, and sync-vs-async branching.",
+      artifact: `${classPrefix}Service.execute(command)`,
+      output: "Business rules run in one place with a clear transaction boundary.",
+    },
+    {
+      id: "events",
+      title: "Event flow",
+      icon: "ti-messages",
+      detail: "Publish durable outbox events, run workers, retry safely, dedupe messages, and update derived views or notifications.",
+      artifact: `${classPrefix}EventPublisher.publishOutboxEvents()`,
+      output: "Slow side effects leave the request path while staying reliable and replayable.",
+    },
+    {
+      id: "runtime",
+      title: "Deployment/runtime path",
+      icon: "ti-rocket",
+      detail: "Wire logs, metrics, traces, dashboards, health checks, rollout strategy, and operational alerts before production traffic.",
+      artifact: "dashboards + alerts + rollout checklist",
+      output: "The system is observable, operable, and safe to release under real traffic.",
+    },
+  ];
+}
+
 function scoreDrillAnswer(answer, expectedPoints) {
   const normalized = answer.toLowerCase();
   return expectedPoints.map((point) => ({
@@ -551,6 +615,8 @@ function buildArchitectureFlow(blueprint) {
 function ArchitectureFlow({ blueprint, activeIndex, accent, onSelectStep, selectedScenarioId, onScenarioSelect }) {
   const [drillAnswer, setDrillAnswer] = useState("");
   const [scenarioCursor, setScenarioCursor] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const [speed, setSpeed] = useState(PLAYBACK_SPEEDS[1].value);
   const steps = buildArchitectureFlow(blueprint);
   const activePosition = activeIndex % steps.length;
   const active = steps[activePosition] || steps[0];
@@ -564,13 +630,34 @@ function ArchitectureFlow({ blueprint, activeIndex, accent, onSelectStep, select
     "Slow query: inspect query plan, composite index order, pagination, and whether the read belongs on a replica.",
     "Queue lag: autoscale workers, tune batch size, watch retries, and move poison messages to a DLQ.",
   ];
-  const moveScenarioStep = (direction) => {
+  const moveScenarioStep = (direction, wrap = true) => {
     const nextCursor = (scenarioCursor + direction + selectedScenario.path.length) % selectedScenario.path.length;
+    if (!wrap) {
+      if (direction > 0 && scenarioCursor >= selectedScenario.path.length - 1) return false;
+      if (direction < 0 && scenarioCursor <= 0) return false;
+    }
     const nextStepId = selectedScenario.path[nextCursor];
     const nextStepIndex = steps.findIndex((step) => step.id === nextStepId);
     setScenarioCursor(nextCursor);
     if (nextStepIndex >= 0) onSelectStep?.(nextStepIndex);
+    return true;
   };
+  const rewindScenario = () => {
+    setPlaying(false);
+    setScenarioCursor(0);
+    const firstStepIndex = steps.findIndex((step) => step.id === selectedScenario.path[0]);
+    if (firstStepIndex >= 0) onSelectStep?.(firstStepIndex);
+  };
+  const scenarioEvents = selectedScenario.path.map((stepId, index) => {
+    const step = steps.find((item) => item.id === stepId);
+    return {
+      id: `${selectedScenario.id}-${stepId}-${index}`,
+      label: step?.label || stepId,
+      detail: step?.detail || selectedScenario.teaching,
+      active: index === scenarioCursor,
+      complete: index < scenarioCursor,
+    };
+  });
 
   useEffect(() => {
     setDrillAnswer("");
@@ -578,7 +665,17 @@ function ArchitectureFlow({ blueprint, activeIndex, accent, onSelectStep, select
 
   useEffect(() => {
     setScenarioCursor(0);
+    setPlaying(false);
   }, [selectedScenario.id]);
+
+  useEffect(() => {
+    if (!playing) return undefined;
+    const timer = window.setInterval(() => {
+      const advanced = moveScenarioStep(1, false);
+      if (!advanced) setPlaying(false);
+    }, speed);
+    return () => window.clearInterval(timer);
+  }, [playing, speed, scenarioCursor, selectedScenario.id]);
 
   return (
     <section style={{ border: `1px solid ${accent}30`, borderRadius: 8, background: "rgba(0,0,0,.16)", display: "grid", gap: 11, padding: 11 }}>
@@ -593,7 +690,7 @@ function ArchitectureFlow({ blueprint, activeIndex, accent, onSelectStep, select
       <div style={{ background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 9, padding: 10 }}>
         <div style={{ alignItems: "center", display: "flex", gap: 8, justifyContent: "space-between", flexWrap: "wrap" }}>
           <div>
-            <strong style={{ color: "#f8fbff", fontSize: 12 }}>Scenario Mode</strong>
+            <strong style={{ color: "#f8fbff", fontSize: 12 }}>HLD Request Playback</strong>
             <p style={{ color: "#9fb0c7", fontSize: 11.1, lineHeight: 1.4, marginTop: 3 }}>{selectedScenario.symptom}</p>
           </div>
           <span style={{ color: "#fde68a", fontSize: 10.8, fontWeight: 900 }}>{selectedScenario.label}</span>
@@ -625,9 +722,24 @@ function ArchitectureFlow({ blueprint, activeIndex, accent, onSelectStep, select
           ))}
         </div>
         <div style={{ alignItems: "center", display: "flex", gap: 6, flexWrap: "wrap" }}>
-          <ActionButton icon="ti-chevron-left" label="Previous Scenario Step" onClick={() => moveScenarioStep(-1)} tone="#a7f3d0" />
+          <ActionButton icon={playing ? "ti-player-pause" : "ti-player-play"} label={playing ? "Pause Playback" : "Play Playback"} onClick={() => setPlaying((value) => !value)} tone={accent} />
+          <ActionButton icon="ti-player-track-prev-filled" label="Rewind Playback" onClick={rewindScenario} tone="#c4b5fd" />
+          <ActionButton icon="ti-chevron-left" label="Previous Scenario Step" onClick={() => { setPlaying(false); moveScenarioStep(-1); }} tone="#a7f3d0" />
           <span style={{ color: "#a7f3d0", fontSize: 10.8, fontWeight: 900 }}>{scenarioCursor + 1}/{selectedScenario.path.length} {selectedScenario.path[scenarioCursor]}</span>
-          <ActionButton icon="ti-chevron-right" label="Next Scenario Step" onClick={() => moveScenarioStep(1)} tone="#a7f3d0" />
+          <ActionButton icon="ti-chevron-right" label="Next Scenario Step" onClick={() => { setPlaying(false); moveScenarioStep(1); }} tone="#a7f3d0" />
+          <label style={{ alignItems: "center", color: "#dbeafe", display: "flex", gap: 7, fontSize: 10.5, fontWeight: 850 }}>
+            Speed control
+            <input
+              aria-label="HLD playback speed"
+              type="range"
+              min="0"
+              max={PLAYBACK_SPEEDS.length - 1}
+              value={PLAYBACK_SPEEDS.findIndex((item) => item.value === speed)}
+              onChange={(event) => setSpeed(PLAYBACK_SPEEDS[Number(event.target.value)]?.value || PLAYBACK_SPEEDS[1].value)}
+              style={{ accentColor: accent, flex: "1 1 110px" }}
+            />
+            <span style={{ color: accent }}>{getPlaybackSpeedLabel(speed)}</span>
+          </label>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
           {selectedScenario.path.map((stepId, index) => (
@@ -639,6 +751,14 @@ function ArchitectureFlow({ blueprint, activeIndex, accent, onSelectStep, select
         <div style={responsiveGrid(230, 8)}>
           <div style={{ color: "#dbeafe", fontSize: 11.2, lineHeight: 1.45 }}><strong style={{ color: "#f8fbff" }}>Teaching path:</strong> {selectedScenario.teaching}</div>
           <div style={{ color: "#d1fae5", fontSize: 11.2, lineHeight: 1.45 }}><strong style={{ color: "#f8fbff" }}>Recovery move:</strong> {selectedScenario.recovery}</div>
+        </div>
+        <div style={{ display: "grid", gap: 7, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 180px), 1fr))" }}>
+          {scenarioEvents.map((event) => (
+            <div key={event.id} style={{ background: event.active ? `${accent}14` : event.complete ? "rgba(167,243,208,.08)" : "rgba(0,0,0,.16)", border: `1px solid ${event.active ? accent : event.complete ? "rgba(167,243,208,.28)" : "rgba(255,255,255,.08)"}`, borderRadius: 8, display: "grid", gap: 5, minHeight: 82, padding: 8 }}>
+              <strong style={{ color: event.active ? "#f8fbff" : event.complete ? "#d1fae5" : "#dbeafe", fontSize: 11.1 }}>{event.label}</strong>
+              <span style={{ color: event.active ? "#dbeafe" : "#9fb0c7", fontSize: 10.7, lineHeight: 1.4 }}>{event.detail}</span>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -718,6 +838,8 @@ function ArchitectureFlow({ blueprint, activeIndex, accent, onSelectStep, select
 function RequestLifecycleDeepDive({ blueprint, accent }) {
   const [activeSliceIndex, setActiveSliceIndex] = useState(0);
   const [drillAnswer, setDrillAnswer] = useState("");
+  const [playing, setPlaying] = useState(false);
+  const [speed, setSpeed] = useState(PLAYBACK_SPEEDS[1].value);
   const serviceName = blueprint?.hld?.services?.[0]?.name || "Application Service";
   const schemaLine = blueprint?.lld?.schema?.[0] || "Entity(id, owner_id, status, created_at) with indexes for the highest-volume reads";
   const implementationSlices = [
@@ -822,23 +944,63 @@ function RequestLifecycleDeepDive({ blueprint, accent }) {
   const drillScore = scoreDrillAnswer(drillAnswer, activeSlice.drillPoints || []);
   const previousSlice = () => setActiveSliceIndex((value) => (value - 1 + implementationSlices.length) % implementationSlices.length);
   const nextSlice = () => setActiveSliceIndex((value) => (value + 1) % implementationSlices.length);
+  const rewindSlices = () => {
+    setPlaying(false);
+    setActiveSliceIndex(0);
+  };
+  const codeFlowEvents = implementationSlices.map((slice, index) => ({
+    id: slice.id,
+    label: slice.title,
+    detail: slice.trace,
+    active: index === activeSliceIndex,
+    complete: index < activeSliceIndex,
+  }));
 
   useEffect(() => {
     setDrillAnswer("");
   }, [activeSlice.id]);
 
+  useEffect(() => {
+    if (!playing) return undefined;
+    const timer = window.setInterval(() => {
+      setActiveSliceIndex((value) => {
+        if (value >= implementationSlices.length - 1) {
+          setPlaying(false);
+          return value;
+        }
+        return value + 1;
+      });
+    }, speed);
+    return () => window.clearInterval(timer);
+  }, [playing, speed, implementationSlices.length]);
+
   return (
     <section style={{ border: `1px solid ${accent}30`, borderRadius: 8, background: "rgba(0,0,0,.15)", display: "grid", gap: 10, padding: 11 }}>
       <div style={{ alignItems: "center", display: "flex", gap: 8, justifyContent: "space-between", flexWrap: "wrap" }}>
         <div>
-          <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>LLD Implementation Simulator</div>
-          <p style={{ color: "#9fb0c7", fontSize: 11.4, lineHeight: 1.45, marginTop: 4 }}>Step through how code executes: controller, service, repository/query plan, cache, queue/worker, and operations.</p>
+          <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>LLD Code-to-Flow Playback</div>
+          <p style={{ color: "#9fb0c7", fontSize: 11.4, lineHeight: 1.45, marginTop: 4 }}>Step through how code executes: controller method called, service rules applied, repository query executed, cache invalidated, event published, worker retries/idempotency path.</p>
         </div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <ActionButton icon={playing ? "ti-player-pause" : "ti-player-play"} label={playing ? "Pause LLD Playback" : "Play LLD Playback"} onClick={() => setPlaying((value) => !value)} tone={accent} />
+          <ActionButton icon="ti-player-track-prev-filled" label="Rewind LLD Playback" onClick={rewindSlices} tone="#c4b5fd" />
           <ActionButton icon="ti-chevron-left" label="Previous LLD Step" onClick={previousSlice} tone={accent} />
           <ActionButton icon="ti-chevron-right" label="Next LLD Step" onClick={nextSlice} tone={accent} />
         </div>
       </div>
+      <label style={{ alignItems: "center", color: "#dbeafe", display: "flex", gap: 7, fontSize: 10.7, fontWeight: 850, flexWrap: "wrap" }}>
+        Speed control
+        <input
+          aria-label="LLD playback speed"
+          type="range"
+          min="0"
+          max={PLAYBACK_SPEEDS.length - 1}
+          value={PLAYBACK_SPEEDS.findIndex((item) => item.value === speed)}
+          onChange={(event) => setSpeed(PLAYBACK_SPEEDS[Number(event.target.value)]?.value || PLAYBACK_SPEEDS[1].value)}
+          style={{ accentColor: accent, flex: "1 1 120px" }}
+        />
+        <span style={{ color: accent }}>{getPlaybackSpeedLabel(speed)}</span>
+      </label>
 
       <section style={{ background: `${accent}0f`, border: `1px solid ${accent}30`, borderRadius: 8, display: "grid", gap: 9, padding: 10 }}>
         <div style={{ alignItems: "center", display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -863,6 +1025,14 @@ function RequestLifecycleDeepDive({ blueprint, accent }) {
         </div>
         <div style={{ border: "1px solid rgba(167,243,208,.2)", borderRadius: 8, color: "#d1fae5", fontSize: 11.2, lineHeight: 1.45, padding: 8 }}>
           <strong style={{ color: "#f8fbff" }}>What to say in interview:</strong> {activeSlice.say}
+        </div>
+        <div style={{ display: "grid", gap: 7, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 180px), 1fr))" }}>
+          {codeFlowEvents.map((event) => (
+            <div key={event.id} style={{ background: event.active ? `${accent}14` : event.complete ? "rgba(167,243,208,.08)" : "rgba(0,0,0,.16)", border: `1px solid ${event.active ? accent : event.complete ? "rgba(167,243,208,.28)" : "rgba(255,255,255,.08)"}`, borderRadius: 8, display: "grid", gap: 5, minHeight: 88, padding: 8 }}>
+              <strong style={{ color: event.active ? "#f8fbff" : event.complete ? "#d1fae5" : "#dbeafe", fontSize: 11.1 }}>{event.label}</strong>
+              <span style={{ color: event.active ? "#dbeafe" : "#9fb0c7", fontSize: 10.7, lineHeight: 1.4 }}>{event.detail}</span>
+            </div>
+          ))}
         </div>
         <div style={{ border: "1px solid rgba(196,181,253,.22)", borderRadius: 8, display: "grid", gap: 8, padding: 8 }}>
           <strong style={{ color: "#ddd6fe", fontSize: 10.8, textTransform: "uppercase" }}>Interview Drill Mode</strong>
@@ -932,12 +1102,35 @@ function MermaidExportPanel({ title, mermaid, accent }) {
 
 function FailureRecoverySimulator({ accent }) {
   const [caseId, setCaseId] = useState(FAILURE_RECOVERY_CASES[0].id);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const [speed, setSpeed] = useState(PLAYBACK_SPEEDS[1].value);
   const selectedCase = FAILURE_RECOVERY_CASES.find((item) => item.id === caseId) || FAILURE_RECOVERY_CASES[0];
+  const activeStep = selectedCase.steps[Math.min(stepIndex, selectedCase.steps.length - 1)] || selectedCase.steps[0];
+
+  useEffect(() => {
+    setStepIndex(0);
+    setPlaying(false);
+  }, [selectedCase.id]);
+
+  useEffect(() => {
+    if (!playing) return undefined;
+    const timer = window.setInterval(() => {
+      setStepIndex((value) => {
+        if (value >= selectedCase.steps.length - 1) {
+          setPlaying(false);
+          return value;
+        }
+        return value + 1;
+      });
+    }, speed);
+    return () => window.clearInterval(timer);
+  }, [playing, speed, selectedCase.steps.length]);
 
   return (
     <section style={{ border: "1px solid rgba(248,113,113,.22)", borderRadius: 8, background: "rgba(127,29,29,.08)", display: "grid", gap: 10, padding: 11 }}>
       <div>
-        <div style={{ color: "#fca5a5", fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Failure Recovery Simulator</div>
+        <div style={{ color: "#fca5a5", fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Failure Mode Playback</div>
         <p style={{ color: "#fecaca", fontSize: 11.3, lineHeight: 1.45, marginTop: 4 }}>Practice retries, idempotency keys, outbox, DLQ, rollback, cache invalidation race, and eventual consistency.</p>
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -952,9 +1145,29 @@ function FailureRecoverySimulator({ accent }) {
           </button>
         ))}
       </div>
+      <div style={{ alignItems: "center", display: "flex", gap: 6, flexWrap: "wrap" }}>
+        <ActionButton icon={playing ? "ti-player-pause" : "ti-player-play"} label={playing ? "Pause Failure Playback" : "Play Failure Playback"} onClick={() => setPlaying((value) => !value)} tone="#fca5a5" />
+        <ActionButton icon="ti-player-track-prev-filled" label="Rewind Failure Playback" onClick={() => { setPlaying(false); setStepIndex(0); }} tone="#c4b5fd" />
+        <ActionButton icon="ti-chevron-left" label="Previous Failure Step" onClick={() => { setPlaying(false); setStepIndex((value) => Math.max(0, value - 1)); }} tone="#fca5a5" />
+        <span style={{ color: "#fff1f2", fontSize: 10.8, fontWeight: 900 }}>{stepIndex + 1}/{selectedCase.steps.length} {activeStep}</span>
+        <ActionButton icon="ti-chevron-right" label="Next Failure Step" onClick={() => { setPlaying(false); setStepIndex((value) => Math.min(selectedCase.steps.length - 1, value + 1)); }} tone="#fca5a5" />
+        <label style={{ alignItems: "center", color: "#fecaca", display: "flex", gap: 7, fontSize: 10.5, fontWeight: 850 }}>
+          Speed control
+          <input
+            aria-label="Failure playback speed"
+            type="range"
+            min="0"
+            max={PLAYBACK_SPEEDS.length - 1}
+            value={PLAYBACK_SPEEDS.findIndex((item) => item.value === speed)}
+            onChange={(event) => setSpeed(PLAYBACK_SPEEDS[Number(event.target.value)]?.value || PLAYBACK_SPEEDS[1].value)}
+            style={{ accentColor: "#fca5a5", flex: "1 1 110px" }}
+          />
+          <span style={{ color: "#fff1f2" }}>{getPlaybackSpeedLabel(speed)}</span>
+        </label>
+      </div>
       <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 150px), 1fr))" }}>
         {selectedCase.steps.map((step, index) => (
-          <div key={step} style={{ background: index === 0 ? "rgba(248,113,113,.14)" : "rgba(255,255,255,.04)", border: "1px solid rgba(248,113,113,.18)", borderRadius: 8, display: "grid", gap: 6, padding: 9 }}>
+          <div key={step} style={{ background: index === stepIndex ? "rgba(248,113,113,.18)" : index < stepIndex ? "rgba(248,113,113,.10)" : "rgba(255,255,255,.04)", border: "1px solid rgba(248,113,113,.18)", borderRadius: 8, display: "grid", gap: 6, padding: 9 }}>
             <span style={{ color: "#fecaca", fontSize: 10, fontWeight: 950, textTransform: "uppercase" }}>Step {index + 1}</span>
             <span style={{ color: "#fff1f2", fontSize: 11.2, lineHeight: 1.4 }}>{step}</span>
           </div>
@@ -1006,6 +1219,79 @@ function DbIndexVisualizer({ accent }) {
           <div key={step} style={{ background: `${accent}${index === 0 ? "18" : "0f"}`, border: `1px solid ${accent}28`, borderRadius: 8, color: "#dbeafe", fontSize: 11.1, lineHeight: 1.4, minHeight: 64, padding: 9 }}>
             <strong style={{ color: accent, display: "block", fontSize: 10.2, marginBottom: 5, textTransform: "uppercase" }}>B-tree hop {index + 1}</strong>
             {step}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ImplementationMode({ blueprint, accent }) {
+  const steps = buildImplementationTimeline(blueprint);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const [speed, setSpeed] = useState(PLAYBACK_SPEEDS[1].value);
+  const activeStep = steps[Math.min(stepIndex, steps.length - 1)] || steps[0];
+
+  useEffect(() => {
+    setStepIndex(0);
+    setPlaying(false);
+  }, [blueprint?.problem, blueprint?.title]);
+
+  useEffect(() => {
+    if (!playing) return undefined;
+    const timer = window.setInterval(() => {
+      setStepIndex((value) => {
+        if (value >= steps.length - 1) {
+          setPlaying(false);
+          return value;
+        }
+        return value + 1;
+      });
+    }, speed);
+    return () => window.clearInterval(timer);
+  }, [playing, speed, steps.length]);
+
+  return (
+    <section style={{ border: `1px solid ${accent}30`, borderRadius: 8, background: "rgba(0,0,0,.15)", display: "grid", gap: 10, padding: 11 }}>
+      <div>
+        <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Implementation Mode</div>
+        <p style={{ color: "#9fb0c7", fontSize: 11.3, lineHeight: 1.45, marginTop: 4 }}>Guided construction timeline for schema creation, index selection, endpoint wiring, service orchestration, event flow, and deployment/runtime path.</p>
+      </div>
+      <div style={{ alignItems: "center", display: "flex", gap: 6, flexWrap: "wrap" }}>
+        <ActionButton icon={playing ? "ti-player-pause" : "ti-player-play"} label={playing ? "Pause Implementation Mode" : "Play Implementation Mode"} onClick={() => setPlaying((value) => !value)} tone={accent} />
+        <ActionButton icon="ti-player-track-prev-filled" label="Rewind Implementation Mode" onClick={() => { setPlaying(false); setStepIndex(0); }} tone="#c4b5fd" />
+        <ActionButton icon="ti-chevron-left" label="Previous Build Step" onClick={() => { setPlaying(false); setStepIndex((value) => Math.max(0, value - 1)); }} tone={accent} />
+        <span style={{ color: "#dbeafe", fontSize: 10.8, fontWeight: 900 }}>{stepIndex + 1}/{steps.length} {activeStep.title}</span>
+        <ActionButton icon="ti-chevron-right" label="Next Build Step" onClick={() => { setPlaying(false); setStepIndex((value) => Math.min(steps.length - 1, value + 1)); }} tone={accent} />
+        <label style={{ alignItems: "center", color: "#dbeafe", display: "flex", gap: 7, fontSize: 10.5, fontWeight: 850 }}>
+          Speed control
+          <input
+            aria-label="Implementation playback speed"
+            type="range"
+            min="0"
+            max={PLAYBACK_SPEEDS.length - 1}
+            value={PLAYBACK_SPEEDS.findIndex((item) => item.value === speed)}
+            onChange={(event) => setSpeed(PLAYBACK_SPEEDS[Number(event.target.value)]?.value || PLAYBACK_SPEEDS[1].value)}
+            style={{ accentColor: accent, flex: "1 1 110px" }}
+          />
+          <span style={{ color: accent }}>{getPlaybackSpeedLabel(speed)}</span>
+        </label>
+      </div>
+      <div style={{ background: `${accent}10`, border: `1px solid ${accent}28`, borderRadius: 8, display: "grid", gap: 7, padding: 9 }}>
+        <div style={{ alignItems: "center", display: "flex", gap: 7, flexWrap: "wrap" }}>
+          <i className={`ti ${activeStep.icon}`} style={{ color: accent, fontSize: 16 }} />
+          <strong style={{ color: "#f8fbff", fontSize: 12.5 }}>{activeStep.title}</strong>
+        </div>
+        <p style={{ color: "#dbeafe", fontSize: 11.3, lineHeight: 1.45, margin: 0 }}>{activeStep.detail}</p>
+        <code style={{ ...wrappingCodeStyle, color: "#d1fae5", fontSize: 11 }}>{activeStep.artifact}</code>
+        <div style={{ color: "#a7f3d0", fontSize: 11.1, lineHeight: 1.45 }}><strong style={{ color: "#f8fbff" }}>Working outcome:</strong> {activeStep.output}</div>
+      </div>
+      <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 170px), 1fr))" }}>
+        {steps.map((step, index) => (
+          <div key={step.id} style={{ background: index === stepIndex ? `${accent}16` : "rgba(255,255,255,.04)", border: `1px solid ${index === stepIndex ? accent : "rgba(255,255,255,.08)"}`, borderRadius: 8, display: "grid", gap: 5, minHeight: 92, padding: 8 }}>
+            <strong style={{ color: index === stepIndex ? "#f8fbff" : "#dbeafe", fontSize: 11.1 }}>{step.title}</strong>
+            <span style={{ color: "#9fb0c7", fontSize: 10.6, lineHeight: 1.35 }}>{step.output}</span>
           </div>
         ))}
       </div>
@@ -1195,15 +1481,6 @@ export default function SystemDesignCanvas({
     setCanvasState(normalizedInitialState);
     setBlueprint(buildSystemDesignStudioBlueprint(normalizedInitialState));
   }, [normalizedInitialState]);
-
-  useEffect(() => {
-    const stepCount = buildArchitectureFlow(blueprint).length || 1;
-    const timer = window.setInterval(() => {
-      setFlowIndex((value) => (value + 1) % stepCount);
-    }, 1500);
-
-    return () => window.clearInterval(timer);
-  }, [blueprint]);
 
   const commitState = (nextState) => {
     const normalized = createSystemDesignCanvasState(nextState);
@@ -1421,6 +1698,7 @@ export default function SystemDesignCanvas({
             <RequestLifecycleDeepDive blueprint={blueprint} accent={accent} />
             <MermaidExportPanel title="Export the LLD code-layer simulator as a Mermaid sequence-style flowchart." mermaid={lldMermaid} accent={accent} />
             <DbIndexVisualizer accent={accent} />
+            <ImplementationMode blueprint={blueprint} accent={accent} />
             <CodeMappingView blueprint={blueprint} accent={accent} />
             <div style={responsiveGrid(230)}>
               <ListPanel title="Classes / Components" icon="ti-box" accent={accent}>
