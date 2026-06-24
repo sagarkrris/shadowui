@@ -2,7 +2,6 @@ import Head from "next/head";
 import { useState, useRef, useEffect, useCallback } from "react";
 import CompanyPrep from "../components/company/CompanyPrep";
 import MessageContent from "../components/chat/MessageContent";
-import CollaborativeMockRoom from "../components/mock-collab/CollaborativeMockRoom";
 import PostAnswerTools from "../components/chat/PostAnswerTools";
 import ScoreBadge from "../components/chat/ScoreBadge";
 import TechBackground from "../components/TechBackground";
@@ -1327,11 +1326,6 @@ export default function Home() {
                 beginnerMode={beginnerMode}
                 beginnerStep={prepProgressState.beginnerStep}
                 onBeginnerStepChange={setBeginnerStep}
-              />
-            ) : activeTab==="collabMock" ? (
-              <CollaborativeMockRoom
-                theme={techTheme}
-                profile={candidateProfile || profileDraft}
               />
             ) : activeTab==="dsaLab" ? (
               <DsaVisualLab

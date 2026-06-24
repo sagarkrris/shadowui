@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
 const WORKSPACE_MENU_DETAILS = {
-  collabMock: "Create shared interview rooms, rotate host and candidate roles, and score each turn together.",
   offerWarRoom: "Offer-focused prep dashboard, company lanes, loops, stories, and weak-spot drills.",
   interviewReady: "Most-asked questions with polished answers and follow-up drills.",
   company: "Company-specific questions, notes, and final-day prep.",
