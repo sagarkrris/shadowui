@@ -47,6 +47,10 @@ test("java digest component renders topic, article, and roadmap sections", () =>
   assert.match(componentSource, /Article Filters/);
   assert.match(componentSource, /All Articles/);
   assert.match(componentSource, /Roadmaps/);
+  assert.match(componentSource, /Digest Version/);
+  assert.match(componentSource, /Mastery Score/);
+  assert.match(componentSource, /Competency Coverage/);
+  assert.match(componentSource, /Competency Radar/);
   assert.match(componentSource, /Coach Me/);
   assert.match(componentSource, /Mock Drill/);
   assert.match(componentSource, /Build My Plan/);

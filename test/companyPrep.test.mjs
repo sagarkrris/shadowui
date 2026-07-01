@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   buildCompanyPrepRoom,
+  buildCompanyProviderStatus,
   buildCompanyReadinessScore,
   buildQuestionBankRefreshState,
   buildCompanyMockPrompt,
@@ -72,6 +73,23 @@ test("builds local question bank refresh metadata without claiming live scraping
   assert.equal(refresh.sourceLinks.length, prep.resources.length);
   assert.equal(refresh.liveScraped, false);
   assert.match(refresh.note, /manual/i);
+});
+
+test("builds provider freshness and verification status for company sources", () => {
+  const prep = getCompanyPrep("Amazon");
+  const refresh = markQuestionBankVerified(
+    buildQuestionBankRefreshState({ prep, now: new Date("2026-06-28T12:00:00.000Z") }),
+    { questionId: "DSA-Top K Frequent Elements", now: new Date("2026-06-28T12:05:00.000Z") },
+  );
+  const status = buildCompanyProviderStatus({
+    prep,
+    refreshState: refresh,
+    now: new Date("2026-07-01T12:00:00.000Z"),
+  });
+
+  assert.equal(status.company, "Amazon");
+  assert.equal(status.verifiedCount, 1);
+  assert.match(status.freshnessLabel, /Fresh/);
 });
 
 test("marks local question bank questions as verified and recent", () => {

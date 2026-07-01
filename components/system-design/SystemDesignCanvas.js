@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   buildCanvasMockPrompt,
   buildCanvasReviewPrompt,
@@ -630,7 +630,7 @@ function ArchitectureFlow({ blueprint, activeIndex, accent, onSelectStep, select
     "Slow query: inspect query plan, composite index order, pagination, and whether the read belongs on a replica.",
     "Queue lag: autoscale workers, tune batch size, watch retries, and move poison messages to a DLQ.",
   ];
-  const moveScenarioStep = (direction, wrap = true) => {
+  const moveScenarioStep = useCallback((direction, wrap = true) => {
     const nextCursor = (scenarioCursor + direction + selectedScenario.path.length) % selectedScenario.path.length;
     if (!wrap) {
       if (direction > 0 && scenarioCursor >= selectedScenario.path.length - 1) return false;
@@ -641,7 +641,7 @@ function ArchitectureFlow({ blueprint, activeIndex, accent, onSelectStep, select
     setScenarioCursor(nextCursor);
     if (nextStepIndex >= 0) onSelectStep?.(nextStepIndex);
     return true;
-  };
+  }, [onSelectStep, scenarioCursor, selectedScenario.path, steps]);
   const rewindScenario = () => {
     setPlaying(false);
     setScenarioCursor(0);
@@ -675,7 +675,7 @@ function ArchitectureFlow({ blueprint, activeIndex, accent, onSelectStep, select
       if (!advanced) setPlaying(false);
     }, speed);
     return () => window.clearInterval(timer);
-  }, [playing, speed, scenarioCursor, selectedScenario.id]);
+  }, [moveScenarioStep, playing, speed]);
 
   return (
     <section style={{ border: `1px solid ${accent}30`, borderRadius: 8, background: "rgba(0,0,0,.16)", display: "grid", gap: 11, padding: 11 }}>

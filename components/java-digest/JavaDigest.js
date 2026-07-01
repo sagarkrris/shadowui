@@ -3,6 +3,8 @@ import {
   CSES_JAVA_PARTS,
   JAVA_DIGEST_ROADMAPS,
   JAVA_DIGEST_TRACKS,
+  JAVA_DIGEST_VERSION,
+  buildJavaDigestCompetencySummary,
   buildCsesJavaPracticePrompt,
   buildJavaDigestGeneratedTopicPrompt,
   buildJavaDigestCoachPrompt,
@@ -364,7 +366,7 @@ function CsesPartSection({ part, accent, onAction }) {
   );
 }
 
-export default function JavaDigest({ theme = {}, onAction, profile = null, beginnerMode = false, beginnerStep = "watch", onBeginnerStepChange, onActivity }) {
+export default function JavaDigest({ theme = {}, onAction, profile = null, beginnerMode = false, beginnerStep = "watch", onBeginnerStepChange, onActivity, progress = {} }) {
   const [activeTrack, setActiveTrack] = useState("all");
   const [activeView, setActiveView] = useState("Handbook Java");
   const [searchDraft, setSearchDraft] = useState("");
@@ -375,6 +377,10 @@ export default function JavaDigest({ theme = {}, onAction, profile = null, begin
   const accent = theme.accentStrong || "#8bd3ff";
   const accentBorder = theme.accentBorder || "rgba(139, 211, 255, .26)";
   const articles = useMemo(() => listJavaDigestArticles(activeTrack), [activeTrack]);
+  const competencySummary = useMemo(
+    () => buildJavaDigestCompetencySummary({ progress, selectedTrackId: activeTrack }),
+    [progress, activeTrack],
+  );
   const tabs = [
     { label: "Handbook Java", icon: "ti-book-2" },
     { label: "Search", icon: "ti-search" },
@@ -499,6 +505,33 @@ export default function JavaDigest({ theme = {}, onAction, profile = null, begin
           ))}
         </div>
       </header>
+
+      <section style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 170px), 1fr))" }}>
+        <article style={{ background: "rgba(255,255,255,.04)", border: `1px solid ${accentBorder}`, borderRadius: 8, padding: 10 }}>
+          <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Digest Version</div>
+          <strong style={{ color: "#f8fbff", display: "block", fontSize: 18, marginTop: 4 }}>{JAVA_DIGEST_VERSION}</strong>
+        </article>
+        <article style={{ background: "rgba(255,255,255,.04)", border: `1px solid ${accentBorder}`, borderRadius: 8, padding: 10 }}>
+          <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Mastery Score</div>
+          <strong style={{ color: "#f8fbff", display: "block", fontSize: 18, marginTop: 4 }}>{competencySummary.masteryScore}%</strong>
+        </article>
+        <article style={{ background: "rgba(255,255,255,.04)", border: `1px solid ${accentBorder}`, borderRadius: 8, padding: 10 }}>
+          <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Competency Coverage</div>
+          <strong style={{ color: "#f8fbff", display: "block", fontSize: 18, marginTop: 4 }}>{competencySummary.completedTopics}/{competencySummary.totalTopics}</strong>
+        </article>
+      </section>
+
+      <section style={{ background: "rgba(255,255,255,.035)", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 8, padding: 10 }}>
+        <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Competency Radar</div>
+        <div style={{ display: "grid", gap: 7, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 180px), 1fr))" }}>
+          {competencySummary.competencyTracks.map((track) => (
+            <div key={track.id} style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 8 }}>
+              <strong style={{ color: "#f8fbff", display: "block", fontSize: 11.6 }}>{track.label}</strong>
+              <div style={{ color: "#cbd5e1", fontSize: 10.8, marginTop: 3 }}>Coverage {track.coverage}% · Mastery {track.mastery}%</div>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <section style={{ border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 10, minWidth: 0, padding: 12 }}>
         <form onSubmit={submitSearch} style={{ ...wrap, display: "grid", gap: 6 }}>

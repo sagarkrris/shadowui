@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { buildCompanyMockPrompt, buildCompanyPrepRoom, buildCompanyReadinessScore, buildQuestionBankRefreshState, markQuestionBankVerified } from "../../lib/companyPrep.mjs";
+import { buildCompanyMockPrompt, buildCompanyPrepRoom, buildCompanyProviderStatus, buildCompanyReadinessScore, buildQuestionBankRefreshState, markQuestionBankVerified } from "../../lib/companyPrep.mjs";
+import ApplicationTrackerPanel from "./ApplicationTrackerPanel";
 import BeginnerGuideBanner from "../BeginnerGuideBanner";
 
 const QUESTION_BANK_REFRESH_KEY = "interviewiq.companyPrep.refresh.v1";
@@ -201,7 +202,7 @@ function RoundMap({ prep, prepRoom, weakSpots, state, theme, onUpdate, onMock, o
   );
 }
 
-export default function CompanyPrep({ theme, weakSpots, mockScores = [], messages = [], selectedCat, selectedSub, onMock, beginnerMode = false, beginnerStep = "watch", onBeginnerStepChange, onActivity }) {
+export default function CompanyPrep({ theme, weakSpots, mockScores = [], messages = [], selectedCat, selectedSub, onMock, beginnerMode = false, beginnerStep = "watch", onBeginnerStepChange, onActivity, applications = [], onApplicationsChange }) {
   const [query, setQuery] = useState("Amazon");
   const [roleContext, setRoleContext] = useState("");
   const [companyPrep, setCompanyPrep] = useState(null);
@@ -303,6 +304,7 @@ export default function CompanyPrep({ theme, weakSpots, mockScores = [], message
     resumeAnalysis: careerToolkitState.resumeAnalysis,
     jobDescriptionAnalysis: careerToolkitState.jobDescriptionAnalysis,
   });
+  const providerStatus = buildCompanyProviderStatus({ prep, refreshState });
 
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: "18px 16px 22px" }}>
@@ -499,6 +501,37 @@ export default function CompanyPrep({ theme, weakSpots, mockScores = [], message
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
                 <div>
                   <h2 style={{ color: theme.accentText, fontSize: 13, display: "flex", alignItems: "center", gap: 7, marginBottom: 4 }}>
+                    <i className="ti ti-plug-connected" />Provider Status
+                  </h2>
+                  <p style={{ color: "#9ca3af", fontSize: 11.5, lineHeight: 1.45 }}>{providerStatus.note}</p>
+                </div>
+                <strong style={{ color: providerStatus.ageDays !== null && providerStatus.ageDays <= 30 ? "#86efac" : theme.accentStrong, fontSize: 12 }}>
+                  {providerStatus.freshnessLabel}
+                </strong>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 8, marginBottom: 10 }}>
+                <div style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 8 }}>
+                  <div style={{ color: "#6b7280", fontSize: 10.5, marginBottom: 3 }}>Provider</div>
+                  <strong style={{ color: "#e8e8f0", fontSize: 12 }}>{providerStatus.provider}</strong>
+                </div>
+                <div style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 8 }}>
+                  <div style={{ color: "#6b7280", fontSize: 10.5, marginBottom: 3 }}>Freshness</div>
+                  <strong style={{ color: "#e8e8f0", fontSize: 12 }}>{providerStatus.ageDays === null ? "Unknown" : `${providerStatus.ageDays}d old`}</strong>
+                </div>
+                <div style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 8 }}>
+                  <div style={{ color: "#6b7280", fontSize: 10.5, marginBottom: 3 }}>Verified</div>
+                  <strong style={{ color: "#e8e8f0", fontSize: 12 }}>{providerStatus.verifiedCount}</strong>
+                </div>
+              </div>
+              <button className="glass-button" onClick={refreshLocalBank} style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 8, color: theme.accentText, fontSize: 11.5, fontWeight: 800, cursor: "pointer", width: "100%", textAlign: "left" }}>
+                <i className="ti ti-refresh" />Refresh local bank
+              </button>
+            </section>
+
+            <section className="glass-card" style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
+                <div>
+                  <h2 style={{ color: theme.accentText, fontSize: 13, display: "flex", alignItems: "center", gap: 7, marginBottom: 4 }}>
                     <i className="ti ti-gauge" />Company Readiness
                   </h2>
                   <p style={{ color: "#9ca3af", fontSize: 11.5, lineHeight: 1.45 }}>{readiness.label}</p>
@@ -517,6 +550,8 @@ export default function CompanyPrep({ theme, weakSpots, mockScores = [], message
                 <i className="ti ti-player-play" />Run readiness mock
               </button>
             </section>
+
+            <ApplicationTrackerPanel applications={applications} onChange={onApplicationsChange} theme={theme} />
 
             {topicFocus && focusQuestions.length > 0 && (
               <section className="glass-card" style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 12 }}>

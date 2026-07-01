@@ -4,6 +4,7 @@ import test from "node:test";
 
 const navUrl = new URL("../components/app/WorkspaceNav.js", import.meta.url);
 const navSource = existsSync(navUrl) ? readFileSync(navUrl, "utf8") : "";
+const commandPaletteSource = readFileSync(new URL("../components/app/CommandPalette.js", import.meta.url), "utf8");
 const indexSource = readFileSync(new URL("../pages/index.js", import.meta.url), "utf8");
 
 test("workspace navigation chrome is extracted from the page shell", () => {
@@ -28,6 +29,9 @@ test("workspace navigation chrome is extracted from the page shell", () => {
   assert.match(navSource, /aria-haspopup/);
   assert.match(navSource, /compactLabel/);
   assert.match(navSource, /quickItems/);
+  assert.match(indexSource, /CommandPalette/);
+  assert.match(indexSource, /Command Palette/);
+  assert.match(commandPaletteSource, /Ctrl\/Cmd \+ Shift \+ P/);
   assert.match(indexSource, /DesktopWorkspaceNav/);
   assert.match(indexSource, /TabletWorkspaceMenu/);
   assert.match(indexSource, /desktop-workspace-nav/);

@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   buildSpeechTranscript,
+  createVoiceSessionReport,
   getRecordingErrorMessage,
   getRecordingSupport,
   getVoiceErrorMessage,
@@ -143,4 +144,18 @@ test("maps recording permission errors to a typed fallback", () => {
 
   assert.match(message, /microphone permission/i);
   assert.match(message, /type or paste/i);
+});
+
+test("builds a live voice session report with duration and speaking rate", () => {
+  const report = createVoiceSessionReport({
+    transcript: "hello there this is a live practice answer",
+    startedAt: "2026-07-01T10:00:00.000Z",
+    endedAt: "2026-07-01T10:00:30.000Z",
+    mode: "live",
+  });
+
+  assert.equal(report.mode, "live");
+  assert.equal(report.wordCount, 8);
+  assert.equal(report.durationSeconds, 30);
+  assert.ok(report.speakingRateWpm > 0);
 });

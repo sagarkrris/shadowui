@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   createMemoryStorage,
   loadVersionedState,
+  resolveVersionedStateConflict,
   saveVersionedState,
   updateVersionedState,
 } from "../lib/localStateStore.mjs";
@@ -49,4 +50,14 @@ test("versioned local state adapter updates from existing state", () => {
 
   assert.deepEqual(next, { count: 2 });
   assert.deepEqual(loadVersionedState(storage, { key: "demo:v1", version: 1, fallback: { count: 0 } }), { count: 2 });
+});
+
+test("conflict resolution prefers the newer versioned state envelope", () => {
+  const result = resolveVersionedStateConflict(
+    { version: 1, savedAt: "2026-07-01T10:00:00.000Z", state: { count: 1 } },
+    { version: 1, savedAt: "2026-07-01T11:00:00.000Z", state: { count: 2 } },
+  );
+
+  assert.equal(result.winner, "incoming");
+  assert.deepEqual(result.value, { count: 2 });
 });

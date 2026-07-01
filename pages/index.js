@@ -6,6 +6,7 @@ import PostAnswerTools from "../components/chat/PostAnswerTools";
 import ScoreBadge from "../components/chat/ScoreBadge";
 import TechBackground from "../components/TechBackground";
 import TypingDots from "../components/chat/TypingDots";
+import CommandPalette from "../components/app/CommandPalette";
 import { DesktopWorkspaceNav, MobileBottomNav, TabletWorkspaceMenu } from "../components/app/WorkspaceNav";
 import AgenticUICourse from "../components/course/AgenticUICourse";
 import DesignLab from "../components/design-lab/DesignLab";
@@ -40,17 +41,22 @@ import {
 import { getPrepLabel, getRecommendedTopics } from "../lib/prepTopics.mjs";
 import { loadQuestionMemory, recordQuestionAttempt } from "../lib/questionMemory.mjs";
 import { DEFAULT_PROFILE, DIFFS } from "../lib/prompts.mjs";
-import { createSessionSnapshot, loadSessionSnapshot, saveSessionSnapshot } from "../lib/sessionPersistence.mjs";
+import { buildAiFollowUpPrompt, buildAiRetryRequest } from "../lib/aiGateway.mjs";
+import { buildCommandPaletteActions } from "../lib/commandPalette.mjs";
+import { resolveVersionedStateConflict } from "../lib/localStateStore.mjs";
+import { createSessionEnvelope, createSessionSnapshot, exportSessionSnapshot, importSessionSnapshot, loadSessionEnvelope, loadSessionSnapshot, saveSessionSnapshot, SESSION_STORAGE_KEY } from "../lib/sessionPersistence.mjs";
 import { createSystemDesignCanvasState } from "../lib/systemDesignCanvas.mjs";
 import { getTechTheme, getWorkspaceTheme } from "../lib/techTheme.mjs";
 import { canUseChatComposer, canUseInterviewTools, canUsePrepTopics, shouldShowCodeTools } from "../lib/uiVisibility.mjs";
 import { getAppShellHeight, getStableViewportHeight, getVisibleViewportHeight, isCompactViewport, isVirtualKeyboardOpen } from "../lib/viewportMode.mjs";
-import { buildSpeechTranscript, getVoiceErrorMessage, getVoiceSupport } from "../lib/voiceSupport.mjs";
+import { buildSpeechTranscript, createVoiceSessionReport, getVoiceErrorMessage, getVoiceSupport } from "../lib/voiceSupport.mjs";
 import { buildWorkspaceActionDisplayText } from "../lib/workspaceActionDisplay.mjs";
 import { getWorkspaceById, getWorkspaceTitle, listDesktopWorkspaces, listMobileWorkspaces, normalizeWorkspaceTab } from "../lib/workspaces.mjs";
 
 const MOCK_ANSWER_SECONDS = 120;
 const BEGINNER_GUIDED_MODE_KEY = "interviewiq.beginnerGuidedMode.v1";
+const APPLICATION_TRACKER_STORAGE_KEY = "interviewiq.applicationTracker.v1";
+const JAVA_DIGEST_PROGRESS_STORAGE_KEY = "interviewiq.javaDigestProgress.v1";
 const INTERVIEW_MODES = [
   { key: "strict", label: "Strict Interviewer" },
   { key: "coach", label: "Coach Mode" },
@@ -145,6 +151,11 @@ export default function Home() {
   const [mockTimerEndsAt, setMockTimerEndsAt] = useState(null);
   const [mockTimerRemaining, setMockTimerRemaining] = useState(MOCK_ANSWER_SECONDS);
   const [mockTimerStatus, setMockTimerStatus] = useState("idle");
+  const [applications, setApplications] = useState([]);
+  const [javaDigestProgress, setJavaDigestProgress] = useState({ completedTopics: [], masteredTopics: [] });
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [offlineState, setOfflineState] = useState({ online: true, conflict: null });
+  const [voiceSessionReport, setVoiceSessionReport] = useState(null);
 
   const chatRef    = useRef(null);
   const inputRef   = useRef(null);
@@ -158,6 +169,9 @@ export default function Home() {
   const keyboardOpenRef = useRef(false);
   const viewportRestoreTimers = useRef([]);
   const activityThrottleRef = useRef({});
+  const sessionEnvelopeRef = useRef(null);
+  const lastRequestRef = useRef(null);
+  const voiceSessionStartedAt = useRef(null);
   const visibleTopics = getRecommendedTopics(candidateProfile || profileDraft);
   const stackTheme = getTechTheme(candidateProfile?.stack || profileDraft.stack);
   const techTheme = getWorkspaceTheme(stackTheme, activeTab);
@@ -228,7 +242,7 @@ export default function Home() {
       return next;
     });
   }, []);
-  const toggleWorkspace = (workspaceId) => {
+  const toggleWorkspace = useCallback((workspaceId) => {
     const normalized = normalizeWorkspaceTab(workspaceId);
     const nextTab = activeTab === normalized ? "chat" : normalized;
     setActiveTab(nextTab);
@@ -241,8 +255,8 @@ export default function Home() {
         dedupeMs: 12000,
       });
     }
-  };
-  const openWorkspace = (workspaceId) => {
+  }, [activeTab, recordWorkspaceActivity]);
+  const openWorkspace = useCallback((workspaceId) => {
     const normalized = normalizeWorkspaceTab(workspaceId);
     setActiveTab(normalized);
     if (normalized !== "chat") {
@@ -255,13 +269,15 @@ export default function Home() {
       });
     }
     if (isMobile) setSidebar(false);
-  };
+  }, [isMobile, recordWorkspaceActivity]);
 
   // ── Local session persistence ────────────────────────────────────────────
   // QUESTION_MEMORY_STORAGE_KEY is owned by lib/questionMemory.mjs; this shell loads the durable memory through its helpers.
   useEffect(() => {
-    const savedSession = loadSessionSnapshot(window.localStorage);
+    const savedEnvelope = loadSessionEnvelope(window.localStorage);
+    const savedSession = savedEnvelope?.snapshot || null;
     if (savedSession) {
+      sessionEnvelopeRef.current = savedEnvelope;
       setCandidateProfile(savedSession.candidateProfile);
       setProfileDraft(savedSession.profileDraft);
       setMessages(savedSession.messages);
@@ -277,12 +293,28 @@ export default function Home() {
     }
     setQuestionMemory(loadQuestionMemory(window.localStorage));
     setBeginnerMode(window.localStorage.getItem(BEGINNER_GUIDED_MODE_KEY) === "1");
+    setApplications(loadVersionedState(window.localStorage, {
+      key: APPLICATION_TRACKER_STORAGE_KEY,
+      version: 1,
+      fallback: [],
+      normalize: (value) => Array.isArray(value) ? value : [],
+    }));
+    setJavaDigestProgress(loadVersionedState(window.localStorage, {
+      key: JAVA_DIGEST_PROGRESS_STORAGE_KEY,
+      version: 1,
+      fallback: { completedTopics: [], masteredTopics: [] },
+      normalize: (value = {}) => ({
+        completedTopics: Array.isArray(value.completedTopics) ? value.completedTopics : [],
+        masteredTopics: Array.isArray(value.masteredTopics) ? value.masteredTopics : [],
+      }),
+    }));
     setPrepProgressState(loadVersionedState(window.localStorage, {
       key: PREP_PROGRESS_STORAGE_KEY,
       version: PREP_PROGRESS_STORAGE_VERSION,
       fallback: createPrepProgressState(),
       normalize: createPrepProgressState,
     }));
+    setOfflineState((previous) => ({ ...previous, online: window.navigator.onLine }));
     setSessionReady(true);
   }, []);
 
@@ -294,24 +326,46 @@ export default function Home() {
   useEffect(() => {
     if (!sessionReady) return;
 
-    saveSessionSnapshot(
-      window.localStorage,
-      createSessionSnapshot({
-        candidateProfile,
-        profileDraft,
-        messages,
-        selectedCat,
-        selectedSub,
-        expandedCat,
-        mode,
-        interviewMode,
-        roundStrategy,
-        interviewPanel,
-        difficulty,
-        activeTab,
-      }),
-    );
+    const snapshot = createSessionSnapshot({
+      candidateProfile,
+      profileDraft,
+      messages,
+      selectedCat,
+      selectedSub,
+      expandedCat,
+      mode,
+      interviewMode,
+      roundStrategy,
+      interviewPanel,
+      difficulty,
+      activeTab,
+    });
+    saveSessionSnapshot(window.localStorage, snapshot);
+    sessionEnvelopeRef.current = createSessionEnvelope(snapshot);
   }, [sessionReady, candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab]);
+
+  useEffect(() => {
+    if (!sessionReady) return;
+    saveVersionedState(window.localStorage, {
+      key: APPLICATION_TRACKER_STORAGE_KEY,
+      version: 1,
+      value: applications,
+      normalize: (value) => Array.isArray(value) ? value : [],
+    });
+  }, [applications, sessionReady]);
+
+  useEffect(() => {
+    if (!sessionReady) return;
+    saveVersionedState(window.localStorage, {
+      key: JAVA_DIGEST_PROGRESS_STORAGE_KEY,
+      version: 1,
+      value: javaDigestProgress,
+      normalize: (value = {}) => ({
+        completedTopics: Array.isArray(value.completedTopics) ? value.completedTopics : [],
+        masteredTopics: Array.isArray(value.masteredTopics) ? value.masteredTopics : [],
+      }),
+    });
+  }, [javaDigestProgress, sessionReady]);
 
   useEffect(() => {
     let active = true;
@@ -329,6 +383,40 @@ export default function Home() {
 
     return () => {
       active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const onOnline = () => setOfflineState((previous) => ({ ...previous, online: true }));
+    const onOffline = () => setOfflineState((previous) => ({ ...previous, online: false }));
+    const onStorage = (event) => {
+      if (event.key !== SESSION_STORAGE_KEY || !event.newValue) return;
+
+      try {
+        const incoming = JSON.parse(event.newValue);
+        const local = sessionEnvelopeRef.current;
+        if (!local?.savedAt || !incoming?.savedAt) return;
+
+        const resolution = resolveVersionedStateConflict(
+          { version: 1, savedAt: local.savedAt, state: local.snapshot },
+          { version: 1, savedAt: incoming.savedAt, state: incoming.snapshot },
+        );
+
+        if (resolution.winner === "incoming") {
+          setOfflineState((previous) => ({ ...previous, conflict: incoming }));
+        }
+      } catch {
+        // Ignore cross-tab session payload issues; local session should remain usable.
+      }
+    };
+
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
+      window.removeEventListener("storage", onStorage);
     };
   }, []);
 
@@ -502,6 +590,64 @@ export default function Home() {
     }
   }, [showToast]);
 
+  const exportCurrentSession = useCallback(async () => {
+    const payload = exportSessionSnapshot(createSessionSnapshot({
+      candidateProfile,
+      profileDraft,
+      messages,
+      selectedCat,
+      selectedSub,
+      expandedCat,
+      mode,
+      interviewMode,
+      roundStrategy,
+      interviewPanel,
+      difficulty,
+      activeTab,
+    }));
+
+    try {
+      await navigator.clipboard.writeText(payload);
+      showToast("Session export copied to clipboard.", "info");
+    } catch {
+      const blob = new Blob([payload], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "interviewiq-session-export.json";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      showToast("Session export downloaded.", "info");
+    }
+  }, [activeTab, candidateProfile, difficulty, expandedCat, interviewMode, interviewPanel, messages, mode, profileDraft, roundStrategy, selectedCat, selectedSub, showToast]);
+
+  const importCurrentSession = useCallback(() => {
+    const raw = window.prompt("Paste exported session JSON");
+    if (!raw) return;
+
+    const snapshot = importSessionSnapshot(raw);
+    if (!snapshot) {
+      showToast("Session import failed: invalid export payload.", "error");
+      return;
+    }
+
+    setCandidateProfile(snapshot.candidateProfile);
+    setProfileDraft(snapshot.profileDraft);
+    setMessages(snapshot.messages);
+    setSelCat(snapshot.selectedCat);
+    setSelSub(snapshot.selectedSub);
+    setExpanded(snapshot.expandedCat);
+    setMode(snapshot.mode);
+    setInterviewMode(normalizeInterviewMode(snapshot.interviewMode));
+    setRoundStrategy(normalizeRoundStrategy(snapshot.roundStrategy));
+    setInterviewPanel(normalizeInterviewPanelSelection(snapshot.interviewPanel));
+    setDifficulty(snapshot.difficulty);
+    setActiveTab(snapshot.activeTab);
+    showToast("Session imported.", "info");
+  }, [showToast]);
+
   // ── API call ──────────────────────────────────────────────────────────────
   const callAPI = useCallback(async (userText, options = {}) => {
     const hasCode = showCodeTools ? codeInput.trim() : "";
@@ -520,6 +666,16 @@ export default function Home() {
       ? `${apiPromptText}\n\n\`\`\`${codeLanguage}\n${hasCode}\n\`\`\``
       : apiPromptText;
     const displayText = String(options.displayText || finalText).trim();
+    lastRequestRef.current = {
+      text: promptText,
+      apiText: finalText,
+      metadata: {
+        interviewMode: options.interviewMode === undefined ? interviewMode : options.interviewMode,
+        roundStrategy: options.roundStrategy === undefined ? roundStrategy : options.roundStrategy,
+        interviewPanel: options.interviewPanel === undefined ? interviewPanel : options.interviewPanel,
+        displayText,
+      },
+    };
     setInput(""); setCodeInput(""); setShowCode(false);
 
     const userMessage = displayText === finalText
@@ -680,6 +836,8 @@ export default function Home() {
     setVoiceHint(support.message);
 
     recognition.onstart = () => {
+      voiceSessionStartedAt.current = new Date().toISOString();
+      setVoiceSessionReport(null);
       setListening(true);
       setVoiceText("");
     };
@@ -708,12 +866,20 @@ export default function Home() {
       const finalSpeech =
         voiceFinal.current.trim();
 
+      setVoiceSessionReport(createVoiceSessionReport({
+        transcript: finalSpeech || voiceText,
+        startedAt: voiceSessionStartedAt.current,
+        endedAt: new Date().toISOString(),
+        mode: "live",
+      }));
+
       if (finalSpeech) {
         callAPI(finalSpeech);
       }
 
       voiceFinal.current = "";
       setVoiceText("");
+      voiceSessionStartedAt.current = null;
     };
 
     recogRef.current = recognition;
@@ -727,7 +893,7 @@ export default function Home() {
     showToast(message, "error");
     inputRef.current?.focus();
   }
-}, [callAPI, showToast]);
+}, [callAPI, showToast, voiceText]);
 
   const toggleVoice = useCallback(() => {
     if (isListening) {
@@ -737,6 +903,65 @@ export default function Home() {
 
     startVoice();
   }, [isListening, startVoice, stopVoice]);
+
+  const retryLastAiRequest = useCallback(() => {
+    const retry = buildAiRetryRequest(lastRequestRef.current);
+    if (!retry.apiText) {
+      showToast("No previous AI request to retry yet.", "info");
+      return;
+    }
+
+    callAPI(retry.text || retry.apiText, {
+      apiText: retry.apiText,
+      ...retry.metadata,
+    });
+  }, [callAPI, showToast]);
+
+  const continueAiFollowUp = useCallback(() => {
+    const latestUser = [...messages].reverse().find((message) => message.role === "user")?.content || "";
+    const latestAssistant = [...messages].reverse().find((message) => message.role === "assistant" && !message.streaming)?.content || "";
+    const prompt = buildAiFollowUpPrompt({
+      latestUserMessage: latestUser,
+      latestAssistantMessage: latestAssistant,
+      focus: "go one level deeper and end with a practical follow-up",
+    });
+
+    if (!prompt) {
+      showToast("Start one AI session first, then follow up from here.", "info");
+      return;
+    }
+
+    callAPI(prompt, {
+      displayText: "Follow-up on the current AI session",
+      skipQuestionMemory: true,
+    });
+  }, [callAPI, messages, showToast]);
+
+  const applyIncomingSessionConflict = useCallback(() => {
+    const snapshot = offlineState.conflict?.snapshot;
+    if (!snapshot) return;
+
+    setCandidateProfile(snapshot.candidateProfile);
+    setProfileDraft(snapshot.profileDraft);
+    setMessages(snapshot.messages);
+    setSelCat(snapshot.selectedCat);
+    setSelSub(snapshot.selectedSub);
+    setExpanded(snapshot.expandedCat);
+    setMode(snapshot.mode);
+    setInterviewMode(normalizeInterviewMode(snapshot.interviewMode));
+    setRoundStrategy(normalizeRoundStrategy(snapshot.roundStrategy));
+    setInterviewPanel(normalizeInterviewPanelSelection(snapshot.interviewPanel));
+    setDifficulty(snapshot.difficulty);
+    setActiveTab(snapshot.activeTab);
+    setOfflineState((previous) => ({ ...previous, conflict: null }));
+    showToast("Imported the newer session from another tab.", "info");
+  }, [offlineState.conflict, showToast]);
+
+  const commandPaletteActions = buildCommandPaletteActions({
+    workspaces: desktopWorkspaces,
+    hasCandidateProfile: Boolean(candidateProfile),
+    canRetryLastAi: Boolean(lastRequestRef.current?.apiText),
+  });
 
   const startCompanyMock = (prompt) => {
     setActiveTab("chat");
@@ -799,6 +1024,14 @@ export default function Home() {
 
   const startJavaDigestAction = (prompt, metadata = {}) => {
     setActiveTab("chat");
+    if (metadata?.article?.id) {
+      setJavaDigestProgress((previous) => ({
+        completedTopics: Array.from(new Set([...(previous.completedTopics || []), metadata.article.id])),
+        masteredTopics: metadata.type === "javaDigestMock"
+          ? Array.from(new Set([...(previous.masteredTopics || []), metadata.article.id]))
+          : [...(previous.masteredTopics || [])],
+      }));
+    }
     recordWorkspaceActivity({
       workspaceId: "javaDigest",
       type: metadata?.type || "java",
@@ -864,7 +1097,7 @@ export default function Home() {
     });
   };
 
-  const goHome = () => {
+  const goHome = useCallback(() => {
     abortRef.current?.abort();
     const homeState = createHomeNavigationState({
       candidateProfile,
@@ -883,12 +1116,30 @@ export default function Home() {
     requestAnimationFrame(() => {
       chatRef.current?.scrollTo({ top: 0, behavior: "auto" });
     });
-  };
+  }, [activeTab, candidateProfile, loading, messages, profileDraft, isMobile]);
 
   const openCourse = () => {
     setActiveTab("course");
     if (isMobile) setSidebar(false);
   };
+
+  const handleCommandPaletteSelect = useCallback((action) => {
+    if (action.type === "workspace" && action.workspaceId) {
+      openWorkspace(action.workspaceId);
+    } else if (action.id === "home") {
+      goHome();
+    } else if (action.id === "voice") {
+      toggleVoice();
+    } else if (action.id === "retry-ai") {
+      retryLastAiRequest();
+    } else if (action.id === "export-session") {
+      exportCurrentSession();
+    } else if (action.id === "import-session") {
+      importCurrentSession();
+    }
+
+    setCommandPaletteOpen(false);
+  }, [exportCurrentSession, goHome, importCurrentSession, openWorkspace, retryLastAiRequest, toggleVoice]);
 
   const startPracticeMock = ({ prompt, question, card, pack }) => {
     if (card) {
@@ -1022,6 +1273,9 @@ export default function Home() {
       if (key === "k") {
         event.preventDefault();
         setSidebar((previous) => !previous);
+      } else if (event.shiftKey && key === "p") {
+        event.preventDefault();
+        setCommandPaletteOpen((previous) => !previous);
       } else if (key === "enter") {
         event.preventDefault();
         startSession();
@@ -1081,8 +1335,16 @@ export default function Home() {
       {/* Toast */}
       {toast && <Toast msg={toast.msg} type={toast.type} />}
 
+      <CommandPalette
+        open={commandPaletteOpen}
+        actions={commandPaletteActions}
+        onClose={() => setCommandPaletteOpen(false)}
+        onSelect={handleCommandPaletteSelect}
+        theme={techTheme}
+      />
+
       {/* Voice bar */}
-      {isListening && <VoiceBar transcript={voiceText} onStop={stopVoice} />}
+      {isListening && <VoiceBar transcript={voiceText} onStop={stopVoice} liveMode="live" report={voiceSessionReport} />}
 
       {/* Screen modal */}
       {showScreen && <ScreenModal theme={techTheme} onCapture={analyzeScreen} onClose={() => setShowScreen(false)} />}
@@ -1122,6 +1384,22 @@ export default function Home() {
 
         {/* Main */}
         <main className="glass-panel" style={{ position:"relative", zIndex:1, flex:1, display:"flex", flexDirection:"column", overflow:"hidden", minWidth:0, minHeight:0 }}>
+          {(!offlineState.online || offlineState.conflict) && (
+            <div role="status" className="glass-chrome" style={{ alignItems: "center", borderBottom: "1px solid rgba(255,255,255,.08)", color: "#cbd5e1", display: "flex", flexWrap: "wrap", gap: 8, padding: "8px 12px" }}>
+              {!offlineState.online && <span>Offline draft mode active. Changes stay local until the network returns.</span>}
+              {offlineState.conflict && (
+                <>
+                  <span>Newer session detected from another tab. Choose which version to keep.</span>
+                  <button type="button" className="glass-button" onClick={applyIncomingSessionConflict} style={{ border: `1px solid ${techTheme.accentBorder}`, borderRadius: 7, color: techTheme.accentText, fontSize: 11, fontWeight: 800, padding: "5px 8px" }}>
+                    Use newer session
+                  </button>
+                  <button type="button" className="glass-button" onClick={() => setOfflineState((previous) => ({ ...previous, conflict: null }))} style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 7, color: "#cbd5e1", fontSize: 11, fontWeight: 800, padding: "5px 8px" }}>
+                    Keep this tab
+                  </button>
+                </>
+              )}
+            </div>
+          )}
 
           {/* ── Top bar ── */}
           <header className="glass-chrome" style={{ position:"relative", zIndex:130, display:"flex", alignItems:"center", gap:8, padding:"9px 12px", borderBottom:"1px solid rgba(255,255,255,.08)", flexShrink:0, minHeight:52 }}>
@@ -1273,6 +1551,29 @@ export default function Home() {
             <button className="icon-btn" onClick={() => setShowSettings(true)} title="Info" aria-label="Info"><i className="ti ti-info-circle" /></button>
           </header>
 
+          <div className="glass-chrome" style={{ alignItems: "center", borderBottom: "1px solid rgba(255,255,255,.06)", display: "flex", flexWrap: "wrap", gap: 7, padding: "8px 12px" }}>
+            <button type="button" className="glass-button" onClick={retryLastAiRequest} style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 7, color: "#cbd5e1", fontSize: 11, fontWeight: 800, padding: "5px 8px" }}>
+              Retry AI
+            </button>
+            <button type="button" className="glass-button" onClick={continueAiFollowUp} style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 7, color: "#cbd5e1", fontSize: 11, fontWeight: 800, padding: "5px 8px" }}>
+              Follow-up
+            </button>
+            <button type="button" className="glass-button" onClick={exportCurrentSession} style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 7, color: "#cbd5e1", fontSize: 11, fontWeight: 800, padding: "5px 8px" }}>
+              Export Session
+            </button>
+            <button type="button" className="glass-button" onClick={importCurrentSession} style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 7, color: "#cbd5e1", fontSize: 11, fontWeight: 800, padding: "5px 8px" }}>
+              Import Session
+            </button>
+            <button type="button" className="glass-button" onClick={() => setCommandPaletteOpen(true)} style={{ border: `1px solid ${techTheme.accentBorder}`, borderRadius: 7, color: techTheme.accentText, fontSize: 11, fontWeight: 900, padding: "5px 8px" }}>
+              Command Palette
+            </button>
+            {voiceSessionReport && (
+              <span style={{ color: "#94a3b8", fontSize: 10.8 }}>
+                Voice report: {voiceSessionReport.wordCount} words · {voiceSessionReport.durationSeconds}s
+              </span>
+            )}
+          </div>
+
           {aiHealth?.configured === false && (
             <div role="status" style={{ alignItems: "center", background: "rgba(250,204,21,.09)", borderBottom: "1px solid rgba(250,204,21,.18)", color: "#fde68a", display: "flex", flexShrink: 0, fontSize: 11.5, gap: 8, lineHeight: 1.4, padding: "7px 12px" }}>
               <i className="ti ti-alert-triangle" style={{ color: "#facc15", flexShrink: 0 }} />
@@ -1326,6 +1627,7 @@ export default function Home() {
                 theme={techTheme}
                 onAction={startJavaDigestAction}
                 profile={candidateProfile || profileDraft}
+                progress={javaDigestProgress}
                 beginnerMode={beginnerMode}
                 beginnerStep={prepProgressState.beginnerStep}
                 onBeginnerStepChange={setBeginnerStep}
@@ -1387,6 +1689,8 @@ export default function Home() {
                 selectedCat={selectedCat}
                 selectedSub={selectedSub}
                 onMock={startCompanyMock}
+                applications={applications}
+                onApplicationsChange={setApplications}
                 beginnerMode={beginnerMode}
                 beginnerStep={prepProgressState.beginnerStep}
                 onBeginnerStepChange={setBeginnerStep}

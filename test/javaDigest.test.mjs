@@ -7,6 +7,8 @@ import {
   JAVA_DIGEST_ARTICLES,
   JAVA_DIGEST_ROADMAPS,
   JAVA_DIGEST_TRACKS,
+  JAVA_DIGEST_VERSION,
+  buildJavaDigestCompetencySummary,
   buildCsesJavaPracticePrompt,
   buildJavaDigestGeneratedTopicPrompt,
   buildJavaDigestCoachPrompt,
@@ -99,4 +101,19 @@ test("cses java chapters include detailed learner-facing explanations", () => {
   assert.match(detail.interviewAnswer, /constraints/);
   assert.match(detail.commonMistakes.join(" "), /Big-O/);
   assert.match(detail.practiceTasks.join(" "), /O\(n log n\)/);
+});
+
+test("java digest computes versioned mastery and competency coverage", () => {
+  const summary = buildJavaDigestCompetencySummary({
+    progress: {
+      completedTopics: ["hashmap-internals", "executor-service"],
+      masteredTopics: ["executor-service"],
+    },
+    selectedTrackId: "all",
+  });
+
+  assert.equal(summary.version, JAVA_DIGEST_VERSION);
+  assert.equal(summary.completedTopics, 2);
+  assert.ok(summary.masteryScore >= 0);
+  assert.ok(summary.competencyTracks.some((track) => track.label === "Core Java"));
 });

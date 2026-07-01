@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  buildAiFollowUpPrompt,
+  buildAiRetryRequest,
   getRequiredGeminiApiKey,
   getSafeConfigErrorPayload,
   runGeminiRouteOperation,
@@ -60,4 +62,22 @@ test("AI gateway reports no supported models before route-specific operation run
     }),
     /No supported Gemini models found/,
   );
+});
+
+test("AI session helpers preserve retry payloads and build focused follow-ups", () => {
+  const retry = buildAiRetryRequest({
+    text: "Explain retries",
+    apiText: "Explain retries with examples",
+    metadata: { interviewMode: "coach" },
+  });
+  const followUp = buildAiFollowUpPrompt({
+    latestUserMessage: "Explain retries",
+    latestAssistantMessage: "Retries need budgets and idempotency.",
+    focus: "compare retries and circuit breakers",
+  });
+
+  assert.equal(retry.apiText, "Explain retries with examples");
+  assert.equal(retry.metadata.interviewMode, "coach");
+  assert.match(followUp, /Continue the same interview-prep session/);
+  assert.match(followUp, /compare retries and circuit breakers/);
 });

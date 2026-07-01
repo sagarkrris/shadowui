@@ -3,6 +3,9 @@ import test from "node:test";
 
 import {
   createSessionSnapshot,
+  exportSessionSnapshot,
+  importSessionSnapshot,
+  loadSessionEnvelope,
   loadSessionSnapshot,
   saveSessionSnapshot,
   SESSION_STORAGE_KEY,
@@ -70,7 +73,7 @@ test("saves and loads a valid session snapshot from storage", () => {
 
   saveSessionSnapshot(storage, snapshot);
 
-  assert.equal(JSON.parse(storage.getItem(SESSION_STORAGE_KEY)).version, 1);
+  assert.equal(JSON.parse(storage.getItem(SESSION_STORAGE_KEY)).version, 2);
   assert.deepEqual(loadSessionSnapshot(storage), snapshot);
 });
 
@@ -165,4 +168,50 @@ test("preserves AI interview panel mode across refreshes", () => {
 test("returns null for missing or corrupt stored sessions", () => {
   assert.equal(loadSessionSnapshot(memoryStorage()), null);
   assert.equal(loadSessionSnapshot(memoryStorage({ [SESSION_STORAGE_KEY]: "not json" })), null);
+});
+
+test("exports and imports a persisted session payload", () => {
+  const snapshot = createSessionSnapshot({
+    candidateProfile: {
+      name: "Sagar",
+      position: "Senior Java Engineer",
+      experience: "5-7 years",
+      stack: "Java, Spring",
+    },
+    profileDraft: {
+      name: "Sagar",
+      position: "Senior Java Engineer",
+      experience: "5-7 years",
+      stack: "Java, Spring",
+    },
+    messages: [
+      { role: "user", content: "Ask me a JVM question" },
+      { role: "assistant", content: "Explain how the G1 collector works." },
+    ],
+    selectedCat: "Java Core",
+    selectedSub: "JVM",
+    expandedCat: "Java Core",
+    mode: "interview",
+    interviewMode: "coach",
+    roundStrategy: "coding",
+    interviewPanel: "seniorEngineer",
+    difficulty: "Hard",
+    activeTab: "javaDigest",
+  });
+
+  const exported = exportSessionSnapshot(snapshot);
+  const imported = importSessionSnapshot(exported);
+
+  assert.equal(typeof exported, "string");
+  assert.deepEqual(imported, snapshot);
+});
+
+test("loads a session envelope with metadata for sync conflict handling", () => {
+  const storage = memoryStorage();
+  saveSessionSnapshot(storage, createSessionSnapshot({ activeTab: "javaDigest" }));
+
+  const envelope = loadSessionEnvelope(storage);
+
+  assert.equal(typeof envelope.savedAt, "string");
+  assert.equal(envelope.snapshot.activeTab, "javaDigest");
 });

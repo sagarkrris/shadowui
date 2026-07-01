@@ -4,6 +4,8 @@ import test from "node:test";
 
 const indexSource = readFileSync(new URL("../pages/index.js", import.meta.url), "utf8");
 const companySource = readFileSync(new URL("../components/company/CompanyPrep.js", import.meta.url), "utf8");
+const applicationTrackerSource = readFileSync(new URL("../components/company/ApplicationTrackerPanel.js", import.meta.url), "utf8");
+const applicationTrackerLibSource = readFileSync(new URL("../lib/applicationTracker.mjs", import.meta.url), "utf8");
 const insightsSource = readFileSync(new URL("../components/welcome/PrepInsightsPanel.js", import.meta.url), "utf8");
 const postAnswerToolsUrl = new URL("../components/chat/PostAnswerTools.js", import.meta.url);
 const postAnswerToolsSource = existsSync(postAnswerToolsUrl) ? readFileSync(postAnswerToolsUrl, "utf8") : "";
@@ -109,6 +111,14 @@ test("answer rewrite studio and code explanation judge are visible after chat an
 test("company readiness score is wired into company prep", () => {
   assert.match(companySource, /Company Readiness/);
   assert.match(companySource, /buildCompanyReadinessScore/);
+  assert.match(companySource, /Provider Status/);
+  assert.match(companySource, /buildCompanyProviderStatus/);
+  assert.match(companySource, /ApplicationTrackerPanel/);
+  assert.match(applicationTrackerSource, /Application Tracker/);
+  assert.match(applicationTrackerSource, /Calendar Adapter/);
+  assert.match(applicationTrackerSource, /Richer Benchmark Analytics/);
+  assert.match(applicationTrackerLibSource, /Pipeline health score/);
+  assert.match(applicationTrackerLibSource, /Average offer salary/);
   assert.match(companySource, /readiness\.score/);
   assert.match(indexSource, /mockScores={mockScores}/);
   assert.match(indexSource, /messages={messages}/);
@@ -136,6 +146,11 @@ test("prep report export and keyboard power mode are wired into the UI", () => {
   assert.match(indexSource, /handlePowerKeys/);
   assert.match(indexSource, new RegExp('event\\.key === "/"'));
   assert.match(indexSource, /ctrlKey|metaKey/);
+  assert.match(indexSource, /Export Session/);
+  assert.match(indexSource, /Import Session/);
+  assert.match(indexSource, /Retry AI/);
+  assert.match(indexSource, /Follow-up/);
+  assert.match(indexSource, /Offline draft mode active/);
 });
 
 test("interview calibration modes and rubric sliders are wired into chat", () => {
@@ -192,12 +207,16 @@ test("question memory and mastery map are wired into practice and prep insights"
 });
 
 test("interview recording review is wired into the home workflow without persisting raw transcript", () => {
+  const voiceBarSource = readFileSync(new URL("../components/VoiceBar.js", import.meta.url), "utf8");
+
   assert.match(indexSource, /RecordingReviewModal/);
   assert.match(indexSource, /showRecordingReview/);
   assert.match(indexSource, /submitRecordingReview/);
   assert.match(welcomeSource, /Record Review/);
   assert.match(indexSource, /apiText/);
   assert.match(indexSource, /displayText/);
+  assert.match(indexSource, /Voice report/);
+  assert.match(voiceBarSource, /Voice Live Mode/);
 });
 
 test("system design canvas is a first-class workspace with review actions", () => {
