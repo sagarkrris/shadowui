@@ -39,3 +39,11 @@ test("workspace navigation chrome is extracted from the page shell", () => {
   assert.match(indexSource, /min-width: 761px\) and \(max-width: 1439px\)/);
   assert.match(indexSource, /MobileBottomNav/);
 });
+
+test("desktop workspace icons expose a visible hover tooltip", () => {
+  const source = readFileSync(new URL("../components/app/WorkspaceNav.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../styles/globals.css", import.meta.url), "utf8");
+
+  assert.match(source, /data-tooltip=\{workspace\.label\}/);
+  assert.match(styles, /\.icon-btn\[data-tooltip\]::after/);
+});

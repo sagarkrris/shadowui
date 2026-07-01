@@ -20,6 +20,7 @@ export function DesktopWorkspaceNav({ activeTab, onToggleWorkspace, workspaces }
           key={workspace.id}
           className={`icon-btn ${activeTab === workspace.id ? "active" : ""}`}
           onClick={() => onToggleWorkspace(workspace.id)}
+          data-tooltip={workspace.label}
           title={workspace.label}
           aria-label={workspace.label}
           aria-current={activeTab === workspace.id ? "page" : undefined}
