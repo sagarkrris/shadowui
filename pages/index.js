@@ -47,6 +47,7 @@ import { resolveVersionedStateConflict } from "../lib/localStateStore.mjs";
 import { createSessionEnvelope, createSessionSnapshot, exportSessionSnapshot, importSessionSnapshot, loadSessionEnvelope, loadSessionSnapshot, saveSessionSnapshot, SESSION_STORAGE_KEY } from "../lib/sessionPersistence.mjs";
 import { createSystemDesignCanvasState } from "../lib/systemDesignCanvas.mjs";
 import { getTechTheme, getWorkspaceTheme } from "../lib/techTheme.mjs";
+import { THEME_PREFERENCE_STORAGE_KEY, normalizeThemePreference, resolveThemeMode } from "../lib/themePreference.mjs";
 import { canUseChatComposer, canUseInterviewTools, canUsePrepTopics, shouldShowCodeTools } from "../lib/uiVisibility.mjs";
 import { getAppShellHeight, getStableViewportHeight, getVisibleViewportHeight, isCompactViewport, isVirtualKeyboardOpen } from "../lib/viewportMode.mjs";
 import { buildSpeechTranscript, createVoiceSessionReport, getVoiceErrorMessage, getVoiceSupport } from "../lib/voiceSupport.mjs";
@@ -139,10 +140,19 @@ export default function Home() {
   const [showScreen, setShowScreen]   = useState(false);
   const [showRecordingReview, setShowRecordingReview] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [settingsAuthMode, setSettingsAuthMode] = useState("login");
+  const [settingsAuthFocused, setSettingsAuthFocused] = useState(false);
+  const [themePreference, setThemePreference] = useState("system");
+  const [systemThemeMode, setSystemThemeMode] = useState("light");
   const [topControlsOpen, setTopControlsOpen] = useState(false);
   const { activeTab, setActiveTab, toggleWorkspace: toggleWorkspaceTab } = useWorkspaceNavigation("chat");
   const { session: interviewSessionState, reset: resetInterviewSession, startQuestion: startInterviewQuestion, submitAnswer: submitInterviewAnswer, score: scoreInterviewAnswer, review: reviewInterviewAnswer } = useInterviewSession({ mode: "strict", round: "coding", panel: "seniorEngineer" });
   const auth = useAuth();
+  const openAuthSettings = useCallback((mode = "login") => {
+    setSettingsAuthMode(mode === "register" ? "register" : "login");
+    setSettingsAuthFocused(true);
+    setShowSettings(true);
+  }, []);
   const [questionMemory, setQuestionMemory] = useState({ questions: {} });
   const [systemDesignCanvas, setSystemDesignCanvas] = useState(() => createSystemDesignCanvasState());
   const [beginnerMode, setBeginnerMode] = useState(false);
@@ -181,7 +191,8 @@ export default function Home() {
   const voiceSessionStartedAt = useRef(null);
   const visibleTopics = getRecommendedTopics(candidateProfile || profileDraft);
   const stackTheme = getTechTheme(candidateProfile?.stack || profileDraft.stack);
-  const techTheme = getWorkspaceTheme(stackTheme, activeTab);
+  const resolvedThemeMode = resolveThemeMode(themePreference, systemThemeMode);
+  const techTheme = getWorkspaceTheme(stackTheme, activeTab, resolvedThemeMode);
   const prepLabel = getPrepLabel(candidateProfile?.stack || profileDraft.stack);
   const displayName = getDisplayName(candidateProfile);
   const stackGreeting = getStackGreeting(candidateProfile);
@@ -322,9 +333,33 @@ export default function Home() {
       fallback: createPrepProgressState(),
       normalize: createPrepProgressState,
     }));
+    setThemePreference(normalizeThemePreference(window.localStorage.getItem(THEME_PREFERENCE_STORAGE_KEY)));
     setOfflineState((previous) => ({ ...previous, online: window.navigator.onLine }));
     setSessionReady(true);
   }, [resetInterviewSession, setActiveTab]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return undefined;
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const updateSystemTheme = (event) => setSystemThemeMode(event.matches ? "dark" : "light");
+    setSystemThemeMode(mediaQuery.matches ? "dark" : "light");
+    if (mediaQuery.addEventListener) mediaQuery.addEventListener("change", updateSystemTheme);
+    else mediaQuery.addListener?.(updateSystemTheme);
+    return () => {
+      if (mediaQuery.removeEventListener) mediaQuery.removeEventListener("change", updateSystemTheme);
+      else mediaQuery.removeListener?.(updateSystemTheme);
+    };
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = resolvedThemeMode;
+    document.documentElement.style.colorScheme = resolvedThemeMode;
+  }, [resolvedThemeMode]);
+
+  useEffect(() => {
+    if (!sessionReady || typeof window === "undefined") return;
+    window.localStorage.setItem(THEME_PREFERENCE_STORAGE_KEY, normalizeThemePreference(themePreference));
+  }, [sessionReady, themePreference]);
 
   useEffect(() => {
     if (!sessionReady) return;
@@ -547,7 +582,7 @@ export default function Home() {
     toastTimer.current = setTimeout(() => setToast(null), 2800);
   }, []);
 
-  const cloudSnapshot = { session: createSessionSnapshot({ candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSession: interviewSessionState }), toolkitState, applications, javaDigestProgress, questionMemory, prepProgressState };
+  const cloudSnapshot = { session: createSessionSnapshot({ candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSession: interviewSessionState }), themePreference, toolkitState, applications, javaDigestProgress, questionMemory, prepProgressState };
   const applyCloudState = useCallback((snapshot) => {
     const session = snapshot.session || snapshot;
     setCandidateProfile(session.candidateProfile);
@@ -562,6 +597,7 @@ export default function Home() {
     setInterviewPanel(normalizeInterviewPanelSelection(session.interviewPanel));
     setDifficulty(session.difficulty);
     setActiveTab(session.activeTab);
+    if (snapshot.themePreference) setThemePreference(normalizeThemePreference(snapshot.themePreference));
     resetInterviewSession(session.interviewSession);
     if (snapshot.session) { setToolkitState(snapshot.toolkitState || {}); setApplications(Array.isArray(snapshot.applications) ? snapshot.applications : []); setJavaDigestProgress(snapshot.javaDigestProgress || { completedTopics: [], masteredTopics: [] }); setQuestionMemory(snapshot.questionMemory || { questions: {} }); setPrepProgressState(snapshot.prepProgressState || createPrepProgressState()); }
     showToast("Synced your workspace from your account.", "info");
@@ -1409,10 +1445,10 @@ export default function Home() {
       )}
 
       {/* Settings modal */}
-      {showSettings && <SettingsModal theme={techTheme} onClose={() => setShowSettings(false)} auth={auth} />}
+      {showSettings && <SettingsModal theme={techTheme} onClose={() => setShowSettings(false)} auth={auth} initialMode={settingsAuthMode} themePreference={themePreference} onThemePreferenceChange={(value) => setThemePreference(normalizeThemePreference(value))} appearance={resolvedThemeMode} authFocused={settingsAuthFocused} />}
 
       {/* App shell */}
-      <div style={{ ...themeVars, position:"fixed", inset:0, isolation:"isolate", display:"flex", height:appShellHeight, overflow:"hidden", background:techTheme.surface }}>
+      <div className={`app-shell theme-${resolvedThemeMode}`} style={{ ...themeVars, position:"fixed", inset:0, isolation:"isolate", display:"flex", height:appShellHeight, overflow:"hidden", background:techTheme.surface }}>
         <TechBackground theme={techTheme} />
 
         {/* Sidebar */}
@@ -1596,7 +1632,17 @@ export default function Home() {
             {candidateProfile && (
               <button className="icon-btn" onClick={() => { setProfileDraft(candidateProfile); setCandidateProfile(null); setMessages([]); }} title="Edit Profile" aria-label="Edit Profile"><i className="ti ti-user-cog" /></button>
             )}
-            <button className="icon-btn" onClick={() => setShowSettings(true)} title="Info" aria-label="Info"><i className="ti ti-info-circle" /></button>
+            {!auth.user ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }} aria-label="Account actions">
+                <button type="button" className="glass-button" onClick={() => openAuthSettings("login")} style={{ border: "1px solid rgba(255,255,255,.12)", borderRadius: 7, color: "#cbd5e1", cursor: "pointer", fontSize: 11, fontWeight: 800, padding: "5px 9px", whiteSpace: "nowrap" }}>
+                  Sign in
+                </button>
+                <button type="button" className="glass-button" onClick={() => openAuthSettings("register")} style={{ border: `1px solid ${techTheme.accentBorder}`, borderRadius: 7, color: techTheme.accentText, cursor: "pointer", fontSize: 11, fontWeight: 850, padding: "5px 9px", whiteSpace: "nowrap" }}>
+                  Create account
+                </button>
+              </div>
+            ) : null}
+            <button className="icon-btn" onClick={() => { setSettingsAuthFocused(false); setShowSettings(true); }} title="About and help" aria-label="Info"><i className="ti ti-info-circle" /></button>
           </header>
 
           <div className="glass-chrome" style={{ alignItems: "center", borderBottom: "1px solid rgba(255,255,255,.06)", display: "flex", flexWrap: "wrap", gap: 7, padding: "8px 12px" }}>
@@ -1746,7 +1792,7 @@ export default function Home() {
               />
             ) : messages.length === 0 && !loading
               ? !candidateProfile
-                ? <ProfileSetup theme={techTheme} draft={profileDraft} onChange={setProfileDraft} onSubmit={saveProfile} keyboardOpen={isKeyboardOpen} />
+                ? <ProfileSetup theme={techTheme} draft={profileDraft} onChange={setProfileDraft} onSubmit={saveProfile} onSignIn={() => openAuthSettings("login")} isSignedIn={Boolean(auth.user)} keyboardOpen={isKeyboardOpen} />
                 : <Welcome
                   onChip={(text) => {
                     recordWorkspaceActivity({
@@ -1931,7 +1977,7 @@ export default function Home() {
                     { icon:"ti-wave-sine",        label:"Review",  action:()=>setShowRecordingReview(true) },
                   ] : []),
                   ...(messages.length > 0 ? [{ icon:"ti-trash", label:"Clear", action:clearChat }] : []),
-                  { icon:"ti-info-circle",      label:"Info",    action:()=>setShowSettings(true) },
+                  { icon:"ti-info-circle",      label:"Info",    action:()=>{ setSettingsAuthFocused(false); setShowSettings(true); } },
                 ]}
               />
             </div>

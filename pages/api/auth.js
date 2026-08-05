@@ -55,11 +55,11 @@ export default async function handler(req, res) {
       await recordAudit({ type: action === "register" ? "register" : "login", userId: user.id, email: user.email, ip: getClientAddress(req) });
       return res.status(action === "register" ? 201 : 200).json({ user, emailVerificationRequired: !user.emailVerified });
     }
-    if (action === "verify" && req.method === "POST") {
-      const user = await consumeVerificationToken(req.body?.token);
-      if (!user) return res.status(400).json({ error: "Verification link is invalid or expired." });
+    if (action === "verify" && (req.method === "POST" || req.method === "GET")) {
+      const user = await consumeVerificationToken(req.method === "GET" ? req.query?.token : req.body?.token);
+      if (!user) return req.method === "GET" ? res.status(400).send("Verification link is invalid or expired.") : res.status(400).json({ error: "Verification link is invalid or expired." });
       await recordAudit({ type: "email_verified", userId: user.id, email: user.email, ip: getClientAddress(req) });
-      return res.status(200).json({ ok: true });
+      return req.method === "GET" ? res.status(200).send("Email verified. You can return to InterviewIQ and sign in.") : res.status(200).json({ ok: true });
     }
     if (action === "forgot" && req.method === "POST") {
       if (!(await validCsrf(req))) return res.status(403).json({ error: "CSRF validation failed." });

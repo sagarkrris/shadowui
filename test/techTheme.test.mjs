@@ -16,6 +16,16 @@ test("returns the Java theme when Java is the selected stack", () => {
   assert.equal(theme.accentStrong, "#c89a5a");
 });
 
+test("builds a readable light workspace theme without losing stack accents", () => {
+  const theme = getWorkspaceTheme(getTechTheme("Java"), "chat", "light");
+
+  assert.equal(theme.surface, "#f4f7fb");
+  assert.equal(theme.appearance, "light");
+  assert.equal(theme.accent, "#5b6f8f");
+  assert.equal(theme.accentText, "#17324d");
+  assert.equal(theme.glass.panelStrong, "rgba(255,255,255,.98)");
+});
+
 test("returns the Python theme when Python is the selected stack", () => {
   const theme = getTechTheme("Python, Django, PostgreSQL");
 
@@ -63,7 +73,7 @@ test("uses a non-blue default landing theme", () => {
   assert.equal(theme.accent, "#2f6f73");
   assert.equal(theme.accentStrong, "#b78b4b");
   assert.equal(theme.accentText, "#d9e6e3");
-  assert.equal(theme.surface, "#151b24");
+  assert.equal(theme.surface, "#132238");
 });
 
 test("uses varied corporate palettes across stack themes", () => {
@@ -119,8 +129,8 @@ test("provides glossy glass tokens derived from the selected stack", () => {
   assert.equal(theme.glass.panel, "rgba(27,24,20,.74)");
   assert.equal(theme.glass.panelStrong, "rgba(27,24,20,.90)");
   assert.equal(theme.glass.tint, "rgba(154,106,47,.12)");
-  assert.equal(theme.glass.shine, "rgba(200,154,90,.16)");
-  assert.match(theme.glass.shadow, /rgba\(2,6,23/);
+  assert.equal(theme.glass.shine, "rgba(200,154,90,.08)");
+  assert.match(theme.glass.shadow, /rgba\(2,12,26/);
 });
 
 test("keeps stack identity while giving each workspace a different room theme", () => {
@@ -144,14 +154,14 @@ test("uses polished room palettes for major workspace windows", () => {
       return [theme.workspaceKey, theme.accent, theme.accentStrong, theme.surface, theme.background.glyphs[0]];
     }),
     [
-      ["chat", "#5b6f8f", "#9fb2d1", "#121824", "Mock Round"],
-      ["company", "#7a6836", "#d0b76f", "#191811", "Company Prep"],
-      ["canvas", "#3f6f86", "#8eb8ca", "#111a22", "Architecture"],
-      ["designLab", "#6d678f", "#aaa4ce", "#171722", "HLD"],
-      ["scenarioBank", "#58744d", "#a0ba8c", "#131a12", "Scenarios"],
-      ["javaDigest", "#936734", "#c89d61", "#1a1711", "Java Digest"],
-      ["dsaLab", "#287c7d", "#79c2bd", "#0f1a1c", "DSA Lab"],
-      ["course", "#7b5d79", "#c09bbb", "#1a151d", "Course"],
+      ["chat", "#5b6f8f", "#9fb2d1", "#101c2d", "Mock Round"],
+      ["company", "#7a6836", "#d0b76f", "#17253a", "Company Prep"],
+      ["canvas", "#3f6f86", "#8eb8ca", "#122238", "Architecture"],
+      ["designLab", "#6d678f", "#aaa4ce", "#18233a", "HLD"],
+      ["scenarioBank", "#58744d", "#a0ba8c", "#14243a", "Scenarios"],
+      ["javaDigest", "#936734", "#c89d61", "#17263d", "Java Digest"],
+      ["dsaLab", "#287c7d", "#79c2bd", "#10263a", "DSA Lab"],
+      ["course", "#7b5d79", "#c09bbb", "#1d243b", "Course"],
     ],
   );
 });

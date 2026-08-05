@@ -29,7 +29,7 @@ function getPrimaryStack(stack = "") {
   return String(stack).split(/[,+/|]/).map((part) => part.trim()).filter(Boolean)[0] || "Stack";
 }
 
-export default function ProfileSetup({ draft, onChange, onSubmit, theme, keyboardOpen = false }) {
+export default function ProfileSetup({ draft, onChange, onSubmit, onSignIn, isSignedIn = false, theme, keyboardOpen = false }) {
   const validationMessages = getValidationMessages(draft);
   const canContinue = validationMessages.length === 0;
   const stackPreviewLabel = getPrimaryStack(draft.stack);
@@ -199,6 +199,11 @@ export default function ProfileSetup({ draft, onChange, onSubmit, theme, keyboar
                 <button onClick={onSubmit} disabled={!canContinue} style={{ marginTop: 2, minHeight: 44, padding: "11px 14px", borderRadius: 8, border: "1px solid #123252", background: canContinue ? "#123252" : "#e5ebf3", color: canContinue ? "#ffffff" : "#64748b", fontSize: 13, fontWeight: 800, cursor: canContinue ? "pointer" : "not-allowed" }}>
                   Personalize Prep
                 </button>
+                {!isSignedIn && onSignIn ? (
+                  <button type="button" onClick={onSignIn} style={{ minHeight: 40, padding: "9px 14px", borderRadius: 8, border: "1px solid #cbd8e8", background: "#ffffff", color: "#123252", fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}>
+                    <i className="ti ti-cloud-upload" style={{ marginRight: 7 }} />Sign in and sync
+                  </button>
+                ) : null}
                 {validationMessages.length ? (
                   <div role="alert" aria-live="polite" style={{ display: "grid", gap: 3, color: "#b42318", fontSize: 11.5, lineHeight: 1.4 }}>
                     {validationMessages.map((message) => <span key={message}>{message}</span>)}

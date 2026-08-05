@@ -73,6 +73,10 @@ INTERVIEWIQ_DATA_DIR=.data
 # Auth email delivery webhook
 # EMAIL_WEBHOOK_URL=https://your-email-service.example/api/send
 # EMAIL_WEBHOOK_TOKEN=your_email_service_token
+# Resend transactional email delivery (preferred)
+# RESEND_API_KEY=re_your_resend_api_key
+# RESEND_FROM_EMAIL=InterviewIQ <onboarding@resend.dev>
+# APP_BASE_URL=https://elevateprep.vercel.app
 # Optional error tracking and AI cost estimates
 # ERROR_TRACKING_WEBHOOK_URL=https://your-monitoring.example/api/events
 # ERROR_TRACKING_TOKEN=your_monitoring_token

@@ -1,4 +1,5 @@
 export default function TechBackground({ theme }) {
+  const isLight = theme.appearance === "light";
   const glyphs = theme.background?.glyphs?.length
     ? theme.background.glyphs
     : ["API", "DB", "UI"];
@@ -27,11 +28,11 @@ export default function TechBackground({ theme }) {
           position: "absolute",
           inset: 0,
           backgroundImage: [
-            "linear-gradient(rgba(255,255,255,.026) 1px, transparent 1px)",
-            "linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px)",
+            `linear-gradient(${isLight ? "rgba(15,47,79,.045)" : "rgba(255,255,255,.026)"} 1px, transparent 1px)`,
+            `linear-gradient(90deg, ${isLight ? "rgba(15,47,79,.032)" : "rgba(255,255,255,.018)"} 1px, transparent 1px)`,
           ].join(", "),
           backgroundSize: "48px 48px",
-          maskImage: "linear-gradient(to bottom, rgba(0,0,0,.58), rgba(0,0,0,.12))",
+          maskImage: `linear-gradient(to bottom, rgba(0,0,0,${isLight ? ".28" : ".58"}), rgba(0,0,0,${isLight ? ".08" : ".12"}))`,
         }}
       />
       <div
@@ -39,7 +40,9 @@ export default function TechBackground({ theme }) {
           position: "absolute",
           inset: 0,
           background:
-            "linear-gradient(180deg, rgba(2,6,23,.08), rgba(2,6,23,.52))",
+            isLight
+              ? "linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.16))"
+              : "linear-gradient(180deg, rgba(2,6,23,.08), rgba(2,6,23,.52))",
         }}
       />
       {glyphStyles.map((style, index) => (
@@ -49,13 +52,13 @@ export default function TechBackground({ theme }) {
             position: "absolute",
             ...style,
             color: index % 2 === 0 ? theme.accentStrong : theme.accentText,
-            opacity: index % 2 === 0 ? 0.055 : 0.045,
+            opacity: isLight ? (index % 2 === 0 ? 0.07 : 0.055) : (index % 2 === 0 ? 0.055 : 0.045),
             fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace',
             fontWeight: 800,
             letterSpacing: 0,
             lineHeight: 1,
             whiteSpace: "nowrap",
-            textShadow: `0 0 28px ${theme.accentSoft}`,
+            textShadow: isLight ? "none" : `0 0 28px ${theme.accentSoft}`,
           }}
         >
           {glyphs[index % glyphs.length]}

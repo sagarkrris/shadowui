@@ -31,6 +31,7 @@ test("mobile glass styling is tuned for smoother scrolling", () => {
   assert.match(globalsSource, /@media \(max-width: 760px\)[\s\S]*\.icon-btn[\s\S]*backdrop-filter: blur\(8px\)/);
   assert.match(globalsSource, /-webkit-overflow-scrolling: touch/);
   assert.match(globalsSource, /prefers-reduced-motion: reduce/);
+  assert.match(globalsSource, /prefers-contrast: more/);
 });
 
 test("mobile keyboard mode trims chrome around the composer", () => {
@@ -61,6 +62,8 @@ test("profile setup uses a corporate onboarding entry", () => {
   assert.match(profileSetupSource, /Corporate trust/);
   assert.match(profileSetupSource, /Mobile app preview/);
   assert.match(profileSetupSource, /Personalize Prep/);
+  assert.match(profileSetupSource, /Sign in and sync/);
+  assert.match(indexSource, /openAuthSettings\("login"\)/);
   assert.match(profileSetupSource, /Sample plan generated from your profile inputs/);
   assert.match(profileSetupSource, /getPrimaryStack/);
   assert.doesNotMatch(profileSetupSource, /72%|58%|81%/);
@@ -74,9 +77,11 @@ test("public pages share the corporate light theme", () => {
 
 test("app shell uses restrained corporate glass surfaces", () => {
   assert.match(globalsSource, /Corporate glass surfaces/);
-  assert.match(globalsSource, /#151b24/);
-  assert.match(globalsSource, /blur\(16px\) saturate\(1\.18\)/);
+  assert.match(globalsSource, /#132238/);
+  assert.match(globalsSource, /blur\(12px\) saturate\(1\.06\)/);
   assert.doesNotMatch(globalsSource, /saturate\(1\.35\)/);
+  assert.match(indexSource, /THEME_PREFERENCE_STORAGE_KEY/);
+  assert.match(indexSource, /prefers-color-scheme: dark/);
 });
 
 test("resume analyzer explains why the score is not perfect", () => {
