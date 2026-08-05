@@ -44,6 +44,12 @@ async function handler(req, res) {
   try {
     if (action === "me" && req.method === "GET") return res.status(200).json({ user: await getUserBySession(readCookie(req, COOKIE)) });
     if (action === "csrf" && req.method === "GET") {
+      const existingToken = csrfCookie(req);
+      const sessionToken = readCookie(req, COOKIE);
+      if (existingToken && sessionToken && await verifyCsrfToken(sessionToken, existingToken).catch(() => false)) {
+        res.setHeader("Cache-Control", "no-store, max-age=0");
+        return res.status(200).json({ csrfToken: existingToken });
+      }
       const token = createOpaqueToken();
       res.setHeader("Cache-Control", "no-store, max-age=0");
       res.setHeader("Set-Cookie", `${CSRF_COOKIE}=${token}; Path=/; SameSite=Lax${process.env.NODE_ENV === "production" ? "; Secure" : ""}`);

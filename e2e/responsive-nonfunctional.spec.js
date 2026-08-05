@@ -105,6 +105,7 @@ const viewports = [
   { name: "laptop-small", width: 1024, height: 768 },
   { name: "laptop-large", width: 1280, height: 800 },
   { name: "desktop", width: 1440, height: 900 },
+  { name: "wide-laptop", width: 1680, height: 947 },
 ];
 
 test.describe("Non-functional UI/UX, responsiveness, and state management", () => {

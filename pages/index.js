@@ -1504,6 +1504,7 @@ export default function Home() {
             <TabletWorkspaceMenu
               activeTab={activeTab}
               accent={techTheme.accentStrong}
+              appearance={resolvedThemeMode}
               workspaces={desktopWorkspaces}
               onToggleWorkspace={toggleWorkspace}
             />

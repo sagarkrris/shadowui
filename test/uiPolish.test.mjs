@@ -7,6 +7,9 @@ const indexSource = readFileSync(new URL("../pages/index.js", import.meta.url), 
 const messageContentSource = readFileSync(new URL("../components/chat/MessageContent.js", import.meta.url), "utf8");
 const careerToolkitSource = readFileSync(new URL("../components/welcome/CareerToolkit.js", import.meta.url), "utf8");
 const profileSetupSource = readFileSync(new URL("../components/welcome/ProfileSetup.js", import.meta.url), "utf8");
+const settingsModalSource = readFileSync(new URL("../components/modals/SettingsModal.js", import.meta.url), "utf8");
+const authHookSource = readFileSync(new URL("../hooks/useAuth.js", import.meta.url), "utf8");
+const authApiSource = readFileSync(new URL("../pages/api/auth.js", import.meta.url), "utf8");
 
 test("assistant part-wise answers render with readable section styling", () => {
   assert.match(messageContentSource, /message-part-heading/);
@@ -49,6 +52,26 @@ test("laptop header wraps controls instead of clipping the right edge", () => {
   assert.match(globalsSource, /@media \(min-width: 761px\) and \(max-width: 1439px\)[\s\S]*\.app-topbar[\s\S]*flex-wrap: wrap/);
   assert.match(indexSource, /@media \(min-width: 1440px\) and \(max-width: 1799px\)/);
   assert.match(globalsSource, /\.app-topbar \.header-profile-label/);
+  assert.match(globalsSource, /@media \(min-width: 1440px\) and \(max-width: 1799px\)[\s\S]*\.app-topbar[\s\S]*flex-wrap: wrap/);
+});
+
+test("account modal stays centered and protects account form interactions", () => {
+  assert.match(settingsModalSource, /height: "100dvh"/);
+  assert.match(settingsModalSource, /height: "min\(820px, calc\(100dvh - 32px\)\)"/);
+  assert.match(settingsModalSource, /settings-modal-surface/);
+  assert.match(settingsModalSource, /settings-modal-copy/);
+  assert.match(settingsModalSource, /settings-modal-account-email/);
+  assert.match(settingsModalSource, /appearance === "light" \? "#17324d"/);
+  assert.match(settingsModalSource, /aria-label=\{showPassword \? "Hide password" : "Show password"\}/);
+  assert.match(settingsModalSource, /aria-busy=\{submitting\}/);
+  assert.match(settingsModalSource, /aria-label="Password strength"/);
+});
+
+test("authenticated CSRF state is not replaced by a random token", () => {
+  assert.match(authHookSource, /interviewiq_csrf=/);
+  assert.match(authHookSource, /if \(cookieToken\) \{ setCsrfToken\(cookieToken\); return cookieToken; \}/);
+  assert.match(authHookSource, /cache: "no-store"/);
+  assert.match(authApiSource, /existingToken && sessionToken && await verifyCsrfToken/);
 });
 
 test("profile setup avoids oversized sticky iOS keyboard spacers", () => {

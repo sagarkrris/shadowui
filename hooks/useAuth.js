@@ -8,9 +8,15 @@ export function useAuth() {
   const [deliveryNotice, setDeliveryNotice] = useState("");
   const [csrfToken, setCsrfToken] = useState("");
   const fetchCsrfToken = useCallback(async () => {
+    const cookieToken = typeof document !== "undefined"
+      ? document.cookie.split(";").map((item) => item.trim()).find((item) => item.startsWith("interviewiq_csrf="))?.slice("interviewiq_csrf=".length) || ""
+      : "";
+    if (cookieToken) { setCsrfToken(cookieToken); return cookieToken; }
     const response = await fetch("/api/auth?action=csrf", { cache: "no-store", headers: { "Cache-Control": "no-cache" } });
+    if (!response.ok) throw new Error("CSRF setup failed");
     const payload = await response.json();
     const token = payload.csrfToken || "";
+    if (!token) throw new Error("CSRF token missing");
     setCsrfToken(token);
     return token;
   }, []);

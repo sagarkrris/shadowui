@@ -32,7 +32,7 @@ export function DesktopWorkspaceNav({ activeTab, onToggleWorkspace, workspaces }
   );
 }
 
-export function TabletWorkspaceMenu({ activeTab, accent = "#8bd3ff", onToggleWorkspace, workspaces }) {
+export function TabletWorkspaceMenu({ activeTab, accent = "#8bd3ff", onToggleWorkspace, workspaces, appearance = "dark" }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const activeWorkspace = workspaces.find((workspace) => workspace.id === activeTab);
 
@@ -69,15 +69,15 @@ export function TabletWorkspaceMenu({ activeTab, accent = "#8bd3ff", onToggleWor
       {menuOpen && (
         <section
           aria-label="Tablet workspace menu"
-          className="glass-card"
+          className={`glass-card workspace-menu-surface theme-${appearance}`}
           style={{ background: "rgba(7,11,20,.985)", border: "1px solid rgba(255,255,255,.13)", borderRadius: 10, boxShadow: "0 22px 54px rgba(0,0,0,.52)", display: "grid", gap: 10, left: 0, maxHeight: "min(72vh, 540px)", overflowY: "auto", padding: 12, pointerEvents: "auto", position: "absolute", top: "calc(100% + 10px)", width: "min(420px, calc(100vw - 24px))", zIndex: 120 }}
         >
           <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", gap: 8 }}>
             <div style={{ display: "grid", gap: 2, minWidth: 0 }}>
-              <strong style={{ color: "#f8fbff", fontSize: 11, fontWeight: 950, letterSpacing: ".04em", textTransform: "uppercase" }}>Workspaces</strong>
-              <span style={{ color: "#94a3b8", fontSize: 11, lineHeight: 1.35 }}>Choose a focused prep room.</span>
+              <strong className="workspace-menu-label" style={{ color: "#f8fbff", fontSize: 11, fontWeight: 950, letterSpacing: ".04em", textTransform: "uppercase" }}>Workspaces</strong>
+              <span className="workspace-menu-description" style={{ color: "#94a3b8", fontSize: 11, lineHeight: 1.35 }}>Choose a focused prep room.</span>
             </div>
-            <button type="button" aria-label="Close workspace menu" onClick={() => setMenuOpen(false)} style={{ alignItems: "center", background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 7, color: "#9ca3af", cursor: "pointer", display: "inline-flex", height: 28, justifyContent: "center", width: 28 }}>
+            <button type="button" aria-label="Close workspace menu" onClick={() => setMenuOpen(false)} className="workspace-menu-close" style={{ alignItems: "center", background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 7, color: "#9ca3af", cursor: "pointer", display: "inline-flex", height: 28, justifyContent: "center", width: 28 }}>
               <i className="ti ti-x" />
             </button>
           </div>
@@ -88,14 +88,15 @@ export function TabletWorkspaceMenu({ activeTab, accent = "#8bd3ff", onToggleWor
                 type="button"
                 aria-current={activeTab === workspace.id ? "page" : undefined}
                 onClick={() => selectWorkspace(workspace.id)}
+                className="workspace-menu-item"
                 style={{ alignItems: "center", background: activeTab === workspace.id ? "rgba(139,211,255,.12)" : "rgba(255,255,255,.04)", border: `1px solid ${activeTab === workspace.id ? `${accent}66` : "rgba(255,255,255,.085)"}`, borderRadius: 8, color: activeTab === workspace.id ? "#f8fbff" : "#dbe6f4", cursor: "pointer", display: "grid", gap: 10, gridTemplateColumns: "32px minmax(0, 1fr) auto", minHeight: 58, minWidth: 0, padding: "10px 11px", pointerEvents: "auto", textAlign: "left" }}
               >
                 <span style={{ alignItems: "center", background: activeTab === workspace.id ? `${accent}18` : "rgba(255,255,255,.045)", border: `1px solid ${activeTab === workspace.id ? `${accent}55` : "rgba(255,255,255,.07)"}`, borderRadius: 8, color: activeTab === workspace.id ? accent : "#94a3b8", display: "inline-flex", height: 32, justifyContent: "center", width: 32 }}>
                   <i className={`ti ${workspace.icon}`} style={{ fontSize: 16 }} />
                 </span>
                 <span style={{ display: "grid", gap: 3, minWidth: 0 }}>
-                  <span style={{ color: activeTab === workspace.id ? "#ffffff" : "#edf3fb", fontSize: 12.5, fontWeight: 900, lineHeight: 1.2 }}>{workspace.label}</span>
-                  <span style={{ color: "#94a3b8", fontSize: 11, fontWeight: 650, lineHeight: 1.35 }}>{WORKSPACE_MENU_DETAILS[workspace.id] || "Open this workspace."}</span>
+                  <span className="workspace-menu-item-label" style={{ color: activeTab === workspace.id ? "#ffffff" : "#edf3fb", fontSize: 12.5, fontWeight: 900, lineHeight: 1.2 }}>{workspace.label}</span>
+                  <span className="workspace-menu-item-description" style={{ color: "#94a3b8", fontSize: 11, fontWeight: 650, lineHeight: 1.35 }}>{WORKSPACE_MENU_DETAILS[workspace.id] || "Open this workspace."}</span>
                 </span>
                 <span style={{ color: activeTab === workspace.id ? accent : "#64748b", fontSize: 10.5, fontWeight: 900, justifySelf: "end", textTransform: "uppercase" }}>{activeTab === workspace.id ? "Open" : "Go"}</span>
               </button>

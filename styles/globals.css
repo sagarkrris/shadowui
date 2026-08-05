@@ -159,6 +159,78 @@ textarea { resize: none; }
   box-shadow: 0 5px 14px rgba(31,55,82,.12), inset 0 1px 0 rgba(255,255,255,.95);
 }
 
+.theme-light .settings-modal-surface {
+  background: #ffffff !important;
+  border-color: #cbd8e6 !important;
+  box-shadow: 0 24px 70px rgba(31, 48, 71, .22), inset 0 1px 0 rgba(255,255,255,.98);
+  color: #17324d;
+}
+
+.theme-light .settings-modal-surface section {
+  background: #fbfdff;
+  border-color: #dbe5ef !important;
+}
+
+.theme-light .settings-modal-surface .settings-modal-copy,
+.theme-light .settings-modal-surface .settings-modal-account-email {
+  color: #526579 !important;
+}
+
+.theme-light .settings-modal-surface .settings-modal-title,
+.theme-light .settings-modal-surface .settings-modal-author {
+  color: #17324d !important;
+}
+
+.theme-light .workspace-menu-surface {
+  background: #ffffff !important;
+  border-color: #cbd8e6 !important;
+  box-shadow: 0 22px 54px rgba(31, 48, 71, .22) !important;
+  color: #17324d !important;
+}
+
+.theme-light .workspace-menu-surface .workspace-menu-label,
+.theme-light .workspace-menu-surface .workspace-menu-item-label {
+  color: #17324d !important;
+}
+
+.theme-light .workspace-menu-surface .workspace-menu-description,
+.theme-light .workspace-menu-surface .workspace-menu-item-description {
+  color: #526579 !important;
+}
+
+.theme-light .workspace-menu-surface .workspace-menu-item {
+  background: #f8fbff !important;
+  border-color: #dbe5ef !important;
+  color: #17324d !important;
+}
+
+.theme-light .workspace-menu-surface .workspace-menu-close {
+  background: #f1f5f9 !important;
+  border-color: #cbd8e6 !important;
+  color: #526579 !important;
+}
+
+/* Below 1800px the content column is not wide enough for the full desktop
+   toolbar. Force the compact workspace and prep menus so the final controls
+   never disappear beyond the right edge. */
+@media (min-width: 761px) and (max-width: 1799px) {
+  .app-topbar {
+    min-width: 0 !important;
+    flex-wrap: wrap !important;
+    overflow: visible !important;
+  }
+
+  .app-topbar .desktop-controls,
+  .app-topbar .desktop-workspace-nav {
+    display: none !important;
+  }
+
+  .app-topbar .tablet-workspace-menu,
+  .app-topbar .compact-controls-menu {
+    display: block !important;
+  }
+}
+
 @media (prefers-contrast: more) {
   .glass-chrome,
   .glass-panel,
@@ -425,6 +497,28 @@ a:focus-visible,
 
   .app-topbar .header-account-actions,
   .app-topbar .compact-controls-menu {
+    flex-shrink: 0;
+  }
+}
+
+/* The main content column is narrower than the browser viewport because the
+   sidebar remains visible. At wide laptop sizes the compact menus must still
+   be allowed to wrap instead of forcing the far-right controls off-screen. */
+@media (min-width: 1440px) and (max-width: 1799px) {
+  .app-topbar {
+    flex-wrap: wrap;
+    align-content: center;
+    overflow: visible !important;
+    row-gap: 6px !important;
+  }
+
+  .app-topbar .header-title {
+    flex: 1 1 180px !important;
+  }
+
+  .app-topbar .header-account-actions,
+  .app-topbar .compact-controls-menu,
+  .app-topbar .tablet-workspace-menu {
     flex-shrink: 0;
   }
 }

@@ -4,14 +4,23 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRef } from "react";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
+import { getPasswordStrength } from "../../lib/passwordStrength.mjs";
 
 export default function SettingsModal({ onClose, theme, auth = {}, initialMode = "login", themePreference = "system", onThemePreferenceChange, appearance = "dark", authFocused = false }) {
   const [mode, setMode] = useState(initialMode === "register" ? "register" : "login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const modalRef = useRef(null);
   useFocusTrap(modalRef);
-  const submit = async (event) => { event.preventDefault(); await auth[mode]?.({ email, password }); };
+  const strength = getPasswordStrength(password);
+  const submit = async (event) => {
+    event.preventDefault();
+    if (submitting || !auth.ready) return;
+    setSubmitting(true);
+    try { await auth[mode]?.({ email, password }); } finally { setSubmitting(false); }
+  };
   return (
     <div
       onClick={onClose}
@@ -28,21 +37,28 @@ export default function SettingsModal({ onClose, theme, auth = {}, initialMode =
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: 20,
+        height: "100dvh",
+        minHeight: "100dvh",
+        maxHeight: "100dvh",
+        padding: 16,
+        overflow: "hidden",
         backdropFilter: "blur(4px)"
       }}
     >
       <div
-        className={`glass-chrome ${authFocused && !auth.user ? "auth-dialog" : ""}`}
+        className={`glass-chrome settings-modal-surface ${authFocused && !auth.user ? "auth-dialog" : ""}`}
         onClick={(event) => event.stopPropagation()}
         style={{
           border: `1px solid ${theme.accentBorder}`,
           borderRadius: 18,
           padding: authFocused && !auth.user ? "28px clamp(22px, 5vw, 40px)" : 24,
-          width: "100%",
+          width: "min(520px, calc(100vw - 32px))",
           maxWidth: authFocused && !auth.user ? 440 : 520,
-          maxHeight: "min(88vh, 820px)",
-          overflowY: "auto"
+          height: "min(820px, calc(100dvh - 32px))",
+          maxHeight: "calc(100dvh - 32px)",
+          minHeight: 0,
+          overflowY: "auto",
+          overscrollBehavior: "contain"
         }}
       >
         {!authFocused || auth.user ? <div style={{ width: 36, height: 4, background: "rgba(255,255,255,.1)", borderRadius: 2, margin: "0 auto 20px" }} /> : null}
@@ -65,19 +81,23 @@ export default function SettingsModal({ onClose, theme, auth = {}, initialMode =
               </label>
               <label style={{ display: "grid", gap: 7, color: appearance === "light" ? "#334155" : "#cbd5e1", fontSize: 12, fontWeight: 700 }}>
                 Password
-                <input aria-label="Password" type="password" required minLength={12} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 12 characters" className="glass-input" style={{ minHeight: 44, borderRadius: 8, padding: "11px 12px", cursor: "text" }} />
+                <span style={{ display: "flex", gap: 7 }}>
+                  <input aria-label="Password" type={showPassword ? "text" : "password"} required minLength={12} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 12 characters" className="glass-input" style={{ minHeight: 44, borderRadius: 8, padding: "11px 12px", cursor: "text", flex: 1, minWidth: 0 }} />
+                  <button type="button" aria-label={showPassword ? "Hide password" : "Show password"} onClick={() => setShowPassword((value) => !value)} className="glass-button" style={{ minWidth: 70, borderRadius: 8, color: appearance === "light" ? "#17324d" : "#cbd5e1", fontSize: 11, fontWeight: 800 }}>{showPassword ? "Hide" : "Show"}</button>
+                </span>
               </label>
+              {mode === "register" && password ? <div aria-label="Password strength" style={{ display: "grid", gap: 5 }}><div style={{ height: 6, borderRadius: 999, background: appearance === "light" ? "#e2e8f0" : "rgba(255,255,255,.12)", overflow: "hidden" }}><span style={{ display: "block", width: `${strength.percent}%`, height: "100%", background: strength.label === "Strong" ? "#15803d" : strength.label === "Fair" ? "#b7791f" : "#b91c1c" }} /></div><span style={{ color: strength.label === "Strong" ? "#166534" : strength.label === "Fair" ? "#92400e" : "#b91c1c", fontSize: 12 }}>{strength.label} password · use 12+ characters with upper/lowercase, a number, and a symbol.</span></div> : null}
               {auth.error ? <p role="alert" style={{ color: "#dc2626", fontSize: 12, lineHeight: 1.45, margin: 0 }}>{auth.error}</p> : null}
               {auth.deliveryWarning ? <p role="alert" style={{ color: "#b45309", background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 8, padding: "9px 10px", fontSize: 12, lineHeight: 1.45, margin: 0 }}>{auth.deliveryWarning}</p> : null}
               {auth.deliveryNotice ? <p role="status" style={{ color: "#166534", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: "9px 10px", fontSize: 12, lineHeight: 1.45, margin: 0 }}>{auth.deliveryNotice}</p> : null}
-              <button type="submit" className="glass-button" style={{ minHeight: 46, border: `1px solid ${theme.accentBorder}`, borderRadius: 8, color: theme.accentText, fontSize: 13, fontWeight: 850 }}>{mode === "login" ? "Sign in and sync" : "Create secure account"}</button>
+              <button type="submit" disabled={submitting || !auth.ready} aria-busy={submitting} className="glass-button" style={{ minHeight: 46, border: `1px solid ${theme.accentBorder}`, borderRadius: 8, color: theme.accentText, cursor: submitting || !auth.ready ? "wait" : "pointer", fontSize: 13, fontWeight: 850, opacity: submitting || !auth.ready ? .65 : 1 }}>{submitting ? (mode === "login" ? "Signing in…" : "Creating account…") : (mode === "login" ? "Sign in and sync" : "Create secure account")}</button>
             </form>
             {mode === "login" ? <p style={{ margin: "14px 0 0", textAlign: "center" }}><Link href="/reset-password" style={{ color: theme.accentStrong, fontSize: 12, fontWeight: 700 }}>Forgot password?</Link></p> : null}
             <p style={{ color: appearance === "light" ? "#64748b" : "#94a3b8", fontSize: 12, lineHeight: 1.5, margin: "22px 0 0" }}>{mode === "login" ? "New to InterviewIQ? " : "Already have an account? "}<button type="button" onClick={() => setMode(mode === "login" ? "register" : "login")} style={{ background: "none", border: "none", color: theme.accentStrong, cursor: "pointer", font: "inherit", fontWeight: 800, padding: 0 }}>{mode === "login" ? "Create an account" : "Sign in"}</button></p>
           </section>
         ) : <>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-          <span id="settings-title" style={{ fontSize: 15, fontWeight: 600, color: "#e8e8f0" }}>
+          <span id="settings-title" className="settings-modal-title" style={{ fontSize: 15, fontWeight: 600, color: appearance === "light" ? "#17324d" : "#e8e8f0" }}>
             <i className={`ti ${theme.icon}`} style={{ color: theme.accentStrong, marginRight: 7 }} />
             About
           </span>
@@ -87,7 +107,7 @@ export default function SettingsModal({ onClose, theme, auth = {}, initialMode =
         <section aria-labelledby="account-heading" style={{ border: "1px solid rgba(255,255,255,.09)", borderRadius: 12, padding: 16, marginBottom: 20 }}>
           <h2 id="account-heading" style={{ fontSize: 14, color: theme.accentText, margin: "0 0 12px" }}>Account sync</h2>
           {auth.user ? <>
-            <p style={{ color: "#cbd5e1", fontSize: 13, lineHeight: 1.5, margin: 0 }}>Signed in as {auth.user.email}</p>
+            <p className="settings-modal-account-email" style={{ color: appearance === "light" ? "#526579" : "#cbd5e1", fontSize: 13, lineHeight: 1.5, margin: 0 }}>Signed in as {auth.user.email}</p>
             {!auth.user.emailVerified ? <p role="alert" style={{ color: "#facc15", fontSize: 12, lineHeight: 1.45, margin: "6px 0 0" }}>Email verification is required before AI features can be used when authentication enforcement is enabled.</p> : null}
             {!auth.user.emailVerified ? <button type="button" className="glass-button" onClick={auth.resendVerification} style={{ marginTop: 12, minHeight: 36, padding: "8px 14px" }}>Resend verification email</button> : null}
             {auth.deliveryWarning ? <p role="alert" style={{ color: "#fbbf24", fontSize: 12, lineHeight: 1.45, margin: "8px 0 0" }}>{auth.deliveryWarning}</p> : null}
@@ -104,9 +124,10 @@ export default function SettingsModal({ onClose, theme, auth = {}, initialMode =
               <button type="button" onClick={() => setMode("register")} aria-pressed={mode === "register"} className="glass-button">Create account</button>
             </div>
             <input aria-label="Email" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Email" className="glass-input" />
-            <input aria-label="Password" type="password" required minLength={12} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Password (12+ characters)" className="glass-input" />
+            <span style={{ display: "flex", gap: 7 }}><input aria-label="Password" type={showPassword ? "text" : "password"} required minLength={12} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Password (12+ characters)" className="glass-input" style={{ flex: 1, minWidth: 0 }} /><button type="button" aria-label={showPassword ? "Hide password" : "Show password"} onClick={() => setShowPassword((value) => !value)} className="glass-button" style={{ minWidth: 62, color: appearance === "light" ? "#17324d" : "#cbd5e1", fontSize: 11, fontWeight: 800 }}>{showPassword ? "Hide" : "Show"}</button></span>
+            {mode === "register" && password ? <div aria-label="Password strength" style={{ display: "grid", gap: 4 }}><div style={{ height: 5, borderRadius: 999, background: appearance === "light" ? "#e2e8f0" : "rgba(255,255,255,.12)", overflow: "hidden" }}><span style={{ display: "block", width: `${strength.percent}%`, height: "100%", background: strength.label === "Strong" ? "#15803d" : strength.label === "Fair" ? "#b7791f" : "#b91c1c" }} /></div><span style={{ color: strength.label === "Strong" ? "#166534" : strength.label === "Fair" ? "#92400e" : "#b91c1c", fontSize: 11 }}>{strength.label} password</span></div> : null}
             {auth.error ? <p role="alert" style={{ color: "#fca5a5", fontSize: 11 }}>{auth.error}</p> : null}
-            <button type="submit" className="glass-button" style={{ color: theme.accentText }}>{mode === "login" ? "Sign in and sync" : "Create secure account"}</button>
+            <button type="submit" disabled={submitting || !auth.ready} aria-busy={submitting} className="glass-button" style={{ color: theme.accentText, cursor: submitting || !auth.ready ? "wait" : "pointer", opacity: submitting || !auth.ready ? .65 : 1 }}>{submitting ? (mode === "login" ? "Signing in…" : "Creating account…") : (mode === "login" ? "Sign in and sync" : "Create secure account")}</button>
           </form>}
         </section>
 
@@ -123,13 +144,13 @@ export default function SettingsModal({ onClose, theme, auth = {}, initialMode =
           <p style={{ color: "#64748b", fontSize: 11, lineHeight: 1.45, marginTop: 7 }}>System follows your device preference. Your selection syncs with your account when signed in.</p>
         </section>
 
-        <div style={{ fontSize: 13, color: "#9ca3af", lineHeight: 1.8 }}>
+        <div className="settings-modal-copy" style={{ fontSize: 13, color: appearance === "light" ? "#526579" : "#9ca3af", lineHeight: 1.8 }}>
           <p style={{ marginBottom: 12 }}>
             <strong style={{ color: theme.accentText }}>InterviewIQ</strong>
           </p>
           <p style={{ marginBottom: 12 }}>
             Designed & Developed by
-            <strong style={{ color: "#ffffff" }}> Sagar Krishna</strong>
+            <strong className="settings-modal-author" style={{ color: appearance === "light" ? "#17324d" : "#ffffff" }}> Sagar Krishna</strong>
           </p>
           <p style={{ marginBottom: 12 }}>
             {PRODUCT_TAGLINE} with:
