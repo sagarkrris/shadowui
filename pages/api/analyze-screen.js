@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getSafeConfigErrorPayload, runGeminiRouteOperation } from "../../lib/aiGateway.mjs";
 import { getGeminiErrorStatus, getSafeGeminiErrorMessage } from "../../lib/geminiRetry.mjs";
 import { createRequestLogger } from "../../lib/serverLogger.mjs";
+import { requireConfiguredUser } from "../../lib/apiAuth.mjs";
 
 const SCREEN_PROMPT = `You are a full stack developer interview assistant analyzing a screenshot of a coding problem, system design prompt, UI task, database question, or interview scenario.
 
@@ -50,6 +51,8 @@ export default async function handler(req, res) {
     logger.warn("request.method_not_allowed", { method: req.method });
     return res.status(405).json({ error: "Method not allowed" });
   }
+  const auth = await requireConfiguredUser(req);
+  if (auth.required && !auth.user) return res.status(401).json({ error: "Sign in to use screen analysis." });
 
   const { imageBase64, mimeType = "image/png", context, profile } = req.body;
 

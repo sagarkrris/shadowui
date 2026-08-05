@@ -52,6 +52,10 @@ import { getAppShellHeight, getStableViewportHeight, getVisibleViewportHeight, i
 import { buildSpeechTranscript, createVoiceSessionReport, getVoiceErrorMessage, getVoiceSupport } from "../lib/voiceSupport.mjs";
 import { buildWorkspaceActionDisplayText } from "../lib/workspaceActionDisplay.mjs";
 import { getWorkspaceById, getWorkspaceTitle, listDesktopWorkspaces, listMobileWorkspaces, normalizeWorkspaceTab } from "../lib/workspaces.mjs";
+import { useInterviewSession } from "../hooks/useInterviewSession";
+import { useWorkspaceNavigation } from "../hooks/useWorkspaceNavigation";
+import { useAuth } from "../hooks/useAuth";
+import { useCloudStateSync } from "../hooks/useCloudStateSync";
 
 const MOCK_ANSWER_SECONDS = 120;
 const BEGINNER_GUIDED_MODE_KEY = "interviewiq.beginnerGuidedMode.v1";
@@ -136,7 +140,9 @@ export default function Home() {
   const [showRecordingReview, setShowRecordingReview] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [topControlsOpen, setTopControlsOpen] = useState(false);
-  const [activeTab, setActiveTab]     = useState("chat");
+  const { activeTab, setActiveTab, toggleWorkspace: toggleWorkspaceTab } = useWorkspaceNavigation("chat");
+  const { session: interviewSessionState, reset: resetInterviewSession, startQuestion: startInterviewQuestion } = useInterviewSession({ mode: "strict", round: "coding", panel: "seniorEngineer" });
+  const auth = useAuth();
   const [questionMemory, setQuestionMemory] = useState({ questions: {} });
   const [systemDesignCanvas, setSystemDesignCanvas] = useState(() => createSystemDesignCanvasState());
   const [beginnerMode, setBeginnerMode] = useState(false);
@@ -245,7 +251,7 @@ export default function Home() {
   const toggleWorkspace = useCallback((workspaceId) => {
     const normalized = normalizeWorkspaceTab(workspaceId);
     const nextTab = activeTab === normalized ? "chat" : normalized;
-    setActiveTab(nextTab);
+    toggleWorkspaceTab(workspaceId);
     if (nextTab !== "chat") {
       recordWorkspaceActivity({
         workspaceId: nextTab,
@@ -255,7 +261,7 @@ export default function Home() {
         dedupeMs: 12000,
       });
     }
-  }, [activeTab, recordWorkspaceActivity]);
+  }, [activeTab, recordWorkspaceActivity, toggleWorkspaceTab]);
   const openWorkspace = useCallback((workspaceId) => {
     const normalized = normalizeWorkspaceTab(workspaceId);
     setActiveTab(normalized);
@@ -269,7 +275,7 @@ export default function Home() {
       });
     }
     if (isMobile) setSidebar(false);
-  }, [isMobile, recordWorkspaceActivity]);
+  }, [isMobile, recordWorkspaceActivity, setActiveTab]);
 
   // ── Local session persistence ────────────────────────────────────────────
   // QUESTION_MEMORY_STORAGE_KEY is owned by lib/questionMemory.mjs; this shell loads the durable memory through its helpers.
@@ -290,6 +296,7 @@ export default function Home() {
       setInterviewPanel(normalizeInterviewPanelSelection(savedSession.interviewPanel));
       setDifficulty(savedSession.difficulty);
       setActiveTab(savedSession.activeTab);
+      resetInterviewSession(savedSession.interviewSession);
     }
     setQuestionMemory(loadQuestionMemory(window.localStorage));
     setBeginnerMode(window.localStorage.getItem(BEGINNER_GUIDED_MODE_KEY) === "1");
@@ -316,7 +323,7 @@ export default function Home() {
     }));
     setOfflineState((previous) => ({ ...previous, online: window.navigator.onLine }));
     setSessionReady(true);
-  }, []);
+  }, [resetInterviewSession, setActiveTab]);
 
   useEffect(() => {
     if (!sessionReady) return;
@@ -339,10 +346,11 @@ export default function Home() {
       interviewPanel,
       difficulty,
       activeTab,
+      interviewSession: interviewSessionState,
     });
     saveSessionSnapshot(window.localStorage, snapshot);
     sessionEnvelopeRef.current = createSessionEnvelope(snapshot);
-  }, [sessionReady, candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab]);
+  }, [sessionReady, candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSessionState]);
 
   useEffect(() => {
     if (!sessionReady) return;
@@ -538,6 +546,25 @@ export default function Home() {
     toastTimer.current = setTimeout(() => setToast(null), 2800);
   }, []);
 
+  const cloudSnapshot = createSessionSnapshot({ candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSession: interviewSessionState });
+  const applyCloudState = useCallback((snapshot) => {
+    setCandidateProfile(snapshot.candidateProfile);
+    setProfileDraft(snapshot.profileDraft);
+    setMessages(snapshot.messages);
+    setSelCat(snapshot.selectedCat);
+    setSelSub(snapshot.selectedSub);
+    setExpanded(snapshot.expandedCat);
+    setMode(snapshot.mode);
+    setInterviewMode(normalizeInterviewMode(snapshot.interviewMode));
+    setRoundStrategy(normalizeRoundStrategy(snapshot.roundStrategy));
+    setInterviewPanel(normalizeInterviewPanelSelection(snapshot.interviewPanel));
+    setDifficulty(snapshot.difficulty);
+    setActiveTab(snapshot.activeTab);
+    resetInterviewSession(snapshot.interviewSession);
+    showToast("Synced your workspace from your account.", "info");
+  }, [resetInterviewSession, setActiveTab, showToast]);
+  useCloudStateSync({ user: auth.user, ready: auth.ready && sessionReady, snapshot: cloudSnapshot, onRemoteState: applyCloudState, onError: () => showToast("Cloud sync is temporarily unavailable; local work is safe.", "error") });
+
   useEffect(() => {
     if (mockTimerStatus !== "answering" || !mockTimerEndsAt) return undefined;
 
@@ -604,6 +631,7 @@ export default function Home() {
       interviewPanel,
       difficulty,
       activeTab,
+      interviewSession: interviewSessionState,
     }));
 
     try {
@@ -621,7 +649,7 @@ export default function Home() {
       URL.revokeObjectURL(url);
       showToast("Session export downloaded.", "info");
     }
-  }, [activeTab, candidateProfile, difficulty, expandedCat, interviewMode, interviewPanel, messages, mode, profileDraft, roundStrategy, selectedCat, selectedSub, showToast]);
+  }, [activeTab, candidateProfile, difficulty, expandedCat, interviewMode, interviewPanel, interviewSessionState, messages, mode, profileDraft, roundStrategy, selectedCat, selectedSub, showToast]);
 
   const importCurrentSession = useCallback(() => {
     const raw = window.prompt("Paste exported session JSON");
@@ -645,8 +673,9 @@ export default function Home() {
     setInterviewPanel(normalizeInterviewPanelSelection(snapshot.interviewPanel));
     setDifficulty(snapshot.difficulty);
     setActiveTab(snapshot.activeTab);
+    resetInterviewSession(snapshot.interviewSession);
     showToast("Session imported.", "info");
-  }, [showToast]);
+  }, [resetInterviewSession, setActiveTab, showToast]);
 
   // ── API call ──────────────────────────────────────────────────────────────
   const callAPI = useCallback(async (userText, options = {}) => {
@@ -955,7 +984,7 @@ export default function Home() {
     setActiveTab(snapshot.activeTab);
     setOfflineState((previous) => ({ ...previous, conflict: null }));
     showToast("Imported the newer session from another tab.", "info");
-  }, [offlineState.conflict, showToast]);
+  }, [offlineState.conflict, setActiveTab, showToast]);
 
   const commandPaletteActions = buildCommandPaletteActions({
     workspaces: desktopWorkspaces,
@@ -1116,7 +1145,7 @@ export default function Home() {
     requestAnimationFrame(() => {
       chatRef.current?.scrollTo({ top: 0, behavior: "auto" });
     });
-  }, [activeTab, candidateProfile, loading, messages, profileDraft, isMobile]);
+  }, [activeTab, candidateProfile, loading, messages, profileDraft, isMobile, setActiveTab]);
 
   const openCourse = () => {
     setActiveTab("course");
@@ -1145,6 +1174,8 @@ export default function Home() {
     if (card) {
       pendingPracticeCard.current = { card, pack };
     }
+    resetInterviewSession({ mode: "practice", round: roundStrategy, panel: interviewPanel, profile: candidateProfile });
+    startInterviewQuestion({ questionId: card?.id || "practice", question: question || prompt });
     setActiveTab("chat");
     recordWorkspaceActivity({
       workspaceId: "chat",
@@ -1222,7 +1253,7 @@ export default function Home() {
       detail: `${difficulty} ${topic}`,
     });
     setTimeout(() => callAPI(prompt, { startAnswerTimer: mode === "interview" }), 50);
-  }, [callAPI, candidateProfile, difficulty, displayName, interviewMode, interviewPanel, loading, mode, recordWorkspaceActivity, roundStrategy, selectedCat, selectedSub]);
+  }, [callAPI, candidateProfile, difficulty, displayName, interviewMode, interviewPanel, loading, mode, recordWorkspaceActivity, roundStrategy, selectedCat, selectedSub, setActiveTab]);
 
   const clearChat = useCallback(() => {
     abortRef.current?.abort(); setMessages([]); setLoading(false);
@@ -1361,7 +1392,7 @@ export default function Home() {
       )}
 
       {/* Settings modal */}
-      {showSettings && <SettingsModal theme={techTheme} onClose={() => setShowSettings(false)} />}
+      {showSettings && <SettingsModal theme={techTheme} onClose={() => setShowSettings(false)} auth={auth} />}
 
       {/* App shell */}
       <div style={{ ...themeVars, position:"fixed", inset:0, isolation:"isolate", display:"flex", height:appShellHeight, overflow:"hidden", background:techTheme.surface }}>

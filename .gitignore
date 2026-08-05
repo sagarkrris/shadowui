@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+.data/
 /.pnp
 .pnp.js
 .tools/
@@ -18,9 +19,6 @@ node_modules/
 .env.development.local
 .env.test.local
 .env.production.local
-android/local.properties
-android/keystore.properties
-android/*.jks
 
 # Debug
 npm-debug.log*

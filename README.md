@@ -62,7 +62,11 @@ Open `http://localhost:3000`.
 Create `.env.local` with:
 
 ```bash
-GEMINI_API_KEY=your-gemini-api-key
+GEMINI_API_KEY=your_gemini_api_key
+SESSION_SECRET=<long_random_secret_1>
+APP_ENCRYPTION_KEY=<long_random_secret_2>
+# Persistent server-side storage directory (use a durable volume in production)
+INTERVIEWIQ_DATA_DIR=.data
 # Optional: enable the Live Java Runner on Vercel Sandbox:
 # CODE_RUNNER_PROVIDER=vercel-sandbox
 # VERCEL_SANDBOX_JAVA_SNAPSHOT_ID=your-java-enabled-snapshot-id
@@ -84,22 +88,7 @@ The runner still supports Piston when `PISTON_EXECUTE_URL` is explicitly set to 
 npm run dev
 npm run build
 node --test test/*.test.mjs
-npm run android:sync
-npm run android:open
 ```
-
-## Android App
-
-The first Android version is a hosted WebView shell for `https://elevateprep.vercel.app`. This keeps Gemini, resume extraction, screen analysis, company prep, and other API workflows on the deployed Next.js server, so no AI keys are stored in the Android app.
-
-```bash
-npm install
-npm run android:sync
-npm run android:open
-npm run android:build
-```
-
-Use Android Studio to install the Android SDK, run on an emulator/device, sign, and package the APK/AAB. Use Java 17 for the generated Capacitor 5 Gradle project. `npm run android:build` is cross-platform and chooses `gradlew.bat` on Windows or `./gradlew` on macOS/Linux. The app id is `com.sagarkrishna.interviewiq`, and the native shell requests microphone, camera, internet, and network-state permissions for voice input and upload-oriented WebView workflows.
 
 ## Deploy To Vercel
 
@@ -130,7 +119,11 @@ shadowui/
 │   ├── TechBackground.js
 │   ├── Toast.js
 │   └── VoiceBar.js
+├── hooks/                 # Client state and cloud-sync hooks
 ├── lib/
+│   ├── interviewSession.mjs
+│   ├── requestSecurity.mjs
+│   ├── serverPersistence.mjs
 │   ├── careerToolkit.mjs
 │   ├── answerRubric.mjs
 │   ├── blind75VisualTrack.mjs
@@ -161,12 +154,15 @@ shadowui/
 │   └── voiceSupport.mjs
 ├── pages/
 │   ├── api/
+│   │   ├── auth.js
 │   │   ├── analyze-screen.js
 │   │   ├── chat.js
 │   │   ├── company-prep.js
 │   │   ├── extract-resume.js
+│   │   ├── evaluate.js
 │   │   ├── models.js
-│   │   └── run-code.js
+│   │   ├── state.js
+│   │   └── run-code/
 │   ├── _app.js
 │   ├── _document.js
 │   └── index.js
@@ -178,8 +174,6 @@ shadowui/
 │   └── *.test.mjs
 ├── .env.example
 ├── next.config.js
-├── capacitor.config.json
-├── android/              # Android hosted WebView shell
 └── package.json
 ```
 
@@ -193,6 +187,8 @@ Browser
 ```
 
 The browser never receives the Gemini API key. Code execution requests go through `/api/run-code` only when the user clicks Run, then execute through the configured provider: Vercel Sandbox when `CODE_RUNNER_PROVIDER=vercel-sandbox`, or Piston when `PISTON_EXECUTE_URL` is configured.
+
+Account sync is available through `/api/auth` and `/api/state`. User state is encrypted with `APP_ENCRYPTION_KEY`; configure a durable `INTERVIEWIQ_DATA_DIR` or replace `lib/serverPersistence.mjs` with a managed database adapter before deploying across multiple instances. AI routes enforce bounded request sizes and in-process rate limits. Set `REQUIRE_AUTH=1` before making AI routes public. For multi-instance deployments, move rate-limit counters to a shared store.
 
 ## Notes
 

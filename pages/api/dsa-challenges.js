@@ -6,6 +6,7 @@ import {
 } from "../../lib/dsaChallengeGeneration.mjs";
 import { getGeminiErrorStatus, getSafeGeminiErrorMessage } from "../../lib/geminiRetry.mjs";
 import { createRequestLogger } from "../../lib/serverLogger.mjs";
+import { requireConfiguredUser } from "../../lib/apiAuth.mjs";
 
 export default async function handler(req, res) {
   const logger = createRequestLogger({ route: "/api/dsa-challenges" });
@@ -16,6 +17,8 @@ export default async function handler(req, res) {
     logger.warn("request.method_not_allowed", { method: req.method });
     return res.status(405).json({ error: "Method not allowed" });
   }
+  const auth = await requireConfiguredUser(req);
+  if (auth.required && !auth.user) return res.status(401).json({ error: "Sign in to generate DSA challenges." });
 
   const stack = typeof req.body?.stack === "string" ? req.body.stack.slice(0, 120) : "JavaScript";
   const count = Math.max(6, Math.min(15, Number(req.body?.count) || 12));

@@ -4,6 +4,10 @@ import { buildSystemPrompt } from "../../lib/chatPrompt.mjs";
 import { normalizeChatMessages } from "../../lib/chatRequest.mjs";
 import { getGeminiErrorStatus, getSafeGeminiErrorMessage } from "../../lib/geminiRetry.mjs";
 import { createRequestLogger } from "../../lib/serverLogger.mjs";
+import { checkRateLimit, CHAT_LIMITS, getClientAddress, validateChatRequest } from "../../lib/requestSecurity.mjs";
+import { requireConfiguredUser } from "../../lib/apiAuth.mjs";
+
+export const config = { api: { bodyParser: { sizeLimit: "1mb" } } };
 
 export default async function handler(req, res) {
   const logger = createRequestLogger({ route: "/api/chat" });
@@ -13,6 +17,15 @@ export default async function handler(req, res) {
     logger.warn("request.method_not_allowed", { method: req.method });
     return res.status(405).json({ error: "Method not allowed" });
   }
+  const auth = await requireConfiguredUser(req);
+  if (auth.required && !auth.user) return res.status(401).json({ error: "Sign in to use AI interview features." });
+
+  const rate = checkRateLimit(`chat:${getClientAddress(req)}`);
+  res.setHeader("X-RateLimit-Remaining", String(rate.remaining));
+  if (!rate.ok) {
+    res.setHeader("Retry-After", String(rate.retryAfter));
+    return res.status(429).json({ error: "Too many AI requests. Please try again shortly." });
+  }
 
   const { profile } = req.body;
   const interviewMode = req.body?.interviewMode;
@@ -20,10 +33,12 @@ export default async function handler(req, res) {
   const interviewPanel = req.body?.interviewPanel;
   const messages = normalizeChatMessages(req.body?.messages);
 
-  if (!messages) {
-    logger.warn("request.invalid", { reason: "empty_messages" });
-    return res.status(400).json({ error: "At least one chat message is required." });
+  const validation = validateChatRequest(req.body);
+  if (!validation.ok) {
+    logger.warn("request.invalid", { reason: validation.error });
+    return res.status(validation.status).json({ error: validation.error, limits: CHAT_LIMITS });
   }
+  if (!messages) return res.status(400).json({ error: "At least one chat message is required." });
 
   try {
     const history = messages.slice(0, -1).map((message) => ({

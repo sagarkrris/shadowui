@@ -10,6 +10,7 @@ import {
   normalizeInterviewEvent,
   recordActivityDate,
   validateInterviewDraft,
+  recordArtifactVersion,
 } from "../../lib/careerToolkit.mjs";
 import { buildRolePack } from "../../lib/rolePacks.mjs";
 
@@ -21,6 +22,7 @@ const EMPTY_STATE = {
   reviewHistory: {},
   interviews: [],
   activityDates: [],
+  artifactVersions: { resume: [], jobDescription: [] },
 };
 
 const EMPTY_INTERVIEW = {
@@ -53,7 +55,8 @@ function readToolkitState() {
     const raw = window.localStorage.getItem(CAREER_TOOLKIT_STORAGE_KEY);
     if (!raw) return EMPTY_STATE;
     const parsed = JSON.parse(raw);
-    return { ...EMPTY_STATE, ...(parsed?.state || {}) };
+    const state = { ...EMPTY_STATE, ...(parsed?.state || {}) };
+    return { ...state, artifactVersions: { ...EMPTY_STATE.artifactVersions, ...(state.artifactVersions || {}) } };
   } catch {
     return EMPTY_STATE;
   }
@@ -258,7 +261,7 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
         throw new Error("InterviewIQ could not find readable text in this resume. Please paste the resume text below.");
       }
 
-      setState((previous) => ({ ...previous, resumeText: text, resumeAnalysis: null, jobDescriptionAnalysis: null }));
+      setState((previous) => ({ ...previous, resumeText: text, resumeAnalysis: null, jobDescriptionAnalysis: null, artifactVersions: { ...previous.artifactVersions, resume: recordArtifactVersion(previous.artifactVersions?.resume, text) } }));
       setResumeNotice(`${file.name} extracted inside InterviewIQ. Resume text was not sent to Gemini or any external AI service.`);
     } catch (error) {
       setResumeNotice(error.message || "InterviewIQ could not extract this resume. Please paste the resume text below.");
@@ -373,7 +376,8 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
           <input type="file" aria-label="Upload resume file" accept=".txt,.md,.markdown,.pdf,.doc,.docx" onChange={handleResumeFile} disabled={resumeUploadBusy} style={{ color: "#9ca3af", fontSize: 11, marginBottom: 8, width: "100%", opacity: resumeUploadBusy ? .55 : 1 }} />
           <textarea
             value={state.resumeText}
-            onChange={(event) => setState((previous) => ({ ...previous, resumeText: event.target.value, resumeAnalysis: null, jobDescriptionAnalysis: null }))}
+                  onChange={(event) => setState((previous) => ({ ...previous, resumeText: event.target.value, resumeAnalysis: null, jobDescriptionAnalysis: null }))}
+                  onBlur={(event) => setState((previous) => ({ ...previous, artifactVersions: { ...previous.artifactVersions, resume: recordArtifactVersion(previous.artifactVersions?.resume, event.target.value) } }))}
             rows={5}
             className="glass-input"
             placeholder="Upload PDF/DOCX/TXT/MD or paste resume text here. Gap analysis stays in InterviewIQ."
@@ -509,7 +513,8 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
           </div>
           <textarea
             value={state.jobDescriptionText}
-            onChange={(event) => setState((previous) => ({ ...previous, jobDescriptionText: event.target.value, jobDescriptionAnalysis: null }))}
+                  onChange={(event) => setState((previous) => ({ ...previous, jobDescriptionText: event.target.value, jobDescriptionAnalysis: null }))}
+                  onBlur={(event) => setState((previous) => ({ ...previous, artifactVersions: { ...previous.artifactVersions, jobDescription: recordArtifactVersion(previous.artifactVersions?.jobDescription, event.target.value) } }))}
             rows={5}
             className="glass-input"
             placeholder="Paste the target job description to compare required skills with your resume evidence."
