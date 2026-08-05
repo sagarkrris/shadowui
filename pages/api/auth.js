@@ -22,6 +22,19 @@ function csrfFromRequest(req) { return String(req.headers["x-csrf-token"] || "")
 function csrfCookie(req) { return readCookie(req, CSRF_COOKIE); }
 async function validCsrf(req) { return csrfFromRequest(req) && csrfFromRequest(req) === csrfCookie(req) && (await verifyCsrfToken(readCookie(req, COOKIE), csrfFromRequest(req)).catch(() => false) || !readCookie(req, COOKIE)); }
 
+async function sendAuthEmail({ type, user, token, req }) {
+  try {
+    const delivery = await deliverAuthEmail({ type, email: user.email, userId: user.id, token });
+    recordMetric(delivery.delivered ? "auth.email_sent" : "auth.email_delivery_unavailable", { type, emailDomain: user.email.split("@")[1] });
+    if (!delivery.delivered) await recordAudit({ type: "email_delivery_failed", userId: user.id, email: user.email, ip: getClientAddress(req), providerError: delivery.configured ? "not_delivered" : "not_configured" });
+    return delivery;
+  } catch (error) {
+    recordMetric("auth.email_delivery_failed", { type, emailDomain: user.email.split("@")[1] });
+    await recordAudit({ type: "email_delivery_failed", userId: user.id, email: user.email, ip: getClientAddress(req), providerError: error.message });
+    return { delivered: false, configured: true, provider: "resend", error: true };
+  }
+}
+
 export default async function handler(req, res) {
   const action = String(req.query.action || "me");
   const limit = await checkDistributedRateLimit(`auth:${getClientAddress(req)}`, { limit: 10 });
@@ -47,13 +60,13 @@ export default async function handler(req, res) {
       if (!user) { await recordAudit({ type: "login_failed", email: credentials.email, ip: getClientAddress(req) }); recordMetric("auth.login_failed", { emailDomain: credentials.email.split("@")[1] }); return res.status(401).json({ error: "Invalid email or password." }); }
       const session = await createSession(user.id);
       res.setHeader("Set-Cookie", [`${COOKIE}=${session.token}; ${cookieOptions}${process.env.NODE_ENV === "production" ? "; Secure" : ""}`, `${CSRF_COOKIE}=${session.csrfToken}; Path=/; SameSite=Lax${process.env.NODE_ENV === "production" ? "; Secure" : ""}`]);
+      let emailDelivery;
       if (action === "register") {
         const verificationToken = await createVerificationToken(user.id);
-        try { await deliverAuthEmail({ type: "verify-email", email: user.email, userId: user.id, token: verificationToken }); }
-        catch (error) { await recordAudit({ type: "email_delivery_failed", userId: user.id, email: user.email, providerError: error.message }); }
+        emailDelivery = await sendAuthEmail({ type: "verify-email", user, token: verificationToken, req });
       }
       await recordAudit({ type: action === "register" ? "register" : "login", userId: user.id, email: user.email, ip: getClientAddress(req) });
-      return res.status(action === "register" ? 201 : 200).json({ user, emailVerificationRequired: !user.emailVerified });
+      return res.status(action === "register" ? 201 : 200).json({ user, emailVerificationRequired: !user.emailVerified, ...(emailDelivery ? { emailDelivery } : {}) });
     }
     if (action === "verify" && (req.method === "POST" || req.method === "GET")) {
       const user = await consumeVerificationToken(req.method === "GET" ? req.query?.token : req.body?.token);
@@ -64,7 +77,11 @@ export default async function handler(req, res) {
     if (action === "forgot" && req.method === "POST") {
       if (!(await validCsrf(req))) return res.status(403).json({ error: "CSRF validation failed." });
       const token = await createPasswordResetToken(req.body?.email);
-      if (token) { const user = await getUserBySession(readCookie(req, COOKIE)); await deliverAuthEmail({ type: "password-reset", email: String(req.body?.email || "").trim().toLowerCase(), token, userId: user?.id }); }
+      if (token) {
+        const email = String(req.body?.email || "").trim().toLowerCase();
+        const user = { id: null, email };
+        await sendAuthEmail({ type: "password-reset", user, token, req });
+      }
       return res.status(200).json({ ok: true, message: "If the account exists, reset instructions will be sent." });
     }
     if (action === "reset" && req.method === "POST") {
@@ -74,7 +91,18 @@ export default async function handler(req, res) {
       const user = await resetPassword(req.body?.token, credentials.password);
       if (!user) return res.status(400).json({ error: "Reset link is invalid or expired." });
       await recordAudit({ type: "password_reset", userId: user.id, email: user.email, ip: getClientAddress(req) });
+      recordMetric("auth.password_reset", { emailDomain: user.email.split("@")[1] });
       return res.status(200).json({ ok: true });
+    }
+    if (action === "resend-verification" && req.method === "POST") {
+      if (!(await validCsrf(req))) return res.status(403).json({ error: "CSRF validation failed." });
+      const user = await getUserBySession(readCookie(req, COOKIE));
+      if (!user) return res.status(401).json({ error: "Authentication required." });
+      if (user.emailVerified) return res.status(400).json({ error: "Email is already verified." });
+      const token = await createVerificationToken(user.id);
+      const emailDelivery = await sendAuthEmail({ type: "verify-email", user, token, req });
+      recordMetric("auth.verification_resent", { emailDomain: user.email.split("@")[1] });
+      return res.status(200).json({ ok: true, emailDelivery });
     }
     if (action === "revoke" && req.method === "POST") {
       if (!(await validCsrf(req))) return res.status(403).json({ error: "CSRF validation failed." });

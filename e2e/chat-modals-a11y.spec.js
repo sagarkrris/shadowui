@@ -32,8 +32,9 @@ test.describe("Chat, modals, latency states, and accessibility smoke", () => {
     await gotoSeededApp(page);
 
     await page.getByRole("button", { name: "Info" }).click();
-    await expect(page.getByText("InterviewIQ", { exact: false })).toBeVisible();
-    await page.getByRole("button", { name: "x" }).click();
+    await expect(page.getByRole("dialog")).toContainText("Built for focused interview preparation.");
+    await expect(page.getByLabel("InterviewIQ logo")).toBeVisible();
+    await page.getByRole("button", { name: "Close about" }).click();
     await expect(page.getByText("Voice Input")).toHaveCount(0);
 
     await page.getByRole("button", { name: "Analyze Screen" }).click();
@@ -45,6 +46,19 @@ test.describe("Chat, modals, latency states, and accessibility smoke", () => {
     await expect(page.getByRole("dialog")).toContainText("Recording Review");
     await page.getByRole("button", { name: "x" }).click();
     await assertHealthyApp(page);
+  });
+
+  test("routes sign-in and account creation to dedicated branded pages", async ({ page }) => {
+    await gotoSeededApp(page);
+
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page).toHaveURL(/\/sign-in$/);
+    await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
+    await expect(page.getByLabel("InterviewIQ logo")).toBeVisible();
+
+    await page.getByRole("link", { name: "Create an account" }).click();
+    await expect(page).toHaveURL(/\/sign-up$/);
+    await expect(page.getByRole("heading", { name: "Create your account" })).toBeVisible();
   });
 
   test("has accessible labels and keyboard navigation for core interview controls", async ({ page }) => {

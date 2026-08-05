@@ -205,6 +205,8 @@ The browser never receives the Gemini API key. Code execution requests go throug
 
 Account sync is available through `/api/auth` and `/api/state`. User state is encrypted with `APP_ENCRYPTION_KEY` and persisted in managed PostgreSQL through `lib/serverPersistence.mjs`; set `DATABASE_URL` before enabling account sync in production. The adapter creates its tables and indexes on first use, while database backups, point-in-time recovery, and retention should be configured in the managed provider. AI routes enforce bounded request sizes and distributed rate limits when Upstash is configured. Set `REQUIRE_AUTH=1` before making AI routes public.
 
+Production operations: configure Neon/Vercel automated backups, point-in-time recovery, and a retention window that matches your privacy policy; `DATA_RETENTION_DAYS` controls application-level cleanup of expired sessions, reset tokens, and audit records (bounded to 7–3650 days). The account export endpoint returns a versioned JSON attachment and deletion verifies that the authenticated session no longer resolves. Set `METRICS_WEBHOOK_URL` (and its secret token) to forward email delivery, failed-login, AI usage, and rate-limit metrics to your monitoring system. Keep `RESEND_API_KEY` out of source control; after a custom sending domain is verified in Resend, replace the temporary full-access key with a restricted production key and update `RESEND_FROM_EMAIL`.
+
 ## Notes
 
 - Public company interview data is presented as reported/community-sourced, not official company material.

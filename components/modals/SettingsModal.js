@@ -1,4 +1,5 @@
 import { PRODUCT_TAGLINE } from "../../lib/agenticCourse.mjs";
+import Link from "next/link";
 
 import { useState } from "react";
 import { useRef } from "react";
@@ -66,8 +67,11 @@ export default function SettingsModal({ onClose, theme, auth = {}, initialMode =
                 <input aria-label="Password" type="password" required minLength={12} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 12 characters" className="glass-input" style={{ minHeight: 44, borderRadius: 8, padding: "11px 12px", cursor: "text" }} />
               </label>
               {auth.error ? <p role="alert" style={{ color: "#dc2626", fontSize: 12, lineHeight: 1.45, margin: 0 }}>{auth.error}</p> : null}
+              {auth.deliveryWarning ? <p role="alert" style={{ color: "#b45309", background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 8, padding: "9px 10px", fontSize: 12, lineHeight: 1.45, margin: 0 }}>{auth.deliveryWarning}</p> : null}
+              {auth.deliveryNotice ? <p role="status" style={{ color: "#166534", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: "9px 10px", fontSize: 12, lineHeight: 1.45, margin: 0 }}>{auth.deliveryNotice}</p> : null}
               <button type="submit" className="glass-button" style={{ minHeight: 46, border: `1px solid ${theme.accentBorder}`, borderRadius: 8, color: theme.accentText, fontSize: 13, fontWeight: 850 }}>{mode === "login" ? "Sign in and sync" : "Create secure account"}</button>
             </form>
+            {mode === "login" ? <p style={{ margin: "14px 0 0", textAlign: "center" }}><Link href="/reset-password" style={{ color: theme.accentStrong, fontSize: 12, fontWeight: 700 }}>Forgot password?</Link></p> : null}
             <p style={{ color: appearance === "light" ? "#64748b" : "#94a3b8", fontSize: 12, lineHeight: 1.5, margin: "22px 0 0" }}>{mode === "login" ? "New to InterviewIQ? " : "Already have an account? "}<button type="button" onClick={() => setMode(mode === "login" ? "register" : "login")} style={{ background: "none", border: "none", color: theme.accentStrong, cursor: "pointer", font: "inherit", fontWeight: 800, padding: 0 }}>{mode === "login" ? "Create an account" : "Sign in"}</button></p>
           </section>
         ) : <>
@@ -84,6 +88,9 @@ export default function SettingsModal({ onClose, theme, auth = {}, initialMode =
           {auth.user ? <>
             <p style={{ color: "#cbd5e1", fontSize: 13, lineHeight: 1.5, margin: 0 }}>Signed in as {auth.user.email}</p>
             {!auth.user.emailVerified ? <p role="alert" style={{ color: "#facc15", fontSize: 12, lineHeight: 1.45, margin: "6px 0 0" }}>Email verification is required before AI features can be used when authentication enforcement is enabled.</p> : null}
+            {!auth.user.emailVerified ? <button type="button" className="glass-button" onClick={auth.resendVerification} style={{ marginTop: 12, minHeight: 36, padding: "8px 14px" }}>Resend verification email</button> : null}
+            {auth.deliveryWarning ? <p role="alert" style={{ color: "#fbbf24", fontSize: 12, lineHeight: 1.45, margin: "8px 0 0" }}>{auth.deliveryWarning}</p> : null}
+            {auth.deliveryNotice ? <p role="status" style={{ color: "#86efac", fontSize: 12, lineHeight: 1.45, margin: "8px 0 0" }}>{auth.deliveryNotice}</p> : null}
             <div className="account-actions" style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
               <button type="button" className="glass-button" style={{ minHeight: 36, padding: "8px 12px" }} onClick={async () => { const data = await auth.exportAccount?.(); const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = "interviewiq-account-export.json"; link.click(); URL.revokeObjectURL(url); }}>Export data</button>
               <button type="button" className="glass-button" style={{ minHeight: 36, padding: "8px 12px" }} onClick={auth.revokeSessions}>Revoke sessions</button>

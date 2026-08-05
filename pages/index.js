@@ -1,4 +1,5 @@
 import Head from "next/head";
+import { useRouter } from "next/router";
 import { useState, useRef, useEffect, useCallback } from "react";
 import CompanyPrep from "../components/company/CompanyPrep";
 import MessageContent from "../components/chat/MessageContent";
@@ -17,7 +18,7 @@ import OfferWarRoom from "../components/offer-war-room/OfferWarRoom";
 import ScenarioBank from "../components/scenario-bank/ScenarioBank";
 import RecordingReviewModal from "../components/modals/RecordingReviewModal";
 import ScreenModal from "../components/modals/ScreenModal";
-import SettingsModal from "../components/modals/SettingsModal";
+import AboutModal from "../components/modals/AboutModal";
 import SystemDesignCanvas from "../components/system-design/SystemDesignCanvas";
 import Sidebar from "../components/Sidebar";
 import Toast from "../components/Toast";
@@ -140,19 +141,16 @@ export default function Home() {
   const [showScreen, setShowScreen]   = useState(false);
   const [showRecordingReview, setShowRecordingReview] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [settingsAuthMode, setSettingsAuthMode] = useState("login");
-  const [settingsAuthFocused, setSettingsAuthFocused] = useState(false);
   const [themePreference, setThemePreference] = useState("system");
   const [systemThemeMode, setSystemThemeMode] = useState("light");
   const [topControlsOpen, setTopControlsOpen] = useState(false);
   const { activeTab, setActiveTab, toggleWorkspace: toggleWorkspaceTab } = useWorkspaceNavigation("chat");
   const { session: interviewSessionState, reset: resetInterviewSession, startQuestion: startInterviewQuestion, submitAnswer: submitInterviewAnswer, score: scoreInterviewAnswer, review: reviewInterviewAnswer } = useInterviewSession({ mode: "strict", round: "coding", panel: "seniorEngineer" });
   const auth = useAuth();
+  const router = useRouter();
   const openAuthSettings = useCallback((mode = "login") => {
-    setSettingsAuthMode(mode === "register" ? "register" : "login");
-    setSettingsAuthFocused(true);
-    setShowSettings(true);
-  }, []);
+    router.push(mode === "register" ? "/sign-up" : "/sign-in");
+  }, [router]);
   const [questionMemory, setQuestionMemory] = useState({ questions: {} });
   const [systemDesignCanvas, setSystemDesignCanvas] = useState(() => createSystemDesignCanvasState());
   const [beginnerMode, setBeginnerMode] = useState(false);
@@ -1445,7 +1443,7 @@ export default function Home() {
       )}
 
       {/* Settings modal */}
-      {showSettings && <SettingsModal theme={techTheme} onClose={() => setShowSettings(false)} auth={auth} initialMode={settingsAuthMode} themePreference={themePreference} onThemePreferenceChange={(value) => setThemePreference(normalizeThemePreference(value))} appearance={resolvedThemeMode} authFocused={settingsAuthFocused} />}
+      {showSettings && <AboutModal theme={techTheme} onClose={() => setShowSettings(false)} appearance={resolvedThemeMode} />}
 
       {/* App shell */}
       <div className={`app-shell theme-${resolvedThemeMode}`} style={{ ...themeVars, position:"fixed", inset:0, isolation:"isolate", display:"flex", height:appShellHeight, overflow:"hidden", background:techTheme.surface }}>
@@ -1642,7 +1640,7 @@ export default function Home() {
                 </button>
               </div>
             ) : null}
-            <button className="icon-btn" onClick={() => { setSettingsAuthFocused(false); setShowSettings(true); }} title="About and help" aria-label="Info"><i className="ti ti-info-circle" /></button>
+            <button className="icon-btn" onClick={() => setShowSettings(true)} title="About and help" aria-label="Info"><i className="ti ti-info-circle" /></button>
           </header>
 
           <div className="glass-chrome" style={{ alignItems: "center", borderBottom: "1px solid rgba(255,255,255,.06)", display: "flex", flexWrap: "wrap", gap: 7, padding: "8px 12px" }}>
@@ -1977,7 +1975,7 @@ export default function Home() {
                     { icon:"ti-wave-sine",        label:"Review",  action:()=>setShowRecordingReview(true) },
                   ] : []),
                   ...(messages.length > 0 ? [{ icon:"ti-trash", label:"Clear", action:clearChat }] : []),
-                  { icon:"ti-info-circle",      label:"Info",    action:()=>{ setSettingsAuthFocused(false); setShowSettings(true); } },
+                  { icon:"ti-info-circle",      label:"Info",    action:()=>setShowSettings(true) },
                 ]}
               />
             </div>

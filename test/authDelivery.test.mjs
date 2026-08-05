@@ -27,3 +27,17 @@ test("delivers verification email through Resend with a usable verification link
   assert.match(body.html, /action=verify/);
   assert.match(body.text, /verification-token/);
 });
+
+test("uses the public reset page for password reset links", async () => {
+  let request;
+  await deliverAuthEmail({
+    type: "password-reset",
+    email: "candidate@example.com",
+    token: "reset-token",
+    env: { RESEND_API_KEY: "re_test_key", APP_BASE_URL: "https://elevateprep.vercel.app" },
+    fetchImpl: async (...args) => { request = args; return { ok: true }; },
+  });
+  const body = JSON.parse(request[1].body);
+  assert.match(body.html, /reset-password\?token=reset-token/);
+  assert.match(body.text, /reset-password\?token=reset-token/);
+});
