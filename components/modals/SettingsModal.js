@@ -26,8 +26,9 @@ export default function SettingsModal({ onClose, theme, auth = {}, initialMode =
         background: "rgba(0,0,0,.7)",
         zIndex: 200,
         display: "flex",
-        alignItems: authFocused && !auth.user ? "center" : "flex-end",
+        alignItems: "center",
         justifyContent: "center",
+        padding: 20,
         backdropFilter: "blur(4px)"
       }}
     >
@@ -36,7 +37,7 @@ export default function SettingsModal({ onClose, theme, auth = {}, initialMode =
         onClick={(event) => event.stopPropagation()}
         style={{
           border: `1px solid ${theme.accentBorder}`,
-          borderRadius: authFocused && !auth.user ? 18 : "16px 16px 0 0",
+          borderRadius: 18,
           padding: authFocused && !auth.user ? "28px clamp(22px, 5vw, 40px)" : 24,
           width: "100%",
           maxWidth: authFocused && !auth.user ? 440 : 520,

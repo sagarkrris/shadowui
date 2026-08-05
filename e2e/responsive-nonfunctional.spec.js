@@ -56,7 +56,7 @@ async function openMobileMenuItem(page, name) {
 }
 
 async function openWorkspaceItem(page, name, viewportWidth) {
-  if (viewportWidth >= 1440) {
+  if (viewportWidth >= 1800) {
     await page.getByRole("button", { name }).click();
     return;
   }
@@ -167,7 +167,7 @@ test.describe("Non-functional UI/UX, responsiveness, and state management", () =
       await expect(page.getByRole("button", { name: "Topics" })).toBeVisible();
       await expect(page.getByRole("button", { name: "Account" })).toBeVisible();
 
-      if (viewport.width < 1440) {
+      if (viewport.width < 1800) {
         await expect(page.getByRole("button", { name: "Workspace menu" })).toBeVisible();
         await page.getByRole("button", { name: "Workspace menu" }).click();
         await expect(page.getByLabel("Tablet workspace menu")).toBeVisible();

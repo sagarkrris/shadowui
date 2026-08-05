@@ -2016,6 +2016,16 @@ export default function Home() {
           .tablet-workspace-menu,
           .compact-controls-menu { display: none !important; }
         }
+        @media (min-width: 1440px) and (max-width: 1799px) {
+          .desktop-controls,
+          .desktop-workspace-nav {
+            display: none !important;
+          }
+          .tablet-workspace-menu,
+          .compact-controls-menu {
+            display: block !important;
+          }
+        }
         @media (hover: hover) {
           button:hover { opacity: .9; }
         }

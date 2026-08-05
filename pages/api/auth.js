@@ -45,6 +45,7 @@ async function handler(req, res) {
     if (action === "me" && req.method === "GET") return res.status(200).json({ user: await getUserBySession(readCookie(req, COOKIE)) });
     if (action === "csrf" && req.method === "GET") {
       const token = createOpaqueToken();
+      res.setHeader("Cache-Control", "no-store, max-age=0");
       res.setHeader("Set-Cookie", `${CSRF_COOKIE}=${token}; Path=/; SameSite=Lax${process.env.NODE_ENV === "production" ? "; Secure" : ""}`);
       return res.status(200).json({ csrfToken: token });
     }

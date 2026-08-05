@@ -47,6 +47,7 @@ test("laptop header wraps controls instead of clipping the right edge", () => {
   assert.match(indexSource, /className="glass-chrome app-topbar"/);
   assert.match(indexSource, /className="header-title"/);
   assert.match(globalsSource, /@media \(min-width: 761px\) and \(max-width: 1439px\)[\s\S]*\.app-topbar[\s\S]*flex-wrap: wrap/);
+  assert.match(indexSource, /@media \(min-width: 1440px\) and \(max-width: 1799px\)/);
   assert.match(globalsSource, /\.app-topbar \.header-profile-label/);
 });
 
