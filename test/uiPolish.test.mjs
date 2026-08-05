@@ -64,14 +64,22 @@ test("account modal stays centered and protects account form interactions", () =
   assert.match(settingsModalSource, /appearance === "light" \? "#17324d"/);
   assert.match(settingsModalSource, /aria-label=\{showPassword \? "Hide password" : "Show password"\}/);
   assert.match(settingsModalSource, /aria-busy=\{submitting\}/);
+  assert.match(settingsModalSource, /resendingVerification/);
+  assert.match(settingsModalSource, /verificationFeedback/);
+  assert.match(settingsModalSource, /Sending verification email/);
+  assert.match(settingsModalSource, /auth\.error/);
   assert.match(settingsModalSource, /aria-label="Password strength"/);
 });
 
 test("authenticated CSRF state is not replaced by a random token", () => {
   assert.match(authHookSource, /interviewiq_csrf=/);
-  assert.match(authHookSource, /if \(cookieToken\) \{ setCsrfToken\(cookieToken\); return cookieToken; \}/);
+  assert.match(authHookSource, /if \(cookieToken && !force\) \{ setCsrfToken\(cookieToken\); return cookieToken; \}/);
   assert.match(authHookSource, /cache: "no-store"/);
   assert.match(authApiSource, /existingToken && sessionToken && await verifyCsrfToken/);
+  assert.match(authHookSource, /Email delivery is not configured on this deployment/);
+  assert.match(authHookSource, /fetchCsrfToken\(\{ force: true \}\)/);
+  assert.match(authApiSource, /auth\.csrf_rejected/);
+  assert.match(authApiSource, /auth\.email_delivery/);
 });
 
 test("profile setup avoids oversized sticky iOS keyboard spacers", () => {

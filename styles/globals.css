@@ -141,6 +141,35 @@ textarea { resize: none; }
   color: #526579 !important;
 }
 
+/* React serializes many inline hex colors as rgb() in the browser. Cover the
+   same dark-mode tokens globally so the header and nested light cards cannot
+   silently fall back to pale-on-pale text. */
+.theme-light [style*="rgb(248, 251, 255"],
+.theme-light [style*="rgb(232, 232, 240"],
+.theme-light [style*="rgb(229, 238, 249"],
+.theme-light [style*="rgb(203, 213, 225"],
+.theme-light [style*="rgb(219, 230, 244"],
+.theme-light [style*="rgb(237, 243, 251"],
+.theme-light [style*="rgb(219, 234, 254"],
+.theme-light [style*="rgb(234, 242, 255"],
+.theme-light [style*="rgb(159, 176, 199"] {
+  color: #17324d !important;
+}
+
+.theme-light [style*="rgb(156, 163, 175"],
+.theme-light [style*="rgb(107, 114, 128"],
+.theme-light [style*="rgb(100, 116, 139"],
+.theme-light [style*="rgb(148, 163, 184"] {
+  color: #526579 !important;
+}
+
+.theme-light .welcome-screen [style*="rgba(7, 11, 20"],
+.theme-light .welcome-screen [style*="rgba(8, 12, 22"],
+.theme-light .welcome-screen [style*="rgba(0, 0, 0"] {
+  background: #f8fbff !important;
+  border-color: #dbe5ef !important;
+}
+
 .theme-light .welcome-screen [style*="rgba(0, 0, 0"] {
   background: #f8fbff !important;
   border-color: #dbe5ef !important;

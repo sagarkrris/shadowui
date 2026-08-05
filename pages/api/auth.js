@@ -4,6 +4,7 @@ import { checkDistributedRateLimit } from "../../lib/redisRateLimit.mjs";
 import { deliverAuthEmail } from "../../lib/authDelivery.mjs";
 import { recordMetric, reportServerError } from "../../lib/observability.mjs";
 import { withApiObservability } from "../../lib/apiObservability.mjs";
+import { createRequestLogger } from "../../lib/serverLogger.mjs";
 
 const COOKIE = "interviewiq_session";
 const CSRF_COOKIE = "interviewiq_csrf";
@@ -38,6 +39,7 @@ async function sendAuthEmail({ type, user, token, req }) {
 
 async function handler(req, res) {
   const action = String(req.query.action || "me");
+  const logger = createRequestLogger({ route: "/api/auth", requestId: req.requestId });
   const limit = await checkDistributedRateLimit(`auth:${getClientAddress(req)}`, { limit: 10 });
   res.setHeader("X-RateLimit-Remaining", String(limit.remaining));
   if (!limit.ok) { recordMetric("auth.rate_limited", { route: "/api/auth" }); return res.status(429).json({ error: "Too many authentication requests. Try again later." }); }
@@ -103,12 +105,16 @@ async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
     if (action === "resend-verification" && req.method === "POST") {
-      if (!(await validCsrf(req))) return res.status(403).json({ error: "CSRF validation failed." });
+      if (!(await validCsrf(req))) {
+        logger.warn("auth.csrf_rejected", { action });
+        return res.status(403).json({ error: "CSRF validation failed." });
+      }
       const user = await getUserBySession(readCookie(req, COOKIE));
       if (!user) return res.status(401).json({ error: "Authentication required." });
       if (user.emailVerified) return res.status(400).json({ error: "Email is already verified." });
       const token = await createVerificationToken(user.id);
       const emailDelivery = await sendAuthEmail({ type: "verify-email", user, token, req });
+      logger.info("auth.email_delivery", { action, delivered: Boolean(emailDelivery.delivered), configured: Boolean(emailDelivery.configured), provider: emailDelivery.provider || "unknown" });
       recordMetric("auth.verification_resent", { emailDomain: user.email.split("@")[1] });
       return res.status(200).json({ ok: true, emailDelivery });
     }
