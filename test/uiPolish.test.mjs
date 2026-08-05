@@ -11,6 +11,7 @@ const settingsModalSource = readFileSync(new URL("../components/modals/SettingsM
 const authHookSource = readFileSync(new URL("../hooks/useAuth.js", import.meta.url), "utf8");
 const authApiSource = readFileSync(new URL("../pages/api/auth.js", import.meta.url), "utf8");
 const apiObservabilitySource = readFileSync(new URL("../lib/apiObservability.mjs", import.meta.url), "utf8");
+const persistenceSource = readFileSync(new URL("../lib/serverPersistence.mjs", import.meta.url), "utf8");
 
 test("assistant part-wise answers render with readable section styling", () => {
   assert.match(messageContentSource, /message-part-heading/);
@@ -86,6 +87,8 @@ test("authenticated CSRF state is not replaced by a random token", () => {
   assert.match(authApiSource, /csrfDiagnostics/);
   assert.match(authApiSource, /auth\.email_delivery/);
   assert.match(apiObservabilitySource, /observabilityMeta/);
+  assert.match(authApiSource, /rotateCsrfToken\(sessionToken, token\)/);
+  assert.match(persistenceSource, /UPDATE interviewiq_sessions SET csrf_hash/);
 });
 
 test("profile setup avoids oversized sticky iOS keyboard spacers", () => {

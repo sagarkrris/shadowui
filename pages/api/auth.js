@@ -1,4 +1,4 @@
-import { authenticateUser, consumeVerificationToken, createOpaqueToken, createPasswordResetToken, createSession, createUser, createVerificationToken, destroySession, getUserBySession, recordAudit, resetPassword, revokeAllSessions, verifyCsrfToken } from "../../lib/serverPersistence.mjs";
+import { authenticateUser, consumeVerificationToken, createOpaqueToken, createPasswordResetToken, createSession, createUser, createVerificationToken, destroySession, getUserBySession, recordAudit, resetPassword, revokeAllSessions, rotateCsrfToken, verifyCsrfToken } from "../../lib/serverPersistence.mjs";
 import { getClientAddress } from "../../lib/requestSecurity.mjs";
 import { checkDistributedRateLimit } from "../../lib/redisRateLimit.mjs";
 import { deliverAuthEmail } from "../../lib/authDelivery.mjs";
@@ -65,6 +65,13 @@ async function handler(req, res) {
         return res.status(200).json({ csrfToken: existingToken });
       }
       const token = createOpaqueToken();
+      if (sessionToken) {
+        const rotated = await rotateCsrfToken(sessionToken, token);
+        if (!rotated) {
+          logger.error("auth.csrf_rotation_failed", { action, sessionPresent: true });
+          return res.status(503).json({ error: "Security session refresh failed. Please sign in again." });
+        }
+      }
       res.setHeader("Cache-Control", "no-store, max-age=0");
       res.setHeader("Set-Cookie", `${CSRF_COOKIE}=${token}; Path=/; SameSite=Lax${process.env.NODE_ENV === "production" ? "; Secure" : ""}`);
       return res.status(200).json({ csrfToken: token });
