@@ -102,6 +102,31 @@ textarea { resize: none; }
   color: #64748b !important;
 }
 
+/* Inline workspace components historically used dark-mode text tokens. Keep
+   light mode readable even when those components are rendered with inline
+   styles, while leaving explicit status/accent colors intact. */
+.theme-light [style*="#f8fbff"],
+.theme-light [style*="#e8e8f0"],
+.theme-light [style*="#e5eef9"],
+.theme-light [style*="#cbd5e1"],
+.theme-light [style*="#dbe6f4"],
+.theme-light [style*="#edf3fb"] {
+  color: #17324d !important;
+}
+
+.theme-light [style*="#94a3b8"],
+.theme-light [style*="#9ca3af"],
+.theme-light [style*="#6b7280"],
+.theme-light [style*="#64748b"] {
+  color: #526579 !important;
+}
+
+.theme-light .header-account-actions .glass-button {
+  background: #ffffff !important;
+  border-color: rgba(29,95,145,.30) !important;
+  box-shadow: 0 5px 14px rgba(31,55,82,.12), inset 0 1px 0 rgba(255,255,255,.95);
+}
+
 @media (prefers-contrast: more) {
   .glass-chrome,
   .glass-panel,

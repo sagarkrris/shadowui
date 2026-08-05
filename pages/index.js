@@ -1514,6 +1514,13 @@ export default function Home() {
               </span>
             )}
 
+            <div className="header-account-actions" style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }} aria-label="Account actions">
+              {auth.user ? <button type="button" className="glass-button" onClick={() => setShowSettings(true)} style={{ border: `1px solid ${techTheme.accentBorder}`, borderRadius: 7, color: techTheme.accentText, cursor: "pointer", fontSize: 11, fontWeight: 850, padding: "5px 9px", whiteSpace: "nowrap" }}>Account</button> : <>
+                <button type="button" className="glass-button" onClick={() => openAuthSettings("login")} style={{ border: `1px solid ${techTheme.accentBorder}`, borderRadius: 7, color: techTheme.accentText, cursor: "pointer", fontSize: 11, fontWeight: 850, padding: "5px 9px", whiteSpace: "nowrap" }}>Sign in</button>
+                <button type="button" className="glass-button" onClick={() => openAuthSettings("register")} style={{ border: `1px solid ${techTheme.accentBorder}`, borderRadius: 7, color: techTheme.accentText, cursor: "pointer", fontSize: 11, fontWeight: 850, padding: "5px 9px", whiteSpace: "nowrap" }}>Create account</button>
+              </>}
+            </div>
+
             {/* Desktop-only controls */}
             {showInterviewTools && <div style={{ display:"flex", alignItems:"center", gap:6 }} className="desktop-controls">
               <button className="icon-btn" onClick={() => setShowScreen(true)} title="Analyze Screen" aria-label="Analyze Screen"><i className="ti ti-screenshot" /></button>
@@ -1630,16 +1637,6 @@ export default function Home() {
             {candidateProfile && (
               <button className="icon-btn" onClick={() => { setProfileDraft(candidateProfile); setCandidateProfile(null); setMessages([]); }} title="Edit Profile" aria-label="Edit Profile"><i className="ti ti-user-cog" /></button>
             )}
-            {!auth.user ? (
-              <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }} aria-label="Account actions">
-                <button type="button" className="glass-button" onClick={() => openAuthSettings("login")} style={{ border: "1px solid rgba(255,255,255,.12)", borderRadius: 7, color: "#cbd5e1", cursor: "pointer", fontSize: 11, fontWeight: 800, padding: "5px 9px", whiteSpace: "nowrap" }}>
-                  Sign in
-                </button>
-                <button type="button" className="glass-button" onClick={() => openAuthSettings("register")} style={{ border: `1px solid ${techTheme.accentBorder}`, borderRadius: 7, color: techTheme.accentText, cursor: "pointer", fontSize: 11, fontWeight: 850, padding: "5px 9px", whiteSpace: "nowrap" }}>
-                  Create account
-                </button>
-              </div>
-            ) : null}
             <button className="icon-btn" onClick={() => setShowSettings(true)} title="About and help" aria-label="Info"><i className="ti ti-info-circle" /></button>
           </header>
 
