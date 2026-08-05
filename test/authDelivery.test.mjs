@@ -41,3 +41,13 @@ test("uses the public reset page for password reset links", async () => {
   assert.match(body.html, /reset-password\?token=reset-token/);
   assert.match(body.text, /reset-password\?token=reset-token/);
 });
+
+test("returns a safe provider status code when Resend rejects delivery", async () => {
+  await assert.rejects(() => deliverAuthEmail({
+    type: "verify-email",
+    email: "candidate@example.com",
+    token: "verification-token",
+    env: { RESEND_API_KEY: "re_test_key" },
+    fetchImpl: async () => ({ ok: false, status: 422 }),
+  }), (error) => error.code === "RESEND_HTTP_422");
+});

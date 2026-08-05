@@ -67,8 +67,8 @@ test("account modal stays centered and protects account form interactions", () =
   assert.match(settingsModalSource, /aria-label=\{showPassword \? "Hide password" : "Show password"\}/);
   assert.match(settingsModalSource, /aria-busy=\{submitting\}/);
   assert.match(settingsModalSource, /resendingVerification/);
-  assert.match(settingsModalSource, /verificationFeedback/);
   assert.match(settingsModalSource, /Sending verification email/);
+  assert.match(settingsModalSource, /verificationFeedback/);
   assert.match(settingsModalSource, /auth\.error/);
   assert.match(settingsModalSource, /aria-label="Password strength"/);
 });
@@ -86,6 +86,9 @@ test("authenticated CSRF state is not replaced by a random token", () => {
   assert.match(authApiSource, /auth\.csrf_rejected/);
   assert.match(authApiSource, /csrfDiagnostics/);
   assert.match(authApiSource, /auth\.email_delivery/);
+  assert.match(authApiSource, /resendConfigured/);
+  assert.match(authApiSource, /webhookConfigured/);
+  assert.match(authApiSource, /action === "forgot"[\s\S]*auth\.email_delivery/);
   assert.match(apiObservabilitySource, /observabilityMeta/);
   assert.match(authApiSource, /rotateCsrfToken\(sessionToken, token\)/);
   assert.match(persistenceSource, /UPDATE interviewiq_sessions SET csrf_hash/);

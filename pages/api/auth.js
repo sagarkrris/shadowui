@@ -45,7 +45,7 @@ async function sendAuthEmail({ type, user, token, req }) {
   } catch (error) {
     recordMetric("auth.email_delivery_failed", { type, emailDomain: user.email.split("@")[1] });
     await recordAudit({ type: "email_delivery_failed", userId: user.id, email: user.email, ip: getClientAddress(req), providerError: error.message });
-    return { delivered: false, configured: true, provider: "resend", error: true };
+    return { delivered: false, configured: true, provider: "resend", error: true, errorCode: error.code || "provider_error" };
   }
 }
 
@@ -109,7 +109,10 @@ async function handler(req, res) {
       if (token) {
         const email = String(req.body?.email || "").trim().toLowerCase();
         const user = { id: null, email };
-        await sendAuthEmail({ type: "password-reset", user, token, req });
+        const emailDelivery = await sendAuthEmail({ type: "password-reset", user, token, req });
+        const deliveryMeta = { action, authEvent: "email_delivery", delivered: Boolean(emailDelivery.delivered), configured: Boolean(emailDelivery.configured), provider: emailDelivery.provider || "unknown", providerErrorCode: emailDelivery.errorCode || null, resendConfigured: Boolean(process.env.RESEND_API_KEY), webhookConfigured: Boolean(process.env.EMAIL_WEBHOOK_URL) };
+        req.observabilityMeta = deliveryMeta;
+        logger.info("auth.email_delivery", deliveryMeta);
       }
       return res.status(200).json({ ok: true, message: "If the account exists, reset instructions will be sent." });
     }
@@ -135,7 +138,7 @@ async function handler(req, res) {
       if (user.emailVerified) return res.status(400).json({ error: "Email is already verified." });
       const token = await createVerificationToken(user.id);
       const emailDelivery = await sendAuthEmail({ type: "verify-email", user, token, req });
-      const deliveryMeta = { action, authEvent: "email_delivery", delivered: Boolean(emailDelivery.delivered), configured: Boolean(emailDelivery.configured), provider: emailDelivery.provider || "unknown" };
+      const deliveryMeta = { action, authEvent: "email_delivery", delivered: Boolean(emailDelivery.delivered), configured: Boolean(emailDelivery.configured), provider: emailDelivery.provider || "unknown", providerErrorCode: emailDelivery.errorCode || null, resendConfigured: Boolean(process.env.RESEND_API_KEY), webhookConfigured: Boolean(process.env.EMAIL_WEBHOOK_URL) };
       req.observabilityMeta = deliveryMeta;
       logger.info("auth.email_delivery", deliveryMeta);
       recordMetric("auth.verification_resent", { emailDomain: user.email.split("@")[1] });

@@ -27,14 +27,9 @@ export default function SettingsModal({ onClose, theme, auth = {}, initialMode =
     if (resendingVerification || !auth.resendVerification) return;
     setVerificationFeedback("");
     setResendingVerification(true);
-    try {
-      const result = await auth.resendVerification();
-      if (result?.emailDelivery?.delivered) setVerificationFeedback("Verification email sent. Check your inbox and spam folder.");
-      else if (result?.emailDelivery?.configured === false) setVerificationFeedback("Email delivery is not configured on this deployment, so no verification email was sent.");
-      else if (result?.ok) setVerificationFeedback("Verification request completed. Check your inbox and spam folder.");
-    } catch (error) {
-      setVerificationFeedback(error?.message || "We could not send the verification email. Try again later.");
-    } finally { setResendingVerification(false); }
+    try { await auth.resendVerification(); }
+    catch (error) { setVerificationFeedback(error?.message || "We could not send the verification email. Try again later."); }
+    finally { setResendingVerification(false); }
   };
   return (
     <div
@@ -125,8 +120,8 @@ export default function SettingsModal({ onClose, theme, auth = {}, initialMode =
             <p className="settings-modal-account-email" style={{ color: appearance === "light" ? "#526579" : "#cbd5e1", fontSize: 13, lineHeight: 1.5, margin: 0 }}>Signed in as {auth.user.email}</p>
             {!auth.user.emailVerified ? <p role="alert" style={{ color: "#facc15", fontSize: 12, lineHeight: 1.45, margin: "6px 0 0" }}>Email verification is required before AI features can be used when authentication enforcement is enabled.</p> : null}
             {!auth.user.emailVerified ? <button type="button" className="glass-button" onClick={resendVerification} disabled={resendingVerification} aria-busy={resendingVerification} style={{ marginTop: 12, minHeight: 36, padding: "8px 14px", cursor: resendingVerification ? "wait" : "pointer", opacity: resendingVerification ? .65 : 1 }}>{resendingVerification ? "Sending verification email…" : "Resend verification email"}</button> : null}
-            {verificationFeedback ? <p role={verificationFeedback.includes("not configured") || verificationFeedback.includes("could not") ? "alert" : "status"} aria-live="polite" style={{ color: verificationFeedback.includes("sent") || verificationFeedback.includes("completed") ? (appearance === "light" ? "#166534" : "#86efac") : (appearance === "light" ? "#b42318" : "#fca5a5"), background: verificationFeedback.includes("sent") || verificationFeedback.includes("completed") ? (appearance === "light" ? "#f0fdf4" : "rgba(20,83,45,.18)") : (appearance === "light" ? "#fff1f2" : "rgba(127,29,29,.18)"), border: verificationFeedback.includes("sent") || verificationFeedback.includes("completed") ? (appearance === "light" ? "1px solid #bbf7d0" : "1px solid rgba(134,239,172,.28)") : (appearance === "light" ? "1px solid #fecdd3" : "1px solid rgba(248,113,113,.28)"), borderRadius: 8, padding: "9px 10px", fontSize: 12, lineHeight: 1.45, margin: "10px 0 0" }}>{verificationFeedback}</p> : null}
             {auth.error ? <p role="alert" style={{ color: appearance === "light" ? "#b42318" : "#fca5a5", background: appearance === "light" ? "#fff1f2" : "rgba(127,29,29,.18)", border: appearance === "light" ? "1px solid #fecdd3" : "1px solid rgba(248,113,113,.28)", borderRadius: 8, padding: "9px 10px", fontSize: 12, lineHeight: 1.45, margin: "10px 0 0" }}>{auth.error}</p> : null}
+            {verificationFeedback ? <p role="alert" aria-live="polite" style={{ color: appearance === "light" ? "#b42318" : "#fca5a5", background: appearance === "light" ? "#fff1f2" : "rgba(127,29,29,.18)", border: appearance === "light" ? "1px solid #fecdd3" : "1px solid rgba(248,113,113,.28)", borderRadius: 8, padding: "9px 10px", fontSize: 12, lineHeight: 1.45, margin: "10px 0 0" }}>{verificationFeedback}</p> : null}
             {auth.deliveryWarning ? <p role="alert" style={{ color: "#fbbf24", fontSize: 12, lineHeight: 1.45, margin: "8px 0 0" }}>{auth.deliveryWarning}</p> : null}
             {auth.deliveryNotice ? <p role="status" style={{ color: "#86efac", fontSize: 12, lineHeight: 1.45, margin: "8px 0 0" }}>{auth.deliveryNotice}</p> : null}
             <div className="account-actions" style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
