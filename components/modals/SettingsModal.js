@@ -31,7 +31,6 @@ export default function SettingsModal({ onClose, theme, auth = {}, initialMode =
       const result = await auth.resendVerification();
       if (result?.emailDelivery?.delivered) setVerificationFeedback("Verification email sent. Check your inbox and spam folder.");
       else if (result?.emailDelivery?.configured === false) setVerificationFeedback("Email delivery is not configured on this deployment, so no verification email was sent.");
-      else if (result?.error) setVerificationFeedback(result.error);
       else if (result?.ok) setVerificationFeedback("Verification request completed. Check your inbox and spam folder.");
     } catch (error) {
       setVerificationFeedback(error?.message || "We could not send the verification email. Try again later.");

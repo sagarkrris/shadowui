@@ -10,6 +10,7 @@ const profileSetupSource = readFileSync(new URL("../components/welcome/ProfileSe
 const settingsModalSource = readFileSync(new URL("../components/modals/SettingsModal.js", import.meta.url), "utf8");
 const authHookSource = readFileSync(new URL("../hooks/useAuth.js", import.meta.url), "utf8");
 const authApiSource = readFileSync(new URL("../pages/api/auth.js", import.meta.url), "utf8");
+const apiObservabilitySource = readFileSync(new URL("../lib/apiObservability.mjs", import.meta.url), "utf8");
 
 test("assistant part-wise answers render with readable section styling", () => {
   assert.match(messageContentSource, /message-part-heading/);
@@ -78,8 +79,13 @@ test("authenticated CSRF state is not replaced by a random token", () => {
   assert.match(authApiSource, /existingToken && sessionToken && await verifyCsrfToken/);
   assert.match(authHookSource, /Email delivery is not configured on this deployment/);
   assert.match(authHookSource, /fetchCsrfToken\(\{ force: true \}\)/);
+  assert.match(authHookSource, /interviewiq_csrf=; Max-Age=0/);
+  assert.match(authHookSource, /const csrfUrl = `\/api\/auth\?action=csrf\$\{force \? `&refresh=\$\{Date\.now\(\)\}`/);
+  assert.match(authHookSource, /catch \{ return response; \}/);
   assert.match(authApiSource, /auth\.csrf_rejected/);
+  assert.match(authApiSource, /csrfDiagnostics/);
   assert.match(authApiSource, /auth\.email_delivery/);
+  assert.match(apiObservabilitySource, /observabilityMeta/);
 });
 
 test("profile setup avoids oversized sticky iOS keyboard spacers", () => {

@@ -23,6 +23,18 @@ function validCredentials(body = {}) {
 function csrfFromRequest(req) { return String(req.headers["x-csrf-token"] || ""); }
 function csrfCookie(req) { return readCookie(req, CSRF_COOKIE); }
 async function validCsrf(req) { return csrfFromRequest(req) && csrfFromRequest(req) === csrfCookie(req) && (await verifyCsrfToken(readCookie(req, COOKIE), csrfFromRequest(req)).catch(() => false) || !readCookie(req, COOKIE)); }
+async function csrfDiagnostics(req) {
+  const requestToken = csrfFromRequest(req);
+  const cookieToken = csrfCookie(req);
+  const sessionToken = readCookie(req, COOKIE);
+  return {
+    requestTokenPresent: Boolean(requestToken),
+    cookieTokenPresent: Boolean(cookieToken),
+    sessionPresent: Boolean(sessionToken),
+    tokenMatchesCookie: Boolean(requestToken && cookieToken && requestToken === cookieToken),
+    sessionTokenValid: Boolean(sessionToken && requestToken && await verifyCsrfToken(sessionToken, requestToken).catch(() => false)),
+  };
+}
 
 async function sendAuthEmail({ type, user, token, req }) {
   try {
@@ -106,7 +118,9 @@ async function handler(req, res) {
     }
     if (action === "resend-verification" && req.method === "POST") {
       if (!(await validCsrf(req))) {
-        logger.warn("auth.csrf_rejected", { action });
+        const diagnostics = await csrfDiagnostics(req);
+        req.observabilityMeta = { action, authEvent: "csrf_rejected", ...diagnostics };
+        logger.error("auth.csrf_rejected", { action, ...diagnostics });
         return res.status(403).json({ error: "CSRF validation failed." });
       }
       const user = await getUserBySession(readCookie(req, COOKIE));
@@ -114,7 +128,9 @@ async function handler(req, res) {
       if (user.emailVerified) return res.status(400).json({ error: "Email is already verified." });
       const token = await createVerificationToken(user.id);
       const emailDelivery = await sendAuthEmail({ type: "verify-email", user, token, req });
-      logger.info("auth.email_delivery", { action, delivered: Boolean(emailDelivery.delivered), configured: Boolean(emailDelivery.configured), provider: emailDelivery.provider || "unknown" });
+      const deliveryMeta = { action, authEvent: "email_delivery", delivered: Boolean(emailDelivery.delivered), configured: Boolean(emailDelivery.configured), provider: emailDelivery.provider || "unknown" };
+      req.observabilityMeta = deliveryMeta;
+      logger.info("auth.email_delivery", deliveryMeta);
       recordMetric("auth.verification_resent", { emailDomain: user.email.split("@")[1] });
       return res.status(200).json({ ok: true, emailDelivery });
     }

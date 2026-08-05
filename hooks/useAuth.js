@@ -12,7 +12,11 @@ export function useAuth() {
       ? document.cookie.split(";").map((item) => item.trim()).find((item) => item.startsWith("interviewiq_csrf="))?.slice("interviewiq_csrf=".length) || ""
       : "";
     if (cookieToken && !force) { setCsrfToken(cookieToken); return cookieToken; }
-    const response = await fetch("/api/auth?action=csrf", { cache: "no-store", headers: { "Cache-Control": "no-cache" } });
+    if (force && typeof document !== "undefined") {
+      document.cookie = "interviewiq_csrf=; Max-Age=0; Path=/; SameSite=Lax";
+    }
+    const csrfUrl = `/api/auth?action=csrf${force ? `&refresh=${Date.now()}` : ""}`;
+    const response = await fetch(csrfUrl, { cache: "no-store", headers: { "Cache-Control": "no-cache" } });
     if (!response.ok) throw new Error("CSRF setup failed");
     const payload = await response.json();
     const token = payload.csrfToken || "";
@@ -24,7 +28,7 @@ export function useAuth() {
     let requestToken = await fetchCsrfToken().catch(() => csrfToken);
     let response = await fetch(`/api/auth?action=${action}`, { method: "POST", headers: { "Content-Type": "application/json", ...(requestToken ? { "X-CSRF-Token": requestToken } : {}) }, body: JSON.stringify(body) });
     if (response.status === 403) {
-      requestToken = await fetchCsrfToken({ force: true }).catch(() => requestToken);
+      try { requestToken = await fetchCsrfToken({ force: true }); } catch { return response; }
       response = await fetch(`/api/auth?action=${action}`, { method: "POST", headers: { "Content-Type": "application/json", ...(requestToken ? { "X-CSRF-Token": requestToken } : {}) }, body: JSON.stringify(body) });
     }
     return response;
