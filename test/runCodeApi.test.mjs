@@ -38,4 +38,5 @@ test("POST /api/run-code returns upcoming feature status", async () => {
   assert.equal(res.body.runnerUnavailable, true);
   assert.match(res.body.error, /upcoming/i);
   assert.ok(res.body.requestId);
+  assert.equal(res.headers["X-Request-Id"], res.body.requestId);
 });

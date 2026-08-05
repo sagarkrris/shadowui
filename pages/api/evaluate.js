@@ -7,9 +7,10 @@ import { getClientAddress } from "../../lib/requestSecurity.mjs";
 import { checkDistributedRateLimit } from "../../lib/redisRateLimit.mjs";
 import { requireConfiguredUser } from "../../lib/apiAuth.mjs";
 import { estimateAiUsage, recordMetric, reportServerError } from "../../lib/observability.mjs";
+import { withApiObservability } from "../../lib/apiObservability.mjs";
 
-export default async function handler(req, res) {
-  const logger = createRequestLogger({ route: "/api/evaluate" });
+async function handler(req, res) {
+  const logger = createRequestLogger({ route: "/api/evaluate", requestId: res.getHeader?.("X-Request-Id") || req.requestId });
   res.setHeader("X-Request-Id", logger.requestId);
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
   const auth = await requireConfiguredUser(req);
@@ -36,3 +37,5 @@ export default async function handler(req, res) {
     return res.status(getGeminiErrorStatus(error)).json({ error: getSafeGeminiErrorMessage(error), requestId: logger.requestId });
   }
 }
+
+export default withApiObservability("/api/evaluate", handler);

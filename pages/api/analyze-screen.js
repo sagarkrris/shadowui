@@ -3,6 +3,7 @@ import { getSafeConfigErrorPayload, runGeminiRouteOperation } from "../../lib/ai
 import { getGeminiErrorStatus, getSafeGeminiErrorMessage } from "../../lib/geminiRetry.mjs";
 import { createRequestLogger } from "../../lib/serverLogger.mjs";
 import { requireConfiguredUser } from "../../lib/apiAuth.mjs";
+import { withApiObservability } from "../../lib/apiObservability.mjs";
 
 const SCREEN_PROMPT = `You are a full stack developer interview assistant analyzing a screenshot of a coding problem, system design prompt, UI task, database question, or interview scenario.
 
@@ -43,8 +44,8 @@ export const config = {
   api: { bodyParser: { sizeLimit: "10mb" } },
 };
 
-export default async function handler(req, res) {
-  const logger = createRequestLogger({ route: "/api/analyze-screen" });
+async function handler(req, res) {
+  const logger = createRequestLogger({ route: "/api/analyze-screen", requestId: res.getHeader?.("X-Request-Id") || req.requestId });
   res.setHeader("X-Request-Id", logger.requestId);
 
   if (req.method !== "POST") {
@@ -127,3 +128,5 @@ export default async function handler(req, res) {
     }
   }
 }
+
+export default withApiObservability("/api/analyze-screen", handler);

@@ -45,7 +45,7 @@ export default function Welcome({ onChip, onScreen, onVoice, onRecordReview, sel
       <div className="welcome-logo" style={{ width: 60, height: 60, borderRadius: "50%", background: theme.accentSoft, border: `1px solid ${theme.accentBorder}`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18, color: theme.accentStrong, fontSize: greeting.stackBadge.length > 8 ? 11 : greeting.stackBadge.length > 6 ? 12 : 14, fontWeight: 900, lineHeight: 1, letterSpacing: 0, textAlign: "center", padding: "0 8px", overflowWrap: "anywhere" }}>
         {greeting.stackBadge}
       </div>
-      <h1 className="welcome-title" style={{ fontSize: 20, fontWeight: 600, color: "#e8e8f0", marginBottom: 8, maxWidth: 520, overflowWrap: "anywhere", lineHeight: 1.35 }}>{greeting.headline}</h1>
+      <h1 className="welcome-title" style={{ fontSize: 20, fontWeight: 700, color: theme.appearance === "light" ? "#17324d" : "#e8e8f0", marginBottom: 8, maxWidth: 520, overflowWrap: "anywhere", lineHeight: 1.35 }}>{greeting.headline}</h1>
       {topic ? (
         <p className="welcome-copy" style={{ fontSize: 13.5, color: "#6b7280", marginBottom: 24, maxWidth: 340, lineHeight: 1.65 }}>
           {`${greeting.context} Ready for ${topic}. Hit Start or pick a focused prompt below.`}

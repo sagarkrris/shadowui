@@ -3,6 +3,7 @@ import { getClientAddress } from "../../lib/requestSecurity.mjs";
 import { checkDistributedRateLimit } from "../../lib/redisRateLimit.mjs";
 import { deliverAuthEmail } from "../../lib/authDelivery.mjs";
 import { recordMetric, reportServerError } from "../../lib/observability.mjs";
+import { withApiObservability } from "../../lib/apiObservability.mjs";
 
 const COOKIE = "interviewiq_session";
 const CSRF_COOKIE = "interviewiq_csrf";
@@ -35,7 +36,7 @@ async function sendAuthEmail({ type, user, token, req }) {
   }
 }
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   const action = String(req.query.action || "me");
   const limit = await checkDistributedRateLimit(`auth:${getClientAddress(req)}`, { limit: 10 });
   res.setHeader("X-RateLimit-Remaining", String(limit.remaining));
@@ -117,3 +118,5 @@ export default async function handler(req, res) {
     return res.status(503).json({ error: "Account service is not configured or temporarily unavailable." });
   }
 }
+
+export default withApiObservability("/api/auth", handler);

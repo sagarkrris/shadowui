@@ -26,7 +26,7 @@ function getBrowserStorage() {
   return typeof window !== "undefined" ? window.localStorage : null;
 }
 
-function MissionButton({ children, icon, onClick, tone, disabled = false }) {
+function MissionButton({ children, icon, onClick, tone, disabled = false, isLight = false }) {
   return (
     <button
       type="button"
@@ -37,7 +37,7 @@ function MissionButton({ children, icon, onClick, tone, disabled = false }) {
         alignItems: "center",
         border: `1px solid ${tone}55`,
         borderRadius: 7,
-        color: disabled ? "#64748b" : "#f8fbff",
+        color: disabled ? "#64748b" : isLight ? "#17324d" : "#f8fbff",
         cursor: disabled ? "default" : "pointer",
         display: "inline-flex",
         fontSize: 10.8,
@@ -54,7 +54,7 @@ function MissionButton({ children, icon, onClick, tone, disabled = false }) {
   );
 }
 
-function DailyPrepPath({ missionControl, accent, accentBorder, onAction, onOpenWorkspace }) {
+function DailyPrepPath({ missionControl, accent, accentBorder, onAction, onOpenWorkspace, isLight }) {
   const visualMission = missionControl.missions.find((mission) => mission.workspaceId === "dsaLab" || mission.workspaceId === "canvas") || missionControl.missions[0];
   const mockMission = missionControl.missions.find((mission) => /mock/i.test(mission.actionLabel)) || missionControl.missions[1] || missionControl.missions[0];
   const reviewMission = missionControl.missions.find((mission) => mission.workspaceId === "canvas") || missionControl.missions[2] || missionControl.missions[0];
@@ -105,13 +105,13 @@ function DailyPrepPath({ missionControl, accent, accentBorder, onAction, onOpenW
       </div>
       <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 170px), 1fr))" }}>
         {steps.map((step, index) => (
-          <article key={step.id} style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 7, minHeight: 128, padding: 10 }}>
+          <article key={step.id} style={{ background: isLight ? "#f8fbff" : "rgba(0,0,0,.14)", border: isLight ? "1px solid #dbe5ef" : "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 7, minHeight: 128, padding: 10 }}>
             <span style={{ color: accent, fontSize: 10.5, fontWeight: 950, textTransform: "uppercase" }}>
               <i className={`ti ${step.icon}`} /> Step {index + 1}
             </span>
-            <strong style={{ ...wrap, color: "#f8fbff", fontSize: 12.5, lineHeight: 1.35 }}>{step.title}</strong>
-            <span style={{ ...wrap, color: "#cbd5e1", fontSize: 11, lineHeight: 1.4 }}>{step.detail}</span>
-            <button type="button" className="glass-button" onClick={step.action} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", cursor: "pointer", fontSize: 10.6, fontWeight: 850, marginTop: "auto", padding: "6px 8px", textAlign: "left" }}>
+            <strong style={{ ...wrap, color: isLight ? "#17324d" : "#f8fbff", fontSize: 12.5, lineHeight: 1.35 }}>{step.title}</strong>
+            <span style={{ ...wrap, color: isLight ? "#526579" : "#cbd5e1", fontSize: 11, lineHeight: 1.4 }}>{step.detail}</span>
+            <button type="button" className="glass-button" onClick={step.action} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: isLight ? "#17324d" : "#f8fbff", cursor: "pointer", fontSize: 10.6, fontWeight: 850, marginTop: "auto", padding: "6px 8px", textAlign: "left" }}>
               {step.label}
             </button>
           </article>
@@ -134,6 +134,7 @@ export default function InterviewMissionControl({
   const [scenarioProgress, setScenarioProgress] = useState(() => createScenarioBankProgress());
   const accent = theme.accentStrong || DEFAULT_THEME.accentStrong;
   const accentBorder = theme.accentBorder || DEFAULT_THEME.accentBorder;
+  const isLight = theme.appearance === "light";
 
   useEffect(() => {
     const storage = getBrowserStorage();
@@ -198,6 +199,7 @@ export default function InterviewMissionControl({
         missionControl={missionControl}
         accent={accent}
         accentBorder={accentBorder}
+        isLight={isLight}
         onAction={onAction}
         onOpenWorkspace={onOpenWorkspace}
       />
@@ -208,7 +210,8 @@ export default function InterviewMissionControl({
             key={mission.id}
             className="glass-card"
             style={{
-              border: `1px solid ${mission.completed ? "rgba(167,243,208,.36)" : "rgba(255,255,255,.075)"}`,
+              background: isLight ? "#ffffff" : undefined,
+              border: `1px solid ${mission.completed ? "rgba(167,243,208,.36)" : isLight ? "#dbe5ef" : "rgba(255,255,255,.075)"}`,
               borderRadius: 8,
               display: "grid",
               gap: 10,
@@ -222,7 +225,7 @@ export default function InterviewMissionControl({
                 <span style={{ alignItems: "center", color: mission.completed ? "#a7f3d0" : accent, display: "flex", fontSize: 10.7, fontWeight: 950, gap: 6, textTransform: "uppercase" }}>
                   <i className={`ti ${mission.icon}`} />{mission.workspaceLabel}
                 </span>
-                <h3 style={{ ...wrap, color: "#f8fbff", fontSize: 13.5, lineHeight: 1.35, marginTop: 6 }}>{mission.title}</h3>
+                <h3 style={{ ...wrap, color: isLight ? "#17324d" : "#f8fbff", fontSize: 13.5, lineHeight: 1.35, marginTop: 6 }}>{mission.title}</h3>
               </div>
               {mission.completed && (
                 <span style={{ border: "1px solid rgba(167,243,208,.34)", borderRadius: 999, color: "#a7f3d0", flexShrink: 0, fontSize: 10, fontWeight: 900, padding: "3px 7px", whiteSpace: "nowrap" }}>
@@ -231,17 +234,17 @@ export default function InterviewMissionControl({
               )}
             </div>
 
-            <p style={{ ...wrap, color: "#cbd5e1", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}>{mission.detail}</p>
-            <p style={{ ...wrap, color: "#6b7280", fontSize: 10.8, lineHeight: 1.45, margin: 0 }}>{mission.evidence}</p>
+            <p style={{ ...wrap, color: isLight ? "#526579" : "#cbd5e1", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}>{mission.detail}</p>
+            <p style={{ ...wrap, color: isLight ? "#64748b" : "#6b7280", fontSize: 10.8, lineHeight: 1.45, margin: 0 }}>{mission.evidence}</p>
 
             <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 7, marginTop: "auto" }}>
-              <MissionButton icon="ti-player-play" tone={accent} onClick={() => onAction?.(mission.prompt)}>
+              <MissionButton icon="ti-player-play" tone={accent} isLight={isLight} onClick={() => onAction?.(mission.prompt)}>
                 {mission.actionLabel}
               </MissionButton>
-              <MissionButton icon="ti-external-link" tone="#c4b5fd" onClick={() => onOpenWorkspace?.(mission.workspaceId)}>
+              <MissionButton icon="ti-external-link" tone="#c4b5fd" isLight={isLight} onClick={() => onOpenWorkspace?.(mission.workspaceId)}>
                 Open
               </MissionButton>
-              <MissionButton icon="ti-circle-check" tone="#a7f3d0" onClick={() => markDone(mission.id)} disabled={mission.completed}>
+              <MissionButton icon="ti-circle-check" tone="#a7f3d0" isLight={isLight} onClick={() => markDone(mission.id)} disabled={mission.completed}>
                 Done
               </MissionButton>
             </div>

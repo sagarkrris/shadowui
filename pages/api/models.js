@@ -1,7 +1,8 @@
 import { createRequestLogger } from "../../lib/serverLogger.mjs";
+import { withApiObservability } from "../../lib/apiObservability.mjs";
 
-export default async function handler(req, res) {
-  const logger = createRequestLogger({ route: "/api/models" });
+async function handler(req, res) {
+  const logger = createRequestLogger({ route: "/api/models", requestId: res.getHeader?.("X-Request-Id") || req.requestId });
   res.setHeader("X-Request-Id", logger.requestId);
 
   if (req.method !== "GET") {
@@ -17,3 +18,5 @@ export default async function handler(req, res) {
     message: "Model diagnostics are disabled so API-key-backed provider details are not exposed in browser inspection.",
   });
 }
+
+export default withApiObservability("/api/models", handler);

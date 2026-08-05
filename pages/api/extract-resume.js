@@ -3,6 +3,7 @@ import {
   extractResumeTextFromBuffer,
 } from "../../lib/resumeExtract.mjs";
 import { createRequestLogger } from "../../lib/serverLogger.mjs";
+import { withApiObservability } from "../../lib/apiObservability.mjs";
 
 export const config = {
   api: {
@@ -12,8 +13,8 @@ export const config = {
   },
 };
 
-export default async function handler(req, res) {
-  const logger = createRequestLogger({ route: "/api/extract-resume" });
+async function handler(req, res) {
+  const logger = createRequestLogger({ route: "/api/extract-resume", requestId: res.getHeader?.("X-Request-Id") || req.requestId });
   res.setHeader("X-Request-Id", logger.requestId);
 
   if (req.method !== "POST") {
@@ -60,3 +61,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiObservability("/api/extract-resume", handler);

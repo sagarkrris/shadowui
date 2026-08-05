@@ -1,8 +1,9 @@
 import { deleteUser, exportUserData, getUserBySession, recordAudit } from "../../lib/serverPersistence.mjs";
 import { requireCsrf, sessionTokenFromRequest } from "../../lib/apiAuth.mjs";
 import { recordMetric, reportServerError } from "../../lib/observability.mjs";
+import { withApiObservability } from "../../lib/apiObservability.mjs";
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   const user = await getUserBySession(sessionTokenFromRequest(req));
   if (!user) return res.status(401).json({ error: "Authentication required." });
   if (req.method !== "GET" && !(await requireCsrf(req))) return res.status(403).json({ error: "CSRF validation failed." });
@@ -27,3 +28,5 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed." });
   } catch (error) { reportServerError(error, { route: "/api/account", action: req.query.action || req.method }); return res.status(503).json({ error: "Account operation unavailable." }); }
 }
+
+export default withApiObservability("/api/account", handler);

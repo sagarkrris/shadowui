@@ -7,9 +7,10 @@ import {
 import { getGeminiErrorStatus, getSafeGeminiErrorMessage } from "../../lib/geminiRetry.mjs";
 import { createRequestLogger } from "../../lib/serverLogger.mjs";
 import { requireConfiguredUser } from "../../lib/apiAuth.mjs";
+import { withApiObservability } from "../../lib/apiObservability.mjs";
 
-export default async function handler(req, res) {
-  const logger = createRequestLogger({ route: "/api/dsa-challenges" });
+async function handler(req, res) {
+  const logger = createRequestLogger({ route: "/api/dsa-challenges", requestId: res.getHeader?.("X-Request-Id") || req.requestId });
   res.setHeader("X-Request-Id", logger.requestId);
   res.setHeader("Cache-Control", "no-store");
 
@@ -79,3 +80,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiObservability("/api/dsa-challenges", handler);

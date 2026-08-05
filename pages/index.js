@@ -19,6 +19,7 @@ import ScenarioBank from "../components/scenario-bank/ScenarioBank";
 import RecordingReviewModal from "../components/modals/RecordingReviewModal";
 import ScreenModal from "../components/modals/ScreenModal";
 import AboutModal from "../components/modals/AboutModal";
+import SettingsModal from "../components/modals/SettingsModal";
 import SystemDesignCanvas from "../components/system-design/SystemDesignCanvas";
 import Sidebar from "../components/Sidebar";
 import Toast from "../components/Toast";
@@ -141,6 +142,7 @@ export default function Home() {
   const [showScreen, setShowScreen]   = useState(false);
   const [showRecordingReview, setShowRecordingReview] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showAccountSettings, setShowAccountSettings] = useState(false);
   const [themePreference, setThemePreference] = useState("system");
   const [systemThemeMode, setSystemThemeMode] = useState("light");
   const [topControlsOpen, setTopControlsOpen] = useState(false);
@@ -1444,6 +1446,7 @@ export default function Home() {
 
       {/* Settings modal */}
       {showSettings && <AboutModal theme={techTheme} onClose={() => setShowSettings(false)} appearance={resolvedThemeMode} />}
+      {showAccountSettings && <SettingsModal onClose={() => setShowAccountSettings(false)} theme={techTheme} auth={auth} themePreference={themePreference} onThemePreferenceChange={setThemePreference} appearance={resolvedThemeMode} />}
 
       {/* App shell */}
       <div className={`app-shell theme-${resolvedThemeMode}`} style={{ ...themeVars, position:"fixed", inset:0, isolation:"isolate", display:"flex", height:appShellHeight, overflow:"hidden", background:techTheme.surface }}>
@@ -1515,7 +1518,7 @@ export default function Home() {
             )}
 
             <div className="header-account-actions" style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }} aria-label="Account actions">
-              {auth.user ? <button type="button" className="glass-button" onClick={() => setShowSettings(true)} style={{ border: `1px solid ${techTheme.accentBorder}`, borderRadius: 7, color: techTheme.accentText, cursor: "pointer", fontSize: 11, fontWeight: 850, padding: "5px 9px", whiteSpace: "nowrap" }}>Account</button> : <>
+              {auth.user ? <button type="button" className="glass-button" onClick={() => setShowAccountSettings(true)} style={{ border: `1px solid ${techTheme.accentBorder}`, borderRadius: 7, color: techTheme.accentText, cursor: "pointer", fontSize: 11, fontWeight: 850, padding: "5px 9px", whiteSpace: "nowrap" }}>Account</button> : <>
                 <button type="button" className="glass-button" onClick={() => openAuthSettings("login")} style={{ border: `1px solid ${techTheme.accentBorder}`, borderRadius: 7, color: techTheme.accentText, cursor: "pointer", fontSize: 11, fontWeight: 850, padding: "5px 9px", whiteSpace: "nowrap" }}>Sign in</button>
                 <button type="button" className="glass-button" onClick={() => openAuthSettings("register")} style={{ border: `1px solid ${techTheme.accentBorder}`, borderRadius: 7, color: techTheme.accentText, cursor: "pointer", fontSize: 11, fontWeight: 850, padding: "5px 9px", whiteSpace: "nowrap" }}>Create account</button>
               </>}

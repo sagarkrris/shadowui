@@ -8,11 +8,12 @@ import { CHAT_LIMITS, getClientAddress, validateChatRequest } from "../../lib/re
 import { checkDistributedRateLimit } from "../../lib/redisRateLimit.mjs";
 import { requireConfiguredUser } from "../../lib/apiAuth.mjs";
 import { estimateAiUsage, recordMetric, reportServerError } from "../../lib/observability.mjs";
+import { withApiObservability } from "../../lib/apiObservability.mjs";
 
 export const config = { api: { bodyParser: { sizeLimit: "1mb" } } };
 
-export default async function handler(req, res) {
-  const logger = createRequestLogger({ route: "/api/chat" });
+async function handler(req, res) {
+  const logger = createRequestLogger({ route: "/api/chat", requestId: res.getHeader?.("X-Request-Id") || req.requestId });
   res.setHeader("X-Request-Id", logger.requestId);
 
   if (req.method !== "POST") {
@@ -121,3 +122,5 @@ export default async function handler(req, res) {
     }
   }
 }
+
+export default withApiObservability("/api/chat", handler);

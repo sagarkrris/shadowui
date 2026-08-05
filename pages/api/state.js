@@ -2,10 +2,11 @@ import { getUserBySession, loadUserState, saveUserState } from "../../lib/server
 import { getClientAddress } from "../../lib/requestSecurity.mjs";
 import { checkDistributedRateLimit } from "../../lib/redisRateLimit.mjs";
 import { requireCsrf } from "../../lib/apiAuth.mjs";
+import { withApiObservability } from "../../lib/apiObservability.mjs";
 
 function sessionToken(req) { return String(req.headers.cookie || "").split(";").map((item) => item.trim().split("=")).find(([key]) => key === "interviewiq_session")?.[1] || ""; }
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   const user = await getUserBySession(sessionToken(req));
   if (!user) return res.status(401).json({ error: "Authentication required." });
   const limit = await checkDistributedRateLimit(`state:${user.id}:${getClientAddress(req)}`, { limit: 60 });
@@ -24,3 +25,5 @@ export default async function handler(req, res) {
     return res.status(503).json({ error: "State persistence is not configured." });
   }
 }
+
+export default withApiObservability("/api/state", handler);

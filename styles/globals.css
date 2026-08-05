@@ -11,6 +11,17 @@ body {
   color: #e8e8f0;
   overflow: hidden;
 }
+
+.auth-page input {
+  color-scheme: light;
+  background: #fff !important;
+  color: #102033 !important;
+}
+
+.auth-page input::placeholder {
+  color: #64748b !important;
+  opacity: 1;
+}
 html[data-theme="light"] body {
   color-scheme: light;
   background: linear-gradient(180deg, #f7f9fc 0%, #eef4fb 52%, #e7eef8 100%);
@@ -112,6 +123,27 @@ textarea { resize: none; }
 .theme-light [style*="#dbe6f4"],
 .theme-light [style*="#edf3fb"] {
   color: #17324d !important;
+}
+
+/* A few older dashboard sections still emit serialized RGB values and dark
+   translucent surfaces from inline styles. Normalize those values only
+   inside the light workspace so they cannot wash out the content. */
+.theme-light .welcome-screen [style*="rgb(248, 251, 255"],
+.theme-light .welcome-screen [style*="rgb(232, 232, 240"],
+.theme-light .welcome-screen [style*="rgb(203, 213, 225"],
+.theme-light .welcome-screen [style*="rgb(219, 234, 254"] {
+  color: #17324d !important;
+}
+
+.theme-light .welcome-screen [style*="rgb(156, 163, 175"],
+.theme-light .welcome-screen [style*="rgb(107, 114, 128"],
+.theme-light .welcome-screen [style*="rgb(100, 116, 139"] {
+  color: #526579 !important;
+}
+
+.theme-light .welcome-screen [style*="rgba(0, 0, 0"] {
+  background: #f8fbff !important;
+  border-color: #dbe5ef !important;
 }
 
 .theme-light [style*="#94a3b8"],
@@ -339,6 +371,16 @@ a:focus-visible,
 }
 
 @media (max-width: 760px) {
+  .header-account-actions {
+    order: 5;
+  }
+
+  .header-account-actions .glass-button {
+    min-height: 32px;
+    padding: 6px 8px !important;
+    font-size: 10.5px !important;
+  }
+
   .glass-chrome,
   .glass-panel,
   .glass-card,

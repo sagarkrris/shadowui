@@ -2,9 +2,10 @@ import {
   buildCodeRunnerError,
 } from "../../../lib/codeRunner.mjs";
 import { createRequestLogger } from "../../../lib/serverLogger.mjs";
+import { withApiObservability } from "../../../lib/apiObservability.mjs";
 
-export default async function handler(req, res) {
-  const logger = createRequestLogger({ route: "/api/run-code" });
+async function handler(req, res) {
+  const logger = createRequestLogger({ route: "/api/run-code", requestId: res.getHeader?.("X-Request-Id") || req.requestId });
   res.setHeader("X-Request-Id", logger.requestId);
 
   if (req.method !== "POST") {
@@ -19,3 +20,5 @@ export default async function handler(req, res) {
   logger.warn("runner.upcoming");
   return res.status(runnerError.status).json({ ...runnerError, requestId: logger.requestId });
 }
+
+export default withApiObservability("/api/run-code", handler);

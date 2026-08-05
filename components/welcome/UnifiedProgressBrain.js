@@ -7,7 +7,7 @@ const wrap = {
   wordBreak: "break-word",
 };
 
-function ProgressButton({ children, icon, onClick, tone, disabled = false }) {
+function ProgressButton({ children, icon, onClick, tone, disabled = false, isLight = false }) {
   return (
     <button
       type="button"
@@ -18,7 +18,7 @@ function ProgressButton({ children, icon, onClick, tone, disabled = false }) {
         alignItems: "center",
         border: `1px solid ${tone}55`,
         borderRadius: 7,
-        color: "#f8fbff",
+        color: isLight ? "#17324d" : "#f8fbff",
         cursor: disabled ? "not-allowed" : "pointer",
         display: "inline-flex",
         fontSize: 10.6,
@@ -38,13 +38,13 @@ function ProgressButton({ children, icon, onClick, tone, disabled = false }) {
   );
 }
 
-function LaneCard({ lane, accent, onOpenWorkspace }) {
+function LaneCard({ lane, accent, onOpenWorkspace, isLight = false }) {
   const tone = lane.status === "Strong" ? "#a7f3d0" : lane.status === "Improving" ? "#facc15" : accent;
 
   return (
     <article style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 8, minHeight: 142, padding: 10 }}>
       <div style={{ alignItems: "center", display: "flex", gap: 8, justifyContent: "space-between", minWidth: 0 }}>
-        <strong style={{ ...wrap, alignItems: "center", color: "#f8fbff", display: "flex", fontSize: 12, gap: 6 }}>
+        <strong style={{ ...wrap, alignItems: "center", color: isLight ? "#17324d" : "#f8fbff", display: "flex", fontSize: 12, gap: 6 }}>
           <i className={`ti ${lane.icon}`} style={{ color: tone }} />
           {lane.label}
         </strong>
@@ -56,8 +56,8 @@ function LaneCard({ lane, accent, onOpenWorkspace }) {
         <span style={{ background: tone, display: "block", height: "100%", width: `${lane.score}%` }} />
       </div>
       <span style={{ color: tone, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>{lane.status}</span>
-      <p style={{ ...wrap, color: "#cbd5e1", fontSize: 11, lineHeight: 1.45, margin: 0 }}>{lane.detail}</p>
-      <ProgressButton icon="ti-external-link" tone={accent} onClick={() => onOpenWorkspace?.(lane.workspaceId)}>
+      <p style={{ ...wrap, color: isLight ? "#526579" : "#cbd5e1", fontSize: 11, lineHeight: 1.45, margin: 0 }}>{lane.detail}</p>
+      <ProgressButton icon="ti-external-link" tone={accent} isLight={isLight} onClick={() => onOpenWorkspace?.(lane.workspaceId)}>
         {lane.actionLabel}
       </ProgressButton>
     </article>
@@ -150,6 +150,7 @@ export default function UnifiedProgressBrain({
 }) {
   const accent = theme.accentStrong || "#38bdf8";
   const accentBorder = theme.accentBorder || "rgba(56,189,248,.28)";
+  const isLight = theme.appearance === "light";
   const progress = useMemo(() => buildUnifiedPrepProgress({
     profile,
     weakSpots,
@@ -191,7 +192,7 @@ export default function UnifiedProgressBrain({
         </section>
         <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 150px), 1fr))" }}>
           {progress.lanes.map((lane) => (
-            <LaneCard key={lane.id} lane={lane} accent={accent} onOpenWorkspace={onOpenWorkspace} />
+            <LaneCard key={lane.id} lane={lane} accent={accent} isLight={isLight} onOpenWorkspace={onOpenWorkspace} />
           ))}
         </div>
       </div>

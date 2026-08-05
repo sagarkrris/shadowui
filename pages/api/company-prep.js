@@ -1,8 +1,9 @@
 import { getCompanyPrep } from "../../lib/companyPrep.mjs";
 import { createRequestLogger } from "../../lib/serverLogger.mjs";
+import { withApiObservability } from "../../lib/apiObservability.mjs";
 
-export default function handler(req, res) {
-  const logger = createRequestLogger({ route: "/api/company-prep" });
+function handler(req, res) {
+  const logger = createRequestLogger({ route: "/api/company-prep", requestId: res.getHeader?.("X-Request-Id") || req.requestId });
   res.setHeader("X-Request-Id", logger.requestId);
 
   if (req.method !== "GET") {
@@ -19,3 +20,5 @@ export default function handler(req, res) {
   res.status(200).json(getCompanyPrep(company));
   logger.info("request.done", { status: 200 });
 }
+
+export default withApiObservability("/api/company-prep", handler);

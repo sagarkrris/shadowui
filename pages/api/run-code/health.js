@@ -1,8 +1,9 @@
 import { buildCodeRunnerHealth } from "../../../lib/codeRunner.mjs";
 import { createRequestLogger } from "../../../lib/serverLogger.mjs";
+import { withApiObservability } from "../../../lib/apiObservability.mjs";
 
-export default async function handler(req, res) {
-  const logger = createRequestLogger({ route: "/api/run-code/health" });
+async function handler(req, res) {
+  const logger = createRequestLogger({ route: "/api/run-code/health", requestId: res.getHeader?.("X-Request-Id") || req.requestId });
   res.setHeader("X-Request-Id", logger.requestId);
 
   if (req.method !== "GET") {
@@ -20,3 +21,5 @@ export default async function handler(req, res) {
 
   return res.status(200).json({ ...health, requestId: logger.requestId });
 }
+
+export default withApiObservability("/api/run-code/health", handler);
