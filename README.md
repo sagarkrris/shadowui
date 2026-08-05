@@ -67,6 +67,17 @@ SESSION_SECRET=<long_random_secret_1>
 APP_ENCRYPTION_KEY=<long_random_secret_2>
 # Persistent server-side storage directory (use a durable volume in production)
 INTERVIEWIQ_DATA_DIR=.data
+# Shared serverless rate limiting (Upstash Redis REST)
+# UPSTASH_REDIS_REST_URL=https://your-database.upstash.io
+# UPSTASH_REDIS_REST_TOKEN=your_upstash_rest_token
+# Auth email delivery webhook
+# EMAIL_WEBHOOK_URL=https://your-email-service.example/api/send
+# EMAIL_WEBHOOK_TOKEN=your_email_service_token
+# Optional error tracking and AI cost estimates
+# ERROR_TRACKING_WEBHOOK_URL=https://your-monitoring.example/api/events
+# ERROR_TRACKING_TOKEN=your_monitoring_token
+# GEMINI_INPUT_COST_PER_MILLION=0
+# GEMINI_OUTPUT_COST_PER_MILLION=0
 # Optional: enable the Live Java Runner on Vercel Sandbox:
 # CODE_RUNNER_PROVIDER=vercel-sandbox
 # VERCEL_SANDBOX_JAVA_SNAPSHOT_ID=your-java-enabled-snapshot-id
@@ -188,7 +199,7 @@ Browser
 
 The browser never receives the Gemini API key. Code execution requests go through `/api/run-code` only when the user clicks Run, then execute through the configured provider: Vercel Sandbox when `CODE_RUNNER_PROVIDER=vercel-sandbox`, or Piston when `PISTON_EXECUTE_URL` is configured.
 
-Account sync is available through `/api/auth` and `/api/state`. User state is encrypted with `APP_ENCRYPTION_KEY`; configure a durable `INTERVIEWIQ_DATA_DIR` or replace `lib/serverPersistence.mjs` with a managed database adapter before deploying across multiple instances. AI routes enforce bounded request sizes and in-process rate limits. Set `REQUIRE_AUTH=1` before making AI routes public. For multi-instance deployments, move rate-limit counters to a shared store.
+Account sync is available through `/api/auth` and `/api/state`. User state is encrypted with `APP_ENCRYPTION_KEY` and persisted in managed PostgreSQL through `lib/serverPersistence.mjs`; set `DATABASE_URL` before enabling account sync in production. The adapter creates its tables and indexes on first use, while database backups, point-in-time recovery, and retention should be configured in the managed provider. AI routes enforce bounded request sizes and distributed rate limits when Upstash is configured. Set `REQUIRE_AUTH=1` before making AI routes public.
 
 ## Notes
 

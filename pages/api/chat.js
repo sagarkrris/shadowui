@@ -4,8 +4,10 @@ import { buildSystemPrompt } from "../../lib/chatPrompt.mjs";
 import { normalizeChatMessages } from "../../lib/chatRequest.mjs";
 import { getGeminiErrorStatus, getSafeGeminiErrorMessage } from "../../lib/geminiRetry.mjs";
 import { createRequestLogger } from "../../lib/serverLogger.mjs";
-import { checkRateLimit, CHAT_LIMITS, getClientAddress, validateChatRequest } from "../../lib/requestSecurity.mjs";
+import { CHAT_LIMITS, getClientAddress, validateChatRequest } from "../../lib/requestSecurity.mjs";
+import { checkDistributedRateLimit } from "../../lib/redisRateLimit.mjs";
 import { requireConfiguredUser } from "../../lib/apiAuth.mjs";
+import { estimateAiUsage, recordMetric, reportServerError } from "../../lib/observability.mjs";
 
 export const config = { api: { bodyParser: { sizeLimit: "1mb" } } };
 
@@ -20,9 +22,11 @@ export default async function handler(req, res) {
   const auth = await requireConfiguredUser(req);
   if (auth.required && !auth.user) return res.status(401).json({ error: "Sign in to use AI interview features." });
 
-  const rate = checkRateLimit(`chat:${getClientAddress(req)}`);
+  const rate = await checkDistributedRateLimit(`chat:${getClientAddress(req)}`);
   res.setHeader("X-RateLimit-Remaining", String(rate.remaining));
   if (!rate.ok) {
+    logger.warn("rate_limited", { distributed: rate.distributed, degraded: rate.degraded });
+    recordMetric("ai.rate_limited", { route: "/api/chat" });
     res.setHeader("Retry-After", String(rate.retryAfter));
     return res.status(429).json({ error: "Too many AI requests. Please try again shortly." });
   }
@@ -91,7 +95,9 @@ export default async function handler(req, res) {
 
     res.write("data: [DONE]\n\n");
     res.end();
-    logger.info("stream.done", { modelName, chunkCount, textChars });
+    const usage = estimateAiUsage({ inputChars: apiMessages.reduce((sum, item) => sum + item.content.length, 0), outputChars: textChars });
+    logger.info("stream.done", { modelName, chunkCount, textChars, ...usage });
+    recordMetric("ai.request", { route: "/api/chat", modelName, ...usage });
   } catch (error) {
     if (error.name === "AiConfigError") {
       logger.error("config.failed", { code: error.code });
@@ -105,6 +111,7 @@ export default async function handler(req, res) {
       status: error.status,
       code: error.code,
     });
+    reportServerError(error, { route: "/api/chat", requestId: logger.requestId, status });
     const safeError = getSafeGeminiErrorMessage(error);
     if (!res.headersSent) {
       res.status(status).json({ error: safeError, requestId: logger.requestId });

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-export function useCloudStateSync({ user, ready, snapshot, onRemoteState, onError } = {}) {
+export function useCloudStateSync({ user, ready, snapshot, csrfToken = "", onRemoteState, onError } = {}) {
   const hydratedUser = useRef("");
   useEffect(() => {
     if (!user || !ready || hydratedUser.current === user.id) return;
@@ -9,7 +9,7 @@ export function useCloudStateSync({ user, ready, snapshot, onRemoteState, onErro
   }, [onError, onRemoteState, ready, user]);
   useEffect(() => {
     if (!user || !ready || hydratedUser.current !== user.id) return undefined;
-    const timer = window.setTimeout(() => fetch("/api/state", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ state: snapshot }) }).catch(onError), 500);
+    const timer = window.setTimeout(() => fetch("/api/state", { method: "PUT", headers: { "Content-Type": "application/json", ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}) }, body: JSON.stringify({ state: snapshot }) }).catch(onError), 500);
     return () => window.clearTimeout(timer);
-  }, [onError, ready, snapshot, user]);
+  }, [csrfToken, onError, ready, snapshot, user]);
 }

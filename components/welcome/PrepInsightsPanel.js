@@ -35,10 +35,10 @@ function readToolkitState() {
   }
 }
 
-export default function PrepInsightsPanel({ profile, topics, weakSpots, mockScores, messages, questionMemory, systemDesignCanvas, theme, selectedCat, selectedSub, onAction }) {
-  const mistakeBank = deriveMistakeBank(messages);
+export default function PrepInsightsPanel({ profile, topics, weakSpots, mockScores, messages, structuredSessions = [], questionMemory, systemDesignCanvas, theme, selectedCat, selectedSub, onAction }) {
+  const mistakeBank = deriveMistakeBank(messages, structuredSessions);
   const sessionHistory = deriveMockSessionHistory(messages);
-  const mockReplays = deriveMockReplayTimelines(messages);
+  const mockReplays = deriveMockReplayTimelines(messages, structuredSessions);
   const proofStories = deriveProofVaultStories(messages, profile);
   const heatmap = deriveAnswerQualityHeatmap(messages);
   const radar = deriveWeakSpotRadar(messages, weakSpots);

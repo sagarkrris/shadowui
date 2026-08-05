@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { isModalCloseKey } from "../../lib/modalKeyboard.mjs";
+import { useFocusTrap } from "../../hooks/useFocusTrap";
 
 export default function ScreenModal({ onCapture, onClose, theme }) {
   const [preview, setPreview] = useState(null);
@@ -8,10 +9,7 @@ export default function ScreenModal({ onCapture, onClose, theme }) {
   const [capturing, setCapturing] = useState(false);
   const fileRef = useRef();
   const modalRef = useRef();
-
-  useEffect(() => {
-    modalRef.current?.focus();
-  }, []);
+  useFocusTrap(modalRef);
 
   const capture = async () => {
     setCapturing(true);

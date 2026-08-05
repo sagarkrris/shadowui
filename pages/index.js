@@ -141,7 +141,7 @@ export default function Home() {
   const [showSettings, setShowSettings] = useState(false);
   const [topControlsOpen, setTopControlsOpen] = useState(false);
   const { activeTab, setActiveTab, toggleWorkspace: toggleWorkspaceTab } = useWorkspaceNavigation("chat");
-  const { session: interviewSessionState, reset: resetInterviewSession, startQuestion: startInterviewQuestion } = useInterviewSession({ mode: "strict", round: "coding", panel: "seniorEngineer" });
+  const { session: interviewSessionState, reset: resetInterviewSession, startQuestion: startInterviewQuestion, submitAnswer: submitInterviewAnswer, score: scoreInterviewAnswer, review: reviewInterviewAnswer } = useInterviewSession({ mode: "strict", round: "coding", panel: "seniorEngineer" });
   const auth = useAuth();
   const [questionMemory, setQuestionMemory] = useState({ questions: {} });
   const [systemDesignCanvas, setSystemDesignCanvas] = useState(() => createSystemDesignCanvasState());
@@ -159,6 +159,7 @@ export default function Home() {
   const [mockTimerStatus, setMockTimerStatus] = useState("idle");
   const [applications, setApplications] = useState([]);
   const [javaDigestProgress, setJavaDigestProgress] = useState({ completedTopics: [], masteredTopics: [] });
+  const [toolkitState, setToolkitState] = useState({});
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [offlineState, setOfflineState] = useState({ online: true, conflict: null });
   const [voiceSessionReport, setVoiceSessionReport] = useState(null);
@@ -185,8 +186,8 @@ export default function Home() {
   const displayName = getDisplayName(candidateProfile);
   const stackGreeting = getStackGreeting(candidateProfile);
   const userPrepLabel = candidateProfile ? buildUserPrepLabel(candidateProfile) : prepLabel;
-  const weakSpots = deriveWeakSpots(messages);
-  const mockScores = deriveMockScores(messages);
+  const weakSpots = deriveWeakSpots(messages, interviewSessionState);
+  const mockScores = deriveMockScores(messages, interviewSessionState);
   const showComposer = canUseChatComposer({ activeTab, candidateProfile });
   const showInterviewTools = canUseInterviewTools({ activeTab, candidateProfile });
   const canSelectPrepTopics = canUsePrepTopics({ candidateProfile });
@@ -546,24 +547,26 @@ export default function Home() {
     toastTimer.current = setTimeout(() => setToast(null), 2800);
   }, []);
 
-  const cloudSnapshot = createSessionSnapshot({ candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSession: interviewSessionState });
+  const cloudSnapshot = { session: createSessionSnapshot({ candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSession: interviewSessionState }), toolkitState, applications, javaDigestProgress, questionMemory, prepProgressState };
   const applyCloudState = useCallback((snapshot) => {
-    setCandidateProfile(snapshot.candidateProfile);
-    setProfileDraft(snapshot.profileDraft);
-    setMessages(snapshot.messages);
-    setSelCat(snapshot.selectedCat);
-    setSelSub(snapshot.selectedSub);
-    setExpanded(snapshot.expandedCat);
-    setMode(snapshot.mode);
-    setInterviewMode(normalizeInterviewMode(snapshot.interviewMode));
-    setRoundStrategy(normalizeRoundStrategy(snapshot.roundStrategy));
-    setInterviewPanel(normalizeInterviewPanelSelection(snapshot.interviewPanel));
-    setDifficulty(snapshot.difficulty);
-    setActiveTab(snapshot.activeTab);
-    resetInterviewSession(snapshot.interviewSession);
+    const session = snapshot.session || snapshot;
+    setCandidateProfile(session.candidateProfile);
+    setProfileDraft(session.profileDraft);
+    setMessages(session.messages);
+    setSelCat(session.selectedCat);
+    setSelSub(session.selectedSub);
+    setExpanded(session.expandedCat);
+    setMode(session.mode);
+    setInterviewMode(normalizeInterviewMode(session.interviewMode));
+    setRoundStrategy(normalizeRoundStrategy(session.roundStrategy));
+    setInterviewPanel(normalizeInterviewPanelSelection(session.interviewPanel));
+    setDifficulty(session.difficulty);
+    setActiveTab(session.activeTab);
+    resetInterviewSession(session.interviewSession);
+    if (snapshot.session) { setToolkitState(snapshot.toolkitState || {}); setApplications(Array.isArray(snapshot.applications) ? snapshot.applications : []); setJavaDigestProgress(snapshot.javaDigestProgress || { completedTopics: [], masteredTopics: [] }); setQuestionMemory(snapshot.questionMemory || { questions: {} }); setPrepProgressState(snapshot.prepProgressState || createPrepProgressState()); }
     showToast("Synced your workspace from your account.", "info");
   }, [resetInterviewSession, setActiveTab, showToast]);
-  useCloudStateSync({ user: auth.user, ready: auth.ready && sessionReady, snapshot: cloudSnapshot, onRemoteState: applyCloudState, onError: () => showToast("Cloud sync is temporarily unavailable; local work is safe.", "error") });
+  useCloudStateSync({ user: auth.user, ready: auth.ready && sessionReady, csrfToken: auth.csrfToken, snapshot: cloudSnapshot, onRemoteState: applyCloudState, onError: () => showToast("Cloud sync is temporarily unavailable; local work is safe.", "error") });
 
   useEffect(() => {
     if (mockTimerStatus !== "answering" || !mockTimerEndsAt) return undefined;
@@ -695,6 +698,15 @@ export default function Home() {
       ? `${apiPromptText}\n\n\`\`\`${codeLanguage}\n${hasCode}\n\`\`\``
       : apiPromptText;
     const displayText = String(options.displayText || finalText).trim();
+    const shouldEvaluateStructuredAnswer = !options.isInterviewPrompt && interviewSessionState.state === "question" && Boolean(interviewSessionState.currentQuestionId);
+    const currentStructuredTurn = interviewSessionState.turns.find((turn) => turn.id === interviewSessionState.currentQuestionId);
+    if (shouldEvaluateStructuredAnswer) {
+      submitInterviewAnswer(promptText);
+      fetch("/api/evaluate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: currentStructuredTurn?.question || selectedSub || selectedCat || "Interview question", answer: promptText, profile: candidateProfile, round: roundStrategy }) })
+        .then((response) => response.json())
+        .then((payload) => { if (payload.evaluation) { scoreInterviewAnswer(payload.evaluation); reviewInterviewAnswer({ notes: payload.evaluation.gaps.join("; "), nextAction: payload.evaluation.recommendations[0] || "Repeat this question with one concrete example." }); } })
+        .catch(() => undefined);
+    }
     lastRequestRef.current = {
       text: promptText,
       apiText: finalText,
@@ -784,7 +796,7 @@ export default function Home() {
         setMockTimerStatus("answering");
       }
     }
-  }, [messages, codeInput, loading, showToast, candidateProfile, techTheme.key, showCodeTools, mockTimerStatus, interviewMode, roundStrategy, interviewPanel, selectedCat, selectedSub]);
+  }, [messages, codeInput, loading, showToast, candidateProfile, techTheme.key, showCodeTools, mockTimerStatus, interviewMode, roundStrategy, interviewPanel, selectedCat, selectedSub, interviewSessionState, submitInterviewAnswer, scoreInterviewAnswer, reviewInterviewAnswer]);
 
   // ── Screen analyze ────────────────────────────────────────────────────────
   const analyzeScreen = useCallback(async (b64, ctx) => {
@@ -1185,6 +1197,7 @@ export default function Home() {
     });
     callAPI(prompt, {
       displayText: `Practice as mock: ${question}`,
+      isInterviewPrompt: true,
     });
   };
 
@@ -1252,8 +1265,12 @@ export default function Home() {
       label: mode === "interview" ? "Started mock interview" : "Started practice session",
       detail: `${difficulty} ${topic}`,
     });
-    setTimeout(() => callAPI(prompt, { startAnswerTimer: mode === "interview" }), 50);
-  }, [callAPI, candidateProfile, difficulty, displayName, interviewMode, interviewPanel, loading, mode, recordWorkspaceActivity, roundStrategy, selectedCat, selectedSub, setActiveTab]);
+    if (mode === "interview") {
+      resetInterviewSession({ mode: "interview", round: roundStrategy, panel: interviewPanel, profile: candidateProfile });
+      startInterviewQuestion({ questionId: `${selectedCat}-${Date.now()}`, question: `Interview question about ${topic}` });
+    }
+    setTimeout(() => callAPI(prompt, { startAnswerTimer: mode === "interview", isInterviewPrompt: true }), 50);
+  }, [callAPI, candidateProfile, difficulty, displayName, interviewMode, interviewPanel, loading, mode, recordWorkspaceActivity, roundStrategy, selectedCat, selectedSub, setActiveTab, resetInterviewSession, startInterviewQuestion]);
 
   const clearChat = useCallback(() => {
     abortRef.current?.abort(); setMessages([]); setLoading(false);
@@ -1615,7 +1632,7 @@ export default function Home() {
           )}
 
           {/* ── Chat area ── */}
-          <div ref={chatRef} className="chat-scroll" role="log" aria-live="polite" aria-relevant="additions text" aria-label="Conversation messages" style={{ flex:1, minHeight:0, overflowY:"auto", padding: isMobile?"12px 10px":"20px 16px", display:"flex", flexDirection:"column" }}>
+          <div ref={chatRef} className="chat-scroll" role="log" aria-live="polite" aria-relevant="additions text" aria-busy={loading} aria-label="Conversation messages" style={{ flex:1, minHeight:0, overflowY:"auto", padding: isMobile?"12px 10px":"20px 16px", display:"flex", flexDirection:"column" }}>
             {activeTab === "course" ? (
               <AgenticUICourse theme={techTheme} variant="full" />
             ) : activeTab==="scenarioBank" ? (
@@ -1754,6 +1771,7 @@ export default function Home() {
                   weakSpots={weakSpots}
                   mockScores={mockScores}
                   messages={messages}
+                  structuredSessions={[interviewSessionState]}
                   questionMemory={questionMemory}
                   onQuestionMemoryChange={setQuestionMemory}
                   systemDesignCanvas={systemDesignCanvas}
@@ -1764,6 +1782,7 @@ export default function Home() {
                   prepProgressState={prepProgressState}
                   onBeginnerStepChange={setBeginnerStep}
                   onExportPlan={exportPrepPlan}
+                  onToolkitStateChange={setToolkitState}
                 />
               : (
                 <>

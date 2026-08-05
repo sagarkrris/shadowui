@@ -1,15 +1,23 @@
 import { PRODUCT_TAGLINE } from "../../lib/agenticCourse.mjs";
 
 import { useState } from "react";
+import { useRef } from "react";
+import { useFocusTrap } from "../../hooks/useFocusTrap";
 
 export default function SettingsModal({ onClose, theme, auth = {} }) {
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const modalRef = useRef(null);
+  useFocusTrap(modalRef);
   const submit = async (event) => { event.preventDefault(); await auth[mode]?.({ email, password }); };
   return (
     <div
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="settings-title"
+      ref={modalRef}
       style={{
         position: "fixed",
         inset: 0,
@@ -36,7 +44,7 @@ export default function SettingsModal({ onClose, theme, auth = {} }) {
       >
         <div style={{ width: 36, height: 4, background: "rgba(255,255,255,.1)", borderRadius: 2, margin: "0 auto 16px" }} />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-          <span style={{ fontSize: 15, fontWeight: 600, color: "#e8e8f0" }}>
+          <span id="settings-title" style={{ fontSize: 15, fontWeight: 600, color: "#e8e8f0" }}>
             <i className={`ti ${theme.icon}`} style={{ color: theme.accentStrong, marginRight: 7 }} />
             About
           </span>
@@ -47,6 +55,12 @@ export default function SettingsModal({ onClose, theme, auth = {} }) {
           <h2 id="account-heading" style={{ fontSize: 13, color: theme.accentText, margin: "0 0 8px" }}>Account sync</h2>
           {auth.user ? <>
             <p style={{ color: "#cbd5e1", fontSize: 12 }}>Signed in as {auth.user.email}</p>
+            {!auth.user.emailVerified ? <p role="alert" style={{ color: "#facc15", fontSize: 11 }}>Email verification is required before AI features can be used when authentication enforcement is enabled.</p> : null}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <button type="button" className="glass-button" onClick={async () => { const data = await auth.exportAccount?.(); const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = "interviewiq-account-export.json"; link.click(); URL.revokeObjectURL(url); }}>Export data</button>
+              <button type="button" className="glass-button" onClick={auth.revokeSessions}>Revoke sessions</button>
+              <button type="button" className="glass-button" onClick={async () => { if (window.confirm("Delete your account and all stored data? This cannot be undone.")) await auth.deleteAccount?.(); }}>Delete account</button>
+            </div>
             <button type="button" className="glass-button" onClick={auth.logout} style={{ padding: "8px 11px" }}>Sign out</button>
           </> : <form onSubmit={submit} style={{ display: "grid", gap: 8 }}>
             <div style={{ display: "flex", gap: 8 }}>

@@ -10,6 +10,7 @@
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:browser-matrix": "E2E_BROWSER_MATRIX=1 playwright test",
+    "db:migrate": "node scripts/migrate-postgres.mjs",
     "test:unit": "node --test test/*.test.mjs"
   },
   "dependencies": {
@@ -19,6 +20,7 @@
     "mammoth": "^1.12.0",
     "next": "^14.2.35",
     "pdf-parse": "^2.4.5",
+    "pg": "^8.16.3",
     "react": "18.3.1",
     "react-dom": "18.3.1"
   },

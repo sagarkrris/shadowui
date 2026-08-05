@@ -14,14 +14,14 @@ import SmartPrepTimeline from "./SmartPrepTimeline";
 import UnifiedProgressBrain from "./UnifiedProgressBrain";
 import CodeRunner from "../CodeRunner";
 
-export default function Welcome({ onChip, onScreen, onVoice, onRecordReview, selectedCat, selectedSub, mode, difficulty, theme, profile, showCodeTools, topics, weakSpots, mockScores, messages, questionMemory, onQuestionMemoryChange, systemDesignCanvas, onPracticeMock, onOpenWorkspace, beginnerMode, onBeginnerModeChange, prepProgressState, onBeginnerStepChange, onExportPlan }) {
+export default function Welcome({ onChip, onScreen, onVoice, onRecordReview, selectedCat, selectedSub, mode, difficulty, theme, profile, showCodeTools, topics, weakSpots, mockScores, messages, structuredSessions = [], questionMemory, onQuestionMemoryChange, systemDesignCanvas, onPracticeMock, onOpenWorkspace, beginnerMode, onBeginnerModeChange, prepProgressState, onBeginnerStepChange, onExportPlan, onToolkitStateChange: onExternalToolkitStateChange }) {
   const [toolkitState, setToolkitState] = useState({});
   const topic = selectedSub || selectedCat;
   const quickPrompts = getQuickPrompts(selectedCat, selectedSub);
   const greeting = getStackGreeting(profile);
   const commandCenter = buildPrepCommandCenter({ profile, topics, weakSpots, mockScores });
   const proofStories = deriveProofVaultStories(messages, profile);
-  const handleToolkitStateChange = useCallback((nextState) => setToolkitState(nextState || {}), []);
+  const handleToolkitStateChange = useCallback((nextState) => { const next = nextState || {}; setToolkitState(next); onExternalToolkitStateChange?.(next); }, [onExternalToolkitStateChange]);
   const featureBadges = [
     ["ti-screenshot", "Screen AI"],
     ["ti-microphone", "Voice"],
@@ -93,6 +93,7 @@ export default function Welcome({ onChip, onScreen, onVoice, onRecordReview, sel
         questionMemory={questionMemory}
         systemDesignCanvas={systemDesignCanvas}
         messages={messages}
+        structuredSessions={structuredSessions}
         prepProgressState={prepProgressState}
         theme={theme}
         beginnerMode={beginnerMode}

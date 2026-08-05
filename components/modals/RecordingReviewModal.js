@@ -9,6 +9,7 @@ import {
   getRecordingSupport,
   getVoiceSupport,
 } from "../../lib/voiceSupport.mjs";
+import { useFocusTrap } from "../../hooks/useFocusTrap";
 
 const DEFAULT_THEME = {
   accentBorder: "rgba(255,255,255,.12)",
@@ -32,6 +33,8 @@ export default function RecordingReviewModal({
   const [message, setMessage] = useState("");
   const recognitionRef = useRef(null);
   const streamRef = useRef(null);
+  const modalRef = useRef(null);
+  useFocusTrap(modalRef);
 
   const recordingSupport = useMemo(
     () => (typeof window === "undefined" ? { supported: false, type: "typed-fallback", message: "" } : getRecordingSupport(window)),
@@ -111,6 +114,8 @@ export default function RecordingReviewModal({
       onClick={onClose}
       role="dialog"
       aria-modal="true"
+      aria-labelledby="recording-review-title"
+      ref={modalRef}
       style={{
         position: "fixed",
         inset: 0,
@@ -137,7 +142,7 @@ export default function RecordingReviewModal({
       >
         <div style={{ width: 36, height: 4, background: "rgba(255,255,255,.1)", borderRadius: 2, margin: "0 auto 16px" }} />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-          <span style={{ fontSize: 15, fontWeight: 600, color: "#e8e8f0", display: "flex", alignItems: "center", gap: 8 }}>
+          <span id="recording-review-title" style={{ fontSize: 15, fontWeight: 600, color: "#e8e8f0", display: "flex", alignItems: "center", gap: 8 }}>
             <i className="ti ti-microphone" style={{ color: theme.accentStrong }} />
             Recording Review
           </span>
