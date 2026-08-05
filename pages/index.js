@@ -600,8 +600,7 @@ export default function Home() {
     if (snapshot.themePreference) setThemePreference(normalizeThemePreference(snapshot.themePreference));
     resetInterviewSession(session.interviewSession);
     if (snapshot.session) { setToolkitState(snapshot.toolkitState || {}); setApplications(Array.isArray(snapshot.applications) ? snapshot.applications : []); setJavaDigestProgress(snapshot.javaDigestProgress || { completedTopics: [], masteredTopics: [] }); setQuestionMemory(snapshot.questionMemory || { questions: {} }); setPrepProgressState(snapshot.prepProgressState || createPrepProgressState()); }
-    showToast("Synced your workspace from your account.", "info");
-  }, [resetInterviewSession, setActiveTab, showToast]);
+  }, [resetInterviewSession, setActiveTab]);
   useCloudStateSync({ user: auth.user, ready: auth.ready && sessionReady, csrfToken: auth.csrfToken, snapshot: cloudSnapshot, onRemoteState: applyCloudState, onError: () => showToast("Cloud sync is temporarily unavailable; local work is safe.", "error") });
 
   useEffect(() => {

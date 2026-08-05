@@ -73,6 +73,10 @@ test("account modal stays centered and protects account form interactions", () =
   assert.match(settingsModalSource, /aria-label="Password strength"/);
 });
 
+test("cloud hydration does not replay a success toast on every refresh", () => {
+  assert.doesNotMatch(indexSource, /Synced your workspace from your account/);
+});
+
 test("authenticated CSRF state is not replaced by a random token", () => {
   assert.match(authHookSource, /interviewiq_csrf=/);
   assert.match(authHookSource, /if \(cookieToken && !force\) \{ setCsrfToken\(cookieToken\); return cookieToken; \}/);
