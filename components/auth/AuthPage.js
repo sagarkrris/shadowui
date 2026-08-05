@@ -25,7 +25,7 @@ export default function AuthPage({ mode }) {
     <Head><title>{isRegister ? "Create account" : "Sign in"} · InterviewIQ</title></Head>
     <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: 24, background: "linear-gradient(135deg, #f5f9fd, #e9f1f8)", color: "#102033", fontFamily: "Inter, system-ui, sans-serif" }}>
       <section aria-labelledby="auth-heading" style={{ width: "min(100%, 460px)", padding: "36px clamp(24px, 6vw, 42px)", background: "#ffffff", border: "1px solid #dbe5ef", borderRadius: 20, boxShadow: "0 18px 55px rgba(30,64,90,.14)" }}>
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}><BrandLogo theme={DEFAULT_TECH_THEME} size={52} /></div>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}><BrandLogo theme={DEFAULT_TECH_THEME} appearance="light" size={52} /></div>
         <p style={{ color: "#1f6feb", fontSize: 12, fontWeight: 900, letterSpacing: ".08em", margin: "0 0 8px", textAlign: "center", textTransform: "uppercase" }}>InterviewIQ</p>
         <h1 id="auth-heading" style={{ fontSize: 26, lineHeight: 1.2, margin: "0 0 9px", textAlign: "center" }}>{isRegister ? "Create your account" : "Welcome back"}</h1>
         <p style={{ color: "#64748b", fontSize: 14, lineHeight: 1.55, margin: "0 0 25px", textAlign: "center" }}>{isRegister ? "Save your preparation across browsers and devices." : "Sign in to continue your interview preparation."}</p>
