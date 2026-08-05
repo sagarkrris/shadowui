@@ -14,10 +14,13 @@ function readCookie(req, name) {
   return String(req.headers.cookie || "").split(";").map((item) => item.trim().split("=")).find(([key]) => key === name)?.[1] || "";
 }
 
-function validCredentials(body = {}) {
+function validCredentials(body = {}, requireName = false) {
+  const firstName = String(body.firstName || "").trim();
+  const lastName = String(body.lastName || "").trim();
   const email = String(body.email || "").trim().toLowerCase();
   const password = String(body.password || "");
-  return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) && password.length >= 12 && password.length <= 128 ? { email, password } : null;
+  const namesValid = !requireName || (firstName.length >= 1 && firstName.length <= 80 && lastName.length >= 1 && lastName.length <= 80);
+  return namesValid && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) && password.length >= 12 && password.length <= 128 ? { firstName, lastName, email, password } : null;
 }
 
 function csrfFromRequest(req) { return String(req.headers["x-csrf-token"] || ""); }
@@ -83,8 +86,8 @@ async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
     if ((action === "register" || action === "login") && req.method === "POST") {
-      const credentials = validCredentials(req.body);
-      if (!credentials) return res.status(400).json({ error: "Use a valid email and a password of at least 12 characters." });
+      const credentials = validCredentials(req.body, action === "register");
+      if (!credentials) return res.status(400).json({ error: action === "register" ? "Enter your first name, last name, a valid email, and a password of at least 12 characters." : "Use a valid email and a password of at least 12 characters." });
       const user = action === "register" ? await createUser(credentials) : await authenticateUser(credentials);
       if (!user) { await recordAudit({ type: "login_failed", email: credentials.email, ip: getClientAddress(req) }); recordMetric("auth.login_failed", { emailDomain: credentials.email.split("@")[1] }); return res.status(401).json({ error: "Invalid email or password." }); }
       const session = await createSession(user.id);

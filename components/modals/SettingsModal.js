@@ -8,6 +8,8 @@ import { getPasswordStrength } from "../../lib/passwordStrength.mjs";
 
 export default function SettingsModal({ onClose, theme, auth = {}, initialMode = "login", themePreference = "system", onThemePreferenceChange, appearance = "dark", authFocused = false }) {
   const [mode, setMode] = useState(initialMode === "register" ? "register" : "login");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -21,7 +23,7 @@ export default function SettingsModal({ onClose, theme, auth = {}, initialMode =
     event.preventDefault();
     if (submitting || !auth.ready) return;
     setSubmitting(true);
-    try { await auth[mode]?.({ email, password }); } finally { setSubmitting(false); }
+    try { await auth[mode]?.({ firstName, lastName, email, password }); } finally { setSubmitting(false); }
   };
   const resendVerification = async () => {
     if (resendingVerification || !auth.resendVerification) return;
@@ -85,6 +87,10 @@ export default function SettingsModal({ onClose, theme, auth = {}, initialMode =
               <button type="button" role="tab" onClick={() => setMode("register")} aria-selected={mode === "register"} className="glass-button" style={{ minHeight: 38, border: mode === "register" ? `1px solid ${theme.accentBorder}` : "1px solid transparent", borderRadius: 8, color: mode === "register" ? theme.accentText : "#64748b", fontSize: 12, fontWeight: 800 }}>Create account</button>
             </div>
             <form onSubmit={submit} style={{ display: "grid", gap: 14, textAlign: "left" }}>
+              {mode === "register" ? <>
+                <label style={{ display: "grid", gap: 7, color: appearance === "light" ? "#334155" : "#cbd5e1", fontSize: 12, fontWeight: 700 }}>First name<input aria-label="First name" type="text" required autoComplete="given-name" value={firstName} onChange={(event) => setFirstName(event.target.value)} placeholder="First name" className="glass-input" style={{ minHeight: 44, borderRadius: 8, padding: "11px 12px", cursor: "text" }} /></label>
+                <label style={{ display: "grid", gap: 7, color: appearance === "light" ? "#334155" : "#cbd5e1", fontSize: 12, fontWeight: 700 }}>Last name<input aria-label="Last name" type="text" required autoComplete="family-name" value={lastName} onChange={(event) => setLastName(event.target.value)} placeholder="Last name" className="glass-input" style={{ minHeight: 44, borderRadius: 8, padding: "11px 12px", cursor: "text" }} /></label>
+              </> : null}
               <label style={{ display: "grid", gap: 7, color: appearance === "light" ? "#334155" : "#cbd5e1", fontSize: 12, fontWeight: 700 }}>
                 Email
                 <input aria-label="Email" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" className="glass-input" style={{ minHeight: 44, borderRadius: 8, padding: "11px 12px", cursor: "text" }} />
@@ -135,6 +141,10 @@ export default function SettingsModal({ onClose, theme, auth = {}, initialMode =
               <button type="button" onClick={() => setMode("login")} aria-pressed={mode === "login"} className="glass-button">Sign in</button>
               <button type="button" onClick={() => setMode("register")} aria-pressed={mode === "register"} className="glass-button">Create account</button>
             </div>
+            {mode === "register" ? <>
+              <input aria-label="First name" type="text" required autoComplete="given-name" value={firstName} onChange={(event) => setFirstName(event.target.value)} placeholder="First name" className="glass-input" />
+              <input aria-label="Last name" type="text" required autoComplete="family-name" value={lastName} onChange={(event) => setLastName(event.target.value)} placeholder="Last name" className="glass-input" />
+            </> : null}
             <input aria-label="Email" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Email" className="glass-input" />
             <span style={{ display: "flex", gap: 7 }}><input aria-label="Password" type={showPassword ? "text" : "password"} required minLength={12} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Password (12+ characters)" className="glass-input" style={{ flex: 1, minWidth: 0 }} /><button type="button" aria-label={showPassword ? "Hide password" : "Show password"} onClick={() => setShowPassword((value) => !value)} className="glass-button" style={{ minWidth: 62, color: appearance === "light" ? "#17324d" : "#cbd5e1", fontSize: 11, fontWeight: 800 }}>{showPassword ? "Hide" : "Show"}</button></span>
             {mode === "register" && password ? <div aria-label="Password strength" style={{ display: "grid", gap: 4 }}><div style={{ height: 5, borderRadius: 999, background: appearance === "light" ? "#e2e8f0" : "rgba(255,255,255,.12)", overflow: "hidden" }}><span style={{ display: "block", width: `${strength.percent}%`, height: "100%", background: strength.label === "Strong" ? "#15803d" : strength.label === "Fair" ? "#b7791f" : "#b91c1c" }} /></div><span style={{ color: strength.label === "Strong" ? "#166534" : strength.label === "Fair" ? "#92400e" : "#b91c1c", fontSize: 11 }}>{strength.label} password</span></div> : null}

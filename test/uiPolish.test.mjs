@@ -69,6 +69,9 @@ test("account modal stays centered and protects account form interactions", () =
   assert.match(settingsModalSource, /resendingVerification/);
   assert.match(settingsModalSource, /Sending verification email/);
   assert.match(settingsModalSource, /verificationFeedback/);
+  assert.match(settingsModalSource, /aria-label="First name"/);
+  assert.match(settingsModalSource, /aria-label="Last name"/);
+  assert.doesNotMatch(settingsModalSource, /Verification email sent\. Check your inbox and spam folder before using protected features/);
   assert.match(settingsModalSource, /auth\.error/);
   assert.match(settingsModalSource, /aria-label="Password strength"/);
 });
