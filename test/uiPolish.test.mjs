@@ -43,6 +43,13 @@ test("mobile keyboard mode trims chrome around the composer", () => {
   assert.match(indexSource, /position:"fixed", inset:0/);
 });
 
+test("laptop header wraps controls instead of clipping the right edge", () => {
+  assert.match(indexSource, /className="glass-chrome app-topbar"/);
+  assert.match(indexSource, /className="header-title"/);
+  assert.match(globalsSource, /@media \(min-width: 761px\) and \(max-width: 1439px\)[\s\S]*\.app-topbar[\s\S]*flex-wrap: wrap/);
+  assert.match(globalsSource, /\.app-topbar \.header-profile-label/);
+});
+
 test("profile setup avoids oversized sticky iOS keyboard spacers", () => {
   assert.match(profileSetupSource, /keyboardOpen/);
   assert.match(indexSource, /<ProfileSetup[\s\S]*keyboardOpen=\{isKeyboardOpen\}/);

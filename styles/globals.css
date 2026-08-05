@@ -408,6 +408,38 @@ a:focus-visible,
   }
 }
 
+/* Keep the laptop/tablet header usable when the workspace, account, and
+   prep controls cannot fit in one row. The controls wrap instead of being
+   clipped off the right edge of the viewport. */
+@media (min-width: 761px) and (max-width: 1439px) {
+  .app-topbar {
+    flex-wrap: wrap;
+    align-content: center;
+    overflow: visible !important;
+    row-gap: 6px !important;
+  }
+
+  .app-topbar .header-title {
+    flex: 1 1 180px !important;
+  }
+
+  .app-topbar .header-account-actions,
+  .app-topbar .compact-controls-menu {
+    flex-shrink: 0;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1080px) {
+  .app-topbar .header-profile-label {
+    display: none !important;
+  }
+
+  .app-topbar .header-account-actions .glass-button {
+    padding-left: 7px !important;
+    padding-right: 7px !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

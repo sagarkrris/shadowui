@@ -1487,7 +1487,7 @@ export default function Home() {
           )}
 
           {/* ── Top bar ── */}
-          <header className="glass-chrome" style={{ position:"relative", zIndex:130, display:"flex", alignItems:"center", gap:8, padding:"9px 12px", borderBottom:"1px solid rgba(255,255,255,.08)", flexShrink:0, minHeight:52 }}>
+          <header className="glass-chrome app-topbar" style={{ position:"relative", zIndex:130, display:"flex", alignItems:"center", gap:8, padding:"9px 12px", borderBottom:"1px solid rgba(255,255,255,.08)", flexShrink:0, minHeight:52 }}>
             <button className={`icon-btn ${activeTab==="chat" && messages.length===0 ? "active" : ""}`} onClick={goHome} title="Home" aria-label="Home">
               <i className="ti ti-home" />
             </button>
@@ -1508,11 +1508,11 @@ export default function Home() {
               onToggleWorkspace={toggleWorkspace}
             />
 
-            <span style={{ flex:1, fontSize:13, fontWeight:500, color: currentLabel?"#e8e8f0":"#4b5563", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+            <span className="header-title" style={{ flex:1, fontSize:13, fontWeight:500, color: currentLabel?"#e8e8f0":"#4b5563", minWidth:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
               {headerTitle}
             </span>
             {candidateProfile && (
-              <span style={{ display:isMobile?"none":"inline-flex", alignItems:"center", gap:5, padding:"3px 8px", borderRadius:999, border:`1px solid ${techTheme.accentBorder}`, background:techTheme.accentMuted, color:techTheme.accentText, fontSize:10.5, fontWeight:600, whiteSpace:"nowrap" }}>
+              <span className="header-profile-label" style={{ display:isMobile?"none":"inline-flex", alignItems:"center", gap:5, padding:"3px 8px", borderRadius:999, border:`1px solid ${techTheme.accentBorder}`, background:techTheme.accentMuted, color:techTheme.accentText, fontSize:10.5, fontWeight:600, whiteSpace:"nowrap" }}>
                 <i className={`ti ${techTheme.icon}`} style={{ fontSize:12 }} />{userPrepLabel}
               </span>
             )}

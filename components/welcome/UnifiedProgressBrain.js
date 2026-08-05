@@ -183,7 +183,7 @@ export default function UnifiedProgressBrain({
       </header>
 
       <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))" }}>
-        <section style={{ background: "rgba(0,0,0,.16)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 8, padding: 11 }}>
+        <section style={{ alignSelf: "start", background: isLight ? "#f8fbff" : "rgba(0,0,0,.16)", border: isLight ? "1px solid #dbe5ef" : "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 8, padding: 11 }}>
           <span style={{ color: "#9ca3af", fontSize: 10.8, fontWeight: 950, textTransform: "uppercase" }}>Readiness</span>
           <strong style={{ color: accent, fontSize: 34, lineHeight: 1 }}>{progress.readinessScore}%</strong>
           <p style={{ ...wrap, color: "#cbd5e1", fontSize: 11.2, lineHeight: 1.45, margin: 0 }}>
