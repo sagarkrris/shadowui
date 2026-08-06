@@ -202,4 +202,24 @@ test.describe("Non-functional UI/UX, responsiveness, and state management", () =
     expect(usedHeap).toBeLessThan(250 * 1024 * 1024);
     await assertHealthyApp(page);
   });
+
+  test("supports keyboard-first Interview Ready Q&A controls and offline guidance", async ({ page, context }) => {
+    await page.setViewportSize({ width: 768, height: 1024 });
+    await gotoSeededApp(page);
+    await page.getByRole("button", { name: "Workspace menu" }).click();
+    const menu = page.getByLabel("Tablet workspace menu");
+    await menu.getByRole("button", { name: "Interview Ready Q&A", exact: true }).click();
+    await expect(page.getByRole("heading", { name: /Most-asked questions with polished answers/ })).toBeVisible();
+
+    const questionInput = page.getByLabel("Ask your own interview question");
+    await page.keyboard.press("Control+K");
+    await expect(questionInput).toBeFocused();
+    await questionInput.fill("How would you design a rate limiter?");
+    await context.setOffline(true);
+    await page.getByRole("button", { name: "Generate answer" }).click();
+    await expect(page.getByText(/Offline mode|Reconnect before sending/)).toBeVisible();
+    await context.setOffline(false);
+    await page.reload();
+    await assertHealthyApp(page);
+  });
 });

@@ -92,6 +92,15 @@ function FilterChip({ label, icon, active, accent, onClick }) {
   );
 }
 
+function HighlightedText({ text, query }) {
+  const needle = query?.trim();
+  if (!needle) return text;
+  const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return text.split(new RegExp(`(${escaped})`, "ig")).map((part, index) => part.toLowerCase() === needle.toLowerCase()
+    ? <mark key={`${part}-${index}`} style={{ background: "#fde68a", color: "#172033", borderRadius: 3, padding: "0 2px" }}>{part}</mark>
+    : part);
+}
+
 function AnswerList({ title, icon, items, accent, color = "#cbd5e1" }) {
   return (
     <section style={{ ...wrap, background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, padding: 10 }}>
@@ -178,8 +187,10 @@ function CompanyPackPanel({ companyPack, accent, onUsePackPrompt, onSelectQuesti
   );
 }
 
-function InterviewAnswerCard({ question, accent, profile, onAction, onActivity, questionFirstMode, onPractice }) {
+function InterviewAnswerCard({ question, accent, profile, onAction, onActivity, questionFirstMode, onPractice, searchQuery }) {
   const [expanded, setExpanded] = useState(false);
+  const [feedback, setFeedback] = useState(null);
+  const [copied, setCopied] = useState(false);
   const category = getInterviewReadyCategory(question.categoryId);
   const revealAnswer = () => {
     setExpanded((value) => !value);
@@ -206,6 +217,24 @@ function InterviewAnswerCard({ question, accent, profile, onAction, onActivity, 
       category,
     });
   };
+  const copyAnswer = async () => {
+    const text = [
+      "Interview-ready answer",
+      question.answer.polished,
+      "Strong example",
+      question.answer.example,
+      "Likely follow-ups",
+      ...question.answer.followUps.map((item) => `- ${item}`),
+    ].join("\n\n");
+    try {
+      await navigator.clipboard?.writeText(text);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+      onActivity?.({ workspaceId: "interviewReady", type: "copy", label: "Copied interview-ready answer", detail: question.question });
+    } catch {
+      onActivity?.({ workspaceId: "interviewReady", type: "copyFailed", label: "Could not copy interview-ready answer", detail: question.question });
+    }
+  };
 
   return (
     <article style={{ ...wrap, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 8, display: "grid", gap: 10, padding: 12 }}>
@@ -214,7 +243,7 @@ function InterviewAnswerCard({ question, accent, profile, onAction, onActivity, 
           <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>
             {category.label} · {question.frequency}
           </div>
-          <h3 style={{ ...wrap, color: "#f8fbff", fontSize: 15.5, lineHeight: 1.3, marginTop: 4 }}>{question.question}</h3>
+          <h3 style={{ ...wrap, color: "#f8fbff", fontSize: 15.5, lineHeight: 1.3, marginTop: 4 }}><HighlightedText text={question.question} query={searchQuery} /></h3>
         </div>
         <span style={{ border: "1px solid rgba(250,204,21,.28)", borderRadius: 999, color: "#fde68a", flexShrink: 0, fontSize: 10.5, fontWeight: 900, padding: "3px 7px", whiteSpace: "nowrap" }}>
           {question.difficulty}
@@ -268,6 +297,10 @@ function InterviewAnswerCard({ question, accent, profile, onAction, onActivity, 
           <i className="ti ti-edit" style={{ color: "#facc15", marginRight: 6 }} />
           Practice this answer
         </button>
+        <button type="button" className="glass-button" onClick={copyAnswer} style={{ border: "1px solid rgba(139,211,255,.32)", borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
+          <i className="ti ti-copy" style={{ color: accent, marginRight: 6 }} />
+          {copied ? "Copied" : "Copy answer"}
+        </button>
         <button type="button" className="glass-button" onClick={tailorAnswer} style={{ border: "1px solid rgba(134,239,172,.35)", borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
           <i className="ti ti-magic-wand" style={{ color: "#86efac", marginRight: 6 }} />
           Tailor with AI
@@ -277,6 +310,13 @@ function InterviewAnswerCard({ question, accent, profile, onAction, onActivity, 
           Mock follow-up
         </button>
       </div>
+      <div style={{ alignItems: "center", color: "#9fb0c7", display: "flex", flexWrap: "wrap", fontSize: 11, gap: 8 }}>
+        <span>Was this answer useful?</span>
+        <button type="button" aria-label="Answer was useful" className="glass-button" onClick={() => { setFeedback("Thanks for the feedback."); onActivity?.({ workspaceId: "interviewReady", type: "feedback", label: "Marked answer useful", detail: question.question }); }} style={{ border: "1px solid rgba(134,239,172,.3)", borderRadius: 999, color: "#d1fae5", padding: "4px 8px" }}><i className="ti ti-thumb-up" /></button>
+        <button type="button" aria-label="Answer needs improvement" className="glass-button" onClick={() => { setFeedback("Thanks — we’ll use that signal to improve this answer."); onActivity?.({ workspaceId: "interviewReady", type: "feedback", label: "Marked answer for improvement", detail: question.question }); }} style={{ border: "1px solid rgba(252,165,165,.3)", borderRadius: 999, color: "#fecaca", padding: "4px 8px" }}><i className="ti ti-thumb-down" /></button>
+        {feedback ? <span role="status" style={{ color: "#86efac" }}>{feedback}</span> : null}
+      </div>
+      <p style={{ color: "#9fb0c7", fontSize: 10.5, lineHeight: 1.4, margin: 0 }}><i className="ti ti-sparkles" style={{ marginRight: 5 }} />AI-generated coaching content. Verify important technical details against your team’s standards.</p>
     </article>
   );
 }
@@ -293,6 +333,19 @@ export default function InterviewReadyQA({
   const [activeCategory, setActiveCategory] = useState("all");
   const [difficulty, setDifficulty] = useState("All");
   const [searchDraft, setSearchDraft] = useState("");
+  const [customQuestion, setCustomQuestion] = useState("");
+  const [customQuestionError, setCustomQuestionError] = useState("");
+  const [compactMode, setCompactMode] = useState(false);
+  const [bookmarkedIds, setBookmarkedIds] = useState([]);
+  const [answerStyle, setAnswerStyle] = useState("balanced");
+  const [lastSavedAt, setLastSavedAt] = useState(null);
+  const [answerHistory, setAnswerHistory] = useState([]);
+  const [bookmarkNotice, setBookmarkNotice] = useState("");
+  const [collectionName, setCollectionName] = useState("My interview questions");
+  const [offline, setOffline] = useState(false);
+  const [lastCustomPrompt, setLastCustomPrompt] = useState("");
+  const [savedOnly, setSavedOnly] = useState(false);
+  const [textScale, setTextScale] = useState(1);
   const [questionFirstMode, setQuestionFirstMode] = useState(true);
   const [practiceState, setPracticeState] = useState(() => createInterviewReadyPracticeState());
   const [draftAnswer, setDraftAnswer] = useState("");
@@ -309,7 +362,7 @@ export default function InterviewReadyQA({
     categoryId: activeCategory,
     difficulty,
     search: searchDraft,
-  }), [activeCategory, difficulty, searchDraft]);
+  }).filter((question) => !savedOnly || bookmarkedIds.includes(question.id)), [activeCategory, difficulty, searchDraft, savedOnly, bookmarkedIds]);
   const activeQuestionId = practiceState.selectedQuestionId || questions[0]?.id || "";
   const activeQuestion = getInterviewReadyQuestion(activeQuestionId) || questions[0] || null;
   const activePracticeKey = customPracticeItem ? `company-pack:${practiceState.company}:${customPracticeItem.id}` : activeQuestion?.id || "";
@@ -333,6 +386,46 @@ export default function InterviewReadyQA({
       normalize: createInterviewReadyPracticeState,
     }));
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try { setBookmarkedIds(JSON.parse(window.localStorage.getItem("interviewiq_interview_ready_bookmarks") || "[]")); } catch { setBookmarkedIds([]); }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") window.localStorage.setItem("interviewiq_interview_ready_bookmarks", JSON.stringify(bookmarkedIds));
+  }, [bookmarkedIds]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try { setAnswerHistory(JSON.parse(window.localStorage.getItem("interviewiq_interview_ready_history") || "[]")); } catch { setAnswerHistory([]); }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") window.localStorage.setItem("interviewiq_interview_ready_history", JSON.stringify(answerHistory.slice(0, 10)));
+  }, [answerHistory]);
+
+  useEffect(() => {
+    const update = () => setOffline(typeof navigator !== "undefined" && !navigator.onLine);
+    update(); window.addEventListener("online", update); window.addEventListener("offline", update);
+    return () => { window.removeEventListener("online", update); window.removeEventListener("offline", update); };
+  }, []);
+
+  useEffect(() => {
+    const onShortcut = (event) => {
+      if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
+      if (event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        document.querySelector('[aria-label="Ask your own interview question"]')?.focus();
+      }
+      if (event.key.toLowerCase() === "b" && activeQuestion?.id) {
+        event.preventDefault();
+        setBookmarkedIds((ids) => ids.includes(activeQuestion.id) ? ids.filter((id) => id !== activeQuestion.id) : [...ids, activeQuestion.id]);
+      }
+    };
+    window.addEventListener("keydown", onShortcut);
+    return () => window.removeEventListener("keydown", onShortcut);
+  }, [activeQuestion]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -411,6 +504,28 @@ export default function InterviewReadyQA({
       label: "Saved personal interview answer",
       detail: activePracticeTitle,
     });
+    setLastSavedAt(new Date());
+    setAnswerHistory((history) => [{ id: Date.now(), title: activePracticeTitle, draft: draftAnswer, savedAt: new Date().toISOString() }, ...history].slice(0, 10));
+  };
+
+  const toggleBookmark = (questionId) => {
+    setBookmarkedIds((ids) => ids.includes(questionId) ? ids.filter((id) => id !== questionId) : [...ids, questionId]);
+    setBookmarkNotice(bookmarkedIds.includes(questionId) ? "Removed from your saved collection." : "Saved to your local collection.");
+    window.setTimeout(() => setBookmarkNotice(""), 2200);
+    onActivity?.({ workspaceId: "interviewReady", type: "bookmark", label: "Updated saved interview collection", detail: questionId });
+  };
+
+  const exportBookmarks = () => {
+    const blob = new Blob([JSON.stringify({ version: 1, name: collectionName, bookmarkedIds }, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = "interviewiq-saved-questions.json"; link.click(); URL.revokeObjectURL(url);
+    setBookmarkNotice("Saved collection exported.");
+  };
+
+  const importBookmarks = (event) => {
+    const file = event.target.files?.[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => { try { const data = JSON.parse(reader.result); const ids = Array.isArray(data.bookmarkedIds) ? data.bookmarkedIds.filter((id) => typeof id === "string") : []; setBookmarkedIds(ids); if (typeof data.name === "string" && data.name.trim()) setCollectionName(data.name.trim().slice(0, 60)); setBookmarkNotice(`${ids.length} saved questions imported.`); } catch { setBookmarkNotice("That collection file could not be imported."); } };
+    reader.readAsText(file); event.target.value = "";
   };
 
   const runCompanyPrompt = (item) => {
@@ -442,6 +557,40 @@ export default function InterviewReadyQA({
     });
   };
 
+  const askCustomQuestion = () => {
+    const question = customQuestion.trim();
+    if (!question) {
+      setCustomQuestionError("Enter an interview question first.");
+      return;
+    }
+    if (question.length < 8) {
+      setCustomQuestionError("Add a little more detail so the answer can be specific.");
+      return;
+    }
+    if (offline) {
+      setCustomQuestionError("You are offline. Reconnect before sending an AI question.");
+      return;
+    }
+    setCustomQuestionError("");
+    const prompt = [
+      "Turn the following question into an interview-ready answer I can say naturally.",
+      `Question: ${question}`,
+      "Use this structure: direct answer first, key points, one concrete example, trade-offs or caveats, and likely follow-up questions.",
+      `Answer style preset: ${answerStyle}.`,
+      "Adapt the answer to my selected role and technology stack when that context is available. Keep it practical and avoid inventing personal experience.",
+    ].join("\n");
+    setLastCustomPrompt(prompt);
+    onAction?.(prompt, {
+      type: "interviewReadyCustomQuestion",
+      question,
+    });
+    onActivity?.({ workspaceId: "interviewReady", type: "customQuestion", label: "Asked a custom interview question", detail: question });
+  };
+
+  const sendFeedback = () => {
+    if (typeof window !== "undefined") window.location.href = "mailto:feedback@interviewiq.app?subject=InterviewIQ%20UI%20feedback";
+  };
+
   return (
     <section
       className="glass-card"
@@ -455,6 +604,7 @@ export default function InterviewReadyQA({
         minWidth: 0,
         padding: 14,
         width: "100%",
+        fontSize: `${textScale}em`,
       }}
     >
       <BeginnerGuideBanner
@@ -472,6 +622,14 @@ export default function InterviewReadyQA({
           <p style={{ ...wrap, color: "#9fb0c7", fontSize: 11.8, lineHeight: 1.55, marginTop: 6 }}>
             This is a rehearsal room now, not just a reference list. Practice your own answer, save it, score it, pressure-test it with a timer, and switch into company-specific packs without leaving the workspace.
           </p>
+          <div style={{ alignItems: "center", color: "#9fb0c7", display: "flex", flexWrap: "wrap", fontSize: 10.8, gap: 10, marginTop: 8 }}>
+            <span><i className="ti ti-command" /> K ask · ⌘ B bookmark</span>
+            <button type="button" className="glass-button" onClick={() => setCompactMode((value) => !value)} style={{ border: "1px solid rgba(139,211,255,.3)", borderRadius: 999, color: "#dbeafe", padding: "4px 8px" }}>{compactMode ? "Comfortable mode" : "Compact mode"}</button>
+            {lastSavedAt ? <span role="status">Saved locally {lastSavedAt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</span> : null}
+            <button type="button" className="glass-button" aria-label="Decrease text size" onClick={() => setTextScale((value) => Math.max(.9, Number((value - .05).toFixed(2))))} style={{ borderRadius: 999, padding: "3px 7px" }}>A−</button>
+            <button type="button" className="glass-button" aria-label="Increase text size" onClick={() => setTextScale((value) => Math.min(1.2, Number((value + .05).toFixed(2))))} style={{ borderRadius: 999, padding: "3px 7px" }}>A+</button>
+            <button type="button" className="glass-button" onClick={sendFeedback} style={{ borderRadius: 999, color: "#dbeafe", padding: "4px 8px" }}><i className="ti ti-message-report" /> Send feedback</button>
+          </div>
         </div>
         <section style={{ ...wrap, background: `${accent}10`, border: `1px solid ${accent}33`, borderRadius: 8, display: "grid", gap: 8, padding: 12 }}>
           <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Ace-the-interview checklist</div>
@@ -489,6 +647,65 @@ export default function InterviewReadyQA({
           </div>
         </section>
       </header>
+
+      <section style={{ ...wrap, background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 8, padding: 10 }} aria-label="Answer style presets">
+        <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Answer style</div>
+        <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 7 }}>
+          {[['concise', 'Concise'], ['balanced', 'Balanced'], ['senior', 'Senior-level'], ['star', 'STAR format'], ['design', 'System-design depth']].map(([value, label]) => <FilterChip key={value} label={label} active={answerStyle === value} accent={accent} onClick={() => setAnswerStyle(value)} />)}
+          <span style={{ color: "#9fb0c7", fontSize: 10.8 }}>Preset applies to your next AI answer.</span>
+        </div>
+      </section>
+
+      <section style={{ ...wrap, alignItems: "center", background: "rgba(134,239,172,.06)", border: "1px solid rgba(134,239,172,.2)", borderRadius: 8, display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between", padding: "8px 10px" }} aria-label="Privacy and storage information">
+        <span style={{ color: "#d1fae5", fontSize: 11 }}><i className="ti ti-shield-lock" style={{ marginRight: 6 }} />Privacy: practice drafts and saved questions stay on this device unless cloud sync is enabled.</span>
+        {bookmarkNotice ? <span role="status" style={{ color: "#86efac", fontSize: 11 }}>{bookmarkNotice}</span> : null}
+      </section>
+
+      {offline ? <div role="status" style={{ ...wrap, background: "rgba(250,204,21,.1)", border: "1px solid rgba(250,204,21,.3)", borderRadius: 8, color: "#fde68a", fontSize: 11.5, padding: "8px 10px" }}><i className="ti ti-wifi-off" style={{ marginRight: 6 }} />Offline mode: local practice remains available, but AI requests are paused until you reconnect.</div> : null}
+
+      <section style={{ ...wrap, display: "flex", flexWrap: "wrap", gap: 7 }} aria-label="Saved collection tools">
+        <input aria-label="Saved collection name" value={collectionName} onChange={(event) => setCollectionName(event.target.value.slice(0, 60))} className="glass-input" style={{ border: "1px solid rgba(139,211,255,.24)", borderRadius: 7, color: "#dbeafe", fontSize: 11.5, padding: "6px 8px", width: 190 }} />
+        <strong style={{ color: "#dbeafe", fontSize: 11.5, padding: "7px 0" }}>{bookmarkedIds.length} saved</strong>
+        <button type="button" className="glass-button" onClick={exportBookmarks} disabled={!bookmarkedIds.length} style={{ border: "1px solid rgba(139,211,255,.3)", borderRadius: 7, color: "#dbeafe", fontSize: 11, padding: "6px 9px", opacity: bookmarkedIds.length ? 1 : .45 }}><i className="ti ti-download" /> Export collection</button>
+        <label className="glass-button" style={{ border: "1px solid rgba(139,211,255,.3)", borderRadius: 7, color: "#dbeafe", cursor: "pointer", fontSize: 11, padding: "6px 9px" }}><i className="ti ti-upload" /> Import collection<input type="file" accept="application/json,.json" onChange={importBookmarks} style={{ display: "none" }} /></label>
+        <button type="button" className="glass-button danger-action" onClick={() => { if (window.confirm("Clear all saved interview questions?")) { setBookmarkedIds([]); setBookmarkNotice("Saved collection cleared."); } }} disabled={!bookmarkedIds.length} style={{ borderRadius: 7, fontSize: 11, opacity: bookmarkedIds.length ? 1 : .45, padding: "6px 9px" }}>Clear all</button>
+        <button type="button" className="glass-button" onClick={() => setSavedOnly((value) => !value)} style={{ border: "1px solid rgba(250,204,21,.3)", borderRadius: 7, color: savedOnly ? "#fde68a" : "#dbeafe", fontSize: 11, padding: "6px 9px" }}><i className="ti ti-bookmark" /> {savedOnly ? "Showing saved" : "Show saved only"}</button>
+        {answerHistory.length ? <span style={{ color: "#9fb0c7", fontSize: 11, padding: "7px 0" }}>Version history: {answerHistory.length} saved draft{answerHistory.length === 1 ? "" : "s"}</span> : null}
+      </section>
+
+      <section className="interview-ready-custom-question" style={{ ...wrap, background: `${accent}10`, border: `1px solid ${accent}44`, borderRadius: 10, display: "grid", gap: 9, padding: 12 }} aria-labelledby="custom-question-heading">
+        <div>
+          <div style={{ alignItems: "center", color: accent, display: "flex", fontSize: 10.5, fontWeight: 900, gap: 6, textTransform: "uppercase" }}>
+            <i className="ti ti-message-question" /> Ask your own question
+          </div>
+          <h3 id="custom-question-heading" style={{ color: "#f8fbff", fontSize: 15, lineHeight: 1.3, marginTop: 4 }}>Get a structured Interview Ready Answer</h3>
+          <p style={{ color: "#cbd5e1", fontSize: 11.5, lineHeight: 1.5, margin: "4px 0 0" }}>The response will include the direct answer, key points, example, trade-offs, and likely follow-ups.</p>
+        </div>
+        <div style={{ alignItems: "stretch", display: "flex", flexWrap: "wrap", gap: 8 }}>
+          <input
+            type="text"
+            value={customQuestion}
+            onChange={(event) => { setCustomQuestion(event.target.value); setCustomQuestionError(""); }}
+            onKeyDown={(event) => { if (event.key === "Enter") askCustomQuestion(); }}
+            placeholder="e.g. How would you design a rate limiter?"
+            aria-label="Ask your own interview question"
+            className="glass-input"
+            style={{ border: `1px solid ${accentBorder}`, borderRadius: 7, color: "#f8fbff", flex: "1 1 280px", fontSize: 12.5, minWidth: 0, outline: "none", padding: "9px 10px" }}
+          />
+          <button type="button" className="glass-button" onClick={askCustomQuestion} style={{ border: `1px solid ${accent}66`, borderRadius: 7, color: "#f8fbff", fontSize: 11.5, fontWeight: 900, padding: "8px 12px" }}>
+            <i className="ti ti-sparkles" style={{ color: accent, marginRight: 6 }} />
+            Generate answer
+          </button>
+        </div>
+        {customQuestionError ? <p role="alert" style={{ color: "#fca5a5", fontSize: 11.5, margin: 0 }}>{customQuestionError}</p> : null}
+        {lastCustomPrompt && !offline ? <button type="button" className="glass-button" onClick={() => onAction?.(lastCustomPrompt, { type: "interviewReadyCustomQuestionRetry", question: customQuestion })} style={{ border: "1px solid rgba(196,181,253,.35)", borderRadius: 7, color: "#dbeafe", fontSize: 11, justifySelf: "start", padding: "6px 9px" }}><i className="ti ti-refresh" /> Regenerate last answer</button> : null}
+      </section>
+
+      <section aria-label="Interview preparation progress" style={{ ...wrap, background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 7, padding: 10 }}>
+        <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between" }}><span style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Practice progress</span><strong style={{ color: "#dbeafe", fontSize: 11 }}>{activeSavedAnswer ? "1 / 1 complete" : "0 / 1 complete"}</strong></div>
+        <div style={{ background: "rgba(255,255,255,.1)", borderRadius: 999, height: 6, overflow: "hidden" }}><span style={{ background: "#86efac", borderRadius: 999, display: "block", height: "100%", transition: "width .2s ease", width: activeSavedAnswer ? "100%" : "12%" }} /></div>
+        <span style={{ color: "#9fb0c7", fontSize: 10.8 }}>Save one answer to mark this practice step complete.</span>
+      </section>
 
       <SectionToggle
         title={activePracticeTitle}
@@ -684,16 +901,10 @@ export default function InterviewReadyQA({
         {questions.length ? (
           <div style={responsiveGrid(320, 10)}>
             {questions.map((question) => (
-              <InterviewAnswerCard
-                key={question.id}
-                question={question}
-                accent={accent}
-                profile={profile}
-                onAction={onAction}
-                onActivity={onActivity}
-                questionFirstMode={questionFirstMode}
-                onPractice={selectPracticeQuestion}
-              />
+              <div key={question.id} style={{ display: "grid", gap: compactMode ? 5 : 10 }}>
+                <button type="button" className="glass-button" onClick={() => toggleBookmark(question.id)} aria-label={bookmarkedIds.includes(question.id) ? "Remove bookmark" : "Bookmark answer"} style={{ border: "1px solid rgba(250,204,21,.3)", borderRadius: 999, color: bookmarkedIds.includes(question.id) ? "#fde68a" : "#9fb0c7", justifySelf: "end", padding: "4px 8px" }}><i className={`ti ${bookmarkedIds.includes(question.id) ? "ti-bookmark-filled" : "ti-bookmark"}`} /> {bookmarkedIds.includes(question.id) ? "Saved" : "Save"}</button>
+                <InterviewAnswerCard question={question} accent={accent} profile={profile} onAction={(prompt, metadata = {}) => onAction?.(prompt, { ...metadata, answerStyle })} onActivity={onActivity} questionFirstMode={questionFirstMode} onPractice={selectPracticeQuestion} searchQuery={searchDraft} />
+              </div>
             ))}
           </div>
         ) : (
@@ -702,6 +913,9 @@ export default function InterviewReadyQA({
             <p style={{ fontSize: 11.6, lineHeight: 1.5, margin: 0 }}>
               Try a broader keyword or switch the category and difficulty filters. Broad terms like concurrency, API, SQL, or ownership work best.
             </p>
+            <button type="button" className="glass-button" onClick={() => { setSearchDraft(""); setActiveCategory("all"); setDifficulty("All"); }} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, justifySelf: "start", padding: "7px 10px" }}>
+              Clear filters
+            </button>
           </section>
         )}
       </SectionToggle>

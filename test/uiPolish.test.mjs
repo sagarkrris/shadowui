@@ -10,8 +10,13 @@ const profileSetupSource = readFileSync(new URL("../components/welcome/ProfileSe
 const settingsModalSource = readFileSync(new URL("../components/modals/SettingsModal.js", import.meta.url), "utf8");
 const authHookSource = readFileSync(new URL("../hooks/useAuth.js", import.meta.url), "utf8");
 const authApiSource = readFileSync(new URL("../pages/api/auth.js", import.meta.url), "utf8");
+const accountApiSource = readFileSync(new URL("../pages/api/account.js", import.meta.url), "utf8");
 const apiObservabilitySource = readFileSync(new URL("../lib/apiObservability.mjs", import.meta.url), "utf8");
 const persistenceSource = readFileSync(new URL("../lib/serverPersistence.mjs", import.meta.url), "utf8");
+const toastSource = readFileSync(new URL("../components/Toast.js", import.meta.url), "utf8");
+const authPageSource = readFileSync(new URL("../components/auth/AuthPage.js", import.meta.url), "utf8");
+const welcomeSource = readFileSync(new URL("../components/welcome/Welcome.js", import.meta.url), "utf8");
+const interviewReadySource = readFileSync(new URL("../components/interview-ready/InterviewReadyQA.js", import.meta.url), "utf8");
 
 test("assistant part-wise answers render with readable section styling", () => {
   assert.match(messageContentSource, /message-part-heading/);
@@ -55,6 +60,36 @@ test("laptop header wraps controls instead of clipping the right edge", () => {
   assert.match(indexSource, /@media \(min-width: 1440px\) and \(max-width: 1799px\)/);
   assert.match(globalsSource, /\.app-topbar \.header-profile-label/);
   assert.match(globalsSource, /@media \(min-width: 1440px\) and \(max-width: 1799px\)[\s\S]*\.app-topbar[\s\S]*flex-wrap: wrap/);
+  assert.match(indexSource, /focusMode/);
+  assert.match(indexSource, /cloud-sync-status/);
+  assert.match(globalsSource, /\.focus-mode \.welcome-secondary/);
+});
+
+test("workspace loading and navigation preserve user context", () => {
+  assert.match(indexSource, /dashboard-skeleton/);
+  assert.match(indexSource, /scrollPositionsRef/);
+  assert.match(indexSource, /cloudStatus/);
+  assert.match(indexSource, /data-tooltip="Topics"/);
+  assert.match(globalsSource, /composer-footer/);
+  assert.match(indexSource, /FOCUS_MODE_STORAGE_KEY/);
+  assert.match(indexSource, /Saved on this device/);
+  assert.match(indexSource, /Account & settings/);
+  assert.match(indexSource, /Back to today/);
+  assert.match(globalsSource, /\.dashboard-section-nav/);
+  assert.match(globalsSource, /welcome-secondary > \.dashboard-section/);
+  assert.match(welcomeSource, /IntersectionObserver/);
+  assert.match(welcomeSource, /aria-current=\{activeSection/);
+});
+
+test("auth and destructive account actions provide inline guidance", () => {
+  assert.match(authPageSource, /Enter your first and last name/);
+  assert.match(authPageSource, /Use a password with at least 12 characters/);
+  assert.match(settingsModalSource, /Type DELETE to confirm/);
+  assert.match(settingsModalSource, /Confirm permanent account deletion/);
+  assert.match(indexSource, /focusModeHint/);
+  assert.match(indexSource, /pointerdown/);
+  assert.match(indexSource, /ai-progress-status/);
+  assert.match(globalsSource, /phone-bottom-nav section/);
 });
 
 test("account modal stays centered and protects account form interactions", () => {
@@ -74,6 +109,19 @@ test("account modal stays centered and protects account form interactions", () =
   assert.doesNotMatch(settingsModalSource, /Verification email sent\. Check your inbox and spam folder before using protected features/);
   assert.match(settingsModalSource, /auth\.error/);
   assert.match(settingsModalSource, /aria-label="Password strength"/);
+  assert.match(settingsModalSource, /onDeleteSuccess/);
+  assert.match(accountApiSource, /type: "account-deleted"/);
+  assert.match(accountApiSource, /emailDelivery/);
+  assert.match(settingsModalSource, /Delete account permanently/);
+  assert.match(settingsModalSource, /Deleting account/);
+  assert.match(settingsModalSource, /accountFeedback/);
+});
+
+test("feedback and empty states remain accessible and readable", () => {
+  assert.match(toastSource, /role=\{type === "error" \? "alert" : "status"\}/);
+  assert.match(globalsSource, /\.empty-state/);
+  assert.match(globalsSource, /theme-light \.empty-state p/);
+  assert.match(authHookSource, /Your security session expired/);
 });
 
 test("cloud hydration does not replay a success toast on every refresh", () => {
@@ -145,4 +193,32 @@ test("app shell uses restrained corporate glass surfaces", () => {
 test("resume analyzer explains why the score is not perfect", () => {
   assert.match(careerToolkitSource, /Why this score/);
   assert.match(careerToolkitSource, /weakestScoreAreas/);
+});
+
+test("Interview Ready Q&A supports custom questions and answer handoff actions", () => {
+  assert.match(interviewReadySource, /Ask your own question/);
+  assert.match(interviewReadySource, /Generate answer/);
+  assert.match(interviewReadySource, /interviewReadyCustomQuestion/);
+  assert.match(interviewReadySource, /direct answer first/);
+  assert.match(interviewReadySource, /Copy answer/);
+  assert.match(interviewReadySource, /Clear filters/);
+  assert.match(interviewReadySource, /Answer style presets/);
+  assert.match(interviewReadySource, /interviewiq_interview_ready_bookmarks/);
+  assert.match(interviewReadySource, /Answer was useful/);
+  assert.match(interviewReadySource, /Compact mode/);
+  assert.match(interviewReadySource, /event.key.toLowerCase\(\) === "k"/);
+  assert.match(interviewReadySource, /Privacy: practice drafts/);
+  assert.match(interviewReadySource, /Export collection/);
+  assert.match(interviewReadySource, /Import collection/);
+  assert.match(interviewReadySource, /answerHistory/);
+  assert.match(interviewReadySource, /HighlightedText/);
+  assert.match(interviewReadySource, /Offline mode/);
+  assert.match(interviewReadySource, /Regenerate last answer/);
+  assert.match(interviewReadySource, /Clear all/);
+  assert.match(interviewReadySource, /Practice progress/);
+  assert.match(interviewReadySource, /Show saved only/);
+  assert.match(interviewReadySource, /AI-generated coaching content/);
+  assert.match(interviewReadySource, /Increase text size/);
+  assert.match(interviewReadySource, /Send feedback/);
+  assert.match(globalsSource, /:focus-visible/);
 });

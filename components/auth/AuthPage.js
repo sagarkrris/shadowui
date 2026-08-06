@@ -17,6 +17,7 @@ export default function AuthPage({ mode }) {
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [registrationComplete, setRegistrationComplete] = useState(false);
+  const [validationMessage, setValidationMessage] = useState("");
   const isRegister = mode === "register";
   const alternateHref = isRegister ? "/sign-in" : "/sign-up";
 
@@ -25,6 +26,9 @@ export default function AuthPage({ mode }) {
   const submit = async (event) => {
     event.preventDefault();
     if (submitting) return;
+    if (isRegister && (!firstName.trim() || !lastName.trim())) { setValidationMessage("Enter your first and last name."); return; }
+    if (password.length < 12) { setValidationMessage("Use a password with at least 12 characters."); return; }
+    setValidationMessage("");
     setSubmitting(true);
     if (isRegister) setRegistrationComplete(true);
     try {
@@ -52,6 +56,7 @@ export default function AuthPage({ mode }) {
           </label>
           {isRegister && password ? <div aria-label="Password strength" style={{ display: "grid", gap: 5 }}><div style={{ height: 6, borderRadius: 999, background: "#e2e8f0", overflow: "hidden" }}><span style={{ display: "block", width: `${strength.percent}%`, height: "100%", background: strength.label === "Strong" ? "#15803d" : strength.label === "Fair" ? "#b7791f" : "#b91c1c" }} /></div><span style={{ color: strength.label === "Strong" ? "#166534" : strength.label === "Fair" ? "#92400e" : "#b91c1c", fontSize: 12 }}>{strength.label} password · use 12+ characters with upper/lowercase, a number, and a symbol.</span></div> : null}
           {auth.error ? <p role="alert" style={{ margin: 0, color: "#b91c1c", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "9px 10px", fontSize: 13 }}>{auth.error}</p> : null}
+          {validationMessage ? <p role="alert" className="field-validation" style={{ margin: 0, color: "#b45309", background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 8, padding: "9px 10px", fontSize: 13 }}>{validationMessage}</p> : null}
           {auth.deliveryWarning ? <p role="alert" style={{ margin: 0, color: "#b45309", background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 8, padding: "9px 10px", fontSize: 13 }}>{auth.deliveryWarning}</p> : null}
           {auth.deliveryNotice ? <p role="status" style={{ margin: 0, color: "#166534", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: "9px 10px", fontSize: 13 }}>{auth.deliveryNotice}</p> : null}
           <button type="submit" disabled={!auth.ready || submitting} aria-busy={submitting} style={{ minHeight: 46, border: 0, borderRadius: 8, background: "#123252", color: "#fff", cursor: auth.ready && !submitting ? "pointer" : "wait", fontSize: 14, fontWeight: 800 }}>{submitting ? (isRegister ? "Creating account…" : "Signing in…") : (isRegister ? "Create account" : "Sign in")}</button>

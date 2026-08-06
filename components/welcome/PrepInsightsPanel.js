@@ -495,7 +495,7 @@ export default function PrepInsightsPanel({ profile, topics, weakSpots, mockScor
               ))}
             </div>
           ) : (
-            <div style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 11, background: theme.accentMuted }}>
+            <div className="empty-state">
               <strong style={{ display: "block", color: theme.accentText, fontSize: 12, marginBottom: 5 }}>No mistakes captured yet</strong>
               <p style={{ color: "#9ca3af", fontSize: 11.5, lineHeight: 1.45 }}>Complete a scored mock and InterviewIQ will collect repeatable gaps here.</p>
             </div>
@@ -531,7 +531,7 @@ export default function PrepInsightsPanel({ profile, topics, weakSpots, mockScor
               ))}
             </div>
           ) : (
-            <div style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 11, background: theme.accentMuted }}>
+            <div className="empty-state">
               <strong style={{ display: "block", color: theme.accentText, fontSize: 12, marginBottom: 5 }}>No saved proof stories yet</strong>
               <p style={{ color: "#9ca3af", fontSize: 11.5, lineHeight: 1.45 }}>Score 7+ on a mock answer and InterviewIQ will turn it into reusable STAR story material.</p>
             </div>
@@ -570,7 +570,7 @@ export default function PrepInsightsPanel({ profile, topics, weakSpots, mockScor
               ))}
             </div>
           ) : (
-            <div style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 11, background: theme.accentMuted }}>
+            <div className="empty-state">
               <strong style={{ display: "block", color: theme.accentText, fontSize: 12, marginBottom: 5 }}>No replay yet</strong>
               <p style={{ color: "#9ca3af", fontSize: 11.5, lineHeight: 1.45 }}>Complete a scored mock and the full question-answer-feedback timeline will appear here.</p>
             </div>
@@ -599,7 +599,7 @@ export default function PrepInsightsPanel({ profile, topics, weakSpots, mockScor
               ))}
             </div>
           ) : (
-            <div style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 11, background: theme.accentMuted }}>
+            <div className="empty-state">
               <strong style={{ display: "block", color: theme.accentText, fontSize: 12, marginBottom: 5 }}>No scored sessions yet</strong>
               <p style={{ color: "#9ca3af", fontSize: 11.5, lineHeight: 1.45 }}>Run a mock and the latest scored sessions will appear here with retry prompts.</p>
             </div>

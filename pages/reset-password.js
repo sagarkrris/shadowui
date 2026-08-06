@@ -33,7 +33,16 @@ export default function ResetPasswordPage() {
     const body = token ? { token, password } : { email };
     const response = await fetch(`/api/auth?action=${action}`, { method: "POST", headers: { "Content-Type": "application/json", ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}) }, body: JSON.stringify(body) });
     const payload = await response.json().catch(() => ({}));
-    if (!response.ok) { setError(payload.error || "Unable to complete this request."); setSubmitting(false); return; }
+    if (!response.ok) {
+      const rawError = String(payload.error || "Unable to complete this request.");
+      setError(rawError.toLowerCase().includes("csrf")
+        ? "Your security session expired. Refresh the page and try again."
+        : response.status === 429
+          ? "Too many attempts. Please wait a moment and try again."
+          : rawError);
+      setSubmitting(false);
+      return;
+    }
     setMessage(token ? "Your password has been reset. You can now sign in." : "If that account exists, reset instructions will be sent shortly.");
     if (!token) setEmail("");
     setSubmitting(false);

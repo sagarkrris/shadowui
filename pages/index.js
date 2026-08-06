@@ -62,6 +62,7 @@ import { useCloudStateSync } from "../hooks/useCloudStateSync";
 
 const MOCK_ANSWER_SECONDS = 120;
 const BEGINNER_GUIDED_MODE_KEY = "interviewiq.beginnerGuidedMode.v1";
+const FOCUS_MODE_STORAGE_KEY = "interviewiq.focusMode.v1";
 const APPLICATION_TRACKER_STORAGE_KEY = "interviewiq.applicationTracker.v1";
 const JAVA_DIGEST_PROGRESS_STORAGE_KEY = "interviewiq.javaDigestProgress.v1";
 const INTERVIEW_MODES = [
@@ -159,6 +160,9 @@ export default function Home() {
   const [prepProgressState, setPrepProgressState] = useState(() => createPrepProgressState());
   const [isKeyboardOpen, setKeyboardOpen] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
+  const [focusMode, setFocusMode] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [cloudStatus, setCloudStatus] = useState("idle");
   const [toast, setToast]             = useState(null);
   const [candidateProfile, setCandidateProfile] = useState(null);
   const [profileDraft, setProfileDraft] = useState(DEFAULT_PROFILE);
@@ -181,6 +185,9 @@ export default function Home() {
   const voiceFinal = useRef("");
   const pendingPracticeCard = useRef(null);
   const toastTimer = useRef(null);
+  const userMenuRef = useRef(null);
+  const scrollPositionsRef = useRef({});
+  const previousActiveTabRef = useRef(activeTab);
   const viewportBaselineHeight = useRef(0);
   const viewportWidthRef = useRef(0);
   const keyboardOpenRef = useRef(false);
@@ -312,6 +319,7 @@ export default function Home() {
     }
     setQuestionMemory(loadQuestionMemory(window.localStorage));
     setBeginnerMode(window.localStorage.getItem(BEGINNER_GUIDED_MODE_KEY) === "1");
+    setFocusMode(window.localStorage.getItem(FOCUS_MODE_STORAGE_KEY) === "1");
     setApplications(loadVersionedState(window.localStorage, {
       key: APPLICATION_TRACKER_STORAGE_KEY,
       version: 1,
@@ -365,6 +373,11 @@ export default function Home() {
     if (!sessionReady) return;
     window.localStorage.setItem(BEGINNER_GUIDED_MODE_KEY, beginnerMode ? "1" : "0");
   }, [beginnerMode, sessionReady]);
+
+  useEffect(() => {
+    if (!sessionReady) return;
+    window.localStorage.setItem(FOCUS_MODE_STORAGE_KEY, focusMode ? "1" : "0");
+  }, [focusMode, sessionReady]);
 
   useEffect(() => {
     if (!sessionReady) return;
@@ -483,6 +496,15 @@ export default function Home() {
   }, [topControlsOpen]);
 
   useEffect(() => {
+    if (!userMenuOpen) return undefined;
+    const closeOnEscape = (event) => { if (event.key === "Escape") setUserMenuOpen(false); };
+    const closeOnOutsideClick = (event) => { if (!userMenuRef.current?.contains(event.target)) setUserMenuOpen(false); };
+    window.addEventListener("keydown", closeOnEscape);
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    return () => { window.removeEventListener("keydown", closeOnEscape); document.removeEventListener("pointerdown", closeOnOutsideClick); };
+  }, [userMenuOpen]);
+
+  useEffect(() => {
     const clearViewportRestoreTimers = () => {
       viewportRestoreTimers.current.forEach((timer) => window.clearTimeout(timer));
       viewportRestoreTimers.current = [];
@@ -569,6 +591,14 @@ export default function Home() {
   }, [activeTab, messages.length, loading, candidateProfile, selectedCat, selectedSub, mode, interviewMode]);
 
   useEffect(() => {
+    if (previousActiveTabRef.current === activeTab) return;
+    const previousTab = previousActiveTabRef.current;
+    if (chatRef.current) scrollPositionsRef.current[previousTab] = chatRef.current.scrollTop;
+    previousActiveTabRef.current = activeTab;
+    requestAnimationFrame(() => chatRef.current?.scrollTo({ top: scrollPositionsRef.current[activeTab] || 0, behavior: "auto" }));
+  }, [activeTab]);
+
+  useEffect(() => {
     if (!showCodeTools) {
       setShowCode(false);
       setCodeInput("");
@@ -581,6 +611,15 @@ export default function Home() {
     clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast(null), 2800);
   }, []);
+
+  useEffect(() => {
+    if (!focusMode || typeof window === "undefined") return;
+    const hintKey = "interviewiq.focusModeHint.v1";
+    if (window.localStorage.getItem(hintKey) !== "1") {
+      showToast("Focus mode keeps your next prep action visible and hides secondary dashboard sections.", "info");
+      window.localStorage.setItem(hintKey, "1");
+    }
+  }, [focusMode, showToast]);
 
   const cloudSnapshot = { session: createSessionSnapshot({ candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSession: interviewSessionState }), themePreference, toolkitState, applications, javaDigestProgress, questionMemory, prepProgressState };
   const applyCloudState = useCallback((snapshot) => {
@@ -601,7 +640,8 @@ export default function Home() {
     resetInterviewSession(session.interviewSession);
     if (snapshot.session) { setToolkitState(snapshot.toolkitState || {}); setApplications(Array.isArray(snapshot.applications) ? snapshot.applications : []); setJavaDigestProgress(snapshot.javaDigestProgress || { completedTopics: [], masteredTopics: [] }); setQuestionMemory(snapshot.questionMemory || { questions: {} }); setPrepProgressState(snapshot.prepProgressState || createPrepProgressState()); }
   }, [resetInterviewSession, setActiveTab]);
-  useCloudStateSync({ user: auth.user, ready: auth.ready && sessionReady, csrfToken: auth.csrfToken, snapshot: cloudSnapshot, onRemoteState: applyCloudState, onError: () => showToast("Cloud sync is temporarily unavailable; local work is safe.", "error") });
+  const handleCloudSyncStatus = useCallback((status) => setCloudStatus(status), []);
+  useCloudStateSync({ user: auth.user, ready: auth.ready && sessionReady, csrfToken: auth.csrfToken, snapshot: cloudSnapshot, onRemoteState: applyCloudState, onStatus: handleCloudSyncStatus, onError: () => showToast("Cloud sync is temporarily unavailable; local work is safe.", "error") });
 
   useEffect(() => {
     if (mockTimerStatus !== "answering" || !mockTimerEndsAt) return undefined;
@@ -1445,10 +1485,10 @@ export default function Home() {
 
       {/* Settings modal */}
       {showSettings && <AboutModal theme={techTheme} onClose={() => setShowSettings(false)} appearance={resolvedThemeMode} />}
-      {showAccountSettings && <SettingsModal onClose={() => setShowAccountSettings(false)} theme={techTheme} auth={auth} themePreference={themePreference} onThemePreferenceChange={setThemePreference} appearance={resolvedThemeMode} />}
+      {showAccountSettings && <SettingsModal onClose={() => setShowAccountSettings(false)} onDeleteSuccess={(result) => { setShowAccountSettings(false); showToast(result.emailDelivery?.delivered ? "Account deleted. Confirmation email sent." : "Account deleted, but confirmation email could not be sent.", result.emailDelivery?.delivered ? "info" : "error"); }} theme={techTheme} auth={auth} themePreference={themePreference} onThemePreferenceChange={setThemePreference} appearance={resolvedThemeMode} />}
 
       {/* App shell */}
-      <div className={`app-shell theme-${resolvedThemeMode}`} style={{ ...themeVars, position:"fixed", inset:0, isolation:"isolate", display:"flex", height:appShellHeight, overflow:"hidden", background:techTheme.surface }}>
+      <div className={`app-shell theme-${resolvedThemeMode} ${focusMode ? "focus-mode" : ""}`} style={{ ...themeVars, position:"fixed", inset:0, isolation:"isolate", display:"flex", height:appShellHeight, overflow:"hidden", background:techTheme.surface }}>
         <TechBackground theme={techTheme} />
 
         {/* Sidebar */}
@@ -1487,10 +1527,10 @@ export default function Home() {
 
           {/* ── Top bar ── */}
           <header className="glass-chrome app-topbar" style={{ position:"relative", zIndex:130, display:"flex", alignItems:"center", gap:8, padding:"9px 12px", borderBottom:"1px solid rgba(255,255,255,.08)", flexShrink:0, minHeight:52 }}>
-            <button className={`icon-btn ${activeTab==="chat" && messages.length===0 ? "active" : ""}`} onClick={goHome} title="Home" aria-label="Home">
+            <button className={`icon-btn ${activeTab==="chat" && messages.length===0 ? "active" : ""}`} onClick={goHome} title="Home" data-tooltip="Home" aria-label="Home">
               <i className="ti ti-home" />
             </button>
-            <button className="icon-btn" onClick={() => setSidebar(p => !p)} title="Topics" aria-label="Topics">
+            <button className="icon-btn" onClick={() => setSidebar(p => !p)} title="Topics" data-tooltip="Topics" aria-label="Topics">
               <i className="ti ti-menu-2" />
             </button>
             <div className="desktop-workspace-nav">
@@ -1509,7 +1549,11 @@ export default function Home() {
             />
 
             <span className="header-title" style={{ flex:1, fontSize:13, fontWeight:500, color: currentLabel?"#e8e8f0":"#4b5563", minWidth:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-              {headerTitle}
+              {activeTab !== "chat" ? <><span className="header-breadcrumb-root">Today</span><span className="header-breadcrumb-separator">/</span>{headerTitle}</> : headerTitle}
+            </span>
+            <span className={`cloud-sync-status cloud-sync-${cloudStatus}`} role="status" aria-live="polite" title="Workspace sync status">
+              <i className={`ti ${cloudStatus === "saving" || cloudStatus === "hydrating" ? "ti-loader-2" : cloudStatus === "error" ? "ti-alert-circle" : "ti-cloud-check"}`} />
+              {cloudStatus === "saving" ? "Saving…" : cloudStatus === "hydrating" ? "Loading…" : cloudStatus === "error" ? "Sync issue" : auth.user ? "Saved" : "Saved on this device"}
             </span>
             {candidateProfile && (
               <span className="header-profile-label" style={{ display:isMobile?"none":"inline-flex", alignItems:"center", gap:5, padding:"3px 8px", borderRadius:999, border:`1px solid ${techTheme.accentBorder}`, background:techTheme.accentMuted, color:techTheme.accentText, fontSize:10.5, fontWeight:600, whiteSpace:"nowrap" }}>
@@ -1518,11 +1562,20 @@ export default function Home() {
             )}
 
             <div className="header-account-actions" style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }} aria-label="Account actions">
-              {auth.user ? <button type="button" className="glass-button" onClick={() => setShowAccountSettings(true)} style={{ border: `1px solid ${techTheme.accentBorder}`, borderRadius: 7, color: techTheme.accentText, cursor: "pointer", fontSize: 11, fontWeight: 850, padding: "5px 9px", whiteSpace: "nowrap" }}>Account</button> : <>
+              {auth.user ? <div ref={userMenuRef} className="user-menu-wrap" style={{ position: "relative" }}>
+                <button type="button" className="glass-button" onClick={() => setUserMenuOpen((value) => !value)} aria-haspopup="menu" aria-expanded={userMenuOpen} style={{ border: `1px solid ${techTheme.accentBorder}`, borderRadius: 7, color: techTheme.accentText, cursor: "pointer", fontSize: 11, fontWeight: 850, padding: "5px 9px", whiteSpace: "nowrap" }}><i className="ti ti-user-circle" /> Account <i className={`ti ${userMenuOpen ? "ti-chevron-up" : "ti-chevron-down"}`} /></button>
+                {userMenuOpen && <div className="user-menu-panel glass-card" role="menu" aria-label="Account menu">
+                  <button type="button" role="menuitem" onClick={() => { setShowAccountSettings(true); setUserMenuOpen(false); }}><i className="ti ti-settings" />Account & settings</button>
+                  <button type="button" role="menuitem" onClick={() => { setFocusMode((value) => !value); setUserMenuOpen(false); }}><i className="ti ti-focus-2" />{focusMode ? "Exit focus mode" : "Focus mode"}</button>
+                </div>}
+              </div> : <>
                 <button type="button" className="glass-button" onClick={() => openAuthSettings("login")} style={{ border: `1px solid ${techTheme.accentBorder}`, borderRadius: 7, color: techTheme.accentText, cursor: "pointer", fontSize: 11, fontWeight: 850, padding: "5px 9px", whiteSpace: "nowrap" }}>Sign in</button>
                 <button type="button" className="glass-button" onClick={() => openAuthSettings("register")} style={{ border: `1px solid ${techTheme.accentBorder}`, borderRadius: 7, color: techTheme.accentText, cursor: "pointer", fontSize: 11, fontWeight: 850, padding: "5px 9px", whiteSpace: "nowrap" }}>Create account</button>
               </>}
             </div>
+            {!auth.user && <button type="button" className={`glass-button focus-mode-toggle ${focusMode ? "active" : ""}`} onClick={() => setFocusMode((value) => !value)} aria-pressed={focusMode} title="Focus mode" data-tooltip="Focus mode" style={{ border: `1px solid ${techTheme.accentBorder}`, borderRadius: 7, color: techTheme.accentText, fontSize: 11, fontWeight: 850, padding: "5px 9px", whiteSpace: "nowrap" }}><i className="ti ti-focus-2" /> {focusMode ? "Exit focus" : "Focus"}</button>}
+
+            {activeTab !== "chat" && <button type="button" className="glass-button today-back-button" onClick={goHome} title="Back to today's plan" data-tooltip="Back to today" style={{ border: `1px solid ${techTheme.accentBorder}`, borderRadius: 7, color: techTheme.accentText, fontSize: 11, fontWeight: 850, padding: "5px 9px", whiteSpace: "nowrap" }}><i className="ti ti-arrow-left" /> Today</button>}
 
             {/* Desktop-only controls */}
             {showInterviewTools && <div style={{ display:"flex", alignItems:"center", gap:6 }} className="desktop-controls">
@@ -1640,7 +1693,7 @@ export default function Home() {
             {candidateProfile && (
               <button className="icon-btn" onClick={() => { setProfileDraft(candidateProfile); setCandidateProfile(null); setMessages([]); }} title="Edit Profile" aria-label="Edit Profile"><i className="ti ti-user-cog" /></button>
             )}
-            <button className="icon-btn" onClick={() => setShowSettings(true)} title="About and help" aria-label="Info"><i className="ti ti-info-circle" /></button>
+            <button className="icon-btn" onClick={() => setShowSettings(true)} title="About and help" data-tooltip="About & help" aria-label="Info"><i className="ti ti-info-circle" /></button>
           </header>
 
           <div className="glass-chrome" style={{ alignItems: "center", borderBottom: "1px solid rgba(255,255,255,.06)", display: "flex", flexWrap: "wrap", gap: 7, padding: "8px 12px" }}>
@@ -1676,7 +1729,10 @@ export default function Home() {
           )}
 
           {/* ── Chat area ── */}
-          <div ref={chatRef} className="chat-scroll" role="log" aria-live="polite" aria-relevant="additions text" aria-busy={loading} aria-label="Conversation messages" style={{ flex:1, minHeight:0, overflowY:"auto", padding: isMobile?"12px 10px":"20px 16px", display:"flex", flexDirection:"column" }}>
+          <div ref={chatRef} className="chat-scroll" role="log" aria-live="polite" aria-relevant="additions text" aria-busy={loading || !sessionReady} aria-label="Conversation messages" style={{ flex:1, minHeight:0, overflowY:"auto", padding: isMobile?"12px 10px":"20px 16px", display:"flex", flexDirection:"column" }}>
+            {!sessionReady ? <div className="dashboard-skeleton" role="status" aria-label="Loading InterviewIQ workspace"><span /><span /><span /><span /></div> : null}
+            {sessionReady ? <>
+            {loading ? <div className="ai-progress-status" role="status" aria-live="polite"><span className="dot" />InterviewIQ is preparing your response…</div> : null}
             {activeTab === "course" ? (
               <AgenticUICourse theme={techTheme} variant="full" />
             ) : activeTab==="scenarioBank" ? (
@@ -1824,6 +1880,8 @@ export default function Home() {
                   beginnerMode={beginnerMode}
                   onBeginnerModeChange={setBeginnerMode}
                   prepProgressState={prepProgressState}
+                  focusMode={focusMode}
+                  onNotify={showToast}
                   onBeginnerStepChange={setBeginnerStep}
                   onExportPlan={exportPrepPlan}
                   onToolkitStateChange={setToolkitState}
@@ -1859,10 +1917,11 @@ export default function Home() {
                 </>
               )
             }
+            </> : null}
           </div>
 
           {/* ── Input area ── */}
-          {showComposer && <footer className="glass-chrome" style={{ padding: isMobile ? (isKeyboardOpen ? "8px 10px" : "8px 10px 10px") : "10px 12px 12px", borderTop:"1px solid rgba(255,255,255,.08)", flexShrink:0 }}>
+          {showComposer && <footer className="glass-chrome composer-footer" style={{ padding: isMobile ? (isKeyboardOpen ? "8px 10px" : "8px 10px 10px") : "10px 12px 12px", borderTop:"1px solid rgba(255,255,255,.08)", flexShrink:0 }}>
             {mockTimerStatus !== "idle" && (
               <div role="status" aria-live="polite" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8, border: `1px solid ${techTheme.accentBorder}`, borderRadius: 8, padding: "6px 9px", background: techTheme.accentMuted }}>
                 <span style={{ color: techTheme.accentText, fontSize: 11.5, fontWeight: 800, display: "inline-flex", alignItems: "center", gap: 6 }}>

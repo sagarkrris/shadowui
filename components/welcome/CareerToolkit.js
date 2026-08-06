@@ -144,7 +144,7 @@ function buildResumeQuestionPrompts(resumeAnalysis, profile) {
   }));
 }
 
-export default function CareerToolkit({ profile, topics, messages, theme, onAction, onToolkitStateChange }) {
+export default function CareerToolkit({ profile, topics, messages, theme, onAction, onNotify, onToolkitStateChange }) {
   const [ready, setReady] = useState(false);
   const [state, setState] = useState(EMPTY_STATE);
   const [interviewDraft, setInterviewDraft] = useState(EMPTY_INTERVIEW);
@@ -299,6 +299,7 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
     }));
     setInterviewDraft(EMPTY_INTERVIEW);
     setInterviewNotice("");
+    onNotify?.("Interview scheduled.", "success");
   };
 
   const removeInterview = (id) => {
@@ -645,7 +646,7 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
               ))}
             </div>
           ) : (
-            <div style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 11, background: theme.accentMuted }}>
+            <div className="empty-state">
               <strong style={{ display: "block", color: theme.accentText, fontSize: 12, marginBottom: 5 }}>No review queue yet</strong>
               <p style={{ color: "#9ca3af", fontSize: 11.5, lineHeight: 1.45 }}>Complete a scored mock and gaps will return after 1, 3, and 7 days.</p>
             </div>

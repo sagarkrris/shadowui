@@ -14,8 +14,9 @@ import SmartPrepTimeline from "./SmartPrepTimeline";
 import UnifiedProgressBrain from "./UnifiedProgressBrain";
 import CodeRunner from "../CodeRunner";
 
-export default function Welcome({ onChip, onScreen, onVoice, onRecordReview, selectedCat, selectedSub, mode, difficulty, theme, profile, showCodeTools, topics, weakSpots, mockScores, messages, structuredSessions = [], questionMemory, onQuestionMemoryChange, systemDesignCanvas, onPracticeMock, onOpenWorkspace, beginnerMode, onBeginnerModeChange, prepProgressState, onBeginnerStepChange, onExportPlan, onToolkitStateChange: onExternalToolkitStateChange }) {
+export default function Welcome({ onChip, onScreen, onVoice, onRecordReview, selectedCat, selectedSub, mode, difficulty, theme, profile, showCodeTools, topics, weakSpots, mockScores, messages, structuredSessions = [], questionMemory, onQuestionMemoryChange, systemDesignCanvas, onPracticeMock, onOpenWorkspace, beginnerMode, onBeginnerModeChange, prepProgressState, focusMode = false, onNotify, onBeginnerStepChange, onExportPlan, onToolkitStateChange: onExternalToolkitStateChange }) {
   const [toolkitState, setToolkitState] = useState({});
+  const [activeSection, setActiveSection] = useState("overview");
   const topic = selectedSub || selectedCat;
   const quickPrompts = getQuickPrompts(selectedCat, selectedSub);
   const greeting = getStackGreeting(profile);
@@ -40,8 +41,20 @@ export default function Welcome({ onChip, onScreen, onVoice, onRecordReview, sel
     }
   }, []);
 
+  useEffect(() => {
+    const root = document.querySelector(".chat-scroll");
+    const sections = ["overview", "practice", "career"].map((id) => document.getElementById(`dashboard-${id}`)).filter(Boolean);
+    if (!root || !sections.length || typeof IntersectionObserver === "undefined") return undefined;
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (visible?.target?.id) setActiveSection(visible.target.id.replace("dashboard-", ""));
+    }, { root, threshold: [0.15, 0.4, 0.7], rootMargin: "-8% 0px -55% 0px" });
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  }, [focusMode]);
+
   return (
-    <div className="welcome-screen prep-home-screen" style={{ flex: 1, width: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "18px 20px 28px", textAlign: "center", overflowY: "visible" }}>
+    <div className={`welcome-screen prep-home-screen ${focusMode ? "focus-mode-home" : ""}`} style={{ flex: 1, width: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "18px 20px 28px", textAlign: "center", overflowY: "visible" }}>
       <div className="welcome-logo" style={{ width: 60, height: 60, borderRadius: "50%", background: theme.accentSoft, border: `1px solid ${theme.accentBorder}`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18, color: theme.accentStrong, fontSize: greeting.stackBadge.length > 8 ? 11 : greeting.stackBadge.length > 6 ? 12 : 14, fontWeight: 900, lineHeight: 1, letterSpacing: 0, textAlign: "center", padding: "0 8px", overflowWrap: "anywhere" }}>
         {greeting.stackBadge}
       </div>
@@ -76,6 +89,14 @@ export default function Welcome({ onChip, onScreen, onVoice, onRecordReview, sel
         ))}
       </div>
 
+      <nav className="dashboard-section-nav" aria-label="Dashboard sections">
+        <a href="#dashboard-overview" aria-current={activeSection === "overview" ? "location" : undefined}>Overview</a>
+        <a href="#dashboard-practice" aria-current={activeSection === "practice" ? "location" : undefined}>Practice</a>
+        <a href="#dashboard-career" aria-current={activeSection === "career" ? "location" : undefined}>Career</a>
+      </nav>
+
+      <div className="welcome-secondary">
+      <div id="dashboard-overview" className="dashboard-section">
       <InterviewMissionControl
         profile={profile}
         topics={topics}
@@ -103,7 +124,9 @@ export default function Welcome({ onChip, onScreen, onVoice, onRecordReview, sel
         onOpenWorkspace={onOpenWorkspace}
         onExportPlan={onExportPlan}
       />
+      </div>
 
+      <div id="dashboard-practice" className="dashboard-section">
       {mode === "practice" && (
         <PracticePack
           profile={profile}
@@ -127,7 +150,9 @@ export default function Welcome({ onChip, onScreen, onVoice, onRecordReview, sel
       )}
 
       <PrepCommandCenter center={commandCenter} theme={theme} onAction={onChip} />
+      </div>
 
+      <div id="dashboard-career" className="dashboard-section">
       <PrepOSDashboard
         profile={profile}
         topics={topics}
@@ -146,6 +171,7 @@ export default function Welcome({ onChip, onScreen, onVoice, onRecordReview, sel
         messages={messages}
         theme={theme}
         onAction={onChip}
+        onNotify={onNotify}
         onToolkitStateChange={handleToolkitStateChange}
       />
 
@@ -182,6 +208,8 @@ export default function Welcome({ onChip, onScreen, onVoice, onRecordReview, sel
         {featureBadges.map(([icon, label]) => (
           <span key={label} style={{ display: "flex", alignItems: "center", gap: 5 }}><i className={`ti ${icon}`} />{label}</span>
         ))}
+      </div>
+      </div>
       </div>
     </div>
   );

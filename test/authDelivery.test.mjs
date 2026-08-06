@@ -42,6 +42,20 @@ test("uses the public reset page for password reset links", async () => {
   assert.match(body.text, /reset-password\?token=reset-token/);
 });
 
+test("sends an account deletion confirmation without an action link", async () => {
+  let request;
+  await deliverAuthEmail({
+    type: "account-deleted",
+    email: "candidate@example.com",
+    env: { RESEND_API_KEY: "re_test_key" },
+    fetchImpl: async (...args) => { request = args; return { ok: true }; },
+  });
+  const body = JSON.parse(request[1].body);
+  assert.equal(body.subject, "Your InterviewIQ account was deleted");
+  assert.match(body.text, /permanently deleted/);
+  assert.doesNotMatch(body.html, /href=/);
+});
+
 test("returns a safe provider status code when Resend rejects delivery", async () => {
   await assert.rejects(() => deliverAuthEmail({
     type: "verify-email",
