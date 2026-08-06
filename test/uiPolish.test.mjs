@@ -181,6 +181,13 @@ test("public pages share the corporate light theme", () => {
   assert.match(globalsSource, /\.privacyPage h1[\s\S]*#102033/);
 });
 
+test("verification links render a branded recovery page", () => {
+  assert.match(authApiSource, /Email verified/);
+  assert.match(authApiSource, /Return to InterviewIQ/);
+  assert.match(authApiSource, /Verification link unavailable/);
+  assert.match(authApiSource, /meta name=\"viewport\"/);
+});
+
 test("app shell uses restrained corporate glass surfaces", () => {
   assert.match(globalsSource, /Corporate glass surfaces/);
   assert.match(globalsSource, /#132238/);

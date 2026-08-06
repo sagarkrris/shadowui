@@ -10,6 +10,14 @@ const COOKIE = "interviewiq_session";
 const CSRF_COOKIE = "interviewiq_csrf";
 const cookieOptions = "Path=/; HttpOnly; SameSite=Lax; Max-Age=1209600";
 
+function verificationPage({ success, message }) {
+  const title = success ? "Email verified" : "Verification link unavailable";
+  const detail = success ? message : `${message} Request a new verification email from InterviewIQ and try again.`;
+  const appUrl = String(process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || "https://elevateprep.vercel.app").replace(/\/$/, "");
+  const safe = String(detail).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[character]));
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title} · InterviewIQ</title></head><body style="margin:0;min-height:100vh;background:linear-gradient(180deg,#f7f9fc,#e7eef8);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#102033;display:grid;place-items:center;padding:24px;box-sizing:border-box"><main style="width:min(440px,100%);background:#fff;border:1px solid #d6e1ee;border-radius:18px;box-shadow:0 22px 60px rgba(31,48,71,.16);padding:36px 30px;text-align:center"><div style="width:52px;height:52px;margin:0 auto 18px;border-radius:14px;background:#123252;color:#fff;display:grid;place-items:center;font-weight:800;font-size:19px">IQ</div><div style="color:${success ? "#15803d" : "#b42318"};font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase">${success ? "Success" : "Action needed"}</div><h1 style="font-size:26px;line-height:1.2;margin:10px 0 12px">${title}</h1><p style="color:#526579;font-size:15px;line-height:1.6;margin:0 0 24px">${safe}</p><a href="${appUrl}" style="display:inline-block;background:#123252;color:#fff;border-radius:8px;padding:12px 18px;text-decoration:none;font-weight:700">Return to InterviewIQ</a><p style="color:#94a3b8;font-size:12px;line-height:1.5;margin:22px 0 0">You can close this tab after returning to the app.</p></main></body></html>`;
+}
+
 function readCookie(req, name) {
   return String(req.headers.cookie || "").split(";").map((item) => item.trim().split("=")).find(([key]) => key === name)?.[1] || "";
 }
@@ -102,9 +110,9 @@ async function handler(req, res) {
     }
     if (action === "verify" && (req.method === "POST" || req.method === "GET")) {
       const user = await consumeVerificationToken(req.method === "GET" ? req.query?.token : req.body?.token);
-      if (!user) return req.method === "GET" ? res.status(400).send("Verification link is invalid or expired.") : res.status(400).json({ error: "Verification link is invalid or expired." });
+      if (!user) return req.method === "GET" ? res.status(400).setHeader("Content-Type", "text/html; charset=utf-8").send(verificationPage({ success: false, message: "This verification link is invalid or has expired." })) : res.status(400).json({ error: "Verification link is invalid or expired." });
       await recordAudit({ type: "email_verified", userId: user.id, email: user.email, ip: getClientAddress(req) });
-      return req.method === "GET" ? res.status(200).send("Email verified. You can return to InterviewIQ and sign in.") : res.status(200).json({ ok: true });
+      return req.method === "GET" ? res.status(200).setHeader("Content-Type", "text/html; charset=utf-8").send(verificationPage({ success: true, message: "Your email has been verified. Return to InterviewIQ and sign in to continue." })) : res.status(200).json({ ok: true });
     }
     if (action === "forgot" && req.method === "POST") {
       if (!(await validCsrf(req))) return res.status(403).json({ error: "CSRF validation failed." });
