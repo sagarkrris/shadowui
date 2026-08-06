@@ -8,6 +8,7 @@ test("delivers verification email through Resend with a usable verification link
   const result = await deliverAuthEmail({
     type: "verify-email",
     email: "candidate@example.com",
+    firstName: "Sagar",
     token: "verification-token",
     env: {
       RESEND_API_KEY: "re_test_key",
@@ -26,6 +27,8 @@ test("delivers verification email through Resend with a usable verification link
   assert.equal(body.to[0], "candidate@example.com");
   assert.match(body.html, /action=verify/);
   assert.match(body.text, /verification-token/);
+  assert.match(body.html, /Hello Sagar/);
+  assert.match(body.text, /Hello Sagar/);
 });
 
 test("uses the public reset page for password reset links", async () => {
@@ -40,6 +43,33 @@ test("uses the public reset page for password reset links", async () => {
   const body = JSON.parse(request[1].body);
   assert.match(body.html, /reset-password\?token=reset-token/);
   assert.match(body.text, /reset-password\?token=reset-token/);
+});
+
+test("passes the first name to webhook email providers", async () => {
+  let request;
+  await deliverAuthEmail({
+    type: "verify-email",
+    email: "candidate@example.com",
+    firstName: "Sagar",
+    token: "verification-token",
+    env: { EMAIL_WEBHOOK_URL: "https://mailer.example.test" },
+    fetchImpl: async (...args) => { request = args; return { ok: true }; },
+  });
+  assert.equal(JSON.parse(request[1].body).firstName, "Sagar");
+});
+
+test("uses a safe generic greeting when first name is unavailable", async () => {
+  let request;
+  await deliverAuthEmail({
+    type: "verify-email",
+    email: "candidate@example.com",
+    token: "verification-token",
+    env: { RESEND_API_KEY: "re_test_key" },
+    fetchImpl: async (...args) => { request = args; return { ok: true }; },
+  });
+  const body = JSON.parse(request[1].body);
+  assert.match(body.text, /Hello there/);
+  assert.doesNotMatch(body.text, /candidate@example.com/);
 });
 
 test("sends an account deletion confirmation without an action link", async () => {

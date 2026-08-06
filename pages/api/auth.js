@@ -41,7 +41,7 @@ async function csrfDiagnostics(req) {
 
 async function sendAuthEmail({ type, user, token, req }) {
   try {
-    const delivery = await deliverAuthEmail({ type, email: user.email, userId: user.id, token });
+    const delivery = await deliverAuthEmail({ type, email: user.email, firstName: user.firstName, userId: user.id, token });
     recordMetric(delivery.delivered ? "auth.email_sent" : "auth.email_delivery_unavailable", { type, emailDomain: user.email.split("@")[1] });
     if (!delivery.delivered) await recordAudit({ type: "email_delivery_failed", userId: user.id, email: user.email, ip: getClientAddress(req), providerError: delivery.configured ? "not_delivered" : "not_configured" });
     return delivery;

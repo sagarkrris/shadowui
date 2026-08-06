@@ -24,7 +24,7 @@ async function handler(req, res) {
       if (remaining) return res.status(503).json({ error: "Account deletion could not be verified. Please contact support." });
       let emailDelivery;
       try {
-        emailDelivery = await deliverAuthEmail({ type: "account-deleted", email: user.email, userId: user.id });
+        emailDelivery = await deliverAuthEmail({ type: "account-deleted", email: user.email, firstName: user.firstName, userId: user.id });
       } catch (error) {
         emailDelivery = { delivered: false, configured: true, provider: "resend", error: true, errorCode: error.code || "provider_error" };
         await recordAudit({ type: "account_deletion_email_failed", email: user.email, providerError: error.code || error.message }).catch((auditError) => reportServerError(auditError, { route: "/api/account", action: "delete-email-audit" }));
