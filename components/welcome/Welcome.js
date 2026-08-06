@@ -14,7 +14,7 @@ import SmartPrepTimeline from "./SmartPrepTimeline";
 import UnifiedProgressBrain from "./UnifiedProgressBrain";
 import CodeRunner from "../CodeRunner";
 
-export default function Welcome({ onChip, onScreen, onVoice, onRecordReview, selectedCat, selectedSub, mode, difficulty, theme, profile, showCodeTools, topics, weakSpots, mockScores, messages, structuredSessions = [], questionMemory, onQuestionMemoryChange, systemDesignCanvas, onPracticeMock, onOpenWorkspace, beginnerMode, onBeginnerModeChange, prepProgressState, focusMode = false, onNotify, onBeginnerStepChange, onExportPlan, onToolkitStateChange: onExternalToolkitStateChange }) {
+export default function Welcome({ onChip, onStart, onScreen, onVoice, onRecordReview, selectedCat, selectedSub, mode, difficulty, theme, profile, showCodeTools, topics, weakSpots, mockScores, messages, structuredSessions = [], questionMemory, onQuestionMemoryChange, systemDesignCanvas, onPracticeMock, onOpenWorkspace, beginnerMode, onBeginnerModeChange, prepProgressState, focusMode = false, onNotify, onBeginnerStepChange, onExportPlan, onToolkitStateChange: onExternalToolkitStateChange }) {
   const [toolkitState, setToolkitState] = useState({});
   const [activeSection, setActiveSection] = useState("overview");
   const topic = selectedSub || selectedCat;
@@ -61,7 +61,7 @@ export default function Welcome({ onChip, onScreen, onVoice, onRecordReview, sel
       <h1 className="welcome-title" style={{ fontSize: 20, fontWeight: 700, color: theme.appearance === "light" ? "#17324d" : "#e8e8f0", marginBottom: 8, maxWidth: 520, overflowWrap: "anywhere", lineHeight: 1.35 }}>{greeting.headline}</h1>
       {topic ? (
         <p className="welcome-copy" style={{ fontSize: 13.5, color: "#6b7280", marginBottom: 24, maxWidth: 340, lineHeight: 1.65 }}>
-          {`${greeting.context} Ready for ${topic}. Hit Start or pick a focused prompt below.`}
+          {`${greeting.context} Ready for ${topic}. Start a mock or choose a focused prompt below.`}
         </p>
       ) : (
         <p className="welcome-copy" style={{ fontSize: 13.5, color: "#6b7280", marginBottom: 24, maxWidth: 340, lineHeight: 1.65 }}>
@@ -70,6 +70,9 @@ export default function Welcome({ onChip, onScreen, onVoice, onRecordReview, sel
       )}
 
       <div className="welcome-actions" style={{ display: "flex", gap: 10, marginBottom: 24, flexWrap: "wrap", justifyContent: "center" }}>
+        <button className="glass-button" onClick={onStart} disabled={!onStart} aria-label="Start mock interview" style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 18px", border: `1px solid ${theme.accentBorder}`, borderRadius: 10, background: theme.accentSoft, color: theme.accentText, fontSize: 13, fontWeight: 800, cursor: onStart ? "pointer" : "not-allowed", opacity: onStart ? 1 : 0.55 }}>
+          <i className="ti ti-player-play" />Start mock
+        </button>
         <button className="glass-button" onClick={onScreen} style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 18px", border: `1px solid ${theme.accentBorder}`, borderRadius: 10, color: theme.accentText, fontSize: 13, fontWeight: 500, cursor: "pointer" }}>
           <i className="ti ti-screenshot" />Analyze Screen
         </button>
@@ -81,12 +84,15 @@ export default function Welcome({ onChip, onScreen, onVoice, onRecordReview, sel
         </button>
       </div>
 
-      <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", maxWidth: 500 }}>
+      <div aria-label="Focused prompts" style={{ display: "grid", gap: 8, justifyItems: "center", width: "100%", maxWidth: 520 }}>
+        <div style={{ color: theme.appearance === "light" ? "#526579" : "#cbd5e1", fontSize: 11, fontWeight: 800, letterSpacing: "0.04em", textTransform: "uppercase" }}>Focused prompts</div>
+        <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
         {quickPrompts.map((chip) => (
           <button key={chip} className="glass-button" onClick={() => onChip(chip)} style={{ padding: "6px 13px", fontSize: 12, fontWeight: 500, borderRadius: 20, border: `1px solid ${theme.accentBorder}`, color: theme.accentText, cursor: "pointer" }}>
             {chip}
           </button>
         ))}
+        </div>
       </div>
 
       <nav className="dashboard-section-nav" aria-label="Dashboard sections">

@@ -1,6 +1,6 @@
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import CompanyPrep from "../components/company/CompanyPrep";
 import MessageContent from "../components/chat/MessageContent";
 import PostAnswerTools from "../components/chat/PostAnswerTools";
@@ -621,7 +621,7 @@ export default function Home() {
     }
   }, [focusMode, showToast]);
 
-  const cloudSnapshot = { session: createSessionSnapshot({ candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSession: interviewSessionState }), themePreference, toolkitState, applications, javaDigestProgress, questionMemory, prepProgressState };
+  const cloudSnapshot = useMemo(() => ({ session: createSessionSnapshot({ candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSession: interviewSessionState }), themePreference, toolkitState, applications, javaDigestProgress, questionMemory, prepProgressState }), [candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSessionState, themePreference, toolkitState, applications, javaDigestProgress, questionMemory, prepProgressState]);
   const applyCloudState = useCallback((snapshot) => {
     const session = snapshot.session || snapshot;
     setCandidateProfile(session.candidateProfile);
@@ -640,7 +640,10 @@ export default function Home() {
     resetInterviewSession(session.interviewSession);
     if (snapshot.session) { setToolkitState(snapshot.toolkitState || {}); setApplications(Array.isArray(snapshot.applications) ? snapshot.applications : []); setJavaDigestProgress(snapshot.javaDigestProgress || { completedTopics: [], masteredTopics: [] }); setQuestionMemory(snapshot.questionMemory || { questions: {} }); setPrepProgressState(snapshot.prepProgressState || createPrepProgressState()); }
   }, [resetInterviewSession, setActiveTab]);
-  const handleCloudSyncStatus = useCallback((status) => setCloudStatus(status), []);
+  const handleCloudSyncStatus = useCallback((status) => {
+    setCloudStatus(status);
+    if (status === "saved") setToast((current) => current?.msg === "Cloud sync is temporarily unavailable; local work is safe." ? null : current);
+  }, []);
   useCloudStateSync({ user: auth.user, ready: auth.ready && sessionReady, csrfToken: auth.csrfToken, snapshot: cloudSnapshot, onRemoteState: applyCloudState, onStatus: handleCloudSyncStatus, onError: () => showToast("Cloud sync is temporarily unavailable; local work is safe.", "error") });
 
   useEffect(() => {
@@ -1456,7 +1459,7 @@ export default function Home() {
       </Head>
 
       {/* Toast */}
-      {toast && <Toast msg={toast.msg} type={toast.type} />}
+      {toast && <Toast msg={toast.msg} type={toast.type} onDismiss={() => setToast(null)} />}
 
       <CommandPalette
         open={commandPaletteOpen}
@@ -1857,6 +1860,7 @@ export default function Home() {
                     });
                     callAPI(text);
                   }}
+                  onStart={startSession}
                   onScreen={() => setShowScreen(true)}
                   onVoice={toggleVoice}
                   onRecordReview={() => setShowRecordingReview(true)}
