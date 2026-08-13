@@ -19,8 +19,26 @@ export default function ResetPasswordPage() {
   const strength = getPasswordStrength(password);
 
   useEffect(() => {
-    fetch("/api/auth?action=csrf").then((response) => response.json()).then((payload) => setCsrfToken(payload.csrfToken || "")).catch(() => setError("Security setup is unavailable. Refresh and try again."));
+    refreshCsrfToken().catch(() => setError("Security setup is unavailable. Refresh and try again."));
   }, []);
+
+  const refreshCsrfToken = async () => {
+    const response = await fetch(`/api/auth?action=csrf&refresh=${Date.now()}`, { cache: "no-store", headers: { "Cache-Control": "no-cache" } });
+    if (!response.ok) throw new Error("CSRF setup failed");
+    const payload = await response.json();
+    const nextToken = payload.csrfToken || "";
+    if (!nextToken) throw new Error("CSRF token missing");
+    setCsrfToken(nextToken);
+    return nextToken;
+  };
+
+  const postWithCsrf = async (action, body) => {
+    let requestToken = csrfToken || await refreshCsrfToken();
+    let response = await fetch(`/api/auth?action=${action}`, { method: "POST", headers: { "Content-Type": "application/json", "X-CSRF-Token": requestToken }, body: JSON.stringify(body) });
+    if (response.status !== 403) return response;
+    requestToken = await refreshCsrfToken();
+    return fetch(`/api/auth?action=${action}`, { method: "POST", headers: { "Content-Type": "application/json", "X-CSRF-Token": requestToken }, body: JSON.stringify(body) });
+  };
 
   const submit = async (event) => {
     event.preventDefault();
@@ -31,7 +49,14 @@ export default function ResetPasswordPage() {
     setSubmitting(true);
     const action = token ? "reset" : "forgot";
     const body = token ? { token, password } : { email };
-    const response = await fetch(`/api/auth?action=${action}`, { method: "POST", headers: { "Content-Type": "application/json", ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}) }, body: JSON.stringify(body) });
+    let response;
+    try {
+      response = await postWithCsrf(action, body);
+    } catch {
+      setError("Security setup is unavailable. Please try again.");
+      setSubmitting(false);
+      return;
+    }
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
       const rawError = String(payload.error || "Unable to complete this request.");

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 
 function friendlyAuthError(message, status) {
   if (String(message || "").toLowerCase().includes("csrf")) return "Your security session expired. Refresh the page and try again.";
+  if (status === 401 && String(message || "").toLowerCase().includes("invalid email or password")) return "Invalid email or password.";
   if (status === 401) return "Your sign-in session expired. Please sign in again.";
   if (status === 429) return "Too many attempts. Please wait a moment and try again.";
   return message || "Account operation failed. Please try again.";

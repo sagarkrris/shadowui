@@ -60,6 +60,44 @@ test.describe("Authentication and account lifecycle", () => {
     await expect(page.getByRole("status")).toContainText("password has been reset");
   });
 
+  test("password recovery transparently refreshes a stale CSRF token", async ({ page }) => {
+    let csrfRequests = 0;
+    let forgotRequests = 0;
+    await page.route("**/api/auth**", async (route) => {
+      const url = new URL(route.request().url());
+      if (url.searchParams.get("action") === "csrf") {
+        csrfRequests += 1;
+        return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ csrfToken: `csrf-${csrfRequests}` }) });
+      }
+      if (url.searchParams.get("action") === "forgot") {
+        forgotRequests += 1;
+        return route.fulfill({ status: forgotRequests === 1 ? 403 : 200, contentType: "application/json", body: JSON.stringify(forgotRequests === 1 ? { error: "CSRF validation failed." } : { ok: true }) });
+      }
+      return route.continue();
+    });
+    await page.goto("/reset-password");
+    await page.getByLabel("Email").fill("candidate@example.com");
+    await page.getByRole("button", { name: "Send reset link" }).click();
+    await expect(page.getByRole("status")).toContainText("reset instructions");
+    expect(csrfRequests).toBe(2);
+    expect(forgotRequests).toBe(2);
+  });
+
+  test("sign-in describes invalid credentials accurately", async ({ page }) => {
+    await page.route("**/api/auth**", async (route) => {
+      const url = new URL(route.request().url());
+      if (url.searchParams.get("action") === "csrf") return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ csrfToken: "csrf-test" }) });
+      if (url.searchParams.get("action") === "me") return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ user: null }) });
+      if (url.searchParams.get("action") === "login") return route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ error: "Invalid email or password." }) });
+      return route.continue();
+    });
+    await page.goto("/sign-in");
+    await page.getByLabel("Email").fill("candidate@example.com");
+    await page.getByLabel("Password").fill("WrongPassword42!");
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page.getByRole("alert")).toContainText("Invalid email or password.");
+  });
+
   test("authenticated users can export and delete their account", async ({ page }) => {
     await mockCsrfAndMe(page, { user: verifiedUser });
     const accountRequests = [];
