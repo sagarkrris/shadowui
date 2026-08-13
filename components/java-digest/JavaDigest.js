@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CSES_JAVA_PARTS,
   JAVA_DIGEST_ROADMAPS,
@@ -366,7 +366,7 @@ function CsesPartSection({ part, accent, onAction }) {
   );
 }
 
-export default function JavaDigest({ theme = {}, onAction, profile = null, beginnerMode = false, beginnerStep = "watch", onBeginnerStepChange, onActivity, progress = {} }) {
+export default function JavaDigest({ theme = {}, onAction, onRefresherProgressChange, profile = null, beginnerMode = false, beginnerStep = "watch", onBeginnerStepChange, onActivity, progress = {} }) {
   const [activeTrack, setActiveTrack] = useState("all");
   const [activeView, setActiveView] = useState("Handbook Java");
   const [searchDraft, setSearchDraft] = useState("");
@@ -374,6 +374,16 @@ export default function JavaDigest({ theme = {}, onAction, profile = null, begin
   const [generatedAnswer, setGeneratedAnswer] = useState("");
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState("");
+  const [refresherQuestions, setRefresherQuestions] = useState([]);
+  const [refresherLoading, setRefresherLoading] = useState(false);
+  const [refresherError, setRefresherError] = useState("");
+  const [refresherFilter, setRefresherFilter] = useState("");
+  const [selectedRefresherSection, setSelectedRefresherSection] = useState("all");
+  const [randomQuestionId, setRandomQuestionId] = useState("");
+  const [expandedRefresherQuestions, setExpandedRefresherQuestions] = useState([]);
+  const [practiceQuestionId, setPracticeQuestionId] = useState("");
+  const [practiceResponse, setPracticeResponse] = useState("");
+  const [practiceAnswerRevealed, setPracticeAnswerRevealed] = useState(false);
   const accent = theme.accentStrong || "#8bd3ff";
   const accentBorder = theme.accentBorder || "rgba(139, 211, 255, .26)";
   const articles = useMemo(() => listJavaDigestArticles(activeTrack), [activeTrack]);
@@ -381,7 +391,25 @@ export default function JavaDigest({ theme = {}, onAction, profile = null, begin
     () => buildJavaDigestCompetencySummary({ progress, selectedTrackId: activeTrack }),
     [progress, activeTrack],
   );
+  const visibleRefresherQuestions = useMemo(() => {
+    const query = refresherFilter.trim().toLocaleLowerCase();
+    return refresherQuestions.filter((entry) => (
+      (selectedRefresherSection === "all" || entry.section === selectedRefresherSection)
+      && (!query || `${entry.section} ${entry.question} ${entry.answer}`.toLocaleLowerCase().includes(query))
+    ));
+  }, [refresherFilter, refresherQuestions, selectedRefresherSection]);
+  const refresherSections = useMemo(
+    () => Array.from(new Set(refresherQuestions.map((entry) => entry.section))),
+    [refresherQuestions],
+  );
+  const practiceQuestion = refresherQuestions.find((entry) => entry.id === practiceQuestionId) || null;
+  const refresherProgress = {
+    bookmarkedQuestions: new Set(Array.isArray(progress.bookmarkedQuestions) ? progress.bookmarkedQuestions : []),
+    reviewedQuestions: new Set(Array.isArray(progress.reviewedQuestions) ? progress.reviewedQuestions : []),
+    masteredQuestions: new Set(Array.isArray(progress.masteredQuestions) ? progress.masteredQuestions : []),
+  };
   const tabs = [
+    { label: "Senior Refresher", icon: "ti-bolt" },
     { label: "Handbook Java", icon: "ti-book-2" },
     { label: "Search", icon: "ti-search" },
     { label: "Articles", icon: "ti-news" },
@@ -462,6 +490,71 @@ export default function JavaDigest({ theme = {}, onAction, profile = null, begin
     event?.preventDefault();
     generateAnswer(searchDraft);
   };
+  const toggleRefresherStatus = (field, questionId) => {
+    onRefresherProgressChange?.((previous = {}) => {
+      const values = new Set(Array.isArray(previous[field]) ? previous[field] : []);
+      if (values.has(questionId)) values.delete(questionId);
+      else values.add(questionId);
+      return { ...previous, [field]: Array.from(values) };
+    });
+  };
+  const chooseRandomQuestion = () => {
+    const candidates = visibleRefresherQuestions.length ? visibleRefresherQuestions : refresherQuestions;
+    if (!candidates.length) return;
+    if (!visibleRefresherQuestions.length) {
+      setSelectedRefresherSection("all");
+      setRefresherFilter("");
+    }
+    const selected = candidates[Math.floor(Math.random() * candidates.length)];
+    setRandomQuestionId(selected.id);
+    setExpandedRefresherQuestions([selected.id]);
+  };
+  const startPracticeMode = () => {
+    const candidates = visibleRefresherQuestions.length ? visibleRefresherQuestions : refresherQuestions;
+    if (!candidates.length) return;
+    const selected = candidates[Math.floor(Math.random() * candidates.length)];
+    setPracticeQuestionId(selected.id);
+    setPracticeResponse("");
+    setPracticeAnswerRevealed(false);
+  };
+  const revealPracticeAnswer = () => {
+    if (!practiceQuestion) return;
+    setPracticeAnswerRevealed(true);
+    onRefresherProgressChange?.((previous = {}) => ({
+      ...previous,
+      reviewedQuestions: Array.from(new Set([...(previous.reviewedQuestions || []), practiceQuestion.id])),
+    }));
+  };
+  const scorePracticeResponse = () => {
+    if (!practiceQuestion || !practiceResponse.trim()) return;
+    onAction?.([
+      "Score my senior Java interview answer against the provided reference answer.",
+      `Question: ${practiceQuestion.question}`,
+      `My answer: ${practiceResponse.trim()}`,
+      `Reference answer: ${practiceQuestion.answer}`,
+      "Return a concise score out of 10 for correctness, trade-offs, production judgement, and communication.",
+      "Then give the three highest-value improvements and a stronger 60-second answer. Do not claim the reference is universally correct; call out assumptions.",
+    ].join("\n"), { type: "javaSeniorRefresherScore", refresherQuestion: practiceQuestion });
+  };
+  useEffect(() => {
+    if (activeView !== "Senior Refresher" || refresherQuestions.length || refresherLoading) return undefined;
+
+    const controller = new AbortController();
+    setRefresherLoading(true);
+    setRefresherError("");
+    fetch("/api/java-senior-refresher", { signal: controller.signal })
+      .then(async (response) => {
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || "The question bank could not be loaded.");
+        setRefresherQuestions(Array.isArray(payload.questions) ? payload.questions : []);
+      })
+      .catch((error) => {
+        if (error.name !== "AbortError") setRefresherError(error.message || "The question bank could not be loaded.");
+      })
+      .finally(() => setRefresherLoading(false));
+
+    return () => controller.abort();
+  }, [activeView, refresherLoading, refresherQuestions.length]);
 
   return (
     <section
@@ -490,7 +583,7 @@ export default function JavaDigest({ theme = {}, onAction, profile = null, begin
       <header style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "space-between" }}>
         <div style={wrap}>
           <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Java Digest</div>
-          <h2 style={{ ...wrap, color: "#f8fbff", fontSize: 19, lineHeight: 1.25, marginTop: 4 }}>Competitive Programmer&apos;s Handbook for Java</h2>
+          <h2 style={{ ...wrap, color: "#f8fbff", fontSize: 19, lineHeight: 1.25, marginTop: 4 }}>Competitive Programmer&apos;s Handbook for Java · Senior Refresher</h2>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 7, minWidth: 0 }}>
           {tabs.map((tab) => (
@@ -572,6 +665,114 @@ export default function JavaDigest({ theme = {}, onAction, profile = null, begin
             accent={accent}
             onRetry={() => generateAnswer(searchQuery)}
           />
+        </div>
+      )}
+
+      {activeView === "Senior Refresher" && (
+        <div style={{ display: "grid", gap: 10 }}>
+          <section style={{ ...wrap, background: "rgba(139,211,255,.055)", border: `1px solid ${accent}33`, borderRadius: 8, display: "grid", gap: 7, padding: 12 }}>
+            <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Java 21 · JVM · Concurrency</div>
+            <h3 style={{ ...wrap, color: "#f8fbff", fontSize: 16, lineHeight: 1.25 }}>Complete Java Senior Refresher</h3>
+            <p style={{ ...wrap, color: "#cbd5e1", fontSize: 11.7, lineHeight: 1.55, margin: 0 }}>
+              The PDF&apos;s senior interview questions and answer blocks are presented below verbatim as searchable study cards. The guide itself is not embedded.
+            </p>
+          </section>
+          <section style={{ ...wrap, background: "rgba(255,255,255,.035)", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 8, padding: 12 }}>
+            <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Ask AI About This Refresher</div>
+            <p style={{ color: "#cbd5e1", fontSize: 11.6, lineHeight: 1.5, margin: 0 }}>
+              Ask about any concept, trade-off, interview question, or coding exercise from the guide. Your answer opens in the Search view.
+            </p>
+            <form onSubmit={submitSearch} style={{ ...wrap, alignItems: "center", display: "flex", flexWrap: "wrap", gap: 8 }}>
+              <input
+                type="search"
+                value={searchDraft}
+                onChange={(event) => setSearchDraft(event.target.value)}
+                placeholder="e.g. When should I use virtual threads?"
+                aria-label="Ask a question about the Java senior refresher"
+                className="glass-input"
+                style={{ background: "rgba(0,0,0,.16)", border: `1px solid ${accentBorder}`, borderRadius: 7, color: "#f8fbff", flex: "1 1 280px", fontSize: 12, minHeight: 35, minWidth: 0, outline: "none", padding: "7px 9px" }}
+              />
+              <button type="submit" disabled={searchLoading || !searchDraft.trim()} className="glass-button" style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", cursor: searchLoading || !searchDraft.trim() ? "not-allowed" : "pointer", fontSize: 11, fontWeight: 900, opacity: searchLoading || !searchDraft.trim() ? .45 : 1, padding: "8px 10px" }}>
+                <i className="ti ti-sparkles" style={{ color: accent, marginRight: 6 }} />
+                Ask AI
+              </button>
+            </form>
+          </section>
+          <section style={{ ...wrap, background: `${accent}0d`, border: `1px solid ${accent}44`, borderRadius: 8, display: "grid", gap: 9, padding: 12 }}>
+            <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between" }}>
+              <div>
+                <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Practice Mode</div>
+                <p style={{ color: "#cbd5e1", fontSize: 11.6, lineHeight: 1.5, margin: "5px 0 0" }}>Answer one question aloud or in writing before revealing the source answer.</p>
+              </div>
+              <button type="button" className="glass-button" onClick={startPracticeMode} disabled={!refresherQuestions.length} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", cursor: refresherQuestions.length ? "pointer" : "not-allowed", fontSize: 11, fontWeight: 900, opacity: refresherQuestions.length ? 1 : .45, padding: "8px 10px" }}>
+                <i className="ti ti-player-play" style={{ color: accent, marginRight: 6 }} />
+                {practiceQuestion ? "New Practice Question" : "Start Practice"}
+              </button>
+            </div>
+            {practiceQuestion && (
+              <div style={{ background: "rgba(0,0,0,.16)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 9, padding: 11 }}>
+                <div style={{ color: "#f8fbff", fontSize: 14, fontWeight: 850, lineHeight: 1.45 }}>{practiceQuestion.question}</div>
+                <div style={{ color: "#9fb0c7", fontSize: 10.5 }}>{practiceQuestion.section}</div>
+                <textarea value={practiceResponse} onChange={(event) => setPracticeResponse(event.target.value)} placeholder="Speak your answer aloud, then capture the key points here for scoring..." aria-label="Your interview practice answer" className="glass-input" rows={5} style={{ background: "rgba(0,0,0,.18)", border: `1px solid ${accentBorder}`, borderRadius: 7, color: "#f8fbff", fontFamily: "inherit", fontSize: 12, lineHeight: 1.5, outline: "none", padding: 9, resize: "vertical", width: "100%" }} />
+                <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 7 }}>
+                  <button type="button" className="glass-button" onClick={revealPracticeAnswer} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 900, padding: "7px 10px" }}>
+                    <i className="ti ti-eye" style={{ color: accent, marginRight: 6 }} />
+                    Reveal Source Answer
+                  </button>
+                  {practiceAnswerRevealed && <button type="button" className="glass-button" onClick={scorePracticeResponse} disabled={!practiceResponse.trim()} style={{ border: "1px solid rgba(196,181,253,.45)", borderRadius: 7, color: "#f8fbff", cursor: practiceResponse.trim() ? "pointer" : "not-allowed", fontSize: 11, fontWeight: 900, opacity: practiceResponse.trim() ? 1 : .45, padding: "7px 10px" }}>
+                    <i className="ti ti-chart-bar" style={{ color: "#c4b5fd", marginRight: 6 }} />
+                    Score with AI
+                  </button>}
+                </div>
+                {practiceAnswerRevealed && <section style={{ borderTop: "1px solid rgba(255,255,255,.08)", color: "#dbeafe", fontSize: 11.7, lineHeight: 1.58, paddingTop: 10 }}><strong style={{ color: "#a7f3d0", display: "block", fontSize: 10.3, marginBottom: 5, textTransform: "uppercase" }}>Source Answer</strong>{practiceQuestion.answer}</section>}
+              </div>
+            )}
+          </section>
+          <section style={{ ...wrap, background: "rgba(255,255,255,.035)", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 9, padding: 12 }}>
+            <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between" }}>
+              <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Verbatim Q&A Bank</div>
+              <span style={{ color: "#9fb0c7", fontSize: 11 }}>{refresherLoading ? "Loading questions..." : `${visibleRefresherQuestions.length} of ${refresherQuestions.length} questions`}</span>
+            </div>
+            <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 7 }}>
+              <ChipButton label="All Sections" icon="ti-layout-grid" active={selectedRefresherSection === "all"} accent={accent} onClick={() => setSelectedRefresherSection("all")} />
+              {refresherSections.map((section) => <ChipButton key={section} label={section} icon="ti-bookmark" active={selectedRefresherSection === section} accent={accent} onClick={() => setSelectedRefresherSection(section)} />)}
+            </div>
+            <input
+              type="search"
+              value={refresherFilter}
+              onChange={(event) => setRefresherFilter(event.target.value)}
+              placeholder="Filter questions, e.g. transactions, GC, Kafka, or leadership"
+              aria-label="Filter Java senior refresher questions and answers"
+              className="glass-input"
+              style={{ background: "rgba(0,0,0,.16)", border: `1px solid ${accentBorder}`, borderRadius: 7, color: "#f8fbff", fontSize: 12, minHeight: 35, outline: "none", padding: "7px 9px", width: "100%" }}
+            />
+            <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 7 }}>
+              <button type="button" className="glass-button" onClick={chooseRandomQuestion} disabled={!refresherQuestions.length} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", cursor: refresherQuestions.length ? "pointer" : "not-allowed", fontSize: 11, fontWeight: 900, opacity: refresherQuestions.length ? 1 : .45, padding: "7px 10px" }}>
+                <i className="ti ti-shuffle" style={{ color: accent, marginRight: 6 }} />
+                Random Question
+              </button>
+              <span style={{ color: "#9fb0c7", fontSize: 10.8 }}>
+                {refresherProgress.bookmarkedQuestions.size} bookmarked · {refresherProgress.reviewedQuestions.size} reviewed · {refresherProgress.masteredQuestions.size} mastered
+              </span>
+            </div>
+            {refresherError && <p role="alert" style={{ color: "#fecaca", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}>{refresherError}</p>}
+            {!refresherLoading && !refresherError && visibleRefresherQuestions.length === 0 && <p style={{ color: "#9fb0c7", fontSize: 11.5, margin: 0 }}>No matching questions.</p>}
+            <div style={{ display: "grid", gap: 8 }}>
+              {visibleRefresherQuestions.map((entry) => (
+                <details key={entry.id} open={expandedRefresherQuestions.includes(entry.id)} onToggle={(event) => { const open = event.currentTarget.open; setExpandedRefresherQuestions((previous) => open ? Array.from(new Set([...previous, entry.id])) : previous.filter((id) => id !== entry.id)); if (!open && randomQuestionId === entry.id) setRandomQuestionId(""); }} style={{ background: randomQuestionId === entry.id ? `${accent}10` : "rgba(0,0,0,.14)", border: `1px solid ${randomQuestionId === entry.id ? `${accent}66` : "rgba(255,255,255,.08)"}`, borderRadius: 7, padding: "9px 10px" }}>
+                  <summary style={{ color: "#f8fbff", cursor: "pointer", fontSize: 12.5, fontWeight: 800, lineHeight: 1.45 }}>{entry.question}</summary>
+                  <div style={{ color: accent, fontSize: 10.2, fontWeight: 900, marginTop: 9, textTransform: "uppercase" }}>{entry.section}</div>
+                  <div style={{ color: "#a7f3d0", fontSize: 10.2, fontWeight: 900, marginTop: 7, textTransform: "uppercase" }}>Senior Answer</div>
+                  <p style={{ color: "#dbeafe", fontSize: 11.7, lineHeight: 1.58, margin: "6px 0 0" }}>{entry.answer}</p>
+                  <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 7, marginTop: 10 }}>
+                    <ChipButton label={refresherProgress.bookmarkedQuestions.has(entry.id) ? "Bookmarked" : "Bookmark"} icon="ti-bookmark" active={refresherProgress.bookmarkedQuestions.has(entry.id)} accent="#facc15" onClick={() => toggleRefresherStatus("bookmarkedQuestions", entry.id)} />
+                    <ChipButton label={refresherProgress.reviewedQuestions.has(entry.id) ? "Reviewed" : "Mark Reviewed"} icon="ti-check" active={refresherProgress.reviewedQuestions.has(entry.id)} accent="#a7f3d0" onClick={() => toggleRefresherStatus("reviewedQuestions", entry.id)} />
+                    <ChipButton label={refresherProgress.masteredQuestions.has(entry.id) ? "Mastered" : "Mark Mastered"} icon="ti-award" active={refresherProgress.masteredQuestions.has(entry.id)} accent="#c4b5fd" onClick={() => toggleRefresherStatus("masteredQuestions", entry.id)} />
+                  </div>
+                </details>
+              ))}
+            </div>
+          </section>
         </div>
       )}
 

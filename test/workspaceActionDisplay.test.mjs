@@ -86,6 +86,16 @@ test("java digest actions display selected article and roadmap context", () => {
   assert.match(roadmapText, /Core Java collections/);
 });
 
+test("senior refresher scoring displays the selected practice question", () => {
+  const displayText = buildWorkspaceActionDisplayText("full model prompt", {
+    type: "javaSeniorRefresherScore",
+    refresherQuestion: { question: "How do you make cancellation reliable?" },
+  });
+
+  assert.match(displayText, /Java Senior Refresher Score/);
+  assert.match(displayText, /cancellation reliable/);
+});
+
 test("cses java practice displays the selected track context", () => {
   const displayText = buildWorkspaceActionDisplayText("full model prompt", {
     type: "csesJavaTrack",

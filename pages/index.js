@@ -333,6 +333,9 @@ export default function Home() {
       normalize: (value = {}) => ({
         completedTopics: Array.isArray(value.completedTopics) ? value.completedTopics : [],
         masteredTopics: Array.isArray(value.masteredTopics) ? value.masteredTopics : [],
+        bookmarkedQuestions: Array.isArray(value.bookmarkedQuestions) ? value.bookmarkedQuestions : [],
+        reviewedQuestions: Array.isArray(value.reviewedQuestions) ? value.reviewedQuestions : [],
+        masteredQuestions: Array.isArray(value.masteredQuestions) ? value.masteredQuestions : [],
       }),
     }));
     setPrepProgressState(loadVersionedState(window.localStorage, {
@@ -420,6 +423,9 @@ export default function Home() {
       normalize: (value = {}) => ({
         completedTopics: Array.isArray(value.completedTopics) ? value.completedTopics : [],
         masteredTopics: Array.isArray(value.masteredTopics) ? value.masteredTopics : [],
+        bookmarkedQuestions: Array.isArray(value.bookmarkedQuestions) ? value.bookmarkedQuestions : [],
+        reviewedQuestions: Array.isArray(value.reviewedQuestions) ? value.reviewedQuestions : [],
+        masteredQuestions: Array.isArray(value.masteredQuestions) ? value.masteredQuestions : [],
       }),
     });
   }, [javaDigestProgress, sessionReady]);
@@ -1145,6 +1151,7 @@ export default function Home() {
     setActiveTab("chat");
     if (metadata?.article?.id) {
       setJavaDigestProgress((previous) => ({
+        ...previous,
         completedTopics: Array.from(new Set([...(previous.completedTopics || []), metadata.article.id])),
         masteredTopics: metadata.type === "javaDigestMock"
           ? Array.from(new Set([...(previous.masteredTopics || []), metadata.article.id]))
@@ -1158,9 +1165,9 @@ export default function Home() {
       detail: buildWorkspaceActionDisplayText(prompt, metadata),
     });
     callAPI(prompt, {
-      interviewMode: metadata?.type === "javaDigestMock" ? "strict" : "directAnswer",
-      roundStrategy: metadata?.type === "javaDigestMock" ? "coding" : "directAnswer",
-      interviewPanel: metadata?.type === "javaDigestMock" ? "seniorEngineer" : null,
+      interviewMode: metadata?.type === "javaDigestMock" || metadata?.type === "javaSeniorRefresherScore" ? "strict" : "directAnswer",
+      roundStrategy: metadata?.type === "javaDigestMock" || metadata?.type === "javaSeniorRefresherScore" ? "coding" : "directAnswer",
+      interviewPanel: metadata?.type === "javaDigestMock" || metadata?.type === "javaSeniorRefresherScore" ? "seniorEngineer" : null,
       displayText: buildWorkspaceActionDisplayText(prompt, metadata),
       skipQuestionMemory: true,
     });
@@ -1776,7 +1783,8 @@ export default function Home() {
             ) : activeTab==="javaDigest" ? (
               <JavaDigest
                 theme={techTheme}
-                onAction={startJavaDigestAction}
+              onAction={startJavaDigestAction}
+                onRefresherProgressChange={(updater) => setJavaDigestProgress((previous) => updater(previous))}
                 profile={candidateProfile || profileDraft}
                 progress={javaDigestProgress}
                 beginnerMode={beginnerMode}

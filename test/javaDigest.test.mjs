@@ -17,7 +17,9 @@ import {
   getCsesJavaChapterDetail,
   getJavaDigestTrack,
   listJavaDigestArticles,
+  listJavaSeniorRefresherArticles,
 } from "../lib/javaDigest.mjs";
+import { parseJavaSeniorRefresherQa } from "../lib/javaSeniorRefresherQa.mjs";
 
 test("java digest exposes original topic tracks and article cards", () => {
   assert.ok(JAVA_DIGEST_TRACKS.length >= 5);
@@ -35,6 +37,35 @@ test("java digest filters articles by track", () => {
   assert.ok(springArticles.length > 0);
   assert.ok(springArticles.every((article) => article.trackId === "spring-boot"));
   assert.equal(listJavaDigestArticles("all").length, JAVA_DIGEST_ARTICLES.length);
+});
+
+test("java digest includes a Java 21, JVM, and concurrency senior refresher section", () => {
+  const refresher = listJavaSeniorRefresherArticles();
+
+  assert.equal(refresher.length, 6);
+  assert.ok(refresher.every((article) => article.collection === "senior-refresher"));
+  assert.ok(refresher.some((article) => article.id === "java-21-virtual-threads"));
+  assert.ok(refresher.some((article) => article.title.includes("JVM")));
+  assert.match(refresher.find((article) => article.id === "java-21-virtual-threads").learn.join(" "), /preview APIs/);
+});
+
+test("senior refresher parser preserves question and answer text without summarizing it", () => {
+  const questions = parseJavaSeniorRefresherQa([
+    "Java Senior Refresher - Java 21, JVM, Concurrency, Collections, Streams",
+    "Page 12",
+    "10. Spring and Spring Boot - real-world interview answers",
+    "How do you design transaction boundaries in Spring?",
+    "Senior answer",
+    "I put the transaction at the service operation that represents one business consistency boundary, not on every repository method.",
+    "Why can @Transactional appear not to work?",
+    "Senior answer",
+    "The common causes are self-invocation bypassing the proxy.",
+  ].join("\n"));
+
+  assert.equal(questions.length, 2);
+  assert.equal(questions[0].question, "How do you design transaction boundaries in Spring?");
+  assert.equal(questions[0].answer, "I put the transaction at the service operation that represents one business consistency boundary, not on every repository method.");
+  assert.match(questions[0].section, /Spring and Spring Boot/);
 });
 
 test("java digest prompt builders produce interview-ready prompts", () => {
