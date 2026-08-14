@@ -106,6 +106,7 @@ async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
     if ((action === "register" || action === "login") && req.method === "POST") {
+      if (!(await validCsrf(req))) return res.status(403).json({ error: "CSRF validation failed." });
       const credentials = validCredentials(req.body, action === "register");
       if (!credentials) return res.status(400).json({ error: action === "register" ? "Enter your first name, last name, a valid email, and a password of at least 12 characters." : "Use a valid email and a password of at least 12 characters." });
       const user = action === "register" ? await createUser(credentials) : await authenticateUser(credentials);
@@ -147,7 +148,11 @@ async function handler(req, res) {
       if (!user) return res.status(400).json({ error: "Reset link is invalid or expired." });
       await recordAudit({ type: "password_reset", userId: user.id, email: user.email, ip: getClientAddress(req) });
       recordMetric("auth.password_reset", { emailDomain: user.email.split("@")[1] });
-      return res.status(200).json({ ok: true });
+      const emailDelivery = await sendAuthEmail({ type: "password-changed", user, req });
+      const deliveryMeta = { action, authEvent: "password_changed_email", delivered: Boolean(emailDelivery.delivered), configured: Boolean(emailDelivery.configured), provider: emailDelivery.provider || "unknown", providerErrorCode: emailDelivery.errorCode || null };
+      req.observabilityMeta = deliveryMeta;
+      logger.info("auth.password_changed_email", deliveryMeta);
+      return res.status(200).json({ ok: true, emailDelivery });
     }
     if (action === "resend-verification" && req.method === "POST") {
       if (!(await validCsrf(req))) {

@@ -1,4 +1,3 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getSafeConfigErrorPayload, runGeminiRouteOperation } from "../../lib/aiGateway.mjs";
 import { buildSystemPrompt } from "../../lib/chatPrompt.mjs";
 import { normalizeChatMessages } from "../../lib/chatRequest.mjs";
@@ -9,6 +8,7 @@ import { checkDistributedRateLimit } from "../../lib/redisRateLimit.mjs";
 import { requireConfiguredUser } from "../../lib/apiAuth.mjs";
 import { estimateAiUsage, recordMetric, reportServerError } from "../../lib/observability.mjs";
 import { withApiObservability } from "../../lib/apiObservability.mjs";
+import { createChat, createGeminiClient, streamChunkText } from "../../lib/googleGenai.mjs";
 
 export const config = { api: { bodyParser: { sizeLimit: "1mb" } } };
 
@@ -56,13 +56,12 @@ async function handler(req, res) {
       noModelsMessage: "No supported Gemini models found. Please check your server API key configuration.",
       onFallback: (details) => logger.warn("model.fallback", details),
       operation: (candidate, { apiKey }) => {
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({
+        const chat = createChat(createGeminiClient(apiKey), {
           model: candidate,
+          history,
           systemInstruction: buildSystemPrompt(profile, { interviewMode, roundStrategy, interviewPanel }),
         });
-        const chat = model.startChat({ history });
-        return chat.sendMessageStream(lastMessage.content);
+        return chat.sendMessageStream({ message: lastMessage.content });
       },
     });
 
@@ -85,8 +84,8 @@ async function handler(req, res) {
 
     let chunkCount = 0;
     let textChars = 0;
-    for await (const chunk of result.stream) {
-      const text = chunk.text();
+    for await (const chunk of result) {
+      const text = streamChunkText(chunk);
       if (text) {
         chunkCount += 1;
         textChars += text.length;
@@ -96,7 +95,7 @@ async function handler(req, res) {
 
     res.write("data: [DONE]\n\n");
     res.end();
-    const usage = estimateAiUsage({ inputChars: apiMessages.reduce((sum, item) => sum + item.content.length, 0), outputChars: textChars });
+    const usage = estimateAiUsage({ inputChars: messages.reduce((sum, item) => sum + item.content.length, 0), outputChars: textChars });
     logger.info("stream.done", { modelName, chunkCount, textChars, ...usage });
     recordMetric("ai.request", { route: "/api/chat", modelName, ...usage });
   } catch (error) {

@@ -74,5 +74,5 @@ export function useCloudStateSync({ user, ready, snapshot, csrfToken = "", onRem
       window.clearTimeout(timer);
       if (pendingFingerprint.current === fingerprint) pendingFingerprint.current = "";
     };
-  }, [csrfToken, fingerprint, onError, onStatus, ready, user]);
+  }, [csrfToken, fingerprint, onError, onStatus, ready, snapshot, user]);
 }

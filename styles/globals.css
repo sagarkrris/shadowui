@@ -109,6 +109,147 @@ textarea { resize: none; }
   color: #334155;
 }
 
+/* Java Digest uses semantic surface and text tokens so every disclosure stays
+   readable in both themes without selector-based inline-style overrides. */
+.java-digest {
+  --jd-background: linear-gradient(180deg, rgba(14,18,30,.82), rgba(7,10,18,.74));
+  --jd-surface: rgba(255,255,255,.045);
+  --jd-surface-subtle: rgba(255,255,255,.035);
+  --jd-surface-sunken: rgba(0,0,0,.16);
+  --jd-border: rgba(255,255,255,.085);
+  --jd-border-strong: rgba(255,255,255,.16);
+  --jd-text: #f8fbff;
+  --jd-text-soft: #dbeafe;
+  --jd-text-muted: #9fb0c7;
+  --jd-code-text: var(--tech-accent-text, #dbe9f7);
+  --jd-accent-surface: rgba(139,211,255,.055);
+  --jd-accent-surface-strong: rgba(139,211,255,.12);
+  --jd-accent-alt: #c4b5fd;
+  --jd-warning: #facc15;
+  --jd-warning-text: #fde68a;
+  --jd-danger-accent: #fca5a5;
+  --jd-danger-text: #fecaca;
+}
+
+.java-digest-card {
+  background: var(--jd-surface);
+  border: 1px solid var(--jd-border);
+}
+
+.java-digest-card.is-expanded {
+  grid-column: 1 / -1;
+}
+
+.java-digest-refresher-toolbar {
+  align-items: center;
+  display: grid;
+  gap: 7px;
+  grid-template-columns: minmax(150px, .4fr) minmax(220px, 1fr) auto;
+  min-width: 0;
+}
+
+.java-digest-refresher-section,
+.java-digest-refresher-filter {
+  background: var(--jd-surface-sunken) !important;
+  border: 1px solid var(--jd-border-strong) !important;
+  border-radius: 7px;
+  color: var(--jd-text) !important;
+  font-size: 12px;
+  min-height: 35px;
+  min-width: 0;
+  outline: none;
+  padding: 7px 9px;
+  width: 100%;
+}
+
+.java-digest-refresher-status {
+  color: var(--jd-text-muted);
+  font-size: 10.8px;
+}
+
+.java-digest-refresher-section option {
+  background: var(--jd-surface-sunken);
+  color: var(--jd-text);
+}
+
+@media (max-width: 720px) {
+  .java-digest-refresher-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .java-digest-refresher-toolbar button {
+    justify-self: start;
+  }
+}
+
+/* Keep the Java Digest topic search compact and clearly actionable in light mode. */
+.theme-light .java-digest-search {
+  align-self: start;
+  background: #f8fbff;
+  border-color: #cbd8e6 !important;
+  box-shadow: 0 6px 16px rgba(31,55,82,.08);
+}
+
+.theme-light .java-digest-search-label {
+  color: #17324d !important;
+}
+
+.theme-light .java-digest-search-control {
+  background: #ffffff !important;
+  border-color: #b9cbdd !important;
+  box-shadow: inset 0 1px 2px rgba(31,55,82,.04);
+}
+
+.theme-light .java-digest-search-control input {
+  color: #17324d !important;
+}
+
+.theme-light .java-digest-search-button {
+  background: #1d5f91 !important;
+  border-color: #1d5f91 !important;
+  color: #ffffff !important;
+  box-shadow: none;
+}
+
+.theme-light .java-digest-search-button i {
+  color: #ffffff !important;
+}
+
+/* Java Digest is content-first in light mode: soften legacy dark cards and
+   preserve the reading hierarchy without turning every block into a panel. */
+.theme-light .java-digest {
+  --jd-background: #ffffff;
+  --jd-surface: #ffffff;
+  --jd-surface-subtle: #f6f9fc;
+  --jd-surface-sunken: #fbfdff;
+  --jd-border: #dbe5ef;
+  --jd-border-strong: #cbd8e6;
+  --jd-text: #17324d;
+  --jd-text-soft: #334e68;
+  --jd-text-muted: #526579;
+  --jd-code-text: #245b7d;
+  --jd-accent-surface: #f3f8fc;
+  --jd-accent-surface-strong: #e8f2fa;
+  --jd-accent-alt: #6d55a3;
+  --jd-warning: #9a6700;
+  --jd-warning-text: #7a5200;
+  --jd-danger-accent: #b42318;
+  --jd-danger-text: #b42318;
+  background: #ffffff !important;
+  border-color: #dbe5ef !important;
+  box-shadow: 0 10px 28px rgba(31,55,82,.08) !important;
+}
+
+.theme-light .java-digest .java-digest-progress {
+  background: #f6f9fc !important;
+  border-color: #d5e1ec !important;
+}
+
+.theme-light .java-digest .java-digest-radar > div {
+  background: transparent !important;
+  border-color: #e2eaf2 !important;
+}
+
 .theme-light .user-message {
   color: #17324d;
 }

@@ -41,7 +41,7 @@ AI-powered interview intelligence for modern software engineers. It supports per
 - Agentic UI Engineering course with Java/Spring Boot, React/Next.js, Node/Python, and enterprise adapter tracks for agent loops, tool calling, approvals, traces, streaming, and guardrails.
 - Chat-based interview and practice modes with difficulty levels.
 - Code paste/review tools shown only where useful, such as technical prep topics.
-- Live Java Runner with Vercel Sandbox or Piston provider support, plus safe paused-state guidance when no runner is configured.
+- Live Java Runner surface with safe paused-state guidance while execution providers are being finalized.
 - Screen capture/upload analysis for coding, design, database, and interview prompts.
 - Voice input with helpful iOS/Safari fallback guidance.
 - Responsive layout verified across phone, tablet, iPad, and desktop viewport sizes.
@@ -49,7 +49,7 @@ AI-powered interview intelligence for modern software engineers. It supports per
 ## Run Locally
 
 ```bash
-npm install
+npm ci
 cp .env.example .env.local
 # Edit .env.local and paste your GEMINI_API_KEY
 npm run dev
@@ -65,8 +65,10 @@ Create `.env.local` with:
 GEMINI_API_KEY=your_gemini_api_key
 SESSION_SECRET=<long_random_secret_1>
 APP_ENCRYPTION_KEY=<long_random_secret_2>
-# Persistent server-side storage directory (use a durable volume in production)
-INTERVIEWIQ_DATA_DIR=.data
+# Require verified accounts for AI endpoints in production.
+REQUIRE_AUTH=1
+# Optional explicit stable Gemini model list, comma separated.
+# GEMINI_MODEL_ALLOWLIST=gemini-2.5-flash,gemini-2.0-flash
 # Shared serverless rate limiting (Upstash Redis REST)
 # UPSTASH_REDIS_REST_URL=https://your-database.upstash.io
 # UPSTASH_REDIS_REST_TOKEN=your_upstash_rest_token
@@ -82,18 +84,11 @@ INTERVIEWIQ_DATA_DIR=.data
 # ERROR_TRACKING_TOKEN=your_monitoring_token
 # GEMINI_INPUT_COST_PER_MILLION=0
 # GEMINI_OUTPUT_COST_PER_MILLION=0
-# Optional: enable the Live Java Runner on Vercel Sandbox:
-# CODE_RUNNER_PROVIDER=vercel-sandbox
-# VERCEL_SANDBOX_JAVA_SNAPSHOT_ID=your-java-enabled-snapshot-id
-# Development only, slower: install Java in each fresh sandbox:
-# VERCEL_SANDBOX_AUTO_INSTALL_JAVA=1
 # Optional only when you are ready to enable live code execution:
 # PISTON_EXECUTE_URL=https://your-piston-host.example.com/api/v2/execute
 ```
 
 You can create a Gemini API key from Google AI Studio. Keep the key server-side only; browser requests go through the Next.js API routes.
-
-The Live Java Runner can use Vercel Sandbox when `CODE_RUNNER_PROVIDER=vercel-sandbox` is set. On Vercel, Sandbox authentication is handled by the platform; for local development run `vercel link` and `vercel env pull`, or set `VERCEL_TEAM_ID`, `VERCEL_PROJECT_ID`, and `VERCEL_TOKEN`. For faster Java execution, create a Sandbox snapshot with a JDK installed and set `VERCEL_SANDBOX_JAVA_SNAPSHOT_ID`. Without a snapshot, `VERCEL_SANDBOX_AUTO_INSTALL_JAVA=1` can install Java in each fresh sandbox for development, but it is slower.
 
 The runner still supports Piston when `PISTON_EXECUTE_URL` is explicitly set to a self-hosted or approved Piston runner. The old public Piston endpoint became whitelist-only in February 2026. Do not paste secrets, tokens, proprietary code, or private stdin into any external runner.
 
@@ -197,11 +192,11 @@ shadowui/
 ```text
 Browser
   -> Next.js API route
-  -> Gemini API, Vercel Sandbox, or Piston API
+  -> Gemini API or an approved Piston API (when enabled)
   -> streamed response back to the browser
 ```
 
-The browser never receives the Gemini API key. Code execution requests go through `/api/run-code` only when the user clicks Run, then execute through the configured provider: Vercel Sandbox when `CODE_RUNNER_PROVIDER=vercel-sandbox`, or Piston when `PISTON_EXECUTE_URL` is configured.
+The browser never receives the Gemini API key. Code execution requests go through `/api/run-code` only when the user clicks Run, and remain paused until an approved Piston endpoint is configured.
 
 Account sync is available through `/api/auth` and `/api/state`. User state is encrypted with `APP_ENCRYPTION_KEY` and persisted in managed PostgreSQL through `lib/serverPersistence.mjs`; set `DATABASE_URL` before enabling account sync in production. The adapter creates its tables and indexes on first use, while database backups, point-in-time recovery, and retention should be configured in the managed provider. AI routes enforce bounded request sizes and distributed rate limits when Upstash is configured. Set `REQUIRE_AUTH=1` before making AI routes public.
 
@@ -215,5 +210,5 @@ Production operations: configure Neon/Vercel automated backups, point-in-time re
 
 - Public company interview data is presented as reported/community-sourced, not official company material.
 - Resume gap analysis in the Career Toolkit supports `.pdf`, `.docx`, `.txt`, `.md`, and pasted text. Extraction runs through InterviewIQ's own API route and is not sent to Gemini or external AI services; legacy `.doc` files should be converted to `.docx` or pasted as text.
-- The Live Java Runner returns `503` until `CODE_RUNNER_PROVIDER=vercel-sandbox` or a non-public, approved `PISTON_EXECUTE_URL` is configured. Request-size safeguards remain in place for both providers.
+- The Live Java Runner returns `503` until a non-public, approved `PISTON_EXECUTE_URL` is configured. Request-size safeguards remain in place.
 - Voice input depends on browser support. iOS Safari may require microphone permissions, Siri/dictation support, or keyboard dictation fallback.

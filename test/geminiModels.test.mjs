@@ -20,7 +20,7 @@ test("discovers supported free-tier-friendly Gemini flash models", async () => {
 
   assert.equal(models[0], "gemini-2.0-flash");
   assert.equal(models.includes("gemini-1.5-pro"), false);
-  assert.ok(models.includes("gemini-1.5-flash"));
+  assert.ok(models.includes("gemini-2.5-flash"));
 });
 
 test("uses fallback Gemini models when discovery fails", async () => {
@@ -30,6 +30,6 @@ test("uses fallback Gemini models when discovery fails", async () => {
     },
   });
 
-  assert.ok(models.includes("gemini-1.5-flash"));
+  assert.ok(models.includes("gemini-2.5-flash"));
   assert.equal(models.some((model) => model.includes("pro")), false);
 });

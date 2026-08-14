@@ -30,6 +30,29 @@ const responsiveGrid = (minColumnWidth, gap = 10) => ({
   minWidth: 0,
 });
 
+const VIEW_METADATA = {
+  "Handbook Java": {
+    title: "Competitive Programmer's Handbook for Java",
+    description: "Java practice chapters for algorithms, data structures, graphs, and advanced topics.",
+  },
+  "Senior Refresher": {
+    title: "Senior Java Interview Refresher",
+    description: "Practice Java 21, JVM, concurrency, architecture, and production judgement.",
+  },
+  Search: {
+    title: "Java Interview Topic Search",
+    description: "Generate a focused explanation for any Java, backend, or DSA topic.",
+  },
+  Articles: {
+    title: "Java Interview Articles",
+    description: "Open one focused lesson at a time, then practice its interview drill.",
+  },
+  Roadmaps: {
+    title: "Java Learning Roadmaps",
+    description: "Choose a guided plan and expand it when you are ready to see every step.",
+  },
+};
+
 function ChipButton({ label, icon, active, onClick, accent }) {
   return (
     <button
@@ -39,10 +62,10 @@ function ChipButton({ label, icon, active, onClick, accent }) {
       aria-label={label}
       style={{
         alignItems: "center",
-        background: active ? "rgba(139,211,255,.12)" : "rgba(0,0,0,.14)",
-        border: `1px solid ${active ? accent : "rgba(255,255,255,.08)"}`,
+        background: active ? "var(--jd-accent-surface-strong)" : "var(--jd-surface-sunken)",
+        border: `1px solid ${active ? accent : "var(--jd-border)"}`,
         borderRadius: 7,
-        color: active ? "#f8fbff" : "#9fb0c7",
+        color: active ? "var(--jd-text)" : "var(--jd-text-muted)",
         cursor: "pointer",
         display: "inline-flex",
         fontSize: 11,
@@ -53,7 +76,7 @@ function ChipButton({ label, icon, active, onClick, accent }) {
         padding: "7px 10px",
       }}
     >
-      <i className={`ti ${icon}`} style={{ color: active ? accent : "#9fb0c7", fontSize: 14 }} />
+      <i className={`ti ${icon}`} style={{ color: active ? accent : "var(--jd-text-muted)", fontSize: 14 }} />
       {label}
     </button>
   );
@@ -61,12 +84,12 @@ function ChipButton({ label, icon, active, onClick, accent }) {
 
 function DetailList({ title, icon, items, accent }) {
   return (
-    <section style={{ ...wrap, background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, padding: 10 }}>
-      <h4 style={{ ...wrap, alignItems: "center", color: "#f8fbff", display: "flex", fontSize: 12, gap: 6, marginBottom: 7 }}>
+    <section style={{ ...wrap, background: "var(--jd-surface-subtle)", border: "1px solid var(--jd-border)", borderRadius: 8, padding: 10 }}>
+      <h4 style={{ ...wrap, alignItems: "center", color: "var(--jd-text)", display: "flex", fontSize: 12, gap: 6, marginBottom: 7 }}>
         <i className={`ti ${icon}`} style={{ color: accent }} />
         {title}
       </h4>
-      <ul style={{ ...wrap, color: "#9fb0c7", display: "grid", fontSize: 11.4, gap: 6, lineHeight: 1.45, margin: 0, paddingLeft: 17 }}>
+      <ul style={{ ...wrap, color: "var(--jd-text-muted)", display: "grid", fontSize: 11.4, gap: 6, lineHeight: 1.45, margin: 0, paddingLeft: 17 }}>
         {items.map((item) => <li key={item}>{item}</li>)}
       </ul>
     </section>
@@ -103,24 +126,24 @@ function InterviewDrillCard({ article, accent, onAction }) {
   };
 
   return (
-    <section style={{ ...wrap, background: "rgba(0,0,0,.16)", border: `1px solid ${accent}28`, borderRadius: 8, display: "grid", gap: 8, padding: 10 }}>
+    <section style={{ ...wrap, background: "var(--jd-surface-sunken)", border: `1px solid ${accent}28`, borderRadius: 8, display: "grid", gap: 8, padding: 10 }}>
       <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Interview Drill Card</div>
       <div style={responsiveGrid(170, 8)}>
-        <div style={{ border: "1px solid rgba(255,255,255,.075)", borderRadius: 7, padding: 8 }}>
-          <strong style={{ color: "#a7f3d0", display: "block", fontSize: 10.5, marginBottom: 4, textTransform: "uppercase" }}>Explain</strong>
-          <span style={{ color: "#dbeafe", fontSize: 11.2, lineHeight: 1.4 }}>{drill.explain}</span>
+        <div style={{ border: "1px solid var(--jd-border)", borderRadius: 7, padding: 8 }}>
+          <strong style={{ color: accent, display: "block", fontSize: 10.5, marginBottom: 4, textTransform: "uppercase" }}>Explain</strong>
+          <span style={{ color: "var(--jd-text-soft)", fontSize: 11.2, lineHeight: 1.4 }}>{drill.explain}</span>
         </div>
-        <div style={{ border: "1px solid rgba(255,255,255,.075)", borderRadius: 7, padding: 8 }}>
-          <strong style={{ color: "#facc15", display: "block", fontSize: 10.5, marginBottom: 4, textTransform: "uppercase" }}>Trap</strong>
-          <span style={{ color: "#dbeafe", fontSize: 11.2, lineHeight: 1.4 }}>{drill.trap}</span>
+        <div style={{ border: "1px solid var(--jd-border)", borderRadius: 7, padding: 8 }}>
+          <strong style={{ color: "var(--jd-warning)", display: "block", fontSize: 10.5, marginBottom: 4, textTransform: "uppercase" }}>Trap</strong>
+          <span style={{ color: "var(--jd-text-soft)", fontSize: 11.2, lineHeight: 1.4 }}>{drill.trap}</span>
         </div>
-        <div style={{ border: "1px solid rgba(255,255,255,.075)", borderRadius: 7, padding: 8 }}>
-          <strong style={{ color: "#c4b5fd", display: "block", fontSize: 10.5, marginBottom: 4, textTransform: "uppercase" }}>Follow-up</strong>
-          <span style={{ color: "#dbeafe", fontSize: 11.2, lineHeight: 1.4 }}>{drill.followUp}</span>
+        <div style={{ border: "1px solid var(--jd-border)", borderRadius: 7, padding: 8 }}>
+          <strong style={{ color: "var(--jd-accent-alt)", display: "block", fontSize: 10.5, marginBottom: 4, textTransform: "uppercase" }}>Follow-up</strong>
+          <span style={{ color: "var(--jd-text-soft)", fontSize: 11.2, lineHeight: 1.4 }}>{drill.followUp}</span>
         </div>
       </div>
-      <code style={{ ...wrap, background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 7, color: "#d1fae5", display: "block", fontSize: 11, lineHeight: 1.45, padding: 8, whiteSpace: "pre-wrap" }}>{drill.snippet}</code>
-      <button type="button" className="glass-button" onClick={start} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, justifySelf: "start", padding: "7px 10px" }}>
+      <code style={{ ...wrap, background: "var(--jd-surface-subtle)", border: "1px solid var(--jd-border)", borderRadius: 7, color: "var(--jd-code-text)", display: "block", fontSize: 11, lineHeight: 1.45, padding: 8, whiteSpace: "pre-wrap" }}>{drill.snippet}</code>
+      <button type="button" className="glass-button" onClick={start} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "var(--jd-text)", fontSize: 11, fontWeight: 800, justifySelf: "start", padding: "7px 10px" }}>
         <i className="ti ti-player-play" style={{ color: accent, marginRight: 6 }} />
         Start Drill Card
       </button>
@@ -132,11 +155,11 @@ function GeneratedAnswerPanel({ answer, error, loading, query, accent, onRetry }
   const hasQuery = Boolean(query.trim());
 
   return (
-    <section style={{ ...wrap, background: "rgba(255,255,255,.045)", border: `1px solid ${accent}33`, borderRadius: 8, display: "grid", gap: 10, padding: 12 }}>
+    <section style={{ ...wrap, background: "var(--jd-surface)", border: `1px solid ${accent}33`, borderRadius: 8, display: "grid", gap: 10, padding: 12 }}>
       <div style={{ alignItems: "center", display: "flex", gap: 8, justifyContent: "space-between", minWidth: 0 }}>
         <div style={wrap}>
           <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>AI Interview Explainer</div>
-          <h3 style={{ ...wrap, color: "#f8fbff", fontSize: 16, lineHeight: 1.25, marginTop: 4 }}>
+          <h3 style={{ ...wrap, color: "var(--jd-text)", fontSize: 16, lineHeight: 1.25, marginTop: 4 }}>
             {hasQuery ? query : "Search any Java, backend, or DSA topic"}
           </h3>
         </div>
@@ -148,28 +171,28 @@ function GeneratedAnswerPanel({ answer, error, loading, query, accent, onRetry }
       </div>
 
       {!answer && !error && !loading && (
-        <p style={{ ...wrap, color: "#9fb0c7", fontSize: 12, lineHeight: 1.55 }}>
+        <p style={{ ...wrap, color: "var(--jd-text-muted)", fontSize: 12, lineHeight: 1.55 }}>
           Type a topic like interface, deserialization, segment tree, dynamic programming, Spring transactions, or Java memory model, then press Enter.
         </p>
       )}
 
       {loading && !answer && (
-        <p style={{ ...wrap, color: "#cbd5e1", fontSize: 12, lineHeight: 1.55 }}>
+        <p style={{ ...wrap, color: "var(--jd-text-soft)", fontSize: 12, lineHeight: 1.55 }}>
           Building a polished answer with direct explanation, interview framing, examples, traps, follow-ups, and DSA/competitive-programming angles where relevant.
         </p>
       )}
 
       {answer && (
-        <div className="glass-card" style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, padding: 12 }}>
+        <div className="glass-card" style={{ border: "1px solid var(--jd-border)", borderRadius: 8, padding: 12 }}>
           <MessageContent content={answer} />
         </div>
       )}
 
       {error && (
-        <div role="alert" style={{ ...wrap, background: "rgba(248,113,113,.1)", border: "1px solid rgba(248,113,113,.28)", borderRadius: 8, color: "#fecaca", display: "grid", fontSize: 12, gap: 8, lineHeight: 1.45, padding: 10 }}>
+        <div role="alert" style={{ ...wrap, background: "rgba(248,113,113,.1)", border: "1px solid rgba(248,113,113,.28)", borderRadius: 8, color: "var(--jd-danger-text)", display: "grid", fontSize: 12, gap: 8, lineHeight: 1.45, padding: 10 }}>
           {error}
           {hasQuery && (
-            <button type="button" className="glass-button" onClick={onRetry} style={{ border: "1px solid rgba(248,113,113,.32)", borderRadius: 7, color: "#fee2e2", fontSize: 11, fontWeight: 900, justifySelf: "start", padding: "7px 10px" }}>
+            <button type="button" className="glass-button" onClick={onRetry} style={{ border: "1px solid rgba(248,113,113,.32)", borderRadius: 7, color: "var(--jd-danger-text)", fontSize: 11, fontWeight: 900, justifySelf: "start", padding: "7px 10px" }}>
               <i className="ti ti-refresh" style={{ marginRight: 6 }} />
               Retry
             </button>
@@ -180,7 +203,7 @@ function GeneratedAnswerPanel({ answer, error, loading, query, accent, onRetry }
   );
 }
 
-function ArticleCard({ article, accent, onAction }) {
+function ArticleCard({ article, accent, expanded, onAction, onToggle }) {
   const track = getJavaDigestTrack(article.trackId);
   const beginnerContext = {
     what: `${article.title} is a focused Java/interview concept. Start by understanding the idea before memorizing syntax.`,
@@ -195,147 +218,166 @@ function ArticleCard({ article, accent, onAction }) {
   };
 
   return (
-    <article style={{ ...wrap, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 8, display: "grid", gap: 10, padding: 12 }}>
+    <article className={`java-digest-card${expanded ? " is-expanded" : ""}`} style={{ ...wrap, borderRadius: 8, display: "grid", gap: 10, padding: 12 }}>
       <div style={{ alignItems: "flex-start", display: "flex", gap: 8, justifyContent: "space-between", minWidth: 0 }}>
         <div style={wrap}>
           <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>
             {track.label} · {article.format}
           </div>
-          <h3 style={{ ...wrap, color: "#f8fbff", fontSize: 15.5, lineHeight: 1.25, marginTop: 4 }}>{article.title}</h3>
+          <h3 style={{ ...wrap, color: "var(--jd-text)", fontSize: 15.5, lineHeight: 1.25, marginTop: 4 }}>{article.title}</h3>
         </div>
-        <span style={{ border: "1px solid rgba(255,255,255,.12)", borderRadius: 999, color: "#cbd5e1", flexShrink: 0, fontSize: 10.5, fontWeight: 800, padding: "3px 7px", whiteSpace: "nowrap" }}>
+        <span style={{ border: "1px solid var(--jd-border-strong)", borderRadius: 999, color: "var(--jd-text-soft)", flexShrink: 0, fontSize: 10.5, fontWeight: 800, padding: "3px 7px", whiteSpace: "nowrap" }}>
           {article.readMinutes} min
         </span>
       </div>
 
-      <p style={{ ...wrap, color: "#cbd5e1", fontSize: 12, lineHeight: 1.55 }}>{article.summary}</p>
-      <section style={{ ...wrap, background: `${accent}10`, border: `1px solid ${accent}2f`, borderRadius: 8, display: "grid", gap: 6, padding: 10 }}>
-        <div style={{ color: accent, fontSize: 10.8, fontWeight: 900, textTransform: "uppercase" }}>Beginner Explainer</div>
-        <p style={{ color: "#dbeafe", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}><strong style={{ color: "#f8fbff" }}>What is this?</strong> {beginnerContext.what}</p>
-        <p style={{ color: "#dbeafe", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}><strong style={{ color: "#f8fbff" }}>Why does it matter?</strong> {beginnerContext.why}</p>
-        <p style={{ color: "#dbeafe", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}><strong style={{ color: "#f8fbff" }}>Where is it used?</strong> {beginnerContext.where}</p>
-      </section>
+      <p style={{ ...wrap, color: "var(--jd-text-soft)", fontSize: 12, lineHeight: 1.55 }}>{article.summary}</p>
+      {expanded && (
+        <div id={`java-digest-article-${article.id}`} style={{ display: "grid", gap: 10 }}>
+          <section style={{ ...wrap, background: `${accent}10`, border: `1px solid ${accent}2f`, borderRadius: 8, display: "grid", gap: 6, padding: 10 }}>
+            <div style={{ color: accent, fontSize: 10.8, fontWeight: 900, textTransform: "uppercase" }}>Beginner Explainer</div>
+            <p style={{ color: "var(--jd-text-soft)", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}><strong style={{ color: "var(--jd-text)" }}>What is this?</strong> {beginnerContext.what}</p>
+            <p style={{ color: "var(--jd-text-soft)", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}><strong style={{ color: "var(--jd-text)" }}>Why does it matter?</strong> {beginnerContext.why}</p>
+            <p style={{ color: "var(--jd-text-soft)", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}><strong style={{ color: "var(--jd-text)" }}>Where is it used?</strong> {beginnerContext.where}</p>
+          </section>
 
-      <div style={responsiveGrid(220, 9)}>
-        <DetailList title="What To Learn" icon="ti-list-check" items={article.learn} accent={accent} />
-        <DetailList title="Interview Questions" icon="ti-message-question" items={article.questions} accent="#c4b5fd" />
-      </div>
+          <div style={responsiveGrid(220, 9)}>
+            <DetailList title="What To Learn" icon="ti-list-check" items={article.learn} accent={accent} />
+            <DetailList title="Interview Questions" icon="ti-message-question" items={article.questions} accent="var(--jd-accent-alt)" />
+          </div>
 
-      <InterviewDrillCard article={article} accent={accent} onAction={onAction} />
+          <InterviewDrillCard article={article} accent={accent} onAction={onAction} />
+        </div>
+      )}
 
       <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 7, minWidth: 0 }}>
-        <span style={{ border: "1px solid rgba(250,204,21,.3)", borderRadius: 999, color: "#fde68a", fontSize: 10.5, fontWeight: 900, padding: "3px 7px" }}>{article.level}</span>
-        <button type="button" className="glass-button" onClick={coach} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
-          <i className="ti ti-school" style={{ color: accent, marginRight: 6 }} />
-          Coach Me
+        <span style={{ border: "1px solid rgba(250,204,21,.3)", borderRadius: 999, color: "var(--jd-warning-text)", fontSize: 10.5, fontWeight: 900, padding: "3px 7px" }}>{article.level}</span>
+        <button type="button" className="glass-button" onClick={onToggle} aria-expanded={expanded} aria-controls={expanded ? `java-digest-article-${article.id}` : undefined} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "var(--jd-text)", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
+          <i className={`ti ${expanded ? "ti-chevron-up" : "ti-book-2"}`} style={{ color: accent, marginRight: 6 }} />
+          {expanded ? "Close Lesson" : "Open Lesson"}
         </button>
-        <button type="button" className="glass-button" onClick={mock} style={{ border: "1px solid rgba(196,181,253,.38)", borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
-          <i className="ti ti-player-play" style={{ color: "#c4b5fd", marginRight: 6 }} />
-          Mock Drill
-        </button>
+        {expanded && (
+          <>
+            <button type="button" className="glass-button" onClick={coach} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "var(--jd-text)", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
+              <i className="ti ti-school" style={{ color: accent, marginRight: 6 }} />
+              Coach Me
+            </button>
+            <button type="button" className="glass-button" onClick={mock} style={{ border: "1px solid rgba(196,181,253,.38)", borderRadius: 7, color: "var(--jd-text)", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
+              <i className="ti ti-player-play" style={{ color: "var(--jd-accent-alt)", marginRight: 6 }} />
+              Mock Drill
+            </button>
+          </>
+        )}
       </div>
     </article>
   );
 }
 
-function RoadmapCard({ roadmap, accent, onAction }) {
+function RoadmapCard({ roadmap, accent, expanded, onAction, onToggle }) {
   const start = () => {
     onAction?.(buildJavaDigestRoadmapPrompt(roadmap.id), { type: "javaDigestRoadmap", roadmap });
   };
 
   return (
-    <article style={{ ...wrap, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 8, display: "grid", gap: 10, padding: 12 }}>
+    <article className="java-digest-card" style={{ ...wrap, borderRadius: 8, display: "grid", gap: 10, padding: 12 }}>
       <div style={wrap}>
         <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>{roadmap.audience}</div>
-        <h3 style={{ ...wrap, color: "#f8fbff", fontSize: 15, lineHeight: 1.25, marginTop: 4 }}>{roadmap.title}</h3>
+        <h3 style={{ ...wrap, color: "var(--jd-text)", fontSize: 15, lineHeight: 1.25, marginTop: 4 }}>{roadmap.title}</h3>
       </div>
-      <ol style={{ ...wrap, color: "#9fb0c7", display: "grid", fontSize: 11.5, gap: 6, lineHeight: 1.45, margin: 0, paddingLeft: 18 }}>
-        {roadmap.days.map((day) => <li key={day}>{day}</li>)}
+      <ol id={`java-digest-roadmap-${roadmap.id}`} style={{ ...wrap, color: "var(--jd-text-muted)", display: "grid", fontSize: 11.5, gap: 6, lineHeight: 1.45, margin: 0, paddingLeft: 18 }}>
+        {(expanded ? roadmap.days : roadmap.days.slice(0, 3)).map((day) => <li key={day}>{day}</li>)}
       </ol>
-      <button type="button" className="glass-button" onClick={start} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, justifySelf: "start", padding: "7px 10px" }}>
-        <i className="ti ti-calendar-stats" style={{ color: accent, marginRight: 6 }} />
-        Build My Plan
-      </button>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+        {roadmap.days.length > 3 && (
+          <button type="button" className="glass-button" onClick={onToggle} aria-expanded={expanded} aria-controls={`java-digest-roadmap-${roadmap.id}`} style={{ border: "1px solid var(--jd-border-strong)", borderRadius: 7, color: "var(--jd-text)", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
+            <i className={`ti ${expanded ? "ti-chevron-up" : "ti-list"}`} style={{ color: accent, marginRight: 6 }} />
+            {expanded ? "Show Preview" : "View Full Roadmap"}
+          </button>
+        )}
+        <button type="button" className="glass-button" onClick={start} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "var(--jd-text)", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
+          <i className="ti ti-calendar-stats" style={{ color: accent, marginRight: 6 }} />
+          Build My Plan
+        </button>
+      </div>
     </article>
   );
 }
 
-function CsesChapterCard({ chapter, accent, onAction }) {
-  const [expanded, setExpanded] = useState(chapter.id === "time-complexity-java");
+function CsesChapterCard({ chapter, accent, expanded, onAction, onToggleExpanded }) {
   const detail = getCsesJavaChapterDetail(chapter);
   const startPractice = () => {
     onAction?.(buildCsesJavaPracticePrompt(chapter.id), { type: "csesJavaTrack", csesTrack: chapter });
   };
 
   return (
-    <article style={{ ...wrap, background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.085)", borderRadius: 8, display: "grid", gap: 10, padding: 12 }}>
+    <article style={{ ...wrap, background: "var(--jd-surface-subtle)", border: "1px solid var(--jd-border)", borderRadius: 8, display: "grid", gap: 10, padding: 12 }}>
       <div style={{ alignItems: "flex-start", display: "grid", gap: 9, gridTemplateColumns: "auto 1fr auto", minWidth: 0 }}>
-        <span style={{ alignItems: "center", background: "rgba(139,211,255,.1)", border: `1px solid ${accent}44`, borderRadius: 7, color: accent, display: "inline-flex", fontSize: 12, fontWeight: 950, height: 34, justifyContent: "center", minWidth: 38 }}>
+        <span style={{ alignItems: "center", background: "var(--jd-accent-surface-strong)", border: `1px solid ${accent}44`, borderRadius: 7, color: accent, display: "inline-flex", fontSize: 12, fontWeight: 950, height: 34, justifyContent: "center", minWidth: 38 }}>
           {chapter.chapter}
         </span>
         <div style={{ ...wrap, alignSelf: "center" }}>
-          <div style={{ color: "#9fb0c7", fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>
+          <div style={{ color: "var(--jd-text-muted)", fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>
             Part {chapter.part} · {chapter.partTitle}
           </div>
-          <h3 style={{ ...wrap, color: "#f8fbff", fontSize: 15.5, lineHeight: 1.25, marginTop: 3 }}>{chapter.title}</h3>
+          <h3 style={{ ...wrap, color: "var(--jd-text)", fontSize: 15.5, lineHeight: 1.25, marginTop: 3 }}>{chapter.title}</h3>
         </div>
-        <span style={{ border: "1px solid rgba(255,255,255,.12)", borderRadius: 999, color: "#cbd5e1", flexShrink: 0, fontSize: 10.5, fontWeight: 900, padding: "3px 7px", whiteSpace: "nowrap" }}>
+        <span style={{ border: "1px solid var(--jd-border-strong)", borderRadius: 999, color: "var(--jd-text-soft)", flexShrink: 0, fontSize: 10.5, fontWeight: 900, padding: "3px 7px", whiteSpace: "nowrap" }}>
           {chapter.difficulty}
         </span>
       </div>
 
       <div style={responsiveGrid(230, 9)}>
         <DetailList title="Book Sections" icon="ti-book" items={chapter.sections} accent={accent} />
-        <DetailList title="Java Drills" icon="ti-cup" items={chapter.javaDrills} accent="#a7f3d0" />
+        <DetailList title="Java Drills" icon="ti-cup" items={chapter.javaDrills} accent={accent} />
       </div>
 
-      <section style={{ ...wrap, background: "rgba(0,0,0,.18)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 9, padding: 10 }}>
+      <section style={{ ...wrap, background: "var(--jd-surface-sunken)", border: "1px solid var(--jd-border)", borderRadius: 8, display: "grid", gap: 9, padding: 10 }}>
         <div style={wrap}>
-          <h4 style={{ color: "#f8fbff", fontSize: 12, marginBottom: 6 }}>Detailed Explanation</h4>
-          <p style={{ ...wrap, color: "#dbeafe", fontSize: 11.7, lineHeight: 1.55, margin: 0 }}>{detail.explanation}</p>
+          <h4 style={{ color: "var(--jd-text)", fontSize: 12, marginBottom: 6 }}>Detailed Explanation</h4>
+          <p style={{ ...wrap, color: "var(--jd-text-soft)", fontSize: 11.7, lineHeight: 1.55, margin: 0 }}>{detail.explanation}</p>
         </div>
         <div style={wrap}>
-          <h4 style={{ color: "#f8fbff", fontSize: 12, marginBottom: 6 }}>How To Think About It</h4>
-          <p style={{ ...wrap, color: "#cbd5e1", fontSize: 11.5, lineHeight: 1.55, margin: 0 }}>{detail.reasoning}</p>
+          <h4 style={{ color: "var(--jd-text)", fontSize: 12, marginBottom: 6 }}>How To Think About It</h4>
+          <p style={{ ...wrap, color: "var(--jd-text-soft)", fontSize: 11.5, lineHeight: 1.55, margin: 0 }}>{detail.reasoning}</p>
         </div>
         <div style={wrap}>
-          <h4 style={{ color: "#f8fbff", fontSize: 12, marginBottom: 6 }}>Java Implementation Notes</h4>
-          <p style={{ ...wrap, color: "#d1fae5", fontSize: 11.5, lineHeight: 1.55, margin: 0 }}>{detail.javaApproach}</p>
+          <h4 style={{ color: "var(--jd-text)", fontSize: 12, marginBottom: 6 }}>Java Implementation Notes</h4>
+          <p style={{ ...wrap, color: "var(--jd-code-text)", fontSize: 11.5, lineHeight: 1.55, margin: 0 }}>{detail.javaApproach}</p>
         </div>
         <div style={wrap}>
-          <h4 style={{ color: "#f8fbff", fontSize: 12, marginBottom: 6 }}>Worked Example</h4>
-          <p style={{ ...wrap, color: "#cbd5e1", fontSize: 11.5, lineHeight: 1.55, margin: 0 }}>{detail.workedExample}</p>
+          <h4 style={{ color: "var(--jd-text)", fontSize: 12, marginBottom: 6 }}>Worked Example</h4>
+          <p style={{ ...wrap, color: "var(--jd-text-soft)", fontSize: 11.5, lineHeight: 1.55, margin: 0 }}>{detail.workedExample}</p>
         </div>
         <div style={wrap}>
-          <h4 style={{ color: "#f8fbff", fontSize: 12, marginBottom: 6 }}>Java Sketch</h4>
-          <code style={{ ...wrap, color: "#d1fae5", display: "block", fontSize: 11.2, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{detail.codeSketch}</code>
+          <h4 style={{ color: "var(--jd-text)", fontSize: 12, marginBottom: 6 }}>Java Sketch</h4>
+          <code style={{ ...wrap, color: "var(--jd-code-text)", display: "block", fontSize: 11.2, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{detail.codeSketch}</code>
         </div>
         {expanded && (
-          <div style={{ ...wrap, background: "rgba(139,211,255,.055)", border: `1px solid ${accent}22`, borderRadius: 8, display: "grid", gap: 9, padding: 10 }}>
+          <div style={{ ...wrap, background: "var(--jd-accent-surface)", border: `1px solid ${accent}22`, borderRadius: 8, display: "grid", gap: 9, padding: 10 }}>
             <div style={wrap}>
-              <h4 style={{ color: "#f8fbff", fontSize: 12, marginBottom: 6 }}>Deep Study Path</h4>
-              <ol style={{ ...wrap, color: "#cbd5e1", display: "grid", fontSize: 11.5, gap: 5, lineHeight: 1.5, margin: 0, paddingLeft: 18 }}>
+              <h4 style={{ color: "var(--jd-text)", fontSize: 12, marginBottom: 6 }}>Deep Study Path</h4>
+              <ol style={{ ...wrap, color: "var(--jd-text-soft)", display: "grid", fontSize: 11.5, gap: 5, lineHeight: 1.5, margin: 0, paddingLeft: 18 }}>
                 {detail.stepByStep.map((step) => <li key={step}>{step}</li>)}
               </ol>
             </div>
             <div style={wrap}>
-              <h4 style={{ color: "#f8fbff", fontSize: 12, marginBottom: 6 }}>Interview Answer</h4>
-              <p style={{ ...wrap, color: "#dbeafe", fontSize: 11.5, lineHeight: 1.55, margin: 0 }}>{detail.interviewAnswer}</p>
+              <h4 style={{ color: "var(--jd-text)", fontSize: 12, marginBottom: 6 }}>Interview Answer</h4>
+              <p style={{ ...wrap, color: "var(--jd-text-soft)", fontSize: 11.5, lineHeight: 1.55, margin: 0 }}>{detail.interviewAnswer}</p>
             </div>
             <div style={responsiveGrid(220, 9)}>
-              <DetailList title="Common Mistakes" icon="ti-alert-triangle" items={detail.commonMistakes} accent="#fca5a5" />
-              <DetailList title="Practice Tasks" icon="ti-target-arrow" items={detail.practiceTasks} accent="#c4b5fd" />
+              <DetailList title="Common Mistakes" icon="ti-alert-triangle" items={detail.commonMistakes} accent="var(--jd-danger-accent)" />
+              <DetailList title="Practice Tasks" icon="ti-target-arrow" items={detail.practiceTasks} accent="var(--jd-accent-alt)" />
             </div>
           </div>
         )}
       </section>
 
       <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 7 }}>
-        <button type="button" className="glass-button" onClick={() => setExpanded((value) => !value)} style={{ border: "1px solid rgba(255,255,255,.16)", borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
+        <button type="button" className="glass-button" onClick={onToggleExpanded} aria-expanded={expanded} style={{ border: "1px solid var(--jd-border-strong)", borderRadius: 7, color: "var(--jd-text)", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
           <i className={`ti ${expanded ? "ti-chevron-up" : "ti-chevron-down"}`} style={{ color: accent, marginRight: 6 }} />
           {expanded ? "Show Less" : "Explain More"}
         </button>
-        <button type="button" className="glass-button" onClick={startPractice} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
+        <button type="button" className="glass-button" onClick={startPractice} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "var(--jd-text)", fontSize: 11, fontWeight: 800, padding: "7px 10px" }}>
           <i className="ti ti-player-play" style={{ color: accent, marginRight: 6 }} />
           Study Chapter in Java
         </button>
@@ -344,24 +386,26 @@ function CsesChapterCard({ chapter, accent, onAction }) {
   );
 }
 
-function CsesPartSection({ part, accent, onAction }) {
+function CsesPartSection({ part, accent, expanded, expandedChapterId, onAction, onToggleChapter, onTogglePart }) {
   return (
-    <section style={{ ...wrap, border: "1px solid rgba(255,255,255,.09)", borderRadius: 8, display: "grid", gap: 10, padding: 12 }}>
+    <section style={{ ...wrap, border: "1px solid var(--jd-border)", borderRadius: 8, display: "grid", gap: 10, padding: 12 }}>
       <header style={{ ...wrap, alignItems: "flex-start", display: "flex", gap: 10, justifyContent: "space-between" }}>
         <div style={wrap}>
           <div style={{ color: accent, fontSize: 10.5, fontWeight: 950, textTransform: "uppercase" }}>Part {part.part}</div>
-          <h3 style={{ ...wrap, color: "#f8fbff", fontSize: 17, lineHeight: 1.25, marginTop: 3 }}>{part.title}</h3>
-          <p style={{ ...wrap, color: "#9fb0c7", fontSize: 11.7, lineHeight: 1.5, marginTop: 6 }}>{part.summary}</p>
+          <h3 style={{ ...wrap, color: "var(--jd-text)", fontSize: 17, lineHeight: 1.25, marginTop: 3 }}>{part.title}</h3>
+          <p style={{ ...wrap, color: "var(--jd-text-muted)", fontSize: 11.7, lineHeight: 1.5, marginTop: 6 }}>{part.summary}</p>
         </div>
-        <span style={{ border: `1px solid ${accent}44`, borderRadius: 999, color: accent, flexShrink: 0, fontSize: 10.5, fontWeight: 900, padding: "3px 7px", whiteSpace: "nowrap" }}>
-          {part.chapters.length} chapters
-        </span>
+        <button type="button" className="glass-button" onClick={onTogglePart} aria-expanded={expanded} aria-controls={expanded ? `java-digest-part-${part.id}` : undefined} style={{ border: `1px solid ${accent}44`, borderRadius: 999, color: accent, flexShrink: 0, fontSize: 10.5, fontWeight: 900, padding: "5px 8px", whiteSpace: "nowrap" }}>
+          {part.chapters.length} chapters <i className={`ti ${expanded ? "ti-chevron-up" : "ti-chevron-down"}`} style={{ marginLeft: 4 }} />
+        </button>
       </header>
-      <div style={responsiveGrid(330, 10)}>
-        {part.chapters.map((chapter) => (
-          <CsesChapterCard key={chapter.id} chapter={{ ...chapter, part: part.part, partTitle: part.title }} accent={accent} onAction={onAction} />
-        ))}
-      </div>
+      {expanded && (
+        <div id={`java-digest-part-${part.id}`} style={responsiveGrid(330, 10)}>
+          {part.chapters.map((chapter) => (
+            <CsesChapterCard key={chapter.id} chapter={{ ...chapter, part: part.part, partTitle: part.title }} accent={accent} expanded={expandedChapterId === chapter.id} onAction={onAction} onToggleExpanded={() => onToggleChapter(chapter.id)} />
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -369,6 +413,10 @@ function CsesPartSection({ part, accent, onAction }) {
 export default function JavaDigest({ theme = {}, onAction, onRefresherProgressChange, profile = null, beginnerMode = false, beginnerStep = "watch", onBeginnerStepChange, onActivity, progress = {} }) {
   const [activeTrack, setActiveTrack] = useState("all");
   const [activeView, setActiveView] = useState("Handbook Java");
+  const [expandedPartId, setExpandedPartId] = useState(CSES_JAVA_PARTS[0]?.id || "");
+  const [expandedChapterId, setExpandedChapterId] = useState("");
+  const [expandedArticleId, setExpandedArticleId] = useState("");
+  const [expandedRoadmapId, setExpandedRoadmapId] = useState("");
   const [searchDraft, setSearchDraft] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [generatedAnswer, setGeneratedAnswer] = useState("");
@@ -380,13 +428,14 @@ export default function JavaDigest({ theme = {}, onAction, onRefresherProgressCh
   const [refresherFilter, setRefresherFilter] = useState("");
   const [selectedRefresherSection, setSelectedRefresherSection] = useState("all");
   const [randomQuestionId, setRandomQuestionId] = useState("");
-  const [expandedRefresherQuestions, setExpandedRefresherQuestions] = useState([]);
+  const [expandedRefresherQuestionId, setExpandedRefresherQuestionId] = useState("");
   const [practiceQuestionId, setPracticeQuestionId] = useState("");
   const [practiceResponse, setPracticeResponse] = useState("");
   const [practiceAnswerRevealed, setPracticeAnswerRevealed] = useState(false);
   const accent = theme.accentStrong || "#8bd3ff";
   const accentBorder = theme.accentBorder || "rgba(139, 211, 255, .26)";
   const articles = useMemo(() => listJavaDigestArticles(activeTrack), [activeTrack]);
+  const viewMetadata = VIEW_METADATA[activeView] || VIEW_METADATA["Handbook Java"];
   const competencySummary = useMemo(
     () => buildJavaDigestCompetencySummary({ progress, selectedTrackId: activeTrack }),
     [progress, activeTrack],
@@ -490,6 +539,11 @@ export default function JavaDigest({ theme = {}, onAction, onRefresherProgressCh
     event?.preventDefault();
     generateAnswer(searchDraft);
   };
+  const toggleExpandedChapter = (chapterId) => setExpandedChapterId((current) => current === chapterId ? "" : chapterId);
+  const toggleExpandedPart = (partId) => {
+    setExpandedPartId((current) => current === partId ? "" : partId);
+    setExpandedChapterId("");
+  };
   const toggleRefresherStatus = (field, questionId) => {
     onRefresherProgressChange?.((previous = {}) => {
       const values = new Set(Array.isArray(previous[field]) ? previous[field] : []);
@@ -507,7 +561,7 @@ export default function JavaDigest({ theme = {}, onAction, onRefresherProgressCh
     }
     const selected = candidates[Math.floor(Math.random() * candidates.length)];
     setRandomQuestionId(selected.id);
-    setExpandedRefresherQuestions([selected.id]);
+    setExpandedRefresherQuestionId(selected.id);
   };
   const startPracticeMode = () => {
     const candidates = visibleRefresherQuestions.length ? visibleRefresherQuestions : refresherQuestions;
@@ -558,12 +612,12 @@ export default function JavaDigest({ theme = {}, onAction, onRefresherProgressCh
 
   return (
     <section
-      className="glass-card"
+      className="glass-card java-digest"
       style={{
-        background: "linear-gradient(180deg, rgba(14,18,30,.82), rgba(7,10,18,.74))",
-        border: "1px solid rgba(255,255,255,.1)",
+        background: "var(--jd-background)",
+        border: "1px solid var(--jd-border-strong)",
         borderRadius: 8,
-        color: "#eef4ff",
+        color: "var(--jd-text)",
         display: "grid",
         flexShrink: 0,
         gap: 12,
@@ -583,7 +637,8 @@ export default function JavaDigest({ theme = {}, onAction, onRefresherProgressCh
       <header style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "space-between" }}>
         <div style={wrap}>
           <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Java Digest</div>
-          <h2 style={{ ...wrap, color: "#f8fbff", fontSize: 19, lineHeight: 1.25, marginTop: 4 }}>Competitive Programmer&apos;s Handbook for Java · Senior Refresher</h2>
+          <h2 style={{ ...wrap, color: "var(--jd-text)", fontSize: 19, lineHeight: 1.25, marginTop: 4 }}>{viewMetadata.title}</h2>
+          <p style={{ ...wrap, color: "var(--jd-text-muted)", fontSize: 11.5, lineHeight: 1.45, margin: "4px 0 0" }}>{viewMetadata.description}</p>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 7, minWidth: 0 }}>
           {tabs.map((tab) => (
@@ -599,37 +654,26 @@ export default function JavaDigest({ theme = {}, onAction, onRefresherProgressCh
         </div>
       </header>
 
-      <section style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 170px), 1fr))" }}>
-        <article style={{ background: "rgba(255,255,255,.04)", border: `1px solid ${accentBorder}`, borderRadius: 8, padding: 10 }}>
-          <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Digest Version</div>
-          <strong style={{ color: "#f8fbff", display: "block", fontSize: 18, marginTop: 4 }}>{JAVA_DIGEST_VERSION}</strong>
-        </article>
-        <article style={{ background: "rgba(255,255,255,.04)", border: `1px solid ${accentBorder}`, borderRadius: 8, padding: 10 }}>
-          <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Mastery Score</div>
-          <strong style={{ color: "#f8fbff", display: "block", fontSize: 18, marginTop: 4 }}>{competencySummary.masteryScore}%</strong>
-        </article>
-        <article style={{ background: "rgba(255,255,255,.04)", border: `1px solid ${accentBorder}`, borderRadius: 8, padding: 10 }}>
-          <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Competency Coverage</div>
-          <strong style={{ color: "#f8fbff", display: "block", fontSize: 18, marginTop: 4 }}>{competencySummary.completedTopics}/{competencySummary.totalTopics}</strong>
-        </article>
-      </section>
-
-      <section style={{ background: "rgba(255,255,255,.035)", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 8, padding: 10 }}>
-        <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Competency Radar</div>
-        <div style={{ display: "grid", gap: 7, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 180px), 1fr))" }}>
+      <section className="java-digest-progress" style={{ background: "var(--jd-surface-subtle)", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 9, padding: 10 }}>
+        <div className="java-digest-progress-summary" style={{ alignItems: "baseline", display: "flex", flexWrap: "wrap", gap: "6px 18px" }}>
+          <span style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Java Digest {JAVA_DIGEST_VERSION}</span>
+          <strong style={{ color: "var(--jd-text)", fontSize: 13 }}>Mastery {competencySummary.masteryScore}%</strong>
+          <span style={{ color: "var(--jd-text-soft)", fontSize: 11 }}>Coverage {competencySummary.completedTopics}/{competencySummary.totalTopics}</span>
+        </div>
+        <div className="java-digest-radar" style={{ display: "grid", gap: 7, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 140px), 1fr))" }}>
           {competencySummary.competencyTracks.map((track) => (
-            <div key={track.id} style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 8 }}>
-              <strong style={{ color: "#f8fbff", display: "block", fontSize: 11.6 }}>{track.label}</strong>
-              <div style={{ color: "#cbd5e1", fontSize: 10.8, marginTop: 3 }}>Coverage {track.coverage}% · Mastery {track.mastery}%</div>
+            <div key={track.id} style={{ border: "1px solid var(--jd-border)", borderRadius: 7, padding: "6px 8px" }}>
+              <strong style={{ color: "var(--jd-text)", display: "block", fontSize: 11.6 }}>{track.label}</strong>
+              <div style={{ color: "var(--jd-text-soft)", fontSize: 10.8, marginTop: 3 }}>Coverage {track.coverage}% · Mastery {track.mastery}%</div>
             </div>
           ))}
         </div>
       </section>
 
-      <section style={{ border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 10, minWidth: 0, padding: 12 }}>
-        <form onSubmit={submitSearch} style={{ ...wrap, display: "grid", gap: 6 }}>
-          <span style={{ color: "#9fb0c7", fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Search Interview Topic</span>
-          <div style={{ alignItems: "center", background: "rgba(0,0,0,.16)", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "flex", gap: 8, minWidth: 0, padding: "8px 10px" }}>
+      <section className="java-digest-search" style={{ border: `1px solid ${accentBorder}`, borderRadius: 10, display: "grid", gap: 8, minWidth: 0, padding: 10, width: "min(100%, 680px)" }}>
+        <form className="java-digest-search-form" onSubmit={submitSearch} style={{ ...wrap, display: "grid", gap: 6 }}>
+          <span className="java-digest-search-label" style={{ color: "var(--jd-text-muted)", fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Search Interview Topic</span>
+          <div className="java-digest-search-control" style={{ alignItems: "center", background: "var(--jd-surface-sunken)", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "flex", gap: 8, minWidth: 0, padding: "7px 9px" }}>
             <i className="ti ti-search" style={{ color: accent, flexShrink: 0, fontSize: 15 }} />
             <input
               type="search"
@@ -640,13 +684,13 @@ export default function JavaDigest({ theme = {}, onAction, onRefresherProgressCh
               }}
               placeholder="Search interface, deserialization, segment tree, dynamic programming..."
               className="glass-input"
-              style={{ background: "transparent", border: "none", color: "#f8fbff", flex: 1, fontSize: 13, minWidth: 0, outline: "none", padding: 0 }}
+              style={{ background: "transparent", border: "none", color: "var(--jd-text)", flex: 1, fontSize: 13, minHeight: 30, minWidth: 0, outline: "none", padding: 0 }}
             />
             <button
               type="submit"
               disabled={searchLoading || !searchDraft.trim()}
-              className="glass-button"
-              style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", cursor: searchLoading || !searchDraft.trim() ? "not-allowed" : "pointer", flexShrink: 0, fontSize: 11, fontWeight: 900, opacity: searchLoading || !searchDraft.trim() ? .45 : 1, padding: "6px 9px" }}
+              className="glass-button java-digest-search-button"
+              style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "var(--jd-text)", cursor: searchLoading || !searchDraft.trim() ? "not-allowed" : "pointer", flexShrink: 0, fontSize: 11, fontWeight: 900, minHeight: 32, opacity: searchLoading || !searchDraft.trim() ? .45 : 1, padding: "6px 10px" }}
             >
               <i className="ti ti-arrow-right" style={{ color: accent, marginRight: 5 }} />
               Search
@@ -670,104 +714,87 @@ export default function JavaDigest({ theme = {}, onAction, onRefresherProgressCh
 
       {activeView === "Senior Refresher" && (
         <div style={{ display: "grid", gap: 10 }}>
-          <section style={{ ...wrap, background: "rgba(139,211,255,.055)", border: `1px solid ${accent}33`, borderRadius: 8, display: "grid", gap: 7, padding: 12 }}>
+          <section style={{ ...wrap, background: "var(--jd-accent-surface)", border: `1px solid ${accent}33`, borderRadius: 8, display: "grid", gap: 7, padding: 12 }}>
             <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Java 21 · JVM · Concurrency</div>
-            <h3 style={{ ...wrap, color: "#f8fbff", fontSize: 16, lineHeight: 1.25 }}>Complete Java Senior Refresher</h3>
-            <p style={{ ...wrap, color: "#cbd5e1", fontSize: 11.7, lineHeight: 1.55, margin: 0 }}>
+            <h3 style={{ ...wrap, color: "var(--jd-text)", fontSize: 16, lineHeight: 1.25 }}>Complete Java Senior Refresher</h3>
+            <p style={{ ...wrap, color: "var(--jd-text-soft)", fontSize: 11.7, lineHeight: 1.55, margin: 0 }}>
               The PDF&apos;s senior interview questions and answer blocks are presented below verbatim as searchable study cards. The guide itself is not embedded.
             </p>
-          </section>
-          <section style={{ ...wrap, background: "rgba(255,255,255,.035)", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 8, padding: 12 }}>
-            <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Ask AI About This Refresher</div>
-            <p style={{ color: "#cbd5e1", fontSize: 11.6, lineHeight: 1.5, margin: 0 }}>
-              Ask about any concept, trade-off, interview question, or coding exercise from the guide. Your answer opens in the Search view.
-            </p>
-            <form onSubmit={submitSearch} style={{ ...wrap, alignItems: "center", display: "flex", flexWrap: "wrap", gap: 8 }}>
-              <input
-                type="search"
-                value={searchDraft}
-                onChange={(event) => setSearchDraft(event.target.value)}
-                placeholder="e.g. When should I use virtual threads?"
-                aria-label="Ask a question about the Java senior refresher"
-                className="glass-input"
-                style={{ background: "rgba(0,0,0,.16)", border: `1px solid ${accentBorder}`, borderRadius: 7, color: "#f8fbff", flex: "1 1 280px", fontSize: 12, minHeight: 35, minWidth: 0, outline: "none", padding: "7px 9px" }}
-              />
-              <button type="submit" disabled={searchLoading || !searchDraft.trim()} className="glass-button" style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", cursor: searchLoading || !searchDraft.trim() ? "not-allowed" : "pointer", fontSize: 11, fontWeight: 900, opacity: searchLoading || !searchDraft.trim() ? .45 : 1, padding: "8px 10px" }}>
-                <i className="ti ti-sparkles" style={{ color: accent, marginRight: 6 }} />
-                Ask AI
-              </button>
-            </form>
           </section>
           <section style={{ ...wrap, background: `${accent}0d`, border: `1px solid ${accent}44`, borderRadius: 8, display: "grid", gap: 9, padding: 12 }}>
             <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between" }}>
               <div>
                 <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Practice Mode</div>
-                <p style={{ color: "#cbd5e1", fontSize: 11.6, lineHeight: 1.5, margin: "5px 0 0" }}>Answer one question aloud or in writing before revealing the source answer.</p>
+                <p style={{ color: "var(--jd-text-soft)", fontSize: 11.6, lineHeight: 1.5, margin: "5px 0 0" }}>Answer one question aloud or in writing before revealing the source answer.</p>
               </div>
-              <button type="button" className="glass-button" onClick={startPracticeMode} disabled={!refresherQuestions.length} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", cursor: refresherQuestions.length ? "pointer" : "not-allowed", fontSize: 11, fontWeight: 900, opacity: refresherQuestions.length ? 1 : .45, padding: "8px 10px" }}>
+              <button type="button" className="glass-button" onClick={startPracticeMode} disabled={!refresherQuestions.length} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "var(--jd-text)", cursor: refresherQuestions.length ? "pointer" : "not-allowed", fontSize: 11, fontWeight: 900, opacity: refresherQuestions.length ? 1 : .45, padding: "8px 10px" }}>
                 <i className="ti ti-player-play" style={{ color: accent, marginRight: 6 }} />
                 {practiceQuestion ? "New Practice Question" : "Start Practice"}
               </button>
             </div>
             {practiceQuestion && (
-              <div style={{ background: "rgba(0,0,0,.16)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 9, padding: 11 }}>
-                <div style={{ color: "#f8fbff", fontSize: 14, fontWeight: 850, lineHeight: 1.45 }}>{practiceQuestion.question}</div>
-                <div style={{ color: "#9fb0c7", fontSize: 10.5 }}>{practiceQuestion.section}</div>
-                <textarea value={practiceResponse} onChange={(event) => setPracticeResponse(event.target.value)} placeholder="Speak your answer aloud, then capture the key points here for scoring..." aria-label="Your interview practice answer" className="glass-input" rows={5} style={{ background: "rgba(0,0,0,.18)", border: `1px solid ${accentBorder}`, borderRadius: 7, color: "#f8fbff", fontFamily: "inherit", fontSize: 12, lineHeight: 1.5, outline: "none", padding: 9, resize: "vertical", width: "100%" }} />
+              <div style={{ background: "var(--jd-surface-sunken)", border: "1px solid var(--jd-border)", borderRadius: 8, display: "grid", gap: 9, padding: 11 }}>
+                <div style={{ color: "var(--jd-text)", fontSize: 14, fontWeight: 850, lineHeight: 1.45 }}>{practiceQuestion.question}</div>
+                <div style={{ color: "var(--jd-text-muted)", fontSize: 10.5 }}>{practiceQuestion.section}</div>
+                <textarea value={practiceResponse} onChange={(event) => setPracticeResponse(event.target.value)} placeholder="Speak your answer aloud, then capture the key points here for scoring..." aria-label="Your interview practice answer" className="glass-input" rows={5} style={{ background: "var(--jd-surface-sunken)", border: `1px solid ${accentBorder}`, borderRadius: 7, color: "var(--jd-text)", fontFamily: "inherit", fontSize: 12, lineHeight: 1.5, outline: "none", padding: 9, resize: "vertical", width: "100%" }} />
                 <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 7 }}>
-                  <button type="button" className="glass-button" onClick={revealPracticeAnswer} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 900, padding: "7px 10px" }}>
+                  <button type="button" className="glass-button" onClick={revealPracticeAnswer} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "var(--jd-text)", fontSize: 11, fontWeight: 900, padding: "7px 10px" }}>
                     <i className="ti ti-eye" style={{ color: accent, marginRight: 6 }} />
                     Reveal Source Answer
                   </button>
-                  {practiceAnswerRevealed && <button type="button" className="glass-button" onClick={scorePracticeResponse} disabled={!practiceResponse.trim()} style={{ border: "1px solid rgba(196,181,253,.45)", borderRadius: 7, color: "#f8fbff", cursor: practiceResponse.trim() ? "pointer" : "not-allowed", fontSize: 11, fontWeight: 900, opacity: practiceResponse.trim() ? 1 : .45, padding: "7px 10px" }}>
-                    <i className="ti ti-chart-bar" style={{ color: "#c4b5fd", marginRight: 6 }} />
+                  {practiceAnswerRevealed && <button type="button" className="glass-button" onClick={scorePracticeResponse} disabled={!practiceResponse.trim()} style={{ border: "1px solid rgba(196,181,253,.45)", borderRadius: 7, color: "var(--jd-text)", cursor: practiceResponse.trim() ? "pointer" : "not-allowed", fontSize: 11, fontWeight: 900, opacity: practiceResponse.trim() ? 1 : .45, padding: "7px 10px" }}>
+                    <i className="ti ti-chart-bar" style={{ color: "var(--jd-accent-alt)", marginRight: 6 }} />
                     Score with AI
                   </button>}
                 </div>
-                {practiceAnswerRevealed && <section style={{ borderTop: "1px solid rgba(255,255,255,.08)", color: "#dbeafe", fontSize: 11.7, lineHeight: 1.58, paddingTop: 10 }}><strong style={{ color: "#a7f3d0", display: "block", fontSize: 10.3, marginBottom: 5, textTransform: "uppercase" }}>Source Answer</strong>{practiceQuestion.answer}</section>}
+                {practiceAnswerRevealed && <section style={{ borderTop: "1px solid var(--jd-border)", color: "var(--jd-text-soft)", fontSize: 11.7, lineHeight: 1.58, paddingTop: 10 }}><strong style={{ color: accent, display: "block", fontSize: 10.3, marginBottom: 5, textTransform: "uppercase" }}>Source Answer</strong>{practiceQuestion.answer}</section>}
               </div>
             )}
           </section>
-          <section style={{ ...wrap, background: "rgba(255,255,255,.035)", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 9, padding: 12 }}>
+          <section style={{ ...wrap, background: "var(--jd-surface-subtle)", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 9, padding: 12 }}>
             <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between" }}>
               <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Verbatim Q&A Bank</div>
-              <span style={{ color: "#9fb0c7", fontSize: 11 }}>{refresherLoading ? "Loading questions..." : `${visibleRefresherQuestions.length} of ${refresherQuestions.length} questions`}</span>
+              <span style={{ color: "var(--jd-text-muted)", fontSize: 11 }}>{refresherLoading ? "Loading questions..." : `${visibleRefresherQuestions.length} of ${refresherQuestions.length} questions`}</span>
             </div>
-            <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 7 }}>
-              <ChipButton label="All Sections" icon="ti-layout-grid" active={selectedRefresherSection === "all"} accent={accent} onClick={() => setSelectedRefresherSection("all")} />
-              {refresherSections.map((section) => <ChipButton key={section} label={section} icon="ti-bookmark" active={selectedRefresherSection === section} accent={accent} onClick={() => setSelectedRefresherSection(section)} />)}
-            </div>
-            <input
-              type="search"
-              value={refresherFilter}
-              onChange={(event) => setRefresherFilter(event.target.value)}
-              placeholder="Filter questions, e.g. transactions, GC, Kafka, or leadership"
-              aria-label="Filter Java senior refresher questions and answers"
-              className="glass-input"
-              style={{ background: "rgba(0,0,0,.16)", border: `1px solid ${accentBorder}`, borderRadius: 7, color: "#f8fbff", fontSize: 12, minHeight: 35, outline: "none", padding: "7px 9px", width: "100%" }}
-            />
-            <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 7 }}>
-              <button type="button" className="glass-button" onClick={chooseRandomQuestion} disabled={!refresherQuestions.length} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", cursor: refresherQuestions.length ? "pointer" : "not-allowed", fontSize: 11, fontWeight: 900, opacity: refresherQuestions.length ? 1 : .45, padding: "7px 10px" }}>
+            <div className="java-digest-refresher-toolbar">
+              <select
+                value={selectedRefresherSection}
+                onChange={(event) => setSelectedRefresherSection(event.target.value)}
+                aria-label="Filter refresher questions by section"
+                className="glass-input java-digest-refresher-section"
+              >
+                <option value="all">All sections</option>
+                {refresherSections.map((section) => <option key={section} value={section}>{section}</option>)}
+              </select>
+              <input
+                type="search"
+                value={refresherFilter}
+                onChange={(event) => setRefresherFilter(event.target.value)}
+                placeholder="Filter questions, e.g. transactions, GC, Kafka, or leadership"
+                aria-label="Filter Java senior refresher questions and answers"
+                className="glass-input java-digest-refresher-filter"
+              />
+              <button type="button" className="glass-button" onClick={chooseRandomQuestion} disabled={!refresherQuestions.length} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "var(--jd-text)", cursor: refresherQuestions.length ? "pointer" : "not-allowed", fontSize: 11, fontWeight: 900, opacity: refresherQuestions.length ? 1 : .45, padding: "7px 10px" }}>
                 <i className="ti ti-shuffle" style={{ color: accent, marginRight: 6 }} />
                 Random Question
               </button>
-              <span style={{ color: "#9fb0c7", fontSize: 10.8 }}>
-                {refresherProgress.bookmarkedQuestions.size} bookmarked · {refresherProgress.reviewedQuestions.size} reviewed · {refresherProgress.masteredQuestions.size} mastered
-              </span>
             </div>
-            {refresherError && <p role="alert" style={{ color: "#fecaca", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}>{refresherError}</p>}
-            {!refresherLoading && !refresherError && visibleRefresherQuestions.length === 0 && <p style={{ color: "#9fb0c7", fontSize: 11.5, margin: 0 }}>No matching questions.</p>}
+            <span className="java-digest-refresher-status">
+              {refresherProgress.bookmarkedQuestions.size} bookmarked · {refresherProgress.reviewedQuestions.size} reviewed · {refresherProgress.masteredQuestions.size} mastered
+            </span>
+            {refresherError && <p role="alert" style={{ color: "var(--jd-danger-text)", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}>{refresherError}</p>}
+            {!refresherLoading && !refresherError && visibleRefresherQuestions.length === 0 && <p style={{ color: "var(--jd-text-muted)", fontSize: 11.5, margin: 0 }}>No matching questions.</p>}
             <div style={{ display: "grid", gap: 8 }}>
               {visibleRefresherQuestions.map((entry) => (
-                <details key={entry.id} open={expandedRefresherQuestions.includes(entry.id)} onToggle={(event) => { const open = event.currentTarget.open; setExpandedRefresherQuestions((previous) => open ? Array.from(new Set([...previous, entry.id])) : previous.filter((id) => id !== entry.id)); if (!open && randomQuestionId === entry.id) setRandomQuestionId(""); }} style={{ background: randomQuestionId === entry.id ? `${accent}10` : "rgba(0,0,0,.14)", border: `1px solid ${randomQuestionId === entry.id ? `${accent}66` : "rgba(255,255,255,.08)"}`, borderRadius: 7, padding: "9px 10px" }}>
-                  <summary style={{ color: "#f8fbff", cursor: "pointer", fontSize: 12.5, fontWeight: 800, lineHeight: 1.45 }}>{entry.question}</summary>
+                <details key={entry.id} open={expandedRefresherQuestionId === entry.id} onToggle={(event) => { const open = event.currentTarget.open; setExpandedRefresherQuestionId((current) => open ? entry.id : current === entry.id ? "" : current); if (!open && randomQuestionId === entry.id) setRandomQuestionId(""); }} style={{ background: randomQuestionId === entry.id ? `${accent}10` : "var(--jd-surface-sunken)", border: `1px solid ${randomQuestionId === entry.id ? `${accent}66` : "var(--jd-border)"}`, borderRadius: 7, padding: "9px 10px" }}>
+                  <summary style={{ color: "var(--jd-text)", cursor: "pointer", fontSize: 12.5, fontWeight: 800, lineHeight: 1.45 }}>{entry.question}</summary>
                   <div style={{ color: accent, fontSize: 10.2, fontWeight: 900, marginTop: 9, textTransform: "uppercase" }}>{entry.section}</div>
-                  <div style={{ color: "#a7f3d0", fontSize: 10.2, fontWeight: 900, marginTop: 7, textTransform: "uppercase" }}>Senior Answer</div>
-                  <p style={{ color: "#dbeafe", fontSize: 11.7, lineHeight: 1.58, margin: "6px 0 0" }}>{entry.answer}</p>
+                  <div style={{ color: accent, fontSize: 10.2, fontWeight: 900, marginTop: 7, textTransform: "uppercase" }}>Senior Answer</div>
+                  <p style={{ color: "var(--jd-text-soft)", fontSize: 11.7, lineHeight: 1.58, margin: "6px 0 0" }}>{entry.answer}</p>
                   <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 7, marginTop: 10 }}>
-                    <ChipButton label={refresherProgress.bookmarkedQuestions.has(entry.id) ? "Bookmarked" : "Bookmark"} icon="ti-bookmark" active={refresherProgress.bookmarkedQuestions.has(entry.id)} accent="#facc15" onClick={() => toggleRefresherStatus("bookmarkedQuestions", entry.id)} />
-                    <ChipButton label={refresherProgress.reviewedQuestions.has(entry.id) ? "Reviewed" : "Mark Reviewed"} icon="ti-check" active={refresherProgress.reviewedQuestions.has(entry.id)} accent="#a7f3d0" onClick={() => toggleRefresherStatus("reviewedQuestions", entry.id)} />
-                    <ChipButton label={refresherProgress.masteredQuestions.has(entry.id) ? "Mastered" : "Mark Mastered"} icon="ti-award" active={refresherProgress.masteredQuestions.has(entry.id)} accent="#c4b5fd" onClick={() => toggleRefresherStatus("masteredQuestions", entry.id)} />
+                    <ChipButton label={refresherProgress.bookmarkedQuestions.has(entry.id) ? "Bookmarked" : "Bookmark"} icon="ti-bookmark" active={refresherProgress.bookmarkedQuestions.has(entry.id)} accent="var(--jd-warning)" onClick={() => toggleRefresherStatus("bookmarkedQuestions", entry.id)} />
+                    <ChipButton label={refresherProgress.reviewedQuestions.has(entry.id) ? "Reviewed" : "Mark Reviewed"} icon="ti-check" active={refresherProgress.reviewedQuestions.has(entry.id)} accent={accent} onClick={() => toggleRefresherStatus("reviewedQuestions", entry.id)} />
+                    <ChipButton label={refresherProgress.masteredQuestions.has(entry.id) ? "Mastered" : "Mark Mastered"} icon="ti-award" active={refresherProgress.masteredQuestions.has(entry.id)} accent="var(--jd-accent-alt)" onClick={() => toggleRefresherStatus("masteredQuestions", entry.id)} />
                   </div>
                 </details>
               ))}
@@ -778,26 +805,26 @@ export default function JavaDigest({ theme = {}, onAction, onRefresherProgressCh
 
       {activeView === "Handbook Java" && (
         <div style={{ display: "grid", gap: 10 }}>
-          <section style={{ ...wrap, background: "rgba(139,211,255,.055)", border: `1px solid ${accent}33`, borderRadius: 8, display: "grid", gap: 6, padding: 12 }}>
+          <section style={{ ...wrap, background: "var(--jd-accent-surface)", border: `1px solid ${accent}33`, borderRadius: 8, display: "grid", gap: 6, padding: 12 }}>
             <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Competitive Programmer&apos;s Handbook · Java Adaptation</div>
-            <h3 style={{ ...wrap, color: "#f8fbff", fontSize: 15.5, lineHeight: 1.25 }}>Book-style table of contents, rewritten as Java practice chapters</h3>
-            <p style={{ ...wrap, color: "#9fb0c7", fontSize: 11.6, lineHeight: 1.5 }}>
+            <h3 style={{ ...wrap, color: "var(--jd-text)", fontSize: 15.5, lineHeight: 1.25 }}>Book-style table of contents, rewritten as Java practice chapters</h3>
+            <p style={{ ...wrap, color: "var(--jd-text-muted)", fontSize: 11.6, lineHeight: 1.5 }}>
               This follows the public CSES handbook structure at a high level: Basic Techniques, Graph Algorithms, and Advanced Topics. Each chapter adds Java implementation checkpoints, complexity prompts, and a study action.
             </p>
             <a href="https://cses.fi/book/book.pdf" target="_blank" rel="noreferrer" style={{ color: accent, fontSize: 11.5, fontWeight: 900, justifySelf: "start", textDecoration: "none" }}>
               Open original CSES PDF
             </a>
           </section>
-          {CSES_JAVA_PARTS.map((part) => <CsesPartSection key={part.id} part={part} accent={accent} onAction={onAction} />)}
+          {CSES_JAVA_PARTS.map((part) => <CsesPartSection key={part.id} part={part} accent={accent} expanded={expandedPartId === part.id} expandedChapterId={expandedChapterId} onAction={onAction} onToggleChapter={toggleExpandedChapter} onTogglePart={() => toggleExpandedPart(part.id)} />)}
         </div>
       )}
 
       {activeView === "Articles" && (
         <div style={{ display: "grid", gap: 10 }}>
-          <section style={{ ...wrap, border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 8, padding: 10 }}>
-            <span style={{ color: "#9fb0c7", fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Article Filters</span>
+          <section style={{ ...wrap, border: "1px solid var(--jd-border)", borderRadius: 8, display: "grid", gap: 8, padding: 10 }}>
+            <span style={{ color: "var(--jd-text-muted)", fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Article Filters</span>
             <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 7, minWidth: 0 }}>
-              <ChipButton label="All Articles" icon="ti-layout-grid" active={activeTrack === "all"} accent={accent} onClick={() => setActiveTrack("all")} />
+              <ChipButton label="All Articles" icon="ti-layout-grid" active={activeTrack === "all"} accent={accent} onClick={() => { setActiveTrack("all"); setExpandedArticleId(""); }} />
               {JAVA_DIGEST_TRACKS.map((track) => (
                 <ChipButton
                   key={track.id}
@@ -805,20 +832,20 @@ export default function JavaDigest({ theme = {}, onAction, onRefresherProgressCh
                   icon={track.icon}
                   active={activeTrack === track.id}
                   accent={accent}
-                  onClick={() => setActiveTrack(track.id)}
+                  onClick={() => { setActiveTrack(track.id); setExpandedArticleId(""); }}
                 />
               ))}
             </div>
           </section>
           <div style={responsiveGrid(280, 10)}>
-            {articles.map((article) => <ArticleCard key={article.id} article={article} accent={accent} onAction={onAction} />)}
+            {articles.map((article) => <ArticleCard key={article.id} article={article} accent={accent} expanded={expandedArticleId === article.id} onAction={onAction} onToggle={() => setExpandedArticleId((current) => current === article.id ? "" : article.id)} />)}
           </div>
         </div>
       )}
 
       {activeView === "Roadmaps" && (
         <div style={responsiveGrid(280, 10)}>
-          {JAVA_DIGEST_ROADMAPS.map((roadmap) => <RoadmapCard key={roadmap.id} roadmap={roadmap} accent={accent} onAction={onAction} />)}
+          {JAVA_DIGEST_ROADMAPS.map((roadmap) => <RoadmapCard key={roadmap.id} roadmap={roadmap} accent={accent} expanded={expandedRoadmapId === roadmap.id} onAction={onAction} onToggle={() => setExpandedRoadmapId((current) => current === roadmap.id ? "" : roadmap.id)} />)}
         </div>
       )}
     </section>

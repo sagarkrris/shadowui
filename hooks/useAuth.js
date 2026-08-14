@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { clearPrivateLocalData } from "../lib/localStoragePrivacy.mjs";
 
 function friendlyAuthError(message, status) {
   if (String(message || "").toLowerCase().includes("csrf")) return "Your security session expired. Refresh the page and try again.";
@@ -72,7 +73,7 @@ export function useAuth() {
     setUser(payload.user || null);
     return true;
   }, [postWithCsrf]);
-  const logout = useCallback(async () => { await fetch("/api/auth?action=logout", { method: "POST", headers: csrfToken ? { "X-CSRF-Token": csrfToken } : {} }); setUser(null); }, [csrfToken]);
+  const logout = useCallback(async () => { await fetch("/api/auth?action=logout", { method: "POST", headers: csrfToken ? { "X-CSRF-Token": csrfToken } : {} }); clearPrivateLocalData(); setUser(null); }, [csrfToken]);
   const postAuthAction = useCallback(async (action, body = {}) => {
     setError("");
     setDeliveryWarning("");
@@ -95,6 +96,7 @@ export function useAuth() {
     const response = await fetch("/api/account", { method: "DELETE", headers: csrfToken ? { "X-CSRF-Token": csrfToken } : {} });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) { setError(friendlyAuthError(payload.error, response.status)); return payload; }
+    clearPrivateLocalData();
     setUser(null);
     setCsrfToken("");
     if (payload.emailDelivery?.delivered) setDeliveryNotice("Account deleted. A confirmation email was sent.");

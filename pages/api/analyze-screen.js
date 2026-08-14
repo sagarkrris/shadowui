@@ -1,9 +1,11 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getSafeConfigErrorPayload, runGeminiRouteOperation } from "../../lib/aiGateway.mjs";
 import { getGeminiErrorStatus, getSafeGeminiErrorMessage } from "../../lib/geminiRetry.mjs";
 import { createRequestLogger } from "../../lib/serverLogger.mjs";
 import { requireConfiguredUser } from "../../lib/apiAuth.mjs";
 import { withApiObservability } from "../../lib/apiObservability.mjs";
+import { getClientAddress } from "../../lib/requestSecurity.mjs";
+import { checkDistributedRateLimit } from "../../lib/redisRateLimit.mjs";
+import { createGeminiClient, generateContentStream, streamChunkText } from "../../lib/googleGenai.mjs";
 
 const SCREEN_PROMPT = `You are a full stack developer interview assistant analyzing a screenshot of a coding problem, system design prompt, UI task, database question, or interview scenario.
 
@@ -54,12 +56,17 @@ async function handler(req, res) {
   }
   const auth = await requireConfiguredUser(req);
   if (auth.required && !auth.user) return res.status(401).json({ error: "Sign in to use screen analysis." });
+  const rate = await checkDistributedRateLimit(`analyze-screen:${getClientAddress(req)}`, { limit: 10 });
+  if (!rate.ok) return res.status(429).json({ error: "Too many screen analysis requests. Please try again shortly." });
 
   const { imageBase64, mimeType = "image/png", context, profile } = req.body;
 
   if (!imageBase64) {
     logger.warn("request.invalid", { reason: "missing_image" });
     return res.status(400).json({ error: "imageBase64 required" });
+  }
+  if (!/^(image\/(png|jpeg|webp)|application\/pdf)$/.test(String(mimeType)) || !/^[A-Za-z0-9+/=]+$/.test(String(imageBase64)) || imageBase64.length > 7_000_000) {
+    return res.status(400).json({ error: "Use a valid PNG, JPEG, WebP, or PDF upload under 5 MB." });
   }
   try {
     const prompt = buildScreenPrompt(context, profile);
@@ -68,12 +75,10 @@ async function handler(req, res) {
       vision: true,
       onFallback: (details) => logger.warn("model.fallback", details),
       operation: (candidate, { apiKey }) => {
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: candidate });
-        return model.generateContentStream([
-          { inlineData: { data: imageBase64, mimeType } },
-          prompt,
-        ]);
+        return generateContentStream(createGeminiClient(apiKey), {
+          model: candidate,
+          contents: [{ role: "user", parts: [{ inlineData: { data: imageBase64, mimeType } }, { text: prompt }] }],
+        });
       },
     });
 
@@ -94,8 +99,8 @@ async function handler(req, res) {
 
     let chunkCount = 0;
     let textChars = 0;
-    for await (const chunk of result.stream) {
-      const text = chunk.text();
+    for await (const chunk of result) {
+      const text = streamChunkText(chunk);
       if (text) {
         chunkCount += 1;
         textChars += text.length;

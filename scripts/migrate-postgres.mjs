@@ -28,7 +28,8 @@ if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL is missing. Run `npx vercel env pull .env.local` or export DATABASE_URL before migrating.");
 }
 
-const { initializePersistence } = await import("../lib/serverPersistence.mjs");
+const { initializePersistence, pruneExpiredData } = await import("../lib/serverPersistence.mjs");
 
 await initializePersistence();
+await pruneExpiredData();
 console.log("InterviewIQ PostgreSQL schema is ready.");

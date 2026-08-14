@@ -4,6 +4,9 @@ import {
 } from "../../lib/resumeExtract.mjs";
 import { createRequestLogger } from "../../lib/serverLogger.mjs";
 import { withApiObservability } from "../../lib/apiObservability.mjs";
+import { getClientAddress } from "../../lib/requestSecurity.mjs";
+import { checkDistributedRateLimit } from "../../lib/redisRateLimit.mjs";
+import { requireConfiguredUser } from "../../lib/apiAuth.mjs";
 
 export const config = {
   api: {
@@ -21,6 +24,10 @@ async function handler(req, res) {
     logger.warn("request.method_not_allowed", { method: req.method });
     return res.status(405).json({ error: "Method not allowed" });
   }
+  const auth = await requireConfiguredUser(req);
+  if (auth.required && !auth.user) return res.status(401).json({ error: "Sign in to upload a resume." });
+  const rate = await checkDistributedRateLimit(`extract-resume:${getClientAddress(req)}`, { limit: 8 });
+  if (!rate.ok) return res.status(429).json({ error: "Too many resume extraction requests. Please try again shortly." });
 
   const decoded = decodeResumeUploadRequest(req.body);
   if (!decoded.ok) {

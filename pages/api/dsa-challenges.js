@@ -1,4 +1,3 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getSafeConfigErrorPayload, runGeminiRouteOperation } from "../../lib/aiGateway.mjs";
 import {
   buildDsaChallengeGenerationPrompt,
@@ -8,6 +7,9 @@ import { getGeminiErrorStatus, getSafeGeminiErrorMessage } from "../../lib/gemin
 import { createRequestLogger } from "../../lib/serverLogger.mjs";
 import { requireConfiguredUser } from "../../lib/apiAuth.mjs";
 import { withApiObservability } from "../../lib/apiObservability.mjs";
+import { getClientAddress } from "../../lib/requestSecurity.mjs";
+import { checkDistributedRateLimit } from "../../lib/redisRateLimit.mjs";
+import { createGeminiClient, generateContent } from "../../lib/googleGenai.mjs";
 
 async function handler(req, res) {
   const logger = createRequestLogger({ route: "/api/dsa-challenges", requestId: res.getHeader?.("X-Request-Id") || req.requestId });
@@ -20,6 +22,8 @@ async function handler(req, res) {
   }
   const auth = await requireConfiguredUser(req);
   if (auth.required && !auth.user) return res.status(401).json({ error: "Sign in to generate DSA challenges." });
+  const rate = await checkDistributedRateLimit(`dsa-challenges:${getClientAddress(req)}`, { limit: 12 });
+  if (!rate.ok) return res.status(429).json({ error: "Too many challenge generation requests. Please try again shortly." });
 
   const stack = typeof req.body?.stack === "string" ? req.body.stack.slice(0, 120) : "JavaScript";
   const count = Math.max(6, Math.min(15, Number(req.body?.count) || 12));
@@ -29,15 +33,14 @@ async function handler(req, res) {
     const { modelCandidates, modelName, result } = await runGeminiRouteOperation({
       onFallback: (details) => logger.warn("model.fallback", details),
       operation: (candidate, { apiKey }) => {
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({
+        return generateContent(createGeminiClient(apiKey), {
           model: candidate,
-          generationConfig: {
+          config: {
             temperature: 0.92,
             responseMimeType: "application/json",
           },
+          contents: prompt,
         });
-        return model.generateContent(prompt);
       },
     });
 
@@ -47,7 +50,7 @@ async function handler(req, res) {
       modelCandidateCount: modelCandidates.length,
     });
 
-    const text = result.response.text();
+    const text = result.text || "";
     const challenges = parseGeneratedDsaChallenges(text, { source: "generated" });
 
     if (!challenges.length) {

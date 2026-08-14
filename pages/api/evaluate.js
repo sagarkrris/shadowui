@@ -1,4 +1,3 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getSafeConfigErrorPayload, runGeminiRouteOperation } from "../../lib/aiGateway.mjs";
 import { buildStructuredEvaluationPrompt, parseStructuredEvaluation } from "../../lib/interviewSession.mjs";
 import { getGeminiErrorStatus, getSafeGeminiErrorMessage } from "../../lib/geminiRetry.mjs";
@@ -8,6 +7,7 @@ import { checkDistributedRateLimit } from "../../lib/redisRateLimit.mjs";
 import { requireConfiguredUser } from "../../lib/apiAuth.mjs";
 import { estimateAiUsage, recordMetric, reportServerError } from "../../lib/observability.mjs";
 import { withApiObservability } from "../../lib/apiObservability.mjs";
+import { createGeminiClient, generateContent } from "../../lib/googleGenai.mjs";
 
 async function handler(req, res) {
   const logger = createRequestLogger({ route: "/api/evaluate", requestId: res.getHeader?.("X-Request-Id") || req.requestId });
@@ -23,11 +23,11 @@ async function handler(req, res) {
   try {
     const { result } = await runGeminiRouteOperation({
       onFallback: (details) => logger.warn("model.fallback", details),
-      operation: (candidate, { apiKey }) => new GoogleGenerativeAI(apiKey).getGenerativeModel({ model: candidate, generationConfig: { responseMimeType: "application/json" } }).generateContent(buildStructuredEvaluationPrompt({ question, answer, profile: req.body?.profile, round: req.body?.round })),
+      operation: (candidate, { apiKey }) => generateContent(createGeminiClient(apiKey), { model: candidate, config: { responseMimeType: "application/json" }, contents: buildStructuredEvaluationPrompt({ question, answer, profile: req.body?.profile, round: req.body?.round }) }),
     });
-    const parsed = parseStructuredEvaluation(result.response.text());
+    const parsed = parseStructuredEvaluation(result.text || "");
     if (!parsed.ok) return res.status(502).json({ error: parsed.error, requestId: logger.requestId });
-    const usage = estimateAiUsage({ inputChars: question.length + answer.length, outputChars: result.response.text().length });
+    const usage = estimateAiUsage({ inputChars: question.length + answer.length, outputChars: (result.text || "").length });
     recordMetric("ai.evaluation", { route: "/api/evaluate", ...usage });
     return res.status(200).json({ evaluation: parsed.value, usage, requestId: logger.requestId });
   } catch (error) {

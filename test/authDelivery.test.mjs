@@ -86,6 +86,24 @@ test("sends an account deletion confirmation without an action link", async () =
   assert.doesNotMatch(body.html, /href=/);
 });
 
+test("sends a password-changed confirmation with an ElevatePrep link", async () => {
+  let request;
+  await deliverAuthEmail({
+    type: "password-changed",
+    email: "candidate@example.com",
+    firstName: "Sagar",
+    env: { RESEND_API_KEY: "re_test_key", APP_BASE_URL: "https://elevateprep.vercel.app" },
+    fetchImpl: async (...args) => { request = args; return { ok: true }; },
+  });
+  const body = JSON.parse(request[1].body);
+  assert.equal(body.subject, "Your InterviewIQ password was updated");
+  assert.match(body.html, /href="https:\/\/elevateprep\.vercel\.app"/);
+  assert.match(body.text, /Go to ElevatePrep: https:\/\/elevateprep\.vercel\.app/);
+  assert.match(body.text, /signed out all existing sessions/);
+  assert.match(body.text, /contact support immediately/);
+  assert.doesNotMatch(body.text, /reset-password\?token/);
+});
+
 test("returns a safe provider status code when Resend rejects delivery", async () => {
   await assert.rejects(() => deliverAuthEmail({
     type: "verify-email",
