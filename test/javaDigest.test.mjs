@@ -20,7 +20,7 @@ import {
   listJavaDigestArticles,
   listJavaSeniorRefresherArticles,
 } from "../lib/javaDigest.mjs";
-import { buildJavaSeniorRefresherFallbackQa, loadJavaSeniorRefresherQa, parseJavaSeniorRefresherQa } from "../lib/javaSeniorRefresherQa.mjs";
+import { appendAdditionalTrickyQa, buildJavaSeniorRefresherFallbackQa, loadJavaSeniorRefresherQa, parseJavaSeniorRefresherQa } from "../lib/javaSeniorRefresherQa.mjs";
 
 test("fresher DSA playbook covers solving method, patterns, practice, and debugging", () => {
   assert.equal(FRESHER_DSA_PLAYBOOK.framework.length, 7);
@@ -82,13 +82,27 @@ test("senior refresher parser preserves question and answer text without summari
 test("senior refresher has a bundled fallback when the PDF is unavailable at runtime", () => {
   const questions = buildJavaSeniorRefresherFallbackQa();
 
-  assert.equal(questions.length, 18);
+  assert.equal(questions.length, 42);
   assert.ok(questions.every((question) => question.question && question.answer && question.section));
   assert.ok(questions.every((question) => question.answer.length >= 350));
   assert.ok(questions.every((question) => !question.answer.includes("\\\\`")));
   const recordQuestion = questions.find((question) => question.question === "When would you choose a record over a class?");
   assert.match(recordQuestion.answer, /public record UserId/);
   assert.match(recordQuestion.answer, /JPA entities/);
+  assert.ok(questions.some((question) => question.question === "Why can heap pollution compile cleanly and still fail later?"));
+  assert.ok(questions.some((question) => question.question === "Why can @Transactional appear to do nothing on self-invocation?"));
+  assert.match(questions.find((question) => question.question === "Why can heap pollution compile cleanly and still fail later?").answer, /```java/);
+});
+
+test("senior refresher adds curated tricky questions to the PDF bank without duplicates", () => {
+  const questions = appendAdditionalTrickyQa([{ id: "pdf-1", section: "PDF", question: "Why can heap pollution compile cleanly and still fail later?", answer: "PDF answer" }]);
+
+  assert.equal(questions.length, 24);
+  assert.equal(questions.filter((question) => question.question === "Why can heap pollution compile cleanly and still fail later?").length, 1);
+  assert.ok(questions.some((question) => question.section === "Streams: Semantics and Side Effects"));
+  assert.ok(questions.some((question) => question.section === "Exceptions: Contracts and Resource Ownership"));
+  assert.ok(questions.some((question) => question.section === "Interviewer Expectations: Production Diagnosis"));
+  assert.ok(questions.some((question) => question.section === "Design Principles: Patterns, SOLID, KISS, and DRY"));
 });
 
 test("senior refresher loads the repository PDF source", async () => {

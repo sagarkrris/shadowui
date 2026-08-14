@@ -24,6 +24,7 @@ import {
 } from "../../lib/scenarioBank.mjs";
 import { loadVersionedState, saveVersionedState } from "../../lib/localStateStore.mjs";
 import BeginnerGuideBanner from "../BeginnerGuideBanner";
+import IncidentSimulator from "./IncidentSimulator";
 
 const wrap = {
   minWidth: 0,
@@ -530,6 +531,7 @@ export default function ScenarioBank({ theme = {}, onAction, beginnerMode = fals
             accent={accent}
             onClick={() => setView("recent")}
           />
+          <ControlButton label="Live Incident" icon="ti-alert-hexagon" active={view === "incident"} accent={accent} onClick={() => setView("incident")} />
           {SCENARIO_BANK_TRACKS.map((track) => (
             <ControlButton
               key={track.key}
@@ -551,10 +553,10 @@ export default function ScenarioBank({ theme = {}, onAction, beginnerMode = fals
         <ProgressMetric label="Attempted" value={progress.summary.attempted} accent={accent} />
         <ProgressMetric label="Mastered" value={progress.summary.mastered} accent="#a7f3d0" />
         <ProgressMetric label="Needs Review" value={progress.summary.needsReview} accent="#facc15" />
-        <ProgressMetric label={view === "core" ? "Coverage" : "Recent items"} value={view === "core" ? `${coverage.total.toLocaleString()}+` : recentReports.length} accent="#c4b5fd" />
+        <ProgressMetric label={view === "core" ? "Coverage" : view === "recent" ? "Recent items" : "Evidence stages"} value={view === "core" ? `${coverage.total.toLocaleString()}+` : view === "recent" ? recentReports.length : 3} accent="#c4b5fd" />
       </section>
 
-      {view === "core" ? (
+      {view === "incident" ? null : view === "core" ? (
       <section style={{ border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 10, minWidth: 0, padding: 12 }}>
         <div style={responsiveGrid(160, 9)}>
           {state.track === "database" && (
@@ -626,7 +628,7 @@ export default function ScenarioBank({ theme = {}, onAction, beginnerMode = fals
       </section>
       )}
 
-      {view === "core" && generatedScenario && (
+      {view === "incident" ? <IncidentSimulator accent={accent} onAction={onAction} /> : view === "core" && generatedScenario && (
         <section style={{ border: "1px solid rgba(167,243,208,.28)", borderRadius: 8, display: "grid", gap: 10, minWidth: 0, padding: 12, background: "rgba(16,185,129,.055)" }}>
           <div style={{ ...wrap, color: "#a7f3d0", fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>
             Generated Variant
@@ -644,7 +646,7 @@ export default function ScenarioBank({ theme = {}, onAction, beginnerMode = fals
         </section>
       )}
 
-      {view === "core" ? (
+      {view === "incident" ? null : view === "core" ? (
       <>
         <div style={responsiveGrid(300, 10)}>
           {scenarios.map((scenario) => (

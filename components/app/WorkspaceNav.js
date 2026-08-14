@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 
 const WORKSPACE_MENU_DETAILS = {
+  buildEngineering: "Maven, Gradle, dependencies, CI, and build-system drills.",
+  paths: "Guided Fresher and Senior engineer interview-prep paths.",
   offerWarRoom: "Offer-focused prep dashboard, company lanes, loops, stories, and weak-spot drills.",
   interviewReady: "Most-asked questions with polished answers and follow-up drills.",
   company: "Company-specific questions, notes, and final-day prep.",

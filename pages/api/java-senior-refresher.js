@@ -1,4 +1,4 @@
-import { buildJavaSeniorRefresherFallbackQa, loadJavaSeniorRefresherQa } from "../../lib/javaSeniorRefresherQa.mjs";
+import { appendAdditionalTrickyQa, buildJavaSeniorRefresherFallbackQa, loadJavaSeniorRefresherQa } from "../../lib/javaSeniorRefresherQa.mjs";
 import { withApiObservability } from "../../lib/apiObservability.mjs";
 
 let cachedPayload = null;
@@ -6,7 +6,7 @@ let cachedPayload = null;
 async function loadQuestions() {
   try {
     const questions = await loadJavaSeniorRefresherQa();
-    if (questions.length) return { questions, source: "pdf" };
+    if (questions.length) return { questions: appendAdditionalTrickyQa(questions), source: "pdf-plus-curated" };
   } catch {
     // Fall through to the bundled content when serverless file access fails.
   }

@@ -17,6 +17,8 @@ const InterviewReadyQA = dynamic(() => import("../components/interview-ready/Int
 const JavaDigest = dynamic(() => import("../components/java-digest/JavaDigest"), { ssr: false });
 const OfferWarRoom = dynamic(() => import("../components/offer-war-room/OfferWarRoom"), { ssr: false });
 const ScenarioBank = dynamic(() => import("../components/scenario-bank/ScenarioBank"), { ssr: false });
+const CareerPaths = dynamic(() => import("../components/career-paths/CareerPaths"), { ssr: false });
+const BuildEngineering = dynamic(() => import("../components/build-engineering/BuildEngineering"), { ssr: false });
 import RecordingReviewModal from "../components/modals/RecordingReviewModal";
 import ScreenModal from "../components/modals/ScreenModal";
 import AboutModal from "../components/modals/AboutModal";
@@ -1748,6 +1750,10 @@ export default function Home() {
             {loading ? <div className="ai-progress-status" role="status" aria-live="polite"><span className="dot" />InterviewIQ is preparing your response…</div> : null}
             {activeTab === "course" ? (
               <AgenticUICourse theme={techTheme} variant="full" />
+            ) : activeTab === "paths" ? (
+              <CareerPaths theme={techTheme} profile={candidateProfile || profileDraft} onAction={(prompt) => callAPI(prompt)} onOpenWorkspace={openWorkspace} />
+            ) : activeTab === "buildEngineering" ? (
+              <BuildEngineering theme={techTheme} onAction={(prompt) => callAPI(prompt)} />
             ) : activeTab==="scenarioBank" ? (
               <ScenarioBank
                 theme={techTheme}
