@@ -652,7 +652,8 @@ export default function Home() {
     setCloudStatus(status);
     if (status === "saved") setToast((current) => current?.msg === "Cloud sync is temporarily unavailable; local work is safe." ? null : current);
   }, []);
-  useCloudStateSync({ user: auth.user, ready: auth.ready && sessionReady, csrfToken: auth.csrfToken, snapshot: cloudSnapshot, onRemoteState: applyCloudState, onStatus: handleCloudSyncStatus, onError: () => showToast("Cloud sync is temporarily unavailable; local work is safe.", "error") });
+  const handleCloudSyncError = useCallback(() => showToast("Cloud sync is temporarily unavailable; local work is safe.", "error"), [showToast]);
+  useCloudStateSync({ user: auth.user, ready: auth.ready && sessionReady, csrfToken: auth.csrfToken, refreshCsrfToken: auth.refreshCsrfToken, snapshot: cloudSnapshot, onRemoteState: applyCloudState, onStatus: handleCloudSyncStatus, onError: handleCloudSyncError });
 
   useEffect(() => {
     if (mockTimerStatus !== "answering" || !mockTimerEndsAt) return undefined;

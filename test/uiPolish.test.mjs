@@ -11,6 +11,7 @@ const careerToolkitSource = readFileSync(new URL("../components/welcome/CareerTo
 const profileSetupSource = readFileSync(new URL("../components/welcome/ProfileSetup.js", import.meta.url), "utf8");
 const settingsModalSource = readFileSync(new URL("../components/modals/SettingsModal.js", import.meta.url), "utf8");
 const authHookSource = readFileSync(new URL("../hooks/useAuth.js", import.meta.url), "utf8");
+const cloudStateSyncSource = readFileSync(new URL("../hooks/useCloudStateSync.js", import.meta.url), "utf8");
 const authApiSource = readFileSync(new URL("../pages/api/auth.js", import.meta.url), "utf8");
 const accountApiSource = readFileSync(new URL("../pages/api/account.js", import.meta.url), "utf8");
 const apiObservabilitySource = readFileSync(new URL("../lib/apiObservability.mjs", import.meta.url), "utf8");
@@ -198,6 +199,14 @@ test("authenticated CSRF state is not replaced by a random token", () => {
   assert.match(authApiSource, /staleSessionRecovered/);
   assert.match(authApiSource, /rateLimitBucket = isBootstrapAction \? "bootstrap" : "credential"/);
   assert.match(persistenceSource, /UPDATE interviewiq_sessions SET csrf_hash/);
+  assert.match(authHookSource, /await fetchCsrfToken\(\)\.catch\(\(\) => ""\);[\s\S]*setUser\(payload\.user \|\| null\)/);
+  assert.match(authHookSource, /const refreshCsrfToken = useCallback\(\(\) => fetchCsrfToken\(\{ force: true \}\)/);
+  assert.match(cloudStateSyncSource, /response\.status === 403[\s\S]*refreshCsrfToken/);
+  assert.match(cloudStateSyncSource, /saveSnapshot\(await refreshCsrfToken\(\), true\)/);
+  assert.match(indexSource, /refreshCsrfToken: auth\.refreshCsrfToken/);
+  assert.match(indexSource, /const handleCloudSyncError = useCallback\(/);
+  assert.match(indexSource, /onError: handleCloudSyncError/);
+  assert.doesNotMatch(indexSource, /onError: \(\) => showToast\("Cloud sync is temporarily unavailable/);
 });
 
 test("profile setup avoids oversized sticky iOS keyboard spacers", () => {

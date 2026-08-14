@@ -8,7 +8,7 @@ function snapshotFingerprint(snapshot) {
   }
 }
 
-export function useCloudStateSync({ user, ready, snapshot, csrfToken = "", onRemoteState, onError, onStatus } = {}) {
+export function useCloudStateSync({ user, ready, snapshot, csrfToken = "", refreshCsrfToken, onRemoteState, onError, onStatus } = {}) {
   const hydratedUser = useRef("");
   const hydrated = useRef(false);
   const lastSavedFingerprint = useRef("");
@@ -48,22 +48,36 @@ export function useCloudStateSync({ user, ready, snapshot, csrfToken = "", onRem
 
     pendingFingerprint.current = fingerprint;
     onStatus?.("saving");
-    const timer = window.setTimeout(() => {
-      fetch("/api/state", {
+    let active = true;
+    const saveSnapshot = async (requestToken, retriedAfterCsrfRefresh = false) => {
+      const response = await fetch("/api/state", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
+          ...(requestToken ? { "X-CSRF-Token": requestToken } : {}),
         },
         body: JSON.stringify({ state: snapshot }),
-      })
-        .then((response) => {
-          if (!response.ok) throw new Error("Cloud save failed");
+      });
+      if (response.status === 403 && !retriedAfterCsrfRefresh && refreshCsrfToken) {
+        return saveSnapshot(await refreshCsrfToken(), true);
+      }
+      if (!response.ok) {
+        const error = new Error("Cloud save failed");
+        error.status = response.status;
+        throw error;
+      }
+    };
+
+    const timer = window.setTimeout(() => {
+      saveSnapshot(csrfToken)
+        .then(() => {
+          if (!active) return;
           lastSavedFingerprint.current = fingerprint;
           pendingFingerprint.current = "";
           onStatus?.("saved");
         })
         .catch((error) => {
+          if (!active) return;
           pendingFingerprint.current = "";
           onStatus?.("error");
           onError?.(error);
@@ -71,8 +85,9 @@ export function useCloudStateSync({ user, ready, snapshot, csrfToken = "", onRem
     }, 500);
 
     return () => {
+      active = false;
       window.clearTimeout(timer);
       if (pendingFingerprint.current === fingerprint) pendingFingerprint.current = "";
     };
-  }, [csrfToken, fingerprint, onError, onStatus, ready, snapshot, user]);
+  }, [csrfToken, fingerprint, onError, onStatus, ready, refreshCsrfToken, snapshot, user]);
 }

@@ -70,9 +70,12 @@ export function useAuth() {
       if (payload.emailDelivery.delivered) setDeliveryNotice("Verification email sent. Check your inbox and spam folder.");
       else setDeliveryWarning("Your account was created, but we could not send the verification email. Check email configuration, then use Resend verification email.");
     }
+    // Login rotates the session and CSRF cookies. Keep the in-memory token in
+    // sync before authenticated background work (such as cloud saving) starts.
+    await fetchCsrfToken().catch(() => "");
     setUser(payload.user || null);
     return true;
-  }, [postWithCsrf]);
+  }, [fetchCsrfToken, postWithCsrf]);
   const logout = useCallback(async () => { await fetch("/api/auth?action=logout", { method: "POST", headers: csrfToken ? { "X-CSRF-Token": csrfToken } : {} }); clearPrivateLocalData(); setUser(null); }, [csrfToken]);
   const postAuthAction = useCallback(async (action, body = {}) => {
     setError("");
@@ -103,5 +106,6 @@ export function useAuth() {
     else setDeliveryWarning("Account deleted, but the confirmation email could not be sent.");
     return payload;
   }, [csrfToken]);
-  return { user, ready, error, deliveryWarning, deliveryNotice, csrfToken, login: (credentials) => submit("login", credentials), register: (credentials) => submit("register", credentials), logout, forgotPassword: (email) => postAuthAction("forgot", { email }), resetPassword: (token, password) => postAuthAction("reset", { token, password }), verifyEmail: (token) => postAuthAction("verify", { token }), resendVerification: () => postAuthAction("resend-verification"), revokeSessions: () => postAuthAction("revoke"), exportAccount, deleteAccount };
+  const refreshCsrfToken = useCallback(() => fetchCsrfToken({ force: true }), [fetchCsrfToken]);
+  return { user, ready, error, deliveryWarning, deliveryNotice, csrfToken, refreshCsrfToken, login: (credentials) => submit("login", credentials), register: (credentials) => submit("register", credentials), logout, forgotPassword: (email) => postAuthAction("forgot", { email }), resetPassword: (token, password) => postAuthAction("reset", { token }), verifyEmail: (token) => postAuthAction("verify", { token }), resendVerification: () => postAuthAction("resend-verification"), revokeSessions: () => postAuthAction("revoke"), exportAccount, deleteAccount };
 }
