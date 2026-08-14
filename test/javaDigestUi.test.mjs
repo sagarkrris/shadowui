@@ -12,8 +12,8 @@ test("java digest component renders topic, article, and roadmap sections", () =>
   assert.match(componentSource, /JAVA_DIGEST_TRACKS/);
   assert.match(componentSource, /CSES_JAVA_PARTS/);
   assert.match(componentSource, /Java Digest/);
-  assert.match(componentSource, /Handbook Java/);
-  assert.match(componentSource, /Competitive Programmer's Handbook for Java/);
+  assert.match(componentSource, /Java Curriculum/);
+  assert.match(componentSource, /Competitive Programming in Java/);
   assert.match(componentSource, /VIEW_METADATA/);
   assert.match(componentSource, /viewMetadata\.title/);
   assert.match(componentSource, /viewMetadata\.description/);
@@ -31,7 +31,7 @@ test("java digest component renders topic, article, and roadmap sections", () =>
   assert.match(componentSource, /java-digest-part-/);
   assert.match(componentSource, /aria-expanded=\{expanded\}/);
   assert.match(componentSource, /java-digest-progress/);
-  assert.match(componentSource, /Book-style table of contents/);
+  assert.match(componentSource, /complete, original Java practice path/);
   assert.match(componentSource, /Detailed Explanation/);
   assert.match(componentSource, /Beginner Explainer/);
   assert.match(componentSource, /What is this\?/);

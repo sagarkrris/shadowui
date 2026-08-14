@@ -341,6 +341,11 @@ test("DsaVisualLab source exposes the required learning surfaces", () => {
   assert.match(source, /Test like an interviewer/);
   assert.match(source, /Explain complexity/);
   assert.match(source, /Interview Pattern Theater/);
+  assert.match(source, /Fresher DSA Path/);
+  assert.match(source, /FRESHER_DSA_PLAYBOOK/);
+  assert.match(source, /Constraint map/);
+  assert.match(source, /Pattern recognition cards/);
+  assert.match(source, /Progressive practice and mock interviews/);
   assert.match(source, /Guided Mode/);
   assert.match(source, /Learn/);
   assert.match(source, /Learning Path/);

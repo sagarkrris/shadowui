@@ -105,6 +105,6 @@ test("cses java practice displays the selected track context", () => {
     },
   });
 
-  assert.match(displayText, /Handbook Java Study: Shortest Paths/);
+  assert.match(displayText, /Java Study: Shortest Paths/);
   assert.match(displayText, /Dijkstra/);
 });

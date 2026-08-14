@@ -39,6 +39,9 @@ import {
   saveDsaConfidenceState,
   saveDsaLessonId,
 } from "../../lib/dsaLabPersistence.mjs";
+import { FRESHER_DSA_PLAYBOOK } from "../../lib/javaDigest.mjs";
+import { FRESHER_DSA_PROBLEMS, getFresherDsaDailyPlan, getSpacedReviewQueue, scoreFresherDsaAttempt } from "../../lib/fresherDsaProblems.mjs";
+import { JAVA_DEBUGGING_LESSONS } from "../../lib/javaDebuggingLessons.mjs";
 import BeginnerGuideBanner from "../BeginnerGuideBanner";
 
 const GUIDED_STAGES = ["Learn", "Pattern Atlas", "Visual Playground", "Big-O Board", "Visualize", "Dry run", "Explain-Then-Code", "Code", "Quiz", "Interview Challenges", "Drill Room", "Practice as Mock"];
@@ -50,6 +53,7 @@ const CHALLENGE_FILTERS = [
   { id: "tricky", label: "Tricky" },
 ];
 const TRACKS = [
+  { id: "fresher", label: "Fresher DSA Path" },
   { id: "thinking", label: "How To Approach" },
   { id: "core", label: "Interview Core" },
   { id: "blind75", label: "Blind 75 Visual Track" },
@@ -2213,6 +2217,77 @@ function DsaVisualPlaygroundPanel({
   );
 }
 
+function FresherDsaTrack({ accent, accentBorder }) {
+  const [sessionSeconds, setSessionSeconds] = useState(0);
+  const [sessionLimit, setSessionLimit] = useState(25 * 60);
+  const [sessionRunning, setSessionRunning] = useState(false);
+  const [selectedProblemId, setSelectedProblemId] = useState(FRESHER_DSA_PROBLEMS[0].id);
+  const [hintLevel, setHintLevel] = useState(0);
+  const [solved, setSolved] = useState(false);
+  const [explained, setExplained] = useState(false);
+  const [complexity, setComplexity] = useState(false);
+  const [edgeCases, setEdgeCases] = useState(false);
+  const [reviewState, setReviewState] = useState({});
+  const selectedProblem = FRESHER_DSA_PROBLEMS.find((problem) => problem.id === selectedProblemId) || FRESHER_DSA_PROBLEMS[0];
+  const score = scoreFresherDsaAttempt({ solved, hintLevel, explained, complexity, edgeCases });
+  const reviewedIds = Object.keys(reviewState);
+  const reviewQueue = getSpacedReviewQueue(FRESHER_DSA_PROBLEMS, reviewState);
+  const dueReviews = reviewQueue.filter((entry) => entry.due).length;
+  useEffect(() => {
+    try { setReviewState(JSON.parse(window.localStorage.getItem("interviewiq:fresher-dsa-review:v2") || "{}")); } catch { setReviewState({}); }
+  }, []);
+  const chooseProblem = (id) => { setSelectedProblemId(id); setHintLevel(0); setSolved(false); setExplained(false); setComplexity(false); setEdgeCases(false); };
+  const markReviewed = () => setReviewState((current) => { const previous = current[selectedProblem.id] || {}; const next = { ...current, [selectedProblem.id]: { reviewedAt: new Date().toISOString(), attempts: Number(previous.attempts || 0) + 1, mistakes: solved ? Number(previous.mistakes || 0) : Number(previous.mistakes || 0) + 1 } }; try { window.localStorage.setItem("interviewiq:fresher-dsa-review:v2", JSON.stringify(next)); } catch { /* local-only progress is best effort */ } return next; });
+  useEffect(() => {
+    if (!sessionRunning) return undefined;
+    const timer = window.setInterval(() => setSessionSeconds((value) => {
+      if (value + 1 >= sessionLimit) {
+        setSessionRunning(false);
+        return sessionLimit;
+      }
+      return value + 1;
+    }), 1000);
+    return () => window.clearInterval(timer);
+  }, [sessionLimit, sessionRunning]);
+  const startSession = (minutes) => {
+    setSessionLimit(minutes * 60);
+    setSessionSeconds(0);
+    setSessionRunning(true);
+  };
+  const remainingSeconds = Math.max(0, sessionLimit - sessionSeconds);
+  const timerLabel = `${String(Math.floor(remainingSeconds / 60)).padStart(2, "0")}:${String(remainingSeconds % 60).padStart(2, "0")}`;
+  const panel = { background: "rgba(255,255,255,.035)", border: `1px solid ${accentBorder}`, borderRadius: 8, padding: 11 };
+  const text = { color: "#dbeafe", fontSize: 11.5, lineHeight: 1.5 };
+  return (
+    <section style={{ display: "grid", gap: 10 }}>
+      <div style={panel}><div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Fresher DSA Path</div><h3 style={{ color: "#f8fbff", fontSize: 16, lineHeight: 1.3, margin: "4px 0" }}>From first principles to interview simulation</h3><p style={{ ...text, color: "#93a4bf", margin: 0 }}>Clarify, brute force, recognize the pattern, prove the invariant, dry run, code, test, and explain the trade-off.</p></div>
+      <div style={{ display: "grid", gap: 9, gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
+        <section style={panel}><div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Solving framework</div><ol style={{ ...text, display: "grid", gap: 5, margin: "8px 0 0", paddingLeft: 18 }}>{FRESHER_DSA_PLAYBOOK.framework.map((step) => <li key={step}>{step}</li>)}</ol></section>
+        <section style={panel}><div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Constraint map</div><div style={{ display: "grid", gap: 7, marginTop: 8 }}>{FRESHER_DSA_PLAYBOOK.constraintMap.map((entry) => <div key={entry.limit} style={{ ...text, borderBottom: `1px solid ${accentBorder}`, paddingBottom: 6 }}><b style={{ color: accent }}>{entry.limit} · {entry.choice}</b><br /><span style={{ color: "#93a4bf" }}>{entry.reason}</span></div>)}</div></section>
+      </div>
+      <section style={panel}><div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Pattern recognition cards</div><div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", marginTop: 8 }}>{FRESHER_DSA_PLAYBOOK.patterns.map((pattern) => <article key={pattern.name} style={{ background: "rgba(0,0,0,.14)", border: `1px solid ${accentBorder}`, borderRadius: 7, display: "grid", gap: 4, padding: 9 }}><b style={{ color: accent, fontSize: 12 }}>{pattern.name}</b><span style={text}><b>Recognize:</b> {pattern.recognize}</span><span style={text}><b>Approach:</b> {pattern.approach}</span><span style={{ ...text, color: "#93a4bf" }}><b>Java:</b> {pattern.java}</span><span style={{ ...text, color: "#93a4bf" }}><b>Start:</b> {pattern.starter}</span><span style={{ ...text, color: "#93a4bf" }}><b>Follow-up:</b> {pattern.followUp}</span></article>)}</div></section>
+      <div style={{ display: "grid", gap: 9, gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}><section style={panel}><div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Edge-case checklist</div><ul style={{ ...text, display: "grid", gap: 5, margin: "8px 0 0", paddingLeft: 18 }}>{FRESHER_DSA_PLAYBOOK.edgeCases.map((item) => <li key={item}>{item}</li>)}</ul></section><section style={panel}><div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Debugging routine</div><ol style={{ ...text, display: "grid", gap: 5, margin: "8px 0 0", paddingLeft: 18 }}>{FRESHER_DSA_PLAYBOOK.debugging.map((item) => <li key={item}>{item}</li>)}</ol></section></div>
+      <section style={{ ...panel, background: `${accent}0d` }}><div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Progressive practice and mock interviews</div><div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", marginTop: 8 }}>{FRESHER_DSA_PLAYBOOK.practiceLadder.map((level) => <article key={level.level} style={{ background: "rgba(0,0,0,.14)", border: `1px solid ${accentBorder}`, borderRadius: 7, padding: 9 }}><b style={{ color: accent, fontSize: 11.5 }}>{level.level}</b><div style={{ ...text, marginTop: 4 }}>{level.goal}</div><div style={{ ...text, color: "#93a4bf", marginTop: 4 }}>{level.problems}</div></article>)}</div></section>
+      <section style={{ ...panel, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 9, justifyContent: "space-between" }}>
+        <div><div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Timed practice mode</div><div style={{ ...text, color: "#93a4bf", marginTop: 3 }}>Pick a session, solve without looking at the solution, then explain the trade-off.</div></div>
+        <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {[15, 25, 40].map((minutes) => <button key={minutes} type="button" className="glass-button" onClick={() => startSession(minutes)} style={{ border: `1px solid ${accentBorder}`, borderRadius: 7, color: "#dbeafe", fontSize: 11, padding: "6px 8px" }}>{minutes} min</button>)}
+          <span aria-live="polite" style={{ color: sessionRunning ? accent : "#93a4bf", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 13, fontWeight: 900, minWidth: 42, textAlign: "center" }}>{timerLabel}</span>
+          <button type="button" className="glass-button" onClick={() => setSessionRunning((value) => !value)} style={{ border: `1px solid ${accentBorder}`, borderRadius: 7, color: "#dbeafe", fontSize: 11, padding: "6px 8px" }}>{sessionRunning ? "Pause" : "Start"}</button>
+          <button type="button" className="glass-button" onClick={() => { setSessionRunning(false); setSessionSeconds(0); }} style={{ border: "1px solid rgba(255,255,255,.1)", borderRadius: 7, color: "#93a4bf", fontSize: 11, padding: "6px 8px" }}>Reset</button>
+        </div>
+      </section>
+      <section style={panel}>
+        <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between" }}><div><div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Guided problem mode</div><div style={{ ...text, color: "#93a4bf", marginTop: 3 }}>Try the problem first, reveal hints one at a time, then compare your Java solution.</div></div><span style={{ color: accent, fontSize: 12, fontWeight: 900 }}>{score}/100 readiness</span></div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 9 }}>{FRESHER_DSA_PROBLEMS.map((problem) => <button key={problem.id} type="button" className="glass-button" onClick={() => chooseProblem(problem.id)} style={{ border: `1px solid ${problem.id === selectedProblem.id ? accent : accentBorder}`, borderRadius: 7, color: problem.id === selectedProblem.id ? "#f8fbff" : "#93a4bf", fontSize: 10.8, padding: "6px 8px" }}>{problem.title}</button>)}</div>
+        <article style={{ background: "rgba(0,0,0,.14)", border: `1px solid ${accentBorder}`, borderRadius: 7, display: "grid", gap: 8, marginTop: 9, padding: 10 }}><div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>{selectedProblem.pattern} · {selectedProblem.level}</div><h4 style={{ color: "#f8fbff", fontSize: 14, margin: 0 }}>{selectedProblem.title}</h4><p style={{ ...text, margin: 0 }}>{selectedProblem.prompt}</p><div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>{selectedProblem.hints.slice(0, hintLevel).map((hint, index) => <div key={hint} style={{ ...text, background: `${accent}12`, borderRadius: 5, padding: "5px 7px" }}>Hint {index + 1}: {hint}</div>)}<button type="button" className="glass-button" disabled={hintLevel >= selectedProblem.hints.length} onClick={() => setHintLevel((value) => Math.min(selectedProblem.hints.length, value + 1))} style={{ border: `1px solid ${accentBorder}`, borderRadius: 6, color: "#dbeafe", fontSize: 10.8, padding: "5px 7px" }}>{hintLevel >= selectedProblem.hints.length ? "All hints shown" : "Reveal next hint"}</button></div><details><summary style={{ color: accent, cursor: "pointer", fontSize: 11.2, fontWeight: 800 }}>Show pseudocode and Java solution</summary><pre style={{ color: "#dbeafe", fontSize: 11.2, lineHeight: 1.45, margin: "7px 0 0", overflowX: "auto", whiteSpace: "pre-wrap" }}>{selectedProblem.pseudocode}{"\n\n"}{selectedProblem.solution}</pre></details><div style={{ ...text, color: "#93a4bf" }}><b>Test cases:</b> {selectedProblem.tests.join(" · ")}</div><div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}><button type="button" className="glass-button" onClick={() => setSolved((value) => !value)} style={{ border: `1px solid ${accentBorder}`, borderRadius: 6, color: solved ? accent : "#dbeafe", fontSize: 10.8, padding: "5px 7px" }}>{solved ? "Solved" : "Mark solved"}</button><button type="button" className="glass-button" onClick={() => setExplained((value) => !value)} style={{ border: `1px solid ${accentBorder}`, borderRadius: 6, color: explained ? accent : "#dbeafe", fontSize: 10.8, padding: "5px 7px" }}>Explained</button><button type="button" className="glass-button" onClick={() => setComplexity((value) => !value)} style={{ border: `1px solid ${accentBorder}`, borderRadius: 6, color: complexity ? accent : "#dbeafe", fontSize: 10.8, padding: "5px 7px" }}>Complexity stated</button><button type="button" className="glass-button" onClick={() => setEdgeCases((value) => !value)} style={{ border: `1px solid ${accentBorder}`, borderRadius: 6, color: edgeCases ? accent : "#dbeafe", fontSize: 10.8, padding: "5px 7px" }}>Edge cases tested</button><button type="button" className="glass-button" onClick={markReviewed} style={{ border: `1px solid ${accentBorder}`, borderRadius: 6, color: reviewedIds.includes(selectedProblem.id) ? accent : "#dbeafe", fontSize: 10.8, padding: "5px 7px" }}>{reviewedIds.includes(selectedProblem.id) ? "Reviewed" : "Mark reviewed"}</button></div></article>
+        <div style={{ ...text, color: "#93a4bf", marginTop: 8 }}>Daily plan: {getFresherDsaDailyPlan().map((problem) => problem.title).join(" → ")} · {reviewedIds.length}/{FRESHER_DSA_PROBLEMS.length} reviewed · {dueReviews} due for spaced review</div>
+      </section>
+      <section style={panel}><div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Java debugging lessons</div><div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", marginTop: 8 }}>{JAVA_DEBUGGING_LESSONS.map((lesson) => <article key={lesson.id} style={{ background: "rgba(0,0,0,.14)", border: `1px solid ${accentBorder}`, borderRadius: 7, display: "grid", gap: 4, padding: 9 }}><b style={{ color: accent, fontSize: 11.5 }}>{lesson.title}</b><span style={{ ...text, color: "#fda4af" }}><b>Symptom:</b> {lesson.symptom}</span><span style={text}><b>Rule:</b> {lesson.rule}</span><span style={{ ...text, color: "#93a4bf" }}><b>Drill:</b> {lesson.drill}</span></article>)}</div></section>
+    </section>
+  );
+}
+
 export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, theme = {}, profile = {}, beginnerMode = false, beginnerStep = "watch", onBeginnerStepChange, onActivity }) {
   const lessons = useMemo(() => listDsaVisualLessons(), []);
   const blind75Problems = useMemo(() => listBlind75Problems(), []);
@@ -2816,7 +2891,9 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
         />
       ) : null}
 
-      {track === "thinking" ? (
+      {track === "fresher" ? (
+        <FresherDsaTrack accent={accent} accentBorder={accentBorder} />
+      ) : track === "thinking" ? (
         <section style={{ background: "rgba(255,255,255,.035)", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 12, padding: 12 }}>
           <div style={{ alignItems: "start", display: "grid", gap: 12, gridTemplateColumns: "minmax(0, 1fr) auto" }}>
             <div>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   CSES_JAVA_PARTS,
+  FRESHER_DSA_PLAYBOOK,
   JAVA_DIGEST_ROADMAPS,
   JAVA_DIGEST_TRACKS,
   JAVA_DIGEST_VERSION,
@@ -31,9 +32,9 @@ const responsiveGrid = (minColumnWidth, gap = 10) => ({
 });
 
 const VIEW_METADATA = {
-  "Handbook Java": {
-    title: "Competitive Programmer's Handbook for Java",
-    description: "Java practice chapters for algorithms, data structures, graphs, and advanced topics.",
+  "Java Curriculum": {
+    title: "Competitive Programming in Java",
+    description: "A complete Java practice curriculum for algorithms, data structures, graphs, and advanced topics.",
   },
   "Senior Refresher": {
     title: "Senior Java Interview Refresher",
@@ -303,6 +304,69 @@ function RoadmapCard({ roadmap, accent, expanded, onAction, onToggle }) {
   );
 }
 
+function FresherDsaPlaybook({ accent }) {
+  return (
+    <section style={{ ...wrap, background: "var(--jd-surface)", border: "1px solid var(--jd-border)", borderRadius: 8, display: "grid", gap: 10, padding: 12 }}>
+      <div style={wrap}>
+        <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Fresher DSA Playbook</div>
+        <h3 style={{ ...wrap, color: "var(--jd-text)", fontSize: 15.5, lineHeight: 1.25, marginTop: 3 }}>A repeatable method for unfamiliar DSA questions</h3>
+        <p style={{ ...wrap, color: "var(--jd-text-muted)", fontSize: 11.6, lineHeight: 1.5, margin: "6px 0 0" }}>Use this before every problem: understand the constraints, name the pattern, prove the invariant, code the smallest correct version, and test the edges.</p>
+      </div>
+      <div style={responsiveGrid(260, 9)}>
+        <section style={{ ...wrap, background: "var(--jd-surface-sunken)", border: "1px solid var(--jd-border)", borderRadius: 8, padding: 10 }}>
+          <h4 style={{ color: "var(--jd-text)", fontSize: 12, margin: "0 0 7px" }}>Seven-step solving framework</h4>
+          <ol style={{ ...wrap, color: "var(--jd-text-soft)", display: "grid", fontSize: 11.5, gap: 5, lineHeight: 1.5, margin: 0, paddingLeft: 18 }}>
+            {FRESHER_DSA_PLAYBOOK.framework.map((step) => <li key={step}>{step}</li>)}
+          </ol>
+        </section>
+        <section style={{ ...wrap, background: "var(--jd-surface-sunken)", border: "1px solid var(--jd-border)", borderRadius: 8, padding: 10 }}>
+          <h4 style={{ color: "var(--jd-text)", fontSize: 12, margin: "0 0 7px" }}>Constraint-to-algorithm map</h4>
+          <div style={{ display: "grid", gap: 7 }}>
+            {FRESHER_DSA_PLAYBOOK.constraintMap.map((entry) => (
+              <div key={entry.limit} style={{ ...wrap, borderBottom: "1px solid var(--jd-border)", paddingBottom: 6 }}>
+                <strong style={{ color: accent, fontSize: 11.2 }}>{entry.limit} · {entry.choice}</strong>
+                <div style={{ color: "var(--jd-text-muted)", fontSize: 11.2, lineHeight: 1.45, marginTop: 2 }}>{entry.reason}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+      <section style={{ ...wrap, background: "var(--jd-surface-sunken)", border: "1px solid var(--jd-border)", borderRadius: 8, padding: 10 }}>
+        <h4 style={{ color: "var(--jd-text)", fontSize: 12, margin: "0 0 7px" }}>Pattern recognition and interview follow-ups</h4>
+        <div style={responsiveGrid(300, 8)}>
+          {FRESHER_DSA_PLAYBOOK.patterns.map((pattern) => (
+            <article key={pattern.name} style={{ ...wrap, background: "var(--jd-surface)", border: "1px solid var(--jd-border)", borderRadius: 7, display: "grid", gap: 5, padding: 9 }}>
+              <strong style={{ color: accent, fontSize: 12 }}>{pattern.name}</strong>
+              <div style={{ color: "var(--jd-text-soft)", fontSize: 11.2, lineHeight: 1.45 }}><b>Recognize:</b> {pattern.recognize}</div>
+              <div style={{ color: "var(--jd-text-soft)", fontSize: 11.2, lineHeight: 1.45 }}><b>Approach:</b> {pattern.approach}</div>
+              <div style={{ color: "var(--jd-text-muted)", fontSize: 11.1, lineHeight: 1.45 }}><b>Java:</b> {pattern.java}</div>
+              <div style={{ color: "var(--jd-text-muted)", fontSize: 11.1, lineHeight: 1.45 }}><b>Cost:</b> {pattern.complexity}</div>
+              <div style={{ color: "var(--jd-text-muted)", fontSize: 11.1, lineHeight: 1.45 }}><b>Start with:</b> {pattern.starter}</div>
+              <div style={{ color: "var(--jd-text-muted)", fontSize: 11.1, lineHeight: 1.45 }}><b>Follow-up:</b> {pattern.followUp}</div>
+            </article>
+          ))}
+        </div>
+      </section>
+      <div style={responsiveGrid(260, 9)}>
+        <DetailList title="Edge-case checklist" icon="ti-checklist" items={FRESHER_DSA_PLAYBOOK.edgeCases} accent="var(--jd-warning)" />
+        <DetailList title="Debugging routine" icon="ti-bug" items={FRESHER_DSA_PLAYBOOK.debugging} accent="var(--jd-danger-accent)" />
+      </div>
+      <section style={{ ...wrap, background: "var(--jd-accent-surface)", border: `1px solid ${accent}33`, borderRadius: 8, padding: 10 }}>
+        <h4 style={{ color: "var(--jd-text)", fontSize: 12, margin: "0 0 7px" }}>Progressive practice ladder</h4>
+        <div style={responsiveGrid(250, 8)}>
+          {FRESHER_DSA_PLAYBOOK.practiceLadder.map((level) => (
+            <article key={level.level} style={{ ...wrap, background: "var(--jd-surface)", border: "1px solid var(--jd-border)", borderRadius: 7, padding: 9 }}>
+              <strong style={{ color: accent, fontSize: 11.5 }}>{level.level}</strong>
+              <div style={{ color: "var(--jd-text-soft)", fontSize: 11.2, lineHeight: 1.45, marginTop: 4 }}>{level.goal}</div>
+              <div style={{ color: "var(--jd-text-muted)", fontSize: 11.1, lineHeight: 1.45, marginTop: 4 }}>{level.problems}</div>
+            </article>
+          ))}
+        </div>
+      </section>
+    </section>
+  );
+}
+
 function CsesChapterCard({ chapter, accent, expanded, onAction, onToggleExpanded }) {
   const detail = getCsesJavaChapterDetail(chapter);
   const startPractice = () => {
@@ -412,7 +476,7 @@ function CsesPartSection({ part, accent, expanded, expandedChapterId, onAction, 
 
 export default function JavaDigest({ theme = {}, onAction, onRefresherProgressChange, profile = null, beginnerMode = false, beginnerStep = "watch", onBeginnerStepChange, onActivity, progress = {} }) {
   const [activeTrack, setActiveTrack] = useState("all");
-  const [activeView, setActiveView] = useState("Handbook Java");
+  const [activeView, setActiveView] = useState("Java Curriculum");
   const [expandedPartId, setExpandedPartId] = useState(CSES_JAVA_PARTS[0]?.id || "");
   const [expandedChapterId, setExpandedChapterId] = useState("");
   const [expandedArticleId, setExpandedArticleId] = useState("");
@@ -435,7 +499,7 @@ export default function JavaDigest({ theme = {}, onAction, onRefresherProgressCh
   const accent = theme.accentStrong || "#8bd3ff";
   const accentBorder = theme.accentBorder || "rgba(139, 211, 255, .26)";
   const articles = useMemo(() => listJavaDigestArticles(activeTrack), [activeTrack]);
-  const viewMetadata = VIEW_METADATA[activeView] || VIEW_METADATA["Handbook Java"];
+  const viewMetadata = VIEW_METADATA[activeView] || VIEW_METADATA["Java Curriculum"];
   const competencySummary = useMemo(
     () => buildJavaDigestCompetencySummary({ progress, selectedTrackId: activeTrack }),
     [progress, activeTrack],
@@ -459,7 +523,7 @@ export default function JavaDigest({ theme = {}, onAction, onRefresherProgressCh
   };
   const tabs = [
     { label: "Senior Refresher", icon: "ti-bolt" },
-    { label: "Handbook Java", icon: "ti-book-2" },
+    { label: "Java Curriculum", icon: "ti-book-2" },
     { label: "Search", icon: "ti-search" },
     { label: "Articles", icon: "ti-news" },
     { label: "Roadmaps", icon: "ti-route" },
@@ -803,18 +867,16 @@ export default function JavaDigest({ theme = {}, onAction, onRefresherProgressCh
         </div>
       )}
 
-      {activeView === "Handbook Java" && (
+      {activeView === "Java Curriculum" && (
         <div style={{ display: "grid", gap: 10 }}>
           <section style={{ ...wrap, background: "var(--jd-accent-surface)", border: `1px solid ${accent}33`, borderRadius: 8, display: "grid", gap: 6, padding: 12 }}>
-            <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Competitive Programmer&apos;s Handbook · Java Adaptation</div>
-            <h3 style={{ ...wrap, color: "var(--jd-text)", fontSize: 15.5, lineHeight: 1.25 }}>Book-style table of contents, rewritten as Java practice chapters</h3>
+            <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Java Competitive Programming Curriculum</div>
+            <h3 style={{ ...wrap, color: "var(--jd-text)", fontSize: 15.5, lineHeight: 1.25 }}>A complete, original Java practice path from fundamentals to advanced algorithms</h3>
             <p style={{ ...wrap, color: "var(--jd-text-muted)", fontSize: 11.6, lineHeight: 1.5 }}>
-              This follows the public CSES handbook structure at a high level: Basic Techniques, Graph Algorithms, and Advanced Topics. Each chapter adds Java implementation checkpoints, complexity prompts, and a study action.
+              Work through Basic Techniques, Graph Algorithms, and Advanced Topics. Every chapter includes Java implementation checkpoints, complexity prompts, worked examples, and a focused study action.
             </p>
-            <a href="https://cses.fi/book/book.pdf" target="_blank" rel="noreferrer" style={{ color: accent, fontSize: 11.5, fontWeight: 900, justifySelf: "start", textDecoration: "none" }}>
-              Open original CSES PDF
-            </a>
           </section>
+          <FresherDsaPlaybook accent={accent} />
           {CSES_JAVA_PARTS.map((part) => <CsesPartSection key={part.id} part={part} accent={accent} expanded={expandedPartId === part.id} expandedChapterId={expandedChapterId} onAction={onAction} onToggleChapter={toggleExpandedChapter} onTogglePart={() => toggleExpandedPart(part.id)} />)}
         </div>
       )}

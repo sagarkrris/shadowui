@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   CSES_JAVA_PARTS,
   CSES_JAVA_TRACKS,
+  FRESHER_DSA_PLAYBOOK,
   JAVA_DIGEST_ARTICLES,
   JAVA_DIGEST_ROADMAPS,
   JAVA_DIGEST_TRACKS,
@@ -20,6 +21,16 @@ import {
   listJavaSeniorRefresherArticles,
 } from "../lib/javaDigest.mjs";
 import { parseJavaSeniorRefresherQa } from "../lib/javaSeniorRefresherQa.mjs";
+
+test("fresher DSA playbook covers solving method, patterns, practice, and debugging", () => {
+  assert.equal(FRESHER_DSA_PLAYBOOK.framework.length, 7);
+  assert.ok(FRESHER_DSA_PLAYBOOK.constraintMap.length >= 5);
+  assert.ok(FRESHER_DSA_PLAYBOOK.patterns.length >= 10);
+  assert.ok(FRESHER_DSA_PLAYBOOK.patterns.every((pattern) => pattern.recognize && pattern.approach && pattern.java && pattern.followUp));
+  assert.ok(FRESHER_DSA_PLAYBOOK.edgeCases.length >= 5);
+  assert.ok(FRESHER_DSA_PLAYBOOK.debugging.length >= 5);
+  assert.equal(FRESHER_DSA_PLAYBOOK.practiceLadder.length, 6);
+});
 
 test("java digest exposes original topic tracks and article cards", () => {
   assert.ok(JAVA_DIGEST_TRACKS.length >= 5);
@@ -93,10 +104,10 @@ test("java digest generated search prompt supports any topic and candidate conte
   assert.match(prompt, /Experience: 5-7 years/);
   assert.match(prompt, /Tech stack: Java, Spring Boot/);
   assert.match(prompt, /Interview-Ready Answer/);
-  assert.match(prompt, /Competitive Programmer's Handbook/);
+  assert.match(prompt, /competitive-programming depth/);
   assert.match(prompt, /direct polished answer/);
   assert.match(prompt, /Avoid LaTeX syntax/);
-  assert.match(prompt, /Do not quote or reproduce book text/);
+  assert.doesNotMatch(prompt, /CSES|Competitive Programmer's Handbook|book text/);
 });
 
 test("cses java tracks expose java-only competitive programming practice prompts", () => {
@@ -111,11 +122,11 @@ test("cses java tracks expose java-only competitive programming practice prompts
   assert.match(shortestPathTrack.templateFocus, /Dijkstra/);
   assert.match(prompt, /Java-only competitive programming track/);
   assert.match(prompt, /Shortest Paths/);
-  assert.match(prompt, /CSES handbook-inspired topic themes/);
+  assert.match(prompt, /Java curriculum topic themes/);
   assert.match(prompt, /direct polished study answer/);
   assert.match(prompt, /Do not greet the user/);
   assert.match(prompt, /plain text math/);
-  assert.match(prompt, /Do not quote or reproduce the handbook text/);
+  assert.doesNotMatch(prompt, /CSES|Competitive Programmer's Handbook/);
 });
 
 test("cses java chapters include detailed learner-facing explanations", () => {
