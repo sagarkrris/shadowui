@@ -24,12 +24,17 @@ const wrap = {
   wordBreak: "break-word",
 };
 
+// Keep Design Lab's instructional hierarchy in the blue/violet family. The
+// previous mint treatment looked washed out against the light workspace theme.
+const CODE_TEXT_TONE = "#bfdbfe";
+const DETAIL_TONE = "#c4b5fd";
+
 const codeStyle = {
   ...wrap,
   background: "rgba(0,0,0,.18)",
   border: "1px solid rgba(255,255,255,.08)",
   borderRadius: 7,
-  color: "#d1fae5",
+  color: CODE_TEXT_TONE,
   display: "block",
   fontSize: 11,
   lineHeight: 1.45,
@@ -84,7 +89,7 @@ const END_TO_END_WORKFLOWS = [
       {
         node: "Response",
         icon: "ti-arrow-back-up",
-        tone: "#a7f3d0",
+        tone: DETAIL_TONE,
         action: "Service returns the response with low latency.",
         teach: "Mention freshness: fast is useful only if the returned data is acceptably current.",
       },
@@ -127,7 +132,7 @@ const END_TO_END_WORKFLOWS = [
       {
         node: "Database",
         icon: "ti-database",
-        tone: "#a7f3d0",
+        tone: DETAIL_TONE,
         action: "Primary DB or read replica loads the row, aggregate, or projection.",
         teach: "Call out indexes and read replicas when latency or QPS becomes the bottleneck.",
       },
@@ -141,7 +146,7 @@ const END_TO_END_WORKFLOWS = [
       {
         node: "Response",
         icon: "ti-arrow-back-up",
-        tone: "#a7f3d0",
+        tone: DETAIL_TONE,
         action: "Response returns to the user and later requests become cache hits.",
         teach: "This is where you mention stampede protection for many simultaneous misses.",
       },
@@ -184,7 +189,7 @@ const END_TO_END_WORKFLOWS = [
       {
         node: "Database",
         icon: "ti-database",
-        tone: "#a7f3d0",
+        tone: DETAIL_TONE,
         action: "DB writes the source-of-truth state and an outbox event in the same transaction.",
         teach: "The outbox pattern prevents the classic bug: DB commit succeeds but event publish fails.",
       },
@@ -212,7 +217,7 @@ const END_TO_END_WORKFLOWS = [
       {
         node: "Response",
         icon: "ti-arrow-back-up",
-        tone: "#a7f3d0",
+        tone: DETAIL_TONE,
         action: "User receives success once the critical write is committed; async work may continue.",
         teach: "Be explicit about what is synchronous versus eventually consistent.",
       },
@@ -462,7 +467,7 @@ const PATTERN_VISUALS = {
       { label: "Client", detail: "Calls notify()", tone: "#93c5fd" },
       { label: "Creator", detail: "NotificationService", tone: "#8bd3ff" },
       { label: "Factory Method", detail: "createSender(channel)", tone: "#facc15" },
-      { label: "Product Interface", detail: "NotificationSender", tone: "#a7f3d0" },
+      { label: "Product Interface", detail: "NotificationSender", tone: DETAIL_TONE },
       { label: "Concrete Products", detail: "EmailSender / PushSender", tone: "#c4b5fd" },
     ],
     flow: ["Client requests send", "Creator asks factory method", "Concrete sender is created", "Client uses sender interface"],
@@ -475,7 +480,7 @@ const PATTERN_VISUALS = {
       { label: "Client", detail: "BookingController", tone: "#93c5fd" },
       { label: "Builder", detail: "BookingSummaryBuilder", tone: "#facc15" },
       { label: "Steps", detail: "reservation -> payment -> tickets", tone: "#8bd3ff" },
-      { label: "Validation", detail: "build()", tone: "#a7f3d0" },
+      { label: "Validation", detail: "build()", tone: DETAIL_TONE },
       { label: "Product", detail: "BookingSummary", tone: "#c4b5fd" },
     ],
     flow: ["Collect required data", "Set optional pieces", "Validate in build", "Return immutable result"],
@@ -486,7 +491,7 @@ const PATTERN_VISUALS = {
     scenario: "Payment provider integration",
     roles: [
       { label: "Domain Service", detail: "PaymentService", tone: "#93c5fd" },
-      { label: "Internal Port", detail: "PaymentGateway", tone: "#a7f3d0" },
+      { label: "Internal Port", detail: "PaymentGateway", tone: DETAIL_TONE },
       { label: "Adapter", detail: "StripePaymentAdapter", tone: "#facc15" },
       { label: "External API", detail: "StripeClient", tone: "#c4b5fd" },
       { label: "Mapped Result", detail: "PaymentResult", tone: "#8bd3ff" },
@@ -501,7 +506,7 @@ const PATTERN_VISUALS = {
       { label: "Controller", detail: "One entrypoint", tone: "#93c5fd" },
       { label: "Facade", detail: "BookingFacade", tone: "#facc15" },
       { label: "Inventory", detail: "hold seats", tone: "#8bd3ff" },
-      { label: "Payment", detail: "capture money", tone: "#a7f3d0" },
+      { label: "Payment", detail: "capture money", tone: DETAIL_TONE },
       { label: "Tickets", detail: "issue ticket", tone: "#c4b5fd" },
     ],
     flow: ["Controller calls facade", "Facade coordinates services", "Each subsystem does one job", "Facade returns workflow result"],
@@ -513,7 +518,7 @@ const PATTERN_VISUALS = {
     roles: [
       { label: "Context", detail: "PricingService", tone: "#93c5fd" },
       { label: "Selector", detail: "choose strategy", tone: "#facc15" },
-      { label: "Strategy Interface", detail: "PricingStrategy", tone: "#a7f3d0" },
+      { label: "Strategy Interface", detail: "PricingStrategy", tone: DETAIL_TONE },
       { label: "Concrete Strategy", detail: "Surge / EarlyBird", tone: "#c4b5fd" },
       { label: "Result", detail: "Money quote", tone: "#8bd3ff" },
     ],
@@ -526,7 +531,7 @@ const PATTERN_VISUALS = {
     roles: [
       { label: "Entity", detail: "Reservation", tone: "#93c5fd" },
       { label: "Current State", detail: "HELD", tone: "#facc15" },
-      { label: "Transition Rule", detail: "confirm()", tone: "#a7f3d0" },
+      { label: "Transition Rule", detail: "confirm()", tone: DETAIL_TONE },
       { label: "Next State", detail: "CONFIRMED", tone: "#8bd3ff" },
       { label: "Rejected Path", detail: "invalid transition", tone: "#fda4af" },
     ],
@@ -539,7 +544,7 @@ const PATTERN_VISUALS = {
     roles: [
       { label: "Publisher", detail: "BookingService", tone: "#93c5fd" },
       { label: "Event", detail: "BookingConfirmed", tone: "#facc15" },
-      { label: "Listener A", detail: "TicketIssuer", tone: "#a7f3d0" },
+      { label: "Listener A", detail: "TicketIssuer", tone: DETAIL_TONE },
       { label: "Listener B", detail: "EmailNotifier", tone: "#8bd3ff" },
       { label: "Listener C", detail: "AuditLogger", tone: "#c4b5fd" },
     ],
@@ -555,7 +560,7 @@ function patternVisualFor(pattern) {
     roles: [
       { label: "Client", detail: "Calls stable API", tone: "#93c5fd" },
       { label: "Pattern Role", detail: pattern.name, tone: "#facc15" },
-      { label: "Interface", detail: "Stable contract", tone: "#a7f3d0" },
+      { label: "Interface", detail: "Stable contract", tone: DETAIL_TONE },
       { label: "Concrete Class", detail: "Implementation detail", tone: "#c4b5fd" },
     ],
     flow: ["Client calls interface", "Pattern object handles variation", "Concrete class does the work", "Client stays decoupled"],
@@ -763,7 +768,7 @@ function AgenticAiBoard({ problems, accent, onAction }) {
     <div style={responsiveGrid(250, 10)}>
       {problems.map((problem) => (
         <LabPanel key={problem.id} title={problem.title} icon="ti-sparkles" accent={accent}>
-          <div style={{ color: "#a7f3d0", fontSize: 11, fontWeight: 900, marginBottom: 6 }}>{problem.difficulty}</div>
+          <div style={{ color: DETAIL_TONE, fontSize: 11, fontWeight: 900, marginBottom: 6 }}>{problem.difficulty}</div>
           <p style={{ ...wrap, color: "#cbd5e1", fontSize: 11.5, lineHeight: 1.45, marginBottom: 9 }}>{problem.goal}</p>
           <strong style={{ color: "#eaf2ff", fontSize: 11.5 }}>Agent Architecture</strong>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, margin: "7px 0 10px" }}>
@@ -810,7 +815,7 @@ function ReferencePlaybookBoard({ playbooks, buildTracks, handbookCheckpoints, t
               </div>
               <div>
                 <strong style={{ color: "#eaf2ff", display: "block", fontSize: 11.5, marginBottom: 6 }}>Practice Outcomes</strong>
-                <BulletList items={playbook.outcomes} color="#a7f3d0" />
+                <BulletList items={playbook.outcomes} color={DETAIL_TONE} />
               </div>
             </div>
             <button type="button" className="glass-button" onClick={() => onAction?.(buildReferencePlaybookPrompt(playbook.id), { type: "practiceCurriculum", playbook })} title={`Practice ${playbook.title}`} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#f8fbff", fontSize: 11, fontWeight: 800, justifySelf: "start", padding: "7px 10px" }}>
@@ -827,7 +832,7 @@ function ReferencePlaybookBoard({ playbooks, buildTracks, handbookCheckpoints, t
               <div key={track.title} style={{ ...wrap, color: "#9fb0c7", fontSize: 11.2, lineHeight: 1.45 }}>
                 <strong style={{ color: "#eaf2ff" }}>{track.title}</strong>
                 <div>{track.buildLoop.join(" -> ")}</div>
-                <div style={{ color: "#a7f3d0", marginTop: 2 }}>{track.interviewTransfer}</div>
+                <div style={{ color: DETAIL_TONE, marginTop: 2 }}>{track.interviewTransfer}</div>
               </div>
             ))}
           </div>
@@ -890,7 +895,7 @@ function ReferencePlaybookBoard({ playbooks, buildTracks, handbookCheckpoints, t
                       <strong style={{ color: "#f8fbff", fontSize: 11.5 }}>{item.topic}</strong>
                       <span style={{ color: "#cbd5e1", fontSize: 11, lineHeight: 1.4 }}>{item.what}</span>
                       <span style={{ color: "#9fb0c7", fontSize: 10.8, lineHeight: 1.4 }}>{item.why}</span>
-                      <span style={{ color: "#a7f3d0", fontSize: 10.8, lineHeight: 1.4 }}>{item.whereUsed}</span>
+                      <span style={{ color: DETAIL_TONE, fontSize: 10.8, lineHeight: 1.4 }}>{item.whereUsed}</span>
                     </div>
                   ))}
                 </div>
@@ -928,7 +933,7 @@ function ReferencePlaybookBoard({ playbooks, buildTracks, handbookCheckpoints, t
                 </div>
                 <div>
                   <strong style={{ color: "#eaf2ff", display: "block", fontSize: 11.5, marginBottom: 6 }}>Practice Outcomes</strong>
-                  <BulletList items={group.outcomes} color="#a7f3d0" />
+                  <BulletList items={group.outcomes} color={DETAIL_TONE} />
                 </div>
               </div>
               <div>
@@ -1046,7 +1051,7 @@ export default function DesignLab({ theme = {}, onAction, beginnerMode = false, 
 
   return (
     <section
-      className="glass-card"
+      className="glass-card design-lab"
       style={{
         background: "linear-gradient(180deg, rgba(14,18,30,.82), rgba(7,10,18,.74))",
         border: "1px solid rgba(255,255,255,.1)",
@@ -1119,7 +1124,7 @@ export default function DesignLab({ theme = {}, onAction, beginnerMode = false, 
           {practiceSystems.map((system) => (
             <LabPanel key={system.id} title={system.title} icon="ti-target-arrow" accent={accent}>
               <p style={{ ...wrap, color: "#cbd5e1", fontSize: 11.5, lineHeight: 1.45, marginBottom: 8 }}>{system.focus}</p>
-              <div style={{ color: "#a7f3d0", fontSize: 11, fontWeight: 800, marginBottom: 5 }}>{system.difficulty}</div>
+              <div style={{ color: DETAIL_TONE, fontSize: 11, fontWeight: 800, marginBottom: 5 }}>{system.difficulty}</div>
               <strong style={{ color: "#eaf2ff", fontSize: 11.5 }}>HLD Angles</strong>
               <BulletList items={system.hldAngles} />
               <strong style={{ color: "#eaf2ff", display: "block", fontSize: 11.5, marginTop: 8 }}>LLD Angles</strong>

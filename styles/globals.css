@@ -331,6 +331,38 @@ textarea { resize: none; }
   color: #526579 !important;
 }
 
+/* Design Lab keeps its rich dark treatment in dark mode. In the light
+   workspace, normalize its inline teaching cards to the same crisp white and
+   blue surfaces used by the rest of the application. */
+.theme-light .design-lab {
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%) !important;
+  border-color: #d5e3f0 !important;
+  box-shadow: 0 10px 28px rgba(31,55,82,.08) !important;
+  color: #17324d !important;
+}
+
+.theme-light .design-lab [style*="rgba(15, 23, 42"],
+.theme-light .design-lab [style*="rgba(0, 0, 0"],
+.theme-light .design-lab [style*="rgba(14, 18, 30"] {
+  background: #f4f9fd !important;
+  border-color: #cfe0ee !important;
+}
+
+.theme-light .design-lab [style*="rgba(255, 255, 255"] {
+  background: #ffffff !important;
+  border-color: #dce8f2 !important;
+}
+
+.theme-light .design-lab [style*="rgb(248, 251, 255"],
+.theme-light .design-lab [style*="rgb(234, 242, 255"],
+.theme-light .design-lab [style*="rgb(219, 234, 254"] {
+  color: #17324d !important;
+}
+
+.theme-light .design-lab [style*="rgb(159, 176, 199"] {
+  color: #526579 !important;
+}
+
 .theme-light .header-account-actions .glass-button {
   background: #ffffff !important;
   border-color: rgba(29,95,145,.30) !important;

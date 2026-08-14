@@ -10,6 +10,10 @@ const sessionSource = readFileSync(new URL("../lib/sessionPersistence.mjs", impo
 const workspaceSource = readFileSync(new URL("../lib/workspaces.mjs", import.meta.url), "utf8");
 
 test("design lab component renders catalog tabs and practice actions", () => {
+  assert.match(componentSource, /CODE_TEXT_TONE = "#bfdbfe"/);
+  assert.match(componentSource, /DETAIL_TONE = "#c4b5fd"/);
+  assert.match(componentSource, /glass-card design-lab/);
+  assert.doesNotMatch(componentSource, /#d1fae5|#a7f3d0/);
   assert.match(componentSource, /DESIGN_LAB_CATALOG/);
   assert.match(componentSource, /Design Lab/);
   assert.match(componentSource, /Patterns/);
