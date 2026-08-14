@@ -201,6 +201,10 @@ test("authenticated CSRF state is not replaced by a random token", () => {
   assert.match(persistenceSource, /UPDATE interviewiq_sessions SET csrf_hash/);
   assert.match(authHookSource, /await fetchCsrfToken\(\)\.catch\(\(\) => ""\);[\s\S]*setUser\(payload\.user \|\| null\)/);
   assert.match(authHookSource, /const refreshCsrfToken = useCallback\(\(\) => fetchCsrfToken\(\{ force: true \}\)/);
+  assert.match(authHookSource, /action=logout[\s\S]*response\.status === 403/);
+  assert.match(authHookSource, /if \(!response\.ok\)[\s\S]*throw error/);
+  assert.match(authHookSource, /clearPrivateLocalData\(\);[\s\S]*setUser\(null\)/);
+  assert.match(authApiSource, /action === "logout"[\s\S]*\$\{CSRF_COOKIE\}=;/);
   assert.match(cloudStateSyncSource, /response\.status === 403[\s\S]*refreshCsrfToken/);
   assert.match(cloudStateSyncSource, /saveSnapshot\(await refreshCsrfToken\(\), true\)/);
   assert.match(indexSource, /refreshCsrfToken: auth\.refreshCsrfToken/);

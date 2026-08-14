@@ -76,7 +76,25 @@ export function useAuth() {
     setUser(payload.user || null);
     return true;
   }, [fetchCsrfToken, postWithCsrf]);
-  const logout = useCallback(async () => { await fetch("/api/auth?action=logout", { method: "POST", headers: csrfToken ? { "X-CSRF-Token": csrfToken } : {} }); clearPrivateLocalData(); setUser(null); }, [csrfToken]);
+  const logout = useCallback(async () => {
+    setError("");
+    let requestToken = csrfToken || await fetchCsrfToken();
+    let response = await fetch("/api/auth?action=logout", { method: "POST", headers: { "X-CSRF-Token": requestToken } });
+    if (response.status === 403) {
+      requestToken = await fetchCsrfToken({ force: true });
+      response = await fetch("/api/auth?action=logout", { method: "POST", headers: { "X-CSRF-Token": requestToken } });
+    }
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      const error = new Error(friendlyAuthError(payload.error, response.status));
+      setError(error.message);
+      throw error;
+    }
+    clearPrivateLocalData();
+    setUser(null);
+    setCsrfToken("");
+    return true;
+  }, [csrfToken, fetchCsrfToken]);
   const postAuthAction = useCallback(async (action, body = {}) => {
     setError("");
     setDeliveryWarning("");

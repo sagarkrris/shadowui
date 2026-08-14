@@ -102,7 +102,7 @@ async function handler(req, res) {
     if (action === "logout" && req.method === "POST") {
       if (!(await validCsrf(req))) return res.status(403).json({ error: "CSRF validation failed." });
       await destroySession(readCookie(req, COOKIE));
-      res.setHeader("Set-Cookie", `${COOKIE}=; ${cookieOptions}; Max-Age=0`);
+      res.setHeader("Set-Cookie", [`${COOKIE}=; ${cookieOptions}; Max-Age=0`, `${CSRF_COOKIE}=; Path=/; SameSite=Lax; Max-Age=0`]);
       return res.status(200).json({ ok: true });
     }
     if ((action === "register" || action === "login") && req.method === "POST") {
