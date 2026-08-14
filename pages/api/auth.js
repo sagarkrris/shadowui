@@ -63,7 +63,11 @@ async function sendAuthEmail({ type, user, token, req }) {
 async function handler(req, res) {
   const action = String(req.query.action || "me");
   const logger = createRequestLogger({ route: "/api/auth", requestId: req.requestId });
-  const limit = await checkDistributedRateLimit(`auth:${getClientAddress(req)}`, { limit: 10 });
+  // CSRF bootstrap and session lookup are safe reads. Keep their allowance separate
+  // from credential actions so normal page loads and retries cannot lock users out.
+  const isBootstrapAction = action === "csrf" || action === "me";
+  const rateLimitBucket = isBootstrapAction ? "bootstrap" : "credential";
+  const limit = await checkDistributedRateLimit(`auth:${rateLimitBucket}:${getClientAddress(req)}`, { limit: isBootstrapAction ? 60 : 10 });
   res.setHeader("X-RateLimit-Remaining", String(limit.remaining));
   if (!limit.ok) { recordMetric("auth.rate_limited", { route: "/api/auth" }); return res.status(429).json({ error: "Too many authentication requests. Try again later." }); }
   try {
@@ -71,6 +75,7 @@ async function handler(req, res) {
     if (action === "csrf" && req.method === "GET") {
       const existingToken = csrfCookie(req);
       const sessionToken = readCookie(req, COOKIE);
+      let staleSessionRecovered = false;
       if (existingToken && sessionToken && await verifyCsrfToken(sessionToken, existingToken).catch(() => false)) {
         res.setHeader("Cache-Control", "no-store, max-age=0");
         return res.status(200).json({ csrfToken: existingToken });
@@ -79,12 +84,19 @@ async function handler(req, res) {
       if (sessionToken) {
         const rotated = await rotateCsrfToken(sessionToken, token);
         if (!rotated) {
-          logger.error("auth.csrf_rotation_failed", { action, sessionPresent: true });
-          return res.status(503).json({ error: "Security session refresh failed. Please sign in again." });
+          // A browser can retain a session cookie after its server-side session
+          // expires or is revoked. Recover to an anonymous CSRF session instead
+          // of preventing the user from signing in or resetting a password.
+          staleSessionRecovered = true;
+          logger.warn("auth.stale_session_recovered", { action, sessionPresent: true });
+          recordMetric("auth.stale_session_recovered");
         }
       }
       res.setHeader("Cache-Control", "no-store, max-age=0");
-      res.setHeader("Set-Cookie", `${CSRF_COOKIE}=${token}; Path=/; SameSite=Lax${process.env.NODE_ENV === "production" ? "; Secure" : ""}`);
+      const csrfCookieValue = `${CSRF_COOKIE}=${token}; Path=/; SameSite=Lax${process.env.NODE_ENV === "production" ? "; Secure" : ""}`;
+      res.setHeader("Set-Cookie", staleSessionRecovered
+        ? [`${COOKIE}=; ${cookieOptions}; Max-Age=0`, csrfCookieValue]
+        : csrfCookieValue);
       return res.status(200).json({ csrfToken: token });
     }
     if (action === "logout" && req.method === "POST") {

@@ -146,6 +146,9 @@ test("authenticated CSRF state is not replaced by a random token", () => {
   assert.match(authApiSource, /action === "forgot"[\s\S]*auth\.email_delivery/);
   assert.match(apiObservabilitySource, /observabilityMeta/);
   assert.match(authApiSource, /rotateCsrfToken\(sessionToken, token\)/);
+  assert.match(authApiSource, /auth\.stale_session_recovered/);
+  assert.match(authApiSource, /staleSessionRecovered/);
+  assert.match(authApiSource, /rateLimitBucket = isBootstrapAction \? "bootstrap" : "credential"/);
   assert.match(persistenceSource, /UPDATE interviewiq_sessions SET csrf_hash/);
 });
 
