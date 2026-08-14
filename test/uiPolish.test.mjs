@@ -6,6 +6,7 @@ const globalsSource = readFileSync(new URL("../styles/globals.css", import.meta.
 const indexSource = readFileSync(new URL("../pages/index.js", import.meta.url), "utf8");
 const messageContentSource = readFileSync(new URL("../components/chat/MessageContent.js", import.meta.url), "utf8");
 const typingDotsSource = readFileSync(new URL("../components/chat/TypingDots.js", import.meta.url), "utf8");
+const javaDigestSource = readFileSync(new URL("../components/java-digest/JavaDigest.js", import.meta.url), "utf8");
 const careerToolkitSource = readFileSync(new URL("../components/welcome/CareerToolkit.js", import.meta.url), "utf8");
 const profileSetupSource = readFileSync(new URL("../components/welcome/ProfileSetup.js", import.meta.url), "utf8");
 const settingsModalSource = readFileSync(new URL("../components/modals/SettingsModal.js", import.meta.url), "utf8");
@@ -49,6 +50,12 @@ test("light workspace keeps the answer-generation status readable before streami
   assert.match(globalsSource, /theme-light \.typing-status-label \{ color: #17324d; \}/);
   assert.match(globalsSource, /theme-light \.typing-status-detail \{ color: #475569; \}/);
   assert.match(globalsSource, /theme-light \.typing-status-chip[\s\S]*?#1d4f73/);
+});
+
+test("Java Digest renders curated refresher answers as structured study content", () => {
+  assert.match(javaDigestSource, /java-digest-refresher-answer/);
+  assert.match(javaDigestSource, /<MessageContent content=\{entry\.answer\}/);
+  assert.match(globalsSource, /\.java-digest-refresher-answer \.code-body/);
 });
 
 test("light workspace converts dark instructional sub-panels before darkening their text", () => {

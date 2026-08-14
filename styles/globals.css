@@ -188,6 +188,39 @@ textarea { resize: none; }
   font-size: 10.8px;
 }
 
+.java-digest-refresher-answer .message-line {
+  margin: 0 0 8px;
+}
+
+.java-digest-refresher-answer .message-list {
+  margin-bottom: 10px;
+}
+
+.java-digest-refresher-answer .message-part-heading,
+.java-digest-refresher-answer .message-comparison-heading,
+.java-digest-refresher-answer .message-comparison-heading strong {
+  color: var(--jd-text);
+}
+
+.java-digest-refresher-answer .inline-code {
+  background: var(--jd-accent-surface-strong);
+  color: var(--jd-code-text);
+}
+
+.java-digest-refresher-answer .code-block {
+  background: var(--jd-surface-subtle);
+  border-color: var(--jd-border-strong);
+}
+
+.java-digest-refresher-answer .code-header {
+  background: var(--jd-accent-surface);
+  border-bottom-color: var(--jd-border);
+}
+
+.java-digest-refresher-answer .code-body {
+  color: var(--jd-code-text);
+}
+
 .java-digest-refresher-section option {
   background: var(--jd-surface-sunken);
   color: var(--jd-text);

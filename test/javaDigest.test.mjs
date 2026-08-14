@@ -20,7 +20,7 @@ import {
   listJavaDigestArticles,
   listJavaSeniorRefresherArticles,
 } from "../lib/javaDigest.mjs";
-import { buildJavaSeniorRefresherFallbackQa, parseJavaSeniorRefresherQa } from "../lib/javaSeniorRefresherQa.mjs";
+import { buildJavaSeniorRefresherFallbackQa, loadJavaSeniorRefresherQa, parseJavaSeniorRefresherQa } from "../lib/javaSeniorRefresherQa.mjs";
 
 test("fresher DSA playbook covers solving method, patterns, practice, and debugging", () => {
   assert.equal(FRESHER_DSA_PLAYBOOK.framework.length, 7);
@@ -81,6 +81,18 @@ test("senior refresher parser preserves question and answer text without summari
 
 test("senior refresher has a bundled fallback when the PDF is unavailable at runtime", () => {
   const questions = buildJavaSeniorRefresherFallbackQa();
+
+  assert.equal(questions.length, 18);
+  assert.ok(questions.every((question) => question.question && question.answer && question.section));
+  assert.ok(questions.every((question) => question.answer.length >= 350));
+  assert.ok(questions.every((question) => !question.answer.includes("\\\\`")));
+  const recordQuestion = questions.find((question) => question.question === "When would you choose a record over a class?");
+  assert.match(recordQuestion.answer, /public record UserId/);
+  assert.match(recordQuestion.answer, /JPA entities/);
+});
+
+test("senior refresher loads the repository PDF source", async () => {
+  const questions = await loadJavaSeniorRefresherQa();
 
   assert.ok(questions.length > 0);
   assert.ok(questions.every((question) => question.question && question.answer && question.section));

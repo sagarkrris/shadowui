@@ -856,7 +856,9 @@ export default function JavaDigest({ theme = {}, onAction, onRefresherProgressCh
                   <summary style={{ color: "var(--jd-text)", cursor: "pointer", fontSize: 12.5, fontWeight: 800, lineHeight: 1.45 }}>{entry.question}</summary>
                   <div style={{ color: accent, fontSize: 10.2, fontWeight: 900, marginTop: 9, textTransform: "uppercase" }}>{entry.section}</div>
                   <div style={{ color: accent, fontSize: 10.2, fontWeight: 900, marginTop: 7, textTransform: "uppercase" }}>Senior Answer</div>
-                  <p style={{ color: "var(--jd-text-soft)", fontSize: 11.7, lineHeight: 1.58, margin: "6px 0 0" }}>{entry.answer}</p>
+                  <div className="java-digest-refresher-answer" style={{ color: "var(--jd-text-soft)", fontSize: 11.7, lineHeight: 1.58, marginTop: 6 }}>
+                    <MessageContent content={entry.answer} />
+                  </div>
                   <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 7, marginTop: 10 }}>
                     <ChipButton label={refresherProgress.bookmarkedQuestions.has(entry.id) ? "Bookmarked" : "Bookmark"} icon="ti-bookmark" active={refresherProgress.bookmarkedQuestions.has(entry.id)} accent="var(--jd-warning)" onClick={() => toggleRefresherStatus("bookmarkedQuestions", entry.id)} />
                     <ChipButton label={refresherProgress.reviewedQuestions.has(entry.id) ? "Reviewed" : "Mark Reviewed"} icon="ti-check" active={refresherProgress.reviewedQuestions.has(entry.id)} accent={accent} onClick={() => toggleRefresherStatus("reviewedQuestions", entry.id)} />
