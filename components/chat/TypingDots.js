@@ -33,7 +33,7 @@ export default function TypingDots() {
   const stage = LOADING_STAGES[stageIndex];
 
   return (
-    <div style={{ display: "grid", gap: 10, minWidth: 0 }}>
+    <div className="typing-status" style={{ display: "grid", gap: 10, minWidth: 0 }}>
       <div style={{ alignItems: "center", display: "flex", gap: 10, minWidth: 0 }}>
         <div
           aria-hidden="true"
@@ -64,26 +64,26 @@ export default function TypingDots() {
         </div>
 
         <div style={{ display: "grid", gap: 4, minWidth: 0 }}>
-          <div style={{ color: "#f5d0fe", fontSize: 11.2, fontWeight: 900, lineHeight: 1.3, textTransform: "uppercase" }}>
+          <div className="typing-status-kicker" style={{ fontSize: 11.2, fontWeight: 900, lineHeight: 1.3, textTransform: "uppercase" }}>
             InterviewIQ is cooking
           </div>
-          <div style={{ color: "#eef4ff", fontSize: 13, fontWeight: 700, lineHeight: 1.35 }}>
+          <div className="typing-status-label" style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.35 }}>
             {stage.label}
           </div>
-          <div style={{ color: "#cbd5e1", fontSize: 11.4, lineHeight: 1.45 }}>
+          <div className="typing-status-detail" style={{ fontSize: 11.4, lineHeight: 1.45 }}>
             {stage.detail}
           </div>
         </div>
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-        <span style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 999, color: "#c4b5fd", fontSize: 10.5, fontWeight: 800, padding: "4px 8px" }}>
+        <span className="typing-status-chip" style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 999, fontSize: 10.5, fontWeight: 800, padding: "4px 8px" }}>
           sharpening clarity
         </span>
-        <span style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 999, color: "#93c5fd", fontSize: 10.5, fontWeight: 800, padding: "4px 8px" }}>
+        <span className="typing-status-chip" style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 999, fontSize: 10.5, fontWeight: 800, padding: "4px 8px" }}>
           removing waffle
         </span>
-        <span style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 999, color: "#a7f3d0", fontSize: 10.5, fontWeight: 800, padding: "4px 8px" }}>
+        <span className="typing-status-chip" style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 999, fontSize: 10.5, fontWeight: 800, padding: "4px 8px" }}>
           boosting signal
         </span>
       </div>

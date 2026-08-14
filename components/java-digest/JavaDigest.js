@@ -487,6 +487,7 @@ export default function JavaDigest({ theme = {}, onAction, onRefresherProgressCh
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState("");
   const [refresherQuestions, setRefresherQuestions] = useState([]);
+  const [refresherSource, setRefresherSource] = useState("pdf");
   const [refresherLoading, setRefresherLoading] = useState(false);
   const [refresherError, setRefresherError] = useState("");
   const [refresherFilter, setRefresherFilter] = useState("");
@@ -665,6 +666,7 @@ export default function JavaDigest({ theme = {}, onAction, onRefresherProgressCh
         const payload = await response.json();
         if (!response.ok) throw new Error(payload.error || "The question bank could not be loaded.");
         setRefresherQuestions(Array.isArray(payload.questions) ? payload.questions : []);
+        setRefresherSource(payload.source === "bundled-fallback" ? "bundled-fallback" : "pdf");
       })
       .catch((error) => {
         if (error.name !== "AbortError") setRefresherError(error.message || "The question bank could not be loaded.");
@@ -817,7 +819,7 @@ export default function JavaDigest({ theme = {}, onAction, onRefresherProgressCh
           </section>
           <section style={{ ...wrap, background: "var(--jd-surface-subtle)", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 9, padding: 12 }}>
             <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between" }}>
-              <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Verbatim Q&A Bank</div>
+              <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>{refresherSource === "bundled-fallback" ? "Curated Q&A Bank" : "Verbatim Q&A Bank"}</div>
               <span style={{ color: "var(--jd-text-muted)", fontSize: 11 }}>{refresherLoading ? "Loading questions..." : `${visibleRefresherQuestions.length} of ${refresherQuestions.length} questions`}</span>
             </div>
             <div className="java-digest-refresher-toolbar">

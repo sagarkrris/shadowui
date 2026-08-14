@@ -109,6 +109,27 @@ textarea { resize: none; }
   color: #334155;
 }
 
+.theme-light .assistant-message .message-part-heading {
+  color: #1d5f91;
+}
+
+.theme-light .assistant-message .message-comparison-heading,
+.theme-light .assistant-message .message-comparison-heading strong {
+  color: #17324d;
+}
+
+/* The chat's initial answer-generation state appears on the same light
+   surface as completed replies. Keep its progress copy and chips legible
+   until the first streamed token replaces it. */
+.theme-light .typing-status-kicker { color: #6b3fa0; }
+.theme-light .typing-status-label { color: #17324d; }
+.theme-light .typing-status-detail { color: #475569; }
+.theme-light .typing-status-chip {
+  background: #eef5fb !important;
+  border-color: #cbd8e6 !important;
+  color: #1d4f73;
+}
+
 /* Java Digest uses semantic surface and text tokens so every disclosure stays
    readable in both themes without selector-based inline-style overrides. */
 .java-digest {
@@ -447,6 +468,22 @@ textarea { resize: none; }
   color: #526579 !important;
 }
 
+/* Scenario Bank's recent-trap cards use dark-mode inline panels. Keep their
+   surfaces and warning copy readable after the workspace switches to light. */
+.theme-light .scenario-bank [style*="rgba(0, 0, 0"] {
+  background: #f5f9fd !important;
+  border-color: #d5e3f0 !important;
+}
+
+.theme-light .scenario-bank [style*="rgba(255, 255, 255"] {
+  background: #ffffff !important;
+  border-color: #dbe5ef !important;
+}
+
+.theme-light .scenario-bank [style*="color: rgb(254, 243, 199"] {
+  color: #9a6700 !important;
+}
+
 .theme-light .header-account-actions .glass-button {
   background: #ffffff !important;
   border-color: rgba(29,95,145,.30) !important;
@@ -605,6 +642,11 @@ a:focus-visible,
 .assistant-message {
   color: #dbe5ee;
 }
+
+.typing-status-kicker { color: #f5d0fe; }
+.typing-status-label { color: #eef4ff; }
+.typing-status-detail { color: #cbd5e1; }
+.typing-status-chip { color: #c4b5fd; }
 
 .user-message {
   color: var(--tech-accent-text, #bbf7d0);

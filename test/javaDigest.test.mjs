@@ -20,7 +20,7 @@ import {
   listJavaDigestArticles,
   listJavaSeniorRefresherArticles,
 } from "../lib/javaDigest.mjs";
-import { parseJavaSeniorRefresherQa } from "../lib/javaSeniorRefresherQa.mjs";
+import { buildJavaSeniorRefresherFallbackQa, parseJavaSeniorRefresherQa } from "../lib/javaSeniorRefresherQa.mjs";
 
 test("fresher DSA playbook covers solving method, patterns, practice, and debugging", () => {
   assert.equal(FRESHER_DSA_PLAYBOOK.framework.length, 7);
@@ -77,6 +77,13 @@ test("senior refresher parser preserves question and answer text without summari
   assert.equal(questions[0].question, "How do you design transaction boundaries in Spring?");
   assert.equal(questions[0].answer, "I put the transaction at the service operation that represents one business consistency boundary, not on every repository method.");
   assert.match(questions[0].section, /Spring and Spring Boot/);
+});
+
+test("senior refresher has a bundled fallback when the PDF is unavailable at runtime", () => {
+  const questions = buildJavaSeniorRefresherFallbackQa();
+
+  assert.ok(questions.length > 0);
+  assert.ok(questions.every((question) => question.question && question.answer && question.section));
 });
 
 test("java digest prompt builders produce interview-ready prompts", () => {

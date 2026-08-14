@@ -5,6 +5,7 @@ import test from "node:test";
 const globalsSource = readFileSync(new URL("../styles/globals.css", import.meta.url), "utf8");
 const indexSource = readFileSync(new URL("../pages/index.js", import.meta.url), "utf8");
 const messageContentSource = readFileSync(new URL("../components/chat/MessageContent.js", import.meta.url), "utf8");
+const typingDotsSource = readFileSync(new URL("../components/chat/TypingDots.js", import.meta.url), "utf8");
 const careerToolkitSource = readFileSync(new URL("../components/welcome/CareerToolkit.js", import.meta.url), "utf8");
 const profileSetupSource = readFileSync(new URL("../components/welcome/ProfileSetup.js", import.meta.url), "utf8");
 const settingsModalSource = readFileSync(new URL("../components/modals/SettingsModal.js", import.meta.url), "utf8");
@@ -23,6 +24,8 @@ test("assistant part-wise answers render with readable section styling", () => {
   assert.match(messageContentSource, /isPartHeading/);
   assert.match(globalsSource, /\.assistant-message/);
   assert.match(globalsSource, /\.message-part-heading/);
+  assert.match(globalsSource, /theme-light \.assistant-message \.message-part-heading[\s\S]*?#1d5f91/);
+  assert.match(globalsSource, /theme-light \.assistant-message \.message-comparison-heading[\s\S]*?#17324d/);
 });
 
 test("light workspace normalizes shared inline semantic text colors", () => {
@@ -39,10 +42,28 @@ test("light workspace keeps chat code samples readable", () => {
   assert.match(globalsSource, /theme-light \.inline-code[\s\S]*?#1d4f73/);
 });
 
+test("light workspace keeps the answer-generation status readable before streaming begins", () => {
+  assert.match(typingDotsSource, /typing-status-label/);
+  assert.match(typingDotsSource, /typing-status-detail/);
+  assert.match(typingDotsSource, /typing-status-chip/);
+  assert.match(globalsSource, /theme-light \.typing-status-label \{ color: #17324d; \}/);
+  assert.match(globalsSource, /theme-light \.typing-status-detail \{ color: #475569; \}/);
+  assert.match(globalsSource, /theme-light \.typing-status-chip[\s\S]*?#1d4f73/);
+});
+
 test("light workspace converts dark instructional sub-panels before darkening their text", () => {
   assert.match(globalsSource, /theme-light \.dsa-visual-lab \[style\*="rgba\(0, 0, 0"\][\s\S]*?#f5f9fd/);
   assert.match(globalsSource, /theme-light \.system-design-canvas \[style\*="rgba\(0, 0, 0"\][\s\S]*?#f5f9fd/);
   assert.match(globalsSource, /theme-light \.post-answer-tools \[style\*="rgba\(0, 0, 0"\][\s\S]*?#f5f9fd/);
+});
+
+test("light workspace keeps Scenario Bank trap cards readable", () => {
+  const styles = readFileSync(new URL("../styles/globals.css", import.meta.url), "utf8");
+  const scenarioBank = readFileSync(new URL("../components/scenario-bank/ScenarioBank.js", import.meta.url), "utf8");
+
+  assert.match(scenarioBank, /scenario-bank/);
+  assert.match(styles, /\.theme-light \.scenario-bank \[style\*="rgba\(0, 0, 0"\]/);
+  assert.match(styles, /\.theme-light \.scenario-bank \[style\*="color: rgb\(254, 243, 199"\]/);
 });
 
 test("chat and form controls expose accessibility hooks", () => {

@@ -478,7 +478,7 @@ export default function ScenarioBank({ theme = {}, onAction, beginnerMode = fals
 
   return (
     <section
-      className="glass-card"
+      className="glass-card scenario-bank"
       style={{
         background: "linear-gradient(180deg, rgba(14,18,30,.82), rgba(7,10,18,.74))",
         border: "1px solid rgba(255,255,255,.1)",
