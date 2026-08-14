@@ -98,6 +98,40 @@ test.describe("Authentication and account lifecycle", () => {
     await expect(page.getByRole("alert")).toContainText("Invalid email or password.");
   });
 
+  test("sign-in reports unavailable security setup only after submission", async ({ page }) => {
+    let loginRequests = 0;
+    await page.route("**/api/auth**", async (route) => {
+      const url = new URL(route.request().url());
+      if (url.searchParams.get("action") === "csrf") return route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: "Unavailable" }) });
+      if (url.searchParams.get("action") === "me") return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ user: null }) });
+      if (url.searchParams.get("action") === "login") { loginRequests += 1; return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ user: verifiedUser }) }); }
+      return route.continue();
+    });
+    await page.goto("/sign-in");
+    await expect(page.getByRole("alert")).toHaveCount(0);
+    await page.getByLabel("Email").fill("candidate@example.com");
+    await page.getByLabel("Password").fill("LongerPassword42!");
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page.getByRole("alert")).toContainText("Security setup is unavailable. Refresh and try again.");
+    expect(loginRequests).toBe(0);
+  });
+
+  test("forgot password does not show a security error before submission", async ({ page }) => {
+    let forgotRequests = 0;
+    await page.route("**/api/auth**", async (route) => {
+      const url = new URL(route.request().url());
+      if (url.searchParams.get("action") === "csrf") return route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: "Unavailable" }) });
+      if (url.searchParams.get("action") === "forgot") { forgotRequests += 1; return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) }); }
+      return route.continue();
+    });
+    await page.goto("/reset-password");
+    await expect(page.getByRole("alert")).toHaveCount(0);
+    await page.getByLabel("Email").fill("candidate@example.com");
+    await page.getByRole("button", { name: "Send reset link" }).click();
+    await expect(page.getByRole("alert")).toContainText("Security setup is unavailable. Please try again.");
+    expect(forgotRequests).toBe(0);
+  });
+
   test("authenticated users can export and delete their account", async ({ page }) => {
     await mockCsrfAndMe(page, { user: verifiedUser });
     const accountRequests = [];

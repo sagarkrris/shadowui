@@ -20,6 +20,9 @@ import {
   SYSTEM_DESIGN_LEARNING_CATALOG,
   SYSTEM_DESIGN_PATTERN_LIBRARY,
   SYSTEM_DESIGN_CANVAS_SECTIONS,
+  SYSTEM_DESIGN_INTERVIEW_PRACTICE_CATALOG,
+  buildSystemDesignInterviewAnswer,
+  buildSystemDesignInterviewPracticeTemplate,
 } from "../lib/systemDesignCanvas.mjs";
 
 test("creates a system design canvas state with stable editable sections", () => {
@@ -177,6 +180,22 @@ test("exposes a system design learning catalog with separated HLD and LLD tracks
   assert.ok(SYSTEM_DESIGN_LEARNING_CATALOG.lowLevelDesign.practiceTasks.some((item) => /class|interface|sequence/i.test(item)));
 });
 
+test("includes complete fresher and experienced implementation briefs", () => {
+  assert.equal(SYSTEM_DESIGN_INTERVIEW_PRACTICE_CATALOG.filter((entry) => entry.level === "Fresher").length, 20);
+  assert.equal(SYSTEM_DESIGN_INTERVIEW_PRACTICE_CATALOG.filter((entry) => entry.level === "Experienced").length, 20);
+  const payment = SYSTEM_DESIGN_INTERVIEW_PRACTICE_CATALOG.find((entry) => entry.id === "e-payments");
+  const answer = buildSystemDesignInterviewAnswer(payment);
+  const template = buildSystemDesignInterviewPracticeTemplate(payment);
+  assert.match(template.problem, /payment processing/i);
+  assert.match(template.sections.architecture, /outbox/i);
+  assert.match(template.sections.risks, /rollback/i);
+  assert.equal(answer.flow[0], "Client");
+  assert.match(answer.mermaid, /flowchart LR/);
+  assert.ok(answer.answer.some((line) => /idempotency/i.test(line)));
+  assert.match(answer.javaCode, /public final class PaymentProcessingRazorpayCommandService/);
+  assert.match(answer.javaCode, /inTransaction/);
+});
+
 test("system design canvas component renders editable glass sections and action buttons", () => {
   const source = readFileSync(new URL("../components/system-design/SystemDesignCanvas.js", import.meta.url), "utf8");
 
@@ -187,6 +206,12 @@ test("system design canvas component renders editable glass sections and action 
   assert.match(source, /buildSystemDesignDiagramEvaluationPrompt/);
   assert.match(source, /SYSTEM_DESIGN_LEARNING_CATALOG/);
   assert.match(source, /SYSTEM_DESIGN_CANVAS_SECTIONS/);
+  assert.match(source, /SYSTEM_DESIGN_INTERVIEW_PRACTICE_CATALOG/);
+  assert.match(source, /templatesByLevel/);
+  assert.match(source, /level === "Experienced"/);
+  assert.match(source, /Interview-ready answer/);
+  assert.match(source, /Mermaid architecture diagram/);
+  assert.match(source, /Java implementation slice/);
   assert.match(source, /buildCanvasReviewPrompt/);
   assert.match(source, /buildCanvasMockPrompt/);
   assert.match(source, /onAction/);

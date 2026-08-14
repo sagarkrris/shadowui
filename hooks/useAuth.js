@@ -8,6 +8,8 @@ function friendlyAuthError(message, status) {
   return message || "Account operation failed. Please try again.";
 }
 
+const SECURITY_SETUP_UNAVAILABLE = "Security setup is unavailable. Refresh and try again.";
+
 export function useAuth() {
   const [user, setUser] = useState(null);
   const [ready, setReady] = useState(false);
@@ -33,22 +35,34 @@ export function useAuth() {
     return token;
   }, []);
   const postWithCsrf = useCallback(async (action, body = {}) => {
-    let requestToken = await fetchCsrfToken().catch(() => csrfToken);
-    let response = await fetch(`/api/auth?action=${action}`, { method: "POST", headers: { "Content-Type": "application/json", ...(requestToken ? { "X-CSRF-Token": requestToken } : {}) }, body: JSON.stringify(body) });
+    let requestToken = csrfToken || await fetchCsrfToken();
+    let response = await fetch(`/api/auth?action=${action}`, { method: "POST", headers: { "Content-Type": "application/json", "X-CSRF-Token": requestToken }, body: JSON.stringify(body) });
     if (response.status === 403) {
-      try { requestToken = await fetchCsrfToken({ force: true }); } catch { return response; }
-      response = await fetch(`/api/auth?action=${action}`, { method: "POST", headers: { "Content-Type": "application/json", ...(requestToken ? { "X-CSRF-Token": requestToken } : {}) }, body: JSON.stringify(body) });
+      requestToken = await fetchCsrfToken({ force: true });
+      response = await fetch(`/api/auth?action=${action}`, { method: "POST", headers: { "Content-Type": "application/json", "X-CSRF-Token": requestToken }, body: JSON.stringify(body) });
     }
     return response;
   }, [csrfToken, fetchCsrfToken]);
   useEffect(() => {
-    Promise.all([fetchCsrfToken(), fetch("/api/auth?action=me", { cache: "no-store" }).then((response) => response.json())]).then(([, payload]) => { setUser(payload.user || null); }).catch(() => {}).finally(() => setReady(true));
+    let active = true;
+    const loadAuth = async () => {
+      const [, payload] = await Promise.all([
+        fetchCsrfToken().catch(() => null),
+        fetch("/api/auth?action=me", { cache: "no-store" }).then((response) => response.json()).catch(() => ({})),
+      ]);
+      if (!active) return;
+      setUser(payload.user || null);
+      setReady(true);
+    };
+    loadAuth();
+    return () => { active = false; };
   }, [fetchCsrfToken]);
   const submit = useCallback(async (action, credentials) => {
     setError("");
     setDeliveryWarning("");
     setDeliveryNotice("");
-    const response = await postWithCsrf(action, credentials);
+    let response;
+    try { response = await postWithCsrf(action, credentials); } catch { setError(SECURITY_SETUP_UNAVAILABLE); return false; }
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) { setError(friendlyAuthError(payload.error, response.status)); return false; }
     if (payload.emailDelivery) {
@@ -63,7 +77,8 @@ export function useAuth() {
     setError("");
     setDeliveryWarning("");
     setDeliveryNotice("");
-    const response = await postWithCsrf(action, body);
+    let response;
+    try { response = await postWithCsrf(action, body); } catch { setError(SECURITY_SETUP_UNAVAILABLE); return {}; }
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) { setError(friendlyAuthError(payload.error, response.status)); return payload; }
     if (payload.emailDelivery) {

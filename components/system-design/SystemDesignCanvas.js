@@ -12,6 +12,8 @@ import {
   SYSTEM_DESIGN_LEARNING_CATALOG,
   SYSTEM_DESIGN_PATTERN_LIBRARY,
   SYSTEM_DESIGN_CANVAS_SECTIONS,
+  SYSTEM_DESIGN_INTERVIEW_PRACTICE_CATALOG,
+  buildSystemDesignInterviewPracticeTemplate,
 } from "../../lib/systemDesignCanvas.mjs";
 import BeginnerGuideBanner from "../BeginnerGuideBanner";
 
@@ -1330,24 +1332,57 @@ function CodeMappingView({ blueprint, accent }) {
 }
 
 function PracticeTemplateLauncher({ templates, activeTemplateId, onApply, accent }) {
+  const templatesByLevel = templates.reduce((groups, template) => {
+    const level = template.level || "Core";
+    if (!groups[level]) groups[level] = [];
+    groups[level].push(template);
+    return groups;
+  }, {});
   return (
     <section style={{ border: `1px solid ${accent}24`, borderRadius: 8, background: "rgba(255,255,255,.035)", display: "grid", gap: 8, padding: 10 }}>
       <div>
         <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Practice Templates</div>
-        <p style={{ color: "#9fb0c7", fontSize: 11.2, lineHeight: 1.45, marginTop: 3 }}>One-click load common systems with starter requirements, architecture, data, scaling, and risk notes.</p>
+        <p style={{ color: "#9fb0c7", fontSize: 11.2, lineHeight: 1.45, marginTop: 3 }}>Load a complete design brief with implementation scope, architecture, data, scaling, reliability, and trade-off prompts.</p>
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-        {templates.map((template) => (
-          <button
-            key={template.id}
-            type="button"
-            onClick={() => onApply(template)}
-            style={{ background: template.id === activeTemplateId ? `${accent}18` : "rgba(0,0,0,.16)", border: `1px solid ${template.id === activeTemplateId ? accent : "rgba(255,255,255,.08)"}`, borderRadius: 999, color: template.id === activeTemplateId ? "#f8fbff" : "#9fb0c7", cursor: "pointer", fontSize: 10.6, fontWeight: 850, padding: "6px 9px" }}
-          >
-            {template.label}
-          </button>
+      <div style={{ display: "grid", gap: 8 }}>
+        {Object.entries(templatesByLevel).map(([level, levelTemplates]) => (
+          <div key={level} style={{ display: "grid", gap: 5 }}>
+            <strong style={{ color: level === "Experienced" ? "#fbbf24" : accent, fontSize: 10.5, letterSpacing: ".05em", textTransform: "uppercase" }}>{level} level · {levelTemplates.length}</strong>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {levelTemplates.map((template) => <button key={template.id} type="button" title={template.focus || template.label} onClick={() => onApply(template)} style={{ background: template.id === activeTemplateId ? `${accent}18` : "rgba(0,0,0,.16)", border: `1px solid ${template.id === activeTemplateId ? accent : "rgba(255,255,255,.08)"}`, borderRadius: 999, color: template.id === activeTemplateId ? "#f8fbff" : "#9fb0c7", cursor: "pointer", fontSize: 10.6, fontWeight: 850, padding: "6px 9px" }}>{template.label}</button>)}
+            </div>
+          </div>
         ))}
       </div>
+    </section>
+  );
+}
+
+function InterviewAnswerPanel({ answer, accent }) {
+  if (!answer) return null;
+  return (
+    <section style={{ border: `1px solid ${accent}35`, borderRadius: 8, background: "rgba(0,0,0,.16)", display: "grid", gap: 10, padding: 11 }}>
+      <div>
+        <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Interview-ready answer</div>
+        <h3 style={{ color: "#f8fbff", fontSize: 15, lineHeight: 1.3, marginTop: 3 }}>{answer.title}</h3>
+        <p style={{ color: "#9fb0c7", fontSize: 11.4, lineHeight: 1.5, marginTop: 4 }}>{answer.summary}</p>
+      </div>
+      <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 6 }} aria-label="Architecture diagram">
+        {answer.flow.map((step, index) => <div key={step} style={{ alignItems: "center", display: "flex", gap: 6 }}>
+          <span style={{ background: index === 0 ? `${accent}18` : "rgba(255,255,255,.05)", border: `1px solid ${index === 0 ? `${accent}55` : "rgba(255,255,255,.1)"}`, borderRadius: 7, color: "#eaf2ff", fontSize: 10.8, fontWeight: 750, maxWidth: 170, padding: "7px 8px" }}>{step}</span>
+          {index < answer.flow.length - 1 ? <i className="ti ti-arrow-right" aria-hidden="true" style={{ color: accent }} /> : null}
+        </div>)}
+      </div>
+      <div style={responsiveGrid(280)}>
+        <ListPanel title="Model answer" icon="ti-message-2" items={answer.answer} accent={accent} />
+        <ListPanel title="Senior trade-offs" icon="ti-scale" items={answer.tradeOffs} accent={accent} />
+      </div>
+      <section style={{ border: "1px solid rgba(255,255,255,.09)", borderRadius: 8, display: "grid", gap: 7, padding: 10 }}>
+        <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Java implementation slice</div>
+        <p style={{ color: "#9fb0c7", fontSize: 11.3, lineHeight: 1.45, margin: 0 }}>{answer.javaFocus}</p>
+        <pre style={{ ...wrappingCodeStyle, background: "rgba(0,0,0,.24)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, color: "#d1fae5", fontSize: 10.8, lineHeight: 1.45, margin: 0, padding: 10 }}>{answer.javaCode}</pre>
+      </section>
+      <MermaidExportPanel title="Mermaid architecture diagram" mermaid={answer.mermaid} accent={accent} />
     </section>
   );
 }
@@ -1469,6 +1504,7 @@ export default function SystemDesignCanvas({
   const [flowIndex, setFlowIndex] = useState(0);
   const [selectedScenarioId, setSelectedScenarioId] = useState(SYSTEM_SCENARIOS[0].id);
   const [activeTemplateId, setActiveTemplateId] = useState(null);
+  const [activeInterviewAnswer, setActiveInterviewAnswer] = useState(null);
   const accent = theme.accentStrong || "#8bd3ff";
   const accentBorder = theme.accentBorder || "rgba(139, 211, 255, .26)";
   const diagramBoard = useMemo(() => buildSystemDesignDiagramBoard(canvasState), [canvasState]);
@@ -1506,6 +1542,7 @@ export default function SystemDesignCanvas({
     setCanvasState(nextState);
     setBlueprint(buildSystemDesignStudioBlueprint(nextState));
     setActiveTemplateId(template.id);
+    setActiveInterviewAnswer(template.answer || null);
     setStudioTab("HLD");
     onChange?.(nextState);
   };
@@ -1619,7 +1656,8 @@ export default function SystemDesignCanvas({
       </header>
 
       <section style={{ border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 11, minWidth: 0, padding: 12, background: "rgba(139,211,255,.045)" }}>
-        <PracticeTemplateLauncher templates={SYSTEM_PRACTICE_TEMPLATES} activeTemplateId={activeTemplateId} onApply={applyPracticeTemplate} accent={accent} />
+        <PracticeTemplateLauncher templates={[...SYSTEM_PRACTICE_TEMPLATES, ...SYSTEM_DESIGN_INTERVIEW_PRACTICE_CATALOG.map(buildSystemDesignInterviewPracticeTemplate)]} activeTemplateId={activeTemplateId} onApply={applyPracticeTemplate} accent={accent} />
+        <InterviewAnswerPanel answer={activeInterviewAnswer} accent={accent} />
 
         <div style={{ alignItems: "center", display: "flex", gap: 8, justifyContent: "space-between", flexWrap: "wrap" }}>
           <div style={{ ...wrappingTextStyle }}>

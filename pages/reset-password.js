@@ -1,7 +1,7 @@
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { getPasswordStrength } from "../lib/passwordStrength.mjs";
 
 export default function ResetPasswordPage() {
@@ -17,10 +17,6 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState("");
   const token = typeof router.query.token === "string" ? router.query.token : "";
   const strength = getPasswordStrength(password);
-
-  useEffect(() => {
-    refreshCsrfToken().catch(() => setError("Security setup is unavailable. Refresh and try again."));
-  }, []);
 
   const refreshCsrfToken = async () => {
     const response = await fetch(`/api/auth?action=csrf&refresh=${Date.now()}`, { cache: "no-store", headers: { "Cache-Control": "no-cache" } });

@@ -137,7 +137,7 @@ test("authenticated CSRF state is not replaced by a random token", () => {
   assert.match(authHookSource, /fetchCsrfToken\(\{ force: true \}\)/);
   assert.match(authHookSource, /interviewiq_csrf=; Max-Age=0/);
   assert.match(authHookSource, /const csrfUrl = `\/api\/auth\?action=csrf\$\{force \? `&refresh=\$\{Date\.now\(\)\}`/);
-  assert.match(authHookSource, /catch \{ return response; \}/);
+  assert.match(authHookSource, /SECURITY_SETUP_UNAVAILABLE/);
   assert.match(authApiSource, /auth\.csrf_rejected/);
   assert.match(authApiSource, /csrfDiagnostics/);
   assert.match(authApiSource, /auth\.email_delivery/);
