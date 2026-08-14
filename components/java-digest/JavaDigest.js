@@ -783,9 +783,6 @@ export default function JavaDigest({ theme = {}, onAction, onRefresherProgressCh
           <section style={{ ...wrap, background: "var(--jd-accent-surface)", border: `1px solid ${accent}33`, borderRadius: 8, display: "grid", gap: 7, padding: 12 }}>
             <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Java 21 · JVM · Concurrency</div>
             <h3 style={{ ...wrap, color: "var(--jd-text)", fontSize: 16, lineHeight: 1.25 }}>Complete Java Senior Refresher</h3>
-            <p style={{ ...wrap, color: "var(--jd-text-soft)", fontSize: 11.7, lineHeight: 1.55, margin: 0 }}>
-              The PDF&apos;s senior interview questions and answer blocks are presented below verbatim as searchable study cards. The guide itself is not embedded.
-            </p>
           </section>
           <section style={{ ...wrap, background: `${accent}0d`, border: `1px solid ${accent}44`, borderRadius: 8, display: "grid", gap: 9, padding: 12 }}>
             <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between" }}>

@@ -63,6 +63,7 @@ test("java digest component renders topic, article, and roadmap sections", () =>
   assert.match(componentSource, /Roadmaps/);
   assert.match(componentSource, /Complete Java Senior Refresher/);
   assert.match(componentSource, /Verbatim Q&A Bank/);
+  assert.doesNotMatch(componentSource, /The PDF&apos;s senior interview questions and answer blocks are presented below verbatim as searchable study cards/);
   assert.match(componentSource, /Filter Java senior refresher questions and answers/);
   assert.match(componentSource, /All sections/);
   assert.match(componentSource, /Filter refresher questions by section/);

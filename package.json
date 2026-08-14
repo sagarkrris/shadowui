@@ -17,6 +17,7 @@
     "test:unit": "node --test test/*.test.mjs"
   },
   "dependencies": {
+    "@napi-rs/canvas": "0.1.80",
     "@google/genai": "2.17.1",
     "@vercel/speed-insights": "^2.0.0",
     "mammoth": "^1.12.0",
