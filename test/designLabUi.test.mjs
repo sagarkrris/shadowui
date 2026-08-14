@@ -4,6 +4,7 @@ import test from "node:test";
 
 const componentUrl = new URL("../components/design-lab/DesignLab.js", import.meta.url);
 const componentSource = existsSync(componentUrl) ? readFileSync(componentUrl, "utf8") : "";
+const globalStylesSource = readFileSync(new URL("../styles/globals.css", import.meta.url), "utf8");
 const catalogSource = readFileSync(new URL("../lib/designLab.mjs", import.meta.url), "utf8");
 const indexSource = readFileSync(new URL("../pages/index.js", import.meta.url), "utf8");
 const sessionSource = readFileSync(new URL("../lib/sessionPersistence.mjs", import.meta.url), "utf8");
@@ -102,4 +103,11 @@ test("design lab is wired as a first-class workspace", () => {
   assert.match(indexSource, /startDesignLabAction/);
   assert.match(sessionSource, /normalizeWorkspaceTab/);
   assert.match(workspaceSource, /designLab/);
+});
+
+test("design lab dark instructional colors remain readable in the light workspace", () => {
+  assert.match(globalStylesSource, /theme-light \.design-lab \[style\*="rgb\(191, 219, 254"\][\s\S]*?#1d4f73/);
+  assert.match(globalStylesSource, /theme-light \.design-lab \[style\*="rgb\(196, 181, 253"\][\s\S]*?#5b3f91/);
+  assert.match(globalStylesSource, /theme-light \.design-lab \[style\*="rgb\(147, 164, 191"\][\s\S]*?#526579/);
+  assert.match(globalStylesSource, /theme-light \.design-lab \[style\*="rgb\(252, 165, 165"\][\s\S]*?#b42318/);
 });

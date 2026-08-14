@@ -49,6 +49,7 @@ export default function PostAnswerTools({
   return (
     <section
       aria-label="Answer Rewrite Studio and Code Explanation Judge"
+      className="post-answer-tools"
       style={{
         width: "100%",
         maxWidth: 900,

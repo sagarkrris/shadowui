@@ -655,7 +655,7 @@ export default function JavaDigest({ theme = {}, onAction, onRefresherProgressCh
     ].join("\n"), { type: "javaSeniorRefresherScore", refresherQuestion: practiceQuestion });
   };
   useEffect(() => {
-    if (activeView !== "Senior Refresher" || refresherQuestions.length || refresherLoading) return undefined;
+    if (activeView !== "Senior Refresher" || refresherQuestions.length) return undefined;
 
     const controller = new AbortController();
     setRefresherLoading(true);
@@ -672,7 +672,7 @@ export default function JavaDigest({ theme = {}, onAction, onRefresherProgressCh
       .finally(() => setRefresherLoading(false));
 
     return () => controller.abort();
-  }, [activeView, refresherLoading, refresherQuestions.length]);
+  }, [activeView, refresherQuestions.length]);
 
   return (
     <section

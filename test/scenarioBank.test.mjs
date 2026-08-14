@@ -104,6 +104,21 @@ test("builds fresh local scenario variants without requiring AI", () => {
   assert.ok(variant.followUps.some((followUp) => /evidence/i.test(followUp)));
 });
 
+test("builds an on-topic local variant when a selected topic has no seed", () => {
+  const variant = buildLocalScenarioVariant(null, {
+    track: "java",
+    topic: "design-patterns",
+    difficulty: "Beginner",
+  });
+
+  assert.equal(variant.track, "java");
+  assert.equal(variant.topic, "design-patterns");
+  assert.equal(variant.difficulty, "Beginner");
+  assert.match(variant.title, /Design Patterns/);
+  assert.match(variant.prompt, /Java Design Patterns/);
+  assert.doesNotMatch(variant.prompt, /Broken Cache Key/);
+});
+
 test("builds prompts for real-time variants, answer expansion, and mock practice", () => {
   const state = createScenarioBankState({
     track: "database",

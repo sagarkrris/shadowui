@@ -25,6 +25,26 @@ test("assistant part-wise answers render with readable section styling", () => {
   assert.match(globalsSource, /\.message-part-heading/);
 });
 
+test("light workspace normalizes shared inline semantic text colors", () => {
+  assert.match(globalsSource, /color: rgb\(167, 243, 208[\s\S]*?#166534/);
+  assert.match(globalsSource, /color: rgb\(191, 219, 254[\s\S]*?#1d4f73/);
+  assert.match(globalsSource, /color: rgb\(196, 181, 253[\s\S]*?#5b3f91/);
+  assert.match(globalsSource, /color: rgb\(250, 204, 21[\s\S]*?#9a6700/);
+  assert.match(globalsSource, /color: rgb\(252, 165, 165[\s\S]*?#b42318/);
+});
+
+test("light workspace keeps chat code samples readable", () => {
+  assert.match(globalsSource, /theme-light \.code-block[\s\S]*?#f8fbff/);
+  assert.match(globalsSource, /theme-light \.code-body[\s\S]*?#17324d/);
+  assert.match(globalsSource, /theme-light \.inline-code[\s\S]*?#1d4f73/);
+});
+
+test("light workspace converts dark instructional sub-panels before darkening their text", () => {
+  assert.match(globalsSource, /theme-light \.dsa-visual-lab \[style\*="rgba\(0, 0, 0"\][\s\S]*?#f5f9fd/);
+  assert.match(globalsSource, /theme-light \.system-design-canvas \[style\*="rgba\(0, 0, 0"\][\s\S]*?#f5f9fd/);
+  assert.match(globalsSource, /theme-light \.post-answer-tools \[style\*="rgba\(0, 0, 0"\][\s\S]*?#f5f9fd/);
+});
+
 test("chat and form controls expose accessibility hooks", () => {
   assert.match(indexSource, /role="log"/);
   assert.match(indexSource, /aria-live="polite"/);
@@ -216,6 +236,10 @@ test("Interview Ready Q&A supports custom questions and answer handoff actions",
   assert.match(interviewReadySource, /interviewiq_interview_ready_bookmarks/);
   assert.match(interviewReadySource, /Answer was useful/);
   assert.match(interviewReadySource, /Compact mode/);
+  assert.match(interviewReadySource, /aria-pressed=\{compactMode\}/);
+  assert.match(interviewReadySource, /zoom: textScale/);
+  assert.match(interviewReadySource, /TEXT_SCALE_STEP = 0\.1/);
+  assert.match(interviewReadySource, /Text \{Math\.round\(textScale \* 100\)\}%/);
   assert.match(interviewReadySource, /event.key.toLowerCase\(\) === "k"/);
   assert.match(interviewReadySource, /Privacy: practice drafts/);
   assert.match(interviewReadySource, /Export collection/);

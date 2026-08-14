@@ -55,6 +55,7 @@ import { canUseChatComposer, canUseInterviewTools, canUsePrepTopics, shouldShowC
 import { getAppShellHeight, getStableViewportHeight, getVisibleViewportHeight, isCompactViewport, isVirtualKeyboardOpen } from "../lib/viewportMode.mjs";
 import { buildSpeechTranscript, createVoiceSessionReport, getVoiceErrorMessage, getVoiceSupport } from "../lib/voiceSupport.mjs";
 import { buildWorkspaceActionDisplayText } from "../lib/workspaceActionDisplay.mjs";
+import { compactChatHistory } from "../lib/chatRequest.mjs";
 import { getWorkspaceById, getWorkspaceTitle, listDesktopWorkspaces, listMobileWorkspaces, normalizeWorkspaceTab } from "../lib/workspaces.mjs";
 import { useInterviewSession } from "../hooks/useInterviewSession";
 import { useWorkspaceNavigation } from "../hooks/useWorkspaceNavigation";
@@ -808,7 +809,7 @@ export default function Home() {
       ? { role:"user", content:displayText }
       : { role:"user", content:displayText, apiContent:finalText };
     const newMsgs = [...messages, userMessage];
-    const apiMessages = [...toApiMessages(messages), { role:"user", content:finalText }];
+    const apiMessages = compactChatHistory([...toApiMessages(messages), { role:"user", content:finalText }]);
     setMessages([...newMsgs, { role:"assistant", content:"", streaming:true }]);
 
     try {

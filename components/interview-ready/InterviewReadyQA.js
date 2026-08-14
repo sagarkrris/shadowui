@@ -28,6 +28,9 @@ const wrap = {
 };
 
 const TIMER_OPTIONS = [60, 90, 120];
+const TEXT_SCALE_MIN = 0.9;
+const TEXT_SCALE_MAX = 1.2;
+const TEXT_SCALE_STEP = 0.1;
 
 const responsiveGrid = (minColumnWidth, gap = 10) => ({
   display: "grid",
@@ -36,9 +39,9 @@ const responsiveGrid = (minColumnWidth, gap = 10) => ({
   minWidth: 0,
 });
 
-function SectionToggle({ title, eyebrow, open, accent, onToggle, children, defaultOpenNote = "" }) {
+function SectionToggle({ title, eyebrow, open, accent, onToggle, children, compact = false, defaultOpenNote = "" }) {
   return (
-    <section style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 8, display: "grid", gap: open ? 12 : 0, padding: 12 }}>
+    <section style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 8, display: "grid", gap: open ? (compact ? 8 : 12) : 0, padding: compact ? 8 : 12 }}>
       <button
         type="button"
         onClick={onToggle}
@@ -187,7 +190,7 @@ function CompanyPackPanel({ companyPack, accent, onUsePackPrompt, onSelectQuesti
   );
 }
 
-function InterviewAnswerCard({ question, accent, profile, onAction, onActivity, questionFirstMode, onPractice, searchQuery }) {
+function InterviewAnswerCard({ question, accent, profile, onAction, onActivity, questionFirstMode, onPractice, searchQuery, compact = false }) {
   const [expanded, setExpanded] = useState(false);
   const [feedback, setFeedback] = useState(null);
   const [copied, setCopied] = useState(false);
@@ -237,7 +240,7 @@ function InterviewAnswerCard({ question, accent, profile, onAction, onActivity, 
   };
 
   return (
-    <article style={{ ...wrap, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 8, display: "grid", gap: 10, padding: 12 }}>
+    <article style={{ ...wrap, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 8, display: "grid", gap: compact ? 6 : 10, padding: compact ? 8 : 12 }}>
       <header style={{ alignItems: "flex-start", display: "flex", gap: 10, justifyContent: "space-between", minWidth: 0 }}>
         <div style={wrap}>
           <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>
@@ -593,18 +596,18 @@ export default function InterviewReadyQA({
 
   return (
     <section
-      className="glass-card"
+      className={`glass-card interview-ready-qa${compactMode ? " is-compact" : ""}`}
       style={{
         background: "linear-gradient(180deg, rgba(14,18,30,.82), rgba(7,10,18,.74))",
         border: "1px solid rgba(255,255,255,.1)",
         borderRadius: 8,
         color: "#eef4ff",
         display: "grid",
-        gap: 12,
+        gap: compactMode ? 8 : 12,
         minWidth: 0,
-        padding: 14,
+        padding: compactMode ? 10 : 14,
         width: "100%",
-        fontSize: `${textScale}em`,
+        zoom: textScale,
       }}
     >
       <BeginnerGuideBanner
@@ -624,10 +627,11 @@ export default function InterviewReadyQA({
           </p>
           <div style={{ alignItems: "center", color: "#9fb0c7", display: "flex", flexWrap: "wrap", fontSize: 10.8, gap: 10, marginTop: 8 }}>
             <span><i className="ti ti-command" /> K ask · ⌘ B bookmark</span>
-            <button type="button" className="glass-button" onClick={() => setCompactMode((value) => !value)} style={{ border: "1px solid rgba(139,211,255,.3)", borderRadius: 999, color: "#dbeafe", padding: "4px 8px" }}>{compactMode ? "Comfortable mode" : "Compact mode"}</button>
+            <button type="button" className="glass-button" aria-pressed={compactMode} onClick={() => setCompactMode((value) => !value)} style={{ border: "1px solid rgba(139,211,255,.3)", borderRadius: 999, color: "#dbeafe", padding: "4px 8px" }}>{compactMode ? "Comfortable mode" : "Compact mode"}</button>
             {lastSavedAt ? <span role="status">Saved locally {lastSavedAt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</span> : null}
-            <button type="button" className="glass-button" aria-label="Decrease text size" onClick={() => setTextScale((value) => Math.max(.9, Number((value - .05).toFixed(2))))} style={{ borderRadius: 999, padding: "3px 7px" }}>A−</button>
-            <button type="button" className="glass-button" aria-label="Increase text size" onClick={() => setTextScale((value) => Math.min(1.2, Number((value + .05).toFixed(2))))} style={{ borderRadius: 999, padding: "3px 7px" }}>A+</button>
+            <button type="button" className="glass-button" aria-label="Decrease text size" disabled={textScale === TEXT_SCALE_MIN} onClick={() => setTextScale((value) => Math.max(TEXT_SCALE_MIN, Number((value - TEXT_SCALE_STEP).toFixed(1))))} style={{ borderRadius: 999, padding: "3px 7px" }}>A−</button>
+            <button type="button" className="glass-button" aria-label="Increase text size" disabled={textScale === TEXT_SCALE_MAX} onClick={() => setTextScale((value) => Math.min(TEXT_SCALE_MAX, Number((value + TEXT_SCALE_STEP).toFixed(1))))} style={{ borderRadius: 999, padding: "3px 7px" }}>A+</button>
+            <span aria-live="polite" style={{ color: "#9fb0c7", fontSize: 10.5 }}>Text {Math.round(textScale * 100)}%</span>
             <button type="button" className="glass-button" onClick={sendFeedback} style={{ borderRadius: 999, color: "#dbeafe", padding: "4px 8px" }}><i className="ti ti-message-report" /> Send feedback</button>
           </div>
         </div>
@@ -713,6 +717,7 @@ export default function InterviewReadyQA({
         open={practiceStudioOpen}
         accent={accent}
         onToggle={() => setPracticeStudioOpen((value) => !value)}
+        compact={compactMode}
         defaultOpenNote={activeSavedAnswer?.practicedAt ? `Saved locally on ${new Date(activeSavedAnswer.practicedAt).toLocaleDateString()}` : "Write, time, and score your own version here."}
       >
         {customPracticeItem ? (
@@ -823,6 +828,7 @@ export default function InterviewReadyQA({
         open={companyPackOpen}
         accent={accent}
         onToggle={() => setCompanyPackOpen((value) => !value)}
+        compact={compactMode}
         defaultOpenNote="Open when you want company-specific behavioral, coding, and design prompts."
       >
         <CompanyPackPanel companyPack={companyPack} accent={accent} onUsePackPrompt={runCompanyPrompt} onSelectQuestion={useCompanyPromptInStudio} />
@@ -834,9 +840,10 @@ export default function InterviewReadyQA({
         open={questionBankOpen}
         accent={accent}
         onToggle={() => setQuestionBankOpen((value) => !value)}
+        compact={compactMode}
         defaultOpenNote="Search, filter, and open polished answers when you need them."
       >
-        <section style={{ border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 10, padding: 12 }}>
+        <section style={{ border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: compactMode ? 6 : 10, padding: compactMode ? 8 : 12 }}>
           <div style={{ ...wrap, display: "grid", gap: 6 }}>
             <span style={{ color: "#9fb0c7", fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Search question bank</span>
             <div style={{ alignItems: "center", background: "rgba(0,0,0,.16)", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "flex", gap: 8, minWidth: 0, padding: "8px 10px" }}>
@@ -903,7 +910,7 @@ export default function InterviewReadyQA({
             {questions.map((question) => (
               <div key={question.id} style={{ display: "grid", gap: compactMode ? 5 : 10 }}>
                 <button type="button" className="glass-button" onClick={() => toggleBookmark(question.id)} aria-label={bookmarkedIds.includes(question.id) ? "Remove bookmark" : "Bookmark answer"} style={{ border: "1px solid rgba(250,204,21,.3)", borderRadius: 999, color: bookmarkedIds.includes(question.id) ? "#fde68a" : "#9fb0c7", justifySelf: "end", padding: "4px 8px" }}><i className={`ti ${bookmarkedIds.includes(question.id) ? "ti-bookmark-filled" : "ti-bookmark"}`} /> {bookmarkedIds.includes(question.id) ? "Saved" : "Save"}</button>
-                <InterviewAnswerCard question={question} accent={accent} profile={profile} onAction={(prompt, metadata = {}) => onAction?.(prompt, { ...metadata, answerStyle })} onActivity={onActivity} questionFirstMode={questionFirstMode} onPractice={selectPracticeQuestion} searchQuery={searchDraft} />
+                <InterviewAnswerCard question={question} accent={accent} profile={profile} onAction={(prompt, metadata = {}) => onAction?.(prompt, { ...metadata, answerStyle })} onActivity={onActivity} questionFirstMode={questionFirstMode} onPractice={selectPracticeQuestion} searchQuery={searchDraft} compact={compactMode} />
               </div>
             ))}
           </div>

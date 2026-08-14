@@ -2702,7 +2702,7 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
 
   return (
     <section
-      className="glass-card"
+      className="glass-card dsa-visual-lab"
       style={{
         background: "linear-gradient(180deg, rgba(12,18,29,.88), rgba(7,11,19,.80))",
         border: "1px solid rgba(255,255,255,.1)",

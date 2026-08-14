@@ -1590,7 +1590,7 @@ export default function SystemDesignCanvas({
 
   return (
     <section
-      className="glass-card"
+      className="glass-card system-design-canvas"
       style={{
         background: "linear-gradient(180deg, rgba(14,18,30,.82), rgba(7,10,18,.74))",
         backdropFilter: "blur(18px)",

@@ -312,6 +312,43 @@ textarea { resize: none; }
   color: #526579 !important;
 }
 
+/* Shared workspaces also render semantic status and instructional colors
+   inline. Target the color declaration (rather than any matching surface)
+   to keep every pale dark-mode token legible on a light background. */
+.theme-light [style*="color: rgb(167, 243, 208"],
+.theme-light [style*="color: rgb(209, 250, 229"],
+.theme-light [style*="color: rgb(134, 239, 172"] {
+  color: #166534 !important;
+}
+
+.theme-light [style*="color: rgb(191, 219, 254"],
+.theme-light [style*="color: rgb(147, 197, 253"],
+.theme-light [style*="color: rgb(200, 214, 229"] {
+  color: #1d4f73 !important;
+}
+
+.theme-light [style*="color: rgb(196, 181, 253"],
+.theme-light [style*="color: rgb(221, 214, 254"],
+.theme-light [style*="color: rgb(245, 208, 254"] {
+  color: #5b3f91 !important;
+}
+
+.theme-light [style*="color: rgb(253, 232, 138"],
+.theme-light [style*="color: rgb(250, 204, 21"] {
+  color: #9a6700 !important;
+}
+
+.theme-light [style*="color: rgb(252, 165, 165"],
+.theme-light [style*="color: rgb(253, 164, 175"],
+.theme-light [style*="color: rgb(254, 202, 202"] {
+  color: #b42318 !important;
+}
+
+.theme-light [style*="color: rgb(229, 231, 235"],
+.theme-light [style*="color: rgb(226, 232, 240"] {
+  color: #334e68 !important;
+}
+
 .theme-light .welcome-screen [style*="rgba(7, 11, 20"],
 .theme-light .welcome-screen [style*="rgba(8, 12, 22"],
 .theme-light .welcome-screen [style*="rgba(0, 0, 0"] {
@@ -360,6 +397,53 @@ textarea { resize: none; }
 }
 
 .theme-light .design-lab [style*="rgb(159, 176, 199"] {
+  color: #526579 !important;
+}
+
+/* Design Lab code samples, instructional metadata, and caution lists use
+   additional dark-theme palette tokens.  Map them to high-contrast light
+   theme colors so they stay readable after their surfaces become white. */
+.theme-light .design-lab [style*="rgb(191, 219, 254"] {
+  color: #1d4f73 !important;
+}
+
+.theme-light .design-lab [style*="rgb(196, 181, 253"] {
+  color: #5b3f91 !important;
+}
+
+.theme-light .design-lab [style*="rgb(147, 164, 191"] {
+  color: #526579 !important;
+}
+
+.theme-light .design-lab [style*="rgb(252, 165, 165"] {
+  color: #b42318 !important;
+}
+
+/* These workspaces use dark instructional sub-panels in their inline styles.
+   When the workspace switches to light mode, move both the panel and its
+   border to light tokens; the shared foreground mappings above then retain a
+   coherent, high-contrast reading hierarchy. */
+.theme-light .dsa-visual-lab [style*="rgba(0, 0, 0"],
+.theme-light .system-design-canvas [style*="rgba(0, 0, 0"],
+.theme-light .post-answer-tools [style*="rgba(0, 0, 0"] {
+  background: #f5f9fd !important;
+  border-color: #d5e3f0 !important;
+}
+
+.theme-light .dsa-visual-lab [style*="rgba(255, 255, 255"],
+.theme-light .system-design-canvas [style*="rgba(255, 255, 255"],
+.theme-light .post-answer-tools [style*="rgba(255, 255, 255"] {
+  background: #ffffff !important;
+  border-color: #dbe5ef !important;
+}
+
+.theme-light .post-answer-tools [style*="rgb(209, 213, 219"],
+.theme-light .post-answer-tools [style*="rgb(229, 231, 235"] {
+  color: #334e68 !important;
+}
+
+.theme-light .post-answer-tools [style*="rgb(139, 148, 158"],
+.theme-light .post-answer-tools [style*="rgb(127, 135, 146"] {
   color: #526579 !important;
 }
 
@@ -479,6 +563,37 @@ a:focus-visible,
 .code-copy:hover { color:var(--tech-accent-strong, #fb7185); background:var(--tech-accent-soft, rgba(34,197,94,.1)); }
 .code-body { padding:13px; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size:12.5px; line-height:1.65; color:#c8d6e5; overflow-x:auto; }
 .inline-code { background:var(--tech-accent-soft, rgba(34,197,94,.12)); padding:1px 6px; border-radius:4px; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size:12.5px; color:var(--tech-accent-text, #bbf7d0); }
+
+/* Chat code is emitted with a dark-mode foreground by default. The light
+   workspace changes its surface, so give source text and its controls an
+   explicit dark palette instead of leaving pale blue on near-white. */
+.theme-light .code-block {
+  background: #f8fbff;
+  border-color: #cbd8e6;
+}
+
+.theme-light .code-header {
+  background: #eef5fb;
+  border-bottom-color: #d5e3f0;
+}
+
+.theme-light .code-lang,
+.theme-light .code-copy:hover {
+  color: #1d5f91;
+}
+
+.theme-light .code-copy {
+  color: #526579;
+}
+
+.theme-light .code-body {
+  color: #17324d;
+}
+
+.theme-light .inline-code {
+  background: #eaf3fb;
+  color: #1d4f73;
+}
 
 /* ─── Chat readability ───────────────────────────────────────────────────── */
 .chat-scroll {

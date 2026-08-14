@@ -87,6 +87,9 @@ test("java digest component renders topic, article, and roadmap sections", () =>
   assert.match(componentSource, /roadmap\.days\.slice\(0, 3\)/);
   assert.match(componentSource, /expandedRoadmapId/);
   assert.match(componentSource, /expandedRefresherQuestionId/);
+  assert.match(componentSource, /fetch\("\/api\/java-senior-refresher"/);
+  assert.match(componentSource, /\}, \[activeView, refresherQuestions\.length\]\);/);
+  assert.doesNotMatch(componentSource, /\}, \[activeView, refresherLoading, refresherQuestions\.length\]\);/);
   assert.doesNotMatch(componentSource, /expandedRefresherQuestions/);
   assert.match(componentSource, /buildJavaDigestCoachPrompt/);
   assert.match(componentSource, /buildJavaDigestMockPrompt/);
