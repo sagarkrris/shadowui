@@ -155,7 +155,7 @@ function buildArticleDrill(article) {
 }
 
 function buildStarFrame(title, context = "") {
-  return `Situation: a project needed a reliable approach to ${title}. Task: apply the concept without weakening correctness. Action: clarified the constraint, implemented the smallest observable change, tested the normal and failure paths, and measured the result. Result: the behavior matched the contract and the trade-off was documented. ${context}`;
+  return `Situation: a backend feature involving ${title} had a correctness or operational risk that was not obvious from the happy path. Task: explain the mechanism, choose the right boundary, and apply it without weakening reliability. Action: clarified the invariant and workload, traced the normal and failure paths, implemented the smallest observable change, added focused tests for edge cases and regressions, and measured the relevant latency, throughput, memory, or error signal. Result: the behavior matched the contract, the trade-off was documented, and the team had evidence it would remain safe under production load. ${context}`;
 }
 
 function parseStarStory(story = "") {
@@ -164,18 +164,16 @@ function parseStarStory(story = "") {
   return { Situation: match[1], Task: match[2], Action: match[3], Result: match[4] };
 }
 
-function StarAnswer({ story, accent, label = "STAR answer:" }) {
+function StarAnswer({ story, accent, label = "STAR answer:", technicalAnswer = "", example = "", actionSteps = [] }) {
   const parts = parseStarStory(story);
   return (
     <section aria-label={label} style={{ borderLeft: `3px solid ${accent}`, display: "grid", gap: 7, paddingLeft: 9 }}>
       <strong style={{ color: accent, fontSize: 10.5, textTransform: "uppercase" }}>{label}</strong>
-      <div style={responsiveGrid(170, 7)}>
-        {["Situation", "Task", "Action", "Result"].map((key) => (
-          <div key={key} style={{ background: "var(--jd-surface-sunken)", border: "1px solid var(--jd-border)", borderRadius: 6, padding: "7px 8px" }}>
-            <b style={{ color: accent, display: "block", fontSize: 10.2, marginBottom: 3 }}>{key}</b>
-            <span style={{ color: "var(--jd-text-soft)", fontSize: 11.2, lineHeight: 1.45 }}>{parts[key]}</span>
-          </div>
-        ))}
+      <div style={{ color: "var(--jd-text-soft)", display: "grid", fontSize: 11.35, gap: 7, lineHeight: 1.55 }}>
+        <div><b style={{ color: accent }}>Situation:</b> {parts.Situation}</div>
+        <div><b style={{ color: accent }}>Task:</b> {parts.Task}</div>
+        <div><b style={{ color: accent }}>Action:</b> {parts.Action}{actionSteps.length ? <ol style={{ margin: "6px 0 0", paddingLeft: 21 }}>{actionSteps.map((step) => <li key={step}>{step}</li>)}</ol> : null}{technicalAnswer ? <><br /><span style={{ color: "var(--jd-text)" }}><b>Technical approach:</b> {technicalAnswer}</span></> : null}{example ? <pre style={{ background: "var(--jd-surface-sunken)", borderRadius: 6, color: "var(--jd-code-text)", fontSize: 10.8, lineHeight: 1.5, margin: "7px 0 0", overflowX: "auto", padding: 8, whiteSpace: "pre-wrap" }}>{example}</pre> : null}</div>
+        <div><b style={{ color: accent }}>Result:</b> {parts.Result}</div>
       </div>
       <span style={{ color: "var(--jd-text-muted)", fontSize: 10.8, lineHeight: 1.4 }}><b style={{ color: "var(--jd-text)" }}>Make it yours:</b> replace the generic context with your system, decision, metric, and learning.</span>
     </section>
@@ -977,10 +975,14 @@ export default function JavaDigest({ theme = {}, onAction, onJavaProgressChange,
           {JAVA_INTERVIEW_QA.map((entry) => (
             <details key={entry.id} style={{ ...wrap, background: "var(--jd-surface-subtle)", border: `1px solid ${accentBorder}`, borderRadius: 8, padding: "10px 11px" }}>
               <summary style={{ color: "var(--jd-text)", cursor: "pointer", fontSize: 13, fontWeight: 850, lineHeight: 1.45 }}>{entry.question}</summary>
-              <div style={{ color: accent, fontSize: 10.3, fontWeight: 900, marginTop: 9, textTransform: "uppercase" }}>{entry.section} · Detailed answer</div>
-              <p style={{ color: "var(--jd-text-soft)", fontSize: 11.7, lineHeight: 1.58, margin: "6px 0 0" }}>{entry.answer}</p>
-              <pre style={{ background: "var(--jd-surface-sunken)", borderRadius: 6, color: "var(--jd-text)", fontSize: 11, lineHeight: 1.5, margin: "8px 0 0", overflowX: "auto", padding: 9, whiteSpace: "pre-wrap" }}>{entry.example}</pre>
-              <StarAnswer story={entry.star} accent={accent} label="STAR story" />
+              <div style={{ color: accent, fontSize: 10.3, fontWeight: 900, marginTop: 9, textTransform: "uppercase" }}>{entry.section} · Interview-ready answer</div>
+              <StarAnswer story={entry.star} accent={accent} label="STAR answer · Situation → Task → Action → Result" technicalAnswer={<>{entry.answer}<br /><b>Internals:</b> {entry.internals}<br /><b>Expected output:</b> {entry.expectedOutput}</>} example={entry.example} actionSteps={entry.actionSteps} />
+              <div style={{ background: "var(--jd-surface-sunken)", border: "1px solid var(--jd-border)", borderRadius: 7, display: "grid", gap: 6, marginTop: 9, padding: "8px 9px" }}>
+                <div style={{ color: "var(--jd-text-soft)", fontSize: 11.2, lineHeight: 1.5 }}><strong style={{ color: accent }}>Why this works:</strong> {entry.whyItWorks}</div>
+                <div style={{ color: "var(--jd-text-soft)", fontSize: 11.2, lineHeight: 1.5 }}><strong style={{ color: accent }}>Common mistakes:</strong> {entry.commonMistakes}</div>
+                <div style={{ color: "var(--jd-text-soft)", fontSize: 11.2, lineHeight: 1.5 }}><strong style={{ color: accent }}>Performance notes:</strong> {entry.performanceNotes}</div>
+                <div style={{ color: "var(--jd-text-soft)", fontSize: 11.2, lineHeight: 1.5 }}><strong style={{ color: accent }}>Testing:</strong> {entry.testingNotes}</div>
+              </div>
               <div style={{ color: "var(--jd-text-muted)", fontSize: 11.2, lineHeight: 1.45, marginTop: 8 }}><strong style={{ color: "var(--jd-text)" }}>Likely follow-ups:</strong> {entry.followUps}</div>
             </details>
           ))}

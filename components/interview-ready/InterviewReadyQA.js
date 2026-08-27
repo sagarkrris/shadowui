@@ -628,7 +628,7 @@ export default function InterviewReadyQA({
           <div style={{ alignItems: "center", color: "#9fb0c7", display: "flex", flexWrap: "wrap", fontSize: 10.8, gap: 10, marginTop: 8 }}>
             <span><i className="ti ti-command" /> K ask · ⌘ B bookmark</span>
             <button type="button" className="glass-button" aria-pressed={compactMode} onClick={() => setCompactMode((value) => !value)} style={{ border: "1px solid rgba(139,211,255,.3)", borderRadius: 999, color: "#dbeafe", padding: "4px 8px" }}>{compactMode ? "Comfortable mode" : "Compact mode"}</button>
-            {lastSavedAt ? <span role="status">Saved locally {lastSavedAt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</span> : null}
+            {lastSavedAt ? <span role="status">Saved locally</span> : null}
             <button type="button" className="glass-button" aria-label="Decrease text size" disabled={textScale === TEXT_SCALE_MIN} onClick={() => setTextScale((value) => Math.max(TEXT_SCALE_MIN, Number((value - TEXT_SCALE_STEP).toFixed(1))))} style={{ borderRadius: 999, padding: "3px 7px" }}>A−</button>
             <button type="button" className="glass-button" aria-label="Increase text size" disabled={textScale === TEXT_SCALE_MAX} onClick={() => setTextScale((value) => Math.min(TEXT_SCALE_MAX, Number((value + TEXT_SCALE_STEP).toFixed(1))))} style={{ borderRadius: 999, padding: "3px 7px" }}>A+</button>
             <span aria-live="polite" style={{ color: "#9fb0c7", fontSize: 10.5 }}>Text {Math.round(textScale * 100)}%</span>
@@ -718,7 +718,7 @@ export default function InterviewReadyQA({
         accent={accent}
         onToggle={() => setPracticeStudioOpen((value) => !value)}
         compact={compactMode}
-        defaultOpenNote={activeSavedAnswer?.practicedAt ? `Saved locally on ${new Date(activeSavedAnswer.practicedAt).toLocaleDateString()}` : "Write, time, and score your own version here."}
+        defaultOpenNote={activeSavedAnswer?.practicedAt ? "Saved locally" : "Write, time, and score your own version here."}
       >
         {customPracticeItem ? (
           <section style={{ ...wrap, background: `${accent}10`, border: `1px solid ${accent}33`, borderRadius: 8, display: "grid", gap: 6, padding: 10 }}>
