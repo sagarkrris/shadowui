@@ -32,7 +32,7 @@ test("java digest component renders topic, article, and roadmap sections", () =>
   assert.match(componentSource, /canonical/);
   assert.match(componentSource, /navigateArticle/);
   assert.match(componentSource, /exactArticle/);
-  assert.match(componentSource, /Detailed answer/);
+  assert.match(componentSource, /Interview-ready answer/);
   assert.match(componentSource, /QuickReferenceCard/);
   assert.match(componentSource, /Self-check:/);
   assert.match(componentSource, /path.level/);
@@ -56,7 +56,11 @@ test("java digest component renders topic, article, and roadmap sections", () =>
   assert.match(componentSource, /STAR answer:/);
   assert.match(componentSource, /parseStarStory/);
   assert.match(componentSource, /Make it yours:/);
-  assert.match(componentSource, /\["Situation", "Task", "Action", "Result"\]/);
+  assert.match(componentSource, /STAR answer · Situation → Task → Action → Result/);
+  assert.match(componentSource, /Why this works:/);
+  assert.match(componentSource, /Common mistakes:/);
+  assert.match(componentSource, /Performance notes:/);
+  assert.match(componentSource, /Testing:/);
   assert.match(componentSource, /Competitive Programming in Java/);
   assert.match(componentSource, /VIEW_METADATA/);
   assert.match(componentSource, /viewMetadata\.title/);
