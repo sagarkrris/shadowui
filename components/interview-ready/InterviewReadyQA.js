@@ -367,12 +367,12 @@ export default function InterviewReadyQA({
     search: searchDraft,
   }).filter((question) => !savedOnly || bookmarkedIds.includes(question.id)), [activeCategory, difficulty, searchDraft, savedOnly, bookmarkedIds]);
   const activeQuestionId = practiceState.selectedQuestionId || questions[0]?.id || "";
-  const activeQuestion = getInterviewReadyQuestion(activeQuestionId) || questions[0] || null;
+  const activeQuestion = useMemo(() => getInterviewReadyQuestion(activeQuestionId) || questions[0] || null, [activeQuestionId, questions]);
   const activePracticeKey = customPracticeItem ? `company-pack:${practiceState.company}:${customPracticeItem.id}` : activeQuestion?.id || "";
   const activeSavedAnswer = activePracticeKey ? practiceState.answers[activePracticeKey] || null : null;
-  const evaluation = (activeQuestion || customPracticeItem)
+  const evaluation = useMemo(() => (activeQuestion || customPracticeItem)
     ? evaluateInterviewReadyAnswer(draftAnswer, customPracticeItem ? { question: customPracticeItem.prompt } : activeQuestion)
-    : null;
+    : null, [activeQuestion, customPracticeItem, draftAnswer]);
   const companyPack = useMemo(() => buildInterviewReadyCompanyPack(practiceState.company), [practiceState.company]);
   const activePracticeTitle = customPracticeItem
     ? `${customPracticeItem.type}: ${customPracticeItem.title}`

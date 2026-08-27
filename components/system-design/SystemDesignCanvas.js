@@ -1514,6 +1514,11 @@ export default function SystemDesignCanvas({
   const lldMermaid = useMemo(() => buildMermaidDiagram(blueprint, "lld", selectedScenario), [blueprint, selectedScenario]);
 
   useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.title = `System Design Canvas: ${canvasState.problem || "Untitled system"}`;
+  }, [canvasState.problem]);
+
+  useEffect(() => {
     setCanvasState(normalizedInitialState);
     setBlueprint(buildSystemDesignStudioBlueprint(normalizedInitialState));
   }, [normalizedInitialState]);
@@ -1859,7 +1864,7 @@ export default function SystemDesignCanvas({
               {section.label}
             </span>
             <textarea
-              value={canvasState.sections[section.key]}
+              value={canvasState.sections?.[section.key] || ""}
               onChange={(event) => updateSection(section.key, event.target.value)}
               placeholder={section.placeholder}
               rows={4}

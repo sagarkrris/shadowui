@@ -176,7 +176,7 @@ export default function Home() {
   const [mockTimerRemaining, setMockTimerRemaining] = useState(MOCK_ANSWER_SECONDS);
   const [mockTimerStatus, setMockTimerStatus] = useState("idle");
   const [applications, setApplications] = useState([]);
-  const [javaDigestProgress, setJavaDigestProgress] = useState({ completedTopics: [], masteredTopics: [] });
+  const [javaDigestProgress, setJavaDigestProgress] = useState({ completedTopics: [], masteredTopics: [], reviewStages: {} });
   const [toolkitState, setToolkitState] = useState({});
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [offlineState, setOfflineState] = useState({ online: true, conflict: null });
@@ -243,31 +243,12 @@ export default function Home() {
         happenedAt: event.happenedAt || new Date().toISOString(),
       });
 
-      if (typeof window !== "undefined") {
-        saveVersionedState(window.localStorage, {
-          key: PREP_PROGRESS_STORAGE_KEY,
-          version: PREP_PROGRESS_STORAGE_VERSION,
-          value: next,
-          normalize: createPrepProgressState,
-        });
-      }
-
       return next;
     });
   }, []);
   const setBeginnerStep = useCallback((stepId) => {
     setPrepProgressState((previous) => {
       const next = recordBeginnerStep(previous, stepId);
-
-      if (typeof window !== "undefined") {
-        saveVersionedState(window.localStorage, {
-          key: PREP_PROGRESS_STORAGE_KEY,
-          version: PREP_PROGRESS_STORAGE_VERSION,
-          value: next,
-          normalize: createPrepProgressState,
-        });
-      }
-
       return next;
     });
   }, []);
@@ -333,13 +314,22 @@ export default function Home() {
     setJavaDigestProgress(loadVersionedState(window.localStorage, {
       key: JAVA_DIGEST_PROGRESS_STORAGE_KEY,
       version: 1,
-      fallback: { completedTopics: [], masteredTopics: [] },
+      fallback: { completedTopics: [], masteredTopics: [], completedTutorials: [], completedPrograms: [], completedQuizzes: [], bookmarkedTutorials: [], bookmarkedPrograms: [], bookmarkedQuizzes: [], reviewedAt: {}, reviewStages: {} },
       normalize: (value = {}) => ({
         completedTopics: Array.isArray(value.completedTopics) ? value.completedTopics : [],
         masteredTopics: Array.isArray(value.masteredTopics) ? value.masteredTopics : [],
         bookmarkedQuestions: Array.isArray(value.bookmarkedQuestions) ? value.bookmarkedQuestions : [],
         reviewedQuestions: Array.isArray(value.reviewedQuestions) ? value.reviewedQuestions : [],
         masteredQuestions: Array.isArray(value.masteredQuestions) ? value.masteredQuestions : [],
+        completedTutorials: Array.isArray(value.completedTutorials) ? value.completedTutorials : [],
+        completedPrograms: Array.isArray(value.completedPrograms) ? value.completedPrograms : [],
+        completedQuizzes: Array.isArray(value.completedQuizzes) ? value.completedQuizzes : [],
+        bookmarkedTutorials: Array.isArray(value.bookmarkedTutorials) ? value.bookmarkedTutorials : [],
+        bookmarkedPrograms: Array.isArray(value.bookmarkedPrograms) ? value.bookmarkedPrograms : [],
+        bookmarkedQuizzes: Array.isArray(value.bookmarkedQuizzes) ? value.bookmarkedQuizzes : [],
+        reviewedAt: value.reviewedAt && typeof value.reviewedAt === "object" ? value.reviewedAt : {},
+        reviewStages: value.reviewStages && typeof value.reviewStages === "object" ? value.reviewStages : {},
+        lastOpenedTutorial: typeof value.lastOpenedTutorial === "string" ? value.lastOpenedTutorial : "",
       }),
     }));
     setPrepProgressState(loadVersionedState(window.localStorage, {
@@ -421,6 +411,16 @@ export default function Home() {
   useEffect(() => {
     if (!sessionReady) return;
     saveVersionedState(window.localStorage, {
+      key: PREP_PROGRESS_STORAGE_KEY,
+      version: PREP_PROGRESS_STORAGE_VERSION,
+      value: prepProgressState,
+      normalize: createPrepProgressState,
+    });
+  }, [prepProgressState, sessionReady]);
+
+  useEffect(() => {
+    if (!sessionReady) return;
+    saveVersionedState(window.localStorage, {
       key: JAVA_DIGEST_PROGRESS_STORAGE_KEY,
       version: 1,
       value: javaDigestProgress,
@@ -430,6 +430,15 @@ export default function Home() {
         bookmarkedQuestions: Array.isArray(value.bookmarkedQuestions) ? value.bookmarkedQuestions : [],
         reviewedQuestions: Array.isArray(value.reviewedQuestions) ? value.reviewedQuestions : [],
         masteredQuestions: Array.isArray(value.masteredQuestions) ? value.masteredQuestions : [],
+        completedTutorials: Array.isArray(value.completedTutorials) ? value.completedTutorials : [],
+        completedPrograms: Array.isArray(value.completedPrograms) ? value.completedPrograms : [],
+        completedQuizzes: Array.isArray(value.completedQuizzes) ? value.completedQuizzes : [],
+        bookmarkedTutorials: Array.isArray(value.bookmarkedTutorials) ? value.bookmarkedTutorials : [],
+        bookmarkedPrograms: Array.isArray(value.bookmarkedPrograms) ? value.bookmarkedPrograms : [],
+        bookmarkedQuizzes: Array.isArray(value.bookmarkedQuizzes) ? value.bookmarkedQuizzes : [],
+        reviewedAt: value.reviewedAt && typeof value.reviewedAt === "object" ? value.reviewedAt : {},
+        reviewStages: value.reviewStages && typeof value.reviewStages === "object" ? value.reviewStages : {},
+        lastOpenedTutorial: typeof value.lastOpenedTutorial === "string" ? value.lastOpenedTutorial : "",
       }),
     });
   }, [javaDigestProgress, sessionReady]);
@@ -648,7 +657,7 @@ export default function Home() {
     setActiveTab(session.activeTab);
     if (snapshot.themePreference) setThemePreference(normalizeThemePreference(snapshot.themePreference));
     resetInterviewSession(session.interviewSession);
-    if (snapshot.session) { setToolkitState(snapshot.toolkitState || {}); setApplications(Array.isArray(snapshot.applications) ? snapshot.applications : []); setJavaDigestProgress(snapshot.javaDigestProgress || { completedTopics: [], masteredTopics: [] }); setQuestionMemory(snapshot.questionMemory || { questions: {} }); setPrepProgressState(snapshot.prepProgressState || createPrepProgressState()); }
+    if (snapshot.session) { setToolkitState(snapshot.toolkitState || {}); setApplications(Array.isArray(snapshot.applications) ? snapshot.applications : []); setJavaDigestProgress(snapshot.javaDigestProgress || { completedTopics: [], masteredTopics: [], reviewStages: {} }); setQuestionMemory(snapshot.questionMemory || { questions: {} }); setPrepProgressState(snapshot.prepProgressState || createPrepProgressState()); }
   }, [resetInterviewSession, setActiveTab]);
   const handleCloudSyncStatus = useCallback((status) => {
     setCloudStatus(status);
@@ -1793,7 +1802,7 @@ export default function Home() {
               <JavaDigest
                 theme={techTheme}
               onAction={startJavaDigestAction}
-                onRefresherProgressChange={(updater) => setJavaDigestProgress((previous) => updater(previous))}
+                onJavaProgressChange={(updater) => setJavaDigestProgress((previous) => updater(previous))}
                 profile={candidateProfile || profileDraft}
                 progress={javaDigestProgress}
                 beginnerMode={beginnerMode}

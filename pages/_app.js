@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import "../styles/globals.css";
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { installIconTooltips } from "../lib/iconTooltips.mjs";
+import BrandWatermark from "../components/BrandWatermark";
 
 export default function App({ Component, pageProps }) {
   useEffect(() => installIconTooltips(), []);
@@ -16,6 +17,7 @@ export default function App({ Component, pageProps }) {
   return (
     <>
       <Component {...pageProps} />
+      <BrandWatermark />
       <SpeedInsights />
     </>
   );

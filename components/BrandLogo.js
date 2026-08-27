@@ -3,9 +3,27 @@ import {
   BRAND_LOGO_INITIALS,
 } from "../lib/brandLogo.mjs";
 
-export default function BrandLogo({ theme, size = 30, appearance = theme?.appearance || "dark" }) {
-  const markSize = Math.max(28, size);
-  const isLight = appearance === "light";
+const MIN_LOGO_SIZE = 28;
+const INITIALS_SIZE_RATIO = 0.39;
+const BADGE_OFFSET = 5;
+const BADGE_SIZE = 5;
+const FALLBACK_THEME = {
+  appearance: "dark",
+  accentStrong: "#8bd3ff",
+  accentText: "#f8fbff",
+  accentSoft: "rgba(139,211,255,.28)",
+  accentBorder: "rgba(139,211,255,.26)",
+  accentMuted: "rgba(139,211,255,.12)",
+};
+
+export default function BrandLogo({ theme: providedTheme, size = 30, appearance } = {}) {
+  const theme = { ...FALLBACK_THEME, ...(providedTheme || {}) };
+  const numericSize = Number(size);
+  const markSize = Math.max(
+    MIN_LOGO_SIZE,
+    Number.isFinite(numericSize) ? numericSize : MIN_LOGO_SIZE,
+  );
+  const isLight = (appearance || theme.appearance || "dark") === "light";
   const logoStrong = isLight ? "#b7791f" : theme.accentStrong;
   const logoText = isLight ? "#17324d" : theme.accentText;
 
@@ -34,7 +52,7 @@ export default function BrandLogo({ theme, size = 30, appearance = theme?.appear
       <span
         style={{
           color: logoText,
-          fontSize: Math.round(markSize * .39),
+          fontSize: Math.round(markSize * INITIALS_SIZE_RATIO),
           fontWeight: 800,
           letterSpacing: 0,
           lineHeight: 1,
@@ -47,10 +65,10 @@ export default function BrandLogo({ theme, size = 30, appearance = theme?.appear
         aria-hidden="true"
         style={{
           position: "absolute",
-          right: 5,
-          bottom: 5,
-          width: 5,
-          height: 5,
+          right: BADGE_OFFSET,
+          bottom: BADGE_OFFSET,
+          width: BADGE_SIZE,
+          height: BADGE_SIZE,
           borderRadius: "50%",
           background: logoStrong,
           boxShadow: `0 0 10px ${logoStrong}`,

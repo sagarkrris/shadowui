@@ -9,6 +9,17 @@ import {
   JAVA_DIGEST_ROADMAPS,
   JAVA_DIGEST_TRACKS,
   JAVA_DIGEST_VERSION,
+  JAVA_SPRING_STUDY_PATHS,
+  JAVA_QUICK_REFERENCE,
+  JAVA_TUTORIAL_CATALOG,
+  JAVA_VERSION_TOPIC_GUIDE,
+  JAVA_PROGRAM_EXAMPLES,
+  JAVA_QUIZ_BANK,
+  JAVA_EDITORIAL_CHAPTERS,
+  getJavaTutorialBySlug,
+  slugifyJavaTutorial,
+  JAVA_INTERVIEW_QA,
+  JAVA_PRODUCTION_SCENARIOS,
   buildJavaDigestCompetencySummary,
   buildCsesJavaPracticePrompt,
   buildJavaDigestGeneratedTopicPrompt,
@@ -21,6 +32,14 @@ import {
   listJavaSeniorRefresherArticles,
 } from "../lib/javaDigest.mjs";
 import { appendAdditionalTrickyQa, buildJavaSeniorRefresherFallbackQa, loadJavaSeniorRefresherQa, parseJavaSeniorRefresherQa } from "../lib/javaSeniorRefresherQa.mjs";
+import { JAVA_REVIEW_INTERVALS_DAYS, getJavaReviewIntervalDays } from "../components/java-digest/useJavaDigestProgress.js";
+
+test("java digest spaced repetition uses progressive review intervals", () => {
+  assert.deepEqual(JAVA_REVIEW_INTERVALS_DAYS, [1, 3, 7, 14, 30]);
+  assert.equal(getJavaReviewIntervalDays(0), 1);
+  assert.equal(getJavaReviewIntervalDays(2), 7);
+  assert.equal(getJavaReviewIntervalDays(999), 30);
+});
 
 test("fresher DSA playbook covers solving method, patterns, practice, and debugging", () => {
   assert.equal(FRESHER_DSA_PLAYBOOK.framework.length, 7);
@@ -42,12 +61,97 @@ test("java digest exposes original topic tracks and article cards", () => {
   assert.equal(getJavaDigestTrack("missing").id, "core-java");
 });
 
+test("java digest includes original Java and Spring learning paths", () => {
+  assert.equal(JAVA_SPRING_STUDY_PATHS.length, 5);
+  assert.deepEqual(JAVA_SPRING_STUDY_PATHS.map((path) => path.id), [
+    "java-starter-foundations",
+    "effective-java-practice",
+    "spring-framework-foundations",
+    "spring-boot-production",
+    "microservices-patterns",
+  ]);
+  assert.ok(JAVA_SPRING_STUDY_PATHS.every((path) => path.lessons.length >= 5));
+  assert.ok(JAVA_SPRING_STUDY_PATHS.every((path) => path.level));
+  assert.ok(JAVA_SPRING_STUDY_PATHS.every((path) => path.lessons.every((lesson) => (
+    lesson.title && lesson.outcome && lesson.mentalModel && lesson.example && lesson.recall && lesson.drill
+  ))));
+  assert.ok(JAVA_SPRING_STUDY_PATHS[0].lessons.length >= 8);
+  const microservices = JAVA_SPRING_STUDY_PATHS.find((path) => path.id === "microservices-patterns");
+  assert.equal(microservices.lessons.length, 12);
+  assert.ok(microservices.lessons.every((lesson) => lesson.definition && lesson.howItWorks && lesson.advantages && lesson.disadvantages && lesson.whenToUse && lesson.interview && lesson.star && lesson.codeSketch));
+});
+
+test("java digest includes compact reference sheets with self-check answers", () => {
+  assert.equal(JAVA_QUICK_REFERENCE.length, 6);
+  assert.ok(JAVA_QUICK_REFERENCE.every((reference) => reference.level && reference.points.length === 3 && reference.quiz && reference.answer));
+});
+
+test("java digest exposes the expanded original catalog", () => {
+  assert.ok(JAVA_TUTORIAL_CATALOG.length >= 60);
+  assert.ok(JAVA_TUTORIAL_CATALOG.every((tutorial) => tutorial.title && tutorial.category && tutorial.level && tutorial.memoryHook && tutorial.practice));
+  assert.equal(JAVA_VERSION_TOPIC_GUIDE.length, 8);
+  assert.ok(JAVA_PROGRAM_EXAMPLES.length >= 40);
+  assert.equal(JAVA_QUIZ_BANK.length, 48);
+});
+
+test("java digest includes detailed STAR interview answers for collections and concurrency", () => {
+  assert.ok(JAVA_INTERVIEW_QA.length >= 6);
+  assert.ok(JAVA_INTERVIEW_QA.some((entry) => entry.question.includes("HashMap work internally")));
+  assert.ok(JAVA_INTERVIEW_QA.some((entry) => entry.question.includes("ConcurrentHashMap")));
+  assert.ok(JAVA_INTERVIEW_QA.filter((entry) => entry.section === "Multithreading").length >= 5);
+  assert.ok(JAVA_INTERVIEW_QA.every((entry) => entry.answer && entry.example && entry.star && entry.followUps));
+});
+
+test("java interview Q&A covers JVM, Spring, SQL, system design, and concurrency", () => {
+  for (const section of ["JVM", "Spring", "Spring Boot", "SQL", "System Design", "Multithreading"]) {
+    assert.ok(JAVA_INTERVIEW_QA.filter((entry) => entry.section === section).length >= 2, section);
+  }
+  assert.ok(JAVA_INTERVIEW_QA.every((entry) => entry.answer.length > 180 && entry.star.length > 120));
+});
+
+test("production interview scenarios teach end-to-end incident reasoning", () => {
+  assert.ok(JAVA_PRODUCTION_SCENARIOS.length >= 21);
+  assert.ok(JAVA_PRODUCTION_SCENARIOS.every((scenario) => (
+    scenario.prompt && scenario.impact && scenario.triage.length >= 3 && scenario.diagnosis && scenario.prevention && scenario.star && scenario.followUps
+  )));
+  assert.ok(JAVA_PRODUCTION_SCENARIOS.some((scenario) => scenario.title.includes("latency")));
+  assert.ok(JAVA_PRODUCTION_SCENARIOS.some((scenario) => scenario.area === "Concurrency"));
+  assert.ok(JAVA_PRODUCTION_SCENARIOS.some((scenario) => scenario.area === "JVM & runtime"));
+  assert.ok(JAVA_PRODUCTION_SCENARIOS.some((scenario) => scenario.area === "Distributed tracing"));
+  assert.ok(JAVA_PRODUCTION_SCENARIOS.some((scenario) => scenario.area === "SQL operations"));
+  for (const area of ["Kafka", "Kafka rebalancing", "MQ & messaging", "Kubernetes", "Kubernetes networking", "Caching", "Redis & caching", "Security", "Docker & delivery", "CI/CD", "Distributed transactions"]) {
+    assert.ok(JAVA_PRODUCTION_SCENARIOS.some((scenario) => scenario.area === area), area);
+  }
+});
+
 test("java digest filters articles by track", () => {
   const springArticles = listJavaDigestArticles("spring-boot");
 
   assert.ok(springArticles.length > 0);
   assert.ok(springArticles.every((article) => article.trackId === "spring-boot"));
   assert.equal(listJavaDigestArticles("all").length, JAVA_DIGEST_ARTICLES.length);
+});
+
+test("tutorial catalog exposes full article-card lesson fields", () => {
+  assert.ok(JAVA_TUTORIAL_CATALOG.length >= 100);
+  assert.ok(JAVA_TUTORIAL_CATALOG.every((tutorial) => (
+    tutorial.explanation && tutorial.howToThink && tutorial.example && tutorial.diagram && tutorial.benchmark && tutorial.mistakes && tutorial.productionNote && tutorial.exercise && tutorial.interviewAnswer && tutorial.author && tutorial.reviewedAt && tutorial.javaVersions && Array.isArray(tutorial.relatedTopics)
+  )));
+  assert.ok(new Set(JAVA_TUTORIAL_CATALOG.map((tutorial) => tutorial.explanation)).size >= 90);
+  assert.ok(new Set(JAVA_TUTORIAL_CATALOG.map((tutorial) => tutorial.example)).size >= 90);
+});
+
+test("flagship Java topics have individually authored editorial chapters", () => {
+  for (const topic of ["HashMap", "Generics", "Stream pipelines", "Executors", "Virtual threads", "Spring IoC", "Spring Security", "Transactions", "Spring Data JPA", "Garbage collection"]) {
+    assert.ok(JAVA_EDITORIAL_CHAPTERS[topic]?.walkthrough, topic);
+    assert.ok(JAVA_TUTORIAL_CATALOG.find((tutorial) => tutorial.title === topic)?.output, topic);
+  }
+});
+
+test("tutorials expose stable publishable slugs", () => {
+  const slug = slugifyJavaTutorial("Spring Data JPA");
+  assert.equal(slug, "spring-data-jpa");
+  assert.equal(getJavaTutorialBySlug(slug).title, "Spring Data JPA");
 });
 
 test("java digest includes a Java 21, JVM, and concurrency senior refresher section", () => {

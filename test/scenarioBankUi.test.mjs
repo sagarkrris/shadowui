@@ -47,6 +47,15 @@ test("scenario bank workspace renders tracks engines drills and detailed answers
   assert.match(componentSource, /minmax\(min\(100%/);
 });
 
+test("scenario answer scoring and option rendering guard empty dynamic inputs", () => {
+  assert.match(componentSource, /const trapTerms = String\(scenario\?\.traps\?\.\[0\] \|\| ""\)/);
+  assert.match(componentSource, /trapTerms \? new RegExp\(trapTerms, "i"\) : \/a\^\//);
+  assert.match(componentSource, /function escapeRegExp/);
+  assert.match(componentSource, /const optionIdentity = \(option, index\)/);
+  assert.match(componentSource, /option\.key \?\? option\.value \?\? option\.id \?\? option\.label/);
+  assert.match(componentSource, /return `option-\$\{index\}`/);
+});
+
 test("scenario bank is wired as a first-class workspace", () => {
   assert.match(indexSource, /ScenarioBank/);
   assert.match(indexSource, /activeTab==="scenarioBank"/);

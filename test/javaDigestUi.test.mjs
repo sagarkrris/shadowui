@@ -7,12 +7,56 @@ const componentSource = existsSync(componentUrl) ? readFileSync(componentUrl, "u
 const globalStylesSource = readFileSync(new URL("../styles/globals.css", import.meta.url), "utf8");
 const indexSource = readFileSync(new URL("../pages/index.js", import.meta.url), "utf8");
 const workspaceSource = readFileSync(new URL("../lib/workspaces.mjs", import.meta.url), "utf8");
+const tutorialPageSource = readFileSync(new URL("../pages/java/tutorial/[slug].js", import.meta.url), "utf8");
 
 test("java digest component renders topic, article, and roadmap sections", () => {
   assert.match(componentSource, /JAVA_DIGEST_TRACKS/);
   assert.match(componentSource, /CSES_JAVA_PARTS/);
   assert.match(componentSource, /Java Digest/);
   assert.match(componentSource, /Java Curriculum/);
+  assert.match(componentSource, /Java \+ Spring/);
+  assert.match(componentSource, /Java \+ Spring Study Path/);
+  assert.match(componentSource, /JAVA_SPRING_STUDY_PATHS/);
+  assert.match(componentSource, /StudyPathCard/);
+  assert.match(componentSource, /Quick Reference/);
+  assert.match(componentSource, /Interview Q&A/);
+  assert.match(componentSource, /JAVA_INTERVIEW_QA/);
+  assert.match(componentSource, /STAR story/);
+  assert.match(componentSource, /Production Scenarios/);
+  assert.match(componentSource, /End-to-end triage/);
+  assert.match(componentSource, /Customer impact/);
+  assert.match(componentSource, /JAVA_PRODUCTION_SCENARIOS/);
+  assert.match(componentSource, /Table of contents/);
+  assert.match(componentSource, /Print lesson/);
+  assert.match(componentSource, /Copy link/);
+  assert.match(componentSource, /canonical/);
+  assert.match(componentSource, /navigateArticle/);
+  assert.match(componentSource, /exactArticle/);
+  assert.match(componentSource, /Detailed answer/);
+  assert.match(componentSource, /QuickReferenceCard/);
+  assert.match(componentSource, /Self-check:/);
+  assert.match(componentSource, /path.level/);
+  assert.match(componentSource, /reference.level/);
+  assert.match(componentSource, /Tutorial Library/);
+  assert.match(componentSource, /Practice Lab/);
+  assert.match(componentSource, /JAVA_TUTORIAL_CATALOG/);
+  assert.match(componentSource, /JAVA_VERSION_TOPIC_GUIDE/);
+  assert.match(componentSource, /JAVA_PROGRAM_EXAMPLES/);
+  assert.match(componentSource, /JAVA_QUIZ_BANK/);
+  assert.match(componentSource, /tutorialSearch/);
+  assert.match(componentSource, /tutorialCategory/);
+  assert.match(componentSource, /Find a topic/);
+  assert.match(componentSource, /Remember it:/);
+  assert.match(componentSource, /Recall without looking:/);
+  assert.match(componentSource, /Do it:/);
+  assert.match(componentSource, /Detailed pattern answer/);
+  assert.match(componentSource, /How it works:/);
+  assert.match(componentSource, /Advantages:/);
+  assert.match(componentSource, /Disadvantages:/);
+  assert.match(componentSource, /STAR answer:/);
+  assert.match(componentSource, /parseStarStory/);
+  assert.match(componentSource, /Make it yours:/);
+  assert.match(componentSource, /\["Situation", "Task", "Action", "Result"\]/);
   assert.match(componentSource, /Competitive Programming in Java/);
   assert.match(componentSource, /VIEW_METADATA/);
   assert.match(componentSource, /viewMetadata\.title/);
@@ -100,6 +144,12 @@ test("java digest component renders topic, article, and roadmap sections", () =>
   assert.match(globalStylesSource, /--jd-surface-sunken/);
   assert.match(globalStylesSource, /\.java-digest-card\.is-expanded/);
   assert.doesNotMatch(globalStylesSource, /\.java-digest \[style\*=/);
+});
+
+test("published tutorial pages guard stale slugs and provide share fallback", () => {
+  assert.match(tutorialPageSource, /if \(!tutorial\) return \{ notFound: true \}/);
+  assert.match(tutorialPageSource, /navigator\.clipboard\.writeText/);
+  assert.match(tutorialPageSource, /error\?\.name === "AbortError"/);
 });
 
 test("java digest is wired as a first-class workspace", () => {

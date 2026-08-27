@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Component, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   buildDsaExplainThenCodeCoach,
   buildDsaMockPrompt,
@@ -45,6 +45,7 @@ import { JAVA_DEBUGGING_LESSONS } from "../../lib/javaDebuggingLessons.mjs";
 import BeginnerGuideBanner from "../BeginnerGuideBanner";
 
 const GUIDED_STAGES = ["Learn", "Pattern Atlas", "Visual Playground", "Big-O Board", "Visualize", "Dry run", "Explain-Then-Code", "Code", "Quiz", "Interview Challenges", "Drill Room", "Practice as Mock"];
+const FRESHER_DSA_REVIEW_STORAGE_KEY = "interviewiq:fresher-dsa-review:v2";
 const CHALLENGE_FILTERS = [
   { id: "all", label: "All" },
   { id: "mcq", label: "MCQ" },
@@ -53,6 +54,8 @@ const CHALLENGE_FILTERS = [
   { id: "tricky", label: "Tricky" },
 ];
 const TRACKS = [
+  { id: "curriculum", label: "Complete Curriculum" },
+  { id: "foundations", label: "Foundations Path" },
   { id: "fresher", label: "Fresher DSA Path" },
   { id: "thinking", label: "How To Approach" },
   { id: "core", label: "Interview Core" },
@@ -167,6 +170,59 @@ const BEGINNER_LEARNING_MODULES = [
     why: "Use this when brute force repeats the same subproblem many times.",
     drill: "Define the state in one sentence, then fill the smallest examples by hand.",
   },
+];
+const BEGINNER_PREREQUISITES = [
+  { title: "Variables", explanation: "A variable is a named label for a value. During a dry run, write the label and its current value after each important line.", example: "let total = 0; total = total + price;", check: "Can you say what total means before and after the update?", mistake: "Using a variable before assigning it, or changing what the name means halfway through a function." },
+  { title: "Loops", explanation: "A loop repeats a small rule. Identify what changes each turn, when the loop stops, and what is true after every turn.", example: "for (let i = 0; i < nums.length; i += 1) { ... }", check: "What does i represent, and why is the stopping condition safe?", mistake: "An off-by-one boundary: starting at the wrong index or reading nums[nums.length]." },
+  { title: "Functions", explanation: "A function packages a repeatable job. Define its inputs, output, and one responsibility before reading the implementation.", example: "function max(a, b) { return a > b ? a : b; }", check: "Could you test this function with normal, equal, and boundary values?", mistake: "Mixing calculation with hidden input/output side effects, making the result hard to test." },
+  { title: "Arrays", explanation: "An array stores values in numbered positions. Most starter problems are scans: visit each index once while maintaining a useful answer.", example: "const scores = [7, 4, 9]; scores[1] is 4", check: "What does each index mean, and what happens for an empty array?", mistake: "Assuming an array is sorted or non-empty when the prompt never promised it." },
+  { title: "Debugging", explanation: "Debugging is evidence gathering. Reproduce the issue, inspect one state at a time, isolate the smallest wrong assumption, then retest.", example: "console.log({ i, value: nums[i], best });", check: "Can you name the first line where the state differs from your expectation?", mistake: "Changing several lines at once; that removes the evidence showing which assumption was wrong." },
+];
+const BIG_O_GUIDE = [
+  { label: "O(1) · constant", everyday: "Checking the top card of a deck", explanation: "The work stays the same even when the input grows. Reading an array element by index is a typical example.", code: "scores[2]", rule: "Input size can grow; the number of operations does not." },
+  { label: "O(n) · linear", everyday: "Checking every name on a guest list", explanation: "If the input doubles, the maximum work roughly doubles. A single pass through an array is linear.", code: "for (const score of scores) { inspect(score); }", rule: "One pass over n items gives roughly n units of work." },
+  { label: "O(log n) · logarithmic", everyday: "Finding a page by repeatedly halving a book", explanation: "Each step discards half the remaining choices. Binary search is fast because it shrinks the search range this way.", code: "range = range / 2", rule: "Ask a question that safely eliminates half of the remaining choices." },
+  { label: "O(n²) · quadratic", everyday: "Everyone in a room greeting everyone else", explanation: "For each item, you inspect many other items. A nested loop over the same array often has quadratic growth.", code: "for (const a of scores) for (const b of scores) compare(a, b)", rule: "A full scan inside another full scan multiplies the work." },
+];
+const FIRST_GUIDED_PROBLEM = {
+  title: "Two Sum: find a pair without guessing",
+  prompt: "Given [2, 7, 11, 15] and target 9, return the two indices whose values add to 9.",
+  steps: [
+    ["Understand", "The output is a pair of indices, not the values. Clarify whether one element may be reused; here, it may not."],
+    ["Brute force", "Try every pair: compare index 0 with later indices, then index 1, and so on. It is easy to prove correct, but the nested loops take O(n²) time."],
+    ["Optimize", "For each value x, the missing partner is target - x. Store earlier values in a map, so checking whether the partner appeared is O(1) on average."],
+    ["Dry run", "Read 2: need 7, map is empty, store 2 → 0. Read 7: need 2, map contains it, so return [0, 1]."],
+    ["Code", "Use the check-before-store order so the current value cannot pair with itself. The map invariant is: it contains only earlier values and their indices."],
+    ["Test", "Try [3, 3] target 6, a no-solution input, a negative pair, and an empty or one-element array. State the expected result before running each case."],
+  ],
+  code: `function twoSum(nums, target) {
+  const seen = new Map();
+  for (let i = 0; i < nums.length; i += 1) {
+    const need = target - nums[i];
+    if (seen.has(need)) return [seen.get(need), i];
+    seen.set(nums[i], i);
+  }
+  return [];
+}`,
+  complexity: "Time O(n) average, space O(n). We spend memory to avoid rescanning earlier values.",
+};
+const EXHAUSTIVE_DSA_CURRICULUM = [
+  { id: "foundations", title: "Foundations & Complexity", level: "Start here", topics: "Variables, loops, functions, arrays, recursion basics, debugging, invariants, Big-O", outcome: "Trace a program by hand, state what each variable means, and compare solution growth.", complexity: "O(1), O(log n), O(n), O(n log n), O(n²)", trap: "Coding before defining inputs, outputs, constraints, and the invariant.", practice: "Trace five short loops, classify their growth, and explain one off-by-one bug." },
+  { id: "arrays-strings", title: "Arrays & Strings", level: "Core", topics: "Traversal, prefix sums, suffix data, frequency counts, in-place updates, matrices, string builders", outcome: "Choose a scan, indexing strategy, or auxiliary structure that matches the input constraints.", complexity: "Usually O(n) time; O(1) or O(n) extra space", trap: "Assuming sortedness, non-empty input, or that string concatenation is free.", practice: "Solve a maximum subarray, rotate an array, validate a palindrome, and traverse a matrix." },
+  { id: "hashing", title: "Hashing & Sets", level: "Core", topics: "Maps, sets, frequencies, complements, grouping, collision intuition, caching", outcome: "Recognize when remembering earlier facts removes repeated searching.", complexity: "O(1) average lookup; O(n) time for one pass", trap: "Storing too early, forgetting duplicate semantics, or claiming worst-case constant time without qualification.", practice: "Two Sum, group anagrams, longest consecutive sequence, and first unique character." },
+  { id: "pointers-windows", title: "Two Pointers & Sliding Windows", level: "Core", topics: "Opposite ends, fast/slow pointers, sorted pairs, fixed windows, variable windows", outcome: "Move boundaries only when an invariant proves the discarded region cannot help.", complexity: "Typically O(n) time and O(1) or O(k) space", trap: "Moving both pointers without proof or shrinking a window before restoring its rule.", practice: "Three Sum, container area, longest substring, minimum window, and cycle detection." },
+  { id: "linked-lists", title: "Linked Lists", level: "Core", topics: "Node references, insert/delete, reverse, merge, fast/slow pointers, cycles", outcome: "Rewire links safely while keeping a reference to the remaining list.", complexity: "O(n) traversal; O(1) extra space for iterative rewiring", trap: "Overwriting next before saving it, losing the head, or confusing node identity with node value.", practice: "Reverse a list, merge sorted lists, remove the nth node, and detect a cycle." },
+  { id: "stacks-queues", title: "Stacks, Queues & Deques", level: "Core", topics: "LIFO/FIFO, monotonic stacks, BFS frontiers, circular queues, expression parsing", outcome: "Select the processing discipline that matches recency, arrival order, or level order.", complexity: "O(1) amortized push/pop; O(n) traversal", trap: "Using an array shift repeatedly for a queue, or popping before resolving the top item.", practice: "Balanced brackets, min stack, daily temperatures, sliding-window maximum, and level order." },
+  { id: "recursion-backtracking", title: "Recursion & Backtracking", level: "Core", topics: "Base cases, call stacks, state choices, undo steps, pruning, permutations, subsets", outcome: "Define one call's responsibility and enumerate choices without losing or duplicating state.", complexity: "Often O(branches^depth); state-space dependent", trap: "Missing a base case, mutating shared state without undo, or pruning without proof.", practice: "Subsets, permutations, combination sum, N-Queens, word search, and phone digits." },
+  { id: "trees", title: "Trees & Binary Search Trees", level: "Core", topics: "DFS traversals, BFS levels, height, paths, BST ordering, recursion contracts, serialization", outcome: "Return a correct answer for one subtree and combine child answers at the parent.", complexity: "O(n) traversal; O(h) recursion space", trap: "Writing traversal order before defining the return value or forgetting null children.", practice: "Maximum depth, diameter, validate BST, lowest common ancestor, and serialize a tree." },
+  { id: "heaps", title: "Heaps & Priority Queues", level: "Intermediate", topics: "Min/max heaps, sift operations, top K, two heaps, merge streams", outcome: "Keep only the best candidates when repeatedly selecting a minimum or maximum matters.", complexity: "O(log n) push/pop; O(n log k) for top K", trap: "Using the wrong heap polarity or sorting all data when k is small.", practice: "Kth largest, top K frequent, merge sorted lists, median from a stream, and scheduling." },
+  { id: "graphs", title: "Graphs: BFS, DFS & Components", level: "Intermediate", topics: "Adjacency lists, visited state, components, grids, cycle detection, topological sorting", outcome: "Model relationships, choose a frontier order, and prevent revisiting nodes.", complexity: "O(V + E) for traversal", trap: "Marking visited too late, forgetting disconnected components, or reversing edge direction.", practice: "Number of islands, clone graph, course schedule, bipartite check, and connected components." },
+  { id: "shortest-path", title: "Shortest Paths & Union-Find", level: "Intermediate", topics: "Dijkstra, 0–1 BFS intuition, Bellman-Ford concept, minimum spanning trees, disjoint sets", outcome: "Match edge weights and connectivity questions to the correct graph tool.", complexity: "Dijkstra O((V+E) log V); Union-Find near O(1) amortized", trap: "Using Dijkstra with negative edges or forgetting path compression/rank in DSU reasoning.", practice: "Network delay, cheapest flights, redundant connection, Kruskal, and account merging." },
+  { id: "sorting-searching", title: "Sorting, Searching & Intervals", level: "Intermediate", topics: "Selection, insertion, merge, quicksort concepts, binary search variants, interval merging", outcome: "Use ordering to simplify comparisons and maintain a safe search range.", complexity: "Comparison sorting O(n log n); binary search O(log n)", trap: "Incorrect mid boundaries, losing mid as a candidate, or merging intervals before sorting.", practice: "First/last position, search rotated array, merge intervals, meeting rooms, and kth selection." },
+  { id: "greedy", title: "Greedy Algorithms", level: "Advanced", topics: "Local choices, exchange arguments, scheduling, intervals, heaps, proof of optimality", outcome: "Identify when a locally best choice can be proven safe for the global answer.", complexity: "Often O(n log n) after sorting", trap: "Calling an approach greedy because it feels intuitive without a proof or counterexample check.", practice: "Jump game, partition labels, activity selection, minimum arrows, and Huffman intuition." },
+  { id: "dynamic-programming", title: "Dynamic Programming", level: "Advanced", topics: "Memoization, tabulation, state design, transitions, ordering, 1D/2D, subsequences, knapsack", outcome: "Turn repeated subproblems into a state table with explicit base cases and dependencies.", complexity: "Number of states × transition cost", trap: "Starting with code before a state sentence, or using a transition that reads an uncomputed state.", practice: "Climbing stairs, house robber, coin change, LIS, grid paths, edit distance, and 0/1 knapsack." },
+  { id: "advanced-strings", title: "Tries, String Search & Bit Techniques", level: "Advanced", topics: "Trie nodes, prefixes, rolling-hash intuition, XOR, masks, shifts, bit counting", outcome: "Exploit representation when prefixes, character paths, or binary properties are central to the problem.", complexity: "Trie operations O(word length); bit scans O(number of bits)", trap: "Confusing a prefix with a complete word or relying on language-specific shift behavior.", practice: "Autocomplete, word dictionary, maximum XOR pair, single number, and subset masks." },
+  { id: "advanced-design", title: "Interview Synthesis & Design", level: "Finish", topics: "Pattern selection, constraints, trade-offs, testing strategy, communication, custom data structures", outcome: "Solve unfamiliar problems by clarifying, proposing a baseline, proving an optimization, and validating it.", complexity: "State the dominant term and memory trade-off", trap: "Jumping to a memorized pattern without checking whether its assumptions hold.", practice: "Run timed mixed sets, explain solutions aloud, revisit weak spots, and design a cache or scheduler." },
 ];
 const PROBLEM_TEACHING_PLAYBOOK = {
   "arrays-hashing": {
@@ -285,6 +341,33 @@ const PROBLEM_TEACHING_PLAYBOOK = {
 
 function getStorage() {
   return typeof window !== "undefined" ? window.localStorage : null;
+}
+
+class DsaVisualLabErrorBoundary extends Component {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() { return { hasError: true }; }
+
+  componentDidCatch(error) { if (process.env.NODE_ENV !== "production") console.error("[DsaVisualLab] workspace render failed", error); }
+
+  render() {
+    if (this.state.hasError) return <section className="glass-card" role="alert" style={{ margin: 16, padding: 18 }}><h2>DSA Visual Lab needs a refresh</h2><p>One lesson or visualizer could not be rendered. Reload the workspace to restore the learning lab.</p><button type="button" className="glass-button" onClick={() => this.setState({ hasError: false })}>Try again</button></section>;
+    return this.props.children;
+  }
+}
+
+export default function DsaVisualLab(props) {
+  return <DsaVisualLabErrorBoundary><DsaVisualLabContent {...props} /></DsaVisualLabErrorBoundary>;
+}
+
+function loadFresherReviewState() {
+  const storage = getStorage();
+  if (!storage) return {};
+  try { return JSON.parse(storage.getItem(FRESHER_DSA_REVIEW_STORAGE_KEY) || "{}"); } catch { return {}; }
+}
+
+function saveFresherReviewState(value) {
+  try { getStorage()?.setItem(FRESHER_DSA_REVIEW_STORAGE_KEY, JSON.stringify(value)); } catch { /* local-only progress is best effort */ }
 }
 
 function formatInputValue(value) {
@@ -501,6 +584,9 @@ function buildChallengeVisualSteps(challenge) {
 }
 
 function getProblemTeaching(problem) {
+  if (process.env.NODE_ENV !== "production" && problem?.visualizerId && !PROBLEM_TEACHING_PLAYBOOK[problem.visualizerId]) {
+    console.warn(`[DsaVisualLab] Missing teaching playbook for visualizerId: ${problem.visualizerId}`);
+  }
   const playbook = PROBLEM_TEACHING_PLAYBOOK[problem?.visualizerId] || PROBLEM_TEACHING_PLAYBOOK["arrays-hashing"];
   return {
     picture: playbook.picture,
@@ -2233,11 +2319,9 @@ function FresherDsaTrack({ accent, accentBorder }) {
   const reviewedIds = Object.keys(reviewState);
   const reviewQueue = getSpacedReviewQueue(FRESHER_DSA_PROBLEMS, reviewState);
   const dueReviews = reviewQueue.filter((entry) => entry.due).length;
-  useEffect(() => {
-    try { setReviewState(JSON.parse(window.localStorage.getItem("interviewiq:fresher-dsa-review:v2") || "{}")); } catch { setReviewState({}); }
-  }, []);
+  useEffect(() => { setReviewState(loadFresherReviewState()); }, []);
   const chooseProblem = (id) => { setSelectedProblemId(id); setHintLevel(0); setSolved(false); setExplained(false); setComplexity(false); setEdgeCases(false); };
-  const markReviewed = () => setReviewState((current) => { const previous = current[selectedProblem.id] || {}; const next = { ...current, [selectedProblem.id]: { reviewedAt: new Date().toISOString(), attempts: Number(previous.attempts || 0) + 1, mistakes: solved ? Number(previous.mistakes || 0) : Number(previous.mistakes || 0) + 1 } }; try { window.localStorage.setItem("interviewiq:fresher-dsa-review:v2", JSON.stringify(next)); } catch { /* local-only progress is best effort */ } return next; });
+  const markReviewed = () => setReviewState((current) => { const previous = current[selectedProblem.id] || {}; const mistake = !solved && !previous.solved; const next = { ...current, [selectedProblem.id]: { reviewedAt: new Date().toISOString(), attempts: Number(previous.attempts || 0) + 1, mistakes: Number(previous.mistakes || 0) + (mistake ? 1 : 0), solved } }; saveFresherReviewState(next); return next; });
   useEffect(() => {
     if (!sessionRunning) return undefined;
     const timer = window.setInterval(() => setSessionSeconds((value) => {
@@ -2288,7 +2372,123 @@ function FresherDsaTrack({ accent, accentBorder }) {
   );
 }
 
-export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, theme = {}, profile = {}, beginnerMode = false, beginnerStep = "watch", onBeginnerStepChange, onActivity }) {
+function FoundationsPath({ accent, accentBorder, onChooseLesson }) {
+  const [selectedModule, setSelectedModule] = useState(0);
+  const learningModule = BEGINNER_LEARNING_MODULES[selectedModule] || BEGINNER_LEARNING_MODULES[0];
+  const moduleLessons = ["arrays", "two-pointers", "stack-queue", "dp-basics"];
+
+  return (
+    <section style={{ background: "rgba(255,255,255,.035)", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 12, padding: 12 }}>
+      <div>
+        <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Beginner foundations</div>
+        <h3 style={{ color: "#f8fbff", fontSize: 16, lineHeight: 1.3, margin: "4px 0" }}>A gentle path from pictures to problem-solving</h3>
+        <p style={{ color: "#93a4bf", fontSize: 12, lineHeight: 1.5, margin: 0 }}>
+          Learn one idea, connect it to a real use case, then replay it in the visualizer. Each card is an original summary and practice prompt.
+        </p>
+      </div>
+      <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
+        {BEGINNER_LEARNING_MODULES.map((item, index) => {
+          const active = index === selectedModule;
+          return (
+            <button key={item.title} type="button" className={active ? "glass-button" : ""} onClick={() => setSelectedModule(index)} style={{ background: active ? `${accent}1f` : "rgba(0,0,0,.14)", border: `1px solid ${active ? accent : "rgba(255,255,255,.08)"}`, borderRadius: 8, color: active ? "#f8fbff" : "#dbeafe", cursor: "pointer", display: "grid", gap: 5, padding: 10, textAlign: "left" }}>
+              <span style={{ color: active ? accent : "#93a4bf", fontSize: 10.5, fontWeight: 900 }}>STEP {index + 1}</span>
+              <strong style={{ fontSize: 12.5 }}>{item.title}</strong>
+            </button>
+          );
+        })}
+      </div>
+      <article style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 8, padding: 11 }}>
+        <h4 style={{ color: accent, fontSize: 14, margin: 0 }}>{learningModule.title}</h4>
+        <p style={{ color: "#dbeafe", fontSize: 12, lineHeight: 1.5, margin: 0 }}>{learningModule.picture}</p>
+        <p style={{ color: "#93a4bf", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}><b style={{ color: "#a7f3d0" }}>When it helps:</b> {learningModule.why}</p>
+        <div style={{ color: "#facc15", fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Try this out</div>
+        <p style={{ color: "#dbeafe", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}>{learningModule.drill}</p>
+        <button type="button" className="glass-button" onClick={() => onChooseLesson(moduleLessons[selectedModule] || "arrays")} style={{ border: `1px solid ${accentBorder}`, borderRadius: 6, color: accent, fontSize: 11, fontWeight: 850, justifySelf: "start", padding: "7px 9px" }}>Open visual lesson</button>
+      </article>
+      <div style={{ color: "#93a4bf", fontSize: 11.2, lineHeight: 1.45 }}><b style={{ color: "#dbeafe" }}>Beginner loop:</b> watch the state → predict the next move → say the invariant → test one edge case.</div>
+      <section style={{ display: "grid", gap: 9 }}>
+        <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Programming prerequisites</div>
+        <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))" }}>
+          {BEGINNER_PREREQUISITES.map((item) => (
+            <article key={item.title} style={{ background: "rgba(255,255,255,.045)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 6, padding: 10 }}>
+              <strong style={{ color: "#f8fbff", fontSize: 12.5 }}>{item.title}</strong>
+              <span style={{ color: "#dbeafe", fontSize: 11.2, lineHeight: 1.45 }}>{item.explanation}</span>
+              <code style={{ background: "rgba(0,0,0,.2)", borderRadius: 5, color: "#a7f3d0", fontSize: 10.5, padding: "5px 6px", whiteSpace: "pre-wrap" }}>{item.example}</code>
+              <span style={{ color: "#facc15", fontSize: 10.8, lineHeight: 1.4 }}>Check: {item.check}</span>
+              <details>
+                <summary style={{ color: accent, cursor: "pointer", fontSize: 10.8, fontWeight: 850 }}>Common beginner mistake</summary>
+                <span style={{ color: "#fda4af", display: "block", fontSize: 10.8, lineHeight: 1.4, marginTop: 5 }}>{item.mistake}</span>
+              </details>
+            </article>
+          ))}
+        </div>
+      </section>
+      <section style={{ display: "grid", gap: 9 }}>
+        <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Big-O from zero</div>
+        <p style={{ color: "#93a4bf", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}>Big-O describes how the amount of work grows as the input grows. It ignores machine speed and small constants, so you can compare the shape of two solutions.</p>
+        <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))" }}>
+          {BIG_O_GUIDE.map((item) => (
+            <article key={item.label} style={{ background: "rgba(0,0,0,.14)", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 5, padding: 10 }}>
+              <strong style={{ color: accent, fontSize: 12 }}>{item.label}</strong>
+              <span style={{ color: "#f8fbff", fontSize: 11.2 }}>Everyday picture: {item.everyday}</span>
+              <span style={{ color: "#93a4bf", fontSize: 11, lineHeight: 1.45 }}>{item.explanation}</span>
+              <code style={{ background: "rgba(0,0,0,.2)", borderRadius: 5, color: "#a7f3d0", fontSize: 10.3, padding: "5px 6px", whiteSpace: "pre-wrap" }}>{item.code}</code>
+              <span style={{ color: "#facc15", fontSize: 10.7, lineHeight: 1.4 }}>Rule of thumb: {item.rule}</span>
+            </article>
+          ))}
+        </div>
+      </section>
+      <section style={{ background: "rgba(167,243,208,.05)", border: "1px solid rgba(167,243,208,.24)", borderRadius: 8, display: "grid", gap: 9, padding: 11 }}>
+        <div style={{ color: "#a7f3d0", fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>First guided problem · {FIRST_GUIDED_PROBLEM.title}</div>
+        <p style={{ color: "#f8fbff", fontSize: 12, lineHeight: 1.5, margin: 0 }}>{FIRST_GUIDED_PROBLEM.prompt}</p>
+        <div style={{ display: "grid", gap: 7 }}>
+          {FIRST_GUIDED_PROBLEM.steps.map(([label, explanation], index) => (
+            <div key={label} style={{ alignItems: "start", display: "grid", gap: 8, gridTemplateColumns: "24px minmax(0, 1fr)" }}>
+              <span style={{ alignItems: "center", background: "rgba(167,243,208,.14)", borderRadius: 999, color: "#a7f3d0", display: "flex", fontSize: 10, fontWeight: 900, height: 22, justifyContent: "center", width: 22 }}>{index + 1}</span>
+              <span style={{ color: "#dbeafe", fontSize: 11.2, lineHeight: 1.48 }}><b style={{ color: "#a7f3d0" }}>{label}:</b> {explanation}</span>
+            </div>
+          ))}
+        </div>
+        <pre style={{ background: "rgba(0,0,0,.2)", borderRadius: 6, color: "#dbeafe", fontSize: 11, lineHeight: 1.5, margin: 0, overflowX: "auto", padding: 9, whiteSpace: "pre-wrap" }}>{FIRST_GUIDED_PROBLEM.code}</pre>
+        <div style={{ color: "#facc15", fontSize: 11, lineHeight: 1.45 }}><b>Complexity:</b> {FIRST_GUIDED_PROBLEM.complexity}</div>
+      </section>
+    </section>
+  );
+}
+
+function CompleteDsaCurriculum({ accent, accentBorder }) {
+  const [filter, setFilter] = useState("All");
+  const levels = ["All", "Start here", "Core", "Intermediate", "Advanced", "Finish"];
+  const visible = EXHAUSTIVE_DSA_CURRICULUM.filter((item) => filter === "All" || item.level === filter);
+  return (
+    <section style={{ background: "rgba(255,255,255,.035)", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 12, padding: 12 }}>
+      <div>
+        <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Complete DSA curriculum</div>
+        <h3 style={{ color: "#f8fbff", fontSize: 16, lineHeight: 1.3, margin: "4px 0" }}>A start-to-interview roadmap</h3>
+        <p style={{ color: "#93a4bf", fontSize: 12, lineHeight: 1.5, margin: 0 }}>Follow the modules in order. For every topic: learn the model, trace a small example, state the invariant, implement it, test edge cases, and explain complexity.</p>
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        {levels.map((level) => <button key={level} type="button" className={filter === level ? "glass-button" : ""} onClick={() => setFilter(level)} style={{ background: filter === level ? `${accent}1f` : "rgba(0,0,0,.14)", border: `1px solid ${filter === level ? accent : "rgba(255,255,255,.08)"}`, borderRadius: 999, color: filter === level ? "#f8fbff" : "#93a4bf", cursor: "pointer", fontSize: 10.8, fontWeight: 850, padding: "6px 9px" }}>{level}</button>)}
+      </div>
+      <div style={{ display: "grid", gap: 9 }}>
+        {visible.map((item, index) => (
+          <details key={item.id} open={filter !== "All" && index === 0} style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, padding: "9px 10px" }}>
+            <summary style={{ color: "#f8fbff", cursor: "pointer", fontSize: 12.5, fontWeight: 900 }}>{item.title} <span style={{ color: accent, fontSize: 10.5, marginLeft: 5 }}>{item.level}</span></summary>
+            <div style={{ display: "grid", gap: 6, marginTop: 9 }}>
+              <span style={{ color: "#93a4bf", fontSize: 11.2, lineHeight: 1.45 }}><b style={{ color: "#dbeafe" }}>Topics:</b> {item.topics}</span>
+              <span style={{ color: "#dbeafe", fontSize: 11.2, lineHeight: 1.45 }}><b style={{ color: "#a7f3d0" }}>You will be able to:</b> {item.outcome}</span>
+              <span style={{ color: "#facc15", fontSize: 11, lineHeight: 1.4 }}><b>Complexity target:</b> {item.complexity}</span>
+              <span style={{ color: "#fda4af", fontSize: 11, lineHeight: 1.4 }}><b>Common trap:</b> {item.trap}</span>
+              <span style={{ color: "#dbeafe", fontSize: 11, lineHeight: 1.4 }}><b>Practice:</b> {item.practice}</span>
+            </div>
+          </details>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function DsaVisualLabContent({ initialLessonId = "arrays", onPractice, theme = {}, profile = {}, beginnerMode = false, beginnerStep = "watch", onBeginnerStepChange, onActivity }) {
   const lessons = useMemo(() => listDsaVisualLessons(), []);
   const blind75Problems = useMemo(() => listBlind75Problems(), []);
   const blind75Visualizers = useMemo(() => listBlind75Visualizers(), []);
@@ -2428,7 +2628,11 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
     [blind75Problems, learningQuery, learningPatternFilter],
   );
 
+  const challengeRequestRef = useRef(null);
   const refreshGeneratedChallenges = useCallback(async () => {
+    challengeRequestRef.current?.abort();
+    const controller = new AbortController();
+    challengeRequestRef.current = controller;
     setChallengeLoading(true);
     setChallengeError("");
 
@@ -2436,6 +2640,7 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
       const response = await fetch("/api/dsa-challenges", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           stack: stackText || "JavaScript",
           count: 12,
@@ -2452,6 +2657,7 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
       setChallengeChoiceId("");
       setChallengeSource("generated");
     } catch (error) {
+      if (error?.name === "AbortError") return;
       setGeneratedChallenges([]);
       setSelectedChallengeId("challenge-arrays-mcq");
       setChallengeChoiceId("");
@@ -2464,6 +2670,7 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
 
   useEffect(() => {
     refreshGeneratedChallenges();
+    return () => challengeRequestRef.current?.abort();
   }, [refreshGeneratedChallenges]);
 
   useEffect(() => {
@@ -2516,6 +2723,9 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
         return String(lessonId).startsWith("blind75-") ? lessonId : "blind75-two-sum";
       }
       if (nextTrack === "thinking") {
+        return isKnownLessonId(lessonId) ? lessonId : fallbackLessonId;
+      }
+      if (nextTrack === "foundations") {
         return isKnownLessonId(lessonId) ? lessonId : fallbackLessonId;
       }
       return String(lessonId).startsWith("blind75-") ? fallbackLessonId : lessonId;
@@ -2891,7 +3101,11 @@ export default function DsaVisualLab({ initialLessonId = "arrays", onPractice, t
         />
       ) : null}
 
-      {track === "fresher" ? (
+      {track === "curriculum" ? (
+        <CompleteDsaCurriculum accent={accent} accentBorder={accentBorder} />
+      ) : track === "foundations" ? (
+        <FoundationsPath accent={accent} accentBorder={accentBorder} onChooseLesson={(lessonId) => { chooseLesson(lessonId); setStage("Visualize"); }} />
+      ) : track === "fresher" ? (
         <FresherDsaTrack accent={accent} accentBorder={accentBorder} />
       ) : track === "thinking" ? (
         <section style={{ background: "rgba(255,255,255,.035)", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 12, padding: 12 }}>

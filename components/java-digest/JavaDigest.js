@@ -1,3 +1,5 @@
+import Head from "next/head";
+import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
 import {
   CSES_JAVA_PARTS,
@@ -5,6 +7,14 @@ import {
   JAVA_DIGEST_ROADMAPS,
   JAVA_DIGEST_TRACKS,
   JAVA_DIGEST_VERSION,
+  JAVA_SPRING_STUDY_PATHS,
+  JAVA_QUICK_REFERENCE,
+  JAVA_INTERVIEW_QA,
+  JAVA_PRODUCTION_SCENARIOS,
+  JAVA_TUTORIAL_CATALOG,
+  JAVA_VERSION_TOPIC_GUIDE,
+  JAVA_PROGRAM_EXAMPLES,
+  JAVA_QUIZ_BANK,
   buildJavaDigestCompetencySummary,
   buildCsesJavaPracticePrompt,
   buildJavaDigestGeneratedTopicPrompt,
@@ -17,6 +27,9 @@ import {
 } from "../../lib/javaDigest.mjs";
 import BeginnerGuideBanner from "../BeginnerGuideBanner";
 import MessageContent from "../chat/MessageContent";
+import useJavaDigestProgress from "./useJavaDigestProgress";
+import JavaDigestTutorialCard from "./JavaDigestTutorialCard";
+import JavaDigestReviewQueue from "./JavaDigestReviewQueue";
 
 const wrap = {
   minWidth: 0,
@@ -32,6 +45,14 @@ const responsiveGrid = (minColumnWidth, gap = 10) => ({
 });
 
 const VIEW_METADATA = {
+  "Production Scenarios": {
+    title: "Production Scenario Interviews",
+    description: "Practice end-to-end incident reasoning: impact, triage, evidence, mitigation, root cause, prevention, and STAR communication.",
+  },
+  "Interview Q&A": {
+    title: "Java Interview Q&A",
+    description: "Detailed internal-mechanics answers, when-to-use comparisons, and STAR stories for Java and multithreading interviews.",
+  },
   "Java Curriculum": {
     title: "Competitive Programming in Java",
     description: "A complete Java practice curriculum for algorithms, data structures, graphs, and advanced topics.",
@@ -39,6 +60,26 @@ const VIEW_METADATA = {
   "Senior Refresher": {
     title: "Senior Java Interview Refresher",
     description: "Practice Java 21, JVM, concurrency, architecture, and production judgement.",
+  },
+  "Java + Spring": {
+    title: "Java + Spring Study Path",
+    description: "Original learning material for robust Java, Spring Framework, and production Spring Boot development.",
+  },
+  "Quick Reference": {
+    title: "Java + Spring Quick Reference",
+    description: "Short revision sheets and self-check questions for daily recall.",
+  },
+  "Tutorial Library": {
+    title: "Java Tutorial Library",
+    description: "An original, searchable catalog spanning core Java, modern releases, concurrency, data, Spring, and Spring Boot.",
+  },
+  "Practice Lab": {
+    title: "Java Programs + Quizzes",
+    description: "Short implementation prompts and self-check questions for deliberate practice.",
+  },
+  "Saved & Review": {
+    title: "Saved Learning and Review Queue",
+    description: "Return to bookmarked material and spaced-repetition reviews without losing your place.",
   },
   Search: {
     title: "Java Interview Topic Search",
@@ -111,6 +152,34 @@ function buildArticleDrill(article) {
     trap,
     followUp,
   };
+}
+
+function buildStarFrame(title, context = "") {
+  return `Situation: a project needed a reliable approach to ${title}. Task: apply the concept without weakening correctness. Action: clarified the constraint, implemented the smallest observable change, tested the normal and failure paths, and measured the result. Result: the behavior matched the contract and the trade-off was documented. ${context}`;
+}
+
+function parseStarStory(story = "") {
+  const match = String(story).match(/^Situation:\s*(.*?)\s+Task:\s*(.*?)\s+Action:\s*(.*?)\s+Result:\s*(.*)$/s);
+  if (!match) return { Situation: story, Task: "", Action: "", Result: "" };
+  return { Situation: match[1], Task: match[2], Action: match[3], Result: match[4] };
+}
+
+function StarAnswer({ story, accent, label = "STAR answer:" }) {
+  const parts = parseStarStory(story);
+  return (
+    <section aria-label={label} style={{ borderLeft: `3px solid ${accent}`, display: "grid", gap: 7, paddingLeft: 9 }}>
+      <strong style={{ color: accent, fontSize: 10.5, textTransform: "uppercase" }}>{label}</strong>
+      <div style={responsiveGrid(170, 7)}>
+        {["Situation", "Task", "Action", "Result"].map((key) => (
+          <div key={key} style={{ background: "var(--jd-surface-sunken)", border: "1px solid var(--jd-border)", borderRadius: 6, padding: "7px 8px" }}>
+            <b style={{ color: accent, display: "block", fontSize: 10.2, marginBottom: 3 }}>{key}</b>
+            <span style={{ color: "var(--jd-text-soft)", fontSize: 11.2, lineHeight: 1.45 }}>{parts[key]}</span>
+          </div>
+        ))}
+      </div>
+      <span style={{ color: "var(--jd-text-muted)", fontSize: 10.8, lineHeight: 1.4 }}><b style={{ color: "var(--jd-text)" }}>Make it yours:</b> replace the generic context with your system, decision, metric, and learning.</span>
+    </section>
+  );
 }
 
 function InterviewDrillCard({ article, accent, onAction }) {
@@ -204,7 +273,7 @@ function GeneratedAnswerPanel({ answer, error, loading, query, accent, onRetry }
   );
 }
 
-function ArticleCard({ article, accent, expanded, onAction, onToggle }) {
+function ArticleCard({ article, accent, expanded, onAction, onToggle, previousArticle, nextArticle, onNavigate }) {
   const track = getJavaDigestTrack(article.trackId);
   const beginnerContext = {
     what: `${article.title} is a focused Java/interview concept. Start by understanding the idea before memorizing syntax.`,
@@ -235,19 +304,28 @@ function ArticleCard({ article, accent, expanded, onAction, onToggle }) {
       <p style={{ ...wrap, color: "var(--jd-text-soft)", fontSize: 12, lineHeight: 1.55 }}>{article.summary}</p>
       {expanded && (
         <div id={`java-digest-article-${article.id}`} style={{ display: "grid", gap: 10 }}>
-          <section style={{ ...wrap, background: `${accent}10`, border: `1px solid ${accent}2f`, borderRadius: 8, display: "grid", gap: 6, padding: 10 }}>
+          <nav aria-label="Table of contents" style={{ ...wrap, background: "var(--jd-surface-sunken)", border: "1px solid var(--jd-border)", borderRadius: 8, display: "flex", flexWrap: "wrap", gap: 7, padding: 9 }}><strong style={{ color: accent, fontSize: 10.5, textTransform: "uppercase" }}>Contents</strong>{[["Overview", "overview"], ["Topics", "topics"], ["Questions", "questions"], ["STAR framing", "star"], ["Practice", "practice"]].map(([label, id]) => <a key={id} href={`#java-digest-${article.id}-${id}`} style={{ color: "var(--jd-text-soft)", fontSize: 10.8 }}>{label}</a>)}</nav>
+          <section id={`java-digest-${article.id}-overview`} style={{ ...wrap, background: `${accent}10`, border: `1px solid ${accent}2f`, borderRadius: 8, display: "grid", gap: 6, padding: 10 }}>
             <div style={{ color: accent, fontSize: 10.8, fontWeight: 900, textTransform: "uppercase" }}>Beginner Explainer</div>
             <p style={{ color: "var(--jd-text-soft)", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}><strong style={{ color: "var(--jd-text)" }}>What is this?</strong> {beginnerContext.what}</p>
             <p style={{ color: "var(--jd-text-soft)", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}><strong style={{ color: "var(--jd-text)" }}>Why does it matter?</strong> {beginnerContext.why}</p>
             <p style={{ color: "var(--jd-text-soft)", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}><strong style={{ color: "var(--jd-text)" }}>Where is it used?</strong> {beginnerContext.where}</p>
           </section>
 
-          <div style={responsiveGrid(220, 9)}>
+          <div id={`java-digest-${article.id}-topics`} style={responsiveGrid(220, 9)}>
             <DetailList title="What To Learn" icon="ti-list-check" items={article.learn} accent={accent} />
             <DetailList title="Interview Questions" icon="ti-message-question" items={article.questions} accent="var(--jd-accent-alt)" />
           </div>
 
-          <InterviewDrillCard article={article} accent={accent} onAction={onAction} />
+          <section id={`java-digest-${article.id}-star`}><StarAnswer story={buildStarFrame(article.title, article.summary)} accent={accent} label="How to frame it in STAR" /></section>
+
+          <div id={`java-digest-${article.id}-questions`}><div id={`java-digest-${article.id}-practice`}><InterviewDrillCard article={article} accent={accent} onAction={onAction} /></div></div>
+          <nav aria-label="Article navigation" style={{ alignItems: "center", borderTop: "1px solid var(--jd-border)", display: "flex", flexWrap: "wrap", gap: 7, justifyContent: "space-between", paddingTop: 9 }}>
+            <button type="button" className="glass-button" disabled={!previousArticle} onClick={() => onNavigate(previousArticle)} style={{ border: "1px solid var(--jd-border-strong)", borderRadius: 7, color: "var(--jd-text)", fontSize: 10.8, opacity: previousArticle ? 1 : .45, padding: "6px 8px" }}>← {previousArticle?.title || "Previous"}</button>
+            <button type="button" className="glass-button" onClick={() => { window.print(); }} style={{ border: "1px solid var(--jd-border-strong)", borderRadius: 7, color: "var(--jd-text)", fontSize: 10.8, padding: "6px 8px" }}>Print lesson</button>
+            <button type="button" className="glass-button" onClick={() => { const url = window.location.href; navigator.clipboard?.writeText(url); }} style={{ border: "1px solid var(--jd-border-strong)", borderRadius: 7, color: "var(--jd-text)", fontSize: 10.8, padding: "6px 8px" }}>Copy link</button>
+            <button type="button" className="glass-button" disabled={!nextArticle} onClick={() => onNavigate(nextArticle)} style={{ border: "1px solid var(--jd-border-strong)", borderRadius: 7, color: "var(--jd-text)", fontSize: 10.8, opacity: nextArticle ? 1 : .45, padding: "6px 8px" }}>{nextArticle?.title || "Next"} →</button>
+          </nav>
         </div>
       )}
 
@@ -270,6 +348,59 @@ function ArticleCard({ article, accent, expanded, onAction, onToggle }) {
           </>
         )}
       </div>
+    </article>
+  );
+}
+
+function StudyPathCard({ path, accent, expanded, onToggle, completedIds, bookmarkedIds, onToggleStatus }) {
+  return (
+    <article className={`java-digest-card${expanded ? " is-expanded" : ""}`} style={{ ...wrap, borderRadius: 8, display: "grid", gap: 10, padding: 12 }}>
+      <div style={wrap}>
+        <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>{path.eyebrow}</div>
+        <h3 style={{ ...wrap, color: "var(--jd-text)", fontSize: 15.5, lineHeight: 1.25, marginTop: 4 }}>{path.title}</h3>
+        <span style={{ border: "1px solid var(--jd-border-strong)", borderRadius: 999, color: "var(--jd-warning-text)", display: "inline-block", fontSize: 10, fontWeight: 900, marginTop: 6, padding: "3px 7px" }}>{path.level}</span>
+        <p style={{ ...wrap, color: "var(--jd-text-soft)", fontSize: 12, lineHeight: 1.55, marginTop: 7 }}>{path.description}</p>
+      </div>
+      <button type="button" className="glass-button" onClick={onToggle} aria-expanded={expanded} aria-controls={`java-study-path-${path.id}`} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "var(--jd-text)", fontSize: 11, fontWeight: 800, justifySelf: "start", padding: "7px 10px" }}>
+        <i className={`ti ${expanded ? "ti-chevron-up" : "ti-book-2"}`} style={{ color: accent, marginRight: 6 }} />
+        {expanded ? "Close Lessons" : "Open Lessons"}
+      </button>
+      {expanded && (
+        <ol id={`java-study-path-${path.id}`} style={{ ...wrap, color: "var(--jd-text-muted)", display: "grid", fontSize: 11.5, gap: 9, lineHeight: 1.5, margin: 0, paddingLeft: 19 }}>
+          {path.lessons.map((lesson, index) => {
+            const id = `${path.id}-${index + 1}`;
+            return <li key={lesson.title} style={{ borderBottom: "1px solid var(--jd-border)", paddingBottom: 9 }}>
+              <strong style={{ color: "var(--jd-text)", display: "block", fontSize: 12 }}>{lesson.title}</strong>
+              <span style={{ display: "block", marginTop: 5 }}><b style={{ color: accent }}>Learn:</b> {lesson.outcome}</span>
+              <span style={{ display: "block", marginTop: 5 }}><b style={{ color: "var(--jd-warning-text)" }}>Remember it:</b> {lesson.mentalModel}</span>
+              <span style={{ display: "block", marginTop: 5 }}><b style={{ color: "var(--jd-text)" }}>See it:</b> {lesson.example}</span>
+              <span style={{ color: "var(--jd-accent-alt)", display: "block", marginTop: 5 }}><b>Recall without looking:</b> {lesson.recall}</span>
+              <span style={{ color: "var(--jd-accent-alt)", display: "block", marginTop: 5 }}><b>Do it:</b> {lesson.drill}</span>
+              <div style={{ marginTop: 7 }}><StarAnswer story={buildStarFrame(lesson.title, lesson.outcome)} accent={accent} label="How to frame it in STAR" /></div>
+              {lesson.definition && <details style={{ borderTop: "1px solid var(--jd-border)", marginTop: 8, paddingTop: 7 }}><summary style={{ color: accent, cursor: "pointer", fontSize: 11.2, fontWeight: 900 }}>Detailed pattern answer</summary><div style={{ color: "var(--jd-text-soft)", display: "grid", fontSize: 11.2, gap: 6, lineHeight: 1.5, marginTop: 7 }}><div><b style={{ color: "var(--jd-text)" }}>Definition:</b> {lesson.definition}</div><div><b style={{ color: "var(--jd-text)" }}>How it works:</b> {lesson.howItWorks}</div><div><b style={{ color: "var(--jd-text)" }}>Advantages:</b> {lesson.advantages}</div><div><b style={{ color: "var(--jd-text)" }}>Disadvantages:</b> {lesson.disadvantages}</div><div><b style={{ color: "var(--jd-text)" }}>When to use:</b> {lesson.whenToUse}</div><div><b style={{ color: "var(--jd-text)" }}>Interview question:</b> {lesson.interview}</div><StarAnswer story={lesson.star} accent={accent} /><pre style={{ background: "var(--jd-surface-sunken)", borderRadius: 6, color: "var(--jd-code-text)", margin: 0, overflowX: "auto", padding: 8, whiteSpace: "pre-wrap" }}>{lesson.codeSketch}</pre></div></details>}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 7 }}><ChipButton label={completedIds.has(id) ? "Completed" : "Mark complete"} icon="ti-check" active={completedIds.has(id)} accent={accent} onClick={() => onToggleStatus("completedTutorials", id)} /><ChipButton label={bookmarkedIds.has(id) ? "Bookmarked" : "Bookmark"} icon="ti-bookmark" active={bookmarkedIds.has(id)} accent="var(--jd-warning)" onClick={() => onToggleStatus("bookmarkedTutorials", id)} /></div>
+            </li>
+          })}
+        </ol>
+      )}
+    </article>
+  );
+}
+
+function QuickReferenceCard({ reference, accent, completedIds, bookmarkedIds, onToggleStatus }) {
+  return (
+    <article className="java-digest-card" style={{ ...wrap, borderRadius: 8, display: "grid", gap: 9, padding: 12 }}>
+      <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 7 }}><span style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>{reference.category}</span><span style={{ border: "1px solid var(--jd-border-strong)", borderRadius: 999, color: "var(--jd-warning-text)", fontSize: 9.8, fontWeight: 900, padding: "3px 6px" }}>{reference.level}</span></div>
+      <h3 style={{ ...wrap, color: "var(--jd-text)", fontSize: 14.5, lineHeight: 1.25 }}>{reference.title}</h3>
+      <ul style={{ ...wrap, color: "var(--jd-text-soft)", display: "grid", fontSize: 11.4, gap: 6, lineHeight: 1.45, margin: 0, paddingLeft: 17 }}>
+        {reference.points.map((point) => <li key={point}>{point}</li>)}
+      </ul>
+      <details style={{ borderTop: "1px solid var(--jd-border)", paddingTop: 8 }}>
+        <summary style={{ color: "var(--jd-accent-alt)", cursor: "pointer", fontSize: 11, fontWeight: 800 }}>Self-check: {reference.quiz}</summary>
+        <p style={{ color: "var(--jd-text-soft)", fontSize: 11.3, lineHeight: 1.5, margin: "7px 0 0" }}><b style={{ color: accent }}>Answer:</b> {reference.answer}</p>
+        <StarAnswer story={buildStarFrame(reference.title, reference.answer)} accent={accent} label="How to frame it in STAR" />
+      </details>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}><ChipButton label={completedIds.has(reference.id) ? "Reviewed" : "Mark reviewed"} icon="ti-check" active={completedIds.has(reference.id)} accent={accent} onClick={() => onToggleStatus("completedTutorials", reference.id)} /><ChipButton label={bookmarkedIds.has(reference.id) ? "Bookmarked" : "Bookmark"} icon="ti-bookmark" active={bookmarkedIds.has(reference.id)} accent="var(--jd-warning)" onClick={() => onToggleStatus("bookmarkedTutorials", reference.id)} /></div>
     </article>
   );
 }
@@ -474,13 +605,19 @@ function CsesPartSection({ part, accent, expanded, expandedChapterId, onAction, 
   );
 }
 
-export default function JavaDigest({ theme = {}, onAction, onRefresherProgressChange, profile = null, beginnerMode = false, beginnerStep = "watch", onBeginnerStepChange, onActivity, progress = {} }) {
+export default function JavaDigest({ theme = {}, onAction, onJavaProgressChange, onRefresherProgressChange, profile = null, beginnerMode = false, beginnerStep = "watch", onBeginnerStepChange, onActivity, progress = {} }) {
+  const updateProgress = onJavaProgressChange || onRefresherProgressChange;
   const [activeTrack, setActiveTrack] = useState("all");
   const [activeView, setActiveView] = useState("Java Curriculum");
   const [expandedPartId, setExpandedPartId] = useState(CSES_JAVA_PARTS[0]?.id || "");
   const [expandedChapterId, setExpandedChapterId] = useState("");
   const [expandedArticleId, setExpandedArticleId] = useState("");
   const [expandedRoadmapId, setExpandedRoadmapId] = useState("");
+  const [expandedStudyPathId, setExpandedStudyPathId] = useState("");
+  const [tutorialSearch, setTutorialSearch] = useState("");
+  const [tutorialCategory, setTutorialCategory] = useState("all");
+  const [tutorialLevel, setTutorialLevel] = useState("all");
+  const [tutorialSavedFilter, setTutorialSavedFilter] = useState("all");
   const [searchDraft, setSearchDraft] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [generatedAnswer, setGeneratedAnswer] = useState("");
@@ -497,14 +634,48 @@ export default function JavaDigest({ theme = {}, onAction, onRefresherProgressCh
   const [practiceQuestionId, setPracticeQuestionId] = useState("");
   const [practiceResponse, setPracticeResponse] = useState("");
   const [practiceAnswerRevealed, setPracticeAnswerRevealed] = useState(false);
+  const router = useRouter();
   const accent = theme.accentStrong || "#8bd3ff";
   const accentBorder = theme.accentBorder || "rgba(139, 211, 255, .26)";
   const articles = useMemo(() => listJavaDigestArticles(activeTrack), [activeTrack]);
+  const selectedArticle = articles.find((article) => article.id === expandedArticleId) || null;
   const viewMetadata = VIEW_METADATA[activeView] || VIEW_METADATA["Java Curriculum"];
+  const { learningProgress, dueReviewCount, dueReviewIds, toggleLearningStatus } = useJavaDigestProgress(progress, updateProgress);
   const competencySummary = useMemo(
     () => buildJavaDigestCompetencySummary({ progress, selectedTrackId: activeTrack }),
     [progress, activeTrack],
   );
+  const tutorialCategories = useMemo(() => Array.from(new Set(JAVA_TUTORIAL_CATALOG.map((tutorial) => tutorial.category))), []);
+  const tutorialLevels = useMemo(() => Array.from(new Set(JAVA_TUTORIAL_CATALOG.map((tutorial) => tutorial.level))), []);
+  const visibleTutorials = useMemo(() => {
+    const query = tutorialSearch.trim().toLocaleLowerCase();
+    return JAVA_TUTORIAL_CATALOG.filter((tutorial) => (
+      (tutorialCategory === "all" || tutorial.category === tutorialCategory)
+      && (tutorialLevel === "all" || tutorial.level === tutorialLevel)
+      && (tutorialSavedFilter === "all" || (tutorialSavedFilter === "saved" ? learningProgress.bookmarkedIds.has(tutorial.id) : !learningProgress.completedIds.has(tutorial.id)))
+      && (!query || [tutorial.title, tutorial.category, tutorial.level, tutorial.summary, tutorial.explanation, tutorial.walkthrough, tutorial.howToThink, tutorial.mistakes, tutorial.productionNote, tutorial.interviewAnswer, tutorial.relatedTopics?.join(" "), tutorial.editorialStatus].join(" ").toLocaleLowerCase().includes(query))
+    ));
+  }, [learningProgress.bookmarkedIds, learningProgress.completedIds, tutorialCategory, tutorialLevel, tutorialSavedFilter, tutorialSearch]);
+  const dueTutorials = useMemo(() => JAVA_TUTORIAL_CATALOG.filter((tutorial) => dueReviewIds.includes(tutorial.id)).slice(0, 8), [dueReviewIds]);
+  const savedTutorials = useMemo(() => JAVA_TUTORIAL_CATALOG.filter((tutorial) => learningProgress.bookmarkedIds.has(tutorial.id)), [learningProgress.bookmarkedIds]);
+  const lastOpenedTutorial = JAVA_TUTORIAL_CATALOG.find((tutorial) => tutorial.id === progress.lastOpenedTutorial) || null;
+  const openTutorial = (tutorial) => {
+    updateProgress?.((previous = {}) => ({ ...previous, lastOpenedTutorial: tutorial.id }));
+    setTutorialSearch(tutorial.title);
+  };
+  useEffect(() => {
+    const articleId = typeof router.query.article === "string" ? router.query.article : "";
+    if (!router.isReady || !articleId || !JAVA_DIGEST_ARTICLES.some((article) => article.id === articleId)) return;
+    setActiveView("Articles");
+    setExpandedArticleId(articleId);
+  }, [router.isReady, router.query.article]);
+  const navigateArticle = (article) => {
+    if (!article) return;
+    setActiveView("Articles");
+    setActiveTrack("all");
+    setExpandedArticleId(article.id);
+    router.push({ pathname: router.pathname, query: { ...router.query, article: article.id } }, undefined, { shallow: true });
+  };
   const visibleRefresherQuestions = useMemo(() => {
     const query = refresherFilter.trim().toLocaleLowerCase();
     return refresherQuestions.filter((entry) => (
@@ -523,7 +694,14 @@ export default function JavaDigest({ theme = {}, onAction, onRefresherProgressCh
     masteredQuestions: new Set(Array.isArray(progress.masteredQuestions) ? progress.masteredQuestions : []),
   };
   const tabs = [
+    { label: "Interview Q&A", icon: "ti-message-question" },
+    { label: "Production Scenarios", icon: "ti-alert-triangle" },
     { label: "Senior Refresher", icon: "ti-bolt" },
+    { label: "Java + Spring", icon: "ti-leaf" },
+    { label: "Quick Reference", icon: "ti-notes" },
+    { label: "Tutorial Library", icon: "ti-books" },
+    { label: "Practice Lab", icon: "ti-code" },
+    { label: "Saved & Review", icon: "ti-bookmark" },
     { label: "Java Curriculum", icon: "ti-book-2" },
     { label: "Search", icon: "ti-search" },
     { label: "Articles", icon: "ti-news" },
@@ -602,6 +780,18 @@ export default function JavaDigest({ theme = {}, onAction, onRefresherProgressCh
   };
   const submitSearch = (event) => {
     event?.preventDefault();
+    const query = searchDraft.trim().toLocaleLowerCase();
+    const exactArticle = JAVA_DIGEST_ARTICLES.find((article) => article.title.toLocaleLowerCase() === query);
+    const exactTutorial = JAVA_TUTORIAL_CATALOG.find((tutorial) => tutorial.title.toLocaleLowerCase() === query);
+    if (exactArticle) {
+      navigateArticle(exactArticle);
+      return;
+    }
+    if (exactTutorial) {
+      setActiveView("Tutorial Library");
+      openTutorial(exactTutorial);
+      return;
+    }
     generateAnswer(searchDraft);
   };
   const toggleExpandedChapter = (chapterId) => setExpandedChapterId((current) => current === chapterId ? "" : chapterId);
@@ -610,7 +800,7 @@ export default function JavaDigest({ theme = {}, onAction, onRefresherProgressCh
     setExpandedChapterId("");
   };
   const toggleRefresherStatus = (field, questionId) => {
-    onRefresherProgressChange?.((previous = {}) => {
+    updateProgress?.((previous = {}) => {
       const values = new Set(Array.isArray(previous[field]) ? previous[field] : []);
       if (values.has(questionId)) values.delete(questionId);
       else values.add(questionId);
@@ -639,7 +829,7 @@ export default function JavaDigest({ theme = {}, onAction, onRefresherProgressCh
   const revealPracticeAnswer = () => {
     if (!practiceQuestion) return;
     setPracticeAnswerRevealed(true);
-    onRefresherProgressChange?.((previous = {}) => ({
+    updateProgress?.((previous = {}) => ({
       ...previous,
       reviewedQuestions: Array.from(new Set([...(previous.reviewedQuestions || []), practiceQuestion.id])),
     }));
@@ -778,6 +968,48 @@ export default function JavaDigest({ theme = {}, onAction, onRefresherProgressCh
         </div>
       )}
 
+      {activeView === "Interview Q&A" && (
+        <div style={{ display: "grid", gap: 10 }}>
+          <section style={{ ...wrap, background: "var(--jd-accent-surface)", border: `1px solid ${accent}33`, borderRadius: 8, display: "grid", gap: 7, padding: 12 }}>
+            <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Answer framework</div>
+            <p style={{ color: "var(--jd-text-soft)", fontSize: 11.7, lineHeight: 1.55, margin: 0 }}>Start with a direct technical answer, explain the internal mechanism, name the trade-off and usage boundary, then give a STAR story that proves you applied the idea in production.</p>
+          </section>
+          {JAVA_INTERVIEW_QA.map((entry) => (
+            <details key={entry.id} style={{ ...wrap, background: "var(--jd-surface-subtle)", border: `1px solid ${accentBorder}`, borderRadius: 8, padding: "10px 11px" }}>
+              <summary style={{ color: "var(--jd-text)", cursor: "pointer", fontSize: 13, fontWeight: 850, lineHeight: 1.45 }}>{entry.question}</summary>
+              <div style={{ color: accent, fontSize: 10.3, fontWeight: 900, marginTop: 9, textTransform: "uppercase" }}>{entry.section} · Detailed answer</div>
+              <p style={{ color: "var(--jd-text-soft)", fontSize: 11.7, lineHeight: 1.58, margin: "6px 0 0" }}>{entry.answer}</p>
+              <pre style={{ background: "var(--jd-surface-sunken)", borderRadius: 6, color: "var(--jd-text)", fontSize: 11, lineHeight: 1.5, margin: "8px 0 0", overflowX: "auto", padding: 9, whiteSpace: "pre-wrap" }}>{entry.example}</pre>
+              <StarAnswer story={entry.star} accent={accent} label="STAR story" />
+              <div style={{ color: "var(--jd-text-muted)", fontSize: 11.2, lineHeight: 1.45, marginTop: 8 }}><strong style={{ color: "var(--jd-text)" }}>Likely follow-ups:</strong> {entry.followUps}</div>
+            </details>
+          ))}
+        </div>
+      )}
+
+      {activeView === "Production Scenarios" && (
+        <div style={{ display: "grid", gap: 10 }}>
+          <section style={{ ...wrap, background: "var(--jd-accent-surface)", border: `1px solid ${accent}33`, borderRadius: 8, display: "grid", gap: 7, padding: 12 }}>
+            <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Incident answer loop</div>
+            <p style={{ color: "var(--jd-text-soft)", fontSize: 11.7, lineHeight: 1.55, margin: 0 }}>State impact first. Then separate mitigation from diagnosis: stabilize users with the safest reversible action, gather evidence, test a hypothesis, and only then explain root cause and prevention. Finish with the STAR story in your own voice.</p>
+          </section>
+          {JAVA_PRODUCTION_SCENARIOS.map((scenario) => (
+            <details key={scenario.id} style={{ ...wrap, background: "var(--jd-surface-subtle)", border: `1px solid ${accentBorder}`, borderRadius: 8, padding: "10px 11px" }}>
+              <summary style={{ color: "var(--jd-text)", cursor: "pointer", fontSize: 13, fontWeight: 850, lineHeight: 1.45 }}>{scenario.title} <span style={{ color: accent, fontSize: 10.5, marginLeft: 5 }}>{scenario.area}</span></summary>
+              <div style={{ display: "grid", gap: 8, marginTop: 9 }}>
+                <p style={{ color: "var(--jd-text)", fontSize: 11.7, lineHeight: 1.55, margin: 0 }}><strong style={{ color: accent }}>Interviewer prompt:</strong> {scenario.prompt}</p>
+                <p style={{ color: "var(--jd-text-soft)", fontSize: 11.4, lineHeight: 1.5, margin: 0 }}><strong style={{ color: "var(--jd-text)" }}>Customer impact:</strong> {scenario.impact}</p>
+                <div><strong style={{ color: accent, fontSize: 10.3, textTransform: "uppercase" }}>End-to-end triage</strong><ol style={{ color: "var(--jd-text-soft)", display: "grid", fontSize: 11.4, gap: 5, lineHeight: 1.48, margin: "6px 0 0", paddingLeft: 20 }}>{scenario.triage.map((step) => <li key={step}>{step}</li>)}</ol></div>
+                <p style={{ color: "var(--jd-text-soft)", fontSize: 11.4, lineHeight: 1.5, margin: 0 }}><strong style={{ color: "var(--jd-accent-alt)" }}>Likely diagnosis:</strong> {scenario.diagnosis}</p>
+                <p style={{ color: "var(--jd-text-soft)", fontSize: 11.4, lineHeight: 1.5, margin: 0 }}><strong style={{ color: "#facc15" }}>Prevention:</strong> {scenario.prevention}</p>
+                <StarAnswer story={scenario.star} accent={accent} />
+                <div style={{ color: "var(--jd-text-muted)", fontSize: 11.1, lineHeight: 1.45 }}><strong style={{ color: "var(--jd-text)" }}>Follow-ups:</strong> {scenario.followUps}</div>
+              </div>
+            </details>
+          ))}
+        </div>
+      )}
+
       {activeView === "Senior Refresher" && (
         <div style={{ display: "grid", gap: 10 }}>
           <section style={{ ...wrap, background: "var(--jd-accent-surface)", border: `1px solid ${accent}33`, borderRadius: 8, display: "grid", gap: 7, padding: 12 }}>
@@ -882,8 +1114,90 @@ export default function JavaDigest({ theme = {}, onAction, onRefresherProgressCh
         </div>
       )}
 
+      {activeView === "Java + Spring" && (
+        <div style={{ display: "grid", gap: 10 }}>
+          <section style={{ ...wrap, background: "var(--jd-accent-surface)", border: `1px solid ${accent}33`, borderRadius: 8, display: "grid", gap: 6, padding: 12 }}>
+            <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Guided technical curriculum</div>
+            <h3 style={{ ...wrap, color: "var(--jd-text)", fontSize: 15.5, lineHeight: 1.25 }}>Java, Spring Framework, and Spring Boot</h3>
+            <p style={{ ...wrap, color: "var(--jd-text-muted)", fontSize: 11.6, lineHeight: 1.5 }}>
+              This is a complete progression for everyone: start with language foundations, deepen your design judgement, then move into Spring and production operations. The existing Senior Refresher adds Java 21, JVM, concurrency, architecture, and interview-level trade-offs. For every lesson, read the mental model, picture the example, answer the recall question without looking, and complete the drill.
+            </p>
+          </section>
+          <div style={responsiveGrid(280, 10)}>
+            {JAVA_SPRING_STUDY_PATHS.map((path) => <StudyPathCard key={path.id} path={path} accent={accent} expanded={expandedStudyPathId === path.id} completedIds={learningProgress.completedIds} bookmarkedIds={learningProgress.bookmarkedIds} onToggleStatus={toggleLearningStatus} onToggle={() => setExpandedStudyPathId((current) => current === path.id ? "" : path.id)} />)}
+          </div>
+        </div>
+      )}
+
+      {activeView === "Quick Reference" && (
+        <div style={{ display: "grid", gap: 10 }}>
+          <section style={{ ...wrap, background: "var(--jd-accent-surface)", border: `1px solid ${accent}33`, borderRadius: 8, display: "grid", gap: 6, padding: 12 }}>
+            <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Daily revision sheets</div>
+            <h3 style={{ ...wrap, color: "var(--jd-text)", fontSize: 15.5, lineHeight: 1.25 }}>Quick Reference + Self-Check</h3>
+            <p style={{ ...wrap, color: "var(--jd-text-muted)", fontSize: 11.6, lineHeight: 1.5 }}>Read the three rules, close the card, and answer the self-check from memory. Return to a card tomorrow and one week later.</p>
+          </section>
+          <div style={responsiveGrid(280, 10)}>{JAVA_QUICK_REFERENCE.map((reference) => <QuickReferenceCard key={reference.id} reference={reference} accent={accent} completedIds={learningProgress.completedIds} bookmarkedIds={learningProgress.bookmarkedIds} onToggleStatus={toggleLearningStatus} />)}</div>
+        </div>
+      )}
+
+      {activeView === "Tutorial Library" && (
+        <div style={{ display: "grid", gap: 10 }}>
+          <section style={{ ...wrap, background: "var(--jd-accent-surface)", border: `1px solid ${accent}33`, borderRadius: 8, display: "grid", gap: 6, padding: 12 }}>
+            <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Original topic index · {JAVA_TUTORIAL_CATALOG.length} tutorials · {dueReviewCount} due for review</div>
+            <h3 style={{ ...wrap, color: "var(--jd-text)", fontSize: 15.5, lineHeight: 1.25 }}>Searchable Java and Spring Tutorial Library</h3>
+            <p style={{ ...wrap, color: "var(--jd-text-muted)", fontSize: 11.6, lineHeight: 1.5 }}>Browse by category and level. Each card is a compact starting point; open the AI topic search for a deeper explanation and code walkthrough.</p>
+            <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 7, marginTop: 3 }}>
+              <input value={tutorialSearch} onChange={(event) => setTutorialSearch(event.target.value)} className="glass-input" placeholder="Find a topic..." aria-label="Find a Java tutorial" style={{ background: "var(--jd-surface-sunken)", border: `1px solid ${accentBorder}`, borderRadius: 7, color: "var(--jd-text)", fontSize: 11.5, minHeight: 31, minWidth: 190, padding: "6px 8px" }} />
+              <ChipButton label="All topics" icon="ti-layout-grid" active={tutorialCategory === "all"} accent={accent} onClick={() => setTutorialCategory("all")} />
+              {tutorialCategories.map((category) => <ChipButton key={category} label={category} icon="ti-tag" active={tutorialCategory === category} accent={accent} onClick={() => setTutorialCategory(category)} />)}
+              <ChipButton label="All levels" icon="ti-adjustments" active={tutorialLevel === "all"} accent={accent} onClick={() => setTutorialLevel("all")} />
+              {tutorialLevels.map((level) => <ChipButton key={level} label={level} icon="ti-chart-dots" active={tutorialLevel === level} accent={accent} onClick={() => setTutorialLevel(level)} />)}
+              <ChipButton label="Saved" icon="ti-bookmark" active={tutorialSavedFilter === "saved"} accent="var(--jd-warning)" onClick={() => setTutorialSavedFilter(tutorialSavedFilter === "saved" ? "all" : "saved")} />
+              <ChipButton label="Unfinished" icon="ti-progress" active={tutorialSavedFilter === "unfinished"} accent={accent} onClick={() => setTutorialSavedFilter(tutorialSavedFilter === "unfinished" ? "all" : "unfinished")} />
+              <span style={{ color: "var(--jd-text-muted)", fontSize: 10.8 }}>{visibleTutorials.length} shown</span>
+            </div>
+          </section>
+          <JavaDigestReviewQueue dueTutorials={dueTutorials} dueReviewCount={dueReviewCount} accent={accent} onOpen={(tutorial) => { setTutorialSearch(tutorial.title); setTutorialSavedFilter("all"); }} />
+          {lastOpenedTutorial && <section style={{ ...wrap, background: "var(--jd-surface-subtle)", border: "1px solid var(--jd-border)", borderRadius: 8, display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between", padding: 10 }}><span style={{ color: "var(--jd-text-soft)", fontSize: 11.2 }}>Continue reading: <b style={{ color: "var(--jd-text)" }}>{lastOpenedTutorial.title}</b></span><button type="button" className="glass-button" onClick={() => openTutorial(lastOpenedTutorial)} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "var(--jd-text)", fontSize: 10.5, padding: "5px 8px" }}>Resume</button></section>}
+          <div style={responsiveGrid(260, 9)}>{visibleTutorials.map((tutorial) => <JavaDigestTutorialCard key={tutorial.id} tutorial={tutorial} accent={accent} completedIds={learningProgress.completedIds} bookmarkedIds={learningProgress.bookmarkedIds} onToggleStatus={toggleLearningStatus} onOpen={openTutorial} />)}</div>
+          <section style={{ ...wrap, background: "var(--jd-surface-subtle)", border: "1px solid var(--jd-border)", borderRadius: 8, display: "grid", gap: 7, padding: 11 }}>
+            <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Java release guide</div>
+            {JAVA_VERSION_TOPIC_GUIDE.map((release) => <div key={release.version} style={{ color: "var(--jd-text-soft)", fontSize: 11.3, lineHeight: 1.45 }}><b style={{ color: "var(--jd-text)" }}>{release.version}:</b> {release.topics} — {release.focus}.</div>)}
+          </section>
+        </div>
+      )}
+
+      {activeView === "Practice Lab" && (
+        <div style={{ display: "grid", gap: 10 }}>
+          <section style={{ ...wrap, background: "var(--jd-accent-surface)", border: `1px solid ${accent}33`, borderRadius: 8, display: "grid", gap: 6, padding: 12 }}>
+            <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Programs · quizzes · interview readiness</div>
+            <h3 style={{ ...wrap, color: "var(--jd-text)", fontSize: 15.5, lineHeight: 1.25 }}>Practice one small thing at a time</h3>
+            <p style={{ ...wrap, color: "var(--jd-text-muted)", fontSize: 11.6, lineHeight: 1.5 }}>Implement a program, state the invariant and complexity, then use a quiz question to check whether the concept is understood—not just memorized.</p>
+          </section>
+          <div style={responsiveGrid(280, 9)}>{JAVA_PROGRAM_EXAMPLES.map((program) => <article key={program.id} className="java-digest-card" style={{ ...wrap, borderRadius: 8, display: "grid", gap: 6, padding: 10 }}><div style={{ color: accent, fontSize: 10.2, fontWeight: 900, textTransform: "uppercase" }}>{program.level}</div><h4 style={{ ...wrap, color: "var(--jd-text)", fontSize: 13, margin: 0 }}>{program.title}</h4><p style={{ ...wrap, color: "var(--jd-text-soft)", fontSize: 11.2, lineHeight: 1.45, margin: 0 }}>{program.prompt}</p><div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}><ChipButton label={learningProgress.completedIds.has(program.id) ? "Completed" : "Mark complete"} icon="ti-check" active={learningProgress.completedIds.has(program.id)} accent={accent} onClick={() => toggleLearningStatus("completedPrograms", program.id)} /><ChipButton label={learningProgress.bookmarkedIds.has(program.id) ? "Bookmarked" : "Bookmark"} icon="ti-bookmark" active={learningProgress.bookmarkedIds.has(program.id)} accent="var(--jd-warning)" onClick={() => toggleLearningStatus("bookmarkedPrograms", program.id)} /><button type="button" className="glass-button" onClick={() => onAction?.(`Help me implement ${program.title} in Java. ${program.prompt}`, { type: "javaCodeRunner", program })} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "var(--jd-text)", fontSize: 10.5, padding: "5px 7px" }}><i className="ti ti-player-play" style={{ color: accent, marginRight: 4 }} />Open runner</button></div></article>)}</div>
+          <div style={{ display: "grid", gap: 8 }}>{JAVA_QUIZ_BANK.map((quiz) => <details key={quiz.id} style={{ ...wrap, background: "var(--jd-surface-subtle)", border: "1px solid var(--jd-border)", borderRadius: 8, padding: "9px 10px" }}><summary style={{ color: "var(--jd-text)", cursor: "pointer", fontSize: 11.8, fontWeight: 800 }}>{quiz.topic}: {quiz.question}</summary><p style={{ color: "var(--jd-text-soft)", fontSize: 11.2, lineHeight: 1.5, margin: "7px 0 0" }}><b style={{ color: accent }}>Answer:</b> {quiz.answer}</p><StarAnswer story={buildStarFrame(quiz.topic, quiz.answer)} accent={accent} label="How to frame it in STAR" /><div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 7 }}><ChipButton label={learningProgress.completedIds.has(quiz.id) ? "Completed" : "Mark complete"} icon="ti-check" active={learningProgress.completedIds.has(quiz.id)} accent={accent} onClick={() => toggleLearningStatus("completedQuizzes", quiz.id)} /><ChipButton label={learningProgress.bookmarkedIds.has(quiz.id) ? "Bookmarked" : "Bookmark"} icon="ti-bookmark" active={learningProgress.bookmarkedIds.has(quiz.id)} accent="var(--jd-warning)" onClick={() => toggleLearningStatus("bookmarkedQuizzes", quiz.id)} /></div></details>)}</div>
+        </div>
+      )}
+
+      {activeView === "Saved & Review" && (
+        <div style={{ display: "grid", gap: 10 }}>
+          <section style={{ ...wrap, background: "var(--jd-accent-surface)", border: `1px solid ${accent}33`, borderRadius: 8, display: "grid", gap: 6, padding: 12 }}>
+            <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Learning inbox</div>
+            <h3 style={{ ...wrap, color: "var(--jd-text)", fontSize: 15.5, lineHeight: 1.25 }}>Saved material and due reviews</h3>
+            <p style={{ ...wrap, color: "var(--jd-text-muted)", fontSize: 11.6, lineHeight: 1.5 }}>{savedTutorials.length} saved tutorials · {dueReviewCount} due reviews. Use this as your daily starting point.</p>
+          </section>
+          {dueTutorials.length > 0 && <section style={{ ...wrap, background: "var(--jd-surface-subtle)", border: "1px solid var(--jd-border)", borderRadius: 8, display: "grid", gap: 7, padding: 11 }}><strong style={{ color: accent, fontSize: 11.5 }}>Due now</strong>{dueTutorials.map((tutorial) => <div key={tutorial.id} style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between" }}><span style={{ color: "var(--jd-text-soft)", fontSize: 11.2 }}>{tutorial.title}</span><ChipButton label="Open" icon="ti-book-open" active={false} accent={accent} onClick={() => { setActiveView("Tutorial Library"); openTutorial(tutorial); }} /></div>)}</section>}
+          <section style={{ display: "grid", gap: 8 }}>{savedTutorials.length ? savedTutorials.map((tutorial) => <JavaDigestTutorialCard key={tutorial.id} tutorial={tutorial} accent={accent} completedIds={learningProgress.completedIds} bookmarkedIds={learningProgress.bookmarkedIds} onToggleStatus={toggleLearningStatus} onOpen={openTutorial} />) : <div style={{ color: "var(--jd-text-muted)", fontSize: 12, padding: 12 }}>Bookmark a tutorial, program, or quiz to build your saved learning inbox.</div>}</section>
+        </div>
+      )}
+
       {activeView === "Articles" && (
         <div style={{ display: "grid", gap: 10 }}>
+          <Head>
+            <title>{selectedArticle ? `${selectedArticle.title} | ShadowUI Java Digest` : "Java Interview Articles | ShadowUI"}</title>
+            <meta name="description" content={selectedArticle?.summary || "Original Java, Spring, JVM, concurrency, SQL, and system design interview lessons."} />
+            {selectedArticle && <link rel="canonical" href={`${typeof window !== "undefined" ? window.location.origin : ""}${router.pathname}?article=${selectedArticle.id}`} />}
+          </Head>
           <section style={{ ...wrap, border: "1px solid var(--jd-border)", borderRadius: 8, display: "grid", gap: 8, padding: 10 }}>
             <span style={{ color: "var(--jd-text-muted)", fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Article Filters</span>
             <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 7, minWidth: 0 }}>
@@ -901,7 +1215,7 @@ export default function JavaDigest({ theme = {}, onAction, onRefresherProgressCh
             </div>
           </section>
           <div style={responsiveGrid(280, 10)}>
-            {articles.map((article) => <ArticleCard key={article.id} article={article} accent={accent} expanded={expandedArticleId === article.id} onAction={onAction} onToggle={() => setExpandedArticleId((current) => current === article.id ? "" : article.id)} />)}
+            {articles.map((article, index) => <ArticleCard key={article.id} article={article} accent={accent} expanded={expandedArticleId === article.id} previousArticle={articles[index - 1]} nextArticle={articles[index + 1]} onNavigate={navigateArticle} onAction={onAction} onToggle={() => { const next = expandedArticleId === article.id ? "" : article.id; setExpandedArticleId(next); if (next) router.push({ pathname: router.pathname, query: { ...router.query, article: next } }, undefined, { shallow: true }); }} />)}
           </div>
         </div>
       )}

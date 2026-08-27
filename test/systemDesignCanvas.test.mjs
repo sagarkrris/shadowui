@@ -232,6 +232,8 @@ test("system design canvas component renders editable glass sections and action 
   assert.match(source, /Primer Topic Map/);
   assert.match(source, /Sample Design Boards/);
   assert.match(source, /Practice Moves/);
+  assert.match(source, /document\.title = `System Design Canvas/);
+  assert.match(source, /canvasState\.sections\?\.\[section\.key\] \|\| ""/);
   assert.match(source, /Request Lifecycle Studio/);
   assert.match(source, /HLD Request Playback/);
   assert.match(source, /Play Playback/);

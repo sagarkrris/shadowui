@@ -49,4 +49,32 @@ test.describe("DSA Visual Lab", () => {
     await expect(page.getByText("Tricky interview coding, MCQ, and quantitative questions.")).toBeVisible();
     await assertHealthyApp(page);
   });
+
+  test("opens the beginner foundations path and launches a visual lesson", async ({ page }) => {
+    await mockDsaChallenges(page, { fail: true });
+    await gotoSeededApp(page, { activeTab: "dsaLab", selectedCat: "DSA", selectedSub: "Arrays & Strings" });
+
+    await page.getByRole("button", { name: "Foundations Path" }).click();
+    await expect(page.getByText("A gentle path from pictures to problem-solving")).toBeVisible();
+    await expect(page.getByText("Programming prerequisites")).toBeVisible();
+    await expect(page.getByText("Common beginner mistake", { exact: false })).toBeVisible();
+    await expect(page.getByText("Big-O from zero")).toBeVisible();
+    await expect(page.getByText("Rule of thumb", { exact: false })).toBeVisible();
+    await expect(page.getByText("First guided problem", { exact: false })).toBeVisible();
+    await page.getByRole("button", { name: "Open visual lesson" }).click();
+    await expect(page.getByText("Code Walkthrough")).toBeVisible();
+    await assertHealthyApp(page);
+  });
+
+  test("browses the complete DSA curriculum by level", async ({ page }) => {
+    await mockDsaChallenges(page, { fail: true });
+    await gotoSeededApp(page, { activeTab: "dsaLab", selectedCat: "DSA", selectedSub: "Arrays & Strings" });
+
+    await page.getByRole("button", { name: "Complete Curriculum" }).click();
+    await expect(page.getByText("A start-to-interview roadmap")).toBeVisible();
+    await expect(page.getByText("Dynamic Programming", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Advanced" }).click();
+    await expect(page.getByText("Greedy Algorithms", { exact: true })).toBeVisible();
+    await assertHealthyApp(page);
+  });
 });

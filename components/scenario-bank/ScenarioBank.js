@@ -86,6 +86,16 @@ function ControlButton({ label, icon, active, onClick, accent }) {
 }
 
 function SelectControl({ label, value, options, onChange, accentBorder }) {
+  const optionIdentity = (option, index) => {
+    if (option && typeof option === "object") {
+      const candidate = option.key ?? option.value ?? option.id ?? option.label;
+      if (candidate !== undefined && candidate !== null && String(candidate).trim()) return String(candidate);
+    } else if (option !== undefined && option !== null && String(option).trim()) {
+      return String(option);
+    }
+    return `option-${index}`;
+  };
+
   return (
     <label style={{ ...wrap, display: "grid", gap: 5 }}>
       <span style={{ color: "#9fb0c7", fontSize: 10.5, fontWeight: 800, textTransform: "uppercase" }}>{label}</span>
@@ -104,11 +114,15 @@ function SelectControl({ label, value, options, onChange, accentBorder }) {
           width: "100%",
         }}
       >
-        {options.map((option) => (
-          <option key={option.key || option} value={option.key || option}>
-            {option.label || option}
+        {options.map((option, index) => {
+          const identity = optionIdentity(option, index);
+          const labelText = option && typeof option === "object" ? option.label ?? identity : option ?? identity;
+          return (
+          <option key={identity} value={identity}>
+            {labelText}
           </option>
-        ))}
+          );
+        })}
       </select>
     </label>
   );
@@ -139,7 +153,7 @@ function ProgressMetric({ label, value, accent }) {
 
 function scoreScenarioAnswer(answer, style, scenario) {
   const text = String(answer || "").toLowerCase();
-  const trapTerms = String(scenario?.traps?.[0] || "trap")
+  const trapTerms = String(scenario?.traps?.[0] || "")
     .split(/\s+/)
     .slice(0, 3)
     .map(escapeRegExp)
@@ -149,7 +163,7 @@ function scoreScenarioAnswer(answer, style, scenario) {
     concise: [
       ["Direct answer", /\b(i would|use|choose|because|trade[- ]?off)\b/i],
       ["Example", /\b(example|for instance|case)\b/i],
-      ["Trap awareness", new RegExp(trapTerms || "trap", "i")],
+      ["Trap awareness", trapTerms ? new RegExp(trapTerms, "i") : /a^/],
     ],
     star: [
       ["Situation", /\bsituation|context|when\b/i],
