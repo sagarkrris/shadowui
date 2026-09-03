@@ -1591,8 +1591,8 @@ export default function Home() {
               {cloudStatus === "saving" ? "Saving…" : cloudStatus === "hydrating" ? "Loading…" : cloudStatus === "error" ? "Sync issue" : auth.user ? "Saved" : "Saved on this device"}
             </span>
             {candidateProfile && (
-              <span className="header-profile-label" style={{ display:isMobile?"none":"inline-flex", alignItems:"center", gap:5, padding:"3px 8px", borderRadius:999, border:`1px solid ${techTheme.accentBorder}`, background:techTheme.accentMuted, color:techTheme.accentText, fontSize:10.5, fontWeight:600, whiteSpace:"nowrap" }}>
-                <i className={`ti ${techTheme.icon}`} style={{ fontSize:12 }} />{userPrepLabel}
+              <span className="header-profile-label" aria-label={`Local prep profile: ${userPrepLabel}`} title="This is a local prep profile, not a signed-in account." style={{ display:isMobile?"none":"inline-flex", alignItems:"center", gap:5, padding:"3px 8px", borderRadius:999, border:`1px solid ${techTheme.accentBorder}`, background:techTheme.accentMuted, color:techTheme.accentText, fontSize:10.5, fontWeight:600, whiteSpace:"nowrap" }}>
+                <i className={`ti ${techTheme.icon}`} style={{ fontSize:12 }} />Local prep: {userPrepLabel}
               </span>
             )}
 

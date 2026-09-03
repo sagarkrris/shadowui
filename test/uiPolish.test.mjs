@@ -122,6 +122,8 @@ test("workspace loading and navigation preserve user context", () => {
   assert.match(globalsSource, /composer-footer/);
   assert.match(indexSource, /FOCUS_MODE_STORAGE_KEY/);
   assert.match(indexSource, /Saved on this device/);
+  assert.match(indexSource, /Local prep: \{userPrepLabel\}/);
+  assert.match(indexSource, /Local prep profile: \$\{userPrepLabel\}/);
   assert.match(indexSource, /Account & settings/);
   assert.match(indexSource, /Back to today/);
   assert.match(globalsSource, /\.dashboard-section-nav/);
