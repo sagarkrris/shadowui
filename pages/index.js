@@ -172,6 +172,7 @@ export default function Home() {
   const [focusMode, setFocusMode] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [cloudStatus, setCloudStatus] = useState("idle");
+  const [themeStatus, setThemeStatus] = useState("");
   const [toast, setToast]             = useState(null);
   const [candidateProfile, setCandidateProfile] = useState(null);
   const [profileDraft, setProfileDraft] = useState(DEFAULT_PROFILE);
@@ -643,6 +644,13 @@ export default function Home() {
     toastTimer.current = setTimeout(() => setToast(null), 2800);
   }, []);
 
+  const handleThemePreferenceChange = useCallback((preference) => {
+    const normalized = normalizeThemePreference(preference);
+    setThemePreference(normalized);
+    const mode = resolveThemeMode(normalized, systemThemeMode);
+    setThemeStatus(`${mode[0].toUpperCase()}${mode.slice(1)} theme enabled`);
+  }, [systemThemeMode]);
+
   useEffect(() => {
     if (!focusMode || typeof window === "undefined") return;
     const hintKey = "interviewiq.focusModeHint.v1";
@@ -672,11 +680,11 @@ export default function Home() {
     if (snapshot.session) { setToolkitState(snapshot.toolkitState || {}); setApplications(Array.isArray(snapshot.applications) ? snapshot.applications : []); setJavaDigestProgress(snapshot.javaDigestProgress || { completedTopics: [], masteredTopics: [], reviewStages: {} }); setQuestionMemory(snapshot.questionMemory || { questions: {} }); setPrepProgressState(snapshot.prepProgressState || createPrepProgressState()); }
   }, [resetInterviewSession, setActiveTab]);
   const handleCloudSyncStatus = useCallback((status) => {
-    setCloudStatus(status);
+    setCloudStatus(status === "error" ? "offline" : status);
     if (status === "saved") setToast((current) => current?.msg === "Cloud sync is temporarily unavailable; local work is safe." ? null : current);
   }, []);
-  const handleCloudSyncError = useCallback(() => showToast("Cloud sync is temporarily unavailable; local work is safe.", "error"), [showToast]);
-  useCloudStateSync({ user: auth.user, ready: auth.ready && sessionReady, csrfToken: auth.csrfToken, refreshCsrfToken: auth.refreshCsrfToken, snapshot: cloudSnapshot, onRemoteState: applyCloudState, onStatus: handleCloudSyncStatus, onError: handleCloudSyncError });
+  const handleCloudSyncError = useCallback(() => setCloudStatus("offline"), []);
+  const { retry: retryCloudSync } = useCloudStateSync({ user: auth.user, ready: auth.ready && sessionReady, csrfToken: auth.csrfToken, refreshCsrfToken: auth.refreshCsrfToken, snapshot: cloudSnapshot, onRemoteState: applyCloudState, onStatus: handleCloudSyncStatus, onError: handleCloudSyncError });
 
   useEffect(() => {
     if (mockTimerStatus !== "answering" || !mockTimerEndsAt) return undefined;
@@ -1521,7 +1529,7 @@ export default function Home() {
 
       {/* Settings modal */}
       {showSettings && <AboutModal theme={techTheme} onClose={() => setShowSettings(false)} appearance={resolvedThemeMode} />}
-      {showAccountSettings && <SettingsModal onClose={() => setShowAccountSettings(false)} onDeleteSuccess={(result) => { setShowAccountSettings(false); showToast(result.emailDelivery?.delivered ? "Account deleted. Confirmation email sent." : "Account deleted, but confirmation email could not be sent.", result.emailDelivery?.delivered ? "info" : "error"); }} theme={techTheme} auth={auth} themePreference={themePreference} onThemePreferenceChange={setThemePreference} appearance={resolvedThemeMode} />}
+      {showAccountSettings && <SettingsModal onClose={() => setShowAccountSettings(false)} onDeleteSuccess={(result) => { setShowAccountSettings(false); showToast(result.emailDelivery?.delivered ? "Account deleted. Confirmation email sent." : "Account deleted, but confirmation email could not be sent.", result.emailDelivery?.delivered ? "info" : "error"); }} theme={techTheme} auth={auth} themePreference={themePreference} onThemePreferenceChange={handleThemePreferenceChange} themeStatus={themeStatus} appearance={resolvedThemeMode} />}
 
       {/* App shell */}
       <div className={`app-shell theme-${resolvedThemeMode} ${focusMode ? "focus-mode" : ""}`} style={{ ...themeVars, position:"fixed", inset:0, isolation:"isolate", display:"flex", height:appShellHeight, overflow:"hidden", background:techTheme.surface }}>
@@ -1588,9 +1596,10 @@ export default function Home() {
               {activeTab !== "chat" ? <><span className="header-breadcrumb-root">Today</span><span className="header-breadcrumb-separator">/</span>{headerTitle}</> : headerTitle}
             </span>
             <span className={`cloud-sync-status cloud-sync-${cloudStatus}`} role="status" aria-live="polite" title="Workspace sync status">
-              <i className={`ti ${cloudStatus === "saving" || cloudStatus === "hydrating" ? "ti-loader-2" : cloudStatus === "error" ? "ti-alert-circle" : "ti-cloud-check"}`} />
-              {cloudStatus === "saving" ? "Saving…" : cloudStatus === "hydrating" ? "Loading…" : cloudStatus === "error" ? "Sync issue" : auth.user ? "Saved" : "Saved on this device"}
+              <i className={`ti ${cloudStatus === "saving" || cloudStatus === "hydrating" ? "ti-loader-2" : cloudStatus === "offline" ? "ti-device-floppy" : "ti-cloud-check"}`} />
+              {cloudStatus === "saving" ? "Saving…" : cloudStatus === "hydrating" ? "Loading…" : "Saved on this device"}
             </span>
+            {auth.user && cloudStatus === "offline" ? <button type="button" className="cloud-sync-retry glass-button" onClick={retryCloudSync} aria-label="Retry cloud sync" title="Retry cloud sync">Retry sync</button> : null}
             {candidateProfile && (
               <span className="header-profile-label" aria-label={`Local prep profile: ${userPrepLabel}`} title="This is a local prep profile, not a signed-in account." style={{ display:isMobile?"none":"inline-flex", alignItems:"center", gap:5, padding:"3px 8px", borderRadius:999, border:`1px solid ${techTheme.accentBorder}`, background:techTheme.accentMuted, color:techTheme.accentText, fontSize:10.5, fontWeight:600, whiteSpace:"nowrap" }}>
                 <i className={`ti ${techTheme.icon}`} style={{ fontSize:12 }} />Local prep: {userPrepLabel}

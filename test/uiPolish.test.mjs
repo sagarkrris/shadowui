@@ -11,6 +11,7 @@ const careerToolkitSource = readFileSync(new URL("../components/welcome/CareerTo
 const profileSetupSource = readFileSync(new URL("../components/welcome/ProfileSetup.js", import.meta.url), "utf8");
 const settingsModalSource = readFileSync(new URL("../components/modals/SettingsModal.js", import.meta.url), "utf8");
 const profileAvatarSource = readFileSync(new URL("../components/auth/ProfileAvatar.js", import.meta.url), "utf8");
+const screenModalSource = readFileSync(new URL("../components/modals/ScreenModal.js", import.meta.url), "utf8");
 const authHookSource = readFileSync(new URL("../hooks/useAuth.js", import.meta.url), "utf8");
 const cloudStateSyncSource = readFileSync(new URL("../hooks/useCloudStateSync.js", import.meta.url), "utf8");
 const authApiSource = readFileSync(new URL("../pages/api/auth.js", import.meta.url), "utf8");
@@ -177,15 +178,33 @@ test("feedback and empty states remain accessible and readable", () => {
   assert.match(authHookSource, /Your security session expired/);
 });
 
-test("account profiles display a safe avatar and retain refreshed OAuth details", () => {
+test("account profiles display a safe avatar", () => {
   assert.match(profileAvatarSource, /referrerPolicy="no-referrer"/);
   assert.match(profileAvatarSource, /onError=\{\(\) => setImageFailed\(true\)\}/);
+  assert.match(profileAvatarSource, /useEffect\(\(\) => \{[\s\S]*?setImageFailed\(false\)[\s\S]*?\}, \[providerPhotoUrl\]\)/);
   assert.match(settingsModalSource, /Account profile & sync/);
-  assert.match(settingsModalSource, /connected provider’s name and photo refresh each time/);
+  assert.doesNotMatch(settingsModalSource, /connected provider’s name and photo refresh each time/);
   assert.match(indexSource, /<ProfileAvatar user=\{auth\.user\} size=\{22\}/);
   assert.match(persistenceSource, /ADD COLUMN IF NOT EXISTS photo_url TEXT/);
   assert.match(persistenceSource, /photoUrl: row\.photo_url \|\| ""/);
   assert.match(persistenceSource, /SET first_name = CASE WHEN/);
+  assert.match(persistenceSource, /oauthProvider: row\.oauth_provider \|\| ""/);
+  assert.match(settingsModalSource, /oauthProvider\[0\]\.toUpperCase\(\)/);
+});
+
+test("cloud sync failures preserve local work and can be retried", () => {
+  assert.match(indexSource, /setCloudStatus\(status === "error" \? "offline" : status\)/);
+  assert.match(indexSource, /Saved on this device/);
+  assert.match(indexSource, /aria-label="Retry cloud sync"/);
+  assert.match(cloudStateSyncSource, /const retry = useCallback/);
+  assert.match(cloudStateSyncSource, /setRetryNonce\(\(value\) => value \+ 1\)/);
+});
+
+test("screen analysis provides a mobile-safe upload fallback", () => {
+  assert.match(screenModalSource, /getDisplayMedia/);
+  assert.match(screenModalSource, /screenShareSupported/);
+  assert.match(screenModalSource, /Screen sharing unavailable/);
+  assert.match(screenModalSource, /disabled=\{capturing \|\| !screenShareSupported\}/);
 });
 
 test("cloud hydration does not replay a success toast on every refresh", () => {

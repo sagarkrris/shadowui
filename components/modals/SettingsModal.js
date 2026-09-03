@@ -8,7 +8,7 @@ import { useRef } from "react";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { getPasswordStrength } from "../../lib/passwordStrength.mjs";
 
-export default function SettingsModal({ onClose, onDeleteSuccess, theme, auth = {}, initialMode = "login", themePreference = "system", onThemePreferenceChange, appearance = "dark", authFocused = false }) {
+export default function SettingsModal({ onClose, onDeleteSuccess, theme, auth = {}, initialMode = "login", themePreference = "system", onThemePreferenceChange, themeStatus = "", appearance = "dark", authFocused = false }) {
   const [mode, setMode] = useState(initialMode === "register" ? "register" : "login");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -155,9 +155,9 @@ export default function SettingsModal({ onClose, onDeleteSuccess, theme, auth = 
               <div style={{ minWidth: 0 }}>
                 <strong style={{ color: appearance === "light" ? "#17324d" : "#f8fbff", fontSize: 14 }}>{`${auth.user.firstName || ""} ${auth.user.lastName || ""}`.trim() || "InterviewIQ account"}</strong>
                 <p className="settings-modal-account-email" style={{ color: appearance === "light" ? "#526579" : "#cbd5e1", fontSize: 13, lineHeight: 1.5, margin: "2px 0 0", overflowWrap: "anywhere" }}>{auth.user.email}</p>
+                {auth.user.oauthProvider ? <span style={{ color: appearance === "light" ? "#526579" : "#94a3b8", fontSize: 11, marginTop: 2 }}>{`${auth.user.oauthProvider[0].toUpperCase()}${auth.user.oauthProvider.slice(1)} account`}</span> : null}
               </div>
             </div>
-            <p style={{ color: appearance === "light" ? "#64748b" : "#94a3b8", fontSize: 12, lineHeight: 1.5, margin: 0 }}>Your connected provider’s name and photo refresh each time you sign in.</p>
             {!auth.user.emailVerified ? <p role="alert" style={{ color: "#facc15", fontSize: 12, lineHeight: 1.45, margin: "6px 0 0" }}>Email verification is required before AI features can be used when authentication enforcement is enabled.</p> : null}
             {!auth.user.emailVerified ? <button type="button" className="glass-button" onClick={resendVerification} disabled={resendingVerification} aria-busy={resendingVerification} style={{ marginTop: 12, minHeight: 36, padding: "8px 14px", cursor: resendingVerification ? "wait" : "pointer", opacity: resendingVerification ? .65 : 1 }}>{resendingVerification ? "Sending verification email…" : "Resend verification email"}</button> : null}
             {auth.error ? <p role="alert" style={{ color: appearance === "light" ? "#b42318" : "#fca5a5", background: appearance === "light" ? "#fff1f2" : "rgba(127,29,29,.18)", border: appearance === "light" ? "1px solid #fecdd3" : "1px solid rgba(248,113,113,.28)", borderRadius: 8, padding: "9px 10px", fontSize: 12, lineHeight: 1.45, margin: "10px 0 0" }}>{auth.error}</p> : null}
@@ -205,7 +205,7 @@ export default function SettingsModal({ onClose, onDeleteSuccess, theme, auth = 
               <option value="dark">Dark</option>
             </select>
           </label>
-          <p style={{ color: "#64748b", fontSize: 11, lineHeight: 1.45, marginTop: 7 }}>System follows your device preference. Your selection syncs with your account when signed in.</p>
+          <p role="status" aria-live="polite" style={{ color: appearance === "light" ? "#526579" : "#94a3b8", fontSize: 11, lineHeight: 1.45, marginTop: 7 }}>{themeStatus || "System follows your device preference. Your selection syncs with your account when signed in."}</p>
         </section>
 
         <div className="settings-modal-copy" style={{ fontSize: 13, color: appearance === "light" ? "#526579" : "#9ca3af", lineHeight: 1.8 }}>

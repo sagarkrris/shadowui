@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { isModalCloseKey } from "../../lib/modalKeyboard.mjs";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 
@@ -7,11 +7,16 @@ export default function ScreenModal({ onCapture, onClose, theme }) {
   const [imgData, setImgData] = useState(null);
   const [context, setContext] = useState("");
   const [capturing, setCapturing] = useState(false);
+  const [screenShareSupported, setScreenShareSupported] = useState(false);
   const fileRef = useRef();
   const modalRef = useRef();
   useFocusTrap(modalRef);
+  useEffect(() => {
+    setScreenShareSupported(Boolean(navigator.mediaDevices?.getDisplayMedia));
+  }, []);
 
   const capture = async () => {
+    if (!screenShareSupported) return;
     setCapturing(true);
     let stream;
     try {
@@ -94,9 +99,9 @@ export default function ScreenModal({ onCapture, onClose, theme }) {
             <i className="ti ti-photo-scan" style={{ fontSize: 36, color: "#4b5563", display: "block", marginBottom: 12 }} />
             <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 16, lineHeight: 1.6 }}>Drag & drop a screenshot or tap to upload</p>
             <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-              <button className="glass-button" onClick={(event) => { event.stopPropagation(); capture(); }} disabled={capturing}
+              <button type="button" className="glass-button" onClick={(event) => { event.stopPropagation(); capture(); }} disabled={capturing || !screenShareSupported}
                 style={{ padding: "9px 16px", border: `1px solid ${theme.accentBorder}`, borderRadius: 9, color: theme.accentText, fontSize: 13, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 7 }}>
-                <i className="ti ti-screenshot" />{capturing ? "Capturing..." : "Share Screen"}
+                <i className="ti ti-screenshot" />{capturing ? "Capturing..." : screenShareSupported ? "Share Screen" : "Screen sharing unavailable"}
               </button>
               <button className="glass-button" onClick={(event) => { event.stopPropagation(); fileRef.current?.click(); }}
                 style={{ padding: "9px 16px", border: "1px solid rgba(255,255,255,.1)", borderRadius: 9, color: "#9ca3af", fontSize: 13, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 7 }}>

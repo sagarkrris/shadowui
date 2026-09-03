@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 function snapshotFingerprint(snapshot) {
   try {
@@ -9,6 +9,7 @@ function snapshotFingerprint(snapshot) {
 }
 
 export function useCloudStateSync({ user, ready, snapshot, csrfToken = "", refreshCsrfToken, onRemoteState, onError, onStatus } = {}) {
+  const [retryNonce, setRetryNonce] = useState(0);
   const hydratedUser = useRef("");
   const hydrated = useRef(false);
   const lastSavedFingerprint = useRef("");
@@ -89,5 +90,16 @@ export function useCloudStateSync({ user, ready, snapshot, csrfToken = "", refre
       window.clearTimeout(timer);
       if (pendingFingerprint.current === fingerprint) pendingFingerprint.current = "";
     };
-  }, [csrfToken, fingerprint, onError, onStatus, ready, refreshCsrfToken, snapshot, user]);
+  }, [csrfToken, fingerprint, onError, onStatus, ready, refreshCsrfToken, retryNonce, snapshot, user]);
+
+  const retry = useCallback(() => {
+    if (!user || !ready) return;
+    hydratedUser.current = user.id;
+    hydrated.current = true;
+    lastSavedFingerprint.current = "";
+    pendingFingerprint.current = "";
+    setRetryNonce((value) => value + 1);
+  }, [ready, user]);
+
+  return { retry };
 }
