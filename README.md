@@ -79,6 +79,11 @@ REQUIRE_AUTH=1
 # RESEND_API_KEY=re_your_resend_api_key
 # RESEND_FROM_EMAIL=InterviewIQ <onboarding@resend.dev>
 # APP_BASE_URL=https://elevateprep.vercel.app
+# Optional social sign-in (register callbacks at /api/auth?action=oauth-callback&provider=google|github)
+# GOOGLE_CLIENT_ID=your_google_oauth_client_id
+# GOOGLE_CLIENT_SECRET=your_google_oauth_client_secret
+# GITHUB_CLIENT_ID=your_github_oauth_client_id
+# GITHUB_CLIENT_SECRET=your_github_oauth_client_secret
 # Optional error tracking and AI cost estimates
 # ERROR_TRACKING_WEBHOOK_URL=https://your-monitoring.example/api/events
 # ERROR_TRACKING_TOKEN=your_monitoring_token

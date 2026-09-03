@@ -1,4 +1,5 @@
-import { authenticateUser, consumeVerificationToken, createOpaqueToken, createPasswordResetToken, createSession, createUser, createVerificationToken, destroySession, getUserBySession, recordAudit, resetPassword, revokeAllSessions, rotateCsrfToken, verifyCsrfToken } from "../../lib/serverPersistence.mjs";
+import { authenticateUser, consumeVerificationToken, createOpaqueToken, createPasswordResetToken, createSession, createUser, createVerificationToken, destroySession, findOrCreateOAuthUser, getUserBySession, recordAudit, resetPassword, revokeAllSessions, rotateCsrfToken, verifyCsrfToken } from "../../lib/serverPersistence.mjs";
+import { authorizationUrl, createOAuthNonce, exchangeOAuthCode, oauthState, verifyOAuthState } from "../../lib/oauth.mjs";
 import { getClientAddress } from "../../lib/requestSecurity.mjs";
 import { checkDistributedRateLimit } from "../../lib/redisRateLimit.mjs";
 import { deliverAuthEmail } from "../../lib/authDelivery.mjs";
@@ -72,6 +73,8 @@ async function handler(req, res) {
   if (!limit.ok) { recordMetric("auth.rate_limited", { route: "/api/auth" }); return res.status(429).json({ error: "Too many authentication requests. Try again later." }); }
   try {
     if (action === "me" && req.method === "GET") return res.status(200).json({ user: await getUserBySession(readCookie(req, COOKIE)) });
+    if (action === "oauth" && req.method === "GET") { const provider = String(req.query.provider || "").toLowerCase(); const state = oauthState(provider, createOAuthNonce()); const url = authorizationUrl(provider, state); if (!url) return res.status(404).json({ error: "This sign-in provider is not configured." }); res.setHeader("Set-Cookie", `interviewiq_oauth_state=${state}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600${process.env.NODE_ENV === "production" ? "; Secure" : ""}`); return res.redirect(302, url); }
+    if (action === "oauth-callback" && req.method === "GET") { const state = String(req.query.state || ""); const provider = verifyOAuthState(state); if (!provider || readCookie(req, "interviewiq_oauth_state") !== state) return res.status(400).send("OAuth sign-in could not be verified. Please try again."); const user = await findOrCreateOAuthUser(await exchangeOAuthCode(provider, String(req.query.code || ""))); const session = await createSession(user.id); res.setHeader("Set-Cookie", [`${COOKIE}=${session.token}; ${cookieOptions}${process.env.NODE_ENV === "production" ? "; Secure" : ""}`, `${CSRF_COOKIE}=${session.csrfToken}; Path=/; SameSite=Lax${process.env.NODE_ENV === "production" ? "; Secure" : ""}`, "interviewiq_oauth_state=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax"]); await recordAudit({ type: `oauth_${provider}`, userId: user.id, email: user.email, ip: getClientAddress(req) }); return res.redirect(302, "/"); }
     if (action === "csrf" && req.method === "GET") {
       const existingToken = csrfCookie(req);
       const sessionToken = readCookie(req, COOKIE);

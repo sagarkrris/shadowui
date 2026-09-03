@@ -14,6 +14,8 @@ test("public article catalog has indexable, search-focused guides", () => {
     assert.ok(article.reviewedAt);
   }
   assert.equal(getPublicArticle("hashmap-internals").category, "Java Collections");
+  assert.equal(getPublicArticle("hashmap-internals").answerSteps.length, 3);
+  assert.match(getPublicArticle("hashmap-internals").internals, /OpenJDK/);
 });
 
 test("public SEO routes expose metadata, structured data, sitemap, robots, and RSS", () => {
@@ -22,6 +24,7 @@ test("public SEO routes expose metadata, structured data, sitemap, robots, and R
   const sitemap = readFileSync(new URL("../pages/sitemap.xml.js", import.meta.url), "utf8");
   const resources = readFileSync(new URL("../pages/resources.js", import.meta.url), "utf8");
   const resourcePage = readFileSync(new URL("../pages/resources/[slug].js", import.meta.url), "utf8");
+  const javaDigest = readFileSync(new URL("../components/java-digest/JavaDigest.js", import.meta.url), "utf8");
   const robots = readFileSync(new URL("../pages/robots.txt.js", import.meta.url), "utf8");
   const rss = readFileSync(new URL("../pages/rss.xml.js", import.meta.url), "utf8");
   assert.match(article, /application\/ld\+json/);
@@ -29,6 +32,12 @@ test("public SEO routes expose metadata, structured data, sitemap, robots, and R
   assert.match(article, /Breadcrumb/);
   assert.match(article, /BreadcrumbList/);
   assert.match(article, /STAR interview story/);
+  assert.match(article, /Say this first/);
+  assert.match(article, /Build a strong answer, step by step/);
+  assert.match(article, /Read the fuller explanation/);
+  assert.match(javaDigest, /Short answer/);
+  assert.match(javaDigest, /Complexity \/ trade-off/);
+  assert.match(javaDigest, /Explain it in this order/);
   assert.match(index, /Search Java guides/);
   assert.match(index, /levenshtein/);
   assert.match(index, /synonyms/);

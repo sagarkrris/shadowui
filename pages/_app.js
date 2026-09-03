@@ -3,9 +3,11 @@ import "../styles/globals.css";
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { installIconTooltips } from "../lib/iconTooltips.mjs";
 import BrandWatermark from "../components/BrandWatermark";
+import { trackEvent } from "../lib/analytics.mjs";
 
-export default function App({ Component, pageProps }) {
+export default function App({ Component, pageProps, router }) {
   useEffect(() => installIconTooltips(), []);
+  useEffect(() => { trackEvent("page_view"); }, [router.asPath]);
   useEffect(() => {
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
 

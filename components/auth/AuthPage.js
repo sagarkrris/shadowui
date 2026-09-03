@@ -61,6 +61,7 @@ export default function AuthPage({ mode }) {
           {auth.deliveryNotice ? <p role="status" style={{ margin: 0, color: "#166534", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: "9px 10px", fontSize: 13 }}>{auth.deliveryNotice}</p> : null}
           <button type="submit" disabled={!auth.ready || submitting} aria-busy={submitting} style={{ minHeight: 46, border: 0, borderRadius: 8, background: "#123252", color: "#fff", cursor: auth.ready && !submitting ? "pointer" : "wait", fontSize: 14, fontWeight: 800 }}>{submitting ? (isRegister ? "Creating account…" : "Signing in…") : (isRegister ? "Create account" : "Sign in")}</button>
         </form>
+        <div style={{ display: "grid", gap: 8, marginTop: 16 }}><div style={{ alignItems: "center", color: "#94a3b8", display: "flex", gap: 8, fontSize: 11 }}><span style={{ background: "#e2e8f0", height: 1, flex: 1 }} />or continue with<span style={{ background: "#e2e8f0", height: 1, flex: 1 }} /></div><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}><button type="button" onClick={() => { window.location.assign(new URL("/api/auth?action=oauth&provider=google", window.location.origin).toString()); }} style={oauthButtonStyle}>Google</button><button type="button" onClick={() => { window.location.assign(new URL("/api/auth?action=oauth&provider=github", window.location.origin).toString()); }} style={oauthButtonStyle}>GitHub</button></div></div>
         {!isRegister ? <p style={{ margin: "15px 0 0", textAlign: "center" }}><Link href="/reset-password" style={{ color: "#1f6feb", fontSize: 13, fontWeight: 700 }}>Forgot password?</Link></p> : null}
         <p style={{ color: "#64748b", fontSize: 13, margin: "22px 0 0", textAlign: "center" }}>{isRegister ? "Already have an account?" : "New to InterviewIQ?"} <Link href={alternateHref} style={{ color: "#1f6feb", fontWeight: 800 }}>{isRegister ? "Sign in" : "Create an account"}</Link></p>
         <p style={{ margin: "18px 0 0", textAlign: "center" }}><Link href="/" style={{ color: "#475569", fontSize: 13, fontWeight: 700 }}>Return to InterviewIQ</Link></p>
@@ -68,3 +69,5 @@ export default function AuthPage({ mode }) {
     </main>
   </>;
 }
+
+const oauthButtonStyle = { background: "#fff", border: "1px solid #cbd5e1", borderRadius: 8, color: "#17324d", fontSize: 13, fontWeight: 750, padding: "11px 10px", textAlign: "center", textDecoration: "none" };

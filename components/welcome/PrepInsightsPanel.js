@@ -19,6 +19,7 @@ import { buildMasteryMap } from "../../lib/questionMemory.mjs";
 import { buildRolePack } from "../../lib/rolePacks.mjs";
 import SkillGraphPanel from "./SkillGraphPanel";
 import ResumeStoryMatcherPanel from "./ResumeStoryMatcherPanel";
+import { trackEvent } from "../../lib/analytics.mjs";
 
 const CAREER_TOOLKIT_STORAGE_KEY = "interviewiq.careerToolkit.v1";
 const ANSWER_COACH_ACTION_ORDER = ["Make it concise", "Make it senior-level", "Add metrics", "Add trade-offs", "Convert to STAR"];
@@ -56,6 +57,7 @@ export default function PrepInsightsPanel({ profile, topics, weakSpots, mockScor
     proofStories,
     companyPrepScore,
   });
+  const shareReadiness = async () => { const params = new URLSearchParams({ score: String(Math.round(offerReadiness.score)), label: offerReadiness.label, stack: profile?.stack || "Software Engineering" }); const url = `${window.location.origin}/share/readiness?${params}`; trackEvent("readiness_shared", { value: String(Math.round(offerReadiness.score)) }); if (navigator.share) await navigator.share({ title: "My InterviewIQ readiness signal", url }); else await navigator.clipboard?.writeText(url); };
   const dayPack = buildInterviewDayPack({
     profile,
     topics,
@@ -295,6 +297,7 @@ export default function PrepInsightsPanel({ profile, topics, weakSpots, mockScor
           <button className="glass-button" onClick={() => onAction(offerReadiness.nextActionPrompt)} style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 8, color: theme.accentText, fontSize: 11.5, fontWeight: 800, cursor: "pointer", width: "100%", textAlign: "left" }}>
             <i className="ti ti-player-play" /> Improve weakest signal
           </button>
+          <button className="glass-button" onClick={shareReadiness} style={{ border: "1px solid rgba(114,208,166,.45)", borderRadius: 8, marginTop: 7, padding: 8, color: "#a7f3d0", fontSize: 11.5, fontWeight: 800, cursor: "pointer", width: "100%", textAlign: "left" }}><i className="ti ti-share-3" /> Share readiness card</button>
         </div>
 
         <div className="glass-card" style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 12 }}>

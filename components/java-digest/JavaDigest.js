@@ -180,6 +180,29 @@ function StarAnswer({ story, accent, label = "STAR answer:", technicalAnswer = "
   );
 }
 
+function StructuredInterviewAnswer({ entry, accent }) {
+  return (
+    <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
+      <section style={{ background: "var(--jd-accent-surface)", border: `1px solid ${accent}33`, borderRadius: 7, padding: 10 }}>
+        <strong style={{ color: accent, display: "block", fontSize: 10.5, letterSpacing: ".04em", textTransform: "uppercase" }}>Short answer</strong>
+        <p style={{ color: "var(--jd-text)", fontSize: 12, lineHeight: 1.58, margin: "5px 0 0" }}>{entry.answer}</p>
+      </section>
+      <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+        <section style={answerCardStyle}><strong style={answerLabelStyle(accent)}>How it works</strong><p style={answerTextStyle}>{entry.internals}</p></section>
+        <section style={answerCardStyle}><strong style={answerLabelStyle("var(--jd-warning)")}>What to watch for</strong><p style={answerTextStyle}>{entry.commonMistakes}</p></section>
+        <section style={answerCardStyle}><strong style={answerLabelStyle("var(--jd-accent-alt)")}>Complexity / trade-off</strong><p style={answerTextStyle}>{entry.performanceNotes}</p></section>
+      </div>
+      <section style={answerCardStyle}><strong style={answerLabelStyle(accent)}>Explain it in this order</strong><ol style={{ color: "var(--jd-text-soft)", fontSize: 11.35, lineHeight: 1.52, margin: "6px 0 0", paddingLeft: 20 }}>{entry.actionSteps.map((step) => <li key={step}>{step}</li>)}</ol></section>
+      {entry.example ? <details style={{ ...answerCardStyle, padding: "8px 10px" }}><summary style={{ color: accent, cursor: "pointer", fontSize: 11.2, fontWeight: 850 }}>Show Java example</summary><pre style={{ background: "var(--jd-surface-sunken)", borderRadius: 6, color: "var(--jd-code-text)", fontSize: 10.8, lineHeight: 1.5, margin: "8px 0 0", overflowX: "auto", padding: 8, whiteSpace: "pre-wrap" }}>{entry.example}</pre></details> : null}
+      <div style={{ background: "var(--jd-surface-sunken)", border: "1px solid var(--jd-border)", borderRadius: 7, color: "var(--jd-text-soft)", fontSize: 11.2, lineHeight: 1.5, padding: "8px 9px" }}><strong style={{ color: accent }}>Proof to mention:</strong> {entry.expectedOutput}<br /><strong style={{ color: accent }}>How to test:</strong> {entry.testingNotes}</div>
+    </div>
+  );
+}
+
+const answerCardStyle = { background: "var(--jd-surface-subtle)", border: "1px solid var(--jd-border)", borderRadius: 7, padding: "9px 10px" };
+const answerLabelStyle = (color) => ({ color, display: "block", fontSize: 10.5, textTransform: "uppercase" });
+const answerTextStyle = { color: "var(--jd-text-soft)", fontSize: 11.35, lineHeight: 1.52, margin: "5px 0 0" };
+
 function InterviewDrillCard({ article, accent, onAction }) {
   const drill = buildArticleDrill(article);
   const start = () => {
@@ -976,7 +999,8 @@ export default function JavaDigest({ theme = {}, onAction, onJavaProgressChange,
             <details key={entry.id} style={{ ...wrap, background: "var(--jd-surface-subtle)", border: `1px solid ${accentBorder}`, borderRadius: 8, padding: "10px 11px" }}>
               <summary style={{ color: "var(--jd-text)", cursor: "pointer", fontSize: 13, fontWeight: 850, lineHeight: 1.45 }}>{entry.question}</summary>
               <div style={{ color: accent, fontSize: 10.3, fontWeight: 900, marginTop: 9, textTransform: "uppercase" }}>{entry.section} · Interview-ready answer</div>
-              <StarAnswer story={entry.star} accent={accent} label="STAR answer · Situation → Task → Action → Result" technicalAnswer={<>{entry.answer}<br /><b>Internals:</b> {entry.internals}<br /><b>Expected output:</b> {entry.expectedOutput}</>} example={entry.example} actionSteps={entry.actionSteps} />
+              <StructuredInterviewAnswer entry={entry} accent={accent} />
+              <StarAnswer story={entry.star} accent={accent} label="STAR answer · Situation → Task → Action → Result" />
               <div style={{ background: "var(--jd-surface-sunken)", border: "1px solid var(--jd-border)", borderRadius: 7, display: "grid", gap: 6, marginTop: 9, padding: "8px 9px" }}>
                 <div style={{ color: "var(--jd-text-soft)", fontSize: 11.2, lineHeight: 1.5 }}><strong style={{ color: accent }}>Why this works:</strong> {entry.whyItWorks}</div>
                 <div style={{ color: "var(--jd-text-soft)", fontSize: 11.2, lineHeight: 1.5 }}><strong style={{ color: accent }}>Common mistakes:</strong> {entry.commonMistakes}</div>
