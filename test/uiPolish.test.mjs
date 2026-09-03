@@ -198,6 +198,8 @@ test("cloud sync failures preserve local work and can be retried", () => {
   assert.match(indexSource, /aria-label="Retry cloud sync"/);
   assert.match(cloudStateSyncSource, /const retry = useCallback/);
   assert.match(cloudStateSyncSource, /setRetryNonce\(\(value\) => value \+ 1\)/);
+  assert.match(cloudStateSyncSource, /if \(user\) return;[\s\S]*hydratedUser\.current = ""/);
+  assert.match(indexSource, /cloudStatus === "offline" \|\| !auth\.user \? "Saved on this device" : "Saved"/);
 });
 
 test("screen analysis provides a mobile-safe upload fallback", () => {

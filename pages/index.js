@@ -1597,7 +1597,7 @@ export default function Home() {
             </span>
             <span className={`cloud-sync-status cloud-sync-${cloudStatus}`} role="status" aria-live="polite" title="Workspace sync status">
               <i className={`ti ${cloudStatus === "saving" || cloudStatus === "hydrating" ? "ti-loader-2" : cloudStatus === "offline" ? "ti-device-floppy" : "ti-cloud-check"}`} />
-              {cloudStatus === "saving" ? "Saving…" : cloudStatus === "hydrating" ? "Loading…" : "Saved on this device"}
+              {cloudStatus === "saving" ? "Saving…" : cloudStatus === "hydrating" ? "Loading…" : cloudStatus === "offline" || !auth.user ? "Saved on this device" : "Saved"}
             </span>
             {auth.user && cloudStatus === "offline" ? <button type="button" className="cloud-sync-retry glass-button" onClick={retryCloudSync} aria-label="Retry cloud sync" title="Retry cloud sync">Retry sync</button> : null}
             {candidateProfile && (

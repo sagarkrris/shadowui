@@ -17,6 +17,14 @@ export function useCloudStateSync({ user, ready, snapshot, csrfToken = "", refre
   const fingerprint = snapshotFingerprint(snapshot);
 
   useEffect(() => {
+    if (user) return;
+    hydratedUser.current = "";
+    hydrated.current = false;
+    lastSavedFingerprint.current = "";
+    pendingFingerprint.current = "";
+  }, [user]);
+
+  useEffect(() => {
     if (!user || !ready || hydratedUser.current === user.id) return;
 
     hydratedUser.current = user.id;
