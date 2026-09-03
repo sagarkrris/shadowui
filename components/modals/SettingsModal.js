@@ -1,6 +1,7 @@
 import { PRODUCT_TAGLINE } from "../../lib/agenticCourse.mjs";
 import Link from "next/link";
 import BrandLogo from "../BrandLogo";
+import ProfileAvatar from "../auth/ProfileAvatar";
 
 import { useState } from "react";
 import { useRef } from "react";
@@ -147,9 +148,16 @@ export default function SettingsModal({ onClose, onDeleteSuccess, theme, auth = 
         </div>
 
         <section aria-labelledby="account-heading" style={{ border: "1px solid rgba(255,255,255,.09)", borderRadius: 12, padding: 16, marginBottom: 20 }}>
-          <h2 id="account-heading" style={{ fontSize: 14, color: theme.accentText, margin: "0 0 12px" }}>Account sync</h2>
+          <h2 id="account-heading" style={{ fontSize: 14, color: theme.accentText, margin: "0 0 12px" }}>Account profile & sync</h2>
           {auth.user ? <>
-            <p className="settings-modal-account-email" style={{ color: appearance === "light" ? "#526579" : "#cbd5e1", fontSize: 13, lineHeight: 1.5, margin: 0 }}>Account connected</p>
+            <div style={{ display: "flex", alignItems: "center", gap: 11, marginBottom: 10 }}>
+              <ProfileAvatar user={auth.user} size={46} />
+              <div style={{ minWidth: 0 }}>
+                <strong style={{ color: appearance === "light" ? "#17324d" : "#f8fbff", fontSize: 14 }}>{`${auth.user.firstName || ""} ${auth.user.lastName || ""}`.trim() || "InterviewIQ account"}</strong>
+                <p className="settings-modal-account-email" style={{ color: appearance === "light" ? "#526579" : "#cbd5e1", fontSize: 13, lineHeight: 1.5, margin: "2px 0 0", overflowWrap: "anywhere" }}>{auth.user.email}</p>
+              </div>
+            </div>
+            <p style={{ color: appearance === "light" ? "#64748b" : "#94a3b8", fontSize: 12, lineHeight: 1.5, margin: 0 }}>Your connected provider’s name and photo refresh each time you sign in.</p>
             {!auth.user.emailVerified ? <p role="alert" style={{ color: "#facc15", fontSize: 12, lineHeight: 1.45, margin: "6px 0 0" }}>Email verification is required before AI features can be used when authentication enforcement is enabled.</p> : null}
             {!auth.user.emailVerified ? <button type="button" className="glass-button" onClick={resendVerification} disabled={resendingVerification} aria-busy={resendingVerification} style={{ marginTop: 12, minHeight: 36, padding: "8px 14px", cursor: resendingVerification ? "wait" : "pointer", opacity: resendingVerification ? .65 : 1 }}>{resendingVerification ? "Sending verification email…" : "Resend verification email"}</button> : null}
             {auth.error ? <p role="alert" style={{ color: appearance === "light" ? "#b42318" : "#fca5a5", background: appearance === "light" ? "#fff1f2" : "rgba(127,29,29,.18)", border: appearance === "light" ? "1px solid #fecdd3" : "1px solid rgba(248,113,113,.28)", borderRadius: 8, padding: "9px 10px", fontSize: 12, lineHeight: 1.45, margin: "10px 0 0" }}>{auth.error}</p> : null}

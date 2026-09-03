@@ -10,6 +10,7 @@ const javaDigestSource = readFileSync(new URL("../components/java-digest/JavaDig
 const careerToolkitSource = readFileSync(new URL("../components/welcome/CareerToolkit.js", import.meta.url), "utf8");
 const profileSetupSource = readFileSync(new URL("../components/welcome/ProfileSetup.js", import.meta.url), "utf8");
 const settingsModalSource = readFileSync(new URL("../components/modals/SettingsModal.js", import.meta.url), "utf8");
+const profileAvatarSource = readFileSync(new URL("../components/auth/ProfileAvatar.js", import.meta.url), "utf8");
 const authHookSource = readFileSync(new URL("../hooks/useAuth.js", import.meta.url), "utf8");
 const cloudStateSyncSource = readFileSync(new URL("../hooks/useCloudStateSync.js", import.meta.url), "utf8");
 const authApiSource = readFileSync(new URL("../pages/api/auth.js", import.meta.url), "utf8");
@@ -19,6 +20,7 @@ const persistenceSource = readFileSync(new URL("../lib/serverPersistence.mjs", i
 const toastSource = readFileSync(new URL("../components/Toast.js", import.meta.url), "utf8");
 const authPageSource = readFileSync(new URL("../components/auth/AuthPage.js", import.meta.url), "utf8");
 const welcomeSource = readFileSync(new URL("../components/welcome/Welcome.js", import.meta.url), "utf8");
+const homeDemoSource = readFileSync(new URL("../components/welcome/HomeDemo.js", import.meta.url), "utf8");
 const interviewReadySource = readFileSync(new URL("../components/interview-ready/InterviewReadyQA.js", import.meta.url), "utf8");
 
 test("assistant part-wise answers render with readable section styling", () => {
@@ -175,6 +177,17 @@ test("feedback and empty states remain accessible and readable", () => {
   assert.match(authHookSource, /Your security session expired/);
 });
 
+test("account profiles display a safe avatar and retain refreshed OAuth details", () => {
+  assert.match(profileAvatarSource, /referrerPolicy="no-referrer"/);
+  assert.match(profileAvatarSource, /onError=\{\(\) => setImageFailed\(true\)\}/);
+  assert.match(settingsModalSource, /Account profile & sync/);
+  assert.match(settingsModalSource, /connected provider’s name and photo refresh each time/);
+  assert.match(indexSource, /<ProfileAvatar user=\{auth\.user\} size=\{22\}/);
+  assert.match(persistenceSource, /ADD COLUMN IF NOT EXISTS photo_url TEXT/);
+  assert.match(persistenceSource, /photoUrl: row\.photo_url \|\| ""/);
+  assert.match(persistenceSource, /SET first_name = CASE WHEN/);
+});
+
 test("cloud hydration does not replay a success toast on every refresh", () => {
   assert.doesNotMatch(indexSource, /Synced your workspace from your account/);
 });
@@ -239,6 +252,20 @@ test("profile setup uses a corporate onboarding entry", () => {
   assert.match(profileSetupSource, /Sample plan generated from your profile inputs/);
   assert.match(profileSetupSource, /getPrimaryStack/);
   assert.doesNotMatch(profileSetupSource, /72%|58%|81%/);
+});
+
+test("front-page product tour previews the full preparation workspace", () => {
+  assert.match(homeDemoSource, /PRODUCT TOUR/);
+  assert.match(homeDemoSource, /Practice the exact interview format you need/);
+  assert.match(homeDemoSource, /DSA Visual Lab/);
+  assert.match(homeDemoSource, /Java \+ Spring curriculum/);
+  assert.match(homeDemoSource, /System Design Studio/);
+  assert.match(homeDemoSource, /Resume & JD analysis/);
+  assert.match(homeDemoSource, /Mastery map/);
+  assert.match(homeDemoSource, /Play tour/);
+  assert.match(homeDemoSource, /setInterval/);
+  assert.match(globalsSource, /\.home-demo__tour/);
+  assert.match(globalsSource, /\.home-demo__panels/);
 });
 
 test("public pages share the corporate light theme", () => {

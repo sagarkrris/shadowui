@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { normalizeAnalyticsEvent } from "../lib/analytics.mjs";
-import { createOAuthNonce, oauthState, verifyOAuthState } from "../lib/oauth.mjs";
+import { createOAuthNonce, exchangeOAuthCode, oauthState, verifyOAuthState } from "../lib/oauth.mjs";
 import { PUBLIC_STACK_GUIDES, getStackGuide } from "../lib/seoGuides.mjs";
 import { JAVA_TUTORIAL_CATALOG, slugifyJavaTutorial } from "../lib/javaDigest.mjs";
 
@@ -31,6 +31,7 @@ test("every listicle deep-dive link resolves to a published guide", async () => 
 
 test("analytics accepts only bounded product events", () => {
   assert.deepEqual(normalizeAnalyticsEvent({ name: "mock_completed", path: "/", value: "8" }), { name: "mock_completed", path: "/", value: "8" });
+  assert.deepEqual(normalizeAnalyticsEvent({ name: "product_tour_scene", path: "/", value: "3" }), { name: "product_tour_scene", path: "/", value: "3" });
   assert.equal(normalizeAnalyticsEvent({ name: "email_address", path: "/" }), null);
 });
 
@@ -45,4 +46,31 @@ test("oauth state is signed and rejects tampering", () => {
   if (previousSecret === undefined) delete process.env.SESSION_SECRET; else process.env.SESSION_SECRET = previousSecret;
   if (previousClient === undefined) delete process.env.GITHUB_CLIENT_ID; else process.env.GITHUB_CLIENT_ID = previousClient;
   if (previousProviderSecret === undefined) delete process.env.GITHUB_CLIENT_SECRET; else process.env.GITHUB_CLIENT_SECRET = previousProviderSecret;
+});
+
+test("OAuth profiles retain only secure provider photo URLs", async () => {
+  const previousClient = process.env.GOOGLE_CLIENT_ID;
+  const previousSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const originalFetch = global.fetch;
+  process.env.GOOGLE_CLIENT_ID = "client";
+  process.env.GOOGLE_CLIENT_SECRET = "secret";
+  global.fetch = async (url) => ({
+    ok: true,
+    json: async () => String(url).includes("token")
+      ? { access_token: "token" }
+      : { sub: "google-user", email: "person@example.com", given_name: "Person", family_name: "Example", picture: "https://lh3.googleusercontent.com/photo" },
+  });
+  const user = await exchangeOAuthCode("google", "code");
+  assert.equal(user.photoUrl, "https://lh3.googleusercontent.com/photo");
+  global.fetch = async (url) => ({
+    ok: true,
+    json: async () => String(url).includes("token")
+      ? { access_token: "token" }
+      : { sub: "google-user", email: "person@example.com", picture: "http://unsafe.example/photo" },
+  });
+  const unsafePhotoUser = await exchangeOAuthCode("google", "code");
+  assert.equal(unsafePhotoUser.photoUrl, "");
+  global.fetch = originalFetch;
+  if (previousClient === undefined) delete process.env.GOOGLE_CLIENT_ID; else process.env.GOOGLE_CLIENT_ID = previousClient;
+  if (previousSecret === undefined) delete process.env.GOOGLE_CLIENT_SECRET; else process.env.GOOGLE_CLIENT_SECRET = previousSecret;
 });

@@ -23,6 +23,7 @@ import RecordingReviewModal from "../components/modals/RecordingReviewModal";
 import ScreenModal from "../components/modals/ScreenModal";
 import AboutModal from "../components/modals/AboutModal";
 import SettingsModal from "../components/modals/SettingsModal";
+import ProfileAvatar from "../components/auth/ProfileAvatar";
 const SystemDesignCanvas = dynamic(() => import("../components/system-design/SystemDesignCanvas"), { ssr: false });
 import Sidebar from "../components/Sidebar";
 import Toast from "../components/Toast";
@@ -1598,7 +1599,7 @@ export default function Home() {
 
             <div className="header-account-actions" style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }} aria-label="Account actions">
               {auth.user ? <div ref={userMenuRef} className="user-menu-wrap" style={{ position: "relative" }}>
-                <button type="button" className="glass-button" onClick={() => setUserMenuOpen((value) => !value)} aria-haspopup="menu" aria-expanded={userMenuOpen} style={{ border: `1px solid ${techTheme.accentBorder}`, borderRadius: 7, color: techTheme.accentText, cursor: "pointer", fontSize: 11, fontWeight: 850, padding: "5px 9px", whiteSpace: "nowrap" }}><i className="ti ti-user-circle" /> Account <i className={`ti ${userMenuOpen ? "ti-chevron-up" : "ti-chevron-down"}`} /></button>
+                <button type="button" className="glass-button" onClick={() => setUserMenuOpen((value) => !value)} aria-haspopup="menu" aria-expanded={userMenuOpen} style={{ border: `1px solid ${techTheme.accentBorder}`, borderRadius: 7, color: techTheme.accentText, cursor: "pointer", fontSize: 11, fontWeight: 850, padding: "4px 9px 4px 5px", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 5 }}><ProfileAvatar user={auth.user} size={22} /> Account <i className={`ti ${userMenuOpen ? "ti-chevron-up" : "ti-chevron-down"}`} /></button>
                 {userMenuOpen && <div className="user-menu-panel glass-card" role="menu" aria-label="Account menu">
                   <button type="button" role="menuitem" onClick={() => { setShowAccountSettings(true); setUserMenuOpen(false); }}><i className="ti ti-settings" />Account & settings</button>
                   <button type="button" role="menuitem" onClick={() => { setFocusMode((value) => !value); setUserMenuOpen(false); }}><i className="ti ti-focus-2" />{focusMode ? "Exit focus mode" : "Focus mode"}</button>
