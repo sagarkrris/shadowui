@@ -1,4 +1,5 @@
 import { scrollFocusedControlIntoView } from "../../lib/focusViewport.mjs";
+import Link from "next/link";
 
 const FIELD_LIMITS = {
   name: 80,
@@ -68,6 +69,11 @@ export default function ProfileSetup({ draft, onChange, onSubmit, onSignIn, isSi
     ["Explain", "Say the why", "idle"],
     ["Practice", "Run the drill", "idle"],
     ["Review", "Log the signal", "idle"],
+  ];
+  const learningPaths = [
+    ["Java backend", "102 structured chapters from Core Java through Spring, JVM, data, and architecture.", "/java/roadmap", "ti-brand-java"],
+    ["Interview foundations", "Guided Java, Python, React, SQL, and system-design interview guides.", "/guides", "ti-map-2"],
+    ["Hands-on practice", "Move from explanation to a visual DSA drill, mock round, or production scenario.", "#profile-name", "ti-code"],
   ];
   const fieldStyle = {
     width: "100%",
@@ -232,6 +238,15 @@ export default function ProfileSetup({ draft, onChange, onSubmit, onSignIn, isSi
                 <p style={{ color: "#64748b", fontSize: 12, lineHeight: 1.5 }}>{copy}</p>
               </div>
             ))}
+          </div>
+        </section>
+
+        <section style={{ borderTop: "1px solid #d8e2ef", paddingTop: 22 }}>
+          <p style={{ color: "#1f6feb", fontSize: 11, fontWeight: 900, textTransform: "uppercase", marginBottom: 7 }}>Learning maps</p>
+          <h2 style={{ color: "#102033", fontSize: "clamp(24px, 3.2vw, 36px)", lineHeight: 1.1, fontWeight: 900, marginBottom: 6 }}>Know what to learn next.</h2>
+          <p style={{ color: "#64748b", fontSize: 13, lineHeight: 1.5, marginBottom: 14 }}>Choose a path, practise the idea, and build confidence through doing—not just watching.</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: 10 }}>
+            {learningPaths.map(([title, copy, href, icon]) => <Link key={title} href={href} onClick={href === "#profile-name" ? (event) => { event.preventDefault(); focusProfileForm(); } : undefined} style={{ border: "1px solid #d6e1ee", borderRadius: 8, background: "#ffffff", padding: 15, textDecoration: "none" }}><div style={{ width: 34, height: 34, borderRadius: 8, background: "#eef5ff", color: "#1f6feb", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 14 }}><i className={`ti ${icon}`} style={{ fontSize: 18 }} /></div><h3 style={{ color: "#102033", fontSize: 15, fontWeight: 900, marginBottom: 8 }}>{title}</h3><p style={{ color: "#64748b", fontSize: 12.5, lineHeight: 1.5, margin: 0 }}>{copy}</p><span style={{ color: "#1f6feb", display: "block", fontSize: 12, fontWeight: 800, marginTop: 13 }}>{href === "#profile-name" ? "Start here →" : "Explore path →"}</span></Link>)}
           </div>
         </section>
 

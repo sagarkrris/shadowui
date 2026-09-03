@@ -28,6 +28,7 @@ import Sidebar from "../components/Sidebar";
 import Toast from "../components/Toast";
 import VoiceBar from "../components/VoiceBar";
 import ProfileSetup from "../components/welcome/ProfileSetup";
+import HomeDemo from "../components/welcome/HomeDemo";
 import Welcome from "../components/welcome/Welcome";
 import { buildInterviewRecordingReviewPrompt } from "../lib/interviewRecordingReview.mjs";
 import { INTERVIEW_PANELISTS, normalizeInterviewPanel } from "../lib/interviewPanel.mjs";
@@ -58,6 +59,7 @@ import { getAppShellHeight, getStableViewportHeight, getVisibleViewportHeight, i
 import { buildSpeechTranscript, createVoiceSessionReport, getVoiceErrorMessage, getVoiceSupport } from "../lib/voiceSupport.mjs";
 import { buildWorkspaceActionDisplayText } from "../lib/workspaceActionDisplay.mjs";
 import { compactChatHistory } from "../lib/chatRequest.mjs";
+import { trackEvent } from "../lib/analytics.mjs";
 import { getWorkspaceById, getWorkspaceTitle, listDesktopWorkspaces, listMobileWorkspaces, normalizeWorkspaceTab } from "../lib/workspaces.mjs";
 import { useInterviewSession } from "../hooks/useInterviewSession";
 import { useWorkspaceNavigation } from "../hooks/useWorkspaceNavigation";
@@ -69,6 +71,7 @@ const BEGINNER_GUIDED_MODE_KEY = "interviewiq.beginnerGuidedMode.v1";
 const FOCUS_MODE_STORAGE_KEY = "interviewiq.focusMode.v1";
 const APPLICATION_TRACKER_STORAGE_KEY = "interviewiq.applicationTracker.v1";
 const JAVA_DIGEST_PROGRESS_STORAGE_KEY = "interviewiq.javaDigestProgress.v1";
+const HOME_DEMO_SEEN_KEY = "interviewiq.homeDemoSeen.v1";
 const INTERVIEW_MODES = [
   { key: "strict", label: "Strict Interviewer" },
   { key: "coach", label: "Coach Mode" },
@@ -164,6 +167,7 @@ export default function Home() {
   const [prepProgressState, setPrepProgressState] = useState(() => createPrepProgressState());
   const [isKeyboardOpen, setKeyboardOpen] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
+  const [homeDemoSeen, setHomeDemoSeen] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [cloudStatus, setCloudStatus] = useState("idle");
@@ -303,6 +307,7 @@ export default function Home() {
       resetInterviewSession(savedSession.interviewSession);
     }
     setQuestionMemory(loadQuestionMemory(window.localStorage));
+    setHomeDemoSeen(window.localStorage.getItem(HOME_DEMO_SEEN_KEY) === "1");
     setBeginnerMode(window.localStorage.getItem(BEGINNER_GUIDED_MODE_KEY) === "1");
     setFocusMode(window.localStorage.getItem(FOCUS_MODE_STORAGE_KEY) === "1");
     setApplications(loadVersionedState(window.localStorage, {
@@ -342,6 +347,12 @@ export default function Home() {
     setOfflineState((previous) => ({ ...previous, online: window.navigator.onLine }));
     setSessionReady(true);
   }, [resetInterviewSession, setActiveTab]);
+
+  const completeHomeDemo = useCallback(({ skipped = false } = {}) => {
+    if (typeof window !== "undefined") window.localStorage.setItem(HOME_DEMO_SEEN_KEY, "1");
+    setHomeDemoSeen(true);
+    trackEvent(skipped ? "demo_skipped" : "demo_completed");
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) return undefined;
@@ -1874,7 +1885,9 @@ export default function Home() {
                 onActivity={recordWorkspaceActivity}
               />
             ) : messages.length === 0 && !loading
-              ? !candidateProfile
+              ? sessionReady && auth.ready && !homeDemoSeen && (!candidateProfile || !auth.user)
+                ? <HomeDemo onContinue={completeHomeDemo} onSignIn={() => openAuthSettings("login")} />
+                : !candidateProfile
                 ? <ProfileSetup theme={techTheme} draft={profileDraft} onChange={setProfileDraft} onSubmit={saveProfile} onSignIn={() => openAuthSettings("login")} isSignedIn={Boolean(auth.user)} keyboardOpen={isKeyboardOpen} />
                 : <Welcome
                   onChip={(text) => {

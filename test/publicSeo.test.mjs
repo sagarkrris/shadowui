@@ -25,6 +25,8 @@ test("public SEO routes expose metadata, structured data, sitemap, robots, and R
   const resources = readFileSync(new URL("../pages/resources.js", import.meta.url), "utf8");
   const resourcePage = readFileSync(new URL("../pages/resources/[slug].js", import.meta.url), "utf8");
   const javaDigest = readFileSync(new URL("../components/java-digest/JavaDigest.js", import.meta.url), "utf8");
+  const verticalArticle = readFileSync(new URL("../components/public/VerticalArticle.js", import.meta.url), "utf8");
+  const roadmap = readFileSync(new URL("../pages/java/roadmap.js", import.meta.url), "utf8");
   const robots = readFileSync(new URL("../pages/robots.txt.js", import.meta.url), "utf8");
   const rss = readFileSync(new URL("../pages/rss.xml.js", import.meta.url), "utf8");
   assert.match(article, /application\/ld\+json/);
@@ -38,6 +40,10 @@ test("public SEO routes expose metadata, structured data, sitemap, robots, and R
   assert.match(javaDigest, /Short answer/);
   assert.match(javaDigest, /Complexity \/ trade-off/);
   assert.match(javaDigest, /Explain it in this order/);
+  assert.match(verticalArticle, /Related .* interview prep/);
+  assert.match(verticalArticle, /PUBLIC_VERTICAL_LISTICLES/);
+  assert.match(roadmap, /Complete Java Backend Learning Path/);
+  assert.match(roadmap, /ItemList/);
   assert.match(index, /Search Java guides/);
   assert.match(index, /levenshtein/);
   assert.match(index, /synonyms/);
