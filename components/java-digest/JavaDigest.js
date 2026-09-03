@@ -3,13 +3,16 @@ import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
 import {
   CSES_JAVA_PARTS,
+  FRESHER_DSA_GLOSSARY,
   FRESHER_DSA_PLAYBOOK,
   JAVA_DIGEST_ROADMAPS,
   JAVA_DIGEST_TRACKS,
+  JAVA_DIGEST_ARTICLES,
   JAVA_DIGEST_VERSION,
   JAVA_SPRING_STUDY_PATHS,
   JAVA_QUICK_REFERENCE,
   JAVA_INTERVIEW_QA,
+  JAVA_PRODUCTION_GLOSSARY,
   JAVA_PRODUCTION_SCENARIOS,
   JAVA_TUTORIAL_CATALOG,
   JAVA_VERSION_TOPIC_GUIDE,
@@ -462,7 +465,12 @@ function FresherDsaPlaybook({ accent }) {
       <div style={wrap}>
         <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Fresher DSA Playbook</div>
         <h3 style={{ ...wrap, color: "var(--jd-text)", fontSize: 15.5, lineHeight: 1.25, marginTop: 3 }}>A repeatable method for unfamiliar DSA questions</h3>
-        <p style={{ ...wrap, color: "var(--jd-text-muted)", fontSize: 11.6, lineHeight: 1.5, margin: "6px 0 0" }}>Use this before every problem: understand the constraints, name the pattern, prove the invariant, code the smallest correct version, and test the edges.</p>
+        <p style={{ ...wrap, color: "var(--jd-text-muted)", fontSize: 11.6, lineHeight: 1.5, margin: "6px 0 0" }}>Use this before every problem: understand the constraints, name the pattern, state the invariant (the fact that must stay true), code the smallest correct version, and test the edges. The goal is not to guess a trick; it is to make each decision explainable.</p>
+        <details style={{ color: "var(--jd-text-soft)", fontSize: 11.4, lineHeight: 1.5, marginTop: 8 }}>
+          <summary style={{ color: accent, cursor: "pointer", fontWeight: 850 }}>New to DSA? Read the vocabulary first</summary>
+          <p style={{ margin: "7px 0" }}>Start with the definition, trace the small example, and only then worry about memorizing a template. The symbols describe scale; the pattern names describe how you move through the input.</p>
+          <dl style={{ display: "grid", gap: 6, margin: 0 }}>{FRESHER_DSA_GLOSSARY.map(({ term, definition }) => <div key={term}><dt style={{ color: "var(--jd-text)", fontWeight: 800 }}>{term}</dt><dd style={{ margin: "1px 0 0" }}>{definition}</dd></div>)}</dl>
+        </details>
       </div>
       <div style={responsiveGrid(260, 9)}>
         <section style={{ ...wrap, background: "var(--jd-surface-sunken)", border: "1px solid var(--jd-border)", borderRadius: 8, padding: 10 }}>
@@ -473,6 +481,7 @@ function FresherDsaPlaybook({ accent }) {
         </section>
         <section style={{ ...wrap, background: "var(--jd-surface-sunken)", border: "1px solid var(--jd-border)", borderRadius: 8, padding: 10 }}>
           <h4 style={{ color: "var(--jd-text)", fontSize: 12, margin: "0 0 7px" }}>Constraint-to-algorithm map</h4>
+          <p style={{ color: "var(--jd-text-muted)", fontSize: 11.2, lineHeight: 1.45, margin: "0 0 7px" }}>These are sizing heuristics, not guarantees: account for the time limit, language overhead, input shape, and the cost of each operation.</p>
           <div style={{ display: "grid", gap: 7 }}>
             {FRESHER_DSA_PLAYBOOK.constraintMap.map((entry) => (
               <div key={entry.limit} style={{ ...wrap, borderBottom: "1px solid var(--jd-border)", paddingBottom: 6 }}>
@@ -1018,6 +1027,10 @@ export default function JavaDigest({ theme = {}, onAction, onJavaProgressChange,
           <section style={{ ...wrap, background: "var(--jd-accent-surface)", border: `1px solid ${accent}33`, borderRadius: 8, display: "grid", gap: 7, padding: 12 }}>
             <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Incident answer loop</div>
             <p style={{ color: "var(--jd-text-soft)", fontSize: 11.7, lineHeight: 1.55, margin: 0 }}>State impact first. Then separate mitigation from diagnosis: stabilize users with the safest reversible action, gather evidence, test a hypothesis, and only then explain root cause and prevention. Finish with the STAR story in your own voice.</p>
+            <details style={{ color: "var(--jd-text-soft)", fontSize: 11.4, lineHeight: 1.5 }}>
+              <summary style={{ color: accent, cursor: "pointer", fontWeight: 850 }}>Plain-language operations glossary — p99 means the slowest 1% of requests</summary>
+              <dl style={{ display: "grid", gap: 6, margin: "8px 0 0" }}>{JAVA_PRODUCTION_GLOSSARY.map(({ term, definition }) => <div key={term}><dt style={{ color: "var(--jd-text)", fontWeight: 800 }}>{term}</dt><dd style={{ margin: "1px 0 0" }}>{definition}</dd></div>)}</dl>
+            </details>
           </section>
           {JAVA_PRODUCTION_SCENARIOS.map((scenario) => (
             <details key={scenario.id} style={{ ...wrap, background: "var(--jd-surface-subtle)", border: `1px solid ${accentBorder}`, borderRadius: 8, padding: "10px 11px" }}>
@@ -1074,7 +1087,7 @@ export default function JavaDigest({ theme = {}, onAction, onJavaProgressChange,
           </section>
           <section style={{ ...wrap, background: "var(--jd-surface-subtle)", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 9, padding: 12 }}>
             <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between" }}>
-              <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>{refresherSource === "pdf-plus-curated" ? "PDF + Curated Q&A Bank" : refresherSource === "bundled-fallback" ? "Curated Q&A Bank" : "Verbatim Q&A Bank"}</div>
+              <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>{refresherSource === "curated" || refresherSource === "bundled-fallback" ? "Curated Q&A Bank" : "Verbatim Q&A Bank"}</div>
               <span style={{ color: "var(--jd-text-muted)", fontSize: 11 }}>{refresherLoading ? "Loading questions..." : `${visibleRefresherQuestions.length} of ${refresherQuestions.length} questions`}</span>
             </div>
             <div className="java-digest-refresher-toolbar">

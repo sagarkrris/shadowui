@@ -57,6 +57,7 @@ export default function PublicJavaArticle({ article, related }) {
             <div style={eyebrowStyle}>START HERE · 30 SECONDS</div><h2>Say this first</h2><p style={{ fontSize: 18, color: "#f1f7ff" }}>{quickAnswer}</p>
             <details style={detailsStyle}><summary style={summaryStyle}>Read the fuller explanation</summary><p>{article.body}</p></details>
           </section>
+          {article.glossary?.length ? <section style={sectionStyle}><div style={eyebrowStyle}>PLAIN-LANGUAGE GLOSSARY</div><h2>Terms used in this incident guide</h2><p>For example, p99 is the time within which 99% of requests finish; it focuses attention on the slowest 1% of requests.</p><dl style={glossaryStyle}>{article.glossary.map(({ term, definition }) => <div key={term}><dt style={{ color: "#8bd3ff", fontWeight: 800 }}>{term}</dt><dd style={{ margin: "3px 0 0" }}>{definition}</dd></div>)}</dl></section> : null}
           <section id="explain" style={sectionStyle}><div style={eyebrowStyle}>INTERVIEW STRUCTURE</div><h2>Build a strong answer, step by step</h2><div style={stepsStyle}>{article.answerSteps.map((step, index) => <div key={step} style={stepStyle}><span style={stepNumberStyle}>0{index + 1}</span><span>{step}</span></div>)}</div></section>
           <section id="mental-model" style={sectionStyle}><div style={eyebrowStyle}>WHY IT WORKS</div><h2>Simple mental model</h2><p>{article.internals || "Start with the contract, identify the invariant or user-facing target, then trace the smallest set of components that can violate it. Separate diagnosis from mitigation and measure before and after every change."}</p></section>
           {isScenario ? <section id="production" style={sectionStyle}><div style={eyebrowStyle}>WHEN THINGS BREAK</div><h2>Production approach</h2><p><strong>Likely diagnosis:</strong> {source.diagnosis}</p><p><strong>Prevention:</strong> {source.prevention}</p></section> : <section id="production" style={sectionStyle}><div style={eyebrowStyle}>USE IT WELL</div><h2>Example, boundaries, and follow-ups</h2><pre style={codeStyle}><code>{source.example}</code></pre><p><strong>Interview follow-ups:</strong> {source.followUps}</p></section>}
@@ -88,6 +89,7 @@ const stepsStyle = { display: "grid", gap: 8 };
 const stepStyle = { alignItems: "flex-start", background: "#101d30", border: "1px solid #253b57", borderRadius: 8, display: "flex", gap: 12, padding: 14 };
 const stepNumberStyle = { color: "#72d0a6", fontSize: 12, fontWeight: 900, letterSpacing: ".08em" };
 const codeStyle = { background: "#07111d", border: "1px solid #253b57", borderRadius: 8, color: "#d7e9ff", fontSize: 13, lineHeight: 1.55, overflowX: "auto", padding: 14, whiteSpace: "pre-wrap" };
+const glossaryStyle = { display: "grid", gap: 10, margin: 0 };
 
 export function getStaticPaths() { return { paths: PUBLIC_ARTICLES.map((article) => ({ params: { slug: article.slug } })), fallback: false }; }
 export function getStaticProps({ params }) {

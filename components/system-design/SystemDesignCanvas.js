@@ -14,6 +14,7 @@ import {
   SYSTEM_DESIGN_CANVAS_SECTIONS,
   SYSTEM_DESIGN_INTERVIEW_PRACTICE_CATALOG,
   buildSystemDesignInterviewPracticeTemplate,
+  SYSTEM_DESIGN_GLOSSARY,
 } from "../../lib/systemDesignCanvas.mjs";
 import BeginnerGuideBanner from "../BeginnerGuideBanner";
 
@@ -1407,6 +1408,14 @@ function DiagramBoard({ board, roadmap, accent, onEvaluate }) {
         <p style={{ color: "#dbeafe", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}><strong style={{ color: "#f8fbff" }}>Why does it matter?</strong> Interviewers use it to see whether you can reason about scale, reliability, correctness, and trade-offs before writing code.</p>
         <p style={{ color: "#dbeafe", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}><strong style={{ color: "#f8fbff" }}>Where is it used?</strong> Architecture reviews, incident planning, backend design, migrations, and senior engineering interviews.</p>
       </section>
+
+      <details style={{ ...wrappingTextStyle, background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, padding: "8px 10px" }}>
+        <summary style={{ color: accent, cursor: "pointer", fontSize: 11.2, fontWeight: 900 }}>New to system design? Read the terms</summary>
+        <p style={{ color: "#9fb0c7", fontSize: 11.2, lineHeight: 1.45, margin: "8px 0" }}>Use these definitions while you trace the diagram. The goal is to explain why each box exists, not to memorize abbreviations.</p>
+        <dl style={{ display: "grid", gap: 7, margin: 0 }}>
+          {SYSTEM_DESIGN_GLOSSARY.map(([term, definition]) => <div key={term}><dt style={{ color: "#eaf2ff", fontSize: 11.2, fontWeight: 850 }}>{term}</dt><dd style={{ color: "#9fb0c7", fontSize: 11.1, lineHeight: 1.4, margin: "2px 0 0" }}>{definition}</dd></div>)}
+        </dl>
+      </details>
 
       <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 210px), 1fr))", minWidth: 0 }}>
         {board.lanes.map((lane, laneIndex) => (

@@ -21,6 +21,7 @@ test("interview ready Q&A workspace is wired into the app shell", () => {
   assert.match(componentSource, /Show/);
   assert.match(componentSource, /Hide/);
   assert.match(componentSource, /interview-ready-answer-input/);
+  assert.match(componentSource, /INTERVIEW_READY_GLOSSARY/);
   assert.match(componentSource, /Target company/);
   assert.match(componentSource, /Answer timer/);
   assert.match(componentSource, /Tailor with AI/);

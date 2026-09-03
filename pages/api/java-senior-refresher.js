@@ -1,17 +1,13 @@
-import { appendAdditionalTrickyQa, buildJavaSeniorRefresherFallbackQa, loadJavaSeniorRefresherQa } from "../../lib/javaSeniorRefresherQa.mjs";
+import { buildJavaSeniorRefresherFallbackQa } from "../../lib/javaSeniorRefresherQa.mjs";
 import { withApiObservability } from "../../lib/apiObservability.mjs";
 
 let cachedPayload = null;
 
 async function loadQuestions() {
-  try {
-    const questions = await loadJavaSeniorRefresherQa();
-    if (questions.length) return { questions: appendAdditionalTrickyQa(questions), source: "pdf-plus-curated" };
-  } catch {
-    // Fall through to the bundled content when serverless file access fails.
-  }
-
-  return { questions: buildJavaSeniorRefresherFallbackQa(), source: "bundled-fallback" };
+  // The bundled bank contains the reviewed answers for the exact interview
+  // questions exposed by the UI. The PDF is retained as supplemental study
+  // material, but its extracted wording must not replace those answers.
+  return { questions: buildJavaSeniorRefresherFallbackQa(), source: "curated" };
 }
 
 async function handler(req, res) {

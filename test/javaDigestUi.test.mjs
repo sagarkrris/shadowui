@@ -110,7 +110,8 @@ test("java digest component renders topic, article, and roadmap sections", () =>
   assert.match(componentSource, /Close Lesson/);
   assert.match(componentSource, /Roadmaps/);
   assert.match(componentSource, /Complete Java Senior Refresher/);
-  assert.match(componentSource, /PDF \+ Curated Q&A Bank/);
+  assert.match(componentSource, /JAVA_DIGEST_ARTICLES/);
+  assert.match(componentSource, /Curated Q&A Bank/);
   assert.doesNotMatch(componentSource, /The PDF&apos;s senior interview questions and answer blocks are presented below verbatim as searchable study cards/);
   assert.match(componentSource, /Filter Java senior refresher questions and answers/);
   assert.match(componentSource, /All sections/);

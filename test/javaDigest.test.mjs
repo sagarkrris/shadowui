@@ -5,6 +5,7 @@ import {
   CSES_JAVA_PARTS,
   CSES_JAVA_TRACKS,
   FRESHER_DSA_PLAYBOOK,
+  FRESHER_DSA_GLOSSARY,
   JAVA_DIGEST_ARTICLES,
   JAVA_DIGEST_ROADMAPS,
   JAVA_DIGEST_TRACKS,
@@ -19,6 +20,7 @@ import {
   getJavaTutorialBySlug,
   slugifyJavaTutorial,
   JAVA_INTERVIEW_QA,
+  JAVA_PRODUCTION_GLOSSARY,
   JAVA_PRODUCTION_SCENARIOS,
   buildJavaDigestCompetencySummary,
   buildCsesJavaPracticePrompt,
@@ -49,6 +51,10 @@ test("fresher DSA playbook covers solving method, patterns, practice, and debugg
   assert.ok(FRESHER_DSA_PLAYBOOK.edgeCases.length >= 5);
   assert.ok(FRESHER_DSA_PLAYBOOK.debugging.length >= 5);
   assert.equal(FRESHER_DSA_PLAYBOOK.practiceLadder.length, 6);
+  assert.match(FRESHER_DSA_PLAYBOOK.framework[3], /invariant/);
+  assert.match(FRESHER_DSA_PLAYBOOK.constraintMap.find((entry) => entry.limit === "n <= 100,000").reason, /10 billion/);
+  assert.ok(FRESHER_DSA_GLOSSARY.some((entry) => entry.term === "Invariant"));
+  assert.ok(FRESHER_DSA_GLOSSARY.some((entry) => entry.term === "Fenwick tree \/ segment tree"));
 });
 
 test("java digest exposes original topic tracks and article cards", () => {
@@ -162,6 +168,15 @@ test("java digest includes a Java 21, JVM, and concurrency senior refresher sect
   assert.ok(refresher.some((article) => article.id === "java-21-virtual-threads"));
   assert.ok(refresher.some((article) => article.title.includes("JVM")));
   assert.match(refresher.find((article) => article.id === "java-21-virtual-threads").learn.join(" "), /preview APIs/);
+  assert.match(refresher.find((article) => article.id === "java-21-virtual-threads").learn.join(" "), /JDK 25/);
+  assert.match(JAVA_VERSION_TOPIC_GUIDE.find((entry) => entry.version === "Java 22–25").focus, /StructuredTaskScope remains preview/);
+});
+
+test("production scenarios explain operational shorthand before using it", () => {
+  assert.match(JAVA_PRODUCTION_SCENARIOS.find((scenario) => scenario.id === "prod-latency-spike").prompt, /99% of requests finish/);
+  assert.match(JAVA_PRODUCTION_GLOSSARY.find((entry) => entry.term === "p50 \/ p95 \/ p99 latency").definition, /slowest 1%/);
+  assert.ok(JAVA_PRODUCTION_GLOSSARY.some((entry) => entry.term === "SLO"));
+  assert.ok(JAVA_PRODUCTION_GLOSSARY.some((entry) => entry.term === "DLQ"));
 });
 
 test("senior refresher parser preserves question and answer text without summarizing it", () => {
@@ -196,6 +211,51 @@ test("senior refresher has a bundled fallback when the PDF is unavailable at run
   assert.ok(questions.some((question) => question.question === "Why can heap pollution compile cleanly and still fail later?"));
   assert.ok(questions.some((question) => question.question === "Why can @Transactional appear to do nothing on self-invocation?"));
   assert.match(questions.find((question) => question.question === "Why can heap pollution compile cleanly and still fail later?").answer, /```java/);
+  assert.match(questions.find((question) => question.question === "Why can groupingByConcurrent still be unsafe for a parallel stream?").answer, /concurrent, unordered collector/);
+  assert.deepEqual(questions.map((question) => question.question), [
+    "When would you choose a record over a class?",
+    "How does PECS make a public API more flexible?",
+    "When is Optional the wrong modeling choice?",
+    "Where do virtual threads help, and where do they not?",
+    "How can virtual threads reveal a database bottleneck?",
+    "What changes when a structured-concurrency API is preview?",
+    "How do you investigate a suspected memory leak?",
+    "Why is a rising heap not enough evidence of a leak?",
+    "Which signals would you correlate with a p99 latency increase?",
+    "Why does volatile not make a read-modify-write sequence atomic?",
+    "When is a lock clearer than CAS?",
+    "What makes cancellation reliable rather than merely requested?",
+    "Why can get followed by put still be incorrect on ConcurrentHashMap?",
+    "What should happen when a work queue is full?",
+    "Why does a queue move pressure instead of removing it?",
+    "Why can a HashMap lookup fail after insertion?",
+    "When would you avoid streams?",
+    "Why is parallelStream not a general performance switch?",
+    "Why can heap pollution compile cleanly and still fail later?",
+    "Why is List<Integer> not a subtype of List<Number>?",
+    "Why can a static initializer cause a production outage that persists after the original failure?",
+    "Why is double-checked locking broken without volatile?",
+    "What is the lost-notification problem with wait and notify?",
+    "Why can CompletableFuture make a thread-pool starvation deadlock easier to create?",
+    "Why is modifying a collection while streaming it a correctness bug even when it appears to work?",
+    "Why can groupingByConcurrent still be unsafe for a parallel stream?",
+    "Why is catching Exception and wrapping it in RuntimeException often an API regression?",
+    "What happens when both the try block and close() throw in try-with-resources?",
+    "Why can @Transactional appear to do nothing on self-invocation?",
+    "Why can a fetch join with pagination return incomplete or misleading pages?",
+    "A Java endpoint has a p99 latency spike but normal CPU. How would you investigate it?",
+    "How would you test concurrent code without relying on sleep?",
+    "How do you make a Java message consumer safe when delivery is at least once?",
+    "How would you evolve a Java API response without breaking existing clients?",
+    "How would you choose between optimistic locking, pessimistic locking, and a transaction isolation level?",
+    "What makes an outbound HTTP client resilient instead of merely retrying failures?",
+    "Why can ThreadLocal become a memory or data-isolation bug in server code?",
+    "Why are equals and hashCode difficult for JPA entities?",
+    "What would you review before accepting polymorphic JSON into a Java service?",
+    "How do you decide what belongs in unit, integration, and contract tests for a Java service?",
+    "What do you look for first when reviewing a Java backend change?",
+    "How do design patterns, SOLID, KISS, and DRY guide a Java refactor without causing over-engineering?",
+  ]);
 });
 
 test("senior refresher adds curated tricky questions to the PDF bank without duplicates", () => {

@@ -9,6 +9,7 @@ import {
   getInterviewReadyCategory,
   getInterviewReadyQuestion,
   listInterviewReadyQuestions,
+  INTERVIEW_READY_GLOSSARY,
 } from "../../lib/interviewReadyQa.mjs";
 import {
   INTERVIEW_READY_PRACTICE_STORAGE_KEY,
@@ -666,6 +667,14 @@ export default function InterviewReadyQA({
       </section>
 
       {offline ? <div role="status" style={{ ...wrap, background: "rgba(250,204,21,.1)", border: "1px solid rgba(250,204,21,.3)", borderRadius: 8, color: "#fde68a", fontSize: 11.5, padding: "8px 10px" }}><i className="ti ti-wifi-off" style={{ marginRight: 6 }} />Offline mode: local practice remains available, but AI requests are paused until you reconnect.</div> : null}
+
+      <details style={{ ...wrap, background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, padding: "8px 10px" }}>
+        <summary style={{ color: accent, cursor: "pointer", fontSize: 11.2, fontWeight: 900 }}>New to interview practice? Read the terms</summary>
+        <p style={{ color: "#9fb0c7", fontSize: 11.2, lineHeight: 1.45, margin: "8px 0" }}>These words describe the practice flow. You can answer in plain English first, then use the format that helps you stay organized.</p>
+        <dl style={{ display: "grid", gap: 7, margin: 0 }}>
+          {INTERVIEW_READY_GLOSSARY.map(([term, definition]) => <div key={term}><dt style={{ color: "#eaf2ff", fontSize: 11.2, fontWeight: 850 }}>{term}</dt><dd style={{ color: "#9fb0c7", fontSize: 11.1, lineHeight: 1.4, margin: "2px 0 0" }}>{definition}</dd></div>)}
+        </dl>
+      </details>
 
       <section style={{ ...wrap, display: "flex", flexWrap: "wrap", gap: 7 }} aria-label="Saved collection tools">
         <input aria-label="Saved collection name" value={collectionName} onChange={(event) => setCollectionName(event.target.value.slice(0, 60))} className="glass-input" style={{ border: "1px solid rgba(139,211,255,.24)", borderRadius: 7, color: "#dbeafe", fontSize: 11.5, padding: "6px 8px", width: 190 }} />

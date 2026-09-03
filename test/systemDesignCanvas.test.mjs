@@ -23,7 +23,13 @@ import {
   SYSTEM_DESIGN_INTERVIEW_PRACTICE_CATALOG,
   buildSystemDesignInterviewAnswer,
   buildSystemDesignInterviewPracticeTemplate,
+  SYSTEM_DESIGN_GLOSSARY,
 } from "../lib/systemDesignCanvas.mjs";
+
+test("system design glossary explains the terms used in the canvas", () => {
+  assert.ok(SYSTEM_DESIGN_GLOSSARY.some(([term]) => term === "p95 / p99"));
+  assert.ok(SYSTEM_DESIGN_GLOSSARY.some(([term]) => term === "DLQ"));
+});
 
 test("creates a system design canvas state with stable editable sections", () => {
   const state = createSystemDesignCanvasState({
