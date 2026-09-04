@@ -39,7 +39,7 @@ test("java digest component renders topic, article, and roadmap sections", () =>
   assert.match(componentSource, /reference.level/);
   assert.match(componentSource, /Tutorial Library/);
   assert.match(componentSource, /Practice Lab/);
-  assert.match(componentSource, /JAVA_TUTORIAL_CATALOG/);
+  assert.match(componentSource, /JAVA_CURATED_TUTORIAL_CATALOG/);
   assert.match(componentSource, /JAVA_VERSION_TOPIC_GUIDE/);
   assert.match(componentSource, /JAVA_PROGRAM_EXAMPLES/);
   assert.match(componentSource, /JAVA_QUIZ_BANK/);
@@ -155,6 +155,11 @@ test("published tutorial pages guard stale slugs and provide share fallback", ()
   assert.match(tutorialPageSource, /if \(!tutorial\) return \{ notFound: true \}/);
   assert.match(tutorialPageSource, /navigator\.clipboard\.writeText/);
   assert.match(tutorialPageSource, /error\?\.name === "AbortError"/);
+  assert.match(tutorialPageSource, /className="tutorial-article-page"/);
+  assert.match(globalStylesSource, /\.tutorial-article-page\s*\{[\s\S]*overflow-y:\s*auto/);
+  assert.match(tutorialPageSource, /Under editorial review/);
+  assert.match(tutorialPageSource, /not independently reviewed/);
+  assert.match(tutorialPageSource, /noindex, nofollow/);
 });
 
 test("java digest is wired as a first-class workspace", () => {

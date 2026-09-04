@@ -13,6 +13,7 @@ import {
   JAVA_SPRING_STUDY_PATHS,
   JAVA_QUICK_REFERENCE,
   JAVA_TUTORIAL_CATALOG,
+  JAVA_CURATED_TUTORIAL_CATALOG,
   JAVA_VERSION_TOPIC_GUIDE,
   JAVA_PROGRAM_EXAMPLES,
   JAVA_QUIZ_BANK,
@@ -147,11 +148,27 @@ test("tutorial catalog exposes full article-card lesson fields", () => {
   assert.ok(new Set(JAVA_TUTORIAL_CATALOG.map((tutorial) => tutorial.example)).size >= 90);
 });
 
+test("learner-facing tutorial catalog contains only curated chapters", () => {
+  assert.equal(JAVA_CURATED_TUTORIAL_CATALOG.length, JAVA_TUTORIAL_CATALOG.length);
+  assert.ok(JAVA_CURATED_TUTORIAL_CATALOG.every((tutorial) => tutorial.editorialStatus === "curated"));
+});
+
 test("flagship Java topics have individually authored editorial chapters", () => {
-  for (const topic of ["HashMap", "Generics", "Stream pipelines", "Executors", "Virtual threads", "Spring IoC", "Spring Security", "Transactions", "Spring Data JPA", "Garbage collection"]) {
+  for (const topic of ["JDK vs JRE vs JVM", "HashMap", "Generics", "Stream pipelines", "Executors", "Virtual threads", "Spring IoC", "Spring Security", "Transactions", "Spring Data JPA", "Garbage collection"]) {
     assert.ok(JAVA_EDITORIAL_CHAPTERS[topic]?.walkthrough, topic);
     assert.ok(JAVA_TUTORIAL_CATALOG.find((tutorial) => tutorial.title === topic)?.output, topic);
   }
+});
+
+test("JDK, JRE, and JVM tutorial explains the compile-and-run boundary", () => {
+  const tutorial = getJavaTutorialBySlug("jdk-vs-jre-vs-jvm");
+
+  assert.match(tutorial.walkthrough, /javac/);
+  assert.match(tutorial.walkthrough, /JDK 11 and later do not have a JRE image/);
+  assert.match(tutorial.example, /javac Greeting\.java/);
+  assert.match(tutorial.diagram, /Greeting\.class bytecode/);
+  assert.match(tutorial.interviewAnswer, /source → javac → \.class bytecode/);
+  assert.doesNotMatch(tutorial.example, /trace the state/);
 });
 
 test("tutorials expose stable publishable slugs", () => {

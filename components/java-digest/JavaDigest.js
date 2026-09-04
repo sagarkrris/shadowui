@@ -14,7 +14,7 @@ import {
   JAVA_INTERVIEW_QA,
   JAVA_PRODUCTION_GLOSSARY,
   JAVA_PRODUCTION_SCENARIOS,
-  JAVA_TUTORIAL_CATALOG,
+  JAVA_CURATED_TUTORIAL_CATALOG,
   JAVA_VERSION_TOPIC_GUIDE,
   JAVA_PROGRAM_EXAMPLES,
   JAVA_QUIZ_BANK,
@@ -675,20 +675,20 @@ export default function JavaDigest({ theme = {}, onAction, onJavaProgressChange,
     () => buildJavaDigestCompetencySummary({ progress, selectedTrackId: activeTrack }),
     [progress, activeTrack],
   );
-  const tutorialCategories = useMemo(() => Array.from(new Set(JAVA_TUTORIAL_CATALOG.map((tutorial) => tutorial.category))), []);
-  const tutorialLevels = useMemo(() => Array.from(new Set(JAVA_TUTORIAL_CATALOG.map((tutorial) => tutorial.level))), []);
+  const tutorialCategories = useMemo(() => Array.from(new Set(JAVA_CURATED_TUTORIAL_CATALOG.map((tutorial) => tutorial.category))), []);
+  const tutorialLevels = useMemo(() => Array.from(new Set(JAVA_CURATED_TUTORIAL_CATALOG.map((tutorial) => tutorial.level))), []);
   const visibleTutorials = useMemo(() => {
     const query = tutorialSearch.trim().toLocaleLowerCase();
-    return JAVA_TUTORIAL_CATALOG.filter((tutorial) => (
+    return JAVA_CURATED_TUTORIAL_CATALOG.filter((tutorial) => (
       (tutorialCategory === "all" || tutorial.category === tutorialCategory)
       && (tutorialLevel === "all" || tutorial.level === tutorialLevel)
       && (tutorialSavedFilter === "all" || (tutorialSavedFilter === "saved" ? learningProgress.bookmarkedIds.has(tutorial.id) : !learningProgress.completedIds.has(tutorial.id)))
       && (!query || [tutorial.title, tutorial.category, tutorial.level, tutorial.summary, tutorial.explanation, tutorial.walkthrough, tutorial.howToThink, tutorial.mistakes, tutorial.productionNote, tutorial.interviewAnswer, tutorial.relatedTopics?.join(" "), tutorial.editorialStatus].join(" ").toLocaleLowerCase().includes(query))
     ));
   }, [learningProgress.bookmarkedIds, learningProgress.completedIds, tutorialCategory, tutorialLevel, tutorialSavedFilter, tutorialSearch]);
-  const dueTutorials = useMemo(() => JAVA_TUTORIAL_CATALOG.filter((tutorial) => dueReviewIds.includes(tutorial.id)).slice(0, 8), [dueReviewIds]);
-  const savedTutorials = useMemo(() => JAVA_TUTORIAL_CATALOG.filter((tutorial) => learningProgress.bookmarkedIds.has(tutorial.id)), [learningProgress.bookmarkedIds]);
-  const lastOpenedTutorial = JAVA_TUTORIAL_CATALOG.find((tutorial) => tutorial.id === progress.lastOpenedTutorial) || null;
+  const dueTutorials = useMemo(() => JAVA_CURATED_TUTORIAL_CATALOG.filter((tutorial) => dueReviewIds.includes(tutorial.id)).slice(0, 8), [dueReviewIds]);
+  const savedTutorials = useMemo(() => JAVA_CURATED_TUTORIAL_CATALOG.filter((tutorial) => learningProgress.bookmarkedIds.has(tutorial.id)), [learningProgress.bookmarkedIds]);
+  const lastOpenedTutorial = JAVA_CURATED_TUTORIAL_CATALOG.find((tutorial) => tutorial.id === progress.lastOpenedTutorial) || null;
   const openTutorial = (tutorial) => {
     updateProgress?.((previous = {}) => ({ ...previous, lastOpenedTutorial: tutorial.id }));
     setTutorialSearch(tutorial.title);
@@ -812,7 +812,7 @@ export default function JavaDigest({ theme = {}, onAction, onJavaProgressChange,
     event?.preventDefault();
     const query = searchDraft.trim().toLocaleLowerCase();
     const exactArticle = JAVA_DIGEST_ARTICLES.find((article) => article.title.toLocaleLowerCase() === query);
-    const exactTutorial = JAVA_TUTORIAL_CATALOG.find((tutorial) => tutorial.title.toLocaleLowerCase() === query);
+    const exactTutorial = JAVA_CURATED_TUTORIAL_CATALOG.find((tutorial) => tutorial.title.toLocaleLowerCase() === query);
     if (exactArticle) {
       navigateArticle(exactArticle);
       return;
@@ -1182,7 +1182,7 @@ export default function JavaDigest({ theme = {}, onAction, onJavaProgressChange,
       {activeView === "Tutorial Library" && (
         <div style={{ display: "grid", gap: 10 }}>
           <section style={{ ...wrap, background: "var(--jd-accent-surface)", border: `1px solid ${accent}33`, borderRadius: 8, display: "grid", gap: 6, padding: 12 }}>
-            <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Original topic index · {JAVA_TUTORIAL_CATALOG.length} tutorials · {dueReviewCount} due for review</div>
+            <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Curated tutorial library · {JAVA_CURATED_TUTORIAL_CATALOG.length} chapters · {dueReviewCount} due for review</div>
             <h3 style={{ ...wrap, color: "var(--jd-text)", fontSize: 15.5, lineHeight: 1.25 }}>Searchable Java and Spring Tutorial Library</h3>
             <p style={{ ...wrap, color: "var(--jd-text-muted)", fontSize: 11.6, lineHeight: 1.5 }}>Browse by category and level. Each card is a compact starting point; open the AI topic search for a deeper explanation and code walkthrough.</p>
             <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 7, marginTop: 3 }}>
