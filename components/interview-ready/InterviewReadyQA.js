@@ -21,6 +21,7 @@ import {
   setInterviewReadyCompany,
   setInterviewReadySelectedQuestion,
 } from "../../lib/interviewReadyPractice.mjs";
+import AnswerAtAGlance from "../learning/AnswerAtAGlance";
 
 const wrap = {
   minWidth: 0,
@@ -248,6 +249,7 @@ function InterviewAnswerCard({ question, accent, profile, onAction, onActivity, 
             {category.label} · {question.frequency}
           </div>
           <h3 style={{ ...wrap, color: "#f8fbff", fontSize: 15.5, lineHeight: 1.3, marginTop: 4 }}><HighlightedText text={question.question} query={searchQuery} /></h3>
+          <AnswerAtAGlance category={category.label} takeaway={question.answer.direct} compact={compact} />
         </div>
         <span style={{ border: "1px solid rgba(250,204,21,.28)", borderRadius: 999, color: "#fde68a", flexShrink: 0, fontSize: 10.5, fontWeight: 900, padding: "3px 7px", whiteSpace: "nowrap" }}>
           {question.difficulty}

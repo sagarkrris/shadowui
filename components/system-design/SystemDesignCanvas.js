@@ -17,6 +17,8 @@ import {
   SYSTEM_DESIGN_GLOSSARY,
 } from "../../lib/systemDesignCanvas.mjs";
 import BeginnerGuideBanner from "../BeginnerGuideBanner";
+import AnswerAtAGlance from "../learning/AnswerAtAGlance";
+import ReadableFlowDiagram from "../learning/ReadableFlowDiagram";
 
 const wrappingTextStyle = {
   minWidth: 0,
@@ -1098,6 +1100,7 @@ function MermaidExportPanel({ title, mermaid, accent }) {
         </div>
         <ActionButton icon={copied ? "ti-check" : "ti-copy"} label={copied ? "Copied Mermaid" : "Copy Mermaid"} onClick={copyMermaid} tone={accent} />
       </div>
+      <ReadableFlowDiagram value={mermaid} title="Readable architecture flow" accent={accent} />
       <pre style={{ ...wrappingCodeStyle, background: "rgba(0,0,0,.24)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, color: "#d1fae5", fontSize: 10.8, lineHeight: 1.45, margin: 0, padding: 10 }}>{mermaid}</pre>
     </section>
   );
@@ -1627,6 +1630,7 @@ export default function SystemDesignCanvas({
         onStepSelect={onBeginnerStepChange}
         detail="For system design: capture requirements, predict the request flow, explain one trade-off, practice a mock question, then review missing scale and failure details."
       />
+      <AnswerAtAGlance category="HLD LLD System Design" takeaway="Use the canvas as a causal story: request path, state ownership, failure boundary, and recovery action." complexity="Attach QPS, latency, storage, availability, and cost estimates to the diagram." edgeCases="Region loss, dependency timeout, replayed events, schema migration, overload, and degraded reads." />
 
       <header
         style={{

@@ -29,6 +29,7 @@ import {
   listJavaDigestArticles,
 } from "../../lib/javaDigest.mjs";
 import BeginnerGuideBanner from "../BeginnerGuideBanner";
+import AnswerAtAGlance from "../learning/AnswerAtAGlance";
 import MessageContent from "../chat/MessageContent";
 import useJavaDigestProgress from "./useJavaDigestProgress";
 import JavaDigestTutorialCard from "./JavaDigestTutorialCard";
@@ -919,6 +920,7 @@ export default function JavaDigest({ theme = {}, onAction, onJavaProgressChange,
         onStepSelect={onBeginnerStepChange}
         detail="For Java: read one concept, predict the interview trap, explain the code cue, practice one drill card, then review the follow-up."
       />
+      <AnswerAtAGlance category="Java" takeaway="Read the runtime rule first, then connect it to the API choice and the production behavior you would observe." complexity="State the relevant time/space cost and the safety or throughput trade-off." edgeCases="Nulls, mutable keys, empty collections, concurrent access, lifecycle boundaries, and version compatibility." />
 
       <header style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "space-between" }}>
         <div style={wrap}>

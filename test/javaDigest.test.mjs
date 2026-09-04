@@ -142,7 +142,7 @@ test("java digest filters articles by track", () => {
 test("tutorial catalog exposes full article-card lesson fields", () => {
   assert.ok(JAVA_TUTORIAL_CATALOG.length >= 100);
   assert.ok(JAVA_TUTORIAL_CATALOG.every((tutorial) => (
-    tutorial.explanation && tutorial.howToThink && tutorial.example && tutorial.diagram && tutorial.benchmark && tutorial.mistakes && tutorial.productionNote && tutorial.exercise && tutorial.interviewAnswer && tutorial.author && tutorial.reviewedAt && tutorial.javaVersions && Array.isArray(tutorial.relatedTopics)
+    tutorial.explanation && tutorial.howToThink && tutorial.example && tutorial.workedExample && tutorial.why && tutorial.failure && tutorial.complexity && tutorial.edgeCases && tutorial.diagram && tutorial.benchmark && tutorial.mistakes && tutorial.productionNote && tutorial.realWorldAnalogy && tutorial.exercise && tutorial.interviewAnswer && tutorial.author && tutorial.reviewedAt && tutorial.javaVersions && Array.isArray(tutorial.relatedTopics)
   )));
   assert.ok(new Set(JAVA_TUTORIAL_CATALOG.map((tutorial) => tutorial.explanation)).size >= 90);
   assert.ok(new Set(JAVA_TUTORIAL_CATALOG.map((tutorial) => tutorial.example)).size >= 90);
@@ -154,7 +154,7 @@ test("learner-facing tutorial catalog contains only curated chapters", () => {
 });
 
 test("flagship Java topics have individually authored editorial chapters", () => {
-  for (const topic of ["JDK vs JRE vs JVM", "HashMap", "Generics", "Stream pipelines", "Executors", "Virtual threads", "Spring IoC", "Spring Security", "Transactions", "Spring Data JPA", "Garbage collection"]) {
+  for (const topic of ["JDK vs JRE vs JVM", "HashMap", "Generics", "Stream pipelines", "Executors", "Virtual threads", "Spring IoC", "Spring Security", "Transactions", "Spring Data JPA", "Garbage collection", "Java Memory Management"]) {
     assert.ok(JAVA_EDITORIAL_CHAPTERS[topic]?.walkthrough, topic);
     assert.ok(JAVA_TUTORIAL_CATALOG.find((tutorial) => tutorial.title === topic)?.output, topic);
   }
