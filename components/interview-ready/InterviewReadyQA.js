@@ -607,6 +607,7 @@ export default function InterviewReadyQA({
         color: "#eef4ff",
         display: "grid",
         gap: compactMode ? 8 : 12,
+        minHeight: 0,
         minWidth: 0,
         padding: compactMode ? 10 : 14,
         width: "100%",

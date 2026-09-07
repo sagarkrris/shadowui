@@ -1774,7 +1774,7 @@ export default function Home() {
           )}
 
           {/* ── Chat area ── */}
-          <div ref={chatRef} className="chat-scroll" role="log" aria-live="polite" aria-relevant="additions text" aria-busy={loading || !sessionReady} aria-label="Conversation messages" style={{ flex:1, minHeight:0, overflowY:"auto", padding: isMobile?"12px 10px":"20px 16px", display:"flex", flexDirection:"column" }}>
+          <div ref={chatRef} className="chat-scroll" role="log" aria-live="polite" aria-relevant="additions text" aria-busy={loading || !sessionReady} aria-label="Conversation messages" style={{ flex:1, minHeight:0, minWidth:0, overflowX:"hidden", overflowY:"auto", padding: isMobile?"12px 10px":"20px 16px", display:"flex", flexDirection:"column" }}>
             {!sessionReady ? <div className="dashboard-skeleton" role="status" aria-label="Loading InterviewIQ workspace"><span /><span /><span /><span /></div> : null}
             {sessionReady ? <>
             {loading ? <div className="ai-progress-status" role="status" aria-live="polite"><span className="dot" />InterviewIQ is preparing your response…</div> : null}
@@ -2105,10 +2105,12 @@ export default function Home() {
         }
         @media (max-width: 760px) {
           .desktop-controls,
-          .desktop-workspace-nav,
+          .desktop-workspace-nav {
+            display: none !important;
+          }
           .tablet-workspace-menu,
           .compact-controls-menu {
-            display: none !important;
+            display: block !important;
           }
         }
         @media (min-width: 761px) and (max-width: 1439px) {

@@ -36,6 +36,11 @@ test("company prep responds to selected drawer topic with focused prompts", () =
   assert.match(companySource, /Mark verified/);
 });
 
+test("company prep uses the shared workspace scroller instead of a nested touch scroller", () => {
+  assert.match(indexSource, /className="chat-scroll"[\s\S]*overflowY:"auto"/);
+  assert.doesNotMatch(companySource, /flex:\s*1,\s*overflowY:\s*"auto"/);
+});
+
 test("progress dashboard is rendered from prep metrics", () => {
   assert.match(insightsSource, /Progress Dashboard/);
   assert.match(insightsSource, /buildPrepProgressDashboard/);
