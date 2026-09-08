@@ -6,6 +6,7 @@ export default function BrandWatermark() {
   return (
     <div
       aria-hidden="true"
+      className="brand-watermark"
       style={{
         position: "fixed",
         inset: 0,

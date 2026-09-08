@@ -6,6 +6,8 @@ const navUrl = new URL("../components/app/WorkspaceNav.js", import.meta.url);
 const navSource = existsSync(navUrl) ? readFileSync(navUrl, "utf8") : "";
 const commandPaletteSource = readFileSync(new URL("../components/app/CommandPalette.js", import.meta.url), "utf8");
 const indexSource = readFileSync(new URL("../pages/index.js", import.meta.url), "utf8");
+const watermarkSource = readFileSync(new URL("../components/BrandWatermark.js", import.meta.url), "utf8");
+const globalsSource = readFileSync(new URL("../styles/globals.css", import.meta.url), "utf8");
 
 test("workspace navigation chrome is extracted from the page shell", () => {
   assert.match(navSource, /DesktopWorkspaceNav/);
@@ -53,4 +55,11 @@ test("desktop workspace icons expose a visible hover tooltip", () => {
 
   assert.match(source, /data-tooltip=\{workspace\.label\}/);
   assert.match(styles, /\.icon-btn\[data-tooltip\]::after/);
+});
+
+test("phone header actions wrap and the watermark stays visible", () => {
+  assert.match(globalsSource, /@media \(max-width: 760px\) \{[\s\S]*?\.app-topbar \{[\s\S]*?flex-wrap: wrap !important/);
+  assert.match(globalsSource, /\.app-topbar \.header-title \{[\s\S]*?flex: 1 1 calc\(100% - 116px\) !important/);
+  assert.match(watermarkSource, /className="brand-watermark"/);
+  assert.match(globalsSource, /\.brand-watermark \{[\s\S]*?grid-template-columns: repeat\(2, minmax\(118px, 1fr\)\) !important[\s\S]*?opacity: 0\.13 !important/);
 });

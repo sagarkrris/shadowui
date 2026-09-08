@@ -963,6 +963,26 @@ a:focus-visible,
 }
 
 @media (max-width: 760px) {
+  /* Keep every header action reachable on phones. The desktop row contains
+     account and workspace menus in addition to the navigation controls. */
+  .app-topbar {
+    align-content: center;
+    flex-wrap: wrap !important;
+    overflow: visible !important;
+    row-gap: 6px !important;
+  }
+
+  .app-topbar .header-title {
+    flex: 1 1 calc(100% - 116px) !important;
+  }
+
+  .app-topbar .tablet-workspace-menu,
+  .app-topbar .compact-controls-menu,
+  .app-topbar .header-account-actions,
+  .app-topbar .today-back-button {
+    flex-shrink: 0;
+  }
+
   .header-account-actions {
     order: 5;
   }
@@ -1004,6 +1024,25 @@ a:focus-visible,
   .dashboard-section-nav a { padding:6px 10px; }
   .today-back-button { font-size:0 !important; padding:6px 8px !important; }
   .today-back-button i { font-size:15px; }
+
+  /* A four-column desktop watermark leaves too few tiles in a narrow,
+     rotated viewport. Use a compact grid and enough contrast to remain
+     visible behind mobile content without competing with it. */
+  .brand-watermark {
+    gap: clamp(28px, 12vw, 52px) !important;
+    grid-template-columns: repeat(2, minmax(118px, 1fr)) !important;
+    opacity: 0.13 !important;
+    padding: clamp(16px, 8vw, 32px) !important;
+    transform: rotate(-18deg) scale(1.08) !important;
+  }
+
+  .brand-watermark > span {
+    gap: 4px !important;
+  }
+
+  .brand-watermark > span > div {
+    transform: scale(.72);
+  }
 }
 
 /* Keep the laptop/tablet header usable when the workspace, account, and
