@@ -1876,9 +1876,9 @@ export default function Home() {
               />
             ) : messages.length === 0 && !loading
               ? sessionReady && auth.ready && !homeDemoSeen && (!candidateProfile || !auth.user)
-                ? <HomeDemo onContinue={completeHomeDemo} onSignIn={() => openAuthSettings("login")} />
+                ? <HomeDemo onContinue={completeHomeDemo} onSignIn={() => openAuthSettings("login")} onOpenWorkspace={openWorkspace} />
                 : !candidateProfile
-                ? <ProfileSetup theme={techTheme} draft={profileDraft} onChange={setProfileDraft} onSubmit={saveProfile} onSignIn={() => openAuthSettings("login")} isSignedIn={Boolean(auth.user)} keyboardOpen={isKeyboardOpen} />
+                ? <ProfileSetup theme={techTheme} draft={profileDraft} onChange={setProfileDraft} onSubmit={saveProfile} onSignIn={() => openAuthSettings("login")} onOpenWorkspace={openWorkspace} isSignedIn={Boolean(auth.user)} keyboardOpen={isKeyboardOpen} />
                 : <Welcome
                   onChip={(text) => {
                     recordWorkspaceActivity({
@@ -1893,6 +1893,7 @@ export default function Home() {
                   onScreen={() => setShowScreen(true)}
                   onVoice={toggleVoice}
                   onRecordReview={() => setShowRecordingReview(true)}
+                  onOpenWorkspace={openWorkspace}
                   selectedCat={selectedCat}
                   selectedSub={selectedSub}
                   mode={mode}
@@ -1909,7 +1910,6 @@ export default function Home() {
                   onQuestionMemoryChange={setQuestionMemory}
                   systemDesignCanvas={systemDesignCanvas}
                   onPracticeMock={startPracticeMock}
-                  onOpenWorkspace={openWorkspace}
                   beginnerMode={beginnerMode}
                   onBeginnerModeChange={setBeginnerMode}
                   prepProgressState={prepProgressState}

@@ -307,7 +307,7 @@ export default function CompanyPrep({ theme, weakSpots, mockScores = [], message
   const providerStatus = buildCompanyProviderStatus({ prep, refreshState });
 
   return (
-    <div style={{ minWidth: 0, padding: "18px 16px 22px" }}>
+    <div className="workspace-content">
       <div style={{ maxWidth: 1100, margin: "0 auto", display: "grid", gap: 14 }}>
         <BeginnerGuideBanner
           enabled={beginnerMode}

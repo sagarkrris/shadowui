@@ -9,7 +9,7 @@ const TOUR_SCENES = [
   { eyebrow: "05 · PROGRESS THAT COMPOUNDS", title: "Know what to review next, not just what you finished.", description: "The progress dashboard, mastery map, spaced review queue, and prep reports turn practice history into an actionable next step.", icon: "ti-chart-line", panels: ["Mastery map", "Spaced repetition", "Readiness reports"] },
 ];
 
-export default function HomeDemo({ onContinue, onSignIn }) {
+export default function HomeDemo({ onContinue, onSignIn, onOpenWorkspace }) {
   const [sceneIndex, setSceneIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const scene = TOUR_SCENES[sceneIndex];
@@ -43,7 +43,7 @@ export default function HomeDemo({ onContinue, onSignIn }) {
         </div>
       </div>
       <div className="home-demo__inventory" aria-label="Included InterviewIQ content">{TOUR_SCENES.flatMap((item) => item.panels).map((item) => <span key={item}><i className="ti ti-check" />{item}</span>)}</div>
-      <div className="home-demo__footer"><button type="button" className="home-demo__primary" onClick={() => onContinue({})}>Build my personalized plan <span aria-hidden="true">→</span></button><button type="button" className="home-demo__text-button" onClick={() => onContinue({ skipped: true })}>Skip tour</button><span aria-hidden="true">·</span><button type="button" className="home-demo__text-button" onClick={onSignIn}>Already have an account? Sign in</button></div>
+      <div className="home-demo__footer"><button type="button" className="home-demo__primary" onClick={() => onContinue({})}>Build my personalized plan <span aria-hidden="true">→</span></button>{onOpenWorkspace ? <button type="button" className="home-demo__text-button" onClick={() => onOpenWorkspace("javaDigest")}><i className="ti ti-news" /> Open Java Digest</button> : null}<button type="button" className="home-demo__text-button" onClick={() => onContinue({ skipped: true })}>Skip tour</button><span aria-hidden="true">·</span><button type="button" className="home-demo__text-button" onClick={onSignIn}>Already have an account? Sign in</button></div>
     </section>
   );
 }

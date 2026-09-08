@@ -1,6 +1,19 @@
 import { useMemo, useState } from "react";
 import { analyzeBuildSnippet, BUILD_SCENARIOS, BUILD_TRANSLATIONS } from "../../lib/buildEngineering.mjs";
 
+const RELEASE_CHECKLIST = [
+  ...BUILD_TRANSLATIONS.map(([source, destination]) => ({
+    detail: destination,
+    id: source,
+    label: source,
+  })),
+  {
+    detail: "Use wrappers, pinned plugin and dependency versions, trusted repositories, a clean CI build, and a resolved dependency graph before release.",
+    id: "release-verification",
+    label: "Release verification",
+  },
+];
+
 export default function BuildEngineering({ theme = {}, onAction }) {
   const [tool, setTool] = useState("maven"); const [source, setSource] = useState(""); const accent = theme.accentStrong || "#8bd3ff";
   const analysis = useMemo(() => analyzeBuildSnippet(source, tool), [source, tool]);
@@ -10,6 +23,19 @@ export default function BuildEngineering({ theme = {}, onAction }) {
     <div style={{ display: "flex", gap: 8 }}>{["maven", "gradle"].map((value) => <button key={value} className="glass-button" onClick={() => setTool(value)} aria-pressed={tool === value} style={{ border: `1px solid ${tool === value ? `${accent}88` : "var(--jd-border)"}`, borderRadius: 7, color: tool === value ? accent : "var(--jd-text-soft)", cursor: "pointer", padding: "7px 10px" }}>{value === "maven" ? "Maven" : "Gradle"}</button>)}</div>
     <section style={{ display: "grid", gap: 8 }}><strong>Build-file visualizer</strong><textarea className="glass-input" value={source} onChange={(event) => setSource(event.target.value)} placeholder={tool === "maven" ? "Paste pom.xml dependency blocks" : "Paste build.gradle dependency blocks"} rows={5} style={{ padding: 9 }} /><span style={{ color: "var(--jd-text-soft)", fontSize: 11 }}>{analysis.dependencies.length ? `${analysis.dependencies.length} dependencies found: ${analysis.dependencies.map((item) => `${item.group}:${item.artifact}:${item.version}`).join(" · ")}` : "Paste a build file to inspect dependencies locally."}{analysis.hasDynamicVersion ? " Avoid dynamic, latest, or SNAPSHOT versions in release builds." : ""}</span></section>
     <section style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))" }}>{BUILD_SCENARIOS.map(([title, detail]) => <article key={title} style={{ border: "1px solid var(--jd-border)", borderRadius: 8, padding: 10 }}><strong>{title}</strong><p style={{ color: "var(--jd-text-soft)", fontSize: 11.5, lineHeight: 1.45 }}>{detail}</p><button className="glass-button" onClick={() => prompt(detail)} style={{ border: `1px solid ${accent}55`, borderRadius: 6, color: "var(--jd-text)", cursor: "pointer", fontSize: 11, padding: "6px 8px" }}>Practice scenario</button></article>)}</section>
-    <section style={{ borderTop: "1px solid var(--jd-border)", paddingTop: 10 }}><strong>Translation and release checklist</strong><ul style={{ color: "var(--jd-text-soft)", fontSize: 11.5, lineHeight: 1.6 }}>{BUILD_TRANSLATIONS.map(([left, right]) => <li key={left}><code>{left}</code> → {right}</li>)}<li>Use wrappers, pinned plugin/dependency versions, trusted repositories, a clean CI build, and a resolved dependency graph before release.</li></ul></section>
+    <section style={{ borderTop: "1px solid var(--jd-border)", display: "grid", gap: 8, paddingTop: 10 }}>
+      <strong>Translation and release checklist</strong>
+      <div style={{ display: "grid", gap: 7, gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))" }}>
+        {RELEASE_CHECKLIST.map((item) => (
+          <div key={item.id} style={{ alignItems: "flex-start", background: "var(--jd-surface-subtle)", border: "1px solid var(--jd-border)", borderRadius: 7, display: "flex", gap: 8, minWidth: 0, padding: "8px 9px" }}>
+            <span aria-hidden="true" style={{ alignItems: "center", background: `${accent}1a`, border: `1px solid ${accent}55`, borderRadius: "50%", color: accent, display: "inline-flex", flex: "0 0 auto", fontSize: 10, fontWeight: 900, height: 17, justifyContent: "center", marginTop: 1, width: 17 }}>✓</span>
+            <span style={{ color: "var(--jd-text-soft)", fontSize: 11.3, lineHeight: 1.45, minWidth: 0 }}>
+              <strong style={{ color: "var(--jd-text)" }}>{item.label}</strong>
+              {item.label === "Release verification" ? ": " : " → "}{item.detail}
+            </span>
+          </div>
+        ))}
+      </div>
+    </section>
   </section>;
 }

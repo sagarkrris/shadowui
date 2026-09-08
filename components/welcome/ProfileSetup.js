@@ -30,7 +30,7 @@ function getPrimaryStack(stack = "") {
   return String(stack).split(/[,+/|]/).map((part) => part.trim()).filter(Boolean)[0] || "Stack";
 }
 
-export default function ProfileSetup({ draft, onChange, onSubmit, onSignIn, isSignedIn = false, theme, keyboardOpen = false }) {
+export default function ProfileSetup({ draft, onChange, onSubmit, onSignIn, onOpenWorkspace, isSignedIn = false, theme, keyboardOpen = false }) {
   const validationMessages = getValidationMessages(draft);
   const canContinue = validationMessages.length === 0;
   const stackPreviewLabel = getPrimaryStack(draft.stack);
@@ -124,6 +124,9 @@ export default function ProfileSetup({ draft, onChange, onSubmit, onSignIn, isSi
               <button type="button" onClick={focusProfileForm} style={{ display: "inline-flex", alignItems: "center", gap: 8, minHeight: 42, padding: "10px 15px", borderRadius: 8, border: "1px solid #cbd8e8", background: "#ffffff", color: "#123252", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
                 <i className="ti ti-layout-dashboard" />Open workspace preview
               </button>
+              {onOpenWorkspace ? <button type="button" onClick={() => onOpenWorkspace("javaDigest")} style={{ display: "inline-flex", alignItems: "center", gap: 8, minHeight: 42, padding: "10px 15px", borderRadius: 8, border: "1px solid #cbd8e8", background: "#ffffff", color: "#123252", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
+                <i className="ti ti-news" />Read Java Digest
+              </button> : null}
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(116px, 1fr))", gap: 10, maxWidth: 520 }}>
               {readinessStats.map(([label, value]) => (

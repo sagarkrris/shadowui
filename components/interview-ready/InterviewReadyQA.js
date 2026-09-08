@@ -617,9 +617,10 @@ export default function InterviewReadyQA({
   };
 
   return (
-    <section
-      className={`glass-card interview-ready-qa${compactMode ? " is-compact" : ""}`}
-      style={{
+    <div className="workspace-content">
+      <section
+        className={`glass-card interview-ready-qa${compactMode ? " is-compact" : ""}`}
+        style={{
         background: "linear-gradient(180deg, rgba(14,18,30,.82), rgba(7,10,18,.74))",
         border: "1px solid rgba(255,255,255,.1)",
         borderRadius: 8,
@@ -631,8 +632,8 @@ export default function InterviewReadyQA({
         padding: compactMode ? 10 : 14,
         width: "100%",
         zoom: textScale,
-      }}
-    >
+        }}
+      >
       <BeginnerGuideBanner
         enabled={beginnerMode}
         accent={accent}
@@ -957,6 +958,7 @@ export default function InterviewReadyQA({
           </section>
         )}
       </SectionToggle>
-    </section>
+      </section>
+    </div>
   );
 }

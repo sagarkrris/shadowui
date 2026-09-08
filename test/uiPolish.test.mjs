@@ -66,7 +66,18 @@ test("Java Digest renders curated refresher answers as structured study content"
 test("Tech Blogs is a public self-contained study section", () => {
   assert.match(javaDigestSource, /label: "Tech Blogs"/);
   assert.match(javaDigestSource, /activeView === "Tech Blogs"/);
-  assert.match(javaDigestSource, /Read the lessons here without an account/);
+  assert.match(javaDigestSource, /TechBlogReader/);
+  assert.match(javaDigestSource, /selectedTechBlog/);
+  assert.doesNotMatch(javaDigestSource, /Read the lessons here without an account/);
+  assert.doesNotMatch(javaDigestSource, /Original study notes|Choose a lesson to open/);
+  const readerSource = readFileSync(new URL("../components/java-digest/TechBlogReader.js", import.meta.url), "utf8");
+  const diagramSource = readFileSync(new URL("../components/java-digest/SystemDesignDiagram.js", import.meta.url), "utf8");
+  assert.match(readerSource, /SystemDesignDiagram/);
+  assert.match(readerSource, /category=\{blog\.category\}/);
+  assert.match(diagramSource, /aria-label=/);
+  assert.match(diagramSource, /Load balancer/);
+  assert.match(diagramSource, /Queue/);
+  assert.match(diagramSource, /Consistency/);
   assert.match(techBlogsSource, /system-design-handbook/);
   assert.match(techBlogsSource, /practice:/);
 });

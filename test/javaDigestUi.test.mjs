@@ -170,3 +170,10 @@ test("java digest is wired as a first-class workspace", () => {
   assert.match(workspaceSource, /Java Digest/);
   assert.match(workspaceSource, /ti-news/);
 });
+
+test("Java Digest is reachable from public home surfaces without profile setup", () => {
+  assert.match(indexSource, /onOpenWorkspace=\{openWorkspace\}/);
+  assert.match(indexSource, /<HomeDemo[\s\S]*onOpenWorkspace=\{openWorkspace\}/);
+  assert.match(indexSource, /<ProfileSetup[\s\S]*onOpenWorkspace=\{openWorkspace\}/);
+  assert.match(componentSource, /profile = null/);
+});

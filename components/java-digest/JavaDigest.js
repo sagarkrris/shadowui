@@ -35,6 +35,7 @@ import MessageContent from "../chat/MessageContent";
 import useJavaDigestProgress from "./useJavaDigestProgress";
 import JavaDigestTutorialCard from "./JavaDigestTutorialCard";
 import JavaDigestReviewQueue from "./JavaDigestReviewQueue";
+import TechBlogReader from "./TechBlogReader";
 
 const wrap = {
   minWidth: 0,
@@ -648,6 +649,7 @@ export default function JavaDigest({ theme = {}, onAction, onJavaProgressChange,
   const [expandedPartId, setExpandedPartId] = useState(CSES_JAVA_PARTS[0]?.id || "");
   const [expandedChapterId, setExpandedChapterId] = useState("");
   const [expandedArticleId, setExpandedArticleId] = useState("");
+  const [selectedTechBlog, setSelectedTechBlog] = useState(null);
   const [expandedRoadmapId, setExpandedRoadmapId] = useState("");
   const [expandedStudyPathId, setExpandedStudyPathId] = useState("");
   const [tutorialSearch, setTutorialSearch] = useState("");
@@ -1277,13 +1279,11 @@ export default function JavaDigest({ theme = {}, onAction, onJavaProgressChange,
       {activeView === "Tech Blogs" && (
         <div style={{ display: "grid", gap: 10 }}>
           <section style={{ ...wrap, background: "var(--jd-accent-surface)", border: `1px solid ${accent}33`, borderRadius: 8, display: "grid", gap: 7, padding: 12 }}>
-            <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Public learning section</div>
             <h3 style={{ ...wrap, color: "var(--jd-text)", fontSize: 15.5, lineHeight: 1.25, margin: 0 }}>Tech Blogs</h3>
-            <p style={{ ...wrap, color: "var(--jd-text-muted)", fontSize: 11.6, lineHeight: 1.5, margin: 0 }}>Read the lessons here without an account, signup, or redirect. These are concise study notes—not copied articles—so the key ideas remain searchable and usable in your interview practice.</p>
           </section>
           <div style={responsiveGrid(280, 10)}>
             {techBlogs.map((blog) => (
-              <details key={blog.id} style={{ ...wrap, background: "var(--jd-surface-subtle)", border: `1px solid ${accentBorder}`, borderRadius: 8, padding: "10px 11px" }}>
+              <details key={blog.id} className="java-digest-blog-card" onClick={(event) => { event.preventDefault(); setSelectedTechBlog(blog); }} style={{ ...wrap, background: "var(--jd-surface-subtle)", border: `1px solid ${accentBorder}`, borderRadius: 8, cursor: "pointer", padding: "10px 11px" }}>
                 <summary style={{ color: "var(--jd-text)", cursor: "pointer", fontSize: 13, fontWeight: 850, lineHeight: 1.45 }}>{blog.title}</summary>
                 <div style={{ color: accent, fontSize: 10.3, fontWeight: 900, marginTop: 8, textTransform: "uppercase" }}>{blog.category}</div>
                 <p style={{ color: "var(--jd-text-soft)", fontSize: 11.5, lineHeight: 1.52, margin: "7px 0 0" }}>{blog.summary}</p>
@@ -1297,6 +1297,7 @@ export default function JavaDigest({ theme = {}, onAction, onJavaProgressChange,
               </details>
             ))}
           </div>
+          {selectedTechBlog ? <TechBlogReader blog={selectedTechBlog} accent={accent} learningProgress={learningProgress} onToggleChapter={(chapterId) => toggleLearningStatus("completedTutorials", chapterId)} onClose={() => setSelectedTechBlog(null)} /> : null}
         </div>
       )}
     </section>

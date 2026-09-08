@@ -3,7 +3,10 @@ import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
 const indexSource = readFileSync(new URL("../pages/index.js", import.meta.url), "utf8");
+const globalsSource = readFileSync(new URL("../styles/globals.css", import.meta.url), "utf8");
 const companySource = readFileSync(new URL("../components/company/CompanyPrep.js", import.meta.url), "utf8");
+const interviewReadySource = readFileSync(new URL("../components/interview-ready/InterviewReadyQA.js", import.meta.url), "utf8");
+const buildEngineeringSource = readFileSync(new URL("../components/build-engineering/BuildEngineering.js", import.meta.url), "utf8");
 const applicationTrackerSource = readFileSync(new URL("../components/company/ApplicationTrackerPanel.js", import.meta.url), "utf8");
 const applicationTrackerLibSource = readFileSync(new URL("../lib/applicationTracker.mjs", import.meta.url), "utf8");
 const insightsSource = readFileSync(new URL("../components/welcome/PrepInsightsPanel.js", import.meta.url), "utf8");
@@ -39,6 +42,18 @@ test("company prep responds to selected drawer topic with focused prompts", () =
 test("company prep uses the shared workspace scroller instead of a nested touch scroller", () => {
   assert.match(indexSource, /className="chat-scroll"[\s\S]*overflowY:"auto"/);
   assert.doesNotMatch(companySource, /flex:\s*1,\s*overflowY:\s*"auto"/);
+});
+
+test("long workspaces use the shared flowing content wrapper", () => {
+  assert.match(companySource, /className="workspace-content"/);
+  assert.match(interviewReadySource, /className="workspace-content"/);
+  assert.match(globalsSource, /\.workspace-content[\s\S]*flex:\s*0 0 auto/);
+});
+
+test("build engineering uses styled release checklist cards instead of browser bullets", () => {
+  assert.match(buildEngineeringSource, /RELEASE_CHECKLIST/);
+  assert.match(buildEngineeringSource, /gridTemplateColumns: "repeat\(auto-fit, minmax\(230px, 1fr\)\)"/);
+  assert.doesNotMatch(buildEngineeringSource, /<ul/);
 });
 
 test("progress dashboard is rendered from prep metrics", () => {
