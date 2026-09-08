@@ -23,6 +23,7 @@ const authPageSource = readFileSync(new URL("../components/auth/AuthPage.js", im
 const welcomeSource = readFileSync(new URL("../components/welcome/Welcome.js", import.meta.url), "utf8");
 const homeDemoSource = readFileSync(new URL("../components/welcome/HomeDemo.js", import.meta.url), "utf8");
 const interviewReadySource = readFileSync(new URL("../components/interview-ready/InterviewReadyQA.js", import.meta.url), "utf8");
+const techBlogsSource = readFileSync(new URL("../lib/techBlogs.mjs", import.meta.url), "utf8");
 
 test("assistant part-wise answers render with readable section styling", () => {
   assert.match(messageContentSource, /message-part-heading/);
@@ -62,6 +63,14 @@ test("Java Digest renders curated refresher answers as structured study content"
   assert.match(globalsSource, /\.java-digest-refresher-answer \.code-body/);
 });
 
+test("Tech Blogs is a public self-contained study section", () => {
+  assert.match(javaDigestSource, /label: "Tech Blogs"/);
+  assert.match(javaDigestSource, /activeView === "Tech Blogs"/);
+  assert.match(javaDigestSource, /Read the lessons here without an account/);
+  assert.match(techBlogsSource, /system-design-handbook/);
+  assert.match(techBlogsSource, /practice:/);
+});
+
 test("light workspace converts dark instructional sub-panels before darkening their text", () => {
   assert.match(globalsSource, /theme-light \.dsa-visual-lab \[style\*="rgba\(0, 0, 0"\][\s\S]*?#f5f9fd/);
   assert.match(globalsSource, /theme-light \.system-design-canvas \[style\*="rgba\(0, 0, 0"\][\s\S]*?#f5f9fd/);
@@ -92,6 +101,8 @@ test("mobile glass styling is tuned for smoother scrolling", () => {
   assert.match(globalsSource, /backdrop-filter: blur\(8px\)/);
   assert.match(globalsSource, /@media \(max-width: 760px\)[\s\S]*\.icon-btn[\s\S]*backdrop-filter: blur\(8px\)/);
   assert.match(globalsSource, /-webkit-overflow-scrolling: touch/);
+  assert.match(globalsSource, /\.chat-scroll[\s\S]*scroll-behavior: auto/);
+  assert.match(globalsSource, /\.chat-scroll[\s\S]*touch-action: pan-y/);
   assert.match(globalsSource, /prefers-reduced-motion: reduce/);
   assert.match(globalsSource, /prefers-contrast: more/);
 });
@@ -112,9 +123,8 @@ test("laptop header wraps controls instead of clipping the right edge", () => {
   assert.match(indexSource, /@media \(min-width: 1440px\) and \(max-width: 1799px\)/);
   assert.match(globalsSource, /\.app-topbar \.header-profile-label/);
   assert.match(globalsSource, /@media \(min-width: 1440px\) and \(max-width: 1799px\)[\s\S]*\.app-topbar[\s\S]*flex-wrap: wrap/);
-  assert.match(indexSource, /focusMode/);
   assert.match(indexSource, /cloud-sync-status/);
-  assert.match(globalsSource, /\.focus-mode \.welcome-secondary/);
+  assert.doesNotMatch(indexSource, /Focus mode/);
 });
 
 test("workspace loading and navigation preserve user context", () => {
@@ -123,7 +133,6 @@ test("workspace loading and navigation preserve user context", () => {
   assert.match(indexSource, /cloudStatus/);
   assert.match(indexSource, /data-tooltip="Topics"/);
   assert.match(globalsSource, /composer-footer/);
-  assert.match(indexSource, /FOCUS_MODE_STORAGE_KEY/);
   assert.match(indexSource, /Saved on this device/);
   assert.match(indexSource, /Local prep: \{userPrepLabel\}/);
   assert.match(indexSource, /Local prep profile: \$\{userPrepLabel\}/);
@@ -140,7 +149,6 @@ test("auth and destructive account actions provide inline guidance", () => {
   assert.match(authPageSource, /Use a password with at least 12 characters/);
   assert.match(settingsModalSource, /Type DELETE to confirm/);
   assert.match(settingsModalSource, /Confirm permanent account deletion/);
-  assert.match(indexSource, /focusModeHint/);
   assert.match(indexSource, /pointerdown/);
   assert.match(indexSource, /ai-progress-status/);
   assert.match(globalsSource, /phone-bottom-nav section/);
@@ -335,6 +343,9 @@ test("Interview Ready Q&A supports custom questions and answer handoff actions",
   assert.match(interviewReadySource, /Privacy: practice drafts/);
   assert.match(interviewReadySource, /Export collection/);
   assert.match(interviewReadySource, /Import collection/);
+  assert.match(interviewReadySource, /collectionImportInputRef/);
+  assert.match(interviewReadySource, /MAX_COLLECTION_FILE_SIZE/);
+  assert.match(interviewReadySource, /INTERVIEW_READY_QUESTION_IDS\.has\(id\)/);
   assert.match(interviewReadySource, /answerHistory/);
   assert.match(interviewReadySource, /HighlightedText/);
   assert.match(interviewReadySource, /Offline mode/);
@@ -344,6 +355,6 @@ test("Interview Ready Q&A supports custom questions and answer handoff actions",
   assert.match(interviewReadySource, /Show saved only/);
   assert.match(interviewReadySource, /AI-generated coaching content/);
   assert.match(interviewReadySource, /Increase text size/);
-  assert.match(interviewReadySource, /Send feedback/);
+  assert.doesNotMatch(interviewReadySource, /Send feedback/);
   assert.match(globalsSource, /:focus-visible/);
 });

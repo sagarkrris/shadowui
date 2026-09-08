@@ -28,6 +28,7 @@ import {
   getJavaDigestTrack,
   listJavaDigestArticles,
 } from "../../lib/javaDigest.mjs";
+import { listTechBlogs } from "../../lib/techBlogs.mjs";
 import BeginnerGuideBanner from "../BeginnerGuideBanner";
 import AnswerAtAGlance from "../learning/AnswerAtAGlance";
 import MessageContent from "../chat/MessageContent";
@@ -96,6 +97,10 @@ const VIEW_METADATA = {
   Roadmaps: {
     title: "Java Learning Roadmaps",
     description: "Choose a guided plan and expand it when you are ready to see every step.",
+  },
+  "Tech Blogs": {
+    title: "Tech Blogs",
+    description: "Public, self-contained lessons on design patterns, DSA, low-level design, and system design.",
   },
 };
 
@@ -669,6 +674,7 @@ export default function JavaDigest({ theme = {}, onAction, onJavaProgressChange,
   const accent = theme.accentStrong || "#8bd3ff";
   const accentBorder = theme.accentBorder || "rgba(139, 211, 255, .26)";
   const articles = useMemo(() => listJavaDigestArticles(activeTrack), [activeTrack]);
+  const techBlogs = useMemo(() => listTechBlogs(), []);
   const selectedArticle = articles.find((article) => article.id === expandedArticleId) || null;
   const viewMetadata = VIEW_METADATA[activeView] || VIEW_METADATA["Java Curriculum"];
   const { learningProgress, dueReviewCount, dueReviewIds, toggleLearningStatus } = useJavaDigestProgress(progress, updateProgress);
@@ -737,6 +743,7 @@ export default function JavaDigest({ theme = {}, onAction, onJavaProgressChange,
     { label: "Search", icon: "ti-search" },
     { label: "Articles", icon: "ti-news" },
     { label: "Roadmaps", icon: "ti-route" },
+    { label: "Tech Blogs", icon: "ti-world" },
   ];
   const generateAnswer = async (topic) => {
     const trimmedTopic = String(topic || "").trim();
@@ -1264,6 +1271,32 @@ export default function JavaDigest({ theme = {}, onAction, onJavaProgressChange,
       {activeView === "Roadmaps" && (
         <div style={responsiveGrid(280, 10)}>
           {JAVA_DIGEST_ROADMAPS.map((roadmap) => <RoadmapCard key={roadmap.id} roadmap={roadmap} accent={accent} expanded={expandedRoadmapId === roadmap.id} onAction={onAction} onToggle={() => setExpandedRoadmapId((current) => current === roadmap.id ? "" : roadmap.id)} />)}
+        </div>
+      )}
+
+      {activeView === "Tech Blogs" && (
+        <div style={{ display: "grid", gap: 10 }}>
+          <section style={{ ...wrap, background: "var(--jd-accent-surface)", border: `1px solid ${accent}33`, borderRadius: 8, display: "grid", gap: 7, padding: 12 }}>
+            <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Public learning section</div>
+            <h3 style={{ ...wrap, color: "var(--jd-text)", fontSize: 15.5, lineHeight: 1.25, margin: 0 }}>Tech Blogs</h3>
+            <p style={{ ...wrap, color: "var(--jd-text-muted)", fontSize: 11.6, lineHeight: 1.5, margin: 0 }}>Read the lessons here without an account, signup, or redirect. These are concise study notes—not copied articles—so the key ideas remain searchable and usable in your interview practice.</p>
+          </section>
+          <div style={responsiveGrid(280, 10)}>
+            {techBlogs.map((blog) => (
+              <details key={blog.id} style={{ ...wrap, background: "var(--jd-surface-subtle)", border: `1px solid ${accentBorder}`, borderRadius: 8, padding: "10px 11px" }}>
+                <summary style={{ color: "var(--jd-text)", cursor: "pointer", fontSize: 13, fontWeight: 850, lineHeight: 1.45 }}>{blog.title}</summary>
+                <div style={{ color: accent, fontSize: 10.3, fontWeight: 900, marginTop: 8, textTransform: "uppercase" }}>{blog.category}</div>
+                <p style={{ color: "var(--jd-text-soft)", fontSize: 11.5, lineHeight: 1.52, margin: "7px 0 0" }}>{blog.summary}</p>
+                <ul style={{ color: "var(--jd-text-soft)", display: "grid", fontSize: 11.3, gap: 6, lineHeight: 1.48, margin: "8px 0 0", paddingLeft: 18 }}>{blog.lessons.map((lesson) => <li key={lesson}>{lesson}</li>)}</ul>
+                <div style={{ display: "grid", gap: 8, marginTop: 9 }}>{blog.sections.map((section) => <section key={section.heading} style={{ borderTop: "1px solid var(--jd-border)", paddingTop: 8 }}><strong style={{ color: "var(--jd-text)", display: "block", fontSize: 11.2 }}>{section.heading}</strong><p style={{ color: "var(--jd-text-soft)", fontSize: 11.25, lineHeight: 1.52, margin: "4px 0 0" }}>{section.body}</p></section>)}</div>
+                <pre style={{ background: "var(--jd-surface-sunken)", border: "1px solid var(--jd-border)", borderRadius: 7, color: "var(--jd-code-text)", fontSize: 10.6, lineHeight: 1.45, margin: "9px 0 0", overflowX: "auto", padding: 8, whiteSpace: "pre-wrap" }}>{blog.example}</pre>
+                {blog.patterns?.length ? <section style={{ borderTop: "1px solid var(--jd-border)", display: "grid", gap: 7, marginTop: 9, paddingTop: 9 }}><strong style={{ color: accent, fontSize: 11.3 }}>18 industry patterns</strong>{blog.patterns.map((pattern) => <article key={pattern.name} style={{ background: "var(--jd-surface-sunken)", border: "1px solid var(--jd-border)", borderRadius: 6, padding: "7px 8px" }}><strong style={{ color: "var(--jd-text)", fontSize: 11.2 }}>{pattern.name}</strong><p style={{ color: "var(--jd-text-soft)", fontSize: 10.9, lineHeight: 1.45, margin: "3px 0 0" }}>{pattern.intent}</p><p style={{ color: "var(--jd-text-soft)", fontSize: 10.9, lineHeight: 1.45, margin: "3px 0 0" }}><b style={{ color: accent }}>Use:</b> {pattern.use} <b style={{ color: "var(--jd-warning)" }}>Watch:</b> {pattern.caution}</p></article>)}</section> : null}
+                {blog.chapters?.length ? <details style={{ borderTop: "1px solid var(--jd-border)", marginTop: 9, paddingTop: 8 }}><summary style={{ color: accent, cursor: "pointer", fontSize: 11.3, fontWeight: 850 }}>Open full course · {blog.chapters.length} chapters</summary><div style={{ display: "grid", gap: 8, marginTop: 8 }}>{blog.chapters.map((chapter) => { const chapterId = `${blog.id}-chapter-${chapter.order}`; const completed = learningProgress.completedIds.has(chapterId); return <article key={chapter.title} style={{ background: "var(--jd-surface-sunken)", border: "1px solid var(--jd-border)", borderRadius: 7, padding: "9px 10px" }}><h4 style={{ color: "var(--jd-text)", fontSize: 11.7, margin: 0 }}>{chapter.title}</h4><p style={{ color: "var(--jd-text-soft)", fontSize: 11.2, lineHeight: 1.52, margin: "5px 0 0" }}>{chapter.lesson}</p><div style={{ borderLeft: `2px solid ${accent}`, color: "var(--jd-text-soft)", fontSize: 11, lineHeight: 1.5, marginTop: 7, paddingLeft: 8 }}><strong style={{ color: accent }}>Walkthrough:</strong> {chapter.walkthrough}</div><div style={{ background: `${accent}0d`, borderRadius: 5, color: accent, fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 10.4, lineHeight: 1.45, marginTop: 7, padding: "6px 7px", whiteSpace: "pre-wrap" }}>{chapter.diagram}</div><p style={{ color: "var(--jd-code-text)", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 10.5, lineHeight: 1.45, margin: "6px 0 0", whiteSpace: "pre-wrap" }}>{chapter.example}</p><p style={{ color: "var(--jd-text-soft)", fontSize: 11, lineHeight: 1.48, margin: "6px 0 0" }}><strong style={{ color: accent }}>Exercise:</strong> {chapter.exercise}</p><div style={{ background: "var(--jd-accent-surface)", borderRadius: 6, color: "var(--jd-text-soft)", fontSize: 11, lineHeight: 1.48, marginTop: 7, padding: "7px 8px" }}><strong style={{ color: accent }}>Self-check:</strong> {chapter.quiz}</div><button type="button" className="glass-button" onClick={() => toggleLearningStatus("completedTutorials", chapterId)} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "var(--jd-text)", fontSize: 10.5, fontWeight: 850, marginTop: 8, padding: "5px 8px" }}><i className={`ti ${completed ? "ti-check" : "ti-circle-check"}`} style={{ color: accent, marginRight: 5 }} />{completed ? "Chapter completed" : "Mark chapter complete"}</button></article>; })}</div></details> : null}
+                <div style={{ color: "var(--jd-text-soft)", fontSize: 11.2, lineHeight: 1.5, marginTop: 8 }}><strong style={{ color: accent }}>Interview questions:</strong> {blog.interviewQuestions.join(" · ")}</div>
+                <div style={{ background: "var(--jd-surface-sunken)", border: "1px solid var(--jd-border)", borderRadius: 7, color: "var(--jd-text-soft)", fontSize: 11.2, lineHeight: 1.5, marginTop: 9, padding: "8px 9px" }}><strong style={{ color: accent }}>Practice prompt:</strong> {blog.practice}</div>
+              </details>
+            ))}
+          </div>
         </div>
       )}
     </section>

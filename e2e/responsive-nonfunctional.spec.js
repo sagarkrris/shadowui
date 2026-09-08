@@ -99,6 +99,30 @@ async function expectNoDesktopHorizontalOverflow(page, label) {
   });
 }
 
+async function expectWorkspaceContentScrolls(page, label) {
+  const conversation = page.getByLabel("Conversation messages");
+  await expect(conversation).toBeVisible();
+
+  const before = await conversation.evaluate((element) => ({
+    clientHeight: element.clientHeight,
+    scrollHeight: element.scrollHeight,
+    scrollTop: element.scrollTop,
+  }));
+  expect(before.scrollHeight, `${label} should have overflow to scroll`).toBeGreaterThan(before.clientHeight);
+
+  const bounds = await conversation.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return { x: rect.left + (rect.width / 2), y: rect.top + (rect.height / 2) };
+  });
+  await page.mouse.move(bounds.x, bounds.y);
+  await page.mouse.wheel(0, Math.max(360, before.clientHeight));
+
+  await expect.poll(
+    () => conversation.evaluate((element) => element.scrollTop),
+    { message: `${label} should react to a native scroll gesture` },
+  ).toBeGreaterThan(before.scrollTop);
+}
+
 const viewports = [
   { name: "mobile", width: 375, height: 812 },
   { name: "tablet", width: 768, height: 1024 },
@@ -153,6 +177,24 @@ test.describe("Non-functional UI/UX, responsiveness, and state management", () =
     await expect(page.getByRole("heading", { name: "Java and database real-time interview scenarios" })).toBeVisible();
     await expectNoMobileHorizontalOverflow(page, "Scenario Bank");
   });
+
+  for (const viewport of [
+    { name: "mobile", width: 375, height: 812 },
+    { name: "desktop", width: 1440, height: 900 },
+  ]) {
+    test(`keeps Interview Ready Q&A vertically scrollable on ${viewport.name}`, async ({ page }) => {
+      await page.setViewportSize(viewport);
+      await gotoSeededApp(page);
+      if (viewport.width <= 760) {
+        await openMobileMenuItem(page, "Interview Ready Q&A");
+      } else {
+        await openWorkspaceItem(page, "Interview Ready Q&A", viewport.width);
+      }
+      await expect(page.getByRole("heading", { name: /Most-asked questions with polished answers/ })).toBeVisible();
+
+      await expectWorkspaceContentScrolls(page, `Interview Ready Q&A on ${viewport.name}`);
+    });
+  }
 
   test("keeps all header controls reachable across supported desktop widths", async ({ page }) => {
     for (const viewport of [

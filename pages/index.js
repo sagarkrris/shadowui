@@ -69,7 +69,6 @@ import { useCloudStateSync } from "../hooks/useCloudStateSync";
 
 const MOCK_ANSWER_SECONDS = 120;
 const BEGINNER_GUIDED_MODE_KEY = "interviewiq.beginnerGuidedMode.v1";
-const FOCUS_MODE_STORAGE_KEY = "interviewiq.focusMode.v1";
 const APPLICATION_TRACKER_STORAGE_KEY = "interviewiq.applicationTracker.v1";
 const JAVA_DIGEST_PROGRESS_STORAGE_KEY = "interviewiq.javaDigestProgress.v1";
 const HOME_DEMO_SEEN_KEY = "interviewiq.homeDemoSeen.v1";
@@ -169,7 +168,6 @@ export default function Home() {
   const [isKeyboardOpen, setKeyboardOpen] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
   const [homeDemoSeen, setHomeDemoSeen] = useState(false);
-  const [focusMode, setFocusMode] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [cloudStatus, setCloudStatus] = useState("idle");
   const [themeStatus, setThemeStatus] = useState("");
@@ -311,7 +309,6 @@ export default function Home() {
     setQuestionMemory(loadQuestionMemory(window.localStorage));
     setHomeDemoSeen(window.localStorage.getItem(HOME_DEMO_SEEN_KEY) === "1");
     setBeginnerMode(window.localStorage.getItem(BEGINNER_GUIDED_MODE_KEY) === "1");
-    setFocusMode(window.localStorage.getItem(FOCUS_MODE_STORAGE_KEY) === "1");
     setApplications(loadVersionedState(window.localStorage, {
       key: APPLICATION_TRACKER_STORAGE_KEY,
       version: 1,
@@ -383,11 +380,6 @@ export default function Home() {
     if (!sessionReady) return;
     window.localStorage.setItem(BEGINNER_GUIDED_MODE_KEY, beginnerMode ? "1" : "0");
   }, [beginnerMode, sessionReady]);
-
-  useEffect(() => {
-    if (!sessionReady) return;
-    window.localStorage.setItem(FOCUS_MODE_STORAGE_KEY, focusMode ? "1" : "0");
-  }, [focusMode, sessionReady]);
 
   useEffect(() => {
     if (!sessionReady) return;
@@ -650,15 +642,6 @@ export default function Home() {
     const mode = resolveThemeMode(normalized, systemThemeMode);
     setThemeStatus(`${mode[0].toUpperCase()}${mode.slice(1)} theme enabled`);
   }, [systemThemeMode]);
-
-  useEffect(() => {
-    if (!focusMode || typeof window === "undefined") return;
-    const hintKey = "interviewiq.focusModeHint.v1";
-    if (window.localStorage.getItem(hintKey) !== "1") {
-      showToast("Focus mode keeps your next prep action visible and hides secondary dashboard sections.", "info");
-      window.localStorage.setItem(hintKey, "1");
-    }
-  }, [focusMode, showToast]);
 
   const cloudSnapshot = useMemo(() => ({ session: createSessionSnapshot({ candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSession: interviewSessionState }), themePreference, toolkitState, applications, javaDigestProgress, questionMemory, prepProgressState }), [candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSessionState, themePreference, toolkitState, applications, javaDigestProgress, questionMemory, prepProgressState]);
   const applyCloudState = useCallback((snapshot) => {
@@ -1532,7 +1515,7 @@ export default function Home() {
       {showAccountSettings && <SettingsModal onClose={() => setShowAccountSettings(false)} onDeleteSuccess={(result) => { setShowAccountSettings(false); showToast(result.emailDelivery?.delivered ? "Account deleted. Confirmation email sent." : "Account deleted, but confirmation email could not be sent.", result.emailDelivery?.delivered ? "info" : "error"); }} theme={techTheme} auth={auth} themePreference={themePreference} onThemePreferenceChange={handleThemePreferenceChange} themeStatus={themeStatus} appearance={resolvedThemeMode} />}
 
       {/* App shell */}
-      <div className={`app-shell theme-${resolvedThemeMode} ${focusMode ? "focus-mode" : ""}`} style={{ ...themeVars, position:"fixed", inset:0, isolation:"isolate", display:"flex", height:appShellHeight, overflow:"hidden", background:techTheme.surface }}>
+      <div className={`app-shell theme-${resolvedThemeMode}`} style={{ ...themeVars, position:"fixed", inset:0, isolation:"isolate", display:"flex", height:appShellHeight, overflow:"hidden", background:techTheme.surface }}>
         <TechBackground theme={techTheme} />
 
         {/* Sidebar */}
@@ -1611,15 +1594,12 @@ export default function Home() {
                 <button type="button" className="glass-button" onClick={() => setUserMenuOpen((value) => !value)} aria-haspopup="menu" aria-expanded={userMenuOpen} style={{ border: `1px solid ${techTheme.accentBorder}`, borderRadius: 7, color: techTheme.accentText, cursor: "pointer", fontSize: 11, fontWeight: 850, padding: "4px 9px 4px 5px", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 5 }}><ProfileAvatar user={auth.user} size={22} /> Account <i className={`ti ${userMenuOpen ? "ti-chevron-up" : "ti-chevron-down"}`} /></button>
                 {userMenuOpen && <div className="user-menu-panel glass-card" role="menu" aria-label="Account menu">
                   <button type="button" role="menuitem" onClick={() => { setShowAccountSettings(true); setUserMenuOpen(false); }}><i className="ti ti-settings" />Account & settings</button>
-                  <button type="button" role="menuitem" onClick={() => { setFocusMode((value) => !value); setUserMenuOpen(false); }}><i className="ti ti-focus-2" />{focusMode ? "Exit focus mode" : "Focus mode"}</button>
                 </div>}
               </div> : <>
                 <button type="button" className="glass-button" onClick={() => openAuthSettings("login")} style={{ border: `1px solid ${techTheme.accentBorder}`, borderRadius: 7, color: techTheme.accentText, cursor: "pointer", fontSize: 11, fontWeight: 850, padding: "5px 9px", whiteSpace: "nowrap" }}>Sign in</button>
                 <button type="button" className="glass-button" onClick={() => openAuthSettings("register")} style={{ border: `1px solid ${techTheme.accentBorder}`, borderRadius: 7, color: techTheme.accentText, cursor: "pointer", fontSize: 11, fontWeight: 850, padding: "5px 9px", whiteSpace: "nowrap" }}>Create account</button>
               </>}
             </div>
-            {!auth.user && <button type="button" className={`glass-button focus-mode-toggle ${focusMode ? "active" : ""}`} onClick={() => setFocusMode((value) => !value)} aria-pressed={focusMode} title="Focus mode" data-tooltip="Focus mode" style={{ border: `1px solid ${techTheme.accentBorder}`, borderRadius: 7, color: techTheme.accentText, fontSize: 11, fontWeight: 850, padding: "5px 9px", whiteSpace: "nowrap" }}><i className="ti ti-focus-2" /> {focusMode ? "Exit focus" : "Focus"}</button>}
-
             {activeTab !== "chat" && <button type="button" className="glass-button today-back-button" onClick={goHome} title="Back to today's plan" data-tooltip="Back to today" style={{ border: `1px solid ${techTheme.accentBorder}`, borderRadius: 7, color: techTheme.accentText, fontSize: 11, fontWeight: 850, padding: "5px 9px", whiteSpace: "nowrap" }}><i className="ti ti-arrow-left" /> Today</button>}
 
             {/* Desktop-only controls */}
@@ -1933,7 +1913,6 @@ export default function Home() {
                   beginnerMode={beginnerMode}
                   onBeginnerModeChange={setBeginnerMode}
                   prepProgressState={prepProgressState}
-                  focusMode={focusMode}
                   onNotify={showToast}
                   onBeginnerStepChange={setBeginnerStep}
                   onExportPlan={exportPrepPlan}

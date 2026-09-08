@@ -14,7 +14,7 @@ import SmartPrepTimeline from "./SmartPrepTimeline";
 import UnifiedProgressBrain from "./UnifiedProgressBrain";
 import CodeRunner from "../CodeRunner";
 
-export default function Welcome({ onChip, onStart, onScreen, onVoice, onRecordReview, selectedCat, selectedSub, mode, difficulty, theme, profile, showCodeTools, topics, weakSpots, mockScores, messages, structuredSessions = [], questionMemory, onQuestionMemoryChange, systemDesignCanvas, onPracticeMock, onOpenWorkspace, beginnerMode, onBeginnerModeChange, prepProgressState, focusMode = false, onNotify, onBeginnerStepChange, onExportPlan, onToolkitStateChange: onExternalToolkitStateChange }) {
+export default function Welcome({ onChip, onStart, onScreen, onVoice, onRecordReview, selectedCat, selectedSub, mode, difficulty, theme, profile, showCodeTools, topics, weakSpots, mockScores, messages, structuredSessions = [], questionMemory, onQuestionMemoryChange, systemDesignCanvas, onPracticeMock, onOpenWorkspace, beginnerMode, onBeginnerModeChange, prepProgressState, onNotify, onBeginnerStepChange, onExportPlan, onToolkitStateChange: onExternalToolkitStateChange }) {
   const [toolkitState, setToolkitState] = useState({});
   const [activeSection, setActiveSection] = useState("overview");
   const topic = selectedSub || selectedCat;
@@ -51,10 +51,10 @@ export default function Welcome({ onChip, onStart, onScreen, onVoice, onRecordRe
     }, { root, threshold: [0.15, 0.4, 0.7], rootMargin: "-8% 0px -55% 0px" });
     sections.forEach((section) => observer.observe(section));
     return () => observer.disconnect();
-  }, [focusMode]);
+  }, []);
 
   return (
-    <div className={`welcome-screen prep-home-screen ${focusMode ? "focus-mode-home" : ""}`} style={{ flex: 1, width: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "18px 20px 28px", textAlign: "center", overflowY: "visible" }}>
+    <div className="welcome-screen prep-home-screen" style={{ flex: 1, width: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "18px 20px 28px", textAlign: "center", overflowY: "visible" }}>
       <div className="welcome-logo" style={{ width: 60, height: 60, borderRadius: "50%", background: theme.accentSoft, border: `1px solid ${theme.accentBorder}`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18, color: theme.accentStrong, fontSize: greeting.stackBadge.length > 8 ? 11 : greeting.stackBadge.length > 6 ? 12 : 14, fontWeight: 900, lineHeight: 1, letterSpacing: 0, textAlign: "center", padding: "0 8px", overflowWrap: "anywhere" }}>
         {greeting.stackBadge}
       </div>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import BeginnerGuideBanner from "../BeginnerGuideBanner";
 import { loadVersionedState, saveVersionedState } from "../../lib/localStateStore.mjs";
 import {
@@ -33,6 +33,8 @@ const TIMER_OPTIONS = [60, 90, 120];
 const TEXT_SCALE_MIN = 0.9;
 const TEXT_SCALE_MAX = 1.2;
 const TEXT_SCALE_STEP = 0.1;
+const MAX_COLLECTION_FILE_SIZE = 1024 * 1024;
+const INTERVIEW_READY_QUESTION_IDS = new Set(listInterviewReadyQuestions().map((question) => question.id));
 
 const responsiveGrid = (minColumnWidth, gap = 10) => ({
   display: "grid",
@@ -362,6 +364,7 @@ export default function InterviewReadyQA({
   const [companyPackOpen, setCompanyPackOpen] = useState(false);
   const [questionBankOpen, setQuestionBankOpen] = useState(true);
   const [customPracticeItem, setCustomPracticeItem] = useState(null);
+  const collectionImportInputRef = useRef(null);
   const accent = theme.accentStrong || "#8bd3ff";
   const accentBorder = theme.accentBorder || "rgba(139, 211, 255, .26)";
   const questions = useMemo(() => listInterviewReadyQuestions({
@@ -528,10 +531,30 @@ export default function InterviewReadyQA({
   };
 
   const importBookmarks = (event) => {
-    const file = event.target.files?.[0]; if (!file) return;
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (file.size > MAX_COLLECTION_FILE_SIZE) {
+      setBookmarkNotice("That collection file is too large to import.");
+      event.target.value = "";
+      return;
+    }
     const reader = new FileReader();
-    reader.onload = () => { try { const data = JSON.parse(reader.result); const ids = Array.isArray(data.bookmarkedIds) ? data.bookmarkedIds.filter((id) => typeof id === "string") : []; setBookmarkedIds(ids); if (typeof data.name === "string" && data.name.trim()) setCollectionName(data.name.trim().slice(0, 60)); setBookmarkNotice(`${ids.length} saved questions imported.`); } catch { setBookmarkNotice("That collection file could not be imported."); } };
-    reader.readAsText(file); event.target.value = "";
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        const ids = Array.isArray(data.bookmarkedIds)
+          ? [...new Set(data.bookmarkedIds.filter((id) => typeof id === "string" && INTERVIEW_READY_QUESTION_IDS.has(id)))]
+          : [];
+        setBookmarkedIds(ids);
+        if (typeof data.name === "string" && data.name.trim()) setCollectionName(data.name.trim().slice(0, 60));
+        setBookmarkNotice(`${ids.length} saved question${ids.length === 1 ? "" : "s"} imported.`);
+      } catch {
+        setBookmarkNotice("That collection file could not be imported.");
+      }
+    };
+    reader.onerror = () => setBookmarkNotice("That collection file could not be read.");
+    reader.readAsText(file);
+    event.target.value = "";
   };
 
   const runCompanyPrompt = (item) => {
@@ -593,10 +616,6 @@ export default function InterviewReadyQA({
     onActivity?.({ workspaceId: "interviewReady", type: "customQuestion", label: "Asked a custom interview question", detail: question });
   };
 
-  const sendFeedback = () => {
-    if (typeof window !== "undefined") window.location.href = "mailto:feedback@interviewiq.app?subject=InterviewIQ%20UI%20feedback";
-  };
-
   return (
     <section
       className={`glass-card interview-ready-qa${compactMode ? " is-compact" : ""}`}
@@ -636,7 +655,6 @@ export default function InterviewReadyQA({
             <button type="button" className="glass-button" aria-label="Decrease text size" disabled={textScale === TEXT_SCALE_MIN} onClick={() => setTextScale((value) => Math.max(TEXT_SCALE_MIN, Number((value - TEXT_SCALE_STEP).toFixed(1))))} style={{ borderRadius: 999, padding: "3px 7px" }}>A−</button>
             <button type="button" className="glass-button" aria-label="Increase text size" disabled={textScale === TEXT_SCALE_MAX} onClick={() => setTextScale((value) => Math.min(TEXT_SCALE_MAX, Number((value + TEXT_SCALE_STEP).toFixed(1))))} style={{ borderRadius: 999, padding: "3px 7px" }}>A+</button>
             <span aria-live="polite" style={{ color: "#9fb0c7", fontSize: 10.5 }}>Text {Math.round(textScale * 100)}%</span>
-            <button type="button" className="glass-button" onClick={sendFeedback} style={{ borderRadius: 999, color: "#dbeafe", padding: "4px 8px" }}><i className="ti ti-message-report" /> Send feedback</button>
           </div>
         </div>
         <section style={{ ...wrap, background: `${accent}10`, border: `1px solid ${accent}33`, borderRadius: 8, display: "grid", gap: 8, padding: 12 }}>
@@ -683,7 +701,8 @@ export default function InterviewReadyQA({
         <input aria-label="Saved collection name" value={collectionName} onChange={(event) => setCollectionName(event.target.value.slice(0, 60))} className="glass-input" style={{ border: "1px solid rgba(139,211,255,.24)", borderRadius: 7, color: "#dbeafe", fontSize: 11.5, padding: "6px 8px", width: 190 }} />
         <strong style={{ color: "#dbeafe", fontSize: 11.5, padding: "7px 0" }}>{bookmarkedIds.length} saved</strong>
         <button type="button" className="glass-button" onClick={exportBookmarks} disabled={!bookmarkedIds.length} style={{ border: "1px solid rgba(139,211,255,.3)", borderRadius: 7, color: "#dbeafe", fontSize: 11, padding: "6px 9px", opacity: bookmarkedIds.length ? 1 : .45 }}><i className="ti ti-download" /> Export collection</button>
-        <label className="glass-button" style={{ border: "1px solid rgba(139,211,255,.3)", borderRadius: 7, color: "#dbeafe", cursor: "pointer", fontSize: 11, padding: "6px 9px" }}><i className="ti ti-upload" /> Import collection<input type="file" accept="application/json,.json" onChange={importBookmarks} style={{ display: "none" }} /></label>
+        <button type="button" className="glass-button" onClick={() => collectionImportInputRef.current?.click()} style={{ border: "1px solid rgba(139,211,255,.3)", borderRadius: 7, color: "#dbeafe", fontSize: 11, padding: "6px 9px" }}><i className="ti ti-upload" /> Import collection</button>
+        <input ref={collectionImportInputRef} type="file" accept="application/json,.json" aria-hidden="true" tabIndex={-1} onChange={importBookmarks} style={{ height: 1, opacity: 0, pointerEvents: "none", position: "absolute", width: 1 }} />
         <button type="button" className="glass-button danger-action" onClick={() => { if (window.confirm("Clear all saved interview questions?")) { setBookmarkedIds([]); setBookmarkNotice("Saved collection cleared."); } }} disabled={!bookmarkedIds.length} style={{ borderRadius: 7, fontSize: 11, opacity: bookmarkedIds.length ? 1 : .45, padding: "6px 9px" }}>Clear all</button>
         <button type="button" className="glass-button" onClick={() => setSavedOnly((value) => !value)} style={{ border: "1px solid rgba(250,204,21,.3)", borderRadius: 7, color: savedOnly ? "#fde68a" : "#dbeafe", fontSize: 11, padding: "6px 9px" }}><i className="ti ti-bookmark" /> {savedOnly ? "Showing saved" : "Show saved only"}</button>
         {answerHistory.length ? <span style={{ color: "#9fb0c7", fontSize: 11, padding: "7px 0" }}>Version history: {answerHistory.length} saved draft{answerHistory.length === 1 ? "" : "s"}</span> : null}
