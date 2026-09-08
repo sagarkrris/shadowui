@@ -74,6 +74,8 @@ test("Tech Blogs is a public self-contained study section", () => {
   const diagramSource = readFileSync(new URL("../components/java-digest/SystemDesignDiagram.js", import.meta.url), "utf8");
   assert.match(readerSource, /SystemDesignDiagram/);
   assert.match(readerSource, /category=\{blog\.category\}/);
+  assert.match(readerSource, /gridTemplateRows: "auto minmax\(0, 1fr\)"/);
+  assert.match(readerSource, /minHeight: 0, overflowY: "auto"/);
   assert.match(diagramSource, /aria-label=/);
   assert.match(diagramSource, /Load balancer/);
   assert.match(diagramSource, /Queue/);

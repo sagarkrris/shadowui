@@ -1140,4 +1140,10 @@ a:focus-visible,
 .home-demo__footer { display: flex; justify-content: center; align-items: center; gap: 9px; flex-wrap: wrap; margin-top: 20px; color: var(--text-secondary, #607086); font-size: 12px; }
 .home-demo__text-button { padding: 0; border: 0; color: inherit; background: transparent; cursor: pointer; font: inherit; }
 .home-demo__text-button:hover { color: #3478d4; text-decoration: underline; }
+.home-demo__java-digest-launch, .welcome-java-digest-launch { align-items: center; background: linear-gradient(135deg, #b86e21, #8a4712); border: 1px solid #e9b06b; border-radius: 11px; box-shadow: 0 8px 22px rgba(159, 85, 20, .3); color: #fffaf2; cursor: pointer; display: inline-flex; font: inherit; font-weight: 800; gap: 9px; padding: 9px 13px; text-align: left; }
+.home-demo__java-digest-launch:hover, .welcome-java-digest-launch:hover { background: linear-gradient(135deg, #cc7b28, #9d5418); box-shadow: 0 10px 26px rgba(159, 85, 20, .42); transform: translateY(-1px); }
+.home-demo__java-digest-launch:focus-visible, .welcome-java-digest-launch:focus-visible { outline: 3px solid #ffd49d; outline-offset: 3px; }
+.home-demo__java-digest-launch > span, .welcome-java-digest-launch > span { display: grid; gap: 1px; }
+.home-demo__java-digest-launch small, .welcome-java-digest-launch small { color: #ffead0; font-size: 10px; font-weight: 700; }
+.home-demo__java-digest-launch > .ti-arrow-right, .welcome-java-digest-launch > .ti-arrow-right { margin-left: 2px; }
 @media (max-width: 560px) { .home-demo__screen { min-height: 430px; } .home-demo__screen-top { font-size: 9px; } .home-demo__panels { grid-template-columns: 1fr; } .home-demo__panel { min-height: 68px; } .home-demo__screen-copy { margin: 23px auto 20px; } .home-demo__controls { gap: 11px; } }

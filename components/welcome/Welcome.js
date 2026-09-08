@@ -82,8 +82,8 @@ export default function Welcome({ onChip, onStart, onScreen, onVoice, onRecordRe
         <button className="glass-button" onClick={onRecordReview} style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 18px", border: `1px solid ${theme.accentBorder}`, borderRadius: 10, color: theme.accentText, fontSize: 13, fontWeight: 500, cursor: "pointer" }}>
           <i className="ti ti-wave-sine" />Record Review
         </button>
-        <button className="glass-button" onClick={() => onOpenWorkspace?.("javaDigest")} style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 18px", border: `1px solid ${theme.accentBorder}`, borderRadius: 10, color: theme.accentText, fontSize: 13, fontWeight: 500, cursor: "pointer" }}>
-          <i className="ti ti-news" />Open Java Digest
+        <button className="welcome-java-digest-launch" onClick={() => onOpenWorkspace?.("javaDigest")}>
+          <i className="ti ti-news" /><span>Open Java Digest<small>Java + Spring curriculum</small></span><i className="ti ti-arrow-right" aria-hidden="true" />
         </button>
       </div>
 

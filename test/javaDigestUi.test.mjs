@@ -6,6 +6,8 @@ const componentUrl = new URL("../components/java-digest/JavaDigest.js", import.m
 const componentSource = existsSync(componentUrl) ? readFileSync(componentUrl, "utf8") : "";
 const globalStylesSource = readFileSync(new URL("../styles/globals.css", import.meta.url), "utf8");
 const indexSource = readFileSync(new URL("../pages/index.js", import.meta.url), "utf8");
+const homeDemoSource = readFileSync(new URL("../components/welcome/HomeDemo.js", import.meta.url), "utf8");
+const welcomeSource = readFileSync(new URL("../components/welcome/Welcome.js", import.meta.url), "utf8");
 const workspaceSource = readFileSync(new URL("../lib/workspaces.mjs", import.meta.url), "utf8");
 const tutorialPageSource = readFileSync(new URL("../pages/java/tutorial/[slug].js", import.meta.url), "utf8");
 
@@ -176,4 +178,13 @@ test("Java Digest is reachable from public home surfaces without profile setup",
   assert.match(indexSource, /<HomeDemo[\s\S]*onOpenWorkspace=\{openWorkspace\}/);
   assert.match(indexSource, /<ProfileSetup[\s\S]*onOpenWorkspace=\{openWorkspace\}/);
   assert.match(componentSource, /profile = null/);
+});
+
+test("Java Digest is the prominent curriculum launch from home surfaces", () => {
+  assert.match(homeDemoSource, /home-demo__java-digest-launch/);
+  assert.match(homeDemoSource, /Java \+ Spring interview curriculum/);
+  assert.match(welcomeSource, /welcome-java-digest-launch/);
+  assert.match(welcomeSource, /Java \+ Spring curriculum/);
+  assert.match(globalStylesSource, /\.home-demo__java-digest-launch, \.welcome-java-digest-launch/);
+  assert.match(globalStylesSource, /linear-gradient\(135deg, #b86e21, #8a4712\)/);
 });
