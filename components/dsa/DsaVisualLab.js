@@ -2915,7 +2915,7 @@ function DsaVisualLabContent({ initialLessonId = "arrays", onPractice, theme = {
   };
 
   return (
-    <section
+    <div className="workspace-content"><section
       className="glass-card dsa-visual-lab"
       style={{
         background: "linear-gradient(180deg, rgba(12,18,29,.88), rgba(7,11,19,.80))",
@@ -3831,6 +3831,6 @@ function DsaVisualLabContent({ initialLessonId = "arrays", onPractice, theme = {
         </div>
         <CodeSyncBlock code={selectedCode} walkthrough={currentWalkthrough} stepIndex={stepIndex} accent={accent} />
       </section>
-    </section>
+    </section></div>
   );
 }

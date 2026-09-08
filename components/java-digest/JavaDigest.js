@@ -907,7 +907,7 @@ export default function JavaDigest({ theme = {}, onAction, onJavaProgressChange,
   }, [activeView, refresherQuestions.length]);
 
   return (
-    <section
+    <div className="workspace-content"><section
       className="glass-card java-digest"
       style={{
         background: "var(--jd-background)",
@@ -1300,6 +1300,6 @@ export default function JavaDigest({ theme = {}, onAction, onJavaProgressChange,
           {selectedTechBlog ? <TechBlogReader blog={selectedTechBlog} accent={accent} learningProgress={learningProgress} onToggleChapter={(chapterId) => toggleLearningStatus("completedTutorials", chapterId)} onClose={() => setSelectedTechBlog(null)} /> : null}
         </div>
       )}
-    </section>
+    </section></div>
   );
 }

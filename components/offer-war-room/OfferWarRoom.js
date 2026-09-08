@@ -230,7 +230,7 @@ export default function OfferWarRoom({
   };
 
   return (
-    <section className="glass-card" style={{ background: "linear-gradient(180deg, rgba(14,18,30,.82), rgba(7,10,18,.74))", border: "1px solid rgba(255,255,255,.1)", borderRadius: 8, color: "#eef4ff", display: "grid", flexShrink: 0, gap: 12, minWidth: 0, padding: 14, width: "100%" }}>
+    <div className="workspace-content"><section className="glass-card" style={{ background: "linear-gradient(180deg, rgba(14,18,30,.82), rgba(7,10,18,.74))", border: "1px solid rgba(255,255,255,.1)", borderRadius: 8, color: "#eef4ff", display: "grid", flexShrink: 0, gap: 12, minWidth: 0, padding: 14, width: "100%" }}>
       <BeginnerGuideBanner
         enabled={beginnerMode}
         accent={accent}
@@ -397,6 +397,6 @@ export default function OfferWarRoom({
         ) : null}
         <ActionButton label="Run today's 30-minute plan" icon="ti-calendar-bolt" tone={accent} onClick={() => model.dailyPlan.items[0] && runAction(model.dailyPlan.items[0].prompt, { type: "offerWarRoomDailyPlanStart" })} />
       </Section>
-    </section>
+    </section></div>
   );
 }

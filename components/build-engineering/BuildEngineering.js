@@ -18,7 +18,7 @@ export default function BuildEngineering({ theme = {}, onAction }) {
   const [tool, setTool] = useState("maven"); const [source, setSource] = useState(""); const accent = theme.accentStrong || "#8bd3ff";
   const analysis = useMemo(() => analyzeBuildSnippet(source, tool), [source, tool]);
   const prompt = (scenario) => onAction?.(`Run a ${tool} build-engineering interview scenario: ${scenario}. Ask one question at a time, require commands and trade-offs, then score my diagnosis, safety, and verification plan.`);
-  return <section className="glass-card" style={{ background: "var(--jd-background)", border: "1px solid var(--jd-border-strong)", borderRadius: 9, color: "var(--jd-text)", display: "grid", gap: 13, padding: 15, width: "100%" }}>
+  return <div className="workspace-content"><section className="glass-card" style={{ background: "var(--jd-background)", border: "1px solid var(--jd-border-strong)", borderRadius: 9, color: "var(--jd-text)", display: "grid", gap: 13, padding: 15, width: "100%" }}>
     <header><div style={{ color: accent, fontSize: 10.5, fontWeight: 900 }}>BUILD & DEPENDENCY ENGINEERING</div><h2 style={{ margin: "5px 0" }}>Maven and Gradle</h2><p style={{ color: "var(--jd-text-soft)", fontSize: 12, margin: 0 }}>From first builds to multi-module governance, reproducibility, performance, and supply-chain judgement.</p></header>
     <div style={{ display: "flex", gap: 8 }}>{["maven", "gradle"].map((value) => <button key={value} className="glass-button" onClick={() => setTool(value)} aria-pressed={tool === value} style={{ border: `1px solid ${tool === value ? `${accent}88` : "var(--jd-border)"}`, borderRadius: 7, color: tool === value ? accent : "var(--jd-text-soft)", cursor: "pointer", padding: "7px 10px" }}>{value === "maven" ? "Maven" : "Gradle"}</button>)}</div>
     <section style={{ display: "grid", gap: 8 }}><strong>Build-file visualizer</strong><textarea className="glass-input" value={source} onChange={(event) => setSource(event.target.value)} placeholder={tool === "maven" ? "Paste pom.xml dependency blocks" : "Paste build.gradle dependency blocks"} rows={5} style={{ padding: 9 }} /><span style={{ color: "var(--jd-text-soft)", fontSize: 11 }}>{analysis.dependencies.length ? `${analysis.dependencies.length} dependencies found: ${analysis.dependencies.map((item) => `${item.group}:${item.artifact}:${item.version}`).join(" · ")}` : "Paste a build file to inspect dependencies locally."}{analysis.hasDynamicVersion ? " Avoid dynamic, latest, or SNAPSHOT versions in release builds." : ""}</span></section>
@@ -37,5 +37,5 @@ export default function BuildEngineering({ theme = {}, onAction }) {
         ))}
       </div>
     </section>
-  </section>;
+  </section></div>;
 }

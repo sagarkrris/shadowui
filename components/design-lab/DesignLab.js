@@ -1051,7 +1051,7 @@ export default function DesignLab({ theme = {}, onAction, beginnerMode = false, 
   };
 
   return (
-    <section
+    <div className="workspace-content"><section
       className="glass-card design-lab"
       style={{
         background: "linear-gradient(180deg, rgba(14,18,30,.82), rgba(7,10,18,.74))",
@@ -1148,6 +1148,6 @@ export default function DesignLab({ theme = {}, onAction, beginnerMode = false, 
           ))}
         </div>
       )}
-    </section>
+    </section></div>
   );
 }

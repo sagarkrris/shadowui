@@ -23,6 +23,15 @@ const authPageSource = readFileSync(new URL("../components/auth/AuthPage.js", im
 const welcomeSource = readFileSync(new URL("../components/welcome/Welcome.js", import.meta.url), "utf8");
 const homeDemoSource = readFileSync(new URL("../components/welcome/HomeDemo.js", import.meta.url), "utf8");
 const interviewReadySource = readFileSync(new URL("../components/interview-ready/InterviewReadyQA.js", import.meta.url), "utf8");
+const buildEngineeringSource = readFileSync(new URL("../components/build-engineering/BuildEngineering.js", import.meta.url), "utf8");
+const careerPathsSource = readFileSync(new URL("../components/career-paths/CareerPaths.js", import.meta.url), "utf8");
+const courseSource = readFileSync(new URL("../components/course/AgenticUICourse.js", import.meta.url), "utf8");
+const scenarioBankSource = readFileSync(new URL("../components/scenario-bank/ScenarioBank.js", import.meta.url), "utf8");
+const offerWarRoomSource = readFileSync(new URL("../components/offer-war-room/OfferWarRoom.js", import.meta.url), "utf8");
+const designLabSource = readFileSync(new URL("../components/design-lab/DesignLab.js", import.meta.url), "utf8");
+const dsaLabSource = readFileSync(new URL("../components/dsa/DsaVisualLab.js", import.meta.url), "utf8");
+const systemDesignSource = readFileSync(new URL("../components/system-design/SystemDesignCanvas.js", import.meta.url), "utf8");
+const javaDigestWorkspaceSource = readFileSync(new URL("../components/java-digest/JavaDigest.js", import.meta.url), "utf8");
 const techBlogsSource = readFileSync(new URL("../lib/techBlogs.mjs", import.meta.url), "utf8");
 
 test("assistant part-wise answers render with readable section styling", () => {
@@ -63,6 +72,12 @@ test("Java Digest renders curated refresher answers as structured study content"
   assert.match(globalsSource, /\.java-digest-refresher-answer \.code-body/);
 });
 
+test("warning copy uses violet rather than yellow", () => {
+  assert.match(globalsSource, /inline warning colors[\s\S]*?#8b5cf6 !important/);
+  assert.doesNotMatch(globalsSource, /--jd-warning: #facc15/);
+  assert.match(interviewReadySource, /What to improve[\s\S]*?accent="#8b5cf6" color="#ddd6fe"/);
+});
+
 test("Tech Blogs is a public self-contained study section", () => {
   assert.match(javaDigestSource, /label: "Tech Blogs"/);
   assert.match(javaDigestSource, /activeView === "Tech Blogs"/);
@@ -76,6 +91,7 @@ test("Tech Blogs is a public self-contained study section", () => {
   assert.match(readerSource, /category=\{blog\.category\}/);
   assert.match(readerSource, /gridTemplateRows: "auto minmax\(0, 1fr\)"/);
   assert.match(readerSource, /minHeight: 0, overflowY: "auto"/);
+  assert.match(readerSource, /blog\.capstone/);
   assert.match(diagramSource, /aria-label=/);
   assert.match(diagramSource, /Load balancer/);
   assert.match(diagramSource, /Queue/);
@@ -118,6 +134,22 @@ test("mobile glass styling is tuned for smoother scrolling", () => {
   assert.match(globalsSource, /\.chat-scroll[\s\S]*touch-action: pan-y/);
   assert.match(globalsSource, /prefers-reduced-motion: reduce/);
   assert.match(globalsSource, /prefers-contrast: more/);
+});
+
+test("Build Engineering participates in the shared workspace scroll layout", () => {
+  assert.match(buildEngineeringSource, /<div className="workspace-content">/);
+  assert.match(buildEngineeringSource, /<section className="glass-card"/);
+});
+
+test("Career Paths participates in the shared workspace scroll layout", () => {
+  assert.match(careerPathsSource, /<div className="workspace-content">/);
+  assert.match(careerPathsSource, /<section className="glass-card"/);
+});
+
+test("all long-form workspaces participate in the shared scroll layout", () => {
+  for (const source of [courseSource, scenarioBankSource, offerWarRoomSource, designLabSource, dsaLabSource, systemDesignSource, javaDigestWorkspaceSource]) {
+    assert.match(source, /className="workspace-content"/);
+  }
 });
 
 test("mobile keyboard mode trims chrome around the composer", () => {

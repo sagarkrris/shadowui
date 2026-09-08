@@ -146,7 +146,7 @@ function RubricPanel({ evaluation, accent }) {
       </div>
       <div style={responsiveGrid(220, 9)}>
         <AnswerList title="What is working" icon="ti-sparkles" items={evaluation.strengths.length ? evaluation.strengths : ["Build one clearer example and one trade-off to strengthen this answer."]} accent="#86efac" color="#d1fae5" />
-        <AnswerList title="What to improve" icon="ti-target-arrow" items={evaluation.gaps.length ? evaluation.gaps : ["No major gaps detected. Rehearse delivery and keep the answer natural."]} accent="#facc15" color="#fef3c7" />
+        <AnswerList title="What to improve" icon="ti-target-arrow" items={evaluation.gaps.length ? evaluation.gaps : ["No major gaps detected. Rehearse delivery and keep the answer natural."]} accent="#8b5cf6" color="#ddd6fe" />
         <AnswerList title="Too robotic?" icon="ti-cpu" items={evaluation.roboticSignals.length ? evaluation.roboticSignals : ["This answer does not currently read as overly scripted."]} accent="#c4b5fd" />
         <AnswerList title="Too vague?" icon="ti-focus-2" items={evaluation.vagueSignals.length ? evaluation.vagueSignals : ["The answer has enough concrete detail for a first pass."]} accent="#fca5a5" color="#fecaca" />
       </div>

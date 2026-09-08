@@ -59,6 +59,25 @@ pre { white-space: pre-wrap; word-break: break-word; }
 button, select, textarea, input { font-family: inherit; cursor: pointer; }
 :focus-visible { outline: 3px solid #facc15; outline-offset: 2px; }
 textarea { resize: none; }
+
+/* Yellow is reserved for non-text decoration. Existing inline warning colors
+   are normalized here so every workspace keeps readable violet warning copy. */
+[style^="color: rgb(250, 204, 21)"],
+[style*="; color: rgb(250, 204, 21)"],
+[style^="color: rgb(253, 230, 138)"],
+[style*="; color: rgb(253, 230, 138)"],
+[style^="color: rgb(254, 243, 199)"],
+[style*="; color: rgb(254, 243, 199)"],
+[style^="color: rgb(252, 211, 77)"],
+[style*="; color: rgb(252, 211, 77)"],
+[style^="color: rgb(245, 158, 11)"],
+[style*="; color: rgb(245, 158, 11)"],
+[style^="color: rgb(251, 191, 36)"],
+[style*="; color: rgb(251, 191, 36)"],
+[style^="color: rgb(183, 121, 31)"],
+[style*="; color: rgb(183, 121, 31)"],
+[style^="color: rgb(146, 64, 14)"],
+[style*="; color: rgb(146, 64, 14)"] { color: #8b5cf6 !important; }
 .interview-ready-answer-input {
   resize: vertical;
   max-height: 320px;
@@ -155,8 +174,8 @@ textarea { resize: none; }
   --jd-accent-surface: rgba(139,211,255,.055);
   --jd-accent-surface-strong: rgba(139,211,255,.12);
   --jd-accent-alt: #c4b5fd;
-  --jd-warning: #facc15;
-  --jd-warning-text: #fde68a;
+  --jd-warning: #8b5cf6;
+  --jd-warning-text: #ddd6fe;
   --jd-danger-accent: #fca5a5;
   --jd-danger-text: #fecaca;
 }
