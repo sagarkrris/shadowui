@@ -1,0 +1,318 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic:
+        - generic: Mock Round
+        - generic: Coach
+        - generic: Feedback
+        - generic: Mock Round
+      - main [ref=e4]:
+        - generic [ref=e5]:
+          - button "Home" [ref=e6] [cursor=pointer]:
+            - generic "Home" [ref=e7] [cursor=pointer]: 
+            - text: Home
+          - button "Topics" [ref=e8] [cursor=pointer]:
+            - generic "Topics" [ref=e9] [cursor=pointer]: 
+            - text: Topics
+          - text:  Build Engineering Career Paths  Offer War Room 曆 Interview Ready Q&A  Company Prep  System Canvas  Design Lab 礼 Scenario Bank  Java Digest  DSA Lab  Agentic UI Course
+          - generic [ref=e10]:
+            - button "Workspace menu" [expanded] [active] [ref=e11] [cursor=pointer]:
+              - generic "Workspace menu" [ref=e12] [cursor=pointer]: 
+              - generic [ref=e13] [cursor=pointer]: Workspaces
+              - generic "Workspace menu" [ref=e14] [cursor=pointer]: 
+            - region "Tablet workspace menu" [ref=e15]:
+              - generic [ref=e16]:
+                - generic [ref=e17]:
+                  - strong [ref=e18]: Workspaces
+                  - generic [ref=e19]: Choose a focused prep room.
+                - button "Close workspace menu" [ref=e20] [cursor=pointer]:
+                  - generic "Close workspace menu" [ref=e21] [cursor=pointer]: 
+              - generic [ref=e22]:
+                - button " Build Engineering Maven, Gradle, dependencies, CI, and build-system drills. Go" [ref=e23] [cursor=pointer]:
+                  - generic "Package" [ref=e25] [cursor=pointer]: 
+                  - generic [ref=e26] [cursor=pointer]:
+                    - generic [ref=e27] [cursor=pointer]: Build Engineering
+                    - generic [ref=e28] [cursor=pointer]: Maven, Gradle, dependencies, CI, and build-system drills.
+                  - generic [ref=e29] [cursor=pointer]: Go
+                - button "Signpost Career Paths Guided Fresher and Senior engineer interview-prep paths. Go" [ref=e30] [cursor=pointer]:
+                  - generic [ref=e32] [cursor=pointer]:
+                    - generic [ref=e33] [cursor=pointer]: Career Paths
+                    - generic [ref=e34] [cursor=pointer]: Guided Fresher and Senior engineer interview-prep paths.
+                  - generic [ref=e35] [cursor=pointer]: Go
+                - button " Offer War Room Offer-focused prep dashboard, company lanes, loops, stories, and weak-spot drills. Go" [ref=e36] [cursor=pointer]:
+                  - generic "Target Arrow" [ref=e38] [cursor=pointer]: 
+                  - generic [ref=e39] [cursor=pointer]:
+                    - generic [ref=e40] [cursor=pointer]: Offer War Room
+                    - generic [ref=e41] [cursor=pointer]: Offer-focused prep dashboard, company lanes, loops, stories, and weak-spot drills.
+                  - generic [ref=e42] [cursor=pointer]: Go
+                - button "曆 Interview Ready Q&A Most-asked questions with polished answers and follow-up drills. Go" [ref=e43] [cursor=pointer]:
+                  - generic "Message Question" [ref=e45] [cursor=pointer]: 曆
+                  - generic [ref=e46] [cursor=pointer]:
+                    - generic [ref=e47] [cursor=pointer]: Interview Ready Q&A
+                    - generic [ref=e48] [cursor=pointer]: Most-asked questions with polished answers and follow-up drills.
+                  - generic [ref=e49] [cursor=pointer]: Go
+                - button " Company Prep Company-specific questions, notes, and final-day prep. Go" [ref=e50] [cursor=pointer]:
+                  - generic "Building" [ref=e52] [cursor=pointer]: 
+                  - generic [ref=e53] [cursor=pointer]:
+                    - generic [ref=e54] [cursor=pointer]: Company Prep
+                    - generic [ref=e55] [cursor=pointer]: Company-specific questions, notes, and final-day prep.
+                  - generic [ref=e56] [cursor=pointer]: Go
+                - button " System Canvas System design canvas with review and export flow. Go" [ref=e57] [cursor=pointer]:
+                  - generic "Schema" [ref=e59] [cursor=pointer]: 
+                  - generic [ref=e60] [cursor=pointer]:
+                    - generic [ref=e61] [cursor=pointer]: System Canvas
+                    - generic [ref=e62] [cursor=pointer]: System design canvas with review and export flow.
+                  - generic [ref=e63] [cursor=pointer]: Go
+                - button " Design Lab HLD, LLD, and pattern practice in one focused room. Go" [ref=e64] [cursor=pointer]:
+                  - generic "Puzzle" [ref=e66] [cursor=pointer]: 
+                  - generic [ref=e67] [cursor=pointer]:
+                    - generic [ref=e68] [cursor=pointer]: Design Lab
+                    - generic [ref=e69] [cursor=pointer]: HLD, LLD, and pattern practice in one focused room.
+                  - generic [ref=e70] [cursor=pointer]: Go
+                - button "礼 Scenario Bank Scenario drills, prompts, and production-style practice. Go" [ref=e71] [cursor=pointer]:
+                  - generic "Database Search" [ref=e73] [cursor=pointer]: 礼
+                  - generic [ref=e74] [cursor=pointer]:
+                    - generic [ref=e75] [cursor=pointer]: Scenario Bank
+                    - generic [ref=e76] [cursor=pointer]: Scenario drills, prompts, and production-style practice.
+                  - generic [ref=e77] [cursor=pointer]: Go
+                - button " Java Digest Java, backend, and topic refreshers for quick review. Go" [ref=e78] [cursor=pointer]:
+                  - generic "News" [ref=e80] [cursor=pointer]: 
+                  - generic [ref=e81] [cursor=pointer]:
+                    - generic [ref=e82] [cursor=pointer]: Java Digest
+                    - generic [ref=e83] [cursor=pointer]: Java, backend, and topic refreshers for quick review.
+                  - generic [ref=e84] [cursor=pointer]: Go
+                - button " DSA Lab Visual algorithms, beginner flow, and guided practice. Go" [ref=e85] [cursor=pointer]:
+                  - generic "Binary Tree" [ref=e87] [cursor=pointer]: 
+                  - generic [ref=e88] [cursor=pointer]:
+                    - generic [ref=e89] [cursor=pointer]: DSA Lab
+                    - generic [ref=e90] [cursor=pointer]: Visual algorithms, beginner flow, and guided practice.
+                  - generic [ref=e91] [cursor=pointer]: Go
+                - button " Agentic UI Course Agentic UI course path, lessons, and capstone progress. Go" [ref=e92] [cursor=pointer]:
+                  - generic "Sparkles" [ref=e94] [cursor=pointer]: 
+                  - generic [ref=e95] [cursor=pointer]:
+                    - generic [ref=e96] [cursor=pointer]: Agentic UI Course
+                    - generic [ref=e97] [cursor=pointer]: Agentic UI course path, lessons, and capstone progress.
+                  - generic [ref=e98] [cursor=pointer]: Go
+          - generic [ref=e99]: Namaskara, Sagar · React & Next.js
+          - status "Workspace sync status" [ref=e100]:
+            - generic "Cloud Check" [ref=e101]: 
+            - text: Saved on this device
+          - text: 
+          - generic "Account actions" [ref=e102]:
+            - button "Sign in" [ref=e103] [cursor=pointer]
+            - button "Create account" [ref=e104] [cursor=pointer]
+          - text:    
+          - button "Prep controls" [ref=e106] [cursor=pointer]:
+            - generic "Prep controls" [ref=e107] [cursor=pointer]: 
+            - generic [ref=e108] [cursor=pointer]: Prep controls
+            - generic "Prep controls" [ref=e109] [cursor=pointer]: 
+          - button "Edit Profile" [ref=e110] [cursor=pointer]:
+            - generic "Edit Profile" [ref=e111] [cursor=pointer]: 倫
+          - button "Info" [ref=e112] [cursor=pointer]:
+            - generic "Info" [ref=e113] [cursor=pointer]: 
+            - text: About & help
+        - generic [ref=e114]:
+          - button "Retry AI" [ref=e115] [cursor=pointer]
+          - button "Follow-up" [ref=e116] [cursor=pointer]
+          - button "Export Session" [ref=e117] [cursor=pointer]
+          - button "Import Session" [ref=e118] [cursor=pointer]
+          - button "Command Palette" [ref=e119] [cursor=pointer]
+        - log "Conversation messages" [ref=e120]:
+          - region "Everything you need for stronger interview preparation." [ref=e121]:
+            - generic [ref=e122]:
+              - generic [ref=e123]: INTERVIEWIQ · PRODUCT TOUR
+              - heading "Everything you need for stronger interview preparation." [level=1] [ref=e124]
+              - paragraph [ref=e125]: Take a visual tour of the practice rooms, technical curriculum, career tools, and progress system available in one workspace.
+            - generic "InterviewIQ product tour" [ref=e126]:
+              - generic [ref=e127]:
+                - generic [ref=e128]:
+                  - generic [ref=e129]:
+                    - generic "Layout Dashboard" [ref=e130]: 
+                    - text: 01 · PERSONALIZED HOME
+                  - generic [ref=e131]: 01 / 05
+                - generic [ref=e132]:
+                  - generic "Layout Dashboard" [ref=e134]: 
+                  - heading "A prep workspace that starts with your role and stack." [level=2] [ref=e135]
+                  - paragraph [ref=e136]: Set your target role, experience, and technologies once. InterviewIQ turns them into focused topics, practice prompts, and a daily plan.
+                - generic [ref=e137]:
+                  - generic [ref=e138]:
+                    - generic [ref=e139]: "01"
+                    - strong [ref=e140]: Role-aware daily plan
+                    - generic "Arrow Up Right" [ref=e141]: 
+                  - generic [ref=e142]:
+                    - generic [ref=e143]: "02"
+                    - strong [ref=e144]: Interview modes & timers
+                    - generic "Arrow Up Right" [ref=e145]: 
+                  - generic [ref=e146]:
+                    - generic [ref=e147]: "03"
+                    - strong [ref=e148]: Saved workspace sync
+                    - generic "Arrow Up Right" [ref=e149]: 
+              - generic [ref=e150]:
+                - button " Play tour" [ref=e151] [cursor=pointer]:
+                  - generic "Player Play Filled" [ref=e152] [cursor=pointer]: 
+                  - text: Play tour
+                - tablist "Product tour sections" [ref=e153]:
+                  - tab "Show A prep workspace that starts with your role and stack." [selected] [ref=e154] [cursor=pointer]
+                  - tab "Show Practice the exact interview format you need." [ref=e155] [cursor=pointer]
+                  - tab "Show Build stronger engineering fundamentals, visually." [ref=e156] [cursor=pointer]
+                  - tab "Show Turn your experience into interview-ready proof." [ref=e157] [cursor=pointer]
+                  - tab "Show Know what to review next, not just what you finished." [ref=e158] [cursor=pointer]
+                - generic [ref=e159]: Self-paced visual walkthrough
+            - generic "Included InterviewIQ content" [ref=e160]:
+              - generic [ref=e161]:
+                - generic "Check" [ref=e162]: 
+                - text: Role-aware daily plan
+              - generic [ref=e163]:
+                - generic "Check" [ref=e164]: 
+                - text: Interview modes & timers
+              - generic [ref=e165]:
+                - generic "Check" [ref=e166]: 
+                - text: Saved workspace sync
+              - generic [ref=e167]:
+                - generic "Check" [ref=e168]: 
+                - text: Mock interviews
+              - generic [ref=e169]:
+                - generic "Check" [ref=e170]: 
+                - text: Production scenarios
+              - generic [ref=e171]:
+                - generic "Check" [ref=e172]: 
+                - text: Company question packs
+              - generic [ref=e173]:
+                - generic "Check" [ref=e174]: 
+                - text: DSA Visual Lab
+              - generic [ref=e175]:
+                - generic "Check" [ref=e176]: 
+                - text: Java + Spring curriculum
+              - generic [ref=e177]:
+                - generic "Check" [ref=e178]: 
+                - text: System Design Studio
+              - generic [ref=e179]:
+                - generic "Check" [ref=e180]: 
+                - text: Resume & JD analysis
+              - generic [ref=e181]:
+                - generic "Check" [ref=e182]: 
+                - text: STAR story builder
+              - generic [ref=e183]:
+                - generic "Check" [ref=e184]: 
+                - text: Application tracker
+              - generic [ref=e185]:
+                - generic "Check" [ref=e186]: 
+                - text: Mastery map
+              - generic [ref=e187]:
+                - generic "Check" [ref=e188]: 
+                - text: Spaced repetition
+              - generic [ref=e189]:
+                - generic "Check" [ref=e190]: 
+                - text: Readiness reports
+            - generic [ref=e191]:
+              - button " Open Java Digest Java + Spring interview curriculum" [ref=e192] [cursor=pointer]:
+                - generic "News" [ref=e193] [cursor=pointer]: 
+                - generic [ref=e194] [cursor=pointer]:
+                  - strong [ref=e195] [cursor=pointer]: Open Java Digest
+                  - generic [ref=e196] [cursor=pointer]: Java + Spring interview curriculum
+                - generic [ref=e197] [cursor=pointer]: 
+              - button "Build my personalized plan" [ref=e198] [cursor=pointer]:
+                - text: Build my personalized plan
+                - generic [ref=e199] [cursor=pointer]: →
+              - button "Skip tour" [ref=e200] [cursor=pointer]
+              - generic [ref=e201]: ·
+              - button "Already have an account? Sign in" [ref=e202] [cursor=pointer]
+        - generic [ref=e203]:
+          - generic [ref=e204]:
+            - textbox "Message composer" [ref=e205] [cursor=pointer]
+            - generic [ref=e206]:
+              - button "Analyze Screen" [ref=e207] [cursor=pointer]:
+                - generic "Analyze Screen" [ref=e208] [cursor=pointer]: 
+              - button "Voice" [ref=e209] [cursor=pointer]:
+                - generic "Voice" [ref=e210] [cursor=pointer]: 
+              - button "Code" [ref=e211] [cursor=pointer]:
+                - generic "Code" [ref=e212] [cursor=pointer]: 
+              - button "Send" [disabled] [ref=e213]:
+                - generic "Send" [ref=e214]: 
+          - generic [ref=e215]:
+            - generic [ref=e216]:
+              - button "interview" [ref=e217] [cursor=pointer]
+              - button "practice" [ref=e218] [cursor=pointer]
+            - combobox "Difficulty level" [ref=e219] [cursor=pointer]:
+              - option "Entry"
+              - option "Mid" [selected]
+              - option "Senior"
+              - option "Lead"
+            - combobox "Interview calibration mode" [ref=e220] [cursor=pointer]:
+              - option "Strict Interviewer" [selected]
+              - option "Coach Mode"
+              - option "Bar Raiser"
+              - option "Behavioral STAR"
+              - option "Real Pressure"
+            - combobox "Round Strategy Mode" [ref=e221] [cursor=pointer]:
+              - option "Recruiter"
+              - option "Coding" [selected]
+              - option "System Design"
+              - option "Manager"
+              - option "Final"
+            - combobox "AI Interview Panel Mode" [ref=e222] [cursor=pointer]:
+              - option "Recruiter"
+              - option "Senior Engineer" [selected]
+              - option "Engineering Manager"
+              - option "System Design Architect"
+              - option "Bar Raiser"
+            - button "Start mock round" [ref=e223] [cursor=pointer]:
+              - generic "Start mock round" [ref=e224] [cursor=pointer]: 
+              - text: Start
+        - text:   
+    - generic:
+      - generic:
+        - img:
+          - generic: IQ
+        - generic: InterviewIQ
+      - generic:
+        - img:
+          - generic: IQ
+        - generic: InterviewIQ
+      - generic:
+        - img:
+          - generic: IQ
+        - generic: InterviewIQ
+      - generic:
+        - img:
+          - generic: IQ
+        - generic: InterviewIQ
+      - generic:
+        - img:
+          - generic: IQ
+        - generic: InterviewIQ
+      - generic:
+        - img:
+          - generic: IQ
+        - generic: InterviewIQ
+      - generic:
+        - img:
+          - generic: IQ
+        - generic: InterviewIQ
+      - generic:
+        - img:
+          - generic: IQ
+        - generic: InterviewIQ
+      - generic:
+        - img:
+          - generic: IQ
+        - generic: InterviewIQ
+      - generic:
+        - img:
+          - generic: IQ
+        - generic: InterviewIQ
+      - generic:
+        - img:
+          - generic: IQ
+        - generic: InterviewIQ
+      - generic:
+        - img:
+          - generic: IQ
+        - generic: InterviewIQ
+  - button "Open Next.js Dev Tools" [ref=e230] [cursor=pointer]:
+    - img [ref=e231] [cursor=pointer]
+  - alert [ref=e234]
+```

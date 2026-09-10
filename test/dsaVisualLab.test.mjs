@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
@@ -137,6 +137,16 @@ test("Blind 75 visual lessons expose trainer metadata", () => {
   assert.ok(lesson.masteryChecklist.some((step) => step.id === "visualize"));
   assert.ok(lesson.testCases.some((testCase) => testCase.type === "edge"));
   assert.ok(lesson.codeWalkthrough.some((step) => /Map|lookup|complement/i.test(step.codeCue)));
+});
+
+test("Blind 75 visual track opens the complete supplied Java study guide in an in-app reader", () => {
+  const source = readFileSync(new URL("../components/dsa/DsaVisualLab.js", import.meta.url), "utf8");
+  const guide = new URL("../public/downloads/blind-75-java-interview-study-guide.docx", import.meta.url);
+
+  assert.match(source, /Complete Java study guide/);
+  assert.match(source, /Blind75GuideModal/);
+  assert.match(source, /scrollable in-app reader/);
+  assert.ok(existsSync(guide));
 });
 
 test("returns selected-stack code templates for Blind 75 problems", () => {

@@ -1,0 +1,285 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic:
+        - generic: Mock Round
+        - generic: Coach
+        - generic: Feedback
+        - generic: Mock Round
+      - main [ref=e4]:
+        - generic [ref=e5]:
+          - button "Home" [ref=e6] [cursor=pointer]:
+            - generic "Home" [ref=e7] [cursor=pointer]: 
+            - text: Home
+          - button "Topics" [ref=e8] [cursor=pointer]:
+            - generic "Topics" [ref=e9] [cursor=pointer]: 
+            - text: Topics
+          - text:  Build Engineering Career Paths  Offer War Room 曆 Interview Ready Q&A  Company Prep  System Canvas  Design Lab 礼 Scenario Bank  Java Digest  DSA Lab  Agentic UI Course
+          - button "Workspace menu" [ref=e11] [cursor=pointer]:
+            - generic "Workspace menu" [ref=e12] [cursor=pointer]: 
+            - generic [ref=e13] [cursor=pointer]: Workspaces
+            - generic "Workspace menu" [ref=e14] [cursor=pointer]: 
+          - generic [ref=e15]: Namaskara, Sagar · React & Next.js
+          - status "Workspace sync status" [ref=e16]:
+            - generic "Cloud Check" [ref=e17]: 
+            - text: Saved on this device
+          - text: 
+          - generic "Account actions" [ref=e18]:
+            - button "Sign in" [ref=e19] [cursor=pointer]
+            - button "Create account" [ref=e20] [cursor=pointer]
+          - text:    
+          - button "Prep controls" [ref=e22] [cursor=pointer]:
+            - generic "Prep controls" [ref=e23] [cursor=pointer]: 
+            - generic [ref=e24] [cursor=pointer]: Prep controls
+            - generic "Prep controls" [ref=e25] [cursor=pointer]: 
+          - button "Clear" [ref=e26] [cursor=pointer]:
+            - generic "Clear" [ref=e27] [cursor=pointer]: 
+          - button "Edit Profile" [ref=e28] [cursor=pointer]:
+            - generic "Edit Profile" [ref=e29] [cursor=pointer]: 倫
+          - button "Info" [ref=e30] [cursor=pointer]:
+            - generic "Info" [ref=e31] [cursor=pointer]: 
+            - text: About & help
+        - generic [ref=e32]:
+          - button "Retry AI" [ref=e33] [cursor=pointer]
+          - button "Follow-up" [ref=e34] [cursor=pointer]
+          - button "Export Session" [ref=e35] [cursor=pointer]
+          - button "Import Session" [ref=e36] [cursor=pointer]
+          - button "Command Palette" [ref=e37] [cursor=pointer]
+        - log "Conversation messages" [ref=e38]:
+          - article "Your message" [ref=e39]:
+            - generic "User" [ref=e41]: 
+            - generic [ref=e43]: Previous mobile test answer
+          - article "InterviewIQ response" [ref=e44]:
+            - generic "Robot" [ref=e46]: 
+            - generic [ref=e47]:
+              - generic [ref=e49]:
+                - generic "Star Filled" [ref=e50]: 
+                - text: 7/10
+              - generic [ref=e52]:
+                - paragraph [ref=e53]: "Score: 7/10"
+                - paragraph [ref=e54]: Keep practicing.
+          - region "Answer Rewrite Studio and Code Explanation Judge" [ref=e55]:
+            - article [ref=e56]:
+              - generic [ref=e57]:
+                - generic [ref=e58]:
+                  - generic [ref=e59]:
+                    - generic "Writing Sign" [ref=e60]: 
+                    - text: Answer Rewrite Studio
+                  - paragraph [ref=e61]: "Six local rewrites for Full Stack Engineer: concise, senior, STAR, metric-aware, and final answer polish."
+                - button "Polish" [ref=e62] [cursor=pointer]
+              - generic [ref=e63]:
+                - button "Original answer" [ref=e64] [cursor=pointer]
+                - button "Concise version" [ref=e65] [cursor=pointer]
+                - button "Senior version" [ref=e66] [cursor=pointer]
+                - button "STAR version" [ref=e67] [cursor=pointer]
+                - button "Metrics-added version" [ref=e68] [cursor=pointer]
+                - button "Interviewer-ready final answer" [ref=e69] [cursor=pointer]
+              - generic [ref=e70]:
+                - generic [ref=e71]:
+                  - strong [ref=e72]: Interviewer-ready final answer
+                  - button "Practice" [ref=e73] [cursor=pointer]
+                - paragraph [ref=e74]: "Previous mobile test answer. Interview-ready version: I would also state the metric, the validation method, and the trade-off I accepted, then close with what I would improve next."
+            - article [ref=e75]:
+              - generic [ref=e76]:
+                - generic [ref=e77]:
+                  - generic [ref=e78]:
+                    - generic "Code Dots" [ref=e79]: 
+                    - text: Code Explanation Judge
+                  - paragraph [ref=e80]: Checks whether your dry run sounds complete enough for an interviewer.
+                - strong [ref=e81]: "25"
+              - generic [ref=e82]:
+                - button " Invariant Previous mobile test answer Covered" [ref=e83] [cursor=pointer]:
+                  - generic "Name what stays true after every loop, pointer move, recursion step, or data-structure update." [ref=e84] [cursor=pointer]: 
+                  - generic [ref=e85] [cursor=pointer]:
+                    - strong [ref=e86] [cursor=pointer]: Invariant
+                    - generic [ref=e87] [cursor=pointer]: Previous mobile test answer
+                  - generic [ref=e88] [cursor=pointer]: Covered
+                - 'button " Edge cases Call out boundary inputs before coding: empty, one item, duplicates, invalid values, and limits. Fix" [ref=e89] [cursor=pointer]':
+                  - 'generic "Call out boundary inputs before coding: empty, one item, duplicates, invalid values, and limits." [ref=e90] [cursor=pointer]': 
+                  - generic [ref=e91] [cursor=pointer]:
+                    - strong [ref=e92] [cursor=pointer]: Edge cases
+                    - generic [ref=e93] [cursor=pointer]: "Call out boundary inputs before coding: empty, one item, duplicates, invalid values, and limits."
+                  - generic [ref=e94] [cursor=pointer]: Fix
+                - button " Complexity State time and space complexity and explain what input size drives each cost. Fix" [ref=e95] [cursor=pointer]:
+                  - generic "State time and space complexity and explain what input size drives each cost." [ref=e96] [cursor=pointer]: 
+                  - generic [ref=e97] [cursor=pointer]:
+                    - strong [ref=e98] [cursor=pointer]: Complexity
+                    - generic [ref=e99] [cursor=pointer]: State time and space complexity and explain what input size drives each cost.
+                  - generic [ref=e100] [cursor=pointer]: Fix
+                - button " Trade-offs Compare your chosen approach with at least one alternative and explain when the alternative wins. Fix" [ref=e101] [cursor=pointer]:
+                  - generic "Compare your chosen approach with at least one alternative and explain when the alternative wins." [ref=e102] [cursor=pointer]: 
+                  - generic [ref=e103] [cursor=pointer]:
+                    - strong [ref=e104] [cursor=pointer]: Trade-offs
+                    - generic [ref=e105] [cursor=pointer]: Compare your chosen approach with at least one alternative and explain when the alternative wins.
+                  - generic [ref=e106] [cursor=pointer]: Fix
+              - generic [ref=e107]:
+                - paragraph [ref=e108]: 1/4 covered. Needs a clearer interview explanation. Add Edge cases, Complexity, Trade-offs.
+                - button "Practice explanation" [ref=e109] [cursor=pointer]
+        - generic [ref=e110]:
+          - generic [ref=e111]:
+            - textbox "Message composer" [ref=e112] [cursor=pointer]
+            - generic [ref=e113]:
+              - button "Analyze Screen" [ref=e114] [cursor=pointer]:
+                - generic "Analyze Screen" [ref=e115] [cursor=pointer]: 
+              - button "Voice" [ref=e116] [cursor=pointer]:
+                - generic "Voice" [ref=e117] [cursor=pointer]: 
+              - button "Code" [ref=e118] [cursor=pointer]:
+                - generic "Code" [ref=e119] [cursor=pointer]: 
+              - button "Send" [disabled] [ref=e120]:
+                - generic "Send" [ref=e121]: 
+          - generic [ref=e122]:
+            - generic [ref=e123]:
+              - button "interview" [ref=e124] [cursor=pointer]
+              - button "practice" [ref=e125] [cursor=pointer]
+            - combobox "Difficulty level" [ref=e126] [cursor=pointer]:
+              - option "Entry"
+              - option "Mid" [selected]
+              - option "Senior"
+              - option "Lead"
+            - combobox "Interview calibration mode" [ref=e127] [cursor=pointer]:
+              - option "Strict Interviewer" [selected]
+              - option "Coach Mode"
+              - option "Bar Raiser"
+              - option "Behavioral STAR"
+              - option "Real Pressure"
+            - combobox "Round Strategy Mode" [ref=e128] [cursor=pointer]:
+              - option "Recruiter"
+              - option "Coding" [selected]
+              - option "System Design"
+              - option "Manager"
+              - option "Final"
+            - combobox "AI Interview Panel Mode" [ref=e129] [cursor=pointer]:
+              - option "Recruiter"
+              - option "Senior Engineer" [selected]
+              - option "Engineering Manager"
+              - option "System Design Architect"
+              - option "Bar Raiser"
+            - button "Start mock round" [ref=e130] [cursor=pointer]:
+              - generic "Start mock round" [ref=e131] [cursor=pointer]: 
+              - text: Start
+        - generic [ref=e133]:
+          - region "Mobile workspace menu" [ref=e134]:
+            - generic [ref=e135]:
+              - strong [ref=e136]: Workspace Menu
+              - button "Close menu" [ref=e137] [cursor=pointer]:
+                - generic "Close menu" [ref=e138] [cursor=pointer]: 
+            - generic [ref=e139]:
+              - button " Home" [ref=e140] [cursor=pointer]:
+                - generic "Home" [ref=e141] [cursor=pointer]: 
+                - generic [ref=e142] [cursor=pointer]: Home
+              - button " Topics" [ref=e143] [cursor=pointer]:
+                - generic "Layout Sidebar" [ref=e144] [cursor=pointer]: 
+                - generic [ref=e145] [cursor=pointer]: Topics
+              - button " Build" [ref=e146] [cursor=pointer]:
+                - generic "Package" [ref=e147] [cursor=pointer]: 
+                - generic [ref=e148] [cursor=pointer]: Build
+              - button "Signpost Paths" [ref=e149] [cursor=pointer]:
+                - generic [ref=e150] [cursor=pointer]: Paths
+              - button " War Room" [ref=e151] [cursor=pointer]:
+                - generic "Target Arrow" [ref=e152] [cursor=pointer]: 
+                - generic [ref=e153] [cursor=pointer]: War Room
+              - button "曆 Q&A" [ref=e154] [cursor=pointer]:
+                - generic "Message Question" [ref=e155] [cursor=pointer]: 曆
+                - generic [ref=e156] [cursor=pointer]: Q&A
+              - button " Company" [ref=e157] [cursor=pointer]:
+                - generic "Building" [ref=e158] [cursor=pointer]: 
+                - generic [ref=e159] [cursor=pointer]: Company
+              - button " Canvas" [ref=e160] [cursor=pointer]:
+                - generic "Schema" [ref=e161] [cursor=pointer]: 
+                - generic [ref=e162] [cursor=pointer]: Canvas
+              - button " Design Lab" [ref=e163] [cursor=pointer]:
+                - generic "Puzzle" [ref=e164] [cursor=pointer]: 
+                - generic [ref=e165] [cursor=pointer]: Design Lab
+              - button "礼 Scenario Bank" [ref=e166] [cursor=pointer]:
+                - generic "Database Search" [ref=e167] [cursor=pointer]: 礼
+                - generic [ref=e168] [cursor=pointer]: Scenario Bank
+              - button " Java" [ref=e169] [cursor=pointer]:
+                - generic "News" [ref=e170] [cursor=pointer]: 
+                - generic [ref=e171] [cursor=pointer]: Java
+              - button " DSA Lab" [ref=e172] [cursor=pointer]:
+                - generic "Binary Tree" [ref=e173] [cursor=pointer]: 
+                - generic [ref=e174] [cursor=pointer]: DSA Lab
+              - button " Course" [ref=e175] [cursor=pointer]:
+                - generic "Sparkles" [ref=e176] [cursor=pointer]: 
+                - generic [ref=e177] [cursor=pointer]: Course
+              - button " Screen" [ref=e178] [cursor=pointer]:
+                - generic "Screenshot" [ref=e179] [cursor=pointer]: 
+                - generic [ref=e180] [cursor=pointer]: Screen
+              - button " Voice" [ref=e181] [cursor=pointer]:
+                - generic "Microphone" [ref=e182] [cursor=pointer]: 
+                - generic [ref=e183] [cursor=pointer]: Voice
+              - button " Review" [ref=e184] [cursor=pointer]:
+                - generic "Wave Sine" [ref=e185] [cursor=pointer]: 
+                - generic [ref=e186] [cursor=pointer]: Review
+              - button " Clear" [ref=e187] [cursor=pointer]:
+                - generic "Trash" [ref=e188] [cursor=pointer]: 
+                - generic [ref=e189] [cursor=pointer]: Clear
+              - button " Info" [ref=e190] [cursor=pointer]:
+                - generic "Info Circle" [ref=e191] [cursor=pointer]: 
+                - generic [ref=e192] [cursor=pointer]: Info
+          - navigation [ref=e193]:
+            - button "Home" [ref=e194] [cursor=pointer]:
+              - generic "Home" [ref=e195] [cursor=pointer]: 
+              - generic [ref=e196] [cursor=pointer]: Home
+            - button "Topics" [ref=e197] [cursor=pointer]:
+              - generic "Topics" [ref=e198] [cursor=pointer]: 
+              - generic [ref=e199] [cursor=pointer]: Topics
+            - button "More" [expanded] [active] [ref=e200] [cursor=pointer]:
+              - generic "More" [ref=e201] [cursor=pointer]: 
+              - generic [ref=e202] [cursor=pointer]: More
+    - generic:
+      - generic:
+        - img:
+          - generic: IQ
+        - generic: InterviewIQ
+      - generic:
+        - img:
+          - generic: IQ
+        - generic: InterviewIQ
+      - generic:
+        - img:
+          - generic: IQ
+        - generic: InterviewIQ
+      - generic:
+        - img:
+          - generic: IQ
+        - generic: InterviewIQ
+      - generic:
+        - img:
+          - generic: IQ
+        - generic: InterviewIQ
+      - generic:
+        - img:
+          - generic: IQ
+        - generic: InterviewIQ
+      - generic:
+        - img:
+          - generic: IQ
+        - generic: InterviewIQ
+      - generic:
+        - img:
+          - generic: IQ
+        - generic: InterviewIQ
+      - generic:
+        - img:
+          - generic: IQ
+        - generic: InterviewIQ
+      - generic:
+        - img:
+          - generic: IQ
+        - generic: InterviewIQ
+      - generic:
+        - img:
+          - generic: IQ
+        - generic: InterviewIQ
+      - generic:
+        - img:
+          - generic: IQ
+        - generic: InterviewIQ
+  - button "Open Next.js Dev Tools" [ref=e208] [cursor=pointer]:
+    - img [ref=e209] [cursor=pointer]
+  - alert [ref=e212]
+```

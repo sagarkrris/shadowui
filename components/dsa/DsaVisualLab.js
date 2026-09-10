@@ -42,6 +42,8 @@ import {
 import { FRESHER_DSA_PLAYBOOK } from "../../lib/javaDigest.mjs";
 import { FRESHER_DSA_PROBLEMS, getFresherDsaDailyPlan, getSpacedReviewQueue, scoreFresherDsaAttempt } from "../../lib/fresherDsaProblems.mjs";
 import { JAVA_DEBUGGING_LESSONS } from "../../lib/javaDebuggingLessons.mjs";
+import { isModalCloseKey } from "../../lib/modalKeyboard.mjs";
+import { useFocusTrap } from "../../hooks/useFocusTrap";
 import BeginnerGuideBanner from "../BeginnerGuideBanner";
 import AnswerAtAGlance from "../learning/AnswerAtAGlance";
 
@@ -426,6 +428,76 @@ function ActionButton({ icon, label, onClick, disabled, tone = "#8bd3ff" }) {
       <i className={`ti ${icon}`} style={{ color: disabled ? "#64748b" : tone, fontSize: 14 }} />
       {label}
     </button>
+  );
+}
+
+function Blind75GuideModal({ problem, onClose, onOpenVisualizer, theme = {} }) {
+  const modalRef = useRef(null);
+  const [guide, setGuide] = useState(null);
+  const [error, setError] = useState("");
+  const accent = theme.accentStrong || "#8bd3ff";
+  const accentBorder = theme.accentBorder || "rgba(139, 211, 255, .28)";
+  useFocusTrap(modalRef);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setGuide(null);
+    setError("");
+
+    fetch(`/api/blind75-guide?problemId=${encodeURIComponent(problem.id)}`, { signal: controller.signal })
+      .then(async (response) => {
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || "Could not load the study guide");
+        setGuide(payload);
+      })
+      .catch((requestError) => {
+        if (requestError.name !== "AbortError") setError(requestError.message || "Could not load the study guide");
+      });
+
+    return () => controller.abort();
+  }, [problem.id]);
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="blind75-guide-title"
+      tabIndex={-1}
+      ref={modalRef}
+      onClick={onClose}
+      onKeyDown={(event) => { if (isModalCloseKey(event)) onClose(); }}
+      style={{ alignItems: "center", background: "rgba(0,0,0,.72)", backdropFilter: "blur(5px)", display: "flex", inset: 0, justifyContent: "center", padding: "clamp(10px, 3vw, 28px)", position: "fixed", zIndex: 220 }}
+    >
+      <section onClick={(event) => event.stopPropagation()} style={{ background: "#0b1628", border: `1px solid ${accentBorder}`, borderRadius: 14, boxShadow: "0 24px 80px rgba(0,0,0,.55)", color: "#dbeafe", display: "grid", gridTemplateRows: "auto minmax(0, 1fr)", maxHeight: "min(92vh, 940px)", maxWidth: 920, overflow: "hidden", width: "100%" }}>
+        <header style={{ alignItems: "start", borderBottom: "1px solid rgba(255,255,255,.08)", display: "flex", gap: 12, justifyContent: "space-between", padding: "15px 16px 13px" }}>
+          <div>
+            <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Blind 75 Java study guide · #{problem.order}</div>
+            <h2 id="blind75-guide-title" style={{ color: "#f8fbff", fontSize: 19, lineHeight: 1.3, margin: "3px 0 0" }}>{problem.title}</h2>
+          </div>
+          <div style={{ display: "flex", gap: 7 }}>
+            <button type="button" className="glass-button" onClick={onOpenVisualizer} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "#dbeafe", fontSize: 10.8, fontWeight: 850, padding: "7px 9px", whiteSpace: "nowrap" }}>Open visualizer</button>
+            <button type="button" aria-label="Close study guide" className="glass-button" onClick={onClose} style={{ border: "1px solid rgba(255,255,255,.14)", borderRadius: 7, color: "#dbeafe", fontSize: 17, lineHeight: 1, padding: "6px 9px" }}>×</button>
+          </div>
+        </header>
+        <div style={{ display: "grid", gap: 14, overflowY: "auto", overscrollBehavior: "contain", padding: "16px clamp(14px, 3vw, 24px) 28px" }}>
+          <div style={{ background: `${accent}10`, border: `1px solid ${accent}2e`, borderRadius: 8, color: "#cbd5e1", fontSize: 12, lineHeight: 1.5, padding: 10 }}>
+            {problem.summary} <span style={{ color: "#a7f3d0" }}>Pattern: {problem.pattern}.</span>
+          </div>
+          {!guide && !error ? <p role="status" style={{ color: "#93a4bf", margin: 0 }}>Loading the complete Java guide…</p> : null}
+          {error ? <p role="alert" style={{ color: "#fda4af", margin: 0 }}>{error}</p> : null}
+          {guide?.sections?.map((section) => (
+            <section key={section.heading} style={{ borderBottom: "1px solid rgba(255,255,255,.08)", display: "grid", gap: 8, paddingBottom: 14 }}>
+              <h3 style={{ color: section.heading === "Java solution" ? "#a7f3d0" : accent, fontSize: 13, margin: 0, textTransform: "none" }}>{section.heading}</h3>
+              {section.heading === "Java solution" ? (
+                <pre style={{ background: "rgba(0,0,0,.28)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, color: "#dbeafe", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 11.5, lineHeight: 1.55, margin: 0, overflowX: "auto", padding: 11, whiteSpace: "pre" }}>{section.content}</pre>
+              ) : (
+                <p style={{ color: "#cbd5e1", fontSize: 12, lineHeight: 1.6, margin: 0, whiteSpace: "pre-line" }}>{section.content}</p>
+              )}
+            </section>
+          ))}
+        </div>
+      </section>
+    </div>
   );
 }
 
@@ -2532,6 +2604,7 @@ function DsaVisualLabContent({ initialLessonId = "arrays", onPractice, theme = {
   const [learningQuery, setLearningQuery] = useState("");
   const [learningPatternFilter, setLearningPatternFilter] = useState("all");
   const [selectedLearningProblemId, setSelectedLearningProblemId] = useState("two-sum");
+  const [guideProblem, setGuideProblem] = useState(null);
   const [stepIndex, setStepIndex] = useState(0);
   const [stage, setStage] = useState("Visualize");
   const [playing, setPlaying] = useState(false);
@@ -2829,9 +2902,20 @@ function DsaVisualLabContent({ initialLessonId = "arrays", onPractice, theme = {
   const openProblemReader = (problem) => {
     if (!problem) return;
     setSelectedLearningProblemId(problem.id);
-    setTrack("blind75");
-    setSelectedLessonId(problem.lessonId);
-    setStage("Learn");
+    setGuideProblem(problem);
+    onActivity?.({
+      workspaceId: "dsaLab",
+      type: "review",
+      label: "Opened Blind 75 Java study guide",
+      detail: problem.title,
+    });
+  };
+
+  const openGuideVisualizer = () => {
+    if (!guideProblem) return;
+    const problem = guideProblem;
+    setGuideProblem(null);
+    openLearningProblem(problem);
   };
 
   const filterChallenges = (filterId) => {
@@ -3302,6 +3386,16 @@ function DsaVisualLabContent({ initialLessonId = "arrays", onPractice, theme = {
             </div>
           </div>
 
+          <section style={{ background: "rgba(139,211,255,.055)", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 7, padding: 11 }}>
+            <div>
+              <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Complete Java study guide</div>
+              <h4 style={{ color: "#f8fbff", fontSize: 14, lineHeight: 1.35, margin: "3px 0 4px" }}>All 75 problems, with reasoning before code</h4>
+              <p style={{ color: "#cbd5e1", fontSize: 11.3, lineHeight: 1.45, margin: 0 }}>
+                Select any question to read its complete chapter in a scrollable in-app reader: Java solution, invariant, worked example, complexity analysis, common mistake, follow-ups, and edge-case checklist.
+              </p>
+            </div>
+          </section>
+
           <div style={{ display: "grid", gap: 9, gridTemplateColumns: "repeat(auto-fit, minmax(178px, 1fr))" }}>
             {visibleBlind75Problems.map((problem) => {
               const active = problem.lessonId === selectedLessonId;
@@ -3312,7 +3406,7 @@ function DsaVisualLabContent({ initialLessonId = "arrays", onPractice, theme = {
                   key={problem.id}
                   type="button"
                   className="glass-button"
-                  onClick={() => chooseLesson(problem.lessonId)}
+                  onClick={() => openProblemReader(problem)}
                   style={{
                     background: active ? `${accent}1f` : "rgba(255,255,255,.04)",
                     border: `1px solid ${active ? accent : "rgba(255,255,255,.075)"}`,
@@ -3377,7 +3471,7 @@ function DsaVisualLabContent({ initialLessonId = "arrays", onPractice, theme = {
                 <h4 style={{ color: "#f8fbff", fontSize: 15, lineHeight: 1.3, margin: "4px 0 0" }}>LeetCode-style prompt</h4>
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
-                <ActionButton icon="ti-book-2" label="Open problem reader" onClick={() => setStage("Learn")} tone={accent} />
+                <ActionButton icon="ti-book-2" label="Open problem reader" onClick={() => openProblemReader(currentBlind75Problem)} tone={accent} />
                 <ActionButton icon="ti-player-play" label="Open visualizer" onClick={visualize} tone="#a7f3d0" />
               </div>
             </div>
@@ -3418,6 +3512,8 @@ function DsaVisualLabContent({ initialLessonId = "arrays", onPractice, theme = {
           </section>
         </section>
       ) : null}
+
+      {guideProblem ? <Blind75GuideModal problem={guideProblem} onClose={() => setGuideProblem(null)} onOpenVisualizer={openGuideVisualizer} theme={theme} /> : null}
 
       {stage === "Explain-Then-Code" ? (
         <section style={{ background: "rgba(255,255,255,.04)", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 12, padding: 12 }}>
