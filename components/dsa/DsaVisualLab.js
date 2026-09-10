@@ -444,7 +444,7 @@ function Blind75GuideModal({ problem, onClose, onOpenVisualizer, theme = {} }) {
     setGuide(null);
     setError("");
 
-    fetch(`/api/blind75-guide?problemId=${encodeURIComponent(problem.id)}`, { signal: controller.signal })
+    fetch(`/api/blind75-guide?problemId=${encodeURIComponent(problem.id)}&mapping=2`, { signal: controller.signal })
       .then(async (response) => {
         const payload = await response.json();
         if (!response.ok) throw new Error(payload.error || "Could not load the study guide");

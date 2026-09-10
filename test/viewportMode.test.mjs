@@ -1,7 +1,21 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { getAppShellHeight, isCompactViewport } from "../lib/viewportMode.mjs";
+import { getAppShellHeight, getKeyboardViewportOffset, isVirtualKeyboardOpen, isCompactViewport } from "../lib/viewportMode.mjs";
+
+test("tracks keyboard panning and clears stale offsets after dismissal", () => {
+  assert.equal(getKeyboardViewportOffset({ keyboardOpen: true, offsetTop: 143 }), 143);
+  assert.equal(getKeyboardViewportOffset({ keyboardOpen: false, offsetTop: 143 }), 0);
+  assert.equal(getKeyboardViewportOffset({ keyboardOpen: true, offsetTop: -5 }), 0);
+  assert.equal(getKeyboardViewportOffset({ keyboardOpen: true, offsetTop: 143, scale: 2 }), 0);
+});
+
+test("keeps keyboard layout during blur animation but not after viewport recovery or zoom", () => {
+  const state = { viewportWidth: 390, innerHeight: 844, visualViewportHeight: 350, activeElementTagName: "BUTTON", wasKeyboardOpen: true };
+  assert.equal(isVirtualKeyboardOpen(state), true);
+  assert.equal(isVirtualKeyboardOpen({ ...state, visualViewportHeight: 844 }), false);
+  assert.equal(isVirtualKeyboardOpen({ ...state, scale: 2 }), false);
+});
 
 test("treats phone and tablet widths as compact workflow layouts", () => {
   assert.equal(isCompactViewport(390), true);

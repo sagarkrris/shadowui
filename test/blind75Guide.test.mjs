@@ -19,13 +19,23 @@ test("extracts the detailed Java chapter for each Blind 75 question from the sup
   assert.match(sections["Edge cases"], /same element/i);
 });
 
-test("finds a detailed chapter for all 75 questions in the supplied guide", async () => {
+test("matches guide chapters by stable identity, never roster position", async () => {
   const buffer = await readFile(new URL("../public/downloads/blind-75-java-interview-study-guide.docx", import.meta.url));
   const html = await readBlind75GuideHtml(buffer);
 
   for (const problem of listBlind75Problems()) {
     const entry = extractBlind75GuideEntryFromHtml(html, problem);
+    if (problem.id === "binary-search") {
+      assert.equal(entry, null, "Binary Search is not in the supplied document");
+      continue;
+    }
     assert.ok(entry?.sections?.length >= 8, `${problem.title} should have its full guide chapter`);
+    assert.equal(entry.sourceTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""), problem.id);
     assert.ok(entry.sections.some((section) => section.heading === "Java solution"), `${problem.title} should include Java code`);
   }
+  const product = extractBlind75GuideEntryFromHtml(html, getBlind75Problem("product-of-array-except-self"));
+  assert.equal(product.sourceOrder, 7);
+  assert.match(product.sections.find(s => s.heading === "Java solution").content, /productExceptSelf/);
+  assert.doesNotMatch(product.sections.find(s => s.heading === "Java solution").content, /class Codec/);
+  assert.deepEqual(extractBlind75GuideEntryFromHtml(html, { ...getBlind75Problem("product-of-array-except-self"), order: 999 }), product);
 });

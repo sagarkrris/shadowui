@@ -274,7 +274,7 @@ function InterviewAnswerCard({ question, accent, profile, onAction, onActivity, 
       ) : null}
 
       {(expanded || !questionFirstMode) && (
-        <section style={{ ...wrap, background: "rgba(0,0,0,.18)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 10, padding: 10 }}>
+        <section className="qa-expanded-answer" style={{ ...wrap, background: "rgba(0,0,0,.18)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 10, padding: 10 }}>
           <div style={wrap}>
             <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Direct answer</div>
             <p style={{ color: "#e5eefb", fontSize: 11.8, lineHeight: 1.55, margin: "5px 0 0" }}>{question.answer.direct}</p>

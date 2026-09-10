@@ -28,8 +28,8 @@ export default async function handler(req, res) {
 
   try {
     const entry = await getGuideEntry(problem);
-    if (!entry?.sections?.length) return res.status(404).json({ error: "Guide entry not found" });
-    res.setHeader("Cache-Control", "public, max-age=3600");
+    if (!entry?.sections?.length) return res.status(404).json({ error: "This question is not included in the supplied Java study guide. You can still open its visualizer." });
+    res.setHeader("Cache-Control", "no-cache");
     return res.status(200).json(entry);
   } catch {
     return res.status(500).json({ error: "The Java study guide could not be read" });

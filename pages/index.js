@@ -56,7 +56,7 @@ import { createSystemDesignCanvasState } from "../lib/systemDesignCanvas.mjs";
 import { getTechTheme, getWorkspaceTheme } from "../lib/techTheme.mjs";
 import { THEME_PREFERENCE_STORAGE_KEY, normalizeThemePreference, resolveThemeMode } from "../lib/themePreference.mjs";
 import { canUseChatComposer, canUseInterviewTools, canUsePrepTopics, shouldShowCodeTools } from "../lib/uiVisibility.mjs";
-import { getAppShellHeight, getStableViewportHeight, getVisibleViewportHeight, isCompactViewport, isVirtualKeyboardOpen } from "../lib/viewportMode.mjs";
+import { getAppShellHeight, getKeyboardViewportOffset, getStableViewportHeight, getVisibleViewportHeight, isCompactViewport, isVirtualKeyboardOpen } from "../lib/viewportMode.mjs";
 import { buildSpeechTranscript, createVoiceSessionReport, getVoiceErrorMessage, getVoiceSupport } from "../lib/voiceSupport.mjs";
 import { buildWorkspaceActionDisplayText } from "../lib/workspaceActionDisplay.mjs";
 import { compactChatHistory } from "../lib/chatRequest.mjs";
@@ -145,6 +145,8 @@ export default function Home() {
   const [loading, setLoading]         = useState(false);
   const [sidebarOpen, setSidebar]     = useState(false);
   const [isMobile, setIsMobile]       = useState(false);
+  const [mobileHeaderOpen, setMobileHeaderOpen] = useState(false);
+  const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
   const [isListening, setListening]   = useState(false);
   const [voiceText, setVoiceText]     = useState("");
   const [showScreen, setShowScreen]   = useState(false);
@@ -566,6 +568,8 @@ export default function Home() {
         visualViewportHeight: visibleHeight,
         activeElementTagName: activeElement?.tagName,
         activeElementIsContentEditable: activeElement?.isContentEditable,
+        wasKeyboardOpen: !widthChanged && keyboardOpenRef.current,
+        scale: window.visualViewport?.scale,
       });
 
       if (!keyboardOpen) {
@@ -574,6 +578,11 @@ export default function Home() {
 
       document.documentElement.style.setProperty("--vh", `${baselineHeight * 0.01}px`);
       document.documentElement.style.setProperty("--vvh", `${visibleHeight * 0.01}px`);
+      document.documentElement.style.setProperty("--keyboard-viewport-top", `${getKeyboardViewportOffset({
+        keyboardOpen,
+        offsetTop: window.visualViewport?.offsetTop,
+        scale: window.visualViewport?.scale,
+      })}px`);
       if (keyboardOpenRef.current && !keyboardOpen) {
         restorePageScroll();
       }
@@ -604,6 +613,11 @@ export default function Home() {
       window.visualViewport?.removeEventListener("scroll", setViewportHeight);
     };
   }, []);
+
+  useEffect(() => {
+    setMobileHeaderOpen(false);
+    setMobileActionsOpen(false);
+  }, [activeTab]);
 
   // ── Auto-scroll ───────────────────────────────────────────────────────────
   useEffect(() => { chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: "smooth" }); }, [messages, loading]);
@@ -1515,7 +1529,7 @@ export default function Home() {
       {showAccountSettings && <SettingsModal onClose={() => setShowAccountSettings(false)} onDeleteSuccess={(result) => { setShowAccountSettings(false); showToast(result.emailDelivery?.delivered ? "Account deleted. Confirmation email sent." : "Account deleted, but confirmation email could not be sent.", result.emailDelivery?.delivered ? "info" : "error"); }} theme={techTheme} auth={auth} themePreference={themePreference} onThemePreferenceChange={handleThemePreferenceChange} themeStatus={themeStatus} appearance={resolvedThemeMode} />}
 
       {/* App shell */}
-      <div className={`app-shell theme-${resolvedThemeMode}`} style={{ ...themeVars, position:"fixed", inset:0, isolation:"isolate", display:"flex", height:appShellHeight, overflow:"hidden", background:techTheme.surface }}>
+      <div className={`app-shell theme-${resolvedThemeMode}`} data-keyboard-open={isKeyboardOpen} style={{ ...themeVars, position:"fixed", inset:0, top:"var(--keyboard-viewport-top, 0px)", bottom:"auto", isolation:"isolate", display:"flex", height:appShellHeight, overflow:"hidden", background:techTheme.surface }}>
         <TechBackground theme={techTheme} />
 
         {/* Sidebar */}
@@ -1552,8 +1566,12 @@ export default function Home() {
             </div>
           )}
 
+          <div className="mobile-shell-controls">
+            <button type="button" className="glass-button" aria-expanded={mobileHeaderOpen} aria-controls="app-header" onClick={() => setMobileHeaderOpen(value => !value)}>Navigation & settings</button>
+            <button type="button" className="glass-button" aria-expanded={mobileActionsOpen} aria-controls="session-actions" onClick={() => setMobileActionsOpen(value => !value)}>Session actions</button>
+          </div>
           {/* ── Top bar ── */}
-          <header className="glass-chrome app-topbar" style={{ position:"relative", zIndex:130, display:"flex", alignItems:"center", gap:8, padding:"9px 12px", borderBottom:"1px solid rgba(255,255,255,.08)", flexShrink:0, minHeight:52 }}>
+          <header id="app-header" data-mobile-open={mobileHeaderOpen} className="glass-chrome app-topbar" style={{ position:"relative", zIndex:130, display:"flex", alignItems:"center", gap:8, padding:"9px 12px", borderBottom:"1px solid rgba(255,255,255,.08)", flexShrink:0, minHeight:52 }}>
             <button className={`icon-btn ${activeTab==="chat" && messages.length===0 ? "active" : ""}`} onClick={goHome} title="Home" data-tooltip="Home" aria-label="Home">
               <i className="ti ti-home" />
             </button>
@@ -1721,7 +1739,7 @@ export default function Home() {
             <button className="icon-btn" onClick={() => setShowSettings(true)} title="About and help" data-tooltip="About & help" aria-label="Info"><i className="ti ti-info-circle" /></button>
           </header>
 
-          <div className="glass-chrome" style={{ alignItems: "center", borderBottom: "1px solid rgba(255,255,255,.06)", display: "flex", flexWrap: "wrap", gap: 7, padding: "8px 12px" }}>
+          <div id="session-actions" data-mobile-open={mobileActionsOpen} className="glass-chrome session-actions" style={{ alignItems: "center", borderBottom: "1px solid rgba(255,255,255,.06)", display: "flex", flexWrap: "wrap", gap: 7, padding: "8px 12px" }}>
             <button type="button" className="glass-button" onClick={retryLastAiRequest} style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 7, color: "#cbd5e1", fontSize: 11, fontWeight: 800, padding: "5px 8px" }}>
               Retry AI
             </button>
@@ -1981,7 +1999,7 @@ export default function Home() {
                 className="glass-input"
                 style={{ flex:1, border:"1px solid rgba(255,255,255,.09)", borderRadius:9, padding:"9px 12px", fontSize: isMobile?14:13, color:"#e8e8f0", outline:"none", lineHeight:1.5, maxHeight:120 }} />
 
-              <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+              <div className="composer-tools" style={{ display:"flex", flexDirection:"column", gap:4 }}>
                 <button className="icon-btn" onClick={() => setShowScreen(true)} title="Analyze Screen" aria-label="Analyze Screen" style={{ width:30, height:30, fontSize:15 }}><i className="ti ti-screenshot" /></button>
                 <button className={`icon-btn ${isListening?"recording":""}`} onClick={toggleVoice} title="Voice" aria-label="Voice" style={{ width:30, height:30, fontSize:15 }}><i className={`ti ${isListening?"ti-microphone-off":"ti-microphone"}`} /></button>
                 {showCodeTools && <button className={`icon-btn ${showCode?"active":""}`} onClick={() => setShowCode(p=>!p)} title="Code" aria-label="Code" style={{ width:30, height:30, fontSize:15 }}><i className="ti ti-code" /></button>}
@@ -1996,7 +2014,8 @@ export default function Home() {
 
             {/* Desktop hint / Mobile mode bar */}
             {isMobile && !isKeyboardOpen ? (
-              <div style={{ marginTop:8, display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, flexWrap:"wrap" }}>
+              <div className="composer-mode-bar" style={{ marginTop:8, display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, flexWrap:"wrap" }}>
+                <button type="button" className="glass-button" onClick={() => { setMobileHeaderOpen(true); setTopControlsOpen(true); }}>Prep settings</button>
                 <div style={{ display:"flex", background:"rgba(255,255,255,.04)", borderRadius:7, padding:2, border:"1px solid rgba(255,255,255,.07)", flex:"1 1 148px" }}>
                   {["interview","practice"].map(m => (
                     <button key={m} className={mode===m?"glass-button":""} onClick={() => setMode(m)} style={{ flex:1, padding:"5px 6px", fontSize:11, fontWeight:500, borderRadius:5, border:mode===m?`1px solid ${techTheme.accentBorder}`:"none", cursor:"pointer", color: mode===m?techTheme.accentText:"#6b7280", background: mode===m?techTheme.accentSoft:"transparent", textTransform:"capitalize" }}>{m}</button>
