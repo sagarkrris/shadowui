@@ -1,7 +1,11 @@
-import { useMemo, useState } from "react";
+import { useFocusTrap } from "../../hooks/useFocusTrap";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { filterCommandPaletteActions } from "../../lib/commandPalette.mjs";
 
 export default function CommandPalette({ actions = [], onClose, onSelect, open = false, theme }) {
+  const dialogRef = useRef(null);
+  useFocusTrap(dialogRef, open);
+  useEffect(() => { if (!open) return undefined; const close = e => { if (e.key === "Escape") onClose(); }; document.addEventListener("keydown", close); return () => { document.removeEventListener("keydown", close); }; }, [open, onClose]);
   const [query, setQuery] = useState("");
   const filtered = useMemo(() => filterCommandPaletteActions(actions, query), [actions, query]);
 
@@ -9,10 +13,11 @@ export default function CommandPalette({ actions = [], onClose, onSelect, open =
 
   return (
     <div style={{ alignItems: "flex-start", background: "rgba(2,6,23,.74)", display: "flex", inset: 0, justifyContent: "center", padding: "12vh 16px 16px", position: "fixed", zIndex: 200 }}>
-      <section className="glass-card" style={{ background: "rgba(8,12,22,.98)", border: `1px solid ${theme?.accentBorder || "rgba(255,255,255,.12)"}`, borderRadius: 14, boxShadow: "0 28px 80px rgba(0,0,0,.55)", display: "grid", gap: 10, maxWidth: 720, padding: 14, width: "min(100%, 720px)" }}>
+      <section ref={dialogRef} role="dialog" aria-modal="true" aria-label="Search workspaces and saved work" className="glass-card" style={{ background: "rgba(8,12,22,.98)", border: `1px solid ${theme?.accentBorder || "rgba(255,255,255,.12)"}`, borderRadius: 14, boxShadow: "0 28px 80px rgba(0,0,0,.55)", display: "grid", gap: 10, maxWidth: 720, padding: 14, width: "min(100%, 720px)" }}>
         <div style={{ alignItems: "center", display: "flex", gap: 8 }}>
           <i className="ti ti-command" style={{ color: theme?.accentStrong || "#8bd3ff", fontSize: 18 }} />
           <input
+            aria-label="Search commands, lessons, questions, scenarios and saved work"
             autoFocus
             className="glass-input"
             value={query}

@@ -8,7 +8,6 @@ export default function Document() {
           rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css"
         />
-        <meta name="description" content="InterviewIQ - AI-powered interview intelligence for modern software engineers" />
         {process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ? <meta name="google-site-verification" content={process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION} /> : null}
         <meta name="author" content="InterviewIQ" />
         <meta name="copyright" content="InterviewIQ. All rights reserved." />

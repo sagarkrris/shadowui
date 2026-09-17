@@ -28,8 +28,8 @@ test("builds a concise command center from profile, topics, and weak spots", () 
     mockScores: [8, 7],
   });
 
-  assert.equal(center.readinessScore, 71);
-  assert.equal(center.readinessLabel, "Interview momentum building");
+  assert.equal(center.readinessScore, 75);
+  assert.equal(center.readinessLabel, "Limited practice evidence — not a readiness estimate");
   assert.equal(center.focusArea, "Caching");
   assert.equal(center.dailyPlan.length, 3);
   assert.deepEqual(
@@ -51,7 +51,7 @@ test("does not show a fake readiness score before scored mock feedback exists", 
 
   assert.equal(center.focusArea, "Python Core");
   assert.equal(center.readinessScore, null);
-  assert.equal(center.readinessLabel, "Start a scored mock to measure readiness");
+  assert.equal(center.readinessLabel, "Not assessed — complete a scored answer");
   assert.ok(center.actions.every((action) => action.prompt.includes("Sagar")));
 });
 
@@ -74,7 +74,7 @@ test("uses recent mock scores to calculate readiness", () => {
   });
 
   assert.equal(center.readinessScore, 80);
-  assert.equal(center.readinessLabel, "Interview momentum building");
+  assert.equal(center.readinessLabel, "Recent answer average — not a prediction of interview outcomes");
 });
 
 test("builds action prompts with the candidate context", () => {

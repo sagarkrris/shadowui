@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { getBlind75Problem } from "../../lib/blind75VisualTrack.mjs";
-import { extractBlind75GuideEntryFromHtml, readBlind75GuideHtml } from "../../lib/blind75Guide.mjs";
+import { buildCanonicalGuideEntry, extractBlind75GuideEntryFromHtml, readBlind75GuideHtml } from "../../lib/blind75Guide.mjs";
 
 const guidePath = path.join(process.cwd(), "public", "downloads", "blind-75-java-interview-study-guide.docx");
 const entryCache = new Map();
@@ -15,15 +15,7 @@ function getGuideHtml() {
 async function getGuideEntry(problem) {
   if (!entryCache.has(problem.id)) {
     entryCache.set(problem.id, getGuideHtml().then((html) => {
-      const entry = extractBlind75GuideEntryFromHtml(html, problem);
-      if (problem.id !== "best-time-to-buy-and-sell-stock") return entry;
-      return {
-        ...entry,
-        sections: entry.sections?.map((section) => ({
-          ...section,
-          content: String(section.content || "").replace(/at price 5,?\s*profit becomes 5/gi, "at price 5, profit becomes 4").replace(/profit becomes 5 at price 5/gi, "profit becomes 4 at price 5"),
-        })),
-      };
+      return buildCanonicalGuideEntry(problem, extractBlind75GuideEntryFromHtml(html, problem));
     }));
   }
   return entryCache.get(problem.id);

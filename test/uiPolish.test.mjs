@@ -252,7 +252,8 @@ test("cloud sync failures preserve local work and can be retried", () => {
   assert.match(cloudStateSyncSource, /const retry = useCallback/);
   assert.match(cloudStateSyncSource, /setRetryNonce\(\(value\) => value \+ 1\)/);
   assert.match(cloudStateSyncSource, /if \(user\) return;[\s\S]*hydratedUser\.current = ""/);
-  assert.match(indexSource, /cloudStatus === "offline" \|\| !auth\.user \? "Saved on this device" : "Saved"/);
+  assert.match(indexSource, /localSaveStatus === "error" \? "Device save failed"/);
+  assert.match(indexSource, /Saved on device · Sync failed/);
 });
 
 test("screen analysis provides a mobile-safe upload fallback", () => {
@@ -295,7 +296,7 @@ test("authenticated CSRF state is not replaced by a random token", () => {
   assert.match(authHookSource, /clearPrivateLocalData\(\);[\s\S]*setUser\(null\)/);
   assert.match(authApiSource, /action === "logout"[\s\S]*\$\{CSRF_COOKIE\}=;/);
   assert.match(cloudStateSyncSource, /response\.status === 403[\s\S]*refreshCsrfToken/);
-  assert.match(cloudStateSyncSource, /saveSnapshot\(await refreshCsrfToken\(\), true\)/);
+  assert.match(cloudStateSyncSource, /save\(await callbacks\.current\.refreshCsrfToken\(\), true\)/);
   assert.match(indexSource, /refreshCsrfToken: auth\.refreshCsrfToken/);
   assert.match(indexSource, /const handleCloudSyncError = useCallback\(/);
   assert.match(indexSource, /onError: handleCloudSyncError/);

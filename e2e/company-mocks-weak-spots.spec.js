@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+test.use({ serviceWorkers: "block" });
 import {
   assertHealthyApp,
   gotoSeededApp,
@@ -15,12 +16,12 @@ test.describe("Features C and D: company prep, mock rounds, and weak spots", () 
     await page.getByLabel("Company search").fill("Google");
     await page.getByRole("button", { name: "Search" }).click();
     await expect(page.getByText("Google Interview Console")).toBeVisible();
-    await expect(page.getByText("No curated local dataset yet")).toBeVisible();
+    await expect(page.getByText("No curated local dataset yet").first()).toBeVisible();
 
     await page.getByLabel("Company search").fill("zzzxxy-not-a-company");
     await page.getByRole("button", { name: "Search" }).click();
     await expect(page.getByText("Zzzxxy-not-a-company Interview Console")).toBeVisible();
-    await expect(page.getByText("Generic prep")).toBeVisible();
+    await expect(page.getByText("Generic prep").first()).toBeVisible();
     await assertHealthyApp(page);
   });
 

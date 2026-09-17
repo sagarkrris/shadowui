@@ -1,0 +1,752 @@
+{
+  "contains-duplicate": {
+    "code": "class Solution {\n    public boolean containsDuplicate(int[] nums) {\n        Set<Integer> seen = new HashSet<>(); // history of every value scanned so far\n        for (int value : nums) {\n            // add() fails exactly when value was already seen\n            if (!seen.add(value)) return true;\n        }\n        return false;\n    }\n}",
+    "statement": "Return true when any value appears more than once in the array.",
+    "invariant": "Before each iteration, the set contains every earlier value. A failed insertion therefore proves that the current value equals an earlier one. If every insertion succeeds, all values are distinct.",
+    "complexity": "Expected time O(n) and auxiliary space O(n). HashSet operations are expected O(1).",
+    "example": "Example [2, 1, 3, 1]: value = 2 is added to seen, then 1 and 3 are added. On the next value, 1 is already present, so add(1) returns false and the method returns true.",
+    "tests": "Input\n | Expected\n\n[1,2,3,1]\n | true\n\n[1,2,3,4]\n | false\n\n[]\n | false (no duplicate possible)",
+    "constraints": "Do not compare every pair; that is O(n squared).\nA one-element or empty array has no duplicate.\nSorting can use less auxiliary space but changes the array and costs O(n log n).",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "valid-anagram": {
+    "code": "class Solution {\n    public boolean isAnagram(String s, String t) {\n        // different lengths can never be anagrams\n        if (s.length() != t.length()) return false;\n        int[] count = new int[26]; // net count per letter across both strings\n        for (int i = 0; i < s.length(); i++) {\n            count[s.charAt(i) - 'a']++; // credit letters from s\n            count[t.charAt(i) - 'a']--; // debit letters from t\n        }\n        for (int value : count) {\n            // a nonzero count means the letters didn't cancel out\n            if (value != 0) return false;\n        }\n        return true;\n    }\n}",
+    "statement": "Decide whether two strings contain exactly the same characters with the same multiplicities.",
+    "invariant": "Each slot records count in s minus count in t. All slots are zero exactly when every character occurs equally often in both strings.",
+    "complexity": "Time O(n) and auxiliary space O(1) for the fixed lowercase-English alphabet.",
+    "example": "Example s = \"cat\", t = \"act\": at i = 0, s.charAt(0) is 'c' and t.charAt(0) is 'a', so count['c' - 'a'] becomes 1 and count['a' - 'a'] becomes -1. At i = 1, 'a' adds 1 and 'c' subtracts 1, cancelling both slots; i = 2 does the same for 't'. Every slot ends at 0, so the strings are anagrams.",
+    "tests": "Input\n | Expected\n\ns=\"anagram\", t=\"nagaram\"\n | true\n\ns=\"rat\", t=\"car\"\n | false\n\ns=\"a\", t=\"ab\"\n | false (length mismatch)",
+    "constraints": "Confirm the character set; use a HashMap for arbitrary Unicode code points.\nEqual length alone is not enough.\nSorting works but costs O(n log n).",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "two-sum": {
+    "code": "class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        // value -> index seen so far\n        Map<Integer, Integer> indexByValue = new HashMap<>();\n        for (int i = 0; i < nums.length; i++) {\n            int need = target - nums[i]; // the complement that would complete the pair\n            if (indexByValue.containsKey(need)) {\n                return new int[] {indexByValue.get(need), i};\n            }\n            // record this value only after checking for its complement\n            indexByValue.put(nums[i], i);\n        }\n        return new int[0];\n    }\n}",
+    "statement": "Return indices of two distinct elements whose values add to the target.",
+    "invariant": "When processing index i, the map contains exactly the earlier elements. Finding the complement gives a distinct earlier index whose sum with nums[i] is the target. The promised solution will eventually expose such a pair.",
+    "complexity": "Expected time O(n) and auxiliary space O(n).",
+    "example": "Example nums = [2, 7, 11, 15], target = 9: at i = 0, need = 9 - 2 = 7; 7 is not in the map, so store 2 -> 0. At i = 1, need = 9 - 7 = 2; the map contains 2 -> 0, so return [0, 1].",
+    "tests": "Input\n | Expected\n\nnums=[2,7,11,15], target=9\n | [0,1]\n\nnums=[3,2,4], target=6\n | [1,2]\n\nnums=[3,3], target=6\n | [0,1]",
+    "constraints": "Check before inserting so the same element cannot be used twice.\nDuplicate values are valid when they occur at different indices.\nDo not assume the input is sorted.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "group-anagrams": {
+    "code": "class Solution {\n    public List<List<String>> groupAnagrams(String[] strs) {\n        // signature -> words sharing it\n        Map<String, List<String>> groups = new HashMap<>();\n        for (String s : strs) {\n            int[] count = new int[26];\n            for (char c : s.toCharArray()) count[c - 'a']++; // letter-frequency signature\n            StringBuilder key = new StringBuilder();\n            // '#' avoids digit-boundary ambiguity\n            for (int value : count) key.append('#').append(value);\n            groups.computeIfAbsent(key.toString(), k -> new ArrayList<>()).add(s);\n        }\n        return new ArrayList<>(groups.values());\n    }\n}",
+    "statement": "Group strings that are anagrams of one another.",
+    "invariant": "Two lowercase strings produce the same signature exactly when every letter count matches, which is the definition of being anagrams. The map therefore places precisely the anagrams together.",
+    "complexity": "Time O(total characters) and auxiliary space O(total characters) for the returned groups and keys.",
+    "example": "Example [\"eat\", \"tea\", \"bat\"]: for \"eat\", increment e, a, and t to build key [1,0,0,0,1,...,1]. \"tea\" creates the same key, so it joins the same list; \"bat\" creates a different key and starts another list.",
+    "tests": "Input\n | Expected\n\n[\"eat\",\"tea\",\"tan\",\"ate\",\"nat\",\"bat\"]\n | [[\"eat\",\"tea\",\"ate\"],[\"tan\",\"nat\"],[\"bat\"]] (any grouping order)\n\n[]\n | []\n\n[\"\"]\n | [[\"\"]]",
+    "constraints": "A separator prevents ambiguous keys such as counts 1,11 and 11,1.\nThe empty string has an all-zero signature and groups correctly.\nIf the alphabet is not fixed, sort each string or use a map-based key.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "top-k-frequent-elements": {
+    "code": "class Solution {\n    public int[] topKFrequent(int[] nums, int k) {\n        Map<Integer, Integer> frequency = new HashMap<>();\n        for (int value : nums) frequency.merge(value, 1, Integer::sum);\n \n        // Bucket index = frequency, since frequency can never exceed nums.length.\n        List<Integer>[] buckets = new List[nums.length + 1];\n        for (Map.Entry<Integer, Integer> entry : frequency.entrySet()) {\n            int f = entry.getValue();\n            if (buckets[f] == null) buckets[f] = new ArrayList<>();\n            buckets[f].add(entry.getKey());\n        }\n \n        int[] answer = new int[k];\n        int index = 0;\n        // walk buckets high to low\n        for (int f = buckets.length - 1; f >= 1 && index < k; f--) {\n            if (buckets[f] == null) continue;\n            for (int value : buckets[f]) {\n                answer[index++] = value;\n                if (index == k) break;\n            }\n        }\n        return answer;\n    }\n}",
+    "statement": "Return the k values that occur most often.",
+    "invariant": "Every value is placed in the bucket equal to its exact frequency. Visiting buckets in descending order therefore encounters values from most frequent to least frequent, so the first k are a valid answer.",
+    "complexity": "Time O(n) and auxiliary space O(n).",
+    "example": "Example nums = [1, 1, 1, 2, 2, 3], k = 2: count 1 = 3, 2 = 2, and 3 = 1. Put each value into bucket[count]; scanning buckets from frequency 6 down, take 1 from bucket 3 and 2 from bucket 2.",
+    "tests": "Input\n | Expected\n\nnums=[1,1,1,2,2,3], k=2\n | [1,2]\n\nnums=[1], k=1\n | [1]\n\nAll-unique array with k = length\n | every element, any order",
+    "constraints": "Several values may share one frequency, so each bucket holds a list.\nStop immediately after collecting k values.\nA min-heap is a useful O(n log k) alternative when the frequency range is not bounded by n.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "product-of-array-except-self": {
+    "code": "class Solution {\n    public int[] productExceptSelf(int[] nums) {\n        int[] answer = new int[nums.length];\n        int prefix = 1;\n        for (int i = 0; i < nums.length; i++) {\n            answer[i] = prefix; // product of everything strictly left of i\n            prefix *= nums[i];\n        }\n        int suffix = 1;\n        for (int i = nums.length - 1; i >= 0; i--) {\n            answer[i] *= suffix; // multiply in product of everything strictly right of i\n            suffix *= nums[i];\n        }\n        return answer;\n    }\n}",
+    "statement": "For every index, return the product of all other elements without division.",
+    "invariant": "After the first pass, answer[i] equals the product strictly left of i. During the reverse pass, suffix equals the product strictly right of i. Their product therefore excludes exactly nums[i].",
+    "complexity": "Time O(n). Auxiliary space O(1) excluding the required output array.",
+    "example": "Example nums = [1, 2, 3, 4]: the prefix pass leaves result [1, 1, 2, 6]. The suffix pass starts with suffix = 1; at i = 3, result[3] = 6 * 1 = 6, then suffix becomes 4. At i = 2, result[2] = 2 * 4 = 8, and so on, producing [24, 12, 8, 6].",
+    "tests": "Input\n | Expected\n\n[1,2,3,4]\n | [24,12,8,6]\n\n[-1,1,0,-3,3]\n | [0,0,9,0,0]\n\n[1,2]\n | [2,1]",
+    "constraints": "Update the running product after assigning the current index.\nZeros work naturally; division does not.\nThe empty-product identity is 1 at an array boundary.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "encode-and-decode-strings": {
+    "code": "class Codec {\n    public String encode(List<String> strs) {\n        StringBuilder out = new StringBuilder();\n        // length-prefix each string\n        for (String s : strs) out.append(s.length()).append('#').append(s);\n        return out.toString();\n    }\n \n    public List<String> decode(String encoded) {\n        List<String> result = new ArrayList<>();\n        int i = 0;\n        while (i < encoded.length()) {\n            int separator = i;\n            // find the length prefix's end\n            while (encoded.charAt(separator) != '#') separator++;\n            int length = Integer.parseInt(encoded.substring(i, separator));\n            int start = separator + 1;\n            // read exactly `length` characters\n            result.add(encoded.substring(start, start + length));\n            i = start + length;\n        }\n        return result;\n    }\n}",
+    "statement": "Encode a list of arbitrary strings into one string and decode it without ambiguity.",
+    "invariant": "The decoder first recovers the encoded length and then consumes exactly the original payload, regardless of characters inside it. Advancing to the next prefix reconstructs every item in order.",
+    "complexity": "Time O(total encoded characters) for both operations. The output and decoded list require O(total characters) space.",
+    "example": "Example [\"hello\", \"world\"]: encode hello as \"5#hello\" and world as \"5#world\". During decoding, read digits until '#', parse 5, then consume exactly the next five characters; the delimiter remains safe even if the text contains '#'.",
+    "tests": "Input\n | Expected\n\n[\"lint\",\"code\",\"love\",\"you\"]\n | encode then decode returns the same list\n\n[\"\"]\n | [\"\"]\n\n[\"a#b\"]\n | decodes correctly even though the string itself contains '#', since length-prefixing never relies on '#' as a boundary",
+    "constraints": "Empty strings encode as 0# and must be preserved.\nDo not split on # because the payload may contain #.\nUse a format whose numeric prefix has an unambiguous terminator.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "longest-consecutive-sequence": {
+    "code": "class Solution {\n    public int longestConsecutive(int[] nums) {\n        Set<Integer> values = new HashSet<>();\n        for (int value : nums) values.add(value);\n        int best = 0;\n        for (int value : values) {\n            if (values.contains(value - 1)) continue; // not the start of a run, skip it\n            int length = 1;\n            // extend the run from its true start\n            while (values.contains(value + length)) length++;\n            best = Math.max(best, length);\n        }\n        return best;\n    }\n}",
+    "statement": "Find the length of the longest run of consecutive integer values in an unsorted array.",
+    "invariant": "Every maximal consecutive sequence has one smallest value and only that value passes the start test. The inner walk counts the entire sequence once, so the maximum over starts is the desired length.",
+    "complexity": "Expected time O(n) and auxiliary space O(n). Although nested, the walks collectively visit each distinct value once from a valid start.",
+    "example": "Example [100, 4, 200, 1, 3, 2]: start only at 1 because 0 is absent. Check 1, 2, 3, 4 one by one, giving length 4; values 100 and 200 are also starts but produce length 1.",
+    "tests": "Input\n | Expected\n\n[100,4,200,1,3,2]\n | 4 (sequence 1,2,3,4)\n\n[0,3,7,2,5,8,4,6,0,1]\n | 9\n\n[]\n | 0",
+    "constraints": "Duplicates do not lengthen a sequence because the set removes them.\nStarting a walk from every value degrades to O(n squared) on long runs.\nBe aware of integer overflow if constraints allow Integer.MAX_VALUE.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "valid-palindrome": {
+    "code": "class Solution {\n    public boolean isPalindrome(String s) {\n        int left = 0, right = s.length() - 1;\n        while (left < right) {\n            // skip junk\n            while (left < right && !Character.isLetterOrDigit(s.charAt(left))) left++;\n            while (left < right && !Character.isLetterOrDigit(s.charAt(right))) right--;\n            if (Character.toLowerCase(s.charAt(left)) !=\n                Character.toLowerCase(s.charAt(right))) return false;\n            left++;\n            right--;\n        }\n        return true;\n    }\n}",
+    "statement": "Determine whether the alphanumeric characters form a palindrome when case is ignored.",
+    "invariant": "At every comparison, all meaningful characters outside the pointers have already matched. Skipping ignored characters preserves the normalized sequence. If the pointers cross without a mismatch, that sequence equals its reverse.",
+    "complexity": "Time O(n) and auxiliary space O(1).",
+    "example": "Example \"A man, a plan, a canal: Panama\": left and right move inward while skipping punctuation and spaces. At each comparison, lower-case both characters; every pair matches, so return true.",
+    "tests": "Input\n | Expected\n\n\"A man, a plan, a canal: Panama\"\n | true\n\n\"race a car\"\n | false\n\n\"\"\n | true (empty string is trivially a palindrome)",
+    "constraints": "Use Character helpers unless the problem guarantees ASCII.\nMove both pointers after a successful comparison.\nA string with no alphanumeric characters is a palindrome.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "3sum": {
+    "code": "class Solution {\n    public List<List<Integer>> threeSum(int[] nums) {\n        Arrays.sort(nums); // enables the two-pointer sweep and duplicate skipping below\n        List<List<Integer>> result = new ArrayList<>();\n        for (int i = 0; i < nums.length - 2; i++) {\n            if (i > 0 && nums[i] == nums[i - 1]) continue; // skip duplicate first values\n            int left = i + 1, right = nums.length - 1;\n            while (left < right) {\n                long sum = (long) nums[i] + nums[left] + nums[right];\n                if (sum < 0) left++;\n                else if (sum > 0) right--;\n                else {\n                    result.add(Arrays.asList(nums[i], nums[left], nums[right]));\n                    left++;\n                    right--;\n                    // skip duplicates\n                    while (left < right && nums[left] == nums[left - 1]) left++;\n                    while (left < right && nums[right] == nums[right + 1]) right--;\n                }\n            }\n        }\n        return result;\n    }\n}",
+    "statement": "Return all unique triples whose values sum to zero.",
+    "invariant": "For a fixed first value, pointer movement discards only pairs that cannot reach zero because of sorted order. Thus every feasible pair is considered. Duplicate skipping removes repeated value triples without removing any distinct triple.",
+    "complexity": "Time O(n squared) and auxiliary space O(1) apart from sorting implementation and output.",
+    "example": "Example [-1, 0, 1, 2, -1, -4]: after sorting to [-4, -1, -1, 0, 1, 2], fix -1 at i = 1. Set left = 2 and right = 5; -1 + -1 + 2 = 0, so record [-1, -1, 2] and move past duplicates.",
+    "tests": "Input\n | Expected\n\n[-1,0,1,2,-1,-4]\n | [[-1,-1,2],[-1,0,1]]\n\n[0,1,1]\n | []\n\n[0,0,0]\n | [[0,0,0]]",
+    "constraints": "Skip a repeated first value.\nAfter a match, move both pointers and skip duplicates.\nUse a wider numeric type if constraints can overflow a three-value sum.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "container-with-most-water": {
+    "code": "class Solution {\n    public int maxArea(int[] height) {\n        int left = 0, right = height.length - 1;\n        long best = 0;\n        while (left < right) {\n            long area = (long) (right - left) * Math.min(height[left], height[right]);\n            best = Math.max(best, area);\n            // the shorter side caps area either way\n            if (height[left] <= height[right]) left++;\n            else right--;\n        }\n        return (int) best;\n    }\n}",
+    "statement": "Choose two vertical lines that contain the largest area of water.",
+    "invariant": "When the shorter side is discarded, no pair using it at a smaller width can exceed the current area. Therefore each discarded boundary cannot belong to an unseen better solution, and the maximum encountered is optimal.",
+    "complexity": "Time O(n) and auxiliary space O(1).",
+    "example": "Example heights [1, 8, 6, 2, 5, 4, 8, 3, 7]: at left = 0 and right = 8, area = min(1, 7) * 8 = 8. Move the shorter height, left, because moving the taller side cannot increase the limiting height; later the pair 8 and 7 gives area 49.",
+    "tests": "Input\n | Expected\n\n[1,8,6,2,5,4,8,3,7]\n | 49 (lines at index 1 and 8)\n\n[1,1]\n | 1\n\n[4,3,2,1,4]\n | 16",
+    "constraints": "The limiting height is the minimum, not the maximum.\nMoving both pointers can skip the optimum.\nUse long internally if width times height may overflow int.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "best-time-to-buy-and-sell-stock": {
+    "code": "class Solution {\n    public int maxProfit(int[] prices) {\n        int minPrice = Integer.MAX_VALUE; // cheapest price seen so far\n        int best = 0;\n        for (int price : prices) {\n            best = Math.max(best, price - minPrice); // best profit selling today\n            minPrice = Math.min(minPrice, price);\n        }\n        return best;\n    }\n}",
+    "statement": "Find the maximum profit from one buy followed by one later sale.",
+    "invariant": "The running minimum is the cheapest valid buy before or at the current position. The computed profit is therefore the best trade ending here, and the maximum over all endings is the best single trade.",
+    "complexity": "Time O(n) and auxiliary space O(1).",
+    "example": "For prices [7,1,5,3,6,4], the minimum buy price becomes 1. Profit is 4 at price 5 and 5 at price 6. The final answer is 5; the later price 4 cannot improve it.",
+    "tests": "Input\n | Expected\n\n[7,1,5,3,6,4]\n | 5 (buy at 1, sell at 6)\n\n[7,6,4,3,1]\n | 0 (prices only fall)\n\n[2,4,1]\n | 2",
+    "constraints": "Buying must occur before selling; update order should preserve that interpretation.\nReturn zero when prices only fall.\nDo not add profits from multiple transactions.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "longest-substring-without-repeating-characters": {
+    "code": "class Solution {\n    public int lengthOfLongestSubstring(String s) {\n        Map<Character, Integer> lastSeen = new HashMap<>();\n        int left = 0, best = 0;\n        for (int right = 0; right < s.length(); right++) {\n            char c = s.charAt(right);\n            if (lastSeen.containsKey(c)) {\n                // jump left past the earlier occurrence\n                left = Math.max(left, lastSeen.get(c) + 1);\n            }\n            lastSeen.put(c, right);\n            best = Math.max(best, right - left + 1);\n        }\n        return best;\n    }\n}",
+    "statement": "Find the longest contiguous substring containing no repeated character.",
+    "invariant": "After adjusting left, the window contains no repeated current character, and earlier repetitions were already excluded. Taking the maximum length over every right endpoint considers the longest valid substring.",
+    "complexity": "Time O(n) and auxiliary space O(min(n, alphabet size)).",
+    "example": "Example \"abcabcbb\": right advances through a, b, c. At the next a, the window has a duplicate, so move left past the old a; the valid window becomes \"bca\" and the maximum length remains 3.",
+    "tests": "Input\n | Expected\n\n\"abcabcbb\"\n | 3 (\"abc\")\n\n\"bbbbb\"\n | 1\n\n\"pwwkew\"\n | 3 (\"wke\")\n\n\"\"\n | 0",
+    "constraints": "Never move left backward when a previous occurrence lies outside the window.\nUpdate the last index after using its old value.\nClarify whether Java char units or Unicode code points define a character.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "longest-repeating-character-replacement": {
+    "code": "class Solution {\n    public int characterReplacement(String s, int k) {\n        int[] count = new int[26];\n        // maxCount = historical maximum frequency; it may be stale after shrinking\n        int left = 0, maxCount = 0, best = 0;\n        for (int right = 0; right < s.length(); right++) {\n            maxCount = Math.max(maxCount, ++count[s.charAt(right) - 'A']);\n            // The historical bound limits growth; a stale value cannot create a longer optimum\n            while (right - left + 1 - maxCount > k) {\n                count[s.charAt(left++) - 'A']--;\n            }\n            best = Math.max(best, right - left + 1);\n        }\n        return best;\n    }\n}",
+    "statement": "Find the longest substring that can become one repeated character after at most k replacements.",
+    "invariant": "Any window satisfying size minus maxCount at most k can be converted by replacing all non-majority characters. The possibly stale maxCount can delay shrinking but cannot create a best length that was never feasible when that maximum was established.",
+    "complexity": "Time O(n) and auxiliary space O(1) for the fixed uppercase-English alphabet.",
+    "example": "For \"AABABBA\", k=1, window \"AABA\" has length 4 and maxCount=3, so best=4. Adding B makes length−maxCount=2; remove the left A. maxCount stays at its historical value 3 after shrinking: the new window need not itself be valid, but cannot increase best beyond an already achievable length. The final maximum is 4.",
+    "tests": "Input\n | Expected\n\n\"ABAB\", k=2\n | 4 (replace both A's or both B's)\n\n\"AABABBA\", k=1\n | 4\n\n\"AAAA\", k=2\n | 4 (no replacement needed)",
+    "constraints": "The required replacements equal window length minus the majority count.\nA stale maxCount is intentional in the standard linear solution.\nUse a map when the alphabet is not fixed.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "minimum-window-substring": {
+    "code": "class Solution {\n    public String minWindow(String s, String t) {\n        if (t.isEmpty() || s.length() < t.length()) return \"\";\n        Map<Character, Integer> need = new HashMap<>();\n        for (char c : t.toCharArray()) need.merge(c, 1, Integer::sum);\n \n        Map<Character, Integer> window = new HashMap<>();\n        // distinct characters fully satisfied so far\n        int formed = 0, required = need.size();\n        int left = 0, bestStart = 0, bestLength = Integer.MAX_VALUE;\n        for (int right = 0; right < s.length(); right++) {\n            char c = s.charAt(right);\n            int count = window.merge(c, 1, Integer::sum);\n            if (need.containsKey(c) && count == need.get(c)) formed++;\n \n            while (formed == required) { // window is valid, try to shrink it\n                int length = right - left + 1;\n                if (length < bestLength) {\n                    bestLength = length;\n                    bestStart = left;\n                }\n                char removed = s.charAt(left++);\n                int before = window.get(removed);\n                if (need.containsKey(removed) && before == need.get(removed)) formed--;\n                window.put(removed, before - 1);\n            }\n        }\n        return bestLength == Integer.MAX_VALUE\n            ? \"\" : s.substring(bestStart, bestStart + bestLength);\n    }\n}",
+    "statement": "Return the shortest substring of s containing every character of t with required multiplicity.",
+    "invariant": "The expansion finds every point at which a valid window can end. The inner loop removes every unnecessary leading character, so it examines the minimum valid window for that endpoint. The best among them is globally minimum.",
+    "complexity": "Time O(|s| + |t|) and auxiliary space O(alphabet size). Each pointer moves only forward.",
+    "example": "Example s = \"ADOBECODEBANC\", t = \"ABC\": expand right until the window contains A, B, and C. Once valid, move left while counts still cover t; \"BANC\" is reduced to the minimum valid window \"BANC\".",
+    "tests": "Input\n | Expected\n\ns=\"ADOBECODEBANC\", t=\"ABC\"\n | \"BANC\"\n\ns=\"a\", t=\"a\"\n | \"a\"\n\ns=\"a\", t=\"aa\"\n | \"\" (not enough A's in s)",
+    "constraints": "Counts, not mere membership, matter when t repeats a character.\nReturn the empty string if no covering window exists.\nIncrement formed only when a count reaches its exact requirement, and decrement when it falls below.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "valid-parentheses": {
+    "code": "class Solution {\n    public boolean isValid(String s) {\n        // stack of closing brackets we still owe\n        Deque<Character> expected = new ArrayDeque<>();\n        for (char c : s.toCharArray()) {\n            if (c == '(') expected.push(')');\n            else if (c == '[') expected.push(']');\n            else if (c == '{') expected.push('}');\n            // wrong or unmatched\n            else if (expected.isEmpty() || expected.pop() != c) return false;\n        }\n        return expected.isEmpty();\n    }\n}",
+    "statement": "Check whether every opening bracket is closed by the correct bracket in the correct order.",
+    "invariant": "The stack represents closers required by still-open brackets, with the next required closer on top. Every processed closer must match it. An empty stack at the end means no unmatched opener remains.",
+    "complexity": "Time O(n) and auxiliary space O(n).",
+    "example": "For \"([{}])\", push (, [, {. The first closing bracket is }, which pops {. Then ] pops [, and ) pops (. The stack is empty, so return true.",
+    "tests": "Input\n | Expected\n\n\"()[]{}\"\n | true\n\n\"(]\"\n | false\n\n\"([)]\"\n | false (wrong order even though counts match)\n\n\"\"\n | true",
+    "constraints": "A correct prefix can still end with unmatched openings.\nA closing bracket with an empty stack is invalid.\nPushing expected closers makes the comparison simpler than a mapping at pop time.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "binary-search": {
+    "code": "class Solution {\n  public int search(int[] nums, int target) {\n    int low = 0, high = nums.length - 1;\n    while (low <= high) {\n      int mid = low + (high - low) / 2;\n      if (nums[mid] == target) return mid;\n      if (nums[mid] < target) low = mid + 1; else high = mid - 1;\n    }\n    return -1;\n  }\n}",
+    "statement": "Return an index of target in a nondecreasing sorted integer array, or -1 if absent.",
+    "invariant": "If target exists, a matching index remains in [low, high].",
+    "complexity": "O(log n) time and O(1) auxiliary space: each comparison halves the remaining interval.",
+    "example": "[1, 3, 5], target 5: midpoint 1 has value 3; low becomes 2; midpoint 2 matches; return 2.",
+    "tests": "[1,3,5], 5 → 2; [], 1 → -1; [2,2], 3 → -1",
+    "constraints": "Non-null sorted int array; duplicate targets may return any matching index.",
+    "source": "InterviewIQ canonical binary search reference, 2026-09-17"
+  },
+  "find-minimum-in-rotated-sorted-array": {
+    "code": "class Solution {\n    public int findMin(int[] nums) {\n        int left = 0, right = nums.length - 1;\n        while (left < right) {\n            int mid = left + (right - left) / 2;\n            if (nums[mid] > nums[right]) left = mid + 1; // minimum is strictly after mid\n            else right = mid; // minimum is at mid or before it\n        }\n        return nums[left];\n    }\n}",
+    "statement": "Find the minimum value in a rotated strictly increasing array.",
+    "invariant": "When nums[mid] exceeds nums[right], the sorted order breaks between mid and right, so the minimum is strictly right of mid. Otherwise the segment from mid to right is sorted and mid remains a possible minimum, so right can move to mid.",
+    "complexity": "Time O(log n) and auxiliary space O(1).",
+    "example": "Example [3, 4, 5, 1, 2]: left = 0, mid = 2, right = 4. Because nums[mid] = 5 is greater than nums[right] = 2, the minimum must be right of mid, so set left = mid + 1; the answer is 1.",
+    "tests": "Input\n | Expected\n\n[3,4,5,1,2]\n | 1\n\n[4,5,6,7,0,1,2]\n | 0\n\n[11,13,15,17]\n | 11 (not rotated)",
+    "constraints": "Use right equals mid, not mid minus one, when mid may be the minimum.\nThis logic assumes distinct values; duplicates require a modified rule.\nAn unrotated array still works.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "search-in-rotated-sorted-array": {
+    "code": "class Solution {\n    public int search(int[] nums, int target) {\n        int left = 0, right = nums.length - 1;\n        while (left <= right) {\n            int mid = left + (right - left) / 2;\n            if (nums[mid] == target) return mid;\n            if (nums[left] <= nums[mid]) { // left half [left..mid] is sorted\n                if (nums[left] <= target && target < nums[mid]) right = mid - 1;\n                else left = mid + 1;\n            } else { // right half [mid..right] is sorted instead\n                if (nums[mid] < target && target <= nums[right]) left = mid + 1;\n                else right = mid - 1;\n            }\n        }\n        return -1;\n    }\n}",
+    "statement": "Find a target index in a rotated array of distinct values.",
+    "invariant": "The sorted half has known minimum and maximum values. If the target is inside that range, discarding the other half is safe; otherwise discarding the sorted half is safe. Each step retains any possible target.",
+    "complexity": "Time O(log n) and auxiliary space O(1).",
+    "example": "For [4,5,6,7,0,1,2], target 0: mid=3 has 7; discard the sorted left half. In [4,6], mid=5 has 1; target is in its sorted left half, so right=4. Mid=4 has 0; return 4.",
+    "tests": "Input\n | Expected\n\nnums=[4,5,6,7,0,1,2], target=0\n | 4\n\nnums=[4,5,6,7,0,1,2], target=3\n | -1\n\nnums=[1], target=0\n | -1",
+    "constraints": "Use consistent inclusive boundaries.\nThe distinct-values assumption makes the sorted-half test decisive.\nCheck equality with mid before range logic.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "reverse-linked-list": {
+    "code": "class Solution {\n    public ListNode reverseList(ListNode head) {\n        ListNode previous = null;\n        ListNode current = head;\n        while (current != null) {\n            ListNode next = current.next; // save before overwriting current.next\n            current.next = previous;\n            previous = current;\n            current = next;\n        }\n        return previous;\n    }\n}",
+    "statement": "Reverse a singly linked list and return its new head.",
+    "invariant": "Before each iteration, previous heads the correctly reversed processed prefix and current heads the untouched suffix. One pointer change moves current into the reversed prefix while preserving the suffix via next.",
+    "complexity": "Time O(n) and auxiliary space O(1).",
+    "example": "Example 1 -> 2 -> 3: prev starts null and current starts 1. Save next = 2, point 1.next to prev, then advance prev to 1 and current to 2; repeat until the links become 3 -> 2 -> 1.",
+    "tests": "Input\n | Expected\n\n[1,2,3,4,5]\n | [5,4,3,2,1]\n\n[1,2]\n | [2,1]\n\n[]\n | []",
+    "constraints": "Save next before overwriting current.next.\nThe new tail must point to null, which the initialization supplies.\nNull and one-node lists need no special branch.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "merge-two-sorted-lists": {
+    "code": "class Solution {\n    public ListNode mergeTwoLists(ListNode list1, ListNode list2) {\n        // removes the special case for the very first node\n        ListNode dummy = new ListNode(0);\n        ListNode tail = dummy;\n        while (list1 != null && list2 != null) {\n            if (list1.val <= list2.val) {\n                tail.next = list1;\n                list1 = list1.next;\n            } else {\n                tail.next = list2;\n                list2 = list2.next;\n            }\n            tail = tail.next;\n        }\n        // attach whichever list still has nodes left\n        tail.next = list1 != null ? list1 : list2;\n        return dummy.next;\n    }\n}",
+    "statement": "Merge two sorted linked lists into one sorted list by reusing their nodes.",
+    "invariant": "At each step, tail ends a sorted prefix containing the smallest consumed nodes. Choosing the smaller current head preserves sorted order. Once one list ends, the other remainder is already sorted and no smaller node remains elsewhere.",
+    "complexity": "Time O(m + n) and auxiliary space O(1).",
+    "example": "Example lists 1 -> 4 and 2 -> 3: compare 1 and 2, attach 1; compare 4 and 2, attach 2; compare 4 and 3, attach 3; append the remaining 4 after the loop.",
+    "tests": "Input\n | Expected\n\nlist1=[1,2,4], list2=[1,3,4]\n | [1,1,2,3,4,4]\n\nlist1=[], list2=[]\n | []\n\nlist1=[], list2=[0]\n | [0]",
+    "constraints": "Return dummy.next, not dummy.\nAdvance the source pointer after attaching its node.\nTies may come from either list without affecting sortedness.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "reorder-list": {
+    "code": "class Solution {\n    public void reorderList(ListNode head) {\n        if (head == null || head.next == null) return;\n \n        // Find the middle with slow/fast pointers.\n        ListNode slow = head, fast = head;\n        while (fast.next != null && fast.next.next != null) {\n            slow = slow.next;\n            fast = fast.next.next;\n        }\n \n        // Reverse the second half in place.\n        ListNode second = slow.next;\n        slow.next = null;\n        ListNode previous = null;\n        while (second != null) {\n            ListNode next = second.next;\n            second.next = previous;\n            previous = second;\n            second = next;\n        }\n \n        // Weave the first half and reversed second half together.\n        ListNode first = head;\n        second = previous;\n        while (second != null) {\n            ListNode nextFirst = first.next;\n            ListNode nextSecond = second.next;\n            first.next = second;\n            second.next = nextFirst;\n            first = nextFirst;\n            second = nextSecond;\n        }\n    }\n}",
+    "statement": "Rearrange L0 through Ln into L0, Ln, L1, Ln minus 1, and so on in place.",
+    "invariant": "The split preserves the original order of the first half. Reversal exposes last nodes in the order required by the output. Weaving consumes exactly one node from each sequence, producing the requested alternation without losing nodes.",
+    "complexity": "Time O(n) and auxiliary space O(1).",
+    "example": "Example 1 -> 2 -> 3 -> 4: split into [1,2] and [3,4], reverse the second to [4,3], then weave 1 -> 4 -> 2 -> 3.",
+    "tests": "Input\n | Expected\n\n[1,2,3,4]\n | [1,4,2,3] in place\n\n[1,2,3,4,5]\n | [1,5,2,4,3]\n\n[1]\n | [1] (no change)",
+    "constraints": "Detach the first half before reversing to prevent accidental cycles.\nSave both next pointers before rewiring.\nOdd-length lists leave one extra first-half node in place.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "remove-nth-node-from-end-of-list": {
+    "code": "class Solution {\n    public ListNode removeNthFromEnd(ListNode head, int n) {\n        ListNode dummy = new ListNode(0, head);\n        ListNode slow = dummy, fast = dummy;\n        for (int i = 0; i <= n; i++) fast = fast.next; // open a gap of n+1 nodes\n        // when fast reaches the end, slow sits just before the target\n        while (fast != null) {\n            slow = slow.next;\n            fast = fast.next;\n        }\n        slow.next = slow.next.next; // unlink the target node\n        return dummy.next;\n    }\n}",
+    "statement": "Remove the nth node counted from the end in one pass.",
+    "invariant": "The n-plus-one-node gap is preserved while both pointers advance. When fast is null, slow.next has exactly n nodes from itself through the tail, so slow.next is the nth node from the end.",
+    "complexity": "Time O(n) and auxiliary space O(1).",
+    "example": "For 1→2→3→4→5 with n=2, both pointers start at the dummy node. Advance fast n+1=3 links to node 3. Move both until fast is null: slow reaches node 3. Bypass node 4 and return the dummy head’s next node.",
+    "tests": "Input\n | Expected\n\n[1,2,3,4,5], n=2\n | [1,2,3,5]\n\n[1], n=1\n | [] (list becomes empty)\n\n[1,2], n=2\n | [2] (removing the head)",
+    "constraints": "The dummy node handles removing the original head.\nBe consistent about whether the gap is n or n plus one.\nThe standard problem guarantees that n is valid.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "linked-list-cycle": {
+    "code": "public class Solution {\n    public boolean hasCycle(ListNode head) {\n        ListNode slow = head, fast = head;\n        while (fast != null && fast.next != null) {\n            slow = slow.next;      // moves one node per step\n            fast = fast.next.next; // moves two nodes per step\n            if (slow == fast) return true; // they can only meet if a cycle exists\n        }\n        return false;\n    }\n}",
+    "statement": "Determine whether following next pointers eventually enters a cycle.",
+    "invariant": "In an acyclic list, fast must reach the end. In a cycle, once both pointers enter it, their relative distance changes by one modulo the cycle length each iteration, so it eventually becomes zero.",
+    "complexity": "Time O(n) and auxiliary space O(1).",
+    "example": "For 1→2→3→2, both pointers start at node 1. After one move slow=2 and fast=3; after the next slow=3 and fast=3. Identity equality proves the cycle.",
+    "tests": "Input\n | Expected\n\n3\n | 2->0->-4 with tail pointing back to node index 1 -> true\n\n1\n | 2 with tail pointing back to node index 0 -> true\n\n[1] with no cycle\n | false",
+    "constraints": "Guard both fast and fast.next before taking two steps.\nMeeting at the head initially should not count before movement.\nA self-loop is a valid cycle.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "merge-k-sorted-lists": {
+    "code": "class Solution {\n    public ListNode mergeKLists(ListNode[] lists) {\n        PriorityQueue<ListNode> heap =\n            // orders by node value\n            new PriorityQueue<>((a, b) -> Integer.compare(a.val, b.val));\n        for (ListNode node : lists) {\n            if (node != null) heap.offer(node); // seed with each list's head\n        }\n        ListNode dummy = new ListNode(0);\n        ListNode tail = dummy;\n        while (!heap.isEmpty()) {\n            ListNode node = heap.poll(); // smallest current head across all lists\n            tail.next = node;\n            tail = node;\n            if (node.next != null) heap.offer(node.next); // replace it with its successor\n        }\n        return dummy.next;\n    }\n}",
+    "statement": "Merge k sorted linked lists into one sorted list.",
+    "invariant": "The heap contains the smallest unmerged node from each list. Its minimum is therefore the smallest unmerged node overall. Appending it preserves sorted order, and adding its successor restores the invariant.",
+    "complexity": "Time O(N log k) for N total nodes and auxiliary space O(k).",
+    "example": "Example lists [1,4,5], [1,3,4], [2,6]: the heap initially contains the first node of each list. Remove 1, add its next 4, then remove the next smallest node; each removal adds only that list's successor.",
+    "tests": "Input\n | Expected\n\n[[1,4,5],[1,3,4],[2,6]]\n | [1,1,2,3,4,4,5,6]\n\n[]\n | []\n\n[[]]\n | []",
+    "constraints": "Compare node values safely with Integer.compare instead of subtraction.\nPush only nonnull heads and successors.\nA divide-and-conquer pairwise merge achieves the same asymptotic time with O(log k) recursion depth.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "invert-binary-tree": {
+    "code": "class Solution {\n    public TreeNode invertTree(TreeNode root) {\n        if (root == null) return null;\n        TreeNode left = invertTree(root.left);   // invert left subtree first\n        TreeNode right = invertTree(root.right); // invert right subtree first\n        root.left = right;  // then swap the two already-inverted subtrees\n        root.right = left;\n        return root;\n    }\n}",
+    "statement": "Swap the left and right child of every node and return the root.",
+    "invariant": "By induction, each recursive call correctly inverts its subtree. Swapping the two inverted subtrees at the current node completes the mirror transformation for the current tree.",
+    "complexity": "Time O(n). Auxiliary space O(h) for recursion, where h is tree height and can be n in a skewed tree.",
+    "example": "Example tree 1 with children 2 and 3: at node 1, recursively invert the left and right subtrees, then swap the references. The result has 3 on the left and 2 on the right.",
+    "tests": "Input\n | Expected\n\n[4,2,7,1,3,6,9]\n | [4,7,2,9,6,3,1]\n\n[2,1,3]\n | [2,3,1]\n\n[]\n | [] (null root stays null)",
+    "constraints": "Save one subtree result before overwriting child references.\nNull and leaf nodes already satisfy the base case.\nAn iterative breadth-first solution uses O(width) queue space.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "maximum-depth-of-binary-tree": {
+    "code": "class Solution {\n    public int maxDepth(TreeNode root) {\n        if (root == null) return 0;\n        // deepest child + this node\n        return 1 + Math.max(maxDepth(root.left), maxDepth(root.right));\n    }\n}",
+    "statement": "Return the number of nodes on the longest root-to-leaf path.",
+    "invariant": "The base case is correct for an empty tree. If recursive results are correct for both children, every path from the current node continues through one child, so the longest has length one plus the larger child depth.",
+    "complexity": "Time O(n) and auxiliary space O(h) for recursion.",
+    "example": "Example tree 3 -> 9 and 20 -> 15, 7: depth(9) = 1 and depth(20) = 1 + max(depth(15), depth(7)) = 2. Therefore depth(3) = 1 + max(1, 2) = 3.",
+    "tests": "Input\n | Expected\n\n[3,9,20,null,null,15,7]\n | 3\n\n[1,null,2]\n | 2\n\n[]\n | 0",
+    "constraints": "Clarify whether depth counts nodes or edges; LeetCode counts nodes.\nA skewed tree can overflow the call stack for extreme input.\nBreadth-first search can count levels instead.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "same-tree": {
+    "code": "class Solution {\n    public boolean isSameTree(TreeNode p, TreeNode q) {\n        // both null -> true, only one null -> false\n        if (p == null || q == null) return p == q;\n        return p.val == q.val\n            && isSameTree(p.left, q.left)\n            && isSameTree(p.right, q.right);\n    }\n}",
+    "statement": "Decide whether two binary trees have identical structure and node values.",
+    "invariant": "The null checks establish structural equality at the boundary. For nonnull nodes, equal values plus recursively equal corresponding subtrees are both necessary and sufficient for the two rooted trees to be identical.",
+    "complexity": "Time O(n) over compared nodes and auxiliary space O(h).",
+    "example": "Example trees 1 with children 2 and 3: compare roots, then recursively compare the left pair and right pair. A value mismatch, missing node, or extra node immediately returns false.",
+    "tests": "Input\n | Expected\n\np=[1,2,3], q=[1,2,3]\n | true\n\np=[1,2], q=[1,null,2]\n | false (different shape)\n\np=[], q=[]\n | true",
+    "constraints": "Check nulls before reading values.\nMatching traversal values alone do not guarantee identical structure unless null markers are preserved.\nShort-circuit as soon as one difference is found.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "subtree-of-another-tree": {
+    "code": "class Solution {\n    public boolean isSubtree(TreeNode root, TreeNode subRoot) {\n        if (subRoot == null) return true;\n        if (root == null) return false;\n        return same(root, subRoot)              // try matching right here...\n            || isSubtree(root.left, subRoot)     // ...or search the left subtree...\n            || isSubtree(root.right, subRoot);   // ...or search the right subtree\n    }\n \n    private boolean same(TreeNode a, TreeNode b) { // exact structural + value match\n        if (a == null || b == null) return a == b;\n        return a.val == b.val && same(a.left, b.left) && same(a.right, b.right);\n    }\n}",
+    "statement": "Decide whether subRoot appears as an identical rooted subtree inside root.",
+    "invariant": "The outer DFS visits every possible root of a candidate subtree. The equality helper accepts exactly identical trees. Therefore a true result exists exactly when subRoot occurs somewhere in root.",
+    "complexity": "Worst-case time O(nm) for n root nodes and m subRoot nodes; recursion space O(h root plus h subRoot).",
+    "example": "Example root [3,4,5,1,2] and subRoot [4,1,2]: DFS visits 3, then 4; structural comparison at 4 matches 4, 1, and 2, so return true without comparing unrelated branches.",
+    "tests": "Input\n | Expected\n\nroot=[3,4,5,1,2], subRoot=[4,1,2]\n | true\n\nroot=[3,4,5,1,2,null,null,null,null,0], subRoot=[4,1,2]\n | false (extra node breaks exact match)\n\nsubRoot equal to root itself\n | true",
+    "constraints": "Value equality at the candidate root is not enough; structure must match.\nHandle null inputs deliberately.\nTree serialization with null markers can reduce repeated comparison but requires careful token boundaries.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "lowest-common-ancestor-of-a-binary-search-tree": {
+    "code": "class Solution {\n    public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {\n        TreeNode current = root;\n        while (current != null) {\n            // both smaller\n            if (p.val < current.val && q.val < current.val) current = current.left;\n            // both larger\n            else if (p.val > current.val && q.val > current.val) current = current.right;\n            else return current; // values split here (or match) -- this is the LCA\n        }\n        return null;\n    }\n}",
+    "statement": "Find the lowest node in a BST that is an ancestor of both p and q.",
+    "invariant": "When both targets lie on one side, any common ancestor below the current node must also be on that side, so moving there is safe. At the first split or equality, no lower single child subtree contains both targets.",
+    "complexity": "Time O(h) and auxiliary space O(1).",
+    "example": "Example BST root 6, p = 2, q = 8: both values are less than 6? No—2 is less and 8 is greater, so 6 is the split point and the lowest common ancestor.",
+    "tests": "Input\n | Expected\n\nroot=[6,2,8,0,4,7,9,null,null,3,5], p=2, q=8\n | 6\n\nSame tree, p=2, q=4\n | 2 (q is in p's own subtree)\n\np=q\n | returns that node itself",
+    "constraints": "Use both comparisons before deciding a direction.\nA target may itself be the ancestor.\nThis shortcut depends on the BST property and distinct values.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "binary-tree-level-order-traversal": {
+    "code": "class Solution {\n    public List<List<Integer>> levelOrder(TreeNode root) {\n        List<List<Integer>> result = new ArrayList<>();\n        if (root == null) return result;\n        Queue<TreeNode> queue = new ArrayDeque<>();\n        queue.offer(root);\n        while (!queue.isEmpty()) {\n            int size = queue.size(); // snapshot: exactly the nodes at the current depth\n            List<Integer> level = new ArrayList<>(size);\n            for (int i = 0; i < size; i++) {\n                TreeNode node = queue.poll();\n                level.add(node.val);\n                // queued for the next depth\n                if (node.left != null) queue.offer(node.left);\n                if (node.right != null) queue.offer(node.right);\n            }\n            result.add(level);\n        }\n        return result;\n    }\n}",
+    "statement": "Return node values grouped by depth from left to right.",
+    "invariant": "At the start of each round, the queue contains exactly one depth level. Processing its original size records that level while appending exactly the next level, preserving the invariant.",
+    "complexity": "Time O(n) and auxiliary space O(w), where w is maximum tree width.",
+    "example": "Example tree [3,9,20,null,null,15,7]: the queue first holds [3], then [9,20], then [15,7]. Process exactly the current queue size for each level before enqueuing the next level.",
+    "tests": "Input\n | Expected\n\n[3,9,20,null,null,15,7]\n | [[3],[9,20],[15,7]]\n\n[1]\n | [[1]]\n\n[]\n | []",
+    "constraints": "Do not let a changing queue size control the same level loop.\nPreserve left-before-right insertion for the required order.\nNull root should not produce a level containing null.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "validate-binary-search-tree": {
+    "code": "class Solution {\n    public boolean isValidBST(TreeNode root) {\n        // long avoids INT_MIN/MAX edge overflow\n        return valid(root, Long.MIN_VALUE, Long.MAX_VALUE);\n    }\n \n    private boolean valid(TreeNode node, long lower, long upper) {\n        if (node == null) return true;\n        // violates an ancestor's bound\n        if (node.val <= lower || node.val >= upper) return false;\n        // left subtree must stay below node.val\n        return valid(node.left, lower, node.val)\n            // right subtree must stay above node.val\n            && valid(node.right, node.val, upper);\n    }\n}",
+    "statement": "Check whether every node satisfies the global BST ordering rule.",
+    "invariant": "The bounds describe exactly the values permitted by all ancestors. Accepting every node within its inherited interval proves global ordering, and any BST necessarily satisfies those intervals.",
+    "complexity": "Time O(n) and auxiliary space O(h).",
+    "example": "Example tree 5 with left 3 and right 7: call the left subtree with bounds (-infinity, 5) and the right with (5, infinity). A node equal to or outside its bounds makes the tree invalid.",
+    "tests": "Input\n | Expected\n\n[2,1,3]\n | true\n\n[5,1,4,null,null,3,6]\n | false (4 is less than root 5's right-subtree bound)\n\n[]\n | true (empty tree is valid)",
+    "constraints": "Direct child comparisons miss deeper violations.\nBounds are exclusive because duplicate keys are invalid here.\nUse long bounds so Integer.MIN_VALUE and Integer.MAX_VALUE remain valid node values.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "kth-smallest-element-in-a-bst": {
+    "code": "class Solution {\n    public int kthSmallest(TreeNode root, int k) {\n        Deque<TreeNode> stack = new ArrayDeque<>();\n        TreeNode current = root;\n        while (true) {\n            while (current != null) { // push the whole left spine\n                stack.push(current);\n                current = current.left;\n            }\n            current = stack.pop(); // next node in sorted (inorder) order\n            if (--k == 0) return current.val;\n            current = current.right;\n        }\n    }\n}",
+    "statement": "Return the kth smallest value in a BST.",
+    "invariant": "The stack represents ancestors whose left subtrees are complete but whose nodes are not yet visited. Popping yields the next inorder value, so the kth pop is the kth smallest value.",
+    "complexity": "Time O(h + k) and auxiliary space O(h).",
+    "example": "Example BST [3,1,4,null,2], k = 1: inorder traversal pushes 3 then 1, pops 1 first, so the first smallest value is 1. For k = 2, the next pop is 2.",
+    "tests": "Input\n | Expected\n\n[3,1,4,null,2], k=1\n | 1\n\n[5,3,6,2,4,null,null,1], k=3\n | 3\n\nSingle-node tree, k=1\n | that node's value",
+    "constraints": "Move to the popped node's right child before rebuilding the left spine.\nThe input guarantees a valid k.\nRepeated queries can be accelerated by storing subtree sizes.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "construct-binary-tree-from-preorder-and-inorder-traversal": {
+    "code": "class Solution {\n    private int preorderIndex;\n    // value -> its position in inorder, for O(1) split lookup\n    private Map<Integer, Integer> inorderIndex;\n \n    public TreeNode buildTree(int[] preorder, int[] inorder) {\n        preorderIndex = 0;\n        inorderIndex = new HashMap<>();\n        for (int i = 0; i < inorder.length; i++) inorderIndex.put(inorder[i], i);\n        return build(preorder, 0, inorder.length - 1);\n    }\n \n    private TreeNode build(int[] preorder, int left, int right) {\n        if (left > right) return null;\n        // next unused preorder value is always the current root\n        int value = preorder[preorderIndex++];\n        TreeNode root = new TreeNode(value);\n        // everything left of split is the left subtree, etc.\n        int split = inorderIndex.get(value);\n        root.left = build(preorder, left, split - 1);\n        root.right = build(preorder, split + 1, right);\n        return root;\n    }\n}",
+    "statement": "Reconstruct a binary tree from preorder and inorder traversals with unique values.",
+    "invariant": "The preorder cursor always points to the root of the current inorder interval. The inorder position uniquely partitions that interval. Recursively reconstructing both partitions therefore produces the unique tree consistent with both traversals.",
+    "complexity": "Time O(n) and auxiliary space O(n) for the map plus O(h) recursion.",
+    "example": "Example preorder [3,9,20,15,7], inorder [9,3,15,20,7]: preorder[0] = 3 is the root; split inorder at 3 into [9] and [15,20,7], then recurse on each partition.",
+    "tests": "Input\n | Expected\n\npreorder=[3,9,20,15,7], inorder=[9,3,15,20,7]\n | tree [3,9,20,null,null,15,7]\n\nSingle node preorder=[1], inorder=[1]\n | [1]\n\nEmpty arrays\n | null",
+    "constraints": "Unique values are required for a single index map.\nBuild the left subtree before the right because preorder lists it first.\nUse interval boundaries instead of copying subarrays.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "binary-tree-maximum-path-sum": {
+    "code": "class Solution {\n    private int best;\n \n    public int maxPathSum(TreeNode root) {\n        best = Integer.MIN_VALUE;\n        gain(root);\n        return best;\n    }\n \n    // best downward path starting at node, contributed to parent\n    private int gain(TreeNode node) {\n        if (node == null) return 0;\n        int left = Math.max(0, gain(node.left));   // ignore a negative contribution\n        int right = Math.max(0, gain(node.right));\n        // path bending through both children, checked here only\n        best = Math.max(best, node.val + left + right);\n        // but only one branch can be handed up to the parent\n        return node.val + Math.max(left, right);\n    }\n}",
+    "statement": "Find the maximum sum of any nonempty path in a binary tree, where a node is used at most once.",
+    "invariant": "Every path has a highest node. When that node is processed, the algorithm combines its best nonnegative left and right downward paths, so that path is considered. The returned one-branch gain is the only shape a parent can legally extend.",
+    "complexity": "Time O(n) and auxiliary space O(h).",
+    "example": "Example tree -10 with children 9 and 20, and 20 has 15 and 7: each child returns its best one-sided gain. At 20, use 20 + 15 + 7 = 42 as a complete path candidate while returning 20 + max(15,7) upward.",
+    "tests": "Input\n | Expected\n\n[1,2,3]\n | 6 (path 2->1->3)\n\n[-10,9,20,null,null,15,7]\n | 42 (path 15->20->7)\n\nSingle negative node [-3]\n | -3 (a path must have at least one node)",
+    "constraints": "Initialize the global answer to the smallest integer so all-negative trees work.\nDo not return a path containing both children to the parent; that would branch.\nReset mutable state for each public call.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "serialize-and-deserialize-binary-tree": {
+    "code": "public class Codec {\n    public String serialize(TreeNode root) {\n        StringBuilder out = new StringBuilder();\n        encode(root, out);\n        return out.toString();\n    }\n \n    private void encode(TreeNode node, StringBuilder out) {\n        if (node == null) {\n            // explicit marker so decode knows exactly where branches end\n            out.append(\"#,\");\n            return;\n        }\n        out.append(node.val).append(',');\n        encode(node.left, out);  // preorder: root, then left, then right\n        encode(node.right, out);\n    }\n \n    public TreeNode deserialize(String data) {\n        String[] tokens = data.split(\",\");\n        int[] index = {0}; // mutable cursor shared across recursive calls\n        return decode(tokens, index);\n    }\n \n    private TreeNode decode(String[] tokens, int[] index) {\n        String token = tokens[index[0]++];\n        if (token.equals(\"#\")) return null;\n        TreeNode node = new TreeNode(Integer.parseInt(token));\n        node.left = decode(tokens, index);  // same preorder used during encoding\n        node.right = decode(tokens, index);\n        return node;\n    }\n}",
+    "statement": "Convert a binary tree to a string and reconstruct the identical tree.",
+    "invariant": "The serialization records one token for every node and missing child in deterministic preorder. The decoder consumes that grammar recursively, reconstructing exactly the same value and child boundaries.",
+    "complexity": "Time O(n) for each operation and auxiliary space O(n) for the string, tokens, and recursion.",
+    "example": "Example tree 1 with left 2: serialize as \"1,2,#,#,#\" using # for null children. Deserialization reads 1, recursively reads 2, then consumes the two null markers before returning to the parent.",
+    "tests": "Input\n | Expected\n\n[1,2,3,null,null,4,5]\n | serialize then deserialize returns an identical tree\n\n[]\n | null round-trips to null\n\n[1]\n | [1]",
+    "constraints": "Null markers are essential.\nAvoid repeatedly removing index zero from an ArrayList; use a queue or cursor.\nUse an unambiguous delimiter and parse negative values correctly.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "find-median-from-data-stream": {
+    "code": "class MedianFinder {\n    // max-heap: top is the largest of the small half\n    private final PriorityQueue<Integer> lower =\n        new PriorityQueue<>(Comparator.reverseOrder());\n    // min-heap: smallest of the large half\n    private final PriorityQueue<Integer> upper = new PriorityQueue<>();\n \n    public void addNum(int num) {\n        lower.offer(num);\n        // always route through lower first to keep values correctly split\n        upper.offer(lower.poll());\n        // rebalance if upper grew too big\n        if (upper.size() > lower.size()) lower.offer(upper.poll());\n    }\n \n    public double findMedian() {\n        // odd total: lower holds the extra value\n        if (lower.size() > upper.size()) return lower.peek();\n        // even total: average both middle values\n        return ((long) lower.peek() + upper.peek()) / 2.0;\n    }\n}",
+    "statement": "Support inserting numbers and returning the current median efficiently.",
+    "invariant": "Moving through both heaps guarantees every lower value is no greater than every upper value. Rebalancing keeps their sizes within one, so the middle value or two middle values are exactly at the heap roots.",
+    "complexity": "addNum takes O(log n), findMedian takes O(1), and storage is O(n).",
+    "example": "For the stream [5,15,1,3], the medians after each insertion are 5, 10, 5 and 4. After all four, the lower heap contains {1,3} and the upper heap {5,15}; average the roots 3 and 5.",
+    "tests": "Input\n | Expected\n\naddNum(1), addNum(2)\n | findMedian() = 1.5\n\naddNum(3)\n | findMedian() = 2\n\nSingle value added\n | that value is the median",
+    "constraints": "Use long or double before adding two int heap roots to avoid overflow.\nJava's PriorityQueue is a min-heap; reverse the comparator for lower.\nMaintain both ordering and size invariants after every insertion.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "combination-sum": {
+    "code": "class Solution {\n    public List<List<Integer>> combinationSum(int[] candidates, int target) {\n        Arrays.sort(candidates); // enables the early-exit pruning below\n        List<List<Integer>> result = new ArrayList<>();\n        search(candidates, target, 0, new ArrayList<>(), result);\n        return result;\n    }\n \n    private void search(int[] values, int remaining, int start,\n                        List<Integer> path, List<List<Integer>> result) {\n        if (remaining == 0) {\n            result.add(new ArrayList<>(path));\n            return;\n        }\n        // prune once too big\n        for (int i = start; i < values.length && values[i] <= remaining; i++) {\n            path.add(values[i]);\n            // same index i: reuse allowed\n            search(values, remaining - values[i], i, path, result);\n            // undo the choice before trying the next candidate\n            path.remove(path.size() - 1);\n        }\n    }\n}",
+    "statement": "Return unique combinations of distinct candidate values that sum to target, allowing repeated use.",
+    "invariant": "Every emitted path sums to target because remaining reaches zero. Any valid multiset has a nondecreasing index order that the recursion explores, and no other order is allowed, so duplicates are not generated.",
+    "complexity": "Exponential time in the number of combinations; recursion depth O(target divided by the smallest candidate), excluding output.",
+    "example": "For candidates [2,3,6,7] and target 7, choosing 2 then 2 then 3 totals exactly 7 and records [2,2,3]. Backtrack to explore other choices; choosing 7 records [7]. Keep the same candidate index on recursion to permit reuse.",
+    "tests": "Input\n | Expected\n\ncandidates=[2,3,6,7], target=7\n | [[2,2,3],[7]]\n\ncandidates=[2,3,5], target=8\n | [[2,2,2,2],[2,3,3],[3,5]]\n\ncandidates=[2], target=1\n | [] (no combination reaches 1)",
+    "constraints": "Reuse requires recursing with i, not i plus one.\nBacktracking must remove the last choice.\nSorting enables early pruning and assumes positive candidates.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "word-search": {
+    "code": "class Solution {\n    public boolean exist(char[][] board, String word) {\n        for (int r = 0; r < board.length; r++) {\n            for (int c = 0; c < board[0].length; c++) {\n                if (dfs(board, word, r, c, 0)) return true; // try every starting cell\n            }\n        }\n        return false;\n    }\n \n    private boolean dfs(char[][] board, String word, int r, int c, int i) {\n        if (i == word.length()) return true; // matched every character\n        if (r < 0 || r == board.length || c < 0 || c == board[0].length\n                || board[r][c] != word.charAt(i)) return false;\n        char saved = board[r][c];\n        board[r][c] = '#'; // mark as visited in place, no extra memory needed\n        boolean found = dfs(board, word, r + 1, c, i + 1)\n            || dfs(board, word, r - 1, c, i + 1)\n            || dfs(board, word, r, c + 1, i + 1)\n            || dfs(board, word, r, c - 1, i + 1);\n        // restore before returning, whether this path succeeded or not\n        board[r][c] = saved;\n        return found;\n    }\n}",
+    "statement": "Determine whether a word can be formed by adjacent horizontal or vertical cells without reusing a cell.",
+    "invariant": "DFS explores every legal path with the required prefix. Temporary marking enforces no reuse within a path, and restoration keeps independent paths available. Thus success occurs exactly when a full matching path exists.",
+    "complexity": "Worst-case time O(mn times 3 to the L) for word length L; recursion space O(L).",
+    "example": "Example board with word \"ABCCED\": start at A, mark it visited, and try each neighbor. The path A -> B -> C -> C -> E -> D matches; restore each cell while backtracking so other starts can reuse it.",
+    "tests": "Input\n | Expected\n\nboard=[[\"A\",\"B\",\"C\"],[\"S\",\"F\",\"C\"],[\"A\",\"D\",\"E\"]], word=\"ABCCED\"\n | true\n\nSame board, word=\"SEE\"\n | true\n\nSame board, word=\"ABCB\"\n | false (would need to reuse a cell)",
+    "constraints": "Restore the cell even when a recursive branch succeeds; compute the result before returning.\nThe branching factor is at most three after the first step because the previous cell is marked.\nCheck empty dimensions if the platform does not guarantee a nonempty board.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "implement-trie-prefix-tree": {
+    "code": "class Trie {\n    private static class TrieNode {\n        TrieNode[] next = new TrieNode[26]; // one slot per lowercase letter\n        boolean terminal; // true if a word ends exactly here\n    }\n \n    private final TrieNode root = new TrieNode();\n \n    public void insert(String word) {\n        TrieNode node = root;\n        for (char c : word.toCharArray()) {\n            int index = c - 'a';\n            if (node.next[index] == null) node.next[index] = new TrieNode();\n            node = node.next[index];\n        }\n        node.terminal = true;\n    }\n \n    public boolean search(String word) {\n        TrieNode node = find(word);\n        return node != null && node.terminal; // path exists AND ends a word\n    }\n \n    public boolean startsWith(String prefix) {\n        return find(prefix) != null; // path existing is enough, no terminal check\n    }\n \n    private TrieNode find(String text) {\n        TrieNode node = root;\n        for (char c : text.toCharArray()) {\n            node = node.next[c - 'a'];\n            if (node == null) return null;\n        }\n        return node;\n    }\n}",
+    "statement": "Implement insert, exact-word search, and prefix search for lowercase words.",
+    "invariant": "Each stored word creates a root-to-node path labeled by its characters, and terminal marks its final node. Following a query's characters therefore proves prefix existence; the terminal flag additionally proves exact-word existence.",
+    "complexity": "Each operation takes O(L) time for word length L. Space is O(total inserted characters) in the worst case.",
+    "example": "Example insert(\"cat\"): create or follow nodes c, a, and t, then mark t as a word end. startsWith(\"ca\") follows c and a successfully, even though a is not itself a complete word.",
+    "tests": "Input\n | Expected\n\ninsert(\"apple\"); search(\"apple\")\n | true; search(\"app\") -> false; startsWith(\"app\") -> true\n\nEmpty trie, search(\"a\")\n | false\n\ninsert(\"apple\"); search(\"app\")\n | false (prefix is not a stored word)",
+    "constraints": "A path can represent a prefix without representing a complete word.\nThe root may represent the empty prefix.\nUse a map instead of a 26-array for large or sparse alphabets.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "design-add-and-search-words-data-structure": {
+    "code": "class WordDictionary {\n    private static class TrieNode {\n        TrieNode[] next = new TrieNode[26];\n        boolean terminal;\n    }\n \n    private final TrieNode root = new TrieNode();\n \n    public void addWord(String word) {\n        TrieNode node = root;\n        for (char c : word.toCharArray()) {\n            int index = c - 'a';\n            if (node.next[index] == null) node.next[index] = new TrieNode();\n            node = node.next[index];\n        }\n        node.terminal = true;\n    }\n \n    public boolean search(String word) {\n        return search(word, 0, root);\n    }\n \n    private boolean search(String word, int i, TrieNode node) {\n        if (i == word.length()) return node.terminal;\n        char c = word.charAt(i);\n        if (c != '.') {\n            TrieNode child = node.next[c - 'a'];\n            return child != null && search(word, i + 1, child);\n        }\n        for (TrieNode child : node.next) { // '.' tries every possible branch\n            if (child != null && search(word, i + 1, child)) return true;\n        }\n        return false;\n    }\n}",
+    "statement": "Store words and search patterns where a dot matches any single letter.",
+    "invariant": "Literal steps preserve the only possible match. A wildcard enumerates all 26 possible next letters represented in the trie. Therefore the DFS explores exactly the stored words compatible with the entire pattern.",
+    "complexity": "Insert is O(L). Search is O(L) without wildcards and worst-case O(26 to the number of dots times L); recursion space O(L).",
+    "example": "Example words [\"bad\", \"dad\", \"mad\"] and search \".ad\": at index 0, '.' tries each child; the 'a' and 'd' edges then match, so any complete branch returns true.",
+    "tests": "Input\n | Expected\n\naddWord(\"bad\"); addWord(\"dad\"); addWord(\"mad\"); search(\"pad\")\n | false; search(\".ad\") -> true; search(\"b..\") -> true\n\nsearch(\".\") on an empty trie\n | false\n\naddWord(\"bad\"); search(\"b..d\")\n | false (length differs)",
+    "constraints": "A wildcard matches exactly one character, not zero or many.\nAt the end, require terminal rather than merely a valid prefix.\nPass the pattern index instead of allocating substrings.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "word-search-ii": {
+    "code": "class Solution {\n    private static class TrieNode {\n        TrieNode[] next = new TrieNode[26];\n        String word; // non-null exactly at nodes where a dictionary word ends\n    }\n \n    public List<String> findWords(char[][] board, String[] words) {\n        TrieNode root = new TrieNode();\n        for (String word : words) { // build one trie of every word up front\n            TrieNode node = root;\n            for (char c : word.toCharArray()) {\n                int i = c - 'a';\n                if (node.next[i] == null) node.next[i] = new TrieNode();\n                node = node.next[i];\n            }\n            node.word = word;\n        }\n \n        List<String> result = new ArrayList<>();\n        for (int r = 0; r < board.length; r++) {\n            for (int c = 0; c < board[0].length; c++) dfs(board, r, c, root, result);\n        }\n        return result;\n    }\n \n    private void dfs(char[][] board, int r, int c, TrieNode node, List<String> out) {\n        if (r < 0 || r == board.length || c < 0 || c == board[0].length\n                || board[r][c] == '#') return;\n        char letter = board[r][c];\n        TrieNode child = node.next[letter - 'a'];\n        if (child == null) return; // no word in the trie continues this way\n        if (child.word != null) {\n            out.add(child.word);\n            child.word = null; // avoid adding the same word twice via a different path\n        }\n        board[r][c] = '#'; // mark visited for this DFS branch\n        dfs(board, r + 1, c, child, out);\n        dfs(board, r - 1, c, child, out);\n        dfs(board, r, c + 1, child, out);\n        dfs(board, r, c - 1, child, out);\n        board[r][c] = letter; // restore for other starting points\n    }\n}",
+    "statement": "Find all dictionary words that can be formed on a board without reusing cells in one word.",
+    "invariant": "Every explored path is both a legal board path and a dictionary prefix. Reaching a terminal node proves a full word. Any board-realizable dictionary word has all its prefixes in the trie, so its path is never pruned before discovery.",
+    "complexity": "Building the trie takes O(total word characters). Search is bounded by board paths that match trie prefixes; worst case is exponential in maximum word length. Space is O(trie size plus recursion depth).",
+    "example": "Example board [o,a,a,n / e,t,a,e / i,h,k,r / i,f,l,v] and words [\"oath\", \"eat\"]: the trie prunes a DFS as soon as a prefix is absent. When a trie node stores a word at h or t, add it and clear the stored word to avoid duplicates.",
+    "tests": "Input\n | Expected\n\nboard=[[\"o\",\"a\",\"a\",\"n\"],[\"e\",\"t\",\"a\",\"e\"],[\"i\",\"h\",\"k\",\"r\"],[\"i\",\"f\",\"l\",\"v\"]], words=[\"oath\",\"pea\",\"eat\",\"rain\"]\n | [\"eat\",\"oath\"]\n\nwords with no matches\n | []\n\nA single-letter word matching a board cell\n | returned if present",
+    "constraints": "Clear the stored word after emission to avoid duplicates.\nRestore marked cells after exploring.\nPruning exhausted trie leaves can improve practical performance but must not remove shared prefixes.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "number-of-islands": {
+    "code": "class Solution {\n    public int numIslands(char[][] grid) {\n        int islands = 0;\n        for (int r = 0; r < grid.length; r++) {\n            for (int c = 0; c < grid[0].length; c++) {\n                if (grid[r][c] == '1') {\n                    islands++;\n                    // sink the whole connected island so it isn't counted again\n                    flood(grid, r, c);\n                }\n            }\n        }\n        return islands;\n    }\n \n    private void flood(char[][] grid, int r, int c) {\n        if (r < 0 || r == grid.length || c < 0 || c == grid[0].length\n                || grid[r][c] != '1') return;\n        grid[r][c] = '0'; // mark visited in place (doubles as the visited check above)\n        flood(grid, r + 1, c);\n        flood(grid, r - 1, c);\n        flood(grid, r, c + 1);\n        flood(grid, r, c - 1);\n    }\n}",
+    "statement": "Count connected groups of land cells joined horizontally or vertically.",
+    "invariant": "Flood fill visits exactly the cells in the starting land component. Marking them prevents later recounting. Every island has a first cell in the outer scan, so every component is counted once.",
+    "complexity": "Time O(mn). Recursion space O(mn) in the worst case, or O(mn) queue space with BFS.",
+    "example": "Example grid with one island: start at an unvisited land cell, mark it water, and recursively visit its four neighbors. Every connected land cell is consumed once, so the outer loop counts that component only once.",
+    "tests": "Input\n | Expected\n\ngrid with one connected block of 1's surrounded by 0's\n | 1\n\nAll-zero grid\n | 0\n\nGrid with 3 separate diagonal 1's (not 4-directionally connected)\n | 3",
+    "constraints": "Use four-direction adjacency, not diagonals.\nMark when discovered, before recursive expansion, to prevent cycles.\nMutating the grid is acceptable only when the contract allows it.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "clone-graph": {
+    "code": "class Solution {\n    public Node cloneGraph(Node node) {\n        return clone(node, new HashMap<>());\n    }\n \n    private Node clone(Node node, Map<Node, Node> copies) {\n        if (node == null) return null;\n        // already cloned, avoid infinite recursion\n        if (copies.containsKey(node)) return copies.get(node);\n        Node copy = new Node(node.val);\n        // register before recursing into neighbors, in case of a cycle\n        copies.put(node, copy);\n        for (Node neighbor : node.neighbors) {\n            copy.neighbors.add(clone(neighbor, copies));\n        }\n        return copy;\n    }\n}",
+    "statement": "Create a deep copy of a connected undirected graph.",
+    "invariant": "The map guarantees exactly one clone per original node and terminates cycles. For every original edge, the recursion appends the corresponding cloned neighbor, so values and adjacency are preserved without sharing original nodes.",
+    "complexity": "Time O(V + E) and auxiliary space O(V) plus recursion depth.",
+    "example": "Example graph 1 connected to 2 and 4: create clone(1) and put original 1 in the map before visiting neighbors. When recursion sees 1 again, return the stored clone instead of recursing forever.",
+    "tests": "Input\n | Expected\n\nA 3-node cycle 1-2-3-1\n | a cloned graph with the same structure, different node objects\n\nSingle node with a self-loop\n | one cloned node pointing to itself\n\nEmpty graph (null input)\n | null",
+    "constraints": "Insert the clone into the map before visiting neighbors.\nDo not copy the original neighbor list reference.\nNode values need not be unique, so map by object identity.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "pacific-atlantic-water-flow": {
+    "code": "class Solution {\n    public List<List<Integer>> pacificAtlantic(int[][] heights) {\n        int rows = heights.length, cols = heights[0].length;\n        boolean[][] pacific = new boolean[rows][cols];\n        boolean[][] atlantic = new boolean[rows][cols];\n        for (int r = 0; r < rows; r++) { // start DFS from every border cell of each ocean\n            dfs(heights, r, 0, pacific);\n            dfs(heights, r, cols - 1, atlantic);\n        }\n        for (int c = 0; c < cols; c++) {\n            dfs(heights, 0, c, pacific);\n            dfs(heights, rows - 1, c, atlantic);\n        }\n        List<List<Integer>> result = new ArrayList<>();\n        for (int r = 0; r < rows; r++) {\n            for (int c = 0; c < cols; c++) {\n                // reachable from both\n                if (pacific[r][c] && atlantic[r][c]) result.add(Arrays.asList(r, c));\n            }\n        }\n        return result;\n    }\n \n    private void dfs(int[][] h, int r, int c, boolean[][] seen) {\n        if (seen[r][c]) return;\n        seen[r][c] = true;\n        int[][] directions = {{1,0},{-1,0},{0,1},{0,-1}};\n        for (int[] d : directions) {\n            int nr = r + d[0], nc = c + d[1];\n            if (nr >= 0 && nr < h.length && nc >= 0 && nc < h[0].length\n                    // flow backward: only to same/higher ground\n                    && !seen[nr][nc] && h[nr][nc] >= h[r][c]) {\n                dfs(h, nr, nc, seen);\n            }\n        }\n    }\n}",
+    "statement": "Return cells from which water can flow downhill or level to both oceans.",
+    "invariant": "A reversed traversal reaches a cell exactly when that cell has a nonincreasing path to the ocean in the original graph. Intersecting the two reachable sets therefore yields exactly the cells that flow to both oceans.",
+    "complexity": "Time O(mn) and auxiliary space O(mn).",
+    "example": "Example heights where cell (0,0) reaches the Pacific and (2,2) reaches the Atlantic: start BFS/DFS from every Pacific-edge cell and every Atlantic-edge cell, moving to neighbors with height >= current. The intersection contains cells reachable from both oceans.",
+    "tests": "Input\n | Expected\n\nA 3x3 grid where the top-left corner reaches the Pacific and bottom-right reaches the Atlantic by default\n | at least those two corners appear in the result\n\nA flat grid (all equal heights)\n | every border cell reaches both oceans, so water can flow anywhere from any border cell inward\n\n[[1]]\n | [[0,0]]",
+    "constraints": "Reverse movement requires next height greater than or equal to current height.\nCorners may be seeded by both oceans; visited checks prevent duplicate work.\nStart from borders, not from every interior cell.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "course-schedule": {
+    "code": "class Solution {\n    public boolean canFinish(int numCourses, int[][] prerequisites) {\n        List<Integer>[] graph = new List[numCourses];\n        for (int i = 0; i < numCourses; i++) graph[i] = new ArrayList<>();\n        int[] indegree = new int[numCourses];\n        for (int[] edge : prerequisites) {\n            graph[edge[1]].add(edge[0]); // edge[1] must be taken before edge[0]\n            indegree[edge[0]]++;\n        }\n        Queue<Integer> queue = new ArrayDeque<>();\n        // no prerequisites\n        for (int i = 0; i < numCourses; i++) if (indegree[i] == 0) queue.offer(i);\n        int completed = 0;\n        while (!queue.isEmpty()) {\n            int course = queue.poll();\n            completed++;\n            for (int next : graph[course]) {\n                // unlocked once all prereqs are done\n                if (--indegree[next] == 0) queue.offer(next);\n            }\n        }\n        // anything stuck in a cycle never reaches indegree 0\n        return completed == numCourses;\n    }\n}",
+    "statement": "Decide whether all courses can be completed given prerequisite edges.",
+    "invariant": "Only courses with no unmet prerequisite enter the queue, so removal order is valid. If all vertices are removed, it is a topological ordering. A remaining vertex implies a directed cycle prevents every remaining indegree from reaching zero.",
+    "complexity": "Time O(V + E) and auxiliary space O(V + E).",
+    "example": "Example prerequisites [[1,0]]: indegree[1] becomes 1 and 0 -> 1 is added. Queue 0, remove its edge, reduce indegree[1] to 0, enqueue 1, and process both courses; processed count equals 2, so scheduling is possible.",
+    "tests": "Input\n | Expected\n\nnumCourses=2, prerequisites=[[1,0]]\n | true\n\nnumCourses=2, prerequisites=[[1,0],[0,1]]\n | false (cycle)\n\nnumCourses=1, prerequisites=[]\n | true",
+    "constraints": "Orient edges prerequisite to course when using indegree this way.\nDisconnected courses must also be seeded when indegree is zero.\nA self-dependency is a cycle.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "graph-valid-tree": {
+    "code": "class Solution {\n    public boolean validTree(int n, int[][] edges) {\n        if (edges.length != n - 1) return false; // a tree has exactly n-1 edges\n        int[] parent = new int[n];\n        int[] size = new int[n];\n        for (int i = 0; i < n; i++) { parent[i] = i; size[i] = 1; }\n        for (int[] edge : edges) {\n            int a = find(parent, edge[0]);\n            int b = find(parent, edge[1]);\n            if (a == b) return false; // already connected -> this edge creates a cycle\n            // union by size keeps trees shallow\n            if (size[a] < size[b]) { int t = a; a = b; b = t; }\n            parent[b] = a;\n            size[a] += size[b];\n        }\n        return true;\n    }\n \n    private int find(int[] parent, int x) {\n        while (x != parent[x]) {\n            parent[x] = parent[parent[x]]; // path halving keeps future finds fast\n            x = parent[x];\n        }\n        return x;\n    }\n}",
+    "statement": "Determine whether n vertices and undirected edges form one tree.",
+    "invariant": "Successful unions over n minus one edges reduce n components to one. A failed union proves a cycle. Thus accepting means connected and acyclic, exactly the definition of a tree.",
+    "complexity": "Time O(n plus E alpha(n)), effectively linear, and auxiliary space O(n).",
+    "example": "For n=4 and edges [[0,1],[1,2],[2,0]], the n−1 edge-count check passes. The first two unions connect 0,1,2; the last edge has equal roots and proves a cycle. Node 3 is also disconnected, so this is not a tree.",
+    "tests": "Input\n | Expected\n\nn=5, edges=[[0,1],[0,2],[0,3],[1,4]]\n | true\n\nn=5, edges=[[0,1],[1,2],[2,3],[1,3],[1,4]]\n | false (cycle from the extra edge 1-3)\n\nn=1, edges=[]\n | true (a single node is trivially a tree)",
+    "constraints": "Checking only n minus one edges is insufficient without cycle or connectivity reasoning.\nPath compression and union by size keep operations near constant.\nHandle n equal to one with zero edges.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "number-of-connected-components-in-an-undirected-graph": {
+    "code": "class Solution {\n    public int countComponents(int n, int[][] edges) {\n        int[] parent = new int[n];\n        int[] size = new int[n];\n        for (int i = 0; i < n; i++) { parent[i] = i; size[i] = 1; }\n        int components = n; // starts as if every node is its own component\n        for (int[] edge : edges) {\n            int a = find(parent, edge[0]);\n            int b = find(parent, edge[1]);\n            if (a == b) continue; // already merged, no change in component count\n            if (size[a] < size[b]) { int t = a; a = b; b = t; }\n            parent[b] = a;\n            size[a] += size[b];\n            components--; // two components just merged into one\n        }\n        return components;\n    }\n \n    private int find(int[] parent, int x) {\n        if (parent[x] != x) parent[x] = find(parent, parent[x]); // full path compression\n        return parent[x];\n    }\n}",
+    "statement": "Count connected components in an undirected graph.",
+    "invariant": "Union-find maintains exactly the connectivity relation induced by processed edges. Merging distinct sets corresponds to connecting two components, so the running count remains the number of components after every edge.",
+    "complexity": "Time O(n plus E alpha(n)) and auxiliary space O(n).",
+    "example": "Example n = 5 and edges [[0,1],[1,2],[3,4]]: union the first two edges into one component and the last edge into another. Start with count 5 and decrement on each successful union, ending at 2 components.",
+    "tests": "Input\n | Expected\n\nn=5, edges=[[0,1],[1,2],[3,4]]\n | 2 components\n\nn=5, edges=[]\n | 5 components (all isolated)\n\nn=5, edges connecting every pair\n | 1 component",
+    "constraints": "Do not decrement for an edge whose endpoints already share a root.\nIsolated vertices remain singleton components.\nUse path compression together with union by size or rank.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "alien-dictionary": {
+    "code": "class Solution {\n    public String foreignDictionary(String[] words) {\n        Map<Character, Set<Character>> graph = new HashMap<>();\n        Map<Character, Integer> indegree = new HashMap<>();\n        for (String word : words) {\n            for (char c : word.toCharArray()) {\n                graph.computeIfAbsent(c, k -> new HashSet<>());\n                indegree.putIfAbsent(c, 0);\n            }\n        }\n        // compare each adjacent pair of words\n        for (int i = 0; i + 1 < words.length; i++) {\n            String first = words[i], second = words[i + 1];\n            int limit = Math.min(first.length(), second.length());\n            int j = 0;\n            // find first difference\n            while (j < limit && first.charAt(j) == second.charAt(j)) j++;\n            if (j == limit) {\n                // longer word can't come first\n                if (first.length() > second.length()) return \"\";\n                continue;\n            }\n            // this is the only valid ordering clue\n            char from = first.charAt(j), to = second.charAt(j);\n            if (graph.get(from).add(to)) indegree.put(to, indegree.get(to) + 1);\n        }\n \n        Queue<Character> queue = new ArrayDeque<>();\n        for (char c : indegree.keySet()) if (indegree.get(c) == 0) queue.offer(c);\n        StringBuilder order = new StringBuilder();\n        while (!queue.isEmpty()) {\n            char c = queue.poll();\n            order.append(c);\n            for (char next : graph.get(c)) {\n                indegree.put(next, indegree.get(next) - 1);\n                if (indegree.get(next) == 0) queue.offer(next);\n            }\n        }\n        // shorter means a cycle existed\n        return order.length() == indegree.size() ? order.toString() : \"\";\n    }\n}",
+    "statement": "Infer a valid character order from words sorted according to an unknown alphabet, or return empty when impossible.",
+    "invariant": "Each adjacent comparison contributes exactly the precedence required by lexicographic order. A topological ordering satisfies every constraint. If no full ordering exists, a cycle makes the dictionary inconsistent.",
+    "complexity": "Time O(total input characters plus V plus E) and auxiliary space O(V + E).",
+    "example": "Example alien words [\"wrt\", \"wrf\", \"er\", \"ett\", \"rftt\"]: compare adjacent words; the first difference between wrt and wrf says t < f. Add that directed constraint and topologically remove zero-indegree letters to build \"wertf\".",
+    "tests": "Input\n | Expected\n\nwords=[\"wrt\",\"wrf\",\"er\",\"ett\",\"rftt\"]\n | \"wertf\"\n\nwords=[\"z\",\"x\"]\n | \"zx\"\n\nwords=[\"z\",\"x\",\"z\"]\n | \"\" (contradiction: z would need to come both before and after x)",
+    "constraints": "A word appearing before its own strict prefix is invalid.\nStop after the first differing character; later positions imply nothing.\nDeduplicate edges so indegree is not incremented twice.\nInclude characters that have no edges.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "climbing-stairs": {
+    "code": "class Solution {\n    public int climbStairs(int n) {\n        int oneStepBack = 1, twoStepsBack = 1; // ways to reach the previous two steps\n        for (int i = 2; i <= n; i++) {\n            int current = oneStepBack + twoStepsBack; // arrive via a 1-step or a 2-step\n            twoStepsBack = oneStepBack;\n            oneStepBack = current;\n        }\n        return oneStepBack;\n    }\n}",
+    "statement": "Count ways to reach step n using jumps of one or two.",
+    "invariant": "Every route ends with one of the two allowed jump sizes, and those route sets are disjoint.",
+    "complexity": "Time O(n), auxiliary space O(1).",
+    "example": "Example n = 5: dp[0] = 1 and dp[1] = 1. At i = 2, dp[2] = dp[1] + dp[0] = 2; each later step adds the number of ways to reach the previous two stair positions.",
+    "tests": "Input\n | Expected\n\nn=2\n | 2\n\nn=3\n | 3\n\nn=5\n | 8 (Fibonacci-like growth)",
+    "constraints": "Define step zero as one way.\nAvoid exponential recursion.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "house-robber": {
+    "code": "class Solution {\n    public int rob(int[] nums) {\n        int skipped = 0, taken = 0; // best total not robbing / robbing the previous house\n        for (int money : nums) {\n            // skip this house, or rob it using `skipped`\n            int current = Math.max(taken, skipped + money);\n            skipped = taken;\n            taken = current;\n        }\n        return taken;\n    }\n}",
+    "statement": "Maximize money robbed from nonadjacent houses.",
+    "invariant": "The recurrence enumerates the only two legal decisions and each smaller prefix is optimal by induction.",
+    "complexity": "Time O(n), auxiliary space O(1).",
+    "example": "Example [2,7,9,3,1]: at house 2, best = 2; at 7, best = 7; at 9, choose max(7, 2 + 9) = 11. Continue with take = previousBest + current and skip = best to finish at 12.",
+    "tests": "Input\n | Expected\n\n[1,2,3,1]\n | 4 (rob houses at values 1 and 3)\n\n[2,7,9,3,1]\n | 12\n\n[5]\n | 5",
+    "constraints": "Initialize an empty prefix as zero.\nDo not read an already updated adjacent state.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "house-robber-ii": {
+    "code": "class Solution {\n    public int rob(int[] nums) {\n        if (nums.length == 1) return nums[0];\n        // First/last houses are adjacent in a circle, so run the linear version twice,\n        // each time excluding one end, and take the better result.\n        return Math.max(robRange(nums, 0, nums.length - 2),\n                         robRange(nums, 1, nums.length - 1));\n    }\n \n    private int robRange(int[] nums, int start, int end) {\n        int skipped = 0, taken = 0;\n        for (int i = start; i <= end; i++) {\n            int current = Math.max(taken, skipped + nums[i]);\n            skipped = taken;\n            taken = current;\n        }\n        return taken;\n    }\n}",
+    "statement": "Rob the maximum amount from houses arranged in a circle.",
+    "invariant": "Every circular solution belongs to one of the two endpoint-exclusion cases, each solved optimally by House Robber DP.",
+    "complexity": "Time O(n), auxiliary space O(1).",
+    "example": "Example circular houses [2,3,2]: solve two cases—exclude the first house ([3,2] gives 3) and exclude the last ([2,3] gives 3). The maximum of the two cases is 3.",
+    "tests": "Input\n | Expected\n\n[2,3,2]\n | 3 (robbing both ends isn't allowed since they're adjacent in the circle)\n\n[1,2,3,1]\n | 4\n\n[1,2,3]\n | 3",
+    "constraints": "Special-case one house.\nUse consistent inclusive range bounds.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "longest-palindromic-substring": {
+    "code": "class Solution {\n    public String longestPalindrome(String s) {\n        int start = 0, bestLength = 0;\n        for (int center = 0; center < s.length(); center++) {\n            int oddLength = expand(s, center, center);       // odd-length palindromes\n            int evenLength = expand(s, center, center + 1);  // even-length palindromes\n            int length = Math.max(oddLength, evenLength);\n            if (length > bestLength) {\n                bestLength = length;\n                start = center - (length - 1) / 2;\n            }\n        }\n        return s.substring(start, start + bestLength);\n    }\n \n    private int expand(String s, int left, int right) {\n        while (left >= 0 && right < s.length() && s.charAt(left) == s.charAt(right)) {\n            left--;\n            right++;\n        }\n        return right - left - 1;\n    }\n}",
+    "statement": "Return the longest palindromic substring.",
+    "invariant": "A palindrome's center is uniquely determined by its own symmetry point, so no palindrome can be missed by checking every possible center exactly once.",
+    "complexity": "Time O(n squared), auxiliary space O(1).",
+    "example": "Example \"babad\": expand around center b/a/b to get \"bab\"; even and odd centers are both checked. Keep the longest range found while equal characters expand outward.",
+    "tests": "Input\n | Expected\n\n\"babad\"\n | \"bab\" or \"aba\" (either is a valid longest palindrome)\n\n\"cbbd\"\n | \"bb\"\n\n\"a\"\n | \"a\"",
+    "constraints": "Check both center types.\nBe careful converting length to start.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "palindromic-substrings": {
+    "code": "class Solution {\n    public int countSubstrings(String s) {\n        int total = 0;\n        for (int i = 0; i < s.length(); i++) {\n            total += countAround(s, i, i);       // odd-length palindromes centered at i\n            // even-length palindromes centered between i, i+1\n            total += countAround(s, i, i + 1);\n        }\n        return total;\n    }\n \n    private int countAround(String s, int left, int right) {\n        int count = 0;\n        while (left >= 0 && right < s.length() && s.charAt(left) == s.charAt(right)) {\n            count++;\n            left--;\n            right++;\n        }\n        return count;\n    }\n}",
+    "statement": "Count every palindromic substring.",
+    "invariant": "Each palindrome is counted once at its unique center and radius.",
+    "complexity": "Time O(n squared), auxiliary space O(1).",
+    "example": "For \"aaa\", odd centers count three single-character palindromes and one \"aaa\". The two even centers each count one \"aa\". Total: 3+1+2=6.",
+    "tests": "Input\n | Expected\n\n\"abc\"\n | 3 (each single character)\n\n\"aaa\"\n | 6 (\"a\",\"a\",\"a\",\"aa\",\"aa\",\"aaa\")\n\n\"\"\n | 0",
+    "constraints": "Even palindromes use a gap center.\nDo not count an empty expansion.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "decode-ways": {
+    "code": "class Solution {\n    public int numDecodings(String s) {\n        if (s.isEmpty() || s.charAt(0) == '0') return 0; // leading zero can never decode\n        // ways to decode the string ending 2 / 1 positions back\n        int twoBack = 1, oneBack = 1;\n        for (int i = 1; i < s.length(); i++) {\n            int current = 0;\n            // treat s[i] as a single-digit token\n            if (s.charAt(i) != '0') current += oneBack;\n            int twoDigit = (s.charAt(i - 1) - '0') * 10 + (s.charAt(i) - '0');\n            // treat s[i-1..i] as one token\n            if (twoDigit >= 10 && twoDigit <= 26) current += twoBack;\n            twoBack = oneBack;\n            oneBack = current;\n        }\n        return oneBack;\n    }\n}",
+    "statement": "Count decodings of a digit string where one or two digits map to letters.",
+    "invariant": "This is the same reasoning as counting paths in Climbing Stairs, with a validity gate added on the two-digit option — that's why the recurrence looks like a filtered Fibonacci.",
+    "complexity": "Time O(n), auxiliary space O(1).",
+    "example": "For \"226\", dp[0]=1 and dp[1]=1. At i=2, the last single digit is 2 and the pair is 22, so dp[2]=2. At i=3, digit 6 contributes dp[2]=2 and pair 26 contributes dp[1]=1; result 3.",
+    "tests": "Input\n | Expected\n\n\"12\"\n | 2 (\"AB\" or \"L\")\n\n\"226\"\n | 3 (\"2,2,6\", \"22,6\", \"2,26\")\n\n\"06\"\n | 0 (leading zero is never valid)",
+    "constraints": "Zero cannot stand alone.\nTwo-digit bounds are inclusive.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "coin-change": {
+    "code": "class Solution {\n    public int coinChange(int[] coins, int amount) {\n        int[] dp = new int[amount + 1];\n        Arrays.fill(dp, amount + 1); // amount + 1 acts as a safe \"impossible\" sentinel\n        dp[0] = 0;\n        for (int a = 1; a <= amount; a++) {\n            for (int coin : coins) {\n                // use one more `coin`\n                if (coin <= a) dp[a] = Math.min(dp[a], dp[a - coin] + 1);\n            }\n        }\n        return dp[amount] > amount ? -1 : dp[amount];\n    }\n}",
+    "statement": "Find the fewest coins needed to make an amount.",
+    "invariant": "Every optimal combination has a final coin; taking the best remainder gives the recurrence.",
+    "complexity": "Time O(amount times number of coins), space O(amount).",
+    "example": "Example coins [1,2,5], amount 11: dp[0] = 0. For amount 5, try each coin and use dp[4], dp[3], and dp[0], giving dp[5] = 1; the same recurrence eventually gives dp[11] = 3.",
+    "tests": "Input\n | Expected\n\ncoins=[1,2,5], amount=11\n | 3 (5+5+1)\n\ncoins=[2], amount=3\n | -1 (impossible with only even coins)\n\ncoins=[1], amount=0\n | 0",
+    "constraints": "Use a sentinel greater than amount.\nCoin order does not affect the minimum.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "maximum-product-subarray": {
+    "code": "class Solution {\n    public int maxProduct(int[] nums) {\n        int maxSoFar = nums[0], minSoFar = nums[0], best = nums[0]; // track both extremes\n        for (int i = 1; i < nums.length; i++) {\n            int value = nums[i];\n            int prevMax = maxSoFar, prevMin = minSoFar;\n            // A negative value can turn the smallest running product into the largest.\n            maxSoFar = Math.max(value, Math.max(value * prevMax, value * prevMin));\n            minSoFar = Math.min(value, Math.min(value * prevMax, value * prevMin));\n            best = Math.max(best, maxSoFar);\n        }\n        return best;\n    }\n}",
+    "statement": "Find the largest product of a nonempty contiguous subarray.",
+    "invariant": "Any subarray ending here either starts here or extends one of the retained extrema; the recurrence preserves both sign possibilities.",
+    "complexity": "Time O(n), auxiliary space O(1).",
+    "example": "Example [-2,3,-4]: at -2, max = min = -2. At 3, candidates are 3, -6, and -6, so max = 3 and min = -6; at -4, multiplying by the negative min gives 24, the answer.",
+    "tests": "Input\n | Expected\n\n[2,3,-2,4]\n | 6 (subarray [2,3])\n\n[-2,0,-1]\n | 0\n\n[-2,3,-4]\n | 24 (the whole array, since two negatives cancel)",
+    "constraints": "Save old extrema before overwriting.\nZero starts a new product.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "word-break": {
+    "code": "class Solution {\n    public boolean wordBreak(String s, List<String> wordDict) {\n        Set<String> words = new HashSet<>(wordDict);\n        boolean[] dp = new boolean[s.length() + 1]; // dp[i] = can s[0..i) be segmented?\n        dp[0] = true; // empty prefix needs zero words\n        for (int end = 1; end <= s.length(); end++) {\n            for (int start = 0; start < end; start++) {\n                if (dp[start] && words.contains(s.substring(start, end))) {\n                    dp[end] = true;\n                    break; // one valid split is enough for this end\n                }\n            }\n        }\n        return dp[s.length()];\n    }\n}",
+    "statement": "Decide whether a string can be segmented into dictionary words.",
+    "invariant": "The final word of every valid segmentation identifies a prior reachable cut; all cuts are tested.",
+    "complexity": "Time O(n squared) substring checks, space O(n).",
+    "example": "Example s = \"leetcode\", dictionary [\"leet\", \"code\"]: dp[4] becomes true because s[0..4) is \"leet\". Then dp[8] becomes true because the suffix \"code\" starts at the reachable index 4.",
+    "tests": "Input\n | Expected\n\ns=\"leetcode\", wordDict=[\"leet\",\"code\"]\n | true\n\ns=\"catsandog\", wordDict=[\"cats\",\"dog\",\"sand\",\"and\",\"cat\"]\n | false\n\ns=\"\", wordDict=[\"a\"]\n | true (empty string needs zero words)",
+    "constraints": "Avoid empty dictionary words.\ndp indexes prefixes.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "longest-increasing-subsequence": {
+    "code": "class Solution {\n    public int lengthOfLIS(int[] nums) {\n        // smallest possible tail value for each subsequence length\n        int[] tails = new int[nums.length];\n        int size = 0;\n        for (int value : nums) {\n            // binary search for value's insertion point in tails\n            int left = 0, right = size;\n            while (left < right) {\n                int mid = (left + right) >>> 1;\n                if (tails[mid] < value) left = mid + 1;\n                else right = mid;\n            }\n            tails[left] = value;\n            // value extended the longest subsequence found so far\n            if (left == size) size++;\n        }\n        return size;\n    }\n}",
+    "statement": "Return the length of the longest strictly increasing subsequence.",
+    "invariant": "Tails stay sorted and preserve every achievable length; an append proves a longer subsequence exists.",
+    "complexity": "Time O(n log n), space O(n).",
+    "example": "Example [10,9,2,5,3,7,101,18]: maintain tails, the smallest ending value for each subsequence length. Processing 3 replaces the tail 5, and processing 7 extends the length to 3; the final length is 4.",
+    "tests": "Input\n | Expected\n\n[10,9,2,5,3,7,101,18]\n | 4 ([2,3,7,101] or [2,3,7,18])\n\n[0,1,0,3,2,3]\n | 4\n\n[7,7,7,7]\n | 1 (strictly increasing required)",
+    "constraints": "Use lower_bound for strict increase.\nTails are not necessarily one actual subsequence.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "unique-paths": {
+    "code": "class Solution {\n    public int uniquePaths(int m, int n) {\n        // rolled 1D row: dp[c] = paths to reach column c in current row\n        long[] dp = new long[n];\n        // top row: only one way to reach any cell (move right the whole way)\n        Arrays.fill(dp, 1);\n        for (int r = 1; r < m; r++) {\n            // from above (unchanged) or from the left\n            for (int c = 1; c < n; c++) dp[c] += dp[c - 1];\n        }\n        return (int) dp[n - 1];\n    }\n}",
+    "statement": "Count right-and-down paths through an m by n grid.",
+    "invariant": "The two possible final moves partition all paths into disjoint sets.",
+    "complexity": "Time O(mn), auxiliary space O(n).",
+    "example": "Example m = 3, n = 2: first row and column are 1 because there is one way to move straight. At cell (1,1), paths = top 1 + left 1 = 2; at (2,1), paths = top 2 + left 1 = 3.",
+    "tests": "Input\n | Expected\n\nm=3, n=7\n | 28\n\nm=3, n=2\n | 3\n\nm=1, n=1\n | 1 (already at the destination)",
+    "constraints": "Use long for large counts.\nTop row and left column each have one path.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "longest-common-subsequence": {
+    "code": "class Solution {\n    public int longestCommonSubsequence(String a, String b) {\n        int[] prev = new int[b.length() + 1]; // rolled DP: previous row of the 2D table\n        for (int i = 1; i <= a.length(); i++) {\n            int[] current = new int[b.length() + 1];\n            for (int j = 1; j <= b.length(); j++) {\n                current[j] = a.charAt(i - 1) == b.charAt(j - 1)\n                    // characters match: extend the diagonal\n                    ? prev[j - 1] + 1\n                    // otherwise take the better of two neighbors\n                    : Math.max(prev[j], current[j - 1]);\n            }\n            prev = current;\n        }\n        return prev[b.length()];\n    }\n}",
+    "statement": "Find the longest sequence appearing in two strings in order.",
+    "invariant": "The recurrence covers the exhaustive cases of matching the final characters or skipping one of them.",
+    "complexity": "Time O(mn), space O(n).",
+    "example": "Example text1 = \"abcde\", text2 = \"ace\": when characters at i-1 and j-1 match, dp[i][j] = dp[i-1][j-1] + 1; otherwise take max(top, left). Matching a, c, and e produces length 3.",
+    "tests": "Input\n | Expected\n\ntext1=\"abcde\", text2=\"ace\"\n | 3\n\ntext1=\"abc\", text2=\"def\"\n | 0 (no common characters at all)\n\ntext1=\"abc\", text2=\"abc\"\n | 3",
+    "constraints": "Preserve the diagonal value.\nSubsequence is not substring.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "maximum-subarray": {
+    "code": "class Solution {\n    public int maxSubArray(int[] nums) {\n        // current = best subarray ending exactly here\n        int current = nums[0], best = nums[0];\n        for (int i = 1; i < nums.length; i++) {\n            // extend previous run, or restart here\n            current = Math.max(nums[i], current + nums[i]);\n            best = Math.max(best, current);\n        }\n        return best;\n    }\n}",
+    "statement": "Find the largest sum over a nonempty contiguous subarray.",
+    "invariant": "This is a one-step induction: if the best subarray ending just before i is known, extending it or restarting at i are the only two candidates for the best ending at i, so comparing just those two never misses a case.",
+    "complexity": "Time O(n), auxiliary space O(1).",
+    "example": "Example [-2,1,-3,4,-1,2,1,-5,4]: current starts at -2; at 1, restart because -2 + 1 < 1. Extend through 4, -1, 2, 1 to reach sum 6, the best subarray.",
+    "tests": "Input\n | Expected\n\n[-2,1,-3,4,-1,2,1,-5,4]\n | 6 (subarray [4,-1,2,1])\n\n[1]\n | 1\n\n[-1,-2,-3]\n | -1 (best is the single largest element)",
+    "constraints": "Initialize from the first value for all-negative arrays.\nDo not reset to zero when nonempty is required.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "jump-game": {
+    "code": "class Solution {\n    public boolean canJump(int[] nums) {\n        int reach = 0; // furthest index reachable so far\n        for (int i = 0; i < nums.length && i <= reach; i++) {\n            reach = Math.max(reach, i + nums[i]);\n            if (reach >= nums.length - 1) return true;\n        }\n        // loop exits early only if we got stuck before reaching the end\n        return nums.length == 1;\n    }\n}",
+    "statement": "Decide whether the last index is reachable with jump lengths.",
+    "invariant": "Every jump from a reachable index can only extend the farthest frontier; a gap beyond it is impossible to cross.",
+    "complexity": "Time O(n), auxiliary space O(1).",
+    "example": "Example nums [2,3,1,1,4]: farthest starts at 0. At index 0, reach = max(0, 0 + 2) = 2; index 1 extends reach to 4, so the final index is reachable and return true.",
+    "tests": "Input\n | Expected\n\n[2,3,1,1,4]\n | true\n\n[3,2,1,0,4]\n | false (stuck at index 3)\n\n[0]\n | true (already at the last index)",
+    "constraints": "The input is nonempty.\nUse long if sums can overflow.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "insert-interval": {
+    "code": "class Solution {\n    public int[][] insert(int[][] intervals, int[] newInterval) {\n        List<int[]> merged = new ArrayList<>();\n        int i = 0;\n        // entirely before newInterval\n        while (i < intervals.length && intervals[i][1] < newInterval[0]) {\n            merged.add(intervals[i++]);\n        }\n        // overlaps newInterval\n        while (i < intervals.length && intervals[i][0] <= newInterval[1]) {\n            newInterval[0] = Math.min(newInterval[0], intervals[i][0]);\n            newInterval[1] = Math.max(newInterval[1], intervals[i][1]);\n            i++;\n        }\n        merged.add(newInterval);\n        // entirely after newInterval\n        while (i < intervals.length) merged.add(intervals[i++]);\n        return merged.toArray(new int[merged.size()][]);\n    }\n}",
+    "statement": "Insert a new interval into sorted nonoverlapping intervals and merge overlaps.",
+    "invariant": "The three phases preserve sorted order and combine exactly the intervals that overlap the inserted range.",
+    "complexity": "Time O(n), auxiliary space O(n) for output.",
+    "example": "Example intervals [1,3] and new [2,5]: copy intervals ending before 2, merge overlaps while start <= 5 so end becomes max(3,5) = 5, then append intervals starting after 5.",
+    "tests": "Input\n | Expected\n\nintervals=[[1,3],[6,9]], newInterval=[2,5]\n | [[1,5],[6,9]]\n\nintervals=[[1,2],[3,5],[6,7],[8,10],[12,16]], newInterval=[4,8]\n | [[1,2],[3,10],[12,16]]\n\nintervals=[], newInterval=[5,7]\n | [[5,7]]",
+    "constraints": "Use <= for touching intervals when the problem treats them as overlapping.\nDo not mutate the input unless allowed.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "merge-intervals": {
+    "code": "class Solution {\n    public int[][] merge(int[][] intervals) {\n        if (intervals.length == 0) return intervals;\n        Arrays.sort(intervals, Comparator.comparingInt(x -> x[0])); // sort by start time\n        List<int[]> merged = new ArrayList<>();\n        int[] current = intervals[0];\n        for (int i = 1; i < intervals.length; i++) {\n            // overlaps (or touches) the current merged interval\n            if (intervals[i][0] <= current[1]) {\n                current[1] = Math.max(current[1], intervals[i][1]);\n            } else {\n                // no overlap possible with this one anymore; close it out\n                merged.add(current);\n                current = intervals[i];\n            }\n        }\n        merged.add(current);\n        return merged.toArray(new int[merged.size()][]);\n    }\n}",
+    "statement": "Merge all overlapping intervals.",
+    "invariant": "Once an interval's start exceeds the current merged interval's end, sorted order guarantees every interval after it also starts later, so it can never merge back in later — closing the current interval permanently is safe.",
+    "complexity": "Time O(n log n), auxiliary space O(n) for output and sorting.",
+    "example": "Example [[1,3],[2,6],[8,10],[15,18]]: sort by start; [2,6] overlaps [1,3], so extend the current end to 6. [8,10] does not overlap, so emit [1,6] and start a new interval.",
+    "tests": "Input\n | Expected\n\n[[1,3],[2,6],[8,10],[15,18]]\n | [[1,6],[8,10],[15,18]]\n\n[[1,4],[4,5]]\n | [[1,5]] (touching counts as overlapping)\n\n[[1,4]]\n | [[1,4]]",
+    "constraints": "Treat touching endpoints according to the contract.\nAdd the final interval after the loop.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "non-overlapping-intervals": {
+    "code": "class Solution {\n    public int eraseOverlapIntervals(int[][] intervals) {\n        // sort by end time (greedy choice)\n        Arrays.sort(intervals, Comparator.comparingInt(x -> x[1]));\n        int kept = 0, lastEnd = Integer.MIN_VALUE;\n        for (int[] interval : intervals) {\n            if (interval[0] >= lastEnd) { // no overlap with the last kept interval\n                kept++;\n                lastEnd = interval[1];\n            }\n        }\n        return intervals.length - kept; // everything not kept must be removed\n    }\n}",
+    "statement": "Remove the fewest intervals so the rest do not overlap.",
+    "invariant": "Among overlapping choices, the smaller end cannot reduce future feasibility and may increase it, so repeatedly keeping the earliest finisher is optimal.",
+    "complexity": "Time O(n log n), auxiliary space O(1) beyond sorting and answer.",
+    "example": "For [[1,2],[2,3],[3,4],[1,3]], sort by end. Keep [1,2] and [2,3], discard [1,3] because it overlaps, then keep [3,4]. Touching endpoints do not overlap; one removal is needed.",
+    "tests": "Input\n | Expected\n\n[[1,2],[2,3],[3,4],[1,3]]\n | 1 (remove [1,3])\n\n[[1,2],[1,2],[1,2]]\n | 2 (keep only one)\n\n[[1,2],[2,3]]\n | 0 (no removal needed)",
+    "constraints": "Sort by end, not start.\nInitialize last end below all valid starts.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "meeting-rooms-ii": {
+    "code": "class Solution {\n    public int minMeetingRooms(int[][] intervals) {\n        int n = intervals.length;\n        int[] starts = new int[n];\n        int[] ends = new int[n];\n        for (int i = 0; i < n; i++) {\n            starts[i] = intervals[i][0];\n            ends[i] = intervals[i][1];\n        }\n        // sorted independently -- only counts matter, not which meeting is which\n        Arrays.sort(starts);\n        Arrays.sort(ends);\n        int startPointer = 0, endPointer = 0, rooms = 0, best = 0;\n        while (startPointer < n) {\n            // a meeting starts before the earliest ends\n            if (starts[startPointer] < ends[endPointer]) {\n                rooms++;\n                best = Math.max(best, rooms);\n                startPointer++;\n            } else {\n                rooms--; // free up a room instead\n                endPointer++;\n            }\n        }\n        return best;\n    }\n}",
+    "statement": "Find the minimum number of rooms for all meetings.",
+    "invariant": "The earliest end is the only meeting that can free a room before the next start. Processing events in order maintains the exact active count.",
+    "complexity": "Time O(n log n), auxiliary space O(n).",
+    "example": "For meetings [0,30],[5,10],[15,20], sorted starts are [0,5,15] and ends [10,20,30]. Start 0 needs one room; start 5 is before the earliest end 10 and needs a second. Release a room at 10 before processing start 15; peak demand is 2.",
+    "tests": "Input\n | Expected\n\n[[0,30],[5,10],[15,20]]\n | 2\n\n[[7,10],[2,4]]\n | 1\n\n[]\n | 0",
+    "constraints": "When start equals end, release first because the room is available.\nTrack maximum, not only final rooms.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "rotate-image": {
+    "code": "class Solution {\n    public void rotate(int[][] matrix) {\n        int n = matrix.length;\n        for (int r = 0; r < n; r++) { // transpose: reflect across the main diagonal\n            for (int c = r + 1; c < n; c++) {\n                int temp = matrix[r][c];\n                matrix[r][c] = matrix[c][r];\n                matrix[c][r] = temp;\n            }\n        }\n        for (int[] row : matrix) { // then reverse each row: reflect horizontally\n            for (int left = 0, right = n - 1; left < right; left++, right--) {\n                int temp = row[left];\n                row[left] = row[right];\n                row[right] = temp;\n            }\n        }\n    }\n}",
+    "statement": "Rotate an n by n matrix 90 degrees clockwise in place.",
+    "invariant": "Transpose maps coordinates (r,c) to (c,r); reversing rows maps (c,r) to (c,n-1-r), the clockwise destination.",
+    "complexity": "Time O(n squared), auxiliary space O(1).",
+    "example": "Example matrix [[1,2,3],[4,5,6],[7,8,9]]: transpose by swapping (0,1) with (1,0), then reverse each row. The first row becomes [7,4,1], which is the first row of the rotated matrix.",
+    "tests": "Input\n | Expected\n\n[[1,2,3],[4,5,6],[7,8,9]]\n | [[7,4,1],[8,5,2],[9,6,3]]\n\n[[1,2],[3,4]]\n | [[3,1],[4,2]]\n\n[[1]]\n | [[1]] (single cell is unchanged)",
+    "constraints": "Transpose only one triangle.\nReverse rows, not columns, for clockwise rotation.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "spiral-matrix": {
+    "code": "class Solution {\n    public List<Integer> spiralOrder(int[][] matrix) {\n        List<Integer> order = new ArrayList<>();\n        int top = 0, bottom = matrix.length - 1;\n        int left = 0, right = matrix[0].length - 1;\n        // four shrinking boundaries track the unvisited region\n        while (top <= bottom && left <= right) {\n            for (int c = left; c <= right; c++) order.add(matrix[top][c]);\n            top++;\n            for (int r = top; r <= bottom; r++) order.add(matrix[r][right]);\n            right--;\n            if (top <= bottom) { // guards against re-visiting a single remaining row\n                for (int c = right; c >= left; c--) order.add(matrix[bottom][c]);\n                bottom--;\n            }\n            if (left <= right) { // guards against re-visiting a single remaining column\n                for (int r = bottom; r >= top; r--) order.add(matrix[r][left]);\n                left++;\n            }\n        }\n        return order;\n    }\n}",
+    "statement": "Return matrix elements in clockwise spiral order.",
+    "invariant": "Each perimeter pass removes exactly the outer layer; remaining bounds describe the unvisited inner matrix.",
+    "complexity": "Time O(mn), auxiliary space O(1) excluding output.",
+    "example": "Example [[1,2,3],[4,5,6],[7,8,9]]: traverse the top row, move the top boundary down, traverse the right column, and shrink the right boundary. Repeat while top <= bottom and left <= right.",
+    "tests": "Input\n | Expected\n\n[[1,2,3],[4,5,6],[7,8,9]]\n | [1,2,3,6,9,8,7,4,5]\n\n[[1,2,3,4],[5,6,7,8],[9,10,11,12]]\n | [1,2,3,4,8,12,11,10,9,5,6,7]\n\n[[1]]\n | [1]",
+    "constraints": "Check bounds before the reverse traversals to avoid duplicates.\nSingle-row and single-column matrices are the key tests.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "set-matrix-zeroes": {
+    "code": "class Solution {\n    public void setZeroes(int[][] matrix) {\n        int rows = matrix.length, cols = matrix[0].length;\n        boolean firstRowHasZero = false, firstColHasZero = false;\n        for (int c = 0; c < cols; c++) if (matrix[0][c] == 0) firstRowHasZero = true;\n        for (int r = 0; r < rows; r++) if (matrix[r][0] == 0) firstColHasZero = true;\n \n        // Use row 0 and column 0 themselves as marker storage for the rest of the matrix.\n        for (int r = 1; r < rows; r++) {\n            for (int c = 1; c < cols; c++) {\n                if (matrix[r][c] == 0) {\n                    matrix[r][0] = 0;\n                    matrix[0][c] = 0;\n                }\n            }\n        }\n        for (int r = 1; r < rows; r++) {\n            for (int c = 1; c < cols; c++) {\n                if (matrix[r][0] == 0 || matrix[0][c] == 0) matrix[r][c] = 0;\n            }\n        }\n        // apply the saved original state last\n        if (firstRowHasZero) Arrays.fill(matrix[0], 0);\n        if (firstColHasZero) {\n            for (int r = 0; r < rows; r++) matrix[r][0] = 0;\n        }\n    }\n}",
+    "statement": "Set an entire row and column to zero whenever a cell is zero, in place.",
+    "invariant": "Markers encode exactly which rows and columns must be cleared; delaying writes prevents newly created zeros from becoming false markers.",
+    "complexity": "Time O(mn), auxiliary space O(1).",
+    "example": "Example matrix [[1,1,1],[1,0,1],[1,1,1]]: first record that row 1 and column 1 contain zero. In a second pass, set a cell to zero when its row or column marker is set, preserving the original zero information.",
+    "tests": "Input\n | Expected\n\n[[1,1,1],[1,0,1],[1,1,1]]\n | [[1,0,1],[0,0,0],[1,0,1]]\n\n[[0,1,2,0],[3,4,5,2],[1,3,1,5]]\n | zeroes spread through the row/column of every original zero\n\n[[1]]\n | [[1]] (no zero present)",
+    "constraints": "Do not lose the original first-row and first-column state.\nProcess markers after scanning.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "number-of-1-bits": {
+    "code": "class Solution {\n    public int hammingWeight(int n) {\n        int count = 0;\n        while (n != 0) {\n            n &= n - 1; // clears exactly the lowest set bit each time\n            count++;\n        }\n        return count;\n    }\n}",
+    "statement": "Count set bits in a 32-bit integer.",
+    "invariant": "Each loop removes exactly one set bit, so the number of iterations equals the Hamming weight.",
+    "complexity": "Time O(number of set bits), worst-case O(32), auxiliary space O(1).",
+    "example": "For n=11 (binary 1011), n & (n-1) clears one set bit: 1011→1010→1000→0000. Three iterations give count 3. Java int arithmetic also makes this terminate for negative 32-bit patterns.",
+    "tests": "Input\n | Expected\n\nn=11 (binary 1011)\n | 3\n\nn=128 (binary 10000000)\n | 1\n\nn=0\n | 0",
+    "constraints": "Use the language's two's-complement int behavior.\nDo not use arithmetic division for signed bit patterns.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "counting-bits": {
+    "code": "class Solution {\n    public int[] countBits(int n) {\n        int[] dp = new int[n + 1];\n        for (int i = 1; i <= n; i++) {\n            // reuse the answer for i with its lowest bit dropped\n            dp[i] = dp[i >>> 1] + (i & 1);\n        }\n        return dp;\n    }\n}",
+    "statement": "Return set-bit counts for every integer from zero through n.",
+    "invariant": "The shifted value is already computed and contributes all higher bits; the low-bit test contributes the final bit.",
+    "complexity": "Time O(n), space O(n).",
+    "example": "Example n = 5: dp[0] = 0; dp[1] = dp[0] + (1 & 1) = 1; dp[2] = dp[1] + 0 = 1; dp[5] = dp[2] + (5 & 1) = 2.",
+    "tests": "Input\n | Expected\n\nn=2\n | [0,1,1]\n\nn=5\n | [0,1,1,2,1,2]\n\nn=0\n | [0]",
+    "constraints": "Use unsigned shift only when needed for signed inputs.\nThe output includes zero.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "reverse-bits": {
+    "code": "class Solution {\n    public int reverseBits(int n) {\n        int result = 0;\n        for (int i = 0; i < 32; i++) {\n            result = (result << 1) | (n & 1); // shift result left, drop in n's lowest bit\n            n >>>= 1; // unsigned shift avoids sign-extension corrupting the bit pattern\n        }\n        return result;\n    }\n}",
+    "statement": "Reverse the bits of a 32-bit unsigned integer.",
+    "invariant": "After k iterations, result contains the source's lowest k bits in reversed order. Thirty-two iterations process the complete fixed-width word.",
+    "complexity": "Time O(32), auxiliary space O(1).",
+    "example": "Example n = 00000010100101000001111010011100: repeat 32 times, take the lowest bit with n & 1, shift the result left, and use n >>> 1. The unsigned shift preserves the fixed 32-bit process.",
+    "tests": "Input\n | Expected\n\n00000010100101000001111010011100\n | 00111001011110000010100101000000\n\nA number that is all zero bits\n | stays all zero\n\nA number that is all one bits\n | stays all one",
+    "constraints": "Use >>> so sign extension does not reintroduce ones.\nAlways run all 32 iterations, including leading zeros.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "missing-number": {
+    "code": "class Solution {\n    public int missingNumber(int[] nums) {\n        // account for index n up front, since indices only run 0..n-1\n        int result = nums.length;\n        for (int i = 0; i < nums.length; i++) {\n            // every present index/value pair cancels via XOR, leaving the gap\n            result ^= i ^ nums[i];\n        }\n        return result;\n    }\n}",
+    "statement": "Find the missing value from zero through n with one value absent.",
+    "invariant": "Every present number appears once as an index or expected value and once in the array, so pairs cancel; only the missing value remains.",
+    "complexity": "Time O(n), auxiliary space O(1).",
+    "example": "For nums=[3,0,1], start result=n=3. At i=0: 3^0^3=0. At i=1: 0^1^0=1. At i=2: 1^2^1=2. Present indices and values cancel, leaving missing number 2.",
+    "tests": "Input\n | Expected\n\n[3,0,1]\n | 2\n\n[0,1]\n | 2\n\n[9,6,4,2,3,5,7,0,1]\n | 8",
+    "constraints": "Include n in the XOR seed or loop.\nXOR avoids sum overflow.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  },
+  "sum-of-two-integers": {
+    "code": "class Solution {\n    public int getSum(int a, int b) {\n        while (b != 0) {\n            int carry = (a & b) << 1; // bits where both operands are 1 generate a carry\n            a ^= b;                   // XOR adds without carrying\n            b = carry;                // repeat until no carry remains\n        }\n        return a;\n    }\n}",
+    "statement": "Add two integers without using plus or minus.",
+    "invariant": "Each iteration preserves the mathematical sum as partial plus carry; carry shifts toward more significant positions and eventually vanishes in fixed-width arithmetic.",
+    "complexity": "Time O(32) worst case and auxiliary space O(1).",
+    "example": "Example a = 5, b = 3: sum = a ^ b adds without carries, while carry = (a & b) << 1 identifies carry bits. Repeat with a = sum and b = carry until carry is 0; the remaining sum is 8.",
+    "tests": "Input\n | Expected\n\na=1, b=2\n | 3\n\na=-2, b=3\n | 1\n\na=0, b=0\n | 0",
+    "constraints": "Use the loop condition on carry, not on the partial sum.\nJava int overflow naturally follows 32-bit two's-complement semantics.",
+    "source": "Existing InterviewIQ Blind 75 Java study guide; extracted and checked 2026-09-17"
+  }
+}

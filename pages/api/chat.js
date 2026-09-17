@@ -59,7 +59,7 @@ async function handler(req, res) {
         const chat = createChat(createGeminiClient(apiKey), {
           model: candidate,
           history,
-          systemInstruction: buildSystemPrompt(profile, { interviewMode, roundStrategy, interviewPanel }),
+          systemInstruction: buildSystemPrompt(profile, { interviewMode, roundStrategy, interviewPanel, evidence: req.body?.evidence }),
         });
         return chat.sendMessageStream({ message: lastMessage.content });
       },

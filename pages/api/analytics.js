@@ -6,6 +6,6 @@ export default function handler(req, res) {
   if (req.headers["content-length"] && Number(req.headers["content-length"]) > 4096) return res.status(413).json({ error: "Analytics payload is too large." });
   const event = normalizeAnalyticsEvent(req.body);
   if (!event) return res.status(400).json({ error: "Unsupported analytics event." });
-  recordMetric(`product.${event.name}`, { path: event.path, value: event.value || undefined });
+  recordMetric(`product.${event.name}`, { path: event.path, value: event.value || undefined, sessionId: event.sessionId, attemptId: event.attemptId });
   return res.status(204).end();
 }

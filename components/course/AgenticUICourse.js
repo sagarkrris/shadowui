@@ -128,13 +128,13 @@ function VideoLesson({ module, theme }) {
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, marginBottom: 9 }}>
           <div>
             <div style={{ color: "#e8e8f0", fontSize: 13, fontWeight: 800, lineHeight: 1.35 }}>{module.video.title}</div>
-            <div style={{ marginTop: 3, color: "#9ca3af", fontSize: 11 }}>{module.video.duration}</div>
+            <div style={{ marginTop: 3, color: "#9ca3af", fontSize: 11 }}>{module.video.duration}</div><p style={{ color: "#9ca3af", fontSize: 11 }}>Supplementary overview; this external video does not cover every module exercise.</p>
           </div>
           <a href={module.video.watchUrl} target="_blank" rel="noreferrer" className="glass-button" style={{ display: "inline-flex", alignItems: "center", gap: 5, border: `1px solid ${theme.accentBorder}`, borderRadius: 7, padding: "5px 8px", color: theme.accentText, fontSize: 10.5, fontWeight: 800, textDecoration: "none", whiteSpace: "nowrap" }}>
             <i className="ti ti-external-link" />Open
           </a>
         </div>
-        <div style={{ color: theme.accentText, fontSize: 11, fontWeight: 900, marginBottom: 7 }}>Watch for</div>
+        <div style={{ color: theme.accentText, fontSize: 11, fontWeight: 900, marginBottom: 7 }}>Discussion prompts (not video chapters)</div>
         <div style={{ display: "grid", gap: 6 }}>
           {module.video.chapters.map((chapter, index) => (
             <div key={chapter} style={{ display: "flex", alignItems: "center", gap: 8, color: "#9ca3af", fontSize: 11.5 }}>

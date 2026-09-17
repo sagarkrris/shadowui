@@ -4,10 +4,10 @@ export default function PrepCommandCenter({ center, theme, onAction }) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
         <div className="glass-card" style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 7, color: theme.accentText, fontSize: 12, fontWeight: 700, marginBottom: 8 }}>
-            <i className="ti ti-gauge" />Readiness
+            <i className="ti ti-gauge" />Recent answer average
           </div>
           <div style={{ display: "flex", alignItems: "end", gap: 7 }}>
-            <span style={{ color: "#e8e8f0", fontSize: 30, fontWeight: 800, lineHeight: 1 }}>{center.readinessScore ?? "-"}</span>
+            <span style={{ color: "#e8e8f0", fontSize: 30, fontWeight: 800, lineHeight: 1 }}>{center.readinessScore ?? "Not assessed"}</span>
             {center.readinessScore !== null && <span style={{ color: "#6b7280", fontSize: 11, marginBottom: 4 }}>/100</span>}
           </div>
           <p style={{ color: "#9ca3af", fontSize: 11.5, lineHeight: 1.45, marginTop: 8 }}>{center.readinessLabel}</p>

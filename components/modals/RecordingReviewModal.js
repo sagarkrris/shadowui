@@ -26,6 +26,7 @@ export default function RecordingReviewModal({
   role = "",
   theme = DEFAULT_THEME,
 }) {
+  const [retainTranscript, setRetainTranscript] = useState(false);
   const [transcript, setTranscript] = useState(initialTranscript);
   const [recording, setRecording] = useState(false);
   const [startedAt, setStartedAt] = useState(0);
@@ -106,6 +107,7 @@ export default function RecordingReviewModal({
       review,
       prompt,
       transcript,
+      retainTranscript,
     });
   };
 
@@ -177,9 +179,11 @@ export default function RecordingReviewModal({
           {message ? <p style={{ color: "#9ca3af", fontSize: 12, lineHeight: 1.5, margin: 0 }}>{message}</p> : null}
         </div>
 
-        <label style={{ fontSize: 12, color: "#9ca3af", display: "block", marginBottom: 6 }}>Transcript</label>
+        <label><input type="checkbox" checked={retainTranscript} onChange={e => setRetainTranscript(e.target.checked)} /> Keep transcript in saved conversation</label><p>The transcript below is the preview sent for AI review. Audio is not saved by this app. AI feedback may quote your words even when transcript retention is off.</p>
+        <label htmlFor="recording-transcript" style={{ fontSize: 12, color: "#9ca3af", display: "block", marginBottom: 6 }}>Transcript</label>
         <textarea
           className="glass-input"
+          id="recording-transcript"
           value={transcript}
           onChange={(event) => setTranscript(event.target.value)}
           placeholder="Type, paste, or record your answer transcript..."

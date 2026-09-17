@@ -105,3 +105,10 @@ test("chat system prompt adds AI interview panel behavior", () => {
   assert.match(prompt, /Architecture follow-ups/i);
   assert.match(prompt, /Private rubric/i);
 });
+
+test('resume coaching requests source evidence and keeps unknown facts incomplete', () => {
+  const prompt = buildSystemPrompt({ name: 'Tester' }, { evidence: [{ id: 'e1', project: 'Order service' }] });
+  assert.match(prompt, /Resume bullets must cite a supplied evidence ID/);
+  assert.match(prompt, /Missing facts must remain explicit placeholders/);
+  assert.match(prompt, /"id":"e1"/);
+});

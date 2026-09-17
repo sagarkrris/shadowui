@@ -1,3 +1,11 @@
+import LearningSearch from "../components/practice/LearningSearch";
+import ExecutableDsa from "../components/practice/ExecutableDsa";
+import DesignWorkbench from "../components/practice/DesignWorkbench";
+import EvidenceNotebook from "../components/practice/EvidenceNotebook";
+import DataControls from "../components/practice/DataControls";
+import ContentReport from "../components/practice/ContentReport";
+import PracticeReview from "../components/practice/PracticeReview";
+import { normalizePractice, recordAttempt, evaluationMarkdown, compareAttempts } from "../lib/dailyPractice.mjs";
 import Head from "next/head";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/router";
@@ -139,6 +147,13 @@ export default function Home() {
   const [roundStrategy, setRoundStrategy] = useState("coding");
   const [interviewPanel, setInterviewPanel] = useState("seniorEngineer");
   const [difficulty, setDifficulty]   = useState("Mid");
+  const [practice, setPractice] = useState(() => normalizePractice());
+  const [localSaveStatus, setLocalSaveStatus] = useState("loading");
+  const [saveRetry, setSaveRetry] = useState(0);
+  const [requestElapsed, setRequestElapsed] = useState(0);
+  const requestBusy = useRef(false);
+  const pageOpenedAt = useRef(Date.now());
+  const recordedCount = useRef(0);
   const [input, setInput]             = useState("");
   const [codeInput, setCodeInput]     = useState("");
   const [showCode, setShowCode]       = useState(false);
@@ -157,7 +172,7 @@ export default function Home() {
   const [systemThemeMode, setSystemThemeMode] = useState("light");
   const [topControlsOpen, setTopControlsOpen] = useState(false);
   const { activeTab, setActiveTab, toggleWorkspace: toggleWorkspaceTab } = useWorkspaceNavigation("chat");
-  const { session: interviewSessionState, reset: resetInterviewSession, startQuestion: startInterviewQuestion, submitAnswer: submitInterviewAnswer, score: scoreInterviewAnswer, review: reviewInterviewAnswer } = useInterviewSession({ mode: "strict", round: "coding", panel: "seniorEngineer" });
+  const { session: interviewSessionState, reset: resetInterviewSession, startQuestion: startInterviewQuestion } = useInterviewSession({ mode: "strict", round: "coding", panel: "seniorEngineer" });
   const auth = useAuth();
   const router = useRouter();
   const openAuthSettings = useCallback((mode = "login") => {
@@ -216,8 +231,9 @@ export default function Home() {
   const displayName = getDisplayName(candidateProfile);
   const stackGreeting = getStackGreeting(candidateProfile);
   const userPrepLabel = candidateProfile ? buildUserPrepLabel(candidateProfile) : prepLabel;
-  const weakSpots = deriveWeakSpots(messages, interviewSessionState);
-  const mockScores = deriveMockScores(messages, interviewSessionState);
+  const recordedSession = { ...interviewSessionState, turns: practice.attempts.map(a => ({ ...a, score: { value: a.score, gaps: a.gaps, recommendations: a.recommendations } })) };
+  const weakSpots = deriveWeakSpots(messages, recordedSession);
+  const mockScores = practice.attempts.length ? practice.attempts.map(a => a.score).filter(Number.isFinite) : deriveMockScores(messages, interviewSessionState);
   const showComposer = canUseChatComposer({ activeTab, candidateProfile });
   const showInterviewTools = canUseInterviewTools({ activeTab, candidateProfile });
   const canSelectPrepTopics = canUsePrepTopics({ candidateProfile });
@@ -226,7 +242,7 @@ export default function Home() {
   const footerHint = showCodeTools ? "screen · voice · code · Enter to send" : "screen · voice · Enter to send";
   const mockTimerLabel = mockTimerStatus === "answering"
     ? `${Math.floor(mockTimerRemaining / 60)}:${String(mockTimerRemaining % 60).padStart(2, "0")}`
-    : "Review ready";
+    : mockTimerStatus === "paused" ? `Paused · ${mockTimerRemaining}s` : "Review ready";
   const currentLabel = selectedSub || selectedCat;
   const headerTitle = getWorkspaceTitle({
     activeTab,
@@ -289,6 +305,13 @@ export default function Home() {
     if (isMobile) setSidebar(false);
   }, [isMobile, recordWorkspaceActivity, setActiveTab]);
 
+  useEffect(() => {
+    if (!loading) return undefined;
+    const started = Date.now();
+    const interval = setInterval(() => setRequestElapsed(Math.floor((Date.now() - started) / 1000)), 1000);
+    return () => clearInterval(interval);
+  }, [loading]);
+
   // ── Local session persistence ────────────────────────────────────────────
   // QUESTION_MEMORY_STORAGE_KEY is owned by lib/questionMemory.mjs; this shell loads the durable memory through its helpers.
   useEffect(() => {
@@ -296,9 +319,17 @@ export default function Home() {
     const savedSession = savedEnvelope?.snapshot || null;
     if (savedSession) {
       sessionEnvelopeRef.current = savedEnvelope;
+      if (savedSession.input || savedSession.codeInput) trackEvent("draft_recovered");
+      if (savedSession.input || savedSession.codeInput || savedSession.practice?.active || savedSession.practice?.pending) trackEvent("unfinished_session_available");
       setCandidateProfile(savedSession.candidateProfile);
       setProfileDraft(savedSession.profileDraft);
       setMessages(savedSession.messages);
+      setInput(savedSession.input || "");
+      setCodeInput(savedSession.codeInput || "");
+      setPractice(normalizePractice(savedSession.practice));
+      recordedCount.current = savedSession.practice?.attempts?.length || 0;
+      setMockTimerRemaining(savedSession.mockTimer?.remaining ?? MOCK_ANSWER_SECONDS);
+      lastRequestRef.current = savedSession.practice?.pending || null;
       setSelCat(savedSession.selectedCat);
       setSelSub(savedSession.selectedSub);
       setExpanded(savedSession.expandedCat);
@@ -406,11 +437,16 @@ export default function Home() {
       activeTab,
       interviewSession: interviewSessionState,
       systemDesignCanvas,
-      mockTimer: { endsAt: mockTimerEndsAt, status: mockTimerStatus },
+      input, codeInput, practice, mockTimer: { endsAt: mockTimerEndsAt, status: mockTimerStatus, remaining: mockTimerStatus === "paused" ? mockTimerRemaining : MOCK_ANSWER_SECONDS },
     });
-    saveSessionSnapshot(window.localStorage, snapshot);
-    sessionEnvelopeRef.current = createSessionEnvelope(snapshot);
-  }, [sessionReady, candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSessionState, systemDesignCanvas, mockTimerEndsAt, mockTimerStatus]);
+    const saved = saveSessionSnapshot(window.localStorage, snapshot);
+    setLocalSaveStatus(saved ? "saved" : "error");
+    if (saved) {
+      sessionEnvelopeRef.current = createSessionEnvelope(snapshot);
+      if (practice.attempts.length > recordedCount.current) for (const attempt of practice.attempts.slice(recordedCount.current)) trackEvent("result_recorded", { attemptId: attempt.id });
+      recordedCount.current = practice.attempts.length;
+    } else trackEvent("result_save_failed");
+  }, [sessionReady, candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSessionState, systemDesignCanvas, mockTimerEndsAt, mockTimerStatus, mockTimerRemaining, input, codeInput, practice, saveRetry]);
 
   useEffect(() => {
     if (!sessionReady) return;
@@ -646,7 +682,6 @@ export default function Home() {
   useEffect(() => {
     if (!showCodeTools) {
       setShowCode(false);
-      setCodeInput("");
     }
   }, [showCodeTools]);
 
@@ -664,12 +699,18 @@ export default function Home() {
     setThemeStatus(`${mode[0].toUpperCase()}${mode.slice(1)} theme enabled`);
   }, [systemThemeMode]);
 
-  const cloudSnapshot = useMemo(() => ({ session: createSessionSnapshot({ candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSession: interviewSessionState, systemDesignCanvas, mockTimer: { endsAt: mockTimerEndsAt, status: mockTimerStatus } }), themePreference, toolkitState, applications, javaDigestProgress, questionMemory, prepProgressState }), [candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSessionState, systemDesignCanvas, mockTimerEndsAt, mockTimerStatus, themePreference, toolkitState, applications, javaDigestProgress, questionMemory, prepProgressState]);
+  const cloudSnapshot = useMemo(() => ({ session: createSessionSnapshot({ candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSession: interviewSessionState, systemDesignCanvas, input, codeInput, practice, mockTimer: { endsAt: mockTimerEndsAt, status: mockTimerStatus, remaining: mockTimerStatus === "paused" ? mockTimerRemaining : MOCK_ANSWER_SECONDS } }), themePreference, toolkitState, applications, javaDigestProgress, questionMemory, prepProgressState }), [candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSessionState, systemDesignCanvas, mockTimerEndsAt, mockTimerStatus, mockTimerRemaining, input, codeInput, practice, themePreference, toolkitState, applications, javaDigestProgress, questionMemory, prepProgressState]);
   const applyCloudState = useCallback((snapshot) => {
-    const session = snapshot.session || snapshot;
+    const session = createSessionSnapshot(snapshot.session || snapshot);
     setCandidateProfile(session.candidateProfile);
     setProfileDraft(session.profileDraft);
     setMessages(session.messages);
+    setInput(session.input || "");
+    setCodeInput(session.codeInput || "");
+    setPractice(normalizePractice(session.practice));
+    recordedCount.current = session.practice?.attempts?.length || 0;
+    setMockTimerRemaining(session.mockTimer?.remaining ?? MOCK_ANSWER_SECONDS);
+    lastRequestRef.current = session.practice?.pending || null;
     setSelCat(session.selectedCat);
     setSelSub(session.selectedSub);
     setExpanded(session.expandedCat);
@@ -761,7 +802,7 @@ export default function Home() {
       activeTab,
       interviewSession: interviewSessionState,
       systemDesignCanvas,
-      mockTimer: { endsAt: mockTimerEndsAt, status: mockTimerStatus },
+      input, codeInput, practice, mockTimer: { endsAt: mockTimerEndsAt, status: mockTimerStatus, remaining: mockTimerStatus === "paused" ? mockTimerRemaining : MOCK_ANSWER_SECONDS },
     }));
 
     try {
@@ -779,7 +820,7 @@ export default function Home() {
       URL.revokeObjectURL(url);
       showToast("Session export downloaded.", "info");
     }
-  }, [activeTab, candidateProfile, difficulty, expandedCat, interviewMode, interviewPanel, interviewSessionState, messages, mode, profileDraft, roundStrategy, selectedCat, selectedSub, showToast, systemDesignCanvas, mockTimerEndsAt, mockTimerStatus]);
+  }, [activeTab, candidateProfile, difficulty, expandedCat, interviewMode, interviewPanel, interviewSessionState, messages, mode, profileDraft, roundStrategy, selectedCat, selectedSub, showToast, systemDesignCanvas, mockTimerEndsAt, mockTimerStatus, mockTimerRemaining, input, codeInput, practice]);
 
   const importCurrentSession = useCallback(() => {
     const raw = window.prompt("Paste exported session JSON");
@@ -791,9 +832,16 @@ export default function Home() {
       return;
     }
 
+    if (loading || !window.confirm(`Replace the current session with ${snapshot.messages.length} messages and ${snapshot.practice.attempts.length} saved attempts? Profile: ${snapshot.candidateProfile?.name || "none"}. Current session drafts will be replaced. Export first to keep a backup.`)) return;
     setCandidateProfile(snapshot.candidateProfile);
     setProfileDraft(snapshot.profileDraft);
     setMessages(snapshot.messages);
+    setInput(snapshot.input || "");
+    setCodeInput(snapshot.codeInput || "");
+    setPractice(normalizePractice(snapshot.practice));
+    recordedCount.current = snapshot.practice?.attempts?.length || 0;
+    setMockTimerRemaining(snapshot.mockTimer?.remaining ?? MOCK_ANSWER_SECONDS);
+    lastRequestRef.current = snapshot.practice?.pending || null;
     setSelCat(snapshot.selectedCat);
     setSelSub(snapshot.selectedSub);
     setExpanded(snapshot.expandedCat);
@@ -808,13 +856,16 @@ export default function Home() {
     setMockTimerStatus(snapshot.mockTimer?.status || "idle");
     resetInterviewSession(snapshot.interviewSession);
     showToast("Session imported.", "info");
-  }, [resetInterviewSession, setActiveTab, showToast]);
+  }, [loading, resetInterviewSession, setActiveTab, showToast]);
 
   // ── API call ──────────────────────────────────────────────────────────────
   const callAPI = useCallback(async (userText, options = {}) => {
     const hasCode = showCodeTools ? codeInput.trim() : "";
     const promptText = String(userText || "").trim() || (hasCode ? "Please review this code." : "");
-    if (loading || (!promptText && !hasCode)) return;
+    if (requestBusy.current || loading || (!promptText && !hasCode)) return;
+    if (practice.pending && !options.replaceLastRequest && !options.retryEvaluation) { showToast("Retry the saved request before starting another attempt.", "info"); return; }
+    requestBusy.current = true;
+    setRequestElapsed(0);
     setHomeView(false);
     if (mockTimerStatus === "answering" && !options.startAnswerTimer) {
       setMockTimerEndsAt(null);
@@ -829,41 +880,79 @@ export default function Home() {
       ? `${apiPromptText}\n\n\`\`\`${codeLanguage}\n${hasCode}\n\`\`\``
       : apiPromptText;
     const displayText = String(options.displayText || finalText).trim();
-    const shouldEvaluateStructuredAnswer = !options.isInterviewPrompt && interviewSessionState.state === "question" && Boolean(interviewSessionState.currentQuestionId);
-    const currentStructuredTurn = interviewSessionState.turns.find((turn) => turn.id === interviewSessionState.currentQuestionId);
-    if (shouldEvaluateStructuredAnswer) {
-      submitInterviewAnswer(promptText);
-      fetch("/api/evaluate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: currentStructuredTurn?.question || selectedSub || selectedCat || "Interview question", answer: promptText, profile: candidateProfile, round: roundStrategy }) })
-        .then((response) => response.json())
-        .then((payload) => { if (payload.evaluation) { scoreInterviewAnswer(payload.evaluation); reviewInterviewAnswer({ notes: payload.evaluation.gaps.join("; "), nextAction: payload.evaluation.recommendations[0] || "Repeat this question with one concrete example." }); } })
-        .catch(() => undefined);
+    const activeQuestion = options.retryEvaluation || practice.active;
+    if (activeQuestion && !options.isInterviewPrompt && !options.skipQuestionMemory) {
+      const attemptId = activeQuestion.attemptId || crypto.randomUUID();
+      const answer = options.retryAnswer || finalText;
+      const pending = { text: answer, apiText: answer, metadata: { retryEvaluation: { ...activeQuestion, attemptId }, retryAnswer: answer } };
+      lastRequestRef.current = pending;
+      setPractice(prev => ({ ...prev, pending }));
+      if (!options.retryEvaluation) setMessages(prev => [...prev, { role: "user", content: answer, attemptId }]);
+      setInput(""); setCodeInput("");
+      trackEvent("answer_submitted", { attemptId });
+      const startedAt = Date.now();
+      abortRef.current = new AbortController();
+      const timeout = setTimeout(() => abortRef.current?.abort(), 90000);
+      try {
+        const response = await fetch("/api/evaluate", { method: "POST", headers: { "Content-Type": "application/json" }, signal: abortRef.current.signal, body: JSON.stringify({ question: activeQuestion.question, answer, profile: candidateProfile, round: activeQuestion.round, difficulty: activeQuestion.difficulty, feedbackDepth: practice.feedbackDepth }) });
+        const payload = await response.json();
+        if (!response.ok || !payload.evaluation) throw new Error(payload.error || "Evaluation failed. Your answer is saved; retry this attempt.");
+        const evaluation = payload.evaluation;
+        const feedback = evaluationMarkdown(evaluation);
+        const attempt = { ...activeQuestion, ...evaluation, id: attemptId, answer, feedback, rubricVersion: 1, completedAt: new Date().toISOString() };
+        setPractice(prev => recordAttempt(prev, attempt));
+        setMessages(prev => [...prev.filter(m => !(m.attemptId === attemptId && m.role === "assistant")), { role: "assistant", content: feedback, attemptId }]);
+        trackEvent("ai_completed", { attemptId, value: String(Date.now() - startedAt) });
+        if (activeQuestion.parentId) { const comparison = compareAttempts(practice.attempts.find(a => a.id === activeQuestion.parentId), attempt); trackEvent("retest_completed", { attemptId, value: `${comparison.status}:${comparison.delta ?? "unassessed"}` }); }
+        lastRequestRef.current = null;
+      } catch (error) {
+        showToast(error.name === "AbortError" ? "Evaluation interrupted. Retry the saved answer." : error.message, "error");
+        trackEvent("ai_failed", { attemptId });
+      } finally {
+        clearTimeout(timeout); requestBusy.current = false; setLoading(false);
+        setMockTimerEndsAt(null); setMockTimerStatus("review");
+      }
+      return;
     }
-    lastRequestRef.current = {
+    const chatAttemptId = options.chatAttemptId || crypto.randomUUID();
+    const pendingRequest = {
       text: promptText,
       apiText: finalText,
       metadata: {
+        topic: options.topic,
+        chatAttemptId,
+        isInterviewPrompt: options.isInterviewPrompt,
+        startAnswerTimer: options.startAnswerTimer,
         interviewMode: options.interviewMode === undefined ? interviewMode : options.interviewMode,
         roundStrategy: options.roundStrategy === undefined ? roundStrategy : options.roundStrategy,
         interviewPanel: options.interviewPanel === undefined ? interviewPanel : options.interviewPanel,
         displayText,
       },
     };
+    lastRequestRef.current = pendingRequest;
+    setPractice(prev => ({ ...prev, pending: options.privateTranscript ? null : pendingRequest }));
     setInput(""); setCodeInput(""); setShowCode(false);
 
-    const userMessage = displayText === finalText
+    const userMessage = options.privateTranscript ? { role: "user", content: displayText } : displayText === finalText
       ? { role:"user", content:displayText }
       : { role:"user", content:displayText, apiContent:finalText };
-    const newMsgs = [...messages, userMessage];
-    const apiMessages = compactChatHistory([...toApiMessages(messages), { role:"user", content:finalText }]);
+    const baseMessages = options.replaceLastRequest ? messages.slice(0, messages.map(m => m.role).lastIndexOf("user")) : messages;
+    userMessage.attemptId = chatAttemptId;
+    const newMsgs = [...baseMessages, userMessage];
+    const apiMessages = compactChatHistory([...toApiMessages(baseMessages), { role:"user", content:finalText }]);
     setMessages([...newMsgs, { role:"assistant", content:"", streaming:true }]);
 
+    let requestSucceeded = false;
+    let requestTimeout;
     try {
       abortRef.current = new AbortController();
+      requestTimeout = setTimeout(() => abortRef.current?.abort(), 90000);
       const res = await fetch("/api/chat", {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({
           messages: apiMessages,
           profile: candidateProfile,
+          evidence: /resume|\bcv\b|resume bullet/i.test(finalText) ? practice.evidence : undefined,
           // Default request shape used to be interviewMode: interviewMode; options can now override it for canvas/review flows.
           interviewMode: options.interviewMode === undefined ? interviewMode : options.interviewMode,
           roundStrategy: options.roundStrategy === undefined ? roundStrategy : options.roundStrategy,
@@ -878,7 +967,7 @@ export default function Home() {
 
       const reader = res.body.getReader();
       const dec    = new TextDecoder();
-      let buf = "", aiText = "";
+      let buf = "", aiText = "", streamComplete = false;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -888,14 +977,24 @@ export default function Home() {
         for (const line of lines) {
           if (!line.startsWith("data: ")) continue;
           const data = line.slice(6).trim();
-          if (data === "[DONE]") break;
+          if (data === "[DONE]") { streamComplete = true; break; }
           let p;
           try { p = JSON.parse(data); } catch { continue; }
           if (p.error) throw new Error(`${p.error}${p.requestId ? ` (Request ID: ${p.requestId})` : ""}`);
           if (p.text) { aiText += p.text; setMessages(prev => { const u=[...prev]; u[u.length-1]={role:"assistant",content:aiText,streaming:true}; return u; }); }
         }
       }
-      setMessages(prev => { const u=[...prev]; u[u.length-1]={role:"assistant",content:aiText,streaming:false}; return u; });
+      if (!streamComplete) throw new Error("Response interrupted before completion. Retry the saved request.");
+      if (!aiText.trim()) throw new Error("No response received. Retry the saved request.");
+      requestSucceeded = true;
+      setPractice(prev => {
+        const next = { ...prev, pending: null };
+        if (options.isInterviewPrompt || options.startAnswerTimer) return { ...next, active: { question: aiText, topic: options.topic || selectedSub || selectedCat || "General", difficulty, round: roundStrategy, attemptId: crypto.randomUUID() } };
+        const score = aiText.match(/(?:overall\s+)?score\s*:\s*(\d+(?:\.\d+)?)\s*\/\s*10/i);
+        return score && !options.skipQuestionMemory && !options.privateTranscript ? recordAttempt(next, { id: chatAttemptId, question: [...baseMessages].reverse().find(m => m.role === "assistant")?.content || selectedSub || "Practice", answer: finalText, score: Number(score[1]), topic: selectedSub || selectedCat || "General", difficulty, round: roundStrategy, feedback: aiText, rubricVersion: 0, completedAt: new Date().toISOString() }) : next;
+      });
+      lastRequestRef.current = null;
+      setMessages(prev => { const u=[...prev]; u[u.length-1]={role:"assistant",content:aiText,streaming:false,attemptId:chatAttemptId}; return u; });
       if (!options.skipQuestionMemory && pendingPracticeCard.current) {
         const score = extractScoreFromFeedback(aiText);
         if (score !== null) {
@@ -913,33 +1012,39 @@ export default function Home() {
       }
     } catch(err) {
       if (err.name !== "AbortError") {
-        setMessages(prev => { const u=[...prev]; u[u.length-1]={role:"assistant",content:"⚠️ "+(err.message||"Something went wrong."),streaming:false}; return u; });
+        setMessages(prev => { const u=[...prev]; u[u.length-1]={role:"assistant",content: (u.at(-1)?.content || "") + "\n\n⚠️ " + (err.message||"Something went wrong."),streaming:false,interrupted:true}; return u; });
         showToast(err.message || "API error", "error");
       }
     } finally {
+      clearTimeout(requestTimeout);
+      requestBusy.current = false;
+      if (!requestSucceeded) setMessages(prev => prev.map(m => m.streaming ? { ...m, streaming: false, interrupted: true, content: m.content || "Response interrupted. Retry the saved request." } : m));
       if (!options.skipQuestionMemory) {
         pendingPracticeCard.current = null;
       }
       setLoading(false);
-      if (options.startAnswerTimer) {
+      if (requestSucceeded && options.startAnswerTimer) {
         setMockTimerRemaining(MOCK_ANSWER_SECONDS);
         setMockTimerEndsAt(Date.now() + MOCK_ANSWER_SECONDS * 1000);
         setMockTimerStatus("answering");
       }
     }
-  }, [messages, codeInput, loading, showToast, candidateProfile, techTheme.key, showCodeTools, mockTimerStatus, interviewMode, roundStrategy, interviewPanel, selectedCat, selectedSub, interviewSessionState, submitInterviewAnswer, scoreInterviewAnswer, reviewInterviewAnswer]);
+  }, [messages, codeInput, loading, showToast, candidateProfile, techTheme.key, showCodeTools, mockTimerStatus, interviewMode, roundStrategy, interviewPanel, selectedCat, selectedSub, practice, difficulty]);
 
   // ── Screen analyze ────────────────────────────────────────────────────────
   const analyzeScreen = useCallback(async (b64, ctx) => {
     setShowScreen(false);
-    if (loading) return;
+    if (loading || requestBusy.current) return;
+    requestBusy.current = true;
     setLoading(true);
     const label = `📸 Screenshot${ctx?" — "+ctx:""}`;
     const newMsgs = [...messages, { role:"user", content:label }];
     setMessages([...newMsgs, { role:"assistant", content:"", streaming:true }]);
 
+    let timeout;
     try {
       abortRef.current = new AbortController();
+      timeout = setTimeout(() => abortRef.current?.abort(), 90000);
       const res = await fetch("/api/analyze-screen", {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ imageBase64:b64, mimeType:"image/png", context:ctx, profile: candidateProfile }),
@@ -953,7 +1058,7 @@ export default function Home() {
 
       const reader = res.body.getReader();
       const dec    = new TextDecoder();
-      let buf = "", aiText = "";
+      let buf = "", aiText = "", completed = false;
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -962,20 +1067,21 @@ export default function Home() {
         for (const line of lines) {
           if (!line.startsWith("data: ")) continue;
           const data = line.slice(6).trim();
-          if (data === "[DONE]") break;
+          if (data === "[DONE]") { completed = true; break; }
           let p;
           try { p = JSON.parse(data); } catch { continue; }
           if (p.error) throw new Error(`${p.error}${p.requestId ? ` (Request ID: ${p.requestId})` : ""}`);
           if (p.text) { aiText += p.text; setMessages(prev => { const u=[...prev]; u[u.length-1]={role:"assistant",content:aiText,streaming:true}; return u; }); }
         }
       }
+      if (!completed) throw new Error("Screen analysis interrupted. Reopen Analyze Screen to retry.");
       setMessages(prev => { const u=[...prev]; u[u.length-1]={role:"assistant",content:aiText,streaming:false}; return u; });
     } catch(err) {
       if (err.name !== "AbortError") {
         setMessages(prev => { const u=[...prev]; u[u.length-1]={role:"assistant",content:"⚠️ "+(err.message||"Screen analysis error"),streaming:false}; return u; });
         showToast("Screen analysis failed", "error");
       }
-    } finally { setLoading(false); }
+    } finally { clearTimeout(timeout); requestBusy.current = false; setLoading(false); setMessages(prev => prev.map(m => m.streaming ? { ...m, streaming: false, interrupted: true, content: (m.content || "") + "\nScreen analysis stopped. Reopen Analyze Screen to retry." } : m)); }
   }, [messages, loading, showToast, candidateProfile]);
 
   // ── Voice ─────────────────────────────────────────────────────────────────
@@ -1086,6 +1192,7 @@ export default function Home() {
     callAPI(retry.text || retry.apiText, {
       apiText: retry.apiText,
       ...retry.metadata,
+      replaceLastRequest: !retry.metadata?.retryEvaluation,
     });
   }, [callAPI, showToast]);
 
@@ -1116,6 +1223,12 @@ export default function Home() {
     setCandidateProfile(snapshot.candidateProfile);
     setProfileDraft(snapshot.profileDraft);
     setMessages(snapshot.messages);
+    setInput(snapshot.input || "");
+    setCodeInput(snapshot.codeInput || "");
+    setPractice(normalizePractice(snapshot.practice));
+    recordedCount.current = snapshot.practice?.attempts?.length || 0;
+    setMockTimerRemaining(snapshot.mockTimer?.remaining ?? MOCK_ANSWER_SECONDS);
+    lastRequestRef.current = snapshot.practice?.pending || null;
     setSelCat(snapshot.selectedCat);
     setSelSub(snapshot.selectedSub);
     setExpanded(snapshot.expandedCat);
@@ -1143,7 +1256,7 @@ export default function Home() {
       label: "Started company mock",
       detail: "Launched a company-focused practice prompt.",
     });
-    callAPI(prompt);
+    callAPI(prompt, { isInterviewPrompt: true, startAnswerTimer: true });
   };
 
   const startCanvasAction = (prompt, metadata = {}) => {
@@ -1200,9 +1313,7 @@ export default function Home() {
       setJavaDigestProgress((previous) => ({
         ...previous,
         completedTopics: Array.from(new Set([...(previous.completedTopics || []), metadata.article.id])),
-        masteredTopics: metadata.type === "javaDigestMock"
-          ? Array.from(new Set([...(previous.masteredTopics || []), metadata.article.id]))
-          : [...(previous.masteredTopics || [])],
+        masteredTopics: [...(previous.masteredTopics || [])],
       }));
     }
     recordWorkspaceActivity({
@@ -1271,7 +1382,6 @@ export default function Home() {
   };
 
   const goHome = useCallback(() => {
-    abortRef.current?.abort();
     const homeState = createHomeNavigationState({
       candidateProfile,
       profileDraft,
@@ -1284,10 +1394,9 @@ export default function Home() {
     // Home is a view over the current durable practice record. Do not erase
     // the conversation; dashboard, history, and replay all consume it.
     setMessages(messages);
-    setLoading(homeState.loading);
+    // Navigation preserves the in-flight request and its draft.
     setHomeView(true);
     setShowCode(false);
-    setCodeInput("");
     if (isMobile) setSidebar(false);
     requestAnimationFrame(() => {
       chatRef.current?.scrollTo({ top: 0, behavior: "auto" });
@@ -1336,7 +1445,7 @@ export default function Home() {
     });
   };
 
-  const submitRecordingReview = ({ review, prompt, transcript }) => {
+  const submitRecordingReview = ({ review, prompt, transcript, retainTranscript }) => {
     setShowRecordingReview(false);
     recordWorkspaceActivity({
       workspaceId: "chat",
@@ -1357,6 +1466,7 @@ export default function Home() {
       apiText: prompt ? `${prompt}\n\nTranscript:\n${transcript}` : apiText,
       displayText: review.displayText || "Interview recording review",
       skipQuestionMemory: true,
+      privateTranscript: !retainTranscript,
     });
   };
 
@@ -1380,9 +1490,10 @@ export default function Home() {
   };
 
   // ── Session start ─────────────────────────────────────────────────────────
-  const startSession = useCallback(() => {
+  const startSession = useCallback((topicOverride) => {
     if (!candidateProfile || !selectedCat || loading) return;
-    const topic = selectedSub || selectedCat;
+    trackEvent("practice_started", { value: String(Date.now() - pageOpenedAt.current) });
+    const topic = typeof topicOverride === "string" ? topicOverride : selectedSub || selectedCat;
     const style = INTERVIEW_MODES.find((item) => item.key === interviewMode)?.label || "Strict Interviewer";
     const round = ROUND_STRATEGY_MODES.find((item) => item.key === roundStrategy)?.label || "Coding";
     const panel = INTERVIEW_PANEL_OPTIONS.find((item) => item.key === interviewPanel)?.label || "Senior Engineer";
@@ -1391,8 +1502,8 @@ export default function Home() {
       : "";
     const prompt = mode === "interview"
       ? `Start a ${style} mock interview for ${displayName} on "${topic}". Round Strategy Mode: ${round}. AI Interview Panel Mode: ${panel}. Difficulty: ${difficulty}. ${pressureRules} Ask your first question.`
-      : `Give ${displayName} a comprehensive ${difficulty}-level practice session on "${topic}". Include working code when useful.`;
-    setMessages([]);
+      : `Ask ${displayName} one ${difficulty}-level practice question on "${topic}". Wait for their answer; do not provide a solution.`;
+    setPractice(prev => ({ ...prev, active: null, pending: null }));
     setHomeView(false);
     setActiveTab("chat");
     setMockTimerStatus("idle");
@@ -1407,7 +1518,7 @@ export default function Home() {
       resetInterviewSession({ mode: "interview", round: roundStrategy, panel: interviewPanel, profile: candidateProfile });
       startInterviewQuestion({ questionId: `${selectedCat}-${Date.now()}`, question: `Interview question about ${topic}` });
     }
-    setTimeout(() => callAPI(prompt, { startAnswerTimer: mode === "interview", isInterviewPrompt: true }), 50);
+    callAPI(prompt, { topic, startAnswerTimer: mode === "interview", isInterviewPrompt: true });
   }, [callAPI, candidateProfile, difficulty, displayName, interviewMode, interviewPanel, loading, mode, recordWorkspaceActivity, roundStrategy, selectedCat, selectedSub, setActiveTab, resetInterviewSession, startInterviewQuestion]);
 
   const clearChat = useCallback(() => {
@@ -1620,8 +1731,9 @@ export default function Home() {
             </span>
             <span className={`cloud-sync-status cloud-sync-${cloudStatus}`} role="status" aria-live="polite" title="Workspace sync status">
               <i className={`ti ${cloudStatus === "saving" || cloudStatus === "hydrating" ? "ti-loader-2" : cloudStatus === "offline" ? "ti-device-floppy" : "ti-cloud-check"}`} />
-              {cloudStatus === "saving" ? "Saving…" : cloudStatus === "hydrating" ? "Loading…" : cloudStatus === "offline" || !auth.user ? "Saved on this device" : "Saved"}
+              {localSaveStatus === "error" ? "Device save failed" : localSaveStatus !== "saved" ? "Loading…" : cloudStatus === "saving" ? "Saved on device · Syncing…" : cloudStatus === "hydrating" ? "Loading cloud…" : cloudStatus === "offline" ? "Saved on device · Sync failed" : !auth.user ? "Saved on this device" : cloudStatus === "saved" ? "Saved and synced" : "Saved on device · Waiting for sync"}
             </span>
+            {localSaveStatus === "error" && <button onClick={() => setSaveRetry(v => v + 1)}>Retry device save</button>}
             {auth.user && cloudStatus === "offline" ? <button type="button" className="cloud-sync-retry glass-button" onClick={retryCloudSync} aria-label="Retry cloud sync" title="Retry cloud sync">Retry sync</button> : null}
             {candidateProfile && (
               <span className="header-profile-label" aria-label={`Local prep profile: ${userPrepLabel}`} title="This is a local prep profile, not a signed-in account." style={{ display:isMobile?"none":"inline-flex", alignItems:"center", gap:5, padding:"3px 8px", borderRadius:999, border:`1px solid ${techTheme.accentBorder}`, background:techTheme.accentMuted, color:techTheme.accentText, fontSize:10.5, fontWeight:600, whiteSpace:"nowrap" }}>
@@ -1947,7 +2059,10 @@ export default function Home() {
                   weakSpots={weakSpots}
                   mockScores={mockScores}
                   messages={messages}
-                  structuredSessions={[interviewSessionState]}
+                  structuredSessions={[recordedSession]}
+                  practice={practice}
+                  onResume={() => { setHomeView(false); trackEvent("session_resumed"); }}
+                  hasDraft={Boolean(input || codeInput || practice.active || practice.pending)}
                   questionMemory={questionMemory}
                   onQuestionMemoryChange={setQuestionMemory}
                   systemDesignCanvas={systemDesignCanvas}
@@ -1968,6 +2083,7 @@ export default function Home() {
                         <i className={`ti ${msg.role==="user"?"ti-user":"ti-robot"}`} style={{ color: msg.role==="user"?techTheme.accentStrong:"#c084fc" }} />
                       </div>
                       <div className={`glass-card ${msg.role==="user" ? "user-message" : "assistant-message"}`} style={{ maxWidth: isMobile?"88%":"82%", border: msg.role==="user"?`1px solid ${techTheme.accentBorder}`:"1px solid rgba(255,255,255,.07)", borderRadius: msg.role==="user"?"12px 12px 4px 12px":"12px 12px 12px 4px", padding: isMobile?"9px 12px":"10px 14px" }}>
+                        {!loading && <button aria-label="Remove this message" className="icon-btn" onClick={() => setMessages(prev => prev.filter((_, index) => index !== idx))}><i className="ti ti-trash" aria-hidden="true" /></button>}
                         {msg.role==="assistant" && idx>0 && <ScoreBadge content={msg.content} />}
                         {msg.role==="user"
                           ? <div style={{ fontSize: isMobile?13:13.5, color:techTheme.accentText, lineHeight:1.65, whiteSpace:"pre-wrap", wordBreak:"break-word" }}>{msg.content}</div>
@@ -1978,6 +2094,7 @@ export default function Home() {
                       </div>
                     </div>
                   ))}
+                  <PracticeReview practice={practice} onExercise={exerciseNotes => setPractice(prev => ({ ...prev, exerciseNotes }))} loading={loading} onDelete={id => { setPractice(prev => ({ ...prev, attempts: prev.attempts.filter(a => a.id !== id) })); setMessages(prev => prev.filter(m => m.attemptId !== id)); }} onRetest={(attempt, comparable, exercise) => { setPractice(prev => ({ ...prev, active: { question: comparable ? attempt.followUp : attempt.question, topic: attempt.topic, difficulty: attempt.difficulty, round: attempt.round, parentId: attempt.id, exercise, attemptId: crypto.randomUUID() } })); setInput(""); setMockTimerRemaining(60); setMockTimerEndsAt(Date.now() + 60000); setMockTimerStatus("answering"); }} />
                   <PostAnswerTools
                     profile={candidateProfile}
                     messages={messages}
@@ -1992,15 +2109,31 @@ export default function Home() {
               )
             }
             </> : null}
+            {candidateProfile && <>
+              {activeTab === "chat" && (homeView || messages.length === 0) && <LearningSearch attempts={practice.attempts} designs={practice.designs} onQuestion={(question, topic) => { setPractice(prev => ({ ...prev, active: { question, topic, difficulty, round: roundStrategy, attemptId: crypto.randomUUID() } })); setMessages(prev => [...prev, { role: "assistant", content: question }]); setHomeView(false); }} onSaved={attempt => { setHomeView(false); setMessages(prev => [...prev, { role: "assistant", content: `Saved attempt: ${attempt.question}\n\nYour answer: ${attempt.answer}\n\n${attempt.feedback}`, replay: true }]); }} onDesign={id => { setPractice(prev => ({ ...prev, selectedDesignId: id })); openWorkspace("canvas"); }} />}
+              {activeTab === "chat" && (homeView || messages.length === 0) && <EvidenceNotebook records={practice.evidence} onChange={evidence => setPractice(prev => ({ ...prev, evidence }))} />}
+              {activeTab === "dsaLab" && <ExecutableDsa />}
+              {activeTab === "canvas" && <DesignWorkbench initialSelectedId={practice.selectedDesignId} designs={practice.designs} onChange={designs => setPractice(prev => ({ ...prev, designs }))} saveStatus={localSaveStatus} canvas={systemDesignCanvas} onRestoreCanvas={setSystemDesignCanvas} onReview={startCanvasAction} />}
+              <ContentReport context={`${activeTab}: ${selectedSub || selectedCat || "Home"}`} reports={practice.reports} onChange={reports => setPractice(prev => ({ ...prev, reports }))} />
+              <DataControls busy={loading} />
+            </>}
           </div>
 
           {/* ── Input area ── */}
           {showComposer && <footer className="glass-chrome composer-footer" style={{ padding: isMobile ? (isKeyboardOpen ? "8px 10px" : "8px 10px 10px") : "10px 12px 12px", borderTop:"1px solid rgba(255,255,255,.08)", flexShrink:0 }}>
+            <div className="practice-context">
+              <span>{practice.active?.topic || currentLabel || "General"} · {practice.active?.difficulty || difficulty} · {practice.active?.round || roundStrategy}</span>
+              <label>Feedback depth <select value={practice.feedbackDepth} onChange={e => setPractice(prev => ({ ...prev, feedbackDepth: e.target.value }))}>{["Quick review", "Detailed explanation", "Strict interview"].map(v => <option key={v}>{v}</option>)}</select></label>
+              {practice.active && <details open><summary>Current question</summary><p>{practice.active.question}</p></details>}
+              {loading && <p role="status">AI request in progress · {requestElapsed}s {requestElapsed >= 30 ? "· Taking longer than usual. You can stop and retry." : ""}<button onClick={() => abortRef.current?.abort()}>Stop request</button></p>}
+              {!loading && practice.pending && <p role="alert">Request unfinished. Your submitted answer is saved. <button onClick={retryLastAiRequest}>Retry saved request</button> Retry replaces this response; it does not add another attempt.</p>}
+            </div>
             {mockTimerStatus !== "idle" && (
               <div role="status" aria-live="polite" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8, border: `1px solid ${techTheme.accentBorder}`, borderRadius: 8, padding: "6px 9px", background: techTheme.accentMuted }}>
                 <span style={{ color: techTheme.accentText, fontSize: 11.5, fontWeight: 800, display: "inline-flex", alignItems: "center", gap: 6 }}>
                   <i className="ti ti-clock" />Mock answer timer
                 </span>
+                {["answering", "paused"].includes(mockTimerStatus) && <button onClick={() => { if (mockTimerStatus === "answering") { setMockTimerEndsAt(null); setMockTimerStatus("paused"); } else { setMockTimerEndsAt(Date.now() + mockTimerRemaining * 1000); setMockTimerStatus("answering"); } }}>{mockTimerStatus === "paused" ? "Resume timer" : "Pause timer"}</button>}
                 <strong style={{ color: mockTimerStatus === "answering" ? techTheme.accentStrong : "#86efac", fontSize: 12 }}>{mockTimerLabel}</strong>
               </div>
             )}

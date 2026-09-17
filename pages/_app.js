@@ -1,3 +1,4 @@
+import Head from "next/head";
 import { useEffect } from "react";
 import "../styles/globals.css";
 import { SpeedInsights } from '@vercel/speed-insights/next';
@@ -18,6 +19,7 @@ export default function App({ Component, pageProps, router }) {
 
   return (
     <>
+      <Head><meta name="description" content="InterviewIQ - AI-powered interview intelligence for modern software engineers" /></Head>
       <Component {...pageProps} />
       <BrandWatermark />
       <SpeedInsights />

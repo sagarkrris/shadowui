@@ -1,0 +1,7 @@
+import { trackEvent } from "../../lib/analytics.mjs";
+import { useState } from 'react';
+export default function ContentReport({ context, reports, onChange }) {
+  const [description, setDescription] = useState('');
+  const [preview, setPreview] = useState(null);
+  return <details className="practice-panel"><summary>Report a problem with this content</summary><p>Reports stay in your practice data until you export and share them. No personal answer is included automatically.</p><label>What is incorrect?<textarea value={description} onChange={e => { setDescription(e.target.value); setPreview(null); }} /></label><button disabled={!description.trim()} onClick={() => setPreview({ id: crypto.randomUUID(), context: `${context} · ${document.title} · ${location.pathname}`, description, createdAt: new Date().toISOString(), status: 'open' })}>Preview report</button>{preview && <div><pre>{JSON.stringify(preview, null, 2)}</pre><button onClick={() => { onChange([...reports, preview]); trackEvent("content_reported"); setDescription(''); setPreview(null); }}>Save report locally</button></div>}{reports.filter(r => r.context.startsWith(context)).map(r => <div key={r.id}><p>{r.description} · {r.status}{r.resolvedAt ? ` · Resolved ${r.resolvedAt}` : ''}</p>{r.status === 'open' && <button onClick={() => { onChange(reports.map(v => v.id === r.id ? { ...v, status: 'resolved', resolvedAt: new Date().toISOString() } : v)); trackEvent('content_resolved', { value: String(Date.now() - Date.parse(r.createdAt)) }); }}>Mark resolved after checking</button>}</div>)}</details>;
+}

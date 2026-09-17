@@ -58,6 +58,8 @@ export async function gotoCleanApp(page) {
     };
   });
   await page.goto("/");
+  await page.getByRole("button", { name: "Skip tour", exact: true }).click();
+  await expect(page.getByLabel("Name", { exact: true })).toBeVisible();
 }
 
 export async function gotoSeededApp(page, options = {}) {
@@ -74,9 +76,9 @@ export async function gotoSeededApp(page, options = {}) {
     window.alert = () => {
       window.__INTERVIEWIQ_ALERTED__ = true;
     };
-  }, { key: SESSION_STORAGE_KEY, value: session, homeDemoSeen: options.homeDemoSeen === true });
+  }, { key: SESSION_STORAGE_KEY, value: session, homeDemoSeen: options.homeDemoSeen !== false });
   await page.goto("/");
-  if (!options.activeTab || options.activeTab === "chat") await expect(page.getByRole("button", { name: "Start mock round" })).toBeVisible();
+  if (!options.skipReadyCheck && (!options.activeTab || options.activeTab === "chat")) await expect(page.getByRole("button", { name: "Start practice", exact: true })).toBeVisible();
 }
 
 export async function completeOnboarding(page, profile = reactJavaProfile) {
@@ -85,13 +87,13 @@ export async function completeOnboarding(page, profile = reactJavaProfile) {
   await page.getByLabel("Years of experience").selectOption(profile.experience);
   await page.getByLabel("Tech stack").fill(profile.stack);
   await page.getByRole("button", { name: "Personalize Prep" }).click();
-  await expect(page.getByRole("button", { name: "Start mock round" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Start practice", exact: true })).toBeVisible();
 }
 
 export async function openSidebar(page) {
-  const frontendButton = page.getByRole("button", { name: "Frontend" });
+  const frontendButton = page.getByRole("button", { name: /^(Frontend|React Core|Java Core)$/ });
   if (await frontendButton.isVisible().catch(() => false)) return;
-  await page.getByRole("button", { name: "Topics" }).click();
+  await page.getByRole("button", { name: "Topics", exact: true }).click();
   await expect(frontendButton).toBeVisible();
 }
 

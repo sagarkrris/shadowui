@@ -14,7 +14,9 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:browser-matrix": "E2E_BROWSER_MATRIX=1 playwright test",
     "db:migrate": "node scripts/migrate-postgres.mjs",
-    "test:unit": "node --test test/*.test.mjs"
+    "test:unit": "node --test test/*.test.mjs",
+    "test:release": "node scripts/validation/release-gate.mjs",
+    "test:content": "node scripts/validation/check-java-content.mjs && node scripts/validation/check-blind75.mjs"
   },
   "dependencies": {
     "@napi-rs/canvas": "0.1.80",

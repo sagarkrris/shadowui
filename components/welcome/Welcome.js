@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { practiceSummary } from "../../lib/dailyPractice.mjs";
 import { useCallback, useEffect, useState } from "react";
 import { getQuickPrompts } from "../../lib/prompts.mjs";
 import { getStackGreeting } from "../../lib/personalization.mjs";
@@ -14,12 +16,14 @@ import SmartPrepTimeline from "./SmartPrepTimeline";
 import UnifiedProgressBrain from "./UnifiedProgressBrain";
 import CodeRunner from "../CodeRunner";
 
-export default function Welcome({ onChip, onStart, onScreen, onVoice, onRecordReview, selectedCat, selectedSub, mode, difficulty, theme, profile, showCodeTools, topics, weakSpots, mockScores, messages, structuredSessions = [], questionMemory, onQuestionMemoryChange, systemDesignCanvas, onPracticeMock, onOpenWorkspace, beginnerMode, onBeginnerModeChange, prepProgressState, onNotify, onBeginnerStepChange, onExportPlan, onToolkitStateChange: onExternalToolkitStateChange }) {
+export default function Welcome({ practice = { attempts: [] }, onResume, hasDraft, onChip, onStart, onScreen, onVoice, onRecordReview, selectedCat, selectedSub, mode, difficulty, theme, profile, showCodeTools, topics, weakSpots, mockScores, messages, structuredSessions = [], questionMemory, onQuestionMemoryChange, systemDesignCanvas, onPracticeMock, onOpenWorkspace, beginnerMode, onBeginnerModeChange, prepProgressState, onNotify, onBeginnerStepChange, onExportPlan, onToolkitStateChange: onExternalToolkitStateChange }) {
   const [toolkitState, setToolkitState] = useState({});
   const [activeSection, setActiveSection] = useState("overview");
+  const summary = practiceSummary(practice.attempts);
+  const lastAttempt = practice.attempts.at(-1);
   const topic = selectedSub || selectedCat;
   const quickPrompts = getQuickPrompts(selectedCat, selectedSub);
-  const greeting = getStackGreeting(profile);
+
   const commandCenter = buildPrepCommandCenter({ profile, topics, weakSpots, mockScores });
   const proofStories = deriveProofVaultStories(messages, profile);
   const handleToolkitStateChange = useCallback((nextState) => { const next = nextState || {}; setToolkitState(next); onExternalToolkitStateChange?.(next); }, [onExternalToolkitStateChange]);
@@ -55,20 +59,18 @@ export default function Welcome({ onChip, onStart, onScreen, onVoice, onRecordRe
 
   return (
     <div className="welcome-screen prep-home-screen" style={{ flex: 1, width: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "18px 20px 28px", textAlign: "center", overflowY: "visible" }}>
-      <div className="welcome-logo" style={{ width: 60, height: 60, borderRadius: "50%", background: theme.accentSoft, border: `1px solid ${theme.accentBorder}`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18, color: theme.accentStrong, fontSize: greeting.stackBadge.length > 8 ? 11 : greeting.stackBadge.length > 6 ? 12 : 14, fontWeight: 900, lineHeight: 1, letterSpacing: 0, textAlign: "center", padding: "0 8px", overflowWrap: "anywhere" }}>
-        {greeting.stackBadge}
-      </div>
-      <h1 className="welcome-title" style={{ fontSize: 20, fontWeight: 700, color: theme.appearance === "light" ? "#17324d" : "#e8e8f0", marginBottom: 8, maxWidth: 520, overflowWrap: "anywhere", lineHeight: 1.35 }}>{greeting.headline}</h1>
-      {topic ? (
-        <p className="welcome-copy" style={{ fontSize: 13.5, color: "#6b7280", marginBottom: 24, maxWidth: 340, lineHeight: 1.65 }}>
-          {`${greeting.context} Ready for ${topic}. Start a mock or choose a focused prompt below.`}
-        </p>
-      ) : (
-        <p className="welcome-copy" style={{ fontSize: 13.5, color: "#6b7280", marginBottom: 24, maxWidth: 340, lineHeight: 1.65 }}>
-          {`${greeting.context} Select a topic from the sidebar, choose mode & difficulty, then hit Start - or jump in below.`}
-        </p>
-      )}
-
+      <section className="practice-panel today-card">
+        <p>Today · 12 minutes</p><h1>Practise {lastAttempt?.topic || topic || 'your next interview topic'}</h1>
+        <p>{lastAttempt?.gaps?.[0] ? `Your last answer: ${lastAttempt.gaps[0]}` : 'Answer one question, review the evidence, and try again.'}</p>
+        <button onClick={() => onStart(lastAttempt?.topic || topic)}>Start practice</button>
+        {hasDraft && <button onClick={onResume}>Resume last session</button>}
+        <p>{summary.completed} completed attempts · {summary.average === null ? 'Not assessed' : `${summary.average}/10 average`}</p>
+        <p>{summary.readiness}</p>
+        <button onClick={() => onOpenWorkspace?.('javaDigest')}>Explore topics</button>
+        <p>Learn: study an explanation · Practice: improve an answer · Mock: timed interview · Review: revisit recorded evidence.</p>
+      </section>
+      <section className="practice-panel" style={{ width: "100%" }}><h2>Production Detective</h2><p>Investigate a five-minute debugging mystery. Follow the evidence, choose a diagnosis, and explore the repair.</p><Link href="/detective">Open the case files →</Link></section>
+      <details className="practice-panel" style={{ width: '100%' }}><summary>Advanced tools and learning plans</summary>
       <div className="welcome-actions" style={{ display: "flex", gap: 10, marginBottom: 24, flexWrap: "wrap", justifyContent: "center" }}>
         <button className="glass-button" onClick={onStart} disabled={!onStart} aria-label="Start mock interview" style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 18px", border: `1px solid ${theme.accentBorder}`, borderRadius: 10, background: theme.accentSoft, color: theme.accentText, fontSize: 13, fontWeight: 800, cursor: onStart ? "pointer" : "not-allowed", opacity: onStart ? 1 : 0.55 }}>
           <i className="ti ti-player-play" />Start mock
@@ -220,6 +222,7 @@ export default function Welcome({ onChip, onStart, onScreen, onVoice, onRecordRe
       </div>
       </div>
       </div>
+      </details>
     </div>
   );
 }

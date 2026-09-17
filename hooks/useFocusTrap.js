@@ -6,7 +6,8 @@ export function useFocusTrap(ref, enabled = true) {
   useEffect(() => {
     if (!enabled || !ref.current) return undefined;
     const root = ref.current;
-    const focusables = () => Array.from(root.querySelectorAll(SELECTOR));
+    const previousFocus = document.activeElement;
+    const focusables = () => Array.from(root.querySelectorAll(SELECTOR)).filter(element => element.getClientRects().length > 0);
     focusables()[0]?.focus();
     const onKeyDown = (event) => {
       if (event.key !== "Tab") return;
@@ -16,6 +17,6 @@ export function useFocusTrap(ref, enabled = true) {
       else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
     };
     root.addEventListener("keydown", onKeyDown);
-    return () => root.removeEventListener("keydown", onKeyDown);
+    return () => { root.removeEventListener("keydown", onKeyDown); if (previousFocus?.isConnected) previousFocus.focus?.(); };
   }, [enabled, ref]);
 }

@@ -87,6 +87,7 @@ export function TabletWorkspaceMenu({ activeTab, accent = "#8bd3ff", onToggleWor
             {workspaces.map((workspace) => (
               <button
                 key={workspace.id}
+                aria-label={workspace.label}
                 type="button"
                 aria-current={activeTab === workspace.id ? "page" : undefined}
                 onClick={() => selectWorkspace(workspace.id)}

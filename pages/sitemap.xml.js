@@ -1,3 +1,4 @@
+import { DETECTIVE_CASES } from "../lib/productionDetective.mjs";
 import { PUBLIC_ARTICLES, PUBLIC_RESOURCES } from "../lib/publicContent.mjs";
 import { JAVA_TUTORIAL_CATALOG, slugifyJavaTutorial } from "../lib/javaDigest.mjs";
 import { PUBLIC_STACK_GUIDES } from "../lib/seoGuides.mjs";
@@ -9,6 +10,8 @@ export default function Sitemap() { return null; }
 
 export function getServerSideProps({ res }) {
   const urls = [
+    { loc: `${SITE_URL}/detective`, changefreq: "weekly", priority: "0.9" },
+    ...DETECTIVE_CASES.map(incident => ({ loc: `${SITE_URL}/detective/${incident.slug}`, changefreq: "monthly", priority: "0.8" })),
     { loc: `${SITE_URL}/`, changefreq: "weekly", priority: "1.0" },
     { loc: `${SITE_URL}/java`, changefreq: "weekly", priority: "0.9" },
     { loc: `${SITE_URL}/java/roadmap`, changefreq: "weekly", priority: "0.9" },

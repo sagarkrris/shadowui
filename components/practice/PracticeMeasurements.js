@@ -1,0 +1,7 @@
+import { useState } from 'react';
+import { PRODUCT_EVENTS_KEY, summarizeProductEvents } from '../../lib/analytics.mjs';
+export default function PracticeMeasurements() {
+  const [report, setReport] = useState(null);
+  const [error, setError] = useState('');
+  return <details className="practice-panel"><summary>Practice measurements on this device</summary><p>Counts use anonymous tab sessions and deduplicated result IDs. The latest 2,000 events stay on this device and are included in your backup. No answer or profile text is recorded here. These measurements describe use, not interview readiness.</p><button onClick={() => { try { setReport(summarizeProductEvents(JSON.parse(localStorage.getItem(PRODUCT_EVENTS_KEY) || '[]'))); setError(''); } catch { setError('Measurements could not be read. Your practice records are unaffected.'); } }}>Refresh measurements</button>{error && <p role="alert">{error}</p>}{report && <dl><dt>Started sessions with an answer</dt><dd>{report.sessionsWithAnswers} / {report.startedSessions}</dd><dt>Available unfinished sessions resumed</dt><dd>{report.unfinishedSessionsResumed} / {report.unfinishedSessionsAvailable}</dd><dt>AI completions / failures</dt><dd>{report.aiCompletions} / {report.aiFailures}</dd><dt>Median AI response time</dt><dd>{report.medianAiLatencyMs === null ? 'Not measured' : `${report.medianAiLatencyMs} ms`}</dd><dt>Distinct recorded results / save failures</dt><dd>{report.savedResults} / {report.saveFailures}</dd><dt>Improved retests</dt><dd>{report.improvedRetests}</dd></dl>}</details>;
+}

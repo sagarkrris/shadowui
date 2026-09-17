@@ -23,9 +23,9 @@ async function handler(req, res) {
   try {
     const { result } = await runGeminiRouteOperation({
       onFallback: (details) => logger.warn("model.fallback", details),
-      operation: (candidate, { apiKey }) => generateContent(createGeminiClient(apiKey), { model: candidate, config: { responseMimeType: "application/json" }, contents: buildStructuredEvaluationPrompt({ question, answer, profile: req.body?.profile, round: req.body?.round }) }),
+      operation: (candidate, { apiKey }) => generateContent(createGeminiClient(apiKey), { model: candidate, config: { responseMimeType: "application/json" }, contents: buildStructuredEvaluationPrompt({ question, answer, profile: req.body?.profile, round: req.body?.round, difficulty: req.body?.difficulty, feedbackDepth: req.body?.feedbackDepth }) }),
     });
-    const parsed = parseStructuredEvaluation(result.text || "");
+    const parsed = parseStructuredEvaluation(result.text || "", { answer });
     if (!parsed.ok) return res.status(502).json({ error: parsed.error, requestId: logger.requestId });
     const usage = estimateAiUsage({ inputChars: question.length + answer.length, outputChars: (result.text || "").length });
     recordMetric("ai.evaluation", { route: "/api/evaluate", ...usage });

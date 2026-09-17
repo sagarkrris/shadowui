@@ -191,7 +191,7 @@ test("interview calibration modes and rubric sliders are wired into chat", () =>
   assert.match(apiChatSource, /req\.body\?\.interviewMode/);
   assert.match(apiChatSource, /req\.body\?\.roundStrategy/);
   assert.match(apiChatSource, /req\.body\?\.interviewPanel/);
-  assert.match(apiChatSource, /buildSystemPrompt\(profile, \{ interviewMode, roundStrategy, interviewPanel \}\)/);
+  assert.match(apiChatSource, /buildSystemPrompt\(profile, \{ interviewMode, roundStrategy, interviewPanel, evidence: req\.body\?\.evidence \}\)/);
   assert.match(scoreBadgeSource, /parseAnswerRubric/);
   assert.match(scoreBadgeSource, /type="range"/);
   assert.match(scoreBadgeSource, /Correctness/);

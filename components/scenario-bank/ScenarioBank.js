@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
   DATABASE_ENGINES,
@@ -507,6 +508,7 @@ export default function ScenarioBank({ theme = {}, onAction, beginnerMode = fals
         width: "100%",
       }}
     >
+      <Link href="/detective">Production Detective: investigate a five-minute incident →</Link>
       <BeginnerGuideBanner
         enabled={beginnerMode}
         accent={accent}

@@ -1,0 +1,9 @@
+# Content and scoring validation
+
+- `node scripts/validation/check-java-content.mjs`: inventories all 103 Java chapters and compiles/runs 35 standalone or method-harness examples with their declared `--release` level. Other examples require application types, infrastructure, or express a behavioral result rather than stdout; the JSON report labels them contextual snippets.
+- `node scripts/validation/check-blind75.mjs`: compiles all 75 canonical Java reference solutions with `--release 8` and executes bounded regression fixtures, including empty, duplicate, negative, cyclic, ordering, and overflow-sensitive examples where relevant. Standard ListNode, TreeNode and Node fixtures are supplied by the harness. The canonical source is `lib/blind75JavaReferences.json`; lesson views consume it directly. It originated in the existing study guide; subsequent corrections are maintained in this file. Compilation and bounded cases are not a proof for every input.
+- Set `CONTENT_JAVA_HOME` to a JDK 21 installation outside this Mac. Reports and compiled classes use temporary directories.
+- `node scripts/validation/calibrate-ai.mjs`: makes at most ten synthetic Gemini requests, compares score bands, validates exact evidence quotations, and writes a credential-free report. It does not use personal answers. Requires a valid `GEMINI_API_KEY`; explicitly skipped by the user on 2026-09-17 after the configured credential was rejected.
+- `npx playwright test e2e/practice-accessibility.spec.js`: WCAG A/AA axe scans, narrow layout, text scaling, keyboard access and reduced-motion checks for Today, system design and DSA. Real assistive-technology and physical-device usability are separate manual acceptance checks; emulation does not prove them.
+
+All commands exit nonzero on failure. See the release notes for the exact runs and scope.

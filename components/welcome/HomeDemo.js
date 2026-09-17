@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { trackEvent } from "../../lib/analytics.mjs";
 
@@ -30,6 +31,7 @@ export default function HomeDemo({ onContinue, onSignIn, onOpenWorkspace }) {
         <h1 id="home-demo-title">Everything you need for stronger interview preparation.</h1>
         <p>Take a visual tour of the practice rooms, technical curriculum, career tools, and progress system available in one workspace.</p>
       </div>
+      <p><Link href="/detective">Try Production Detective — five-minute debugging mysteries, no sign-in →</Link></p>
       <div className="home-demo__tour" aria-label="InterviewIQ product tour">
         <div className="home-demo__screen" aria-live={isPlaying ? "off" : "polite"}>
           <div className="home-demo__screen-top"><span><i className={`ti ${scene.icon}`} /> {scene.eyebrow}</span><span>{String(sceneIndex + 1).padStart(2, "0")} / {String(TOUR_SCENES.length).padStart(2, "0")}</span></div>

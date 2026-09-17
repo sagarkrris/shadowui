@@ -489,7 +489,7 @@ function Blind75GuideModal({ problem, onClose, onOpenVisualizer, theme = {} }) {
             <section key={section.heading} style={{ borderBottom: "1px solid rgba(255,255,255,.08)", display: "grid", gap: 8, paddingBottom: 14 }}>
               <h3 style={{ color: section.heading === "Java solution" ? "#a7f3d0" : accent, fontSize: 13, margin: 0, textTransform: "none" }}>{section.heading}</h3>
               {section.heading === "Java solution" ? (
-                <pre style={{ background: "rgba(0,0,0,.28)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, color: "#dbeafe", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 11.5, lineHeight: 1.55, margin: 0, overflowX: "auto", padding: 11, whiteSpace: "pre" }}>{section.content}</pre>
+                <pre tabIndex={0} aria-label="Code example" style={{ background: "rgba(0,0,0,.28)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, color: "#dbeafe", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 11.5, lineHeight: 1.55, margin: 0, overflowX: "auto", padding: 11, whiteSpace: "pre" }}>{section.content}</pre>
               ) : (
                 <p style={{ color: "#cbd5e1", fontSize: 12, lineHeight: 1.6, margin: 0, whiteSpace: "pre-line" }}>{section.content}</p>
               )}
@@ -1225,7 +1225,7 @@ function DsaReelView({ lesson, state, currentStep, stepIndex, accent, playing, l
 
 function DryRunTable({ rows, activeIndex, accent }) {
   return (
-    <div style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, overflowX: "auto" }}>
+    <div tabIndex={0} role="region" aria-label="Algorithm state table" style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, overflowX: "auto" }}>
       <div style={{ background: "rgba(255,255,255,.045)", color: accent, display: "grid", fontSize: 10, fontWeight: 900, gap: 0, gridTemplateColumns: "48px minmax(90px, .8fr) minmax(120px, 1fr) minmax(120px, 1fr) minmax(140px, 1.1fr)", minWidth: 640, textTransform: "uppercase" }}>
         {["Step", "Pointer", "State", "Decision", "Reason"].map((label) => (
           <span key={label} style={{ borderRight: "1px solid rgba(255,255,255,.07)", padding: "7px 8px" }}>{label}</span>
@@ -1253,8 +1253,8 @@ function ExplainReadinessChecklist({ explanation, judged, score, accent }) {
   return (
     <section style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 8, padding: 11 }}>
       <div style={{ alignItems: "center", display: "flex", gap: 8, justifyContent: "space-between", flexWrap: "wrap" }}>
-        <strong style={{ color: accent, fontSize: 11, textTransform: "uppercase" }}>Approach readiness</strong>
-        <span style={{ color: judged ? "#a7f3d0" : "#93a4bf", fontSize: 11, fontWeight: 900 }}>{judged ? `${score}% ready` : "Before code"}</span>
+        <strong style={{ color: accent, fontSize: 11, textTransform: "uppercase" }}>Explanation checklist</strong>
+        <span style={{ color: judged ? "#a7f3d0" : "#93a4bf", fontSize: 11, fontWeight: 900 }}>{judged ? `${score}% checklist coverage` : "Before code"}</span>
       </div>
       <div style={{ display: "grid", gap: 7, gridTemplateColumns: "repeat(auto-fit, minmax(138px, 1fr))" }}>
         {EXPLAIN_READINESS_ITEMS.map((item) => {
@@ -1283,14 +1283,14 @@ function CodeSyncBlock({ code, walkthrough, stepIndex, accent }) {
       <div style={{ alignItems: "center", color: accent, display: "flex", fontSize: 11, fontWeight: 900, gap: 7, justifyContent: "space-between", textTransform: "uppercase", flexWrap: "wrap" }}>
         <span style={{ alignItems: "center", display: "inline-flex", gap: 7 }}>
           <i className="ti ti-code" />
-          Synced code
+          {code?.kind === "complete-solution" ? "Complete Java solution · Java 8+" : code?.kind === "starter" ? "Starter code · complete the algorithm" : "Reference code · teaching illustration"}
         </span>
         <span style={{ color: "#a7f3d0" }}>{code?.language}</span>
       </div>
       <div style={{ color: "#93a4bf", fontSize: 11.5, lineHeight: 1.45 }}>
-        Scene cue: {walkthrough?.say || "The highlighted line is the closest code match for the current visual step."}
+        Illustrative scene, not executed output: {walkthrough?.say || "The highlighted line is the closest code match for the current visual step."}
       </div>
-      <pre style={{ color: "#dbeafe", fontSize: 11.6, lineHeight: 1.6, margin: 0, overflowX: "auto", whiteSpace: "pre" }}>
+      <pre tabIndex={0} aria-label="Code example" style={{ color: "#dbeafe", fontSize: 11.6, lineHeight: 1.6, margin: 0, overflowX: "auto", whiteSpace: "pre" }}>
         <code>
           {lines.map((line, index) => {
             const active = index === focusLine;
@@ -1508,7 +1508,7 @@ function DrillRoomPanel({
           </div>
           <div style={{ border: "1px solid rgba(255,255,255,.075)", borderRadius: 7, display: "grid", gap: 7, minWidth: 0, padding: 9 }}>
             <strong style={{ color: "#a7f3d0", fontSize: 10.8, textTransform: "uppercase" }}>{drill.answer.code.language} code</strong>
-            <pre style={{ color: "#dbeafe", fontSize: 11.3, lineHeight: 1.55, margin: 0, overflowX: "auto", whiteSpace: "pre" }}>
+            <pre tabIndex={0} aria-label="Code example" style={{ color: "#dbeafe", fontSize: 11.3, lineHeight: 1.55, margin: 0, overflowX: "auto", whiteSpace: "pre" }}>
               <code>{drill.answer.code.code}</code>
             </pre>
           </div>
@@ -1647,7 +1647,7 @@ function InterviewChallengesPanel({
           <strong style={{ color: "#f8fbff", fontSize: 13.2, lineHeight: 1.45 }}>{challenge?.prompt}</strong>
 
           {challenge?.codeSnippet ? (
-            <pre style={{ background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, color: "#dbeafe", fontSize: 11, lineHeight: 1.5, margin: 0, maxHeight: 220, overflow: "auto", padding: 10, whiteSpace: "pre" }}>
+            <pre tabIndex={0} aria-label="Code example" style={{ background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, color: "#dbeafe", fontSize: 11, lineHeight: 1.5, margin: 0, maxHeight: 220, overflow: "auto", padding: 10, whiteSpace: "pre" }}>
               <code>{challenge.codeSnippet}</code>
             </pre>
           ) : null}
@@ -2437,10 +2437,11 @@ function FresherDsaTrack({ accent, accentBorder }) {
         </div>
       </section>
       <section style={panel}>
-        <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between" }}><div><div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Guided problem mode</div><div style={{ ...text, color: "#93a4bf", marginTop: 3 }}>Try the problem first, reveal hints one at a time, then compare your Java solution.</div></div><span style={{ color: accent, fontSize: 12, fontWeight: 900 }}>{score}/100 readiness</span></div>
+        <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between" }}><div><div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Guided problem mode</div><div style={{ ...text, color: "#93a4bf", marginTop: 3 }}>Try the problem first, reveal hints one at a time, then compare with the reference snippet or solution outline.</div></div><span style={{ color: accent, fontSize: 12, fontWeight: 900 }}>{score}/100 self-reported checklist</span></div>
         <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between" }}><span style={{ ...text, color: "#93a4bf" }}>Curated mode starts with 12 canonical patterns.</span><button type="button" className="glass-button" onClick={() => setCuratedOnly((value) => !value)} style={{ border: `1px solid ${accentBorder}`, borderRadius: 7, color: accent, fontSize: 10.5, padding: "6px 8px" }}>{curatedOnly ? "Show full library" : "Use curated 12"}</button></div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 9 }}>{visibleProblems.map((problem) => <button key={problem.id} type="button" className="glass-button" onClick={() => chooseProblem(problem.id)} style={{ border: `1px solid ${problem.id === selectedProblem.id ? accent : accentBorder}`, borderRadius: 7, color: problem.id === selectedProblem.id ? "#f8fbff" : "#93a4bf", fontSize: 10.8, padding: "6px 8px" }}>{problem.title}</button>)}</div>
-        <article style={{ background: "rgba(0,0,0,.14)", border: `1px solid ${accentBorder}`, borderRadius: 7, display: "grid", gap: 8, marginTop: 9, padding: 10 }}><div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>{selectedProblem.pattern} · {selectedProblem.level}</div><h4 style={{ color: "#f8fbff", fontSize: 14, margin: 0 }}>{selectedProblem.title}</h4><p style={{ ...text, margin: 0 }}>{selectedProblem.prompt}</p><div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>{selectedProblem.hints.slice(0, hintLevel).map((hint, index) => <div key={hint} style={{ ...text, background: `${accent}12`, borderRadius: 5, padding: "5px 7px" }}>Hint {index + 1}: {hint}</div>)}<button type="button" className="glass-button" disabled={hintLevel >= selectedProblem.hints.length} onClick={() => setHintLevel((value) => Math.min(selectedProblem.hints.length, value + 1))} style={{ border: `1px solid ${accentBorder}`, borderRadius: 6, color: "#dbeafe", fontSize: 10.8, padding: "5px 7px" }}>{hintLevel >= selectedProblem.hints.length ? "All hints shown" : "Reveal next hint"}</button></div><details><summary style={{ color: accent, cursor: "pointer", fontSize: 11.2, fontWeight: 800 }}>Show pseudocode and Java solution</summary><pre style={{ color: "#dbeafe", fontSize: 11.2, lineHeight: 1.45, margin: "7px 0 0", overflowX: "auto", whiteSpace: "pre-wrap" }}>{selectedProblem.pseudocode}{"\n\n"}{selectedProblem.solution}</pre></details><div style={{ ...text, color: "#93a4bf" }}><b>Test cases:</b> {selectedProblem.tests.join(" · ")}</div><div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}><button type="button" className="glass-button" onClick={() => setSolved((value) => !value)} style={{ border: `1px solid ${accentBorder}`, borderRadius: 6, color: solved ? accent : "#dbeafe", fontSize: 10.8, padding: "5px 7px" }}>{solved ? "Solved" : "Mark solved"}</button><button type="button" className="glass-button" onClick={() => setExplained((value) => !value)} style={{ border: `1px solid ${accentBorder}`, borderRadius: 6, color: explained ? accent : "#dbeafe", fontSize: 10.8, padding: "5px 7px" }}>Explained</button><button type="button" className="glass-button" onClick={() => setComplexity((value) => !value)} style={{ border: `1px solid ${accentBorder}`, borderRadius: 6, color: complexity ? accent : "#dbeafe", fontSize: 10.8, padding: "5px 7px" }}>Complexity stated</button><button type="button" className="glass-button" onClick={() => setEdgeCases((value) => !value)} style={{ border: `1px solid ${accentBorder}`, borderRadius: 6, color: edgeCases ? accent : "#dbeafe", fontSize: 10.8, padding: "5px 7px" }}>Edge cases tested</button><button type="button" className="glass-button" onClick={markReviewed} style={{ border: `1px solid ${accentBorder}`, borderRadius: 6, color: reviewedIds.includes(selectedProblem.id) ? accent : "#dbeafe", fontSize: 10.8, padding: "5px 7px" }}>{reviewedIds.includes(selectedProblem.id) ? "Reviewed" : "Mark reviewed"}</button></div></article>
+        <article style={{ background: "rgba(0,0,0,.14)", border: `1px solid ${accentBorder}`, borderRadius: 7, display: "grid", gap: 8, marginTop: 9, padding: 10 }}><div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>{selectedProblem.pattern} · {selectedProblem.level}</div><h4 style={{ color: "#f8fbff", fontSize: 14, margin: 0 }}>{selectedProblem.title}</h4><p style={{ ...text, margin: 0 }}>{selectedProblem.prompt}</p><p style={text}>Contract: {selectedProblem.constraints} Non-null inputs; numeric examples assume intermediate results fit a Java int unless the solution uses long. Check the original problem constraints before increasing input bounds.</p><p style={text}>Operations and cost: {selectedProblem.complexity}</p><div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>{selectedProblem.hints.slice(0, hintLevel).map((hint, index) => <div key={hint} style={{ ...text, background: `${accent}12`, borderRadius: 5, padding: "5px 7px" }}>Hint {index + 1}: {hint}</div>)}<button type="button" className="glass-button" disabled={hintLevel >= selectedProblem.hints.length} onClick={() => setHintLevel((value) => Math.min(selectedProblem.hints.length, value + 1))} style={{ border: `1px solid ${accentBorder}`, borderRadius: 6, color: "#dbeafe", fontSize: 10.8, padding: "5px 7px" }}>{hintLevel >= selectedProblem.hints.length ? "All hints shown" : "Reveal next hint"}</button></div><details><summary style={{ color: accent, cursor: "pointer", fontSize: 11.2, fontWeight: 800 }}>Show pseudocode and reference outline</summary><pre tabIndex={0} aria-label="Code example" style={{ color: "#dbeafe", fontSize: 11.2, lineHeight: 1.45, margin: "7px 0 0", overflowX: "auto", whiteSpace: "pre-wrap" }}>{selectedProblem.pseudocode}{"\n\n"}{/* A fragment may require imports, a method wrapper or supplied helpers. */}
+{selectedProblem.solutionKind === "complete-solution" ? "Complete Java solution. Add java.util imports; list/tree/graph problems use standard node types.\n" : selectedProblem.solutionKind === "explanation" ? "Solution outline (not executable Java):\n" : selectedProblem.solutionKind === "scaffold" ? "Starter scaffold — implement the helper before running:\n" : "Java method body — add imports and the signature for the stated inputs:\n"}{selectedProblem.solution}</pre></details><div style={{ ...text, color: "#93a4bf" }}><b>Test cases:</b> {selectedProblem.tests.join(" · ")}</div><div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}><button type="button" className="glass-button" onClick={() => setSolved((value) => !value)} style={{ border: `1px solid ${accentBorder}`, borderRadius: 6, color: solved ? accent : "#dbeafe", fontSize: 10.8, padding: "5px 7px" }}>{solved ? "Solved" : "Mark solved"}</button><button type="button" className="glass-button" onClick={() => setExplained((value) => !value)} style={{ border: `1px solid ${accentBorder}`, borderRadius: 6, color: explained ? accent : "#dbeafe", fontSize: 10.8, padding: "5px 7px" }}>Explained</button><button type="button" className="glass-button" onClick={() => setComplexity((value) => !value)} style={{ border: `1px solid ${accentBorder}`, borderRadius: 6, color: complexity ? accent : "#dbeafe", fontSize: 10.8, padding: "5px 7px" }}>Complexity stated</button><button type="button" className="glass-button" onClick={() => setEdgeCases((value) => !value)} style={{ border: `1px solid ${accentBorder}`, borderRadius: 6, color: edgeCases ? accent : "#dbeafe", fontSize: 10.8, padding: "5px 7px" }}>Edge cases tested</button><button type="button" className="glass-button" onClick={markReviewed} style={{ border: `1px solid ${accentBorder}`, borderRadius: 6, color: reviewedIds.includes(selectedProblem.id) ? accent : "#dbeafe", fontSize: 10.8, padding: "5px 7px" }}>{reviewedIds.includes(selectedProblem.id) ? "Reviewed" : "Mark reviewed"}</button></div></article>
         <div style={{ ...text, color: "#93a4bf", marginTop: 8 }}>Daily plan: {getFresherDsaDailyPlan().map((problem) => problem.title).join(" → ")} · {reviewedIds.length}/{FRESHER_DSA_PROBLEMS.length} reviewed · {dueReviews} due for spaced review</div>
       </section>
       <section style={panel}><div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Java debugging lessons</div><div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", marginTop: 8 }}>{JAVA_DEBUGGING_LESSONS.map((lesson) => <article key={lesson.id} style={{ background: "rgba(0,0,0,.14)", border: `1px solid ${accentBorder}`, borderRadius: 7, display: "grid", gap: 4, padding: 9 }}><b style={{ color: accent, fontSize: 11.5 }}>{lesson.title}</b><span style={{ ...text, color: "#fda4af" }}><b>Symptom:</b> {lesson.symptom}</span><span style={text}><b>Rule:</b> {lesson.rule}</span><span style={{ ...text, color: "#93a4bf" }}><b>Drill:</b> {lesson.drill}</span></article>)}</div></section>
@@ -2525,7 +2526,7 @@ function FoundationsPath({ accent, accentBorder, onChooseLesson }) {
             </div>
           ))}
         </div>
-        <pre style={{ background: "rgba(0,0,0,.2)", borderRadius: 6, color: "#dbeafe", fontSize: 11, lineHeight: 1.5, margin: 0, overflowX: "auto", padding: 9, whiteSpace: "pre-wrap" }}>{FIRST_GUIDED_PROBLEM.code}</pre>
+        <pre tabIndex={0} aria-label="Code example" style={{ background: "rgba(0,0,0,.2)", borderRadius: 6, color: "#dbeafe", fontSize: 11, lineHeight: 1.5, margin: 0, overflowX: "auto", padding: 9, whiteSpace: "pre-wrap" }}>{FIRST_GUIDED_PROBLEM.code}</pre>
         <div style={{ color: "#facc15", fontSize: 11, lineHeight: 1.45 }}><b>Complexity:</b> {FIRST_GUIDED_PROBLEM.complexity}</div>
       </section>
     </section>
@@ -3299,7 +3300,7 @@ function DsaVisualLabContent({ initialLessonId = "arrays", onPractice, theme = {
               <p style={{ color: "#93a4bf", fontSize: 11.5, lineHeight: 1.45, margin: 0 }}>
                 Use this after the invariant and dry run are clear, then explain the complexity out loud.
               </p>
-              <pre style={{ color: "#dbeafe", fontSize: 11.5, lineHeight: 1.55, margin: 0, overflowX: "auto", whiteSpace: "pre" }}>
+              <pre tabIndex={0} aria-label="Code example" style={{ color: "#dbeafe", fontSize: 11.5, lineHeight: 1.55, margin: 0, overflowX: "auto", whiteSpace: "pre" }}>
                 <code>{thinkingSystem.code.code}</code>
               </pre>
             </section>

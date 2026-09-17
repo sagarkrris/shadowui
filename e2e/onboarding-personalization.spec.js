@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+test.use({ serviceWorkers: "block" });
 import {
   completeOnboarding,
   gotoCleanApp,
@@ -13,9 +14,9 @@ test.describe("Feature A: onboarding and personalization", () => {
 
     await completeOnboarding(page, reactJavaProfile);
 
-    await expect(page.getByText("Select a topic from the sidebar")).toBeVisible();
-    await expect(page.getByText("React", { exact: false })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Start mock round" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /^Practise/ })).toBeVisible();
+    await expect(page.getByText("React Core", { exact: true }).first()).toBeVisible();
+    await expect(page.getByRole("button", { name: "Start practice", exact: true })).toBeVisible();
   });
 
   test("TC02 validates empty and excessively long setup fields", async ({ page }) => {
@@ -41,12 +42,12 @@ test.describe("Feature A: onboarding and personalization", () => {
     await openSidebar(page);
 
     await expect(page.getByText("React Prep", { exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Frontend" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Backend" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "React Core", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Java Core", exact: true })).toHaveCount(0);
 
     await page.getByLabel("Tech stack").fill("Java Spring Boot");
     await expect(page.getByText("Java Prep", { exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Backend" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Java Core", exact: true })).toBeVisible();
   });
 
   test("TC04 persists personalization after reload", async ({ page }) => {
@@ -55,7 +56,7 @@ test.describe("Feature A: onboarding and personalization", () => {
 
     await page.reload();
 
-    await expect(page.getByRole("button", { name: "Start" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Start practice", exact: true })).toBeVisible();
     await expect(page.getByText("Tell me your interview target")).toHaveCount(0);
     const stored = await page.evaluate((key) => JSON.parse(window.localStorage.getItem(key)), SESSION_STORAGE_KEY);
     expect(stored.snapshot.candidateProfile).toMatchObject(reactJavaProfile);

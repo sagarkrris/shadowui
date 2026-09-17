@@ -60,7 +60,7 @@ export default function Sidebar({ topics, open, onClose, expandedCat, selectedCa
             const isExpanded = expandedCat === topic.cat;
             return (
               <div key={topic.cat}>
-                <button className={isActive ? "glass-button" : ""} onClick={() => topicsLocked ? onLockedTopic?.() : onToggleCat(topic.cat)} style={{
+                <button aria-label={topic.cat} aria-expanded={isExpanded} className={isActive ? "glass-button" : ""} onClick={() => topicsLocked ? onLockedTopic?.() : onToggleCat(topic.cat)} style={{
                   width: "100%",
                   display: "flex",
                   alignItems: "center",
@@ -81,7 +81,7 @@ export default function Sidebar({ topics, open, onClose, expandedCat, selectedCa
                   <i className={`ti ${topicsLocked ? "ti-info-circle" : `ti-chevron-${isExpanded ? "up" : "down"}`}`} style={{ fontSize: 11, color: "#374151", flexShrink: 0 }} />
                 </button>
                 {!topicsLocked && isExpanded && topic.subs.map((sub) => (
-                  <button key={sub} className={selectedSub === sub ? "glass-button" : ""} onClick={() => onSelectSub(topic.cat, sub)} style={{
+                  <button aria-label={sub} key={sub} className={selectedSub === sub ? "glass-button" : ""} onClick={() => onSelectSub(topic.cat, sub)} style={{
                     width: "100%",
                     display: "block",
                     padding: "7px 16px 7px 38px",
