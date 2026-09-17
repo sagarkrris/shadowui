@@ -78,6 +78,7 @@ test("AI session helpers preserve retry payloads and build focused follow-ups", 
 
   assert.equal(retry.apiText, "Explain retries with examples");
   assert.equal(retry.metadata.interviewMode, "coach");
+  assert.deepEqual(buildAiRetryRequest(null), { text: "", apiText: "", metadata: {} });
   assert.match(followUp, /Continue the same interview-prep session/);
   assert.match(followUp, /compare retries and circuit breakers/);
 });

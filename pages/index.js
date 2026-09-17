@@ -170,6 +170,7 @@ export default function Home() {
   const [isKeyboardOpen, setKeyboardOpen] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
   const [homeDemoSeen, setHomeDemoSeen] = useState(false);
+  const [homeView, setHomeView] = useState(false);
   const [editingProfile, setEditingProfile] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [cloudStatus, setCloudStatus] = useState("idle");
@@ -814,6 +815,7 @@ export default function Home() {
     const hasCode = showCodeTools ? codeInput.trim() : "";
     const promptText = String(userText || "").trim() || (hasCode ? "Please review this code." : "");
     if (loading || (!promptText && !hasCode)) return;
+    setHomeView(false);
     if (mockTimerStatus === "answering" && !options.startAnswerTimer) {
       setMockTimerEndsAt(null);
       setMockTimerStatus("review");
@@ -1279,8 +1281,11 @@ export default function Home() {
     });
 
     setActiveTab(homeState.activeTab);
-    setMessages(homeState.messages);
+    // Home is a view over the current durable practice record. Do not erase
+    // the conversation; dashboard, history, and replay all consume it.
+    setMessages(messages);
     setLoading(homeState.loading);
+    setHomeView(true);
     setShowCode(false);
     setCodeInput("");
     if (isMobile) setSidebar(false);
@@ -1388,6 +1393,7 @@ export default function Home() {
       ? `Start a ${style} mock interview for ${displayName} on "${topic}". Round Strategy Mode: ${round}. AI Interview Panel Mode: ${panel}. Difficulty: ${difficulty}. ${pressureRules} Ask your first question.`
       : `Give ${displayName} a comprehensive ${difficulty}-level practice session on "${topic}". Include working code when useful.`;
     setMessages([]);
+    setHomeView(false);
     setActiveTab("chat");
     setMockTimerStatus("idle");
     setMockTimerEndsAt(null);
@@ -1910,7 +1916,7 @@ export default function Home() {
               />
             ) : editingProfile
               ? <ProfileSetup theme={techTheme} draft={profileDraft} onChange={setProfileDraft} onSubmit={saveProfile} onCancel={() => { setProfileDraft(candidateProfile); setEditingProfile(false); }} onSignIn={() => openAuthSettings("login")} onOpenWorkspace={openWorkspace} isSignedIn={Boolean(auth.user)} keyboardOpen={isKeyboardOpen} />
-            : messages.length === 0 && !loading
+            : (homeView || messages.length === 0) && !loading
               ? sessionReady && auth.ready && !homeDemoSeen && (!candidateProfile || !auth.user)
                 ? <HomeDemo onContinue={completeHomeDemo} onSignIn={() => openAuthSettings("login")} onOpenWorkspace={openWorkspace} />
                 : !candidateProfile

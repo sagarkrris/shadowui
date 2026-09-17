@@ -313,6 +313,13 @@ test("editing a profile does not clear the active conversation", () => {
   assert.doesNotMatch(indexSource, /setCandidateProfile\(null\);\s*setMessages\(\[\]\)/);
 });
 
+test("Home keeps completed conversations available to progress surfaces", () => {
+  assert.match(indexSource, /const \[homeView, setHomeView\] = useState\(false\)/);
+  assert.match(indexSource, /setHomeView\(true\)/);
+  assert.match(indexSource, /homeView \|\| messages\.length === 0/);
+  assert.doesNotMatch(indexSource, /setActiveTab\(homeState\.activeTab\);\s*setMessages\(homeState\.messages\)/);
+});
+
 test("profile setup uses a corporate onboarding entry", () => {
   assert.match(profileSetupSource, /corporate-entry/);
   assert.match(profileSetupSource, /Corporate interview prep/);
