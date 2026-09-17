@@ -307,6 +307,7 @@ export default function Home() {
       setDifficulty(savedSession.difficulty);
       setActiveTab(savedSession.activeTab);
       resetInterviewSession(savedSession.interviewSession);
+      setSystemDesignCanvas(savedSession.systemDesignCanvas);
     }
     setQuestionMemory(loadQuestionMemory(window.localStorage));
     setHomeDemoSeen(window.localStorage.getItem(HOME_DEMO_SEEN_KEY) === "1");
@@ -400,10 +401,11 @@ export default function Home() {
       difficulty,
       activeTab,
       interviewSession: interviewSessionState,
+      systemDesignCanvas,
     });
     saveSessionSnapshot(window.localStorage, snapshot);
     sessionEnvelopeRef.current = createSessionEnvelope(snapshot);
-  }, [sessionReady, candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSessionState]);
+  }, [sessionReady, candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSessionState, systemDesignCanvas]);
 
   useEffect(() => {
     if (!sessionReady) return;
@@ -657,7 +659,7 @@ export default function Home() {
     setThemeStatus(`${mode[0].toUpperCase()}${mode.slice(1)} theme enabled`);
   }, [systemThemeMode]);
 
-  const cloudSnapshot = useMemo(() => ({ session: createSessionSnapshot({ candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSession: interviewSessionState }), themePreference, toolkitState, applications, javaDigestProgress, questionMemory, prepProgressState }), [candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSessionState, themePreference, toolkitState, applications, javaDigestProgress, questionMemory, prepProgressState]);
+  const cloudSnapshot = useMemo(() => ({ session: createSessionSnapshot({ candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSession: interviewSessionState, systemDesignCanvas }), themePreference, toolkitState, applications, javaDigestProgress, questionMemory, prepProgressState }), [candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSessionState, systemDesignCanvas, themePreference, toolkitState, applications, javaDigestProgress, questionMemory, prepProgressState]);
   const applyCloudState = useCallback((snapshot) => {
     const session = snapshot.session || snapshot;
     setCandidateProfile(session.candidateProfile);
@@ -672,6 +674,7 @@ export default function Home() {
     setInterviewPanel(normalizeInterviewPanelSelection(session.interviewPanel));
     setDifficulty(session.difficulty);
     setActiveTab(session.activeTab);
+    setSystemDesignCanvas(createSystemDesignCanvasState(session.systemDesignCanvas));
     if (snapshot.themePreference) setThemePreference(normalizeThemePreference(snapshot.themePreference));
     resetInterviewSession(session.interviewSession);
     if (snapshot.session) { setToolkitState(snapshot.toolkitState || {}); setApplications(Array.isArray(snapshot.applications) ? snapshot.applications : []); setJavaDigestProgress(snapshot.javaDigestProgress || { completedTopics: [], masteredTopics: [], reviewStages: {} }); setQuestionMemory(snapshot.questionMemory || { questions: {} }); setPrepProgressState(snapshot.prepProgressState || createPrepProgressState()); }
@@ -750,6 +753,7 @@ export default function Home() {
       difficulty,
       activeTab,
       interviewSession: interviewSessionState,
+      systemDesignCanvas,
     }));
 
     try {
@@ -767,7 +771,7 @@ export default function Home() {
       URL.revokeObjectURL(url);
       showToast("Session export downloaded.", "info");
     }
-  }, [activeTab, candidateProfile, difficulty, expandedCat, interviewMode, interviewPanel, interviewSessionState, messages, mode, profileDraft, roundStrategy, selectedCat, selectedSub, showToast]);
+  }, [activeTab, candidateProfile, difficulty, expandedCat, interviewMode, interviewPanel, interviewSessionState, messages, mode, profileDraft, roundStrategy, selectedCat, selectedSub, showToast, systemDesignCanvas]);
 
   const importCurrentSession = useCallback(() => {
     const raw = window.prompt("Paste exported session JSON");
@@ -791,6 +795,7 @@ export default function Home() {
     setInterviewPanel(normalizeInterviewPanelSelection(snapshot.interviewPanel));
     setDifficulty(snapshot.difficulty);
     setActiveTab(snapshot.activeTab);
+    setSystemDesignCanvas(createSystemDesignCanvasState(snapshot.systemDesignCanvas));
     resetInterviewSession(snapshot.interviewSession);
     showToast("Session imported.", "info");
   }, [resetInterviewSession, setActiveTab, showToast]);
@@ -1354,7 +1359,8 @@ export default function Home() {
     setSelCat(nextTopics[0]?.cat || null);
     setExpanded(nextTopics[0]?.cat || null);
     setSelSub(null);
-    setMessages([]);
+    // A profile edit changes future prompts, but must not destroy an active
+    // interview or its in-flight result.
     setSidebar(!isMobile);
   };
 
@@ -1734,7 +1740,7 @@ export default function Home() {
               <button className="icon-btn" onClick={clearChat} title="Clear" aria-label="Clear"><i className="ti ti-trash" /></button>
             )}
             {candidateProfile && (
-              <button className="icon-btn" onClick={() => { setProfileDraft(candidateProfile); setCandidateProfile(null); setMessages([]); }} title="Edit Profile" aria-label="Edit Profile"><i className="ti ti-user-cog" /></button>
+              <button className="icon-btn" onClick={() => { setProfileDraft(candidateProfile); setCandidateProfile(null); }} title="Edit Profile" aria-label="Edit Profile"><i className="ti ti-user-cog" /></button>
             )}
             <button className="icon-btn" onClick={() => setShowSettings(true)} title="About and help" data-tooltip="About & help" aria-label="Info"><i className="ti ti-info-circle" /></button>
           </header>

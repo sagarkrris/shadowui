@@ -7,4 +7,6 @@ test("build snippet analyzer extracts Maven and Gradle dependencies without eval
   const gradle = analyzeBuildSnippet('implementation("org.springframework.boot:spring-boot-starter-web:3.4.0")', "gradle");
   assert.deepEqual(maven.dependencies[0], { group: "org.junit.jupiter", artifact: "junit-jupiter", version: "5.11.0" });
   assert.deepEqual(gradle.dependencies[0], { group: "org.springframework.boot", artifact: "spring-boot-starter-web", version: "3.4.0" });
+  const groovyGradle = analyzeBuildSnippet("dependencies { implementation 'org.example:qa-demo:1.0' }", "gradle");
+  assert.deepEqual(groovyGradle.dependencies[0], { group: "org.example", artifact: "qa-demo", version: "1.0" });
 });

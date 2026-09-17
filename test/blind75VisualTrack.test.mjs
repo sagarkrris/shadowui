@@ -56,6 +56,16 @@ test("Blind 75 track exposes the requested reusable visualizers", () => {
   assert.ok(required.every((id) => visualizers.includes(id)));
 });
 
+test("stock lesson uses stock-specific cases and an executable Java solution", () => {
+  const stock = getBlind75Problem("best-time-to-buy-and-sell-stock");
+  assert.equal(stock.testCases[0].expected, "5");
+  assert.match(stock.testCases[0].why, /profit is 4 at price 5.*5 at price 6/i);
+  assert.ok(stock.edgeCases.every((item) => !/character/i.test(item)));
+  const template = getBlind75ProblemCodeTemplate(stock, "Java");
+  assert.match(template.code, /int maxProfit\(int\[\] prices\)/);
+  assert.doesNotMatch(template.code, /return null/);
+});
+
 test("returns a complete featured problem", () => {
   const problem = getBlind75Problem("two-sum");
 

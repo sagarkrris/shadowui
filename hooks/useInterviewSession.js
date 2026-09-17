@@ -12,6 +12,10 @@ export function useInterviewSession(initial = {}) {
     score: useCallback((score) => update((current) => scoreInterviewTurn(current, score)), [update]),
     review: useCallback((review) => update((current) => reviewInterviewTurn(current, review)), [update]),
     complete: useCallback(() => update(completeInterviewSession), [update]),
-    reset: useCallback((value = {}) => setSession(createInterviewSession(value)), []),
+    // Startup calls pass a configuration object; hydration/import passes the
+    // complete saved session. Recreating the latter discarded all scored turns.
+    reset: useCallback((value = {}) => setSession(value?.id || Array.isArray(value?.turns)
+      ? normalizeInterviewSession(value)
+      : createInterviewSession(value)), []),
   };
 }

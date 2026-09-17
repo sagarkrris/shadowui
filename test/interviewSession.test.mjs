@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFileSync } from "node:fs";
 import { addInterviewFollowUp, buildStructuredEvaluationPrompt, completeInterviewSession, createInterviewSession, parseStructuredEvaluation, reviewInterviewTurn, scoreInterviewTurn, startInterviewQuestion, submitInterviewAnswer } from "../lib/interviewSession.mjs";
 
 test("interview sessions move through explicit question, answer, follow-up, score, and review states", () => {
@@ -21,4 +22,9 @@ test("structured evaluation rejects invalid scores and preserves insufficient ev
   assert.equal(parsed.ok, true);
   assert.equal(parsed.value.score, null);
   assert.match(buildStructuredEvaluationPrompt({ question: "Q", answer: "A" }), /Do not invent candidate facts/);
+});
+
+test("session hook restores complete persisted sessions instead of recreating them", () => {
+  const source = readFileSync(new URL("../hooks/useInterviewSession.js", import.meta.url), "utf8");
+  assert.match(source, /value\?\.id \|\| Array\.isArray\(value\?\.turns\)[\s\S]*normalizeInterviewSession\(value\)/);
 });

@@ -309,6 +309,10 @@ test("profile setup avoids oversized sticky iOS keyboard spacers", () => {
   assert.doesNotMatch(profileSetupSource, /scrollPaddingBottom:\s*160/);
 });
 
+test("editing a profile does not clear the active conversation", () => {
+  assert.doesNotMatch(indexSource, /setCandidateProfile\(null\);\s*setMessages\(\[\]\)/);
+});
+
 test("profile setup uses a corporate onboarding entry", () => {
   assert.match(profileSetupSource, /corporate-entry/);
   assert.match(profileSetupSource, /Corporate interview prep/);

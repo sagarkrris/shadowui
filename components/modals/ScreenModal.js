@@ -73,7 +73,7 @@ export default function ScreenModal({ onCapture, onClose, theme }) {
       aria-modal="true"
       tabIndex={-1}
       ref={modalRef}
-      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", zIndex: 200, display: "flex", alignItems: "flex-end", justifyContent: "center", padding: "0 0 0", backdropFilter: "blur(4px)" }}
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", zIndex: 200, display: "flex", alignItems: "flex-end", justifyContent: "center", overflowY: "auto", padding: "12px 0 0", backdropFilter: "blur(4px)" }}
     >
       <div className="glass-chrome" onClick={(event) => event.stopPropagation()} style={{
         border: `1px solid ${theme.accentBorder}`,
@@ -81,7 +81,7 @@ export default function ScreenModal({ onCapture, onClose, theme }) {
         padding: 20,
         width: "100%",
         maxWidth: 520,
-        maxHeight: "90vh",
+        maxHeight: "calc(100dvh - 12px)",
         overflowY: "auto",
       }}>
         <div style={{ width: 36, height: 4, background: "rgba(255,255,255,.1)", borderRadius: 2, margin: "0 auto 16px" }} />

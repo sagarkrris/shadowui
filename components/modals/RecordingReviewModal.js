@@ -124,7 +124,7 @@ export default function RecordingReviewModal({
         display: "flex",
         alignItems: "flex-end",
         justifyContent: "center",
-        backdropFilter: "blur(4px)",
+        backdropFilter: "blur(4px)", overflowY: "auto", paddingTop: 12,
       }}
     >
       <div
@@ -136,7 +136,7 @@ export default function RecordingReviewModal({
           padding: 20,
           width: "100%",
           maxWidth: 560,
-          maxHeight: "90vh",
+          maxHeight: "calc(100dvh - 12px)",
           overflowY: "auto",
         }}
       >

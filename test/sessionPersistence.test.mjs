@@ -99,6 +99,16 @@ test("preserves the system design canvas tab across refreshes", () => {
   assert.equal(loadSessionSnapshot(storage).activeTab, "canvas");
 });
 
+test("preserves system design canvas notes across refreshes", () => {
+  const storage = memoryStorage();
+  saveSessionSnapshot(storage, createSessionSnapshot({
+    systemDesignCanvas: { problem: "URL shortener", sections: { requirements: "Shorten URLs with analytics." } },
+  }));
+  const restored = loadSessionSnapshot(storage).systemDesignCanvas;
+  assert.equal(restored.problem, "URL shortener");
+  assert.equal(restored.sections.requirements, "Shorten URLs with analytics.");
+});
+
 test("preserves the DSA visual lab tab across refreshes", () => {
   const storage = memoryStorage();
   const snapshot = createSessionSnapshot({
