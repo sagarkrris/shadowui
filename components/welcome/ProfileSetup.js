@@ -30,7 +30,7 @@ function getPrimaryStack(stack = "") {
   return String(stack).split(/[,+/|]/).map((part) => part.trim()).filter(Boolean)[0] || "Stack";
 }
 
-export default function ProfileSetup({ draft, onChange, onSubmit, onSignIn, onOpenWorkspace, isSignedIn = false, theme, keyboardOpen = false }) {
+export default function ProfileSetup({ draft, onChange, onSubmit, onCancel, onSignIn, onOpenWorkspace, isSignedIn = false, theme, keyboardOpen = false }) {
   const validationMessages = getValidationMessages(draft);
   const canContinue = validationMessages.length === 0;
   const stackPreviewLabel = getPrimaryStack(draft.stack);
@@ -205,9 +205,7 @@ export default function ProfileSetup({ draft, onChange, onSubmit, onSignIn, onOp
                   Tech stack
                   <input id="profile-stack" value={draft.stack} onFocus={handleFieldFocus} onChange={(event) => onChange({ ...draft, stack: event.target.value })} placeholder="e.g. Java, React, SQL, SAP, Ruby, Rust, AWS" style={fieldStyle} />
                 </label>
-                <button onClick={onSubmit} disabled={!canContinue} style={{ marginTop: 2, minHeight: 44, padding: "11px 14px", borderRadius: 8, border: "1px solid #123252", background: canContinue ? "#123252" : "#e5ebf3", color: canContinue ? "#ffffff" : "#64748b", fontSize: 13, fontWeight: 800, cursor: canContinue ? "pointer" : "not-allowed" }}>
-                  Personalize Prep
-                </button>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 2 }}><button onClick={onSubmit} disabled={!canContinue} style={{ minHeight: 44, padding: "11px 14px", borderRadius: 8, border: "1px solid #123252", background: canContinue ? "#123252" : "#e5ebf3", color: canContinue ? "#ffffff" : "#64748b", fontSize: 13, fontWeight: 800, cursor: canContinue ? "pointer" : "not-allowed" }}>Personalize Prep</button>{onCancel ? <button type="button" onClick={onCancel} style={{ minHeight: 44, padding: "11px 14px", borderRadius: 8, border: "1px solid #cbd8e8", background: "#ffffff", color: "#123252", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>Cancel</button> : null}</div>
                 {!isSignedIn && onSignIn ? (
                   <button type="button" onClick={onSignIn} style={{ minHeight: 40, padding: "9px 14px", borderRadius: 8, border: "1px solid #cbd8e8", background: "#ffffff", color: "#123252", fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}>
                     <i className="ti ti-cloud-upload" style={{ marginRight: 7 }} />Sign in and sync

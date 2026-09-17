@@ -109,6 +109,11 @@ test("preserves system design canvas notes across refreshes", () => {
   assert.equal(restored.sections.requirements, "Shorten URLs with analytics.");
 });
 
+test("preserves an in-progress mock timer across refreshes", () => {
+  const snapshot = createSessionSnapshot({ mockTimer: { endsAt: 1_800_000_000_000, status: "answering" } });
+  assert.deepEqual(snapshot.mockTimer, { endsAt: 1_800_000_000_000, status: "answering" });
+});
+
 test("preserves the DSA visual lab tab across refreshes", () => {
   const storage = memoryStorage();
   const snapshot = createSessionSnapshot({

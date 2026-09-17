@@ -38,8 +38,9 @@ function readToolkitState() {
 
 export default function PrepInsightsPanel({ profile, topics, weakSpots, mockScores, messages, structuredSessions = [], questionMemory, systemDesignCanvas, theme, selectedCat, selectedSub, onAction }) {
   const mistakeBank = deriveMistakeBank(messages, structuredSessions);
-  const sessionHistory = deriveMockSessionHistory(messages);
+  const sessionHistory = deriveMockSessionHistory(messages, structuredSessions);
   const mockReplays = deriveMockReplayTimelines(messages, structuredSessions);
+  const latestResult = mockReplays[0] || null;
   const proofStories = deriveProofVaultStories(messages, profile);
   const heatmap = deriveAnswerQualityHeatmap(messages);
   const radar = deriveWeakSpotRadar(messages, weakSpots);
@@ -174,6 +175,15 @@ export default function PrepInsightsPanel({ profile, topics, weakSpots, mockScor
 
   return (
     <section style={{ width: "100%", maxWidth: 860, display: "grid", gap: 12, marginTop: 22, textAlign: "left" }}>
+      <section className="glass-card" aria-label="Today’s focused practice" style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 10, display: "grid", gap: 9, padding: 14 }}>
+        <div style={{ color: theme.accentStrong, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Today · one focused next step</div>
+        <strong style={{ color: "#e8e8f0", fontSize: 15 }}> {latestResult ? "Explain it again in 60 seconds" : "Start one scored practice question"}</strong>
+        <p style={{ color: "#cbd5e1", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}>{latestResult ? `Re-answer “${latestResult.question}” more clearly. We will compare your first ${latestResult.score}/10 attempt with the retest and name the improvement.` : "A single scored answer establishes a trustworthy baseline for your dashboard, history, and replay."}</p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {latestResult ? <button type="button" className="glass-button" onClick={() => onAction?.(["Explain it again coach.", `Original question: ${latestResult.question}`, `First answer: ${latestResult.yourAnswer}`, `First score: ${latestResult.score}/10`, `Targeted gap: ${latestResult.gaps}`, "Ask me to answer the same question again in 60 seconds. Then compare both attempts in a table: clarity, correctness, examples, trade-offs, and next improvement. Do not invent experience or metrics."].join("\n"))} style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 7, color: theme.accentText, fontSize: 11.5, fontWeight: 800, padding: "8px 10px" }}>Explain it again · 60 sec</button> : <button type="button" className="glass-button" onClick={() => onAction?.("Run one focused scored interview question. Ask the question first, wait for my answer, then provide Score: X/10, gaps, and one targeted retest.")} style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 7, color: theme.accentText, fontSize: 11.5, fontWeight: 800, padding: "8px 10px" }}>Start focused practice</button>}
+          {latestResult ? <button type="button" className="glass-button" onClick={() => onAction?.(latestResult.retryPrompt)} style={{ border: "1px solid rgba(255,255,255,.14)", borderRadius: 7, color: "#dbeafe", fontSize: 11.5, fontWeight: 800, padding: "8px 10px" }}>Resume last result</button> : null}
+        </div>
+      </section>
       <div aria-label={SKILL_GRAPH_SECTION_LABEL}>
         <SkillGraphPanel
           profile={profile}

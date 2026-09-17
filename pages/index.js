@@ -170,6 +170,7 @@ export default function Home() {
   const [isKeyboardOpen, setKeyboardOpen] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
   const [homeDemoSeen, setHomeDemoSeen] = useState(false);
+  const [editingProfile, setEditingProfile] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [cloudStatus, setCloudStatus] = useState("idle");
   const [themeStatus, setThemeStatus] = useState("");
@@ -308,6 +309,8 @@ export default function Home() {
       setActiveTab(savedSession.activeTab);
       resetInterviewSession(savedSession.interviewSession);
       setSystemDesignCanvas(savedSession.systemDesignCanvas);
+      setMockTimerEndsAt(savedSession.mockTimer?.endsAt || null);
+      setMockTimerStatus(savedSession.mockTimer?.status || "idle");
     }
     setQuestionMemory(loadQuestionMemory(window.localStorage));
     setHomeDemoSeen(window.localStorage.getItem(HOME_DEMO_SEEN_KEY) === "1");
@@ -402,10 +405,11 @@ export default function Home() {
       activeTab,
       interviewSession: interviewSessionState,
       systemDesignCanvas,
+      mockTimer: { endsAt: mockTimerEndsAt, status: mockTimerStatus },
     });
     saveSessionSnapshot(window.localStorage, snapshot);
     sessionEnvelopeRef.current = createSessionEnvelope(snapshot);
-  }, [sessionReady, candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSessionState, systemDesignCanvas]);
+  }, [sessionReady, candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSessionState, systemDesignCanvas, mockTimerEndsAt, mockTimerStatus]);
 
   useEffect(() => {
     if (!sessionReady) return;
@@ -659,7 +663,7 @@ export default function Home() {
     setThemeStatus(`${mode[0].toUpperCase()}${mode.slice(1)} theme enabled`);
   }, [systemThemeMode]);
 
-  const cloudSnapshot = useMemo(() => ({ session: createSessionSnapshot({ candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSession: interviewSessionState, systemDesignCanvas }), themePreference, toolkitState, applications, javaDigestProgress, questionMemory, prepProgressState }), [candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSessionState, systemDesignCanvas, themePreference, toolkitState, applications, javaDigestProgress, questionMemory, prepProgressState]);
+  const cloudSnapshot = useMemo(() => ({ session: createSessionSnapshot({ candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSession: interviewSessionState, systemDesignCanvas, mockTimer: { endsAt: mockTimerEndsAt, status: mockTimerStatus } }), themePreference, toolkitState, applications, javaDigestProgress, questionMemory, prepProgressState }), [candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSessionState, systemDesignCanvas, mockTimerEndsAt, mockTimerStatus, themePreference, toolkitState, applications, javaDigestProgress, questionMemory, prepProgressState]);
   const applyCloudState = useCallback((snapshot) => {
     const session = snapshot.session || snapshot;
     setCandidateProfile(session.candidateProfile);
@@ -675,6 +679,8 @@ export default function Home() {
     setDifficulty(session.difficulty);
     setActiveTab(session.activeTab);
     setSystemDesignCanvas(createSystemDesignCanvasState(session.systemDesignCanvas));
+    setMockTimerEndsAt(session.mockTimer?.endsAt || null);
+    setMockTimerStatus(session.mockTimer?.status || "idle");
     if (snapshot.themePreference) setThemePreference(normalizeThemePreference(snapshot.themePreference));
     resetInterviewSession(session.interviewSession);
     if (snapshot.session) { setToolkitState(snapshot.toolkitState || {}); setApplications(Array.isArray(snapshot.applications) ? snapshot.applications : []); setJavaDigestProgress(snapshot.javaDigestProgress || { completedTopics: [], masteredTopics: [], reviewStages: {} }); setQuestionMemory(snapshot.questionMemory || { questions: {} }); setPrepProgressState(snapshot.prepProgressState || createPrepProgressState()); }
@@ -754,6 +760,7 @@ export default function Home() {
       activeTab,
       interviewSession: interviewSessionState,
       systemDesignCanvas,
+      mockTimer: { endsAt: mockTimerEndsAt, status: mockTimerStatus },
     }));
 
     try {
@@ -771,7 +778,7 @@ export default function Home() {
       URL.revokeObjectURL(url);
       showToast("Session export downloaded.", "info");
     }
-  }, [activeTab, candidateProfile, difficulty, expandedCat, interviewMode, interviewPanel, interviewSessionState, messages, mode, profileDraft, roundStrategy, selectedCat, selectedSub, showToast, systemDesignCanvas]);
+  }, [activeTab, candidateProfile, difficulty, expandedCat, interviewMode, interviewPanel, interviewSessionState, messages, mode, profileDraft, roundStrategy, selectedCat, selectedSub, showToast, systemDesignCanvas, mockTimerEndsAt, mockTimerStatus]);
 
   const importCurrentSession = useCallback(() => {
     const raw = window.prompt("Paste exported session JSON");
@@ -796,6 +803,8 @@ export default function Home() {
     setDifficulty(snapshot.difficulty);
     setActiveTab(snapshot.activeTab);
     setSystemDesignCanvas(createSystemDesignCanvasState(snapshot.systemDesignCanvas));
+    setMockTimerEndsAt(snapshot.mockTimer?.endsAt || null);
+    setMockTimerStatus(snapshot.mockTimer?.status || "idle");
     resetInterviewSession(snapshot.interviewSession);
     showToast("Session imported.", "info");
   }, [resetInterviewSession, setActiveTab, showToast]);
@@ -1356,6 +1365,7 @@ export default function Home() {
     if (!nextProfile.name || !nextProfile.position || !nextProfile.experience || !nextProfile.stack) return;
     const nextTopics = getRecommendedTopics(nextProfile);
     setCandidateProfile(nextProfile);
+    setEditingProfile(false);
     setSelCat(nextTopics[0]?.cat || null);
     setExpanded(nextTopics[0]?.cat || null);
     setSelSub(null);
@@ -1740,7 +1750,7 @@ export default function Home() {
               <button className="icon-btn" onClick={clearChat} title="Clear" aria-label="Clear"><i className="ti ti-trash" /></button>
             )}
             {candidateProfile && (
-              <button className="icon-btn" onClick={() => { setProfileDraft(candidateProfile); setCandidateProfile(null); }} title="Edit Profile" aria-label="Edit Profile"><i className="ti ti-user-cog" /></button>
+              <button className="icon-btn" onClick={() => { setProfileDraft(candidateProfile); setEditingProfile(true); }} title="Edit Profile" aria-label="Edit Profile"><i className="ti ti-user-cog" /></button>
             )}
             <button className="icon-btn" onClick={() => setShowSettings(true)} title="About and help" data-tooltip="About & help" aria-label="Info"><i className="ti ti-info-circle" /></button>
           </header>
@@ -1898,7 +1908,9 @@ export default function Home() {
                 onBeginnerStepChange={setBeginnerStep}
                 onActivity={recordWorkspaceActivity}
               />
-            ) : messages.length === 0 && !loading
+            ) : editingProfile
+              ? <ProfileSetup theme={techTheme} draft={profileDraft} onChange={setProfileDraft} onSubmit={saveProfile} onCancel={() => { setProfileDraft(candidateProfile); setEditingProfile(false); }} onSignIn={() => openAuthSettings("login")} onOpenWorkspace={openWorkspace} isSignedIn={Boolean(auth.user)} keyboardOpen={isKeyboardOpen} />
+            : messages.length === 0 && !loading
               ? sessionReady && auth.ready && !homeDemoSeen && (!candidateProfile || !auth.user)
                 ? <HomeDemo onContinue={completeHomeDemo} onSignIn={() => openAuthSettings("login")} onOpenWorkspace={openWorkspace} />
                 : !candidateProfile

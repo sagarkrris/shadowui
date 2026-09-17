@@ -14,7 +14,17 @@ function getGuideHtml() {
 
 async function getGuideEntry(problem) {
   if (!entryCache.has(problem.id)) {
-    entryCache.set(problem.id, getGuideHtml().then((html) => extractBlind75GuideEntryFromHtml(html, problem)));
+    entryCache.set(problem.id, getGuideHtml().then((html) => {
+      const entry = extractBlind75GuideEntryFromHtml(html, problem);
+      if (problem.id !== "best-time-to-buy-and-sell-stock") return entry;
+      return {
+        ...entry,
+        sections: entry.sections?.map((section) => ({
+          ...section,
+          content: String(section.content || "").replace(/at price 5,?\s*profit becomes 5/gi, "at price 5, profit becomes 4").replace(/profit becomes 5 at price 5/gi, "profit becomes 4 at price 5"),
+        })),
+      };
+    }));
   }
   return entryCache.get(problem.id);
 }
