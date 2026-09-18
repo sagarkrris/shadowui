@@ -1987,6 +1987,9 @@ export default function Home() {
             ) : activeTab==="designLab" ? (
               <DesignLab
                 theme={techTheme}
+                canvasState={systemDesignCanvas}
+                onCanvasChange={next => setSystemDesignCanvas(createSystemDesignCanvasState(next))}
+                onOpenCanvas={() => setActiveTab('canvas')}
                 onAction={startDesignLabAction}
                 beginnerMode={beginnerMode}
                 beginnerStep={prepProgressState.beginnerStep}
@@ -2006,6 +2009,7 @@ export default function Home() {
             ) : activeTab === "canvas" ? (
               <SystemDesignCanvas
                 theme={techTheme}
+                onOpenDesignLab={() => setActiveTab('designLab')}
                 initialState={systemDesignCanvas}
                 onChange={(nextCanvasState) => {
                   setSystemDesignCanvas(nextCanvasState);

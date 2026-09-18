@@ -10,7 +10,7 @@ const workspaceSource = readFileSync(new URL("../lib/workspaces.mjs", import.met
   "Home",
   "Topics",
   "Company Prep",
-  "Agentic UI Course",
+  "AI for Software Engineers",
   "Analyze Screen",
   "Voice",
   "Clear",
@@ -18,6 +18,6 @@ const workspaceSource = readFileSync(new URL("../lib/workspaces.mjs", import.met
   "Info",
 ].forEach((label) => {
   test(`top bar icon button exposes ${label} to assistive technology`, () => {
-    assert.match(`${indexSource}\n${navSource}\n${workspaceSource}`, new RegExp(`aria-label=\\{?${label === "Company Prep" || label === "Agentic UI Course" ? "workspace\\.label" : `"${label}"`}`));
+    assert.match(`${indexSource}\n${navSource}\n${workspaceSource}`, new RegExp(`aria-label=\\{?${label === "Company Prep" || label === "AI for Software Engineers" ? "workspace\\.label" : `"${label}"`}`));
   });
 });

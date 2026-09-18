@@ -1,8 +1,15 @@
+import BeginnerCourse from "./BeginnerCourse";
+import { AdvancedWorkshops, ScenarioInterviews } from "./AdvancedCourse";
+import { ClassroomSession, InterviewStudio, CourseProject } from "./CourseLearning";
 import { AGENTIC_UI_COURSE } from "../../lib/agenticCourse.mjs";
 
-function CourseVisual({ type, theme }) {
+function CourseVisual({ type, steps, theme }) {
   const accent = theme.accentStrong || "#86efac";
   const soft = theme.accentText || "#bbf7d0";
+
+  if (type === "pipeline") {
+    return <ol aria-label="Lesson workflow" style={{ display: 'grid', gap: 8, padding: '16px 16px 16px 36px', color: soft, fontSize: 13 }}>{steps.map(step => <li key={step}>{step}</li>)}</ol>;
+  }
 
   if (type === "autonomy") {
     return (
@@ -84,70 +91,6 @@ function CourseVisual({ type, theme }) {
   );
 }
 
-function VideoLesson({ module, theme }) {
-  return (
-    <div className="glass-card" style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, overflow: "hidden" }}>
-      <div style={{ position: "relative", aspectRatio: "16 / 9", background: `linear-gradient(135deg, ${theme.accentMuted}, rgba(255,255,255,.04))` }}>
-        <iframe
-          title={module.video.title}
-          src={module.video.embedUrl}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowFullScreen
-          loading="lazy"
-          referrerPolicy="strict-origin-when-cross-origin"
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: 0 }}
-        />
-        <a
-          href={module.video.watchUrl}
-          target="_blank"
-          rel="noreferrer"
-          aria-label={`Play ${module.video.title}`}
-          style={{
-            position: "absolute",
-            left: 12,
-            bottom: 12,
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 7,
-            border: `1px solid ${theme.accentBorder}`,
-            borderRadius: 8,
-            padding: "7px 10px",
-            background: "rgba(0,0,0,.58)",
-            color: theme.accentText,
-            fontSize: 11.5,
-            fontWeight: 900,
-            textDecoration: "none",
-            backdropFilter: "blur(12px)",
-            zIndex: 2,
-          }}
-        >
-          <i className="ti ti-player-play-filled" />Play video
-        </a>
-      </div>
-      <div style={{ padding: 12 }}>
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, marginBottom: 9 }}>
-          <div>
-            <div style={{ color: "#e8e8f0", fontSize: 13, fontWeight: 800, lineHeight: 1.35 }}>{module.video.title}</div>
-            <div style={{ marginTop: 3, color: "#9ca3af", fontSize: 11 }}>{module.video.duration}</div><p style={{ color: "#9ca3af", fontSize: 11 }}>Supplementary overview; this external video does not cover every module exercise.</p>
-          </div>
-          <a href={module.video.watchUrl} target="_blank" rel="noreferrer" className="glass-button" style={{ display: "inline-flex", alignItems: "center", gap: 5, border: `1px solid ${theme.accentBorder}`, borderRadius: 7, padding: "5px 8px", color: theme.accentText, fontSize: 10.5, fontWeight: 800, textDecoration: "none", whiteSpace: "nowrap" }}>
-            <i className="ti ti-external-link" />Open
-          </a>
-        </div>
-        <div style={{ color: theme.accentText, fontSize: 11, fontWeight: 900, marginBottom: 7 }}>Discussion prompts (not video chapters)</div>
-        <div style={{ display: "grid", gap: 6 }}>
-          {module.video.chapters.map((chapter, index) => (
-            <div key={chapter} style={{ display: "flex", alignItems: "center", gap: 8, color: "#9ca3af", fontSize: 11.5 }}>
-              <span style={{ width: 20, height: 20, borderRadius: 6, background: theme.accentMuted, color: theme.accentStrong, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 900 }}>{index + 1}</span>
-              {chapter}
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function TrackLabList({ labs, theme }) {
   return (
     <div style={{ display: "grid", gap: 8 }}>
@@ -194,7 +137,7 @@ function DrawerCourseTeaser({ course, theme, onOpenCourse }) {
           <i className="ti ti-sparkles" />{course.kicker}
         </div>
         <h3 style={{ color: "#e8e8f0", fontSize: 15, lineHeight: 1.25, marginTop: 6 }}>{course.title}</h3>
-        <p style={{ color: "#9ca3af", fontSize: 11.5, lineHeight: 1.5, marginTop: 6 }}>Open the full course with images, video lessons, patterns, and practice tasks.</p>
+        <p style={{ color: "#9ca3af", fontSize: 11.5, lineHeight: 1.5, marginTop: 6 }}>Teacher-led lessons, student build labs, debriefs, and detailed interview practice.</p>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 6, color: theme.accentStrong, fontSize: 11, fontWeight: 900, marginTop: 10 }}>
           <i className="ti ti-arrow-right" />Open course
         </span>
@@ -230,6 +173,14 @@ export default function AgenticUICourse({ theme, variant = "full", onOpenCourse 
         </div>
       </div>
 
+      <section className="glass-card" style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 14 }}>
+        <div style={{ color: theme.accentText, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Classroom format</div>
+        <p style={{ color: "#e8e8f0", fontSize: 13, fontWeight: 800, marginTop: 5 }}>{course.classroom.format}</p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 10, marginTop: 10 }}>
+          {[['Teacher', course.classroom.teacherRole], ['Student', course.classroom.studentRole]].map(([role, detail]) => <div key={role} style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 10 }}><strong style={{ color: theme.accentText, fontSize: 11 }}>{role} role</strong><p style={{ color: "#9ca3af", fontSize: 11.5, lineHeight: 1.5, marginTop: 5 }}>{detail}</p></div>)}
+        </div>
+      </section>
+
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 10, alignItems: "start" }}>
         {course.findings.map((finding) => (
           <div key={finding} className="glass-card" style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 11, display: "flex", alignItems: "flex-start", gap: 8, color: "#9ca3af", fontSize: 12, lineHeight: 1.5 }}>
@@ -239,12 +190,66 @@ export default function AgenticUICourse({ theme, variant = "full", onOpenCourse 
         ))}
       </div>
 
+      <nav aria-label="Course learning paths" className="glass-card" style={{ padding: 14, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+        <a href="#beginner-genai" style={{ color: theme.accentText }}>Generative AI for Developers</a>
+        <a href="#beginner-rag" style={{ color: theme.accentText }}>RAG from Scratch</a>
+        <a href="#rag-playground" style={{ color: theme.accentText }}>RAG playground</a>
+        <a href="#module-llm-foundations" style={{ color: theme.accentText }}>6 core modules</a>
+        <a href="#advanced-workshops" style={{ color: theme.accentText }}>6 advanced workshops</a>
+        <a href="#scenario-interviews" style={{ color: theme.accentText }}>Timed scenario interviews</a>
+      </nav>
+      <BeginnerCourse theme={theme} />
+      <CourseProject sessions={course.classroomSessions} references={course.references} theme={theme} />
+
+      <div style={{ display: "grid", gap: 14 }}>
+        {course.modules.map((module) => {
+          const lesson = course.lessons.find(item => item.id === module.lessonId);
+          const session = course.classroomSessions.find(item => item.id === module.sessionId);
+
+          return (
+            <article id={module.id} key={module.id} className="glass-card" style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, overflow: "hidden" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
+                <div style={{ padding: 14, borderRight: "1px solid rgba(255,255,255,.06)" }}>
+                  <div style={{ color: theme.accentStrong, fontSize: 11, fontWeight: 900, marginBottom: 7 }}>{module.title}</div>
+                  <h2 style={{ color: "#e8e8f0", fontSize: 18, lineHeight: 1.25 }}>{lesson.title.replace(/^\d+\.\s*/, "")}</h2>
+                  <p style={{ color: "#9ca3af", fontSize: 12, lineHeight: 1.55, marginTop: 8 }}>{module.outcome}</p>
+                  <div style={{ marginTop: 12, border: `1px solid ${theme.accentBorder}`, borderRadius: 8, overflow: "hidden", background: `linear-gradient(135deg, ${theme.accentMuted}, rgba(255,255,255,.03))` }}>
+                    <CourseVisual type={module.image.visual} steps={module.image.steps} theme={theme} />
+                    <div style={{ padding: "0 12px 12px" }}>
+                      <strong style={{ color: theme.accentText, fontSize: 12 }}>{module.image.title}</strong>
+                      <p style={{ color: "#9ca3af", fontSize: 11.5, lineHeight: 1.45, marginTop: 4 }}>{module.image.caption}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ padding: 14, display: "grid", gap: 10 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
+                    <div style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 10, background: theme.accentMuted }}>
+                      <strong style={{ display: "block", color: theme.accentText, fontSize: 11, marginBottom: 4 }}>What this means</strong>
+                      <span style={{ color: "#9ca3af", fontSize: 11.5, lineHeight: 1.45 }}>{lesson.plainMeaning}</span>
+                    </div>
+                    <div style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 10 }}>
+                      <strong style={{ display: "block", color: theme.accentText, fontSize: 11, marginBottom: 4 }}>Practice task</strong>
+                      <span style={{ color: "#9ca3af", fontSize: 11.5, lineHeight: 1.45 }}>{module.practice}</span>
+                    </div>
+                  </div>
+                  <ClassroomSession session={session} theme={theme} />
+                  <ul style={{ paddingLeft: 16, color: "#6b7280", fontSize: 11.5, lineHeight: 1.5 }}>
+                    {lesson.takeaways.map((takeaway) => <li key={takeaway}>{takeaway}</li>)}
+                  </ul>
+                </div>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+
       <section style={{ display: "grid", gap: 10 }}>
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
           <div>
             <h2 style={{ color: "#e8e8f0", fontSize: 18, lineHeight: 1.25 }}>Stack Implementation Tracks</h2>
             <p style={{ color: "#9ca3af", fontSize: 12, lineHeight: 1.55, marginTop: 5 }}>
-              Start with Java / Spring Boot, then connect the same agent contract to frontend, service, and enterprise stacks.
+              Optional extensions after the core project: port the contract to Java / Spring Boot or another stack. These snippets are sketches, not complete applications.
             </p>
           </div>
           <span style={{ color: theme.accentStrong, border: `1px solid ${theme.accentBorder}`, borderRadius: 999, padding: "5px 9px", fontSize: 11, fontWeight: 900 }}>
@@ -269,47 +274,9 @@ export default function AgenticUICourse({ theme, variant = "full", onOpenCourse 
         </div>
       </section>
 
-      <div style={{ display: "grid", gap: 14 }}>
-        {course.modules.map((module, index) => {
-          const lesson = course.lessons[index] || course.lessons[0];
-
-          return (
-            <article key={module.id} className="glass-card" style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, overflow: "hidden" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
-                <div style={{ padding: 14, borderRight: "1px solid rgba(255,255,255,.06)" }}>
-                  <div style={{ color: theme.accentStrong, fontSize: 11, fontWeight: 900, marginBottom: 7 }}>{module.title}</div>
-                  <h2 style={{ color: "#e8e8f0", fontSize: 18, lineHeight: 1.25 }}>{lesson.title.replace(/^\d+\.\s*/, "")}</h2>
-                  <p style={{ color: "#9ca3af", fontSize: 12, lineHeight: 1.55, marginTop: 8 }}>{module.outcome}</p>
-                  <div style={{ marginTop: 12, border: `1px solid ${theme.accentBorder}`, borderRadius: 8, overflow: "hidden", background: `linear-gradient(135deg, ${theme.accentMuted}, rgba(255,255,255,.03))` }}>
-                    <CourseVisual type={module.image.visual} theme={theme} />
-                    <div style={{ padding: "0 12px 12px" }}>
-                      <strong style={{ color: theme.accentText, fontSize: 12 }}>{module.image.title}</strong>
-                      <p style={{ color: "#9ca3af", fontSize: 11.5, lineHeight: 1.45, marginTop: 4 }}>{module.image.caption}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ padding: 14, display: "grid", gap: 10 }}>
-                  <VideoLesson module={module} theme={theme} />
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
-                    <div style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 10, background: theme.accentMuted }}>
-                      <strong style={{ display: "block", color: theme.accentText, fontSize: 11, marginBottom: 4 }}>What this means</strong>
-                      <span style={{ color: "#9ca3af", fontSize: 11.5, lineHeight: 1.45 }}>{lesson.plainMeaning}</span>
-                    </div>
-                    <div style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 10 }}>
-                      <strong style={{ display: "block", color: theme.accentText, fontSize: 11, marginBottom: 4 }}>Practice task</strong>
-                      <span style={{ color: "#9ca3af", fontSize: 11.5, lineHeight: 1.45 }}>{module.practice}</span>
-                    </div>
-                  </div>
-                  <ul style={{ paddingLeft: 16, color: "#6b7280", fontSize: 11.5, lineHeight: 1.5 }}>
-                    {lesson.takeaways.map((takeaway) => <li key={takeaway}>{takeaway}</li>)}
-                  </ul>
-                </div>
-              </div>
-            </article>
-          );
-        })}
-      </div>
+      <AdvancedWorkshops theme={theme} />
+      <InterviewStudio questions={course.interviewQuestions} theme={theme} />
+      <ScenarioInterviews theme={theme} />
 
       <section className="glass-card" style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 16 }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>

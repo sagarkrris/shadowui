@@ -229,7 +229,7 @@ test.describe("Non-functional UI/UX, responsiveness, and state management", () =
     await gotoSeededApp(page);
 
     for (let index = 0; index < 3; index += 1) {
-      await page.getByRole("button", { name: "Agentic UI Course" }).click();
+      await page.getByRole("button", { name: "AI for Software Engineers" }).click();
       await expect(page.getByRole("heading", { name: "Stack Implementation Tracks" })).toBeVisible();
       await page.getByRole("button", { name: "Company Prep" }).click();
       await expect(page.getByRole("heading", { name: "Company Prep" })).toBeVisible();

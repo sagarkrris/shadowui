@@ -18,6 +18,7 @@ import {
 } from "../../lib/designLab.mjs";
 import BeginnerGuideBanner from "../BeginnerGuideBanner";
 import AnswerAtAGlance from "../learning/AnswerAtAGlance";
+import DesignRevisionWorkshop from '../system-design/DesignRevisionWorkshop';
 
 const wrap = {
   minWidth: 0,
@@ -1017,8 +1018,8 @@ function DesignSearchPanel({ query, onQueryChange, onSubmit, accent, accentBorde
   );
 }
 
-export default function DesignLab({ theme = {}, onAction, beginnerMode = false, beginnerStep = "watch", onBeginnerStepChange }) {
-  const [activeTab, setActiveTab] = useState("Patterns");
+export default function DesignLab({ theme = {}, onAction, beginnerMode = false, beginnerStep = "watch", onBeginnerStepChange, canvasState, onCanvasChange, onOpenCanvas }) {
+  const [activeTab, setActiveTab] = useState(() => canvasState?.revision ? 'Revise a design' : 'Patterns');
   const [searchQuery, setSearchQuery] = useState("");
   const practiceSystems = useMemo(() => listDesignLabPracticeSystems(), []);
   const umlSystems = useMemo(() => listUmlClassPracticeSystems(), []);
@@ -1031,6 +1032,7 @@ export default function DesignLab({ theme = {}, onAction, beginnerMode = false, 
   const accentBorder = theme.accentBorder || "rgba(139, 211, 255, .26)";
 
   const tabs = [
+    { label: "Revise a design", icon: "ti-git-compare" },
     { label: "Patterns", icon: "ti-puzzle" },
     { label: "HLD", icon: "ti-sitemap" },
     { label: "LLD", icon: "ti-code" },
@@ -1094,6 +1096,7 @@ export default function DesignLab({ theme = {}, onAction, beginnerMode = false, 
         </div>
       </header>
 
+      {activeTab === 'Revise a design' && <><DesignRevisionWorkshop value={canvasState?.revision} onChange={revision => onCanvasChange?.({ ...canvasState, revision })} />{onOpenCanvas && <button onClick={onOpenCanvas}>Continue in System Canvas</button>}</>}
       <DesignSearchPanel
         query={searchQuery}
         onQueryChange={setSearchQuery}

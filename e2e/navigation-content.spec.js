@@ -25,20 +25,17 @@ test.describe("Feature B: navigation and content modules", () => {
     }
   });
 
-  test("TC06 opens the Agentic UI Engineering course with visuals, videos, patterns, and tasks", async ({ page }) => {
+  test("TC06 opens the AI engineering curriculum with lessons and a downloadable project", async ({ page }) => {
     await gotoSeededApp(page);
 
     await page.getByRole("button", { name: "Workspace menu" }).click();
-    await page.getByRole("button", { name: "Agentic UI Course", exact: true }).click();
+    await page.getByRole("button", { name: "AI for Software Engineers", exact: true }).click();
 
     await expect(page.getByRole("heading", { name: "Stack Implementation Tracks" })).toBeVisible();
     await expect(page.getByText("Practice task", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("Capstone", { exact: true }).first()).toBeVisible();
-    expect(await page.locator("iframe[title]").count()).toBeGreaterThan(0);
-    await expect(page.getByRole("img", { name: "Agent loop from intent to action" }).first()).toBeVisible();
-    const playLinks = page.locator('a[href*="youtube.com/watch"], a[href*="youtu.be/"]');
-    expect(await playLinks.count()).toBeGreaterThan(0);
-    await expect(playLinks.first()).toHaveAttribute("href", /youtube|youtu\.be/);
+    await expect(page.getByRole("list", { name: "Lesson workflow" })).toHaveCount(6);
+    await expect(page.getByRole("link", { name: /Download the complete lab/ })).toBeVisible();
     await assertHealthyApp(page);
   });
 

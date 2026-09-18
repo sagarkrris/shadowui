@@ -46,6 +46,8 @@ import { isModalCloseKey } from "../../lib/modalKeyboard.mjs";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import BeginnerGuideBanner from "../BeginnerGuideBanner";
 import AnswerAtAGlance from "../learning/AnswerAtAGlance";
+import GuideSectionContent from './GuideSectionContent';
+import guideStyles from '../../styles/DsaGuide.module.css';
 
 const GUIDED_STAGES = ["Learn", "Pattern Atlas", "Visual Playground", "Big-O Board", "Visualize", "Dry run", "Explain-Then-Code", "Code", "Quiz", "Interview Challenges", "Drill Room", "Practice as Mock"];
 const FRESHER_DSA_REVIEW_STORAGE_KEY = "interviewiq:fresher-dsa-review:v2";
@@ -485,13 +487,14 @@ function Blind75GuideModal({ problem, onClose, onOpenVisualizer, theme = {} }) {
           </div>
           {!guide && !error ? <p role="status" style={{ color: "#93a4bf", margin: 0 }}>Loading the complete Java guide…</p> : null}
           {error ? <p role="alert" style={{ color: "#fda4af", margin: 0 }}>{error}</p> : null}
-          {guide?.sections?.map((section) => (
-            <section key={section.heading} style={{ borderBottom: "1px solid rgba(255,255,255,.08)", display: "grid", gap: 8, paddingBottom: 14 }}>
+          {guide?.sections && <nav className={guideStyles.navigation} aria-label="Study guide sections">{guide.sections.map((section, index) => <a key={index} href={`#guide-section-${index}`}>{section.heading}</a>)}</nav>}
+          {guide?.sections?.map((section, index) => (
+            <section id={`guide-section-${index}`} key={section.heading} style={{ borderBottom: "1px solid rgba(255,255,255,.08)", display: "grid", gap: 8, paddingBottom: 14, minWidth: 0, scrollMarginTop: 12 }}>
               <h3 style={{ color: section.heading === "Java solution" ? "#a7f3d0" : accent, fontSize: 13, margin: 0, textTransform: "none" }}>{section.heading}</h3>
               {section.heading === "Java solution" ? (
                 <pre tabIndex={0} aria-label="Code example" style={{ background: "rgba(0,0,0,.28)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, color: "#dbeafe", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 11.5, lineHeight: 1.55, margin: 0, overflowX: "auto", padding: 11, whiteSpace: "pre" }}>{section.content}</pre>
               ) : (
-                <p style={{ color: "#cbd5e1", fontSize: 12, lineHeight: 1.6, margin: 0, whiteSpace: "pre-line" }}>{section.content}</p>
+                <GuideSectionContent section={section} />
               )}
             </section>
           ))}

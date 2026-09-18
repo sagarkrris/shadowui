@@ -19,6 +19,7 @@ import {
 import BeginnerGuideBanner from "../BeginnerGuideBanner";
 import AnswerAtAGlance from "../learning/AnswerAtAGlance";
 import ReadableFlowDiagram from "../learning/ReadableFlowDiagram";
+import DesignRevisionWorkshop from './DesignRevisionWorkshop';
 
 const wrappingTextStyle = {
   minWidth: 0,
@@ -1505,6 +1506,7 @@ export default function SystemDesignCanvas({
   beginnerMode = false,
   beginnerStep = "watch",
   onBeginnerStepChange,
+  onOpenDesignLab,
 }) {
   const normalizedInitialState = useMemo(
     () => createSystemDesignCanvasState(initialState),
@@ -1555,6 +1557,7 @@ export default function SystemDesignCanvas({
     const nextState = createSystemDesignCanvasState({
       problem: template.problem,
       sections: template.sections,
+      revision: canvasState.revision,
     });
     setCanvasState(nextState);
     setBlueprint(buildSystemDesignStudioBlueprint(nextState));
@@ -1623,6 +1626,7 @@ export default function SystemDesignCanvas({
         width: "100%",
       }}
     >
+      <details><summary>Editable architecture and revisions</summary><DesignRevisionWorkshop value={canvasState.revision} onChange={revision => commitState({ ...canvasState, revision })} />{onOpenDesignLab && <button onClick={onOpenDesignLab}>Continue in Design Lab</button>}</details>
       <BeginnerGuideBanner
         enabled={beginnerMode}
         accent={accent}

@@ -1,0 +1,31 @@
+import { test, expect } from '@playwright/test';
+import { gotoSeededApp } from './helpers/app.js';
+
+for (const width of [390, 1440]) test(`AI curriculum and attempt-before-reveal at ${width}px`, async ({ page }) => {
+  await page.setViewportSize({ width, height: 900 });
+  await gotoSeededApp(page, { activeTab: 'course', homeDemoSeen: true });
+  await expect(page.getByRole('heading', { name: 'AI for Software Engineers', exact: true, level: 1 })).toBeVisible();
+  const project = page.getByRole('region', { name: 'Progressive project' });
+  const download = page.waitForEvent('download');
+  await project.getByRole('link', { name: /Download the complete lab/ }).click();
+  expect((await download).suggestedFilename()).toBe('interviewiq-lab.mjs');
+  await expect(page.locator('article[id^="module-"]')).toHaveCount(6);
+  const last = page.getByRole('region', { name: 'Classroom: AI-assisted coding and delivery' });
+  await last.getByText('Compare with the expected solution').click();
+  await expect(last.getByText(/A useful prompt names/)).toBeVisible();
+  const studio = page.getByRole('region', { name: 'Interview studio' });
+  await studio.getByLabel('Experience level').selectOption('Intermediate');
+  const question = studio.getByRole('article').first();
+  const reveal = question.getByRole('button', { name: 'Reveal answer and follow-up' });
+  await expect(reveal).toBeDisabled();
+  await expect(question.getByText('Strong answer:', { exact: true })).toHaveCount(0);
+  await question.getByLabel('Your attempt').fill('Filter authorized notes before ranking, then test the private top result.');
+  await reveal.click();
+  await expect(question.getByText('Explained follow-up:', { exact: true })).toBeVisible();
+  await question.getByLabel('Your attempt').fill('');
+  await expect(question.getByText('Strong answer:', { exact: true })).toHaveCount(0);
+  await studio.getByLabel('Experience level').selectOption('Senior');
+  await expect(studio.getByRole('article')).toHaveCount(4);
+  expect(await studio.evaluate(el => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
+  await page.screenshot({ path: `/private/tmp/ai-course-${width}.png` });
+});

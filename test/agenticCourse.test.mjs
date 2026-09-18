@@ -11,8 +11,8 @@ test("uses the premium InterviewIQ tagline", () => {
   assert.equal(PRODUCT_TAGLINE, "AI-powered interview intelligence for modern software engineers");
 });
 
-test("defines a compact agentic UI basics course with visual lessons", () => {
-  assert.equal(AGENTIC_UI_COURSE.title, "Agentic UI Engineering Course");
+test("defines a detailed AI engineering classroom course with visual lessons", () => {
+  assert.equal(AGENTIC_UI_COURSE.title, "AI for Software Engineers");
   assert.ok(AGENTIC_UI_COURSE.summary.includes("agent"));
   assert.ok(AGENTIC_UI_COURSE.findings.length >= 4);
   assert.ok(AGENTIC_UI_COURSE.lessons.length >= 4);
@@ -30,12 +30,18 @@ test("defines a compact agentic UI basics course with visual lessons", () => {
   AGENTIC_UI_COURSE.modules.forEach((module) => {
     assert.ok(module.image.title);
     assert.ok(module.image.caption.length > 20);
-    assert.ok(module.video.title);
-    assert.ok(module.video.duration);
-    assert.match(module.video.embedUrl, /^https:\/\/www\.youtube-nocookie\.com\/embed\/[A-Za-z0-9_-]+/);
-    assert.match(module.video.watchUrl, /^https:\/\/www\.youtube\.com\/watch\?v=[A-Za-z0-9_-]+/);
-    assert.ok(module.video.chapters.length >= 3);
+    assert.equal(module.image.steps.length, 4);
+    assert.ok(AGENTIC_UI_COURSE.lessons.some(lesson => lesson.id === module.lessonId));
+    assert.ok(AGENTIC_UI_COURSE.classroomSessions.some(session => session.id === module.sessionId));
   });
+});
+
+test("course provides teacher-led sessions and detailed interview practice", () => {
+  assert.match(AGENTIC_UI_COURSE.kicker, /Teacher-Led/);
+  assert.equal(AGENTIC_UI_COURSE.classroomSessions.length, AGENTIC_UI_COURSE.modules.length);
+  assert.ok(AGENTIC_UI_COURSE.classroomSessions.every((session) => session.teacherBrief.length > 40 && session.studentActivity.length > 40 && session.debrief.length > 30));
+  assert.ok(AGENTIC_UI_COURSE.interviewQuestions.length >= 6);
+  assert.ok(AGENTIC_UI_COURSE.interviewQuestions.every((question) => question.question && question.strongAnswer.length > 80 && question.followUp && question.rubric.length >= 3));
 });
 
 test("course covers core agentic UI safety and trust patterns", () => {
@@ -94,4 +100,6 @@ test("course UI renders stack tracks and capstone sections", () => {
   assert.match(source, /TrackLabList/);
   assert.match(source, /Capstone/);
   assert.match(source, /codeSnippet/);
+  assert.match(source, /ClassroomSession/);
+  assert.match(source, /InterviewStudio/);
 });
