@@ -102,3 +102,24 @@ or live LLM. It neither measures semantic retrieval quality nor automatically re
 ambiguous intent. The lesson explains these limits and points to the existing runnable
 lab and the advanced retrieval workshop for subsequent work. No API calls, credentials,
 new dependencies, or user data persistence are introduced.
+
+## Visual learning pass
+
+All 24 lessons (12 beginner, six core, six advanced) now open with a concrete
+four-card visual walkthrough. Cards show actual example inputs, intermediate
+results, and decisions, with selectable focus and readable text at mobile widths.
+The course orientation follows one fictional learner from question to approved
+study plan. Core guides define terms and offer a pause-and-predict question.
+Teacher timing, briefs, and debriefs are expandable; the duplicated practice-task
+preview has been removed so the worked example precedes the coding exercise.
+
+Module 1 includes a local context-budget explorer: vary history, add a document,
+restore baseline, or show 20% headroom. It displays each allocation, arithmetic,
+and explicit overflow status. The fixed 600-token allocation includes profile
+and the latest question; all numbers are illustrative. The lab's legacy
+`profileTokens` parameter represents this combined allocation for the exercise.
+Real integration must count the actual messages and provider-specific overhead.
+The explorer performs no generation or external calls.
+
+Validation includes coverage for all 24 guide IDs, arithmetic parity with the lab,
+exact-fit and overflow boundaries, and mobile/desktop browser interactions.

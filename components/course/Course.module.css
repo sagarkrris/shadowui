@@ -1,0 +1,22 @@
+/* The global reset removes native list padding. Restore a marker gutter only
+   inside the course; diagram cards deliberately have no list markers. */
+.course :where(ul, ol):not([data-visual-steps]) {
+  padding-inline-start: 1.75em;
+  margin-block: 12px;
+  list-style-position: outside;
+}
+
+.course :where(ul, ol):not([data-visual-steps]) > li {
+  padding-inline-start: 0.25em;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.course :where(ul, ol):not([data-visual-steps]) > li + li {
+  margin-block-start: 8px;
+}
+
+.course :where(ul, ol):not([data-visual-steps]) > li::marker {
+  color: inherit;
+  font-weight: 600;
+}

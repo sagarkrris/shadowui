@@ -5,16 +5,18 @@ const copy = { color: '#cbd5e1', fontSize: 13, lineHeight: 1.7, overflowWrap: 'a
 
 export function ClassroomSession({ session, theme }) {
   return <section aria-label={`Classroom: ${session.title}`} style={{ ...block, ...copy, display: 'grid', gap: 12 }}>
-    <h3 style={{ color: theme.accentText }}>90-minute teaching plan</h3>
-    <ol>{session.agenda.map(item => <li key={item.activity}>{item.minutes} min · {item.activity}</li>)}</ol>
-    <div><strong>Teacher brief</strong><p>{session.teacherBrief}</p></div>
     <div><strong>Worked example</strong><p>{session.workedExample}</p></div>
     <div><strong>Classroom dialogue</strong>{session.dialogue.map(([role, line], index) => <p key={index}><b>{role}:</b> {line}</p>)}</div>
     <div><strong>Guided exercise · project stage {session.stage}</strong><p>{session.studentActivity}</p><ol>{session.steps.map(step => <li key={step}>{step}</li>)}</ol></div>
     <p><strong>Failure case:</strong> {session.failure}</p>
     <details><summary style={{ cursor: 'pointer', color: theme.accentText }}>Compare with the expected solution</summary><p>{session.solution}</p></details>
     <p><strong>Common misconception:</strong> {session.misconception}</p>
+    <details><summary style={{ cursor: "pointer", color: theme.accentText }}>Teacher notes and 90-minute teaching plan</summary>
+    <h3 style={{ color: theme.accentText }}>90-minute teaching plan</h3>
+    <ol>{session.agenda.map(item => <li key={item.activity}>{item.minutes} min · {item.activity}</li>)}</ol>
+    <div><strong>Teacher brief</strong><p>{session.teacherBrief}</p></div>
     <p><strong>Class debrief:</strong> {session.debrief}</p>
+    </details>
     <p><strong>Homework:</strong> {session.homework}</p>
   </section>;
 }

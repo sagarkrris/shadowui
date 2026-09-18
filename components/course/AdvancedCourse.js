@@ -1,3 +1,4 @@
+import LessonVisual from './LessonVisual';
 import { useEffect, useState } from 'react';
 import { ADVANCED_WORKSHOPS, ADVANCED_READINGS, INTERVIEW_SCENARIOS, remainingInterviewSeconds, interviewSelfAssessment } from '../../lib/aiAdvancedCourse.mjs';
 
@@ -19,6 +20,7 @@ export function AdvancedWorkshops({ theme }) {
       <h3>{workshop.title}</h3><p>{workshop.level}</p>
       <p><strong>Prerequisites:</strong> {workshop.prerequisite}</p>
       <p><strong>Learning objective:</strong> {workshop.objective}</p>
+      <LessonVisual lessonId={workshop.id} />
       {workshop.concepts.map(concept => <div key={concept.title}><h4>{concept.title}</h4><p>{concept.text}</p></div>)}
       <h4>Worked example</h4><p>{workshop.workedExample}</p>
       {workshop.dialogue.map(([role, line]) => <p key={role}><strong>{role}:</strong> {line}</p>)}

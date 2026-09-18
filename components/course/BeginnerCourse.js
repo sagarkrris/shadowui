@@ -1,3 +1,4 @@
+import LessonVisual from './LessonVisual';
 import { useState } from 'react';
 import { BEGINNER_PATHS } from '../../lib/aiBeginnerPaths.mjs';
 import { runRagPlayground } from '../../lib/ragPlayground.mjs';
@@ -11,6 +12,7 @@ function BeginnerLesson({ lesson, theme }) {
   const [checked, setChecked] = useState(false);
   return <article aria-label={lesson.title}>
     <h3>{lesson.title}</h3><p><strong>By the end:</strong> {lesson.objective}</p>
+    <LessonVisual lessonId={lesson.id} />
     <h4>Understand the idea</h4><p>{lesson.explanation}</p>
     <h4>Worked example</h4><p>{lesson.example}</p>
     <h4>Try it yourself</h4><p>{lesson.exercise}</p>
