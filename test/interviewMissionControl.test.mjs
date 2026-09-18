@@ -89,7 +89,7 @@ test("mission control marks today's completed missions", () => {
 
 test("prep home renders Interview Mission Control and wires workspace navigation", () => {
   const welcomeSource = readFileSync(new URL("../components/welcome/Welcome.js", import.meta.url), "utf8");
-  const indexSource = readFileSync(new URL("../pages/index.js", import.meta.url), "utf8");
+  const indexSource = readFileSync(new URL("../pages/practice.js", import.meta.url), "utf8");
 
   assert.match(welcomeSource, /InterviewMissionControl/);
   assert.match(welcomeSource, /onOpenWorkspace/);

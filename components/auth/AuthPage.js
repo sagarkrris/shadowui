@@ -22,7 +22,7 @@ export default function AuthPage({ mode }) {
   const alternateHref = isRegister ? "/sign-in" : "/sign-up";
 
   const strength = getPasswordStrength(password);
-  useEffect(() => { if (auth.ready && auth.user && !registrationComplete) router.replace("/"); }, [auth.ready, auth.user, registrationComplete, router]);
+  useEffect(() => { if (auth.ready && auth.user && !registrationComplete) router.replace("/practice"); }, [auth.ready, auth.user, registrationComplete, router]);
   const submit = async (event) => {
     event.preventDefault();
     if (submitting) return;
@@ -33,7 +33,7 @@ export default function AuthPage({ mode }) {
     if (isRegister) setRegistrationComplete(true);
     try {
       const succeeded = await (isRegister ? auth.register : auth.login)({ firstName, lastName, email, password });
-      if (succeeded && !isRegister) router.replace("/");
+      if (succeeded && !isRegister) router.replace("/practice");
     } finally { setSubmitting(false); }
   };
 

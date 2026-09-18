@@ -46,6 +46,16 @@ export default function Welcome({ practice = { attempts: [] }, onResume, hasDraf
   }, []);
 
   useEffect(() => {
+    const selectFromHash = () => {
+      const section = window.location.hash.replace("#dashboard-", "");
+      if (["overview", "practice", "career"].includes(section)) setActiveSection(section);
+    };
+    selectFromHash();
+    window.addEventListener("hashchange", selectFromHash);
+    return () => window.removeEventListener("hashchange", selectFromHash);
+  }, []);
+
+  useEffect(() => {
     const root = document.querySelector(".chat-scroll");
     const sections = ["overview", "practice", "career"].map((id) => document.getElementById(`dashboard-${id}`)).filter(Boolean);
     if (!root || !sections.length || typeof IntersectionObserver === "undefined") return undefined;
@@ -70,6 +80,8 @@ export default function Welcome({ practice = { attempts: [] }, onResume, hasDraf
         <p>Learn: study an explanation · Practice: improve an answer · Mock: timed interview · Review: revisit recorded evidence.</p>
       </section>
       <section className="practice-panel" style={{ width: "100%" }}><h2>Production Detective</h2><p>Investigate a five-minute debugging mystery. Follow the evidence, choose a diagnosis, and explore the repair.</p><Link href="/detective">Open the case files →</Link></section>
+      <section className="practice-panel" style={{ width: "100%" }}><h2>When Advice Fails</h2><p>Five practical backend field notes on the conditions where familiar advice breaks—and how to verify a safer correction.</p><Link href="/advice-fails">Read the field notes →</Link></section>
+      <section className="practice-panel" style={{ width: "100%" }}><h2>Explain This Log</h2><p>Decode fictional stack traces, query plans, thread dumps, and HTTP exchanges without uploading production data.</p><Link href="/explain-log">Open the log reader →</Link></section>
       <details className="practice-panel" style={{ width: '100%' }}><summary>Advanced tools and learning plans</summary>
       <div className="welcome-actions" style={{ display: "flex", gap: 10, marginBottom: 24, flexWrap: "wrap", justifyContent: "center" }}>
         <button className="glass-button" onClick={onStart} disabled={!onStart} aria-label="Start mock interview" style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 18px", border: `1px solid ${theme.accentBorder}`, borderRadius: 10, background: theme.accentSoft, color: theme.accentText, fontSize: 13, fontWeight: 800, cursor: onStart ? "pointer" : "not-allowed", opacity: onStart ? 1 : 0.55 }}>
@@ -101,9 +113,9 @@ export default function Welcome({ practice = { attempts: [] }, onResume, hasDraf
       </div>
 
       <nav className="dashboard-section-nav" aria-label="Dashboard sections">
-        <a href="#dashboard-overview" aria-current={activeSection === "overview" ? "location" : undefined}>Overview</a>
-        <a href="#dashboard-practice" aria-current={activeSection === "practice" ? "location" : undefined}>Practice</a>
-        <a href="#dashboard-career" aria-current={activeSection === "career" ? "location" : undefined}>Career</a>
+        <a href="#dashboard-overview" onClick={() => setActiveSection("overview")} aria-current={activeSection === "overview" ? "location" : undefined}>Overview</a>
+        <a href="#dashboard-practice" onClick={() => setActiveSection("practice")} aria-current={activeSection === "practice" ? "location" : undefined}>Practice</a>
+        <a href="#dashboard-career" onClick={() => setActiveSection("career")} aria-current={activeSection === "career" ? "location" : undefined}>Career</a>
       </nav>
 
       <div className="welcome-secondary">

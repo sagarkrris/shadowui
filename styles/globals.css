@@ -1299,3 +1299,19 @@ a:focus-visible,
 :where(button, a, input, textarea, select, summary):focus-visible { outline: 3px solid #60a5fa !important; outline-offset: 3px; }
 @media (max-width: 600px) { .practice-panel { padding: 12px; } .practice-actions { display: grid; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
+
+/* Public articles have a native scroll owner independent of the fixed workspace. */
+.reader-article-scroll { flex: 1 1 0; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; -webkit-overflow-scrolling: touch; }
+.reader-article-scroll > main:not(.tutorial-article-page) { flex-shrink: 0; }
+.reader-tools { background: #122d38; border: 1px solid #526c78; border-radius: 8px; padding: 18px; margin: 22px 0; color: #e5edf8; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.reader-tools p { margin: 8px 0; }
+.reader-tools a { color: #a6e2d1; }
+.reader-tools label { display: block; margin: 12px 0; }
+.reader-tools input, .reader-tools textarea { display: block; width: 100%; font-size: 16px; padding: 10px; background: #0d1e2b; color: #fff; border: 1px solid #72929f; border-radius: 4px; }
+.reader-tools ul { padding-left: 22px; }
+.reader-tools details { margin-top: 15px; }
+.reader-tools button, .reader-section-actions button, .reader-copy-code { padding: 7px 12px; border: 1px solid #618476; color: #dafff0; background: #17382e; border-radius: 4px; font-size: 12px; cursor: pointer; }
+.reader-section-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+.reader-copy-code { margin: 8px 0 18px; }
+.reader-article-scroll :is(h2,h3)[id] { scroll-margin-top: 15px; }
+@media print { .reader-tools, .reader-section-actions, .reader-copy-code { display: none; } .reader-article-scroll, .reader-article-scroll .tutorial-article-page { overflow: visible; height: auto; } }

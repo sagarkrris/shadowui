@@ -4,7 +4,7 @@ import test from "node:test";
 
 const componentUrl = new URL("../components/scenario-bank/ScenarioBank.js", import.meta.url);
 const componentSource = existsSync(componentUrl) ? readFileSync(componentUrl, "utf8") : "";
-const indexSource = readFileSync(new URL("../pages/index.js", import.meta.url), "utf8");
+const indexSource = readFileSync(new URL("../pages/practice.js", import.meta.url), "utf8");
 const sessionSource = readFileSync(new URL("../lib/sessionPersistence.mjs", import.meta.url), "utf8");
 const workspaceSource = readFileSync(new URL("../lib/workspaces.mjs", import.meta.url), "utf8");
 

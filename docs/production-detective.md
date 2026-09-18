@@ -46,3 +46,20 @@ For durable aggregate measurements, configure the existing `METRICS_WEBHOOK_URL`
 - Spring's trace, retry calculator, PostgreSQL work-unit chart, and cache replay are explicitly labeled teaching models. No Spring container or PostgreSQL benchmark is claimed. Live Gemini calibration remains skipped as requested.
 
 Content lives in `lib/productionDetective.mjs`; published slugs are permanent. When correcting a case, update its explanation, relevant regression checks, and review date together. Retain IDs for compatible edits or version/migrate saved state when changing the solution structure.
+
+### Local validation results — 2026-09-17
+
+- `npm run lint`: passed.
+- `npm run test:unit`: 531 passed (including 10 detective tests).
+- `npm run build`: passed; the index and all five case pages were prerendered.
+- Detective browser suite: 30 passed across Chromium, Firefox, and WebKit. Includes mobile WCAG A/AA automated checks, keyboard skip-link activation, later-day return deduplication, and a single case-specific meta description.
+- Java fixture compiled for release 17 and ran successfully on Temurin 21; output matched the published example and the stable-key repair passed.
+- Actual assistive-technology and physical-device testing remains unverified. No deployment or external analytics destination was provisioned.
+
+### Scroll correction — 2026-09-18
+
+A native wheel regression reproduced a locked page: the global workspace intentionally sets `body { overflow: hidden }`, while the detective root previously relied on document scrolling. Automated clicks could scroll hidden content into view and therefore missed the failure. The detective root now owns a bounded flex scroll region (`flex: 1 1 0; min-height: 0; overflow-y: auto`) with momentum scrolling support. The change is scoped to Production Detective. The share-link field uses 16px text to avoid iOS focus zoom.
+
+`e2e/detective-scroll.spec.js` covers native wheel movement, keyboard travel to both ends, horizontal overflow, expanded debriefs, and six viewport shapes: 320px small phone, 390px iPhone-sized, 412px Android-sized, 844px landscape, 768px tablet, and 1440px desktop. It also injects a native Chromium touch swipe and checks resizing to landscape. The touch protocol test is skipped in Firefox and WebKit because that protocol is Chromium-specific; their wheel and keyboard checks still run at all six sizes. Physical iPhone/Android hardware remains untested.
+
+Scroll-fix validation: 67 browser checks passed across Chromium, Firefox, and WebKit; 2 Chromium-only touch checks were explicitly skipped in the other engines. Lint and all 10 focused unit tests passed. The original five-case interaction suite was included in that browser run.

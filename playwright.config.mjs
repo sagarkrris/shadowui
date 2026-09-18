@@ -68,9 +68,9 @@ export default defineConfig({
     video: "retain-on-failure",
   },
   webServer: {
-    command: `npm run dev -- --hostname 127.0.0.1 --port ${PORT}`,
+    command: `npm run ${process.env.E2E_PRODUCTION === "1" ? "start" : "dev"} -- --hostname 127.0.0.1 --port ${PORT}`,
     url: baseURL,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: !process.env.CI && process.env.E2E_PRODUCTION !== "1",
     timeout: 120_000,
   },
   projects: browserMatrix ? matrixProjects : [chromiumProject],

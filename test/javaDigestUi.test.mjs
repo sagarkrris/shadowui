@@ -5,7 +5,7 @@ import test from "node:test";
 const componentUrl = new URL("../components/java-digest/JavaDigest.js", import.meta.url);
 const componentSource = existsSync(componentUrl) ? readFileSync(componentUrl, "utf8") : "";
 const globalStylesSource = readFileSync(new URL("../styles/globals.css", import.meta.url), "utf8");
-const indexSource = readFileSync(new URL("../pages/index.js", import.meta.url), "utf8");
+const indexSource = readFileSync(new URL("../pages/practice.js", import.meta.url), "utf8");
 const homeDemoSource = readFileSync(new URL("../components/welcome/HomeDemo.js", import.meta.url), "utf8");
 const welcomeSource = readFileSync(new URL("../components/welcome/Welcome.js", import.meta.url), "utf8");
 const workspaceSource = readFileSync(new URL("../lib/workspaces.mjs", import.meta.url), "utf8");

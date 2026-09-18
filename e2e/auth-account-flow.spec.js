@@ -13,16 +13,19 @@ async function mockCsrfAndMe(page, { user = null } = {}) {
 
 test.describe("Authentication and account lifecycle", () => {
   test("signup exposes password strength, loading state, and verification confirmation", async ({ page }) => {
+    let releaseRegistration;
     await page.route("**/api/auth**", async (route) => {
       const url = new URL(route.request().url());
       if (url.searchParams.get("action") === "csrf") return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ csrfToken: "csrf-test" }) });
       if (url.searchParams.get("action") === "me") return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ user: null }) });
-      if (url.searchParams.get("action") === "register") return route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ user: { ...verifiedUser, emailVerified: false }, emailDelivery: { delivered: true, configured: true } }) });
+      if (url.searchParams.get("action") === "register") { await new Promise(resolve => { releaseRegistration = resolve; }); return route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ user: { ...verifiedUser, emailVerified: false }, emailDelivery: { delivered: true, configured: true } }) }); }
       return route.continue();
     });
     await page.goto("/sign-up");
+    await page.getByLabel("First name", { exact: true }).fill("Test");
+    await page.getByLabel("Last name", { exact: true }).fill("Reader");
     await page.getByLabel("Email").fill("candidate@example.com");
-    const password = page.getByLabel("Password");
+    const password = page.getByLabel("Password", { exact: true });
     await password.fill("LongerPassword42!");
     await expect(page.getByLabel("Password strength")).toContainText("Strong");
     await expect(password).toHaveAttribute("type", "password");
@@ -30,6 +33,8 @@ test.describe("Authentication and account lifecycle", () => {
     await expect(password).toHaveAttribute("type", "text");
     await page.getByRole("button", { name: "Create account" }).click();
     await expect(page.getByRole("button", { name: "Creating account…" })).toBeVisible();
+    await expect.poll(() => Boolean(releaseRegistration)).toBe(true);
+    releaseRegistration();
     await expect(page.getByRole("status")).toContainText("Verification email sent");
   });
 
@@ -54,8 +59,8 @@ test.describe("Authentication and account lifecycle", () => {
     await expect(page.getByRole("status")).toContainText("reset instructions");
 
     await page.goto("/reset-password?token=reset-token");
-    await page.getByLabel("New password").fill("NewLongPassword42!");
-    await page.getByLabel("Confirm password").fill("NewLongPassword42!");
+    await page.getByLabel("New password").and(page.locator("input")).fill("NewLongPassword42!");
+    await page.getByLabel("Confirm password").and(page.locator("input")).fill("NewLongPassword42!");
     await page.getByRole("button", { name: "Reset password" }).click();
     await expect(page.getByRole("status")).toContainText("password has been reset");
   });
@@ -93,9 +98,9 @@ test.describe("Authentication and account lifecycle", () => {
     });
     await page.goto("/sign-in");
     await page.getByLabel("Email").fill("candidate@example.com");
-    await page.getByLabel("Password").fill("WrongPassword42!");
+    await page.getByLabel("Password", { exact: true }).fill("WrongPassword42!");
     await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page.getByRole("alert")).toContainText("Invalid email or password.");
+    await expect(page.locator("main").getByRole("alert")).toContainText("Invalid email or password.");
   });
 
   test("sign-in reports unavailable security setup only after submission", async ({ page }) => {
@@ -108,11 +113,11 @@ test.describe("Authentication and account lifecycle", () => {
       return route.continue();
     });
     await page.goto("/sign-in");
-    await expect(page.getByRole("alert")).toHaveCount(0);
+    await expect(page.locator("main").getByRole("alert")).toHaveCount(0);
     await page.getByLabel("Email").fill("candidate@example.com");
-    await page.getByLabel("Password").fill("LongerPassword42!");
+    await page.getByLabel("Password", { exact: true }).fill("LongerPassword42!");
     await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page.getByRole("alert")).toContainText("Security setup is unavailable. Refresh and try again.");
+    await expect(page.locator("main").getByRole("alert")).toContainText("Security setup is unavailable. Refresh and try again.");
     expect(loginRequests).toBe(0);
   });
 
@@ -125,10 +130,10 @@ test.describe("Authentication and account lifecycle", () => {
       return route.continue();
     });
     await page.goto("/reset-password");
-    await expect(page.getByRole("alert")).toHaveCount(0);
+    await expect(page.locator("main").getByRole("alert")).toHaveCount(0);
     await page.getByLabel("Email").fill("candidate@example.com");
     await page.getByRole("button", { name: "Send reset link" }).click();
-    await expect(page.getByRole("alert")).toContainText("Security setup is unavailable. Please try again.");
+    await expect(page.locator("main").getByRole("alert")).toContainText("Security setup is unavailable. Please try again.");
     expect(forgotRequests).toBe(0);
   });
 
@@ -140,14 +145,17 @@ test.describe("Authentication and account lifecycle", () => {
       if (route.request().method() === "GET") return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ exportVersion: 1, user: verifiedUser, state: {}, audits: [] }) });
       return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, deletionVerified: true }) });
     });
-    await page.goto("/");
-    await expect(page.getByRole("button", { name: "Account" })).toBeVisible();
-    await page.getByRole("button", { name: "Account" }).click();
-    await expect(page.getByRole("heading", { name: "Account sync" })).toBeVisible();
+    await page.goto("/practice");
+    await expect(page.locator(".header-account-actions").getByRole("button", { name: /Account/ })).toBeVisible();
+    await page.locator(".header-account-actions").getByRole("button", { name: /Account/ }).click();
+    await page.getByRole("menuitem", { name: /Account & settings/ }).click();
+    await expect(page.getByRole("heading", { name: "Account profile & sync" })).toBeVisible();
     await page.getByRole("button", { name: "Export data" }).click();
     await expect.poll(() => accountRequests.some((request) => request.method === "GET")).toBe(true);
     page.on("dialog", (dialog) => dialog.accept());
-    await page.getByRole("button", { name: "Delete account" }).click();
+    await page.getByRole("button", { name: "Delete account permanently" }).click();
+    await page.getByLabel("Type DELETE to confirm").fill("DELETE");
+    await page.getByRole("button", { name: "Confirm deletion", exact: true }).click();
     await expect.poll(() => accountRequests.some((request) => request.method === "DELETE")).toBe(true);
   });
 });

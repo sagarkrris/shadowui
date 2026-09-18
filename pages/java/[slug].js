@@ -12,7 +12,7 @@ export default function PublicJavaArticle({ article, related }) {
   return (
     <>
       <Head>
-        <title>{article.title} | InterviewIQ</title>
+        <title>{`${article.title} | InterviewIQ`}</title>
         <meta name="description" content={article.description} />
         <meta name="keywords" content={article.keywords.join(", ")} />
         <meta property="og:type" content="article" />
@@ -42,7 +42,7 @@ export default function PublicJavaArticle({ article, related }) {
             <div style={{ color: "#8bd3ff", fontSize: 12, fontWeight: 800, textTransform: "uppercase" }}>{article.category} · Interview guide</div>
             <h1 style={{ fontSize: "clamp(28px, 5vw, 48px)", lineHeight: 1.08, margin: "10px 0" }}>{article.title}</h1>
             <p style={{ color: "#a9bad1", fontSize: 17, lineHeight: 1.55 }}>{article.description}</p>
-            <div style={{ color: "#8295ae", fontSize: 12 }}>By {article.author} · Reviewed {article.reviewedAt}</div>
+            <div style={{ color: "#8295ae", fontSize: 12 }}>By {article.author} · Updated {article.reviewedAt} · Individual reviewer not yet assigned</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 16 }}>
               <button type="button" onClick={() => window.print()} style={buttonStyle}>Print / PDF</button>
               <button type="button" onClick={() => { if (navigator.share) navigator.share({ title: article.title, url }); else navigator.clipboard?.writeText(url); }} style={buttonStyle}>Share article</button>
@@ -79,7 +79,7 @@ function firstSentences(value, count) {
   return sentences.slice(0, count).join(" ").trim() || value;
 }
 
-const buttonStyle = { border: "1px solid #38516e", borderRadius: 6, color: "#dbeafe", display: "inline-block", padding: "8px 11px", textDecoration: "none" };
+const buttonStyle = { background: "#142b40", border: "1px solid #38516e", borderRadius: 6, color: "#dbeafe", display: "inline-block", padding: "8px 11px", textDecoration: "none" };
 const panelStyle = { background: "#101d30", border: "1px solid #253b57", borderRadius: 8, margin: "20px 0", padding: 14 };
 const sectionStyle = { color: "#c7d5e8", fontSize: 16, lineHeight: 1.65, marginTop: 24 };
 const eyebrowStyle = { color: "#72d0a6", fontSize: 11, fontWeight: 800, letterSpacing: ".08em" };

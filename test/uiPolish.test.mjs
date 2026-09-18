@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const globalsSource = readFileSync(new URL("../styles/globals.css", import.meta.url), "utf8");
-const indexSource = readFileSync(new URL("../pages/index.js", import.meta.url), "utf8");
+const indexSource = readFileSync(new URL("../pages/practice.js", import.meta.url), "utf8");
 const messageContentSource = readFileSync(new URL("../components/chat/MessageContent.js", import.meta.url), "utf8");
 const typingDotsSource = readFileSync(new URL("../components/chat/TypingDots.js", import.meta.url), "utf8");
 const javaDigestSource = readFileSync(new URL("../components/java-digest/JavaDigest.js", import.meta.url), "utf8");
@@ -187,6 +187,8 @@ test("workspace loading and navigation preserve user context", () => {
   assert.match(globalsSource, /welcome-secondary > \.dashboard-section/);
   assert.match(welcomeSource, /IntersectionObserver/);
   assert.match(welcomeSource, /aria-current=\{activeSection/);
+  assert.match(welcomeSource, /onClick=\{\(\) => setActiveSection\("practice"\)\}/);
+  assert.match(welcomeSource, /onClick=\{\(\) => setActiveSection\("career"\)\}/);
 });
 
 test("auth and destructive account actions provide inline guidance", () => {

@@ -1,0 +1,8 @@
+.chapter { border-top: 1px solid #cdd5cd; padding-block: 25px; scroll-margin-top: 20px; min-width: 0; }
+.editor { min-height: 300px; max-width: 100% !important; font-family: monospace !important; line-height: 1.5; tab-size: 4; resize: vertical; }
+.code { max-width: 100%; overflow-x: auto; padding: 18px; background: #172f35; color: #f7f4ed; border-radius: 6px; font-size: 14px; line-height: 1.6; white-space: pre; }
+.solution { margin-block: 24px; min-width: 0; }
+.checkpoint { padding: 20px; margin-block: 20px; border: 1px solid #81908b; border-radius: 6px; background: #fffdf7; }
+.checkpoint fieldset { min-width: 0; border: 0; padding: 0; margin-bottom: 20px; }
+.checkpoint legend { font-weight: 700; }
+.checkpoint input[type=radio] { display: inline-block; width: auto; margin-right: 8px; }

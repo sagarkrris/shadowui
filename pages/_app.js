@@ -1,3 +1,4 @@
+import ReaderTools from "../components/reader/ReaderTools";
 import Head from "next/head";
 import { useEffect } from "react";
 import "../styles/globals.css";
@@ -17,10 +18,12 @@ export default function App({ Component, pageProps, router }) {
     });
   }, []);
 
+  const articlePath = router.asPath.split(/[?#]/)[0];
+  const isReaderArticle = /^\/(?:java|tech-blogs|guides|spring|sql|python|aws|javascript|system-design)\/.+/.test(articlePath) && articlePath !== "/java/roadmap";
   return (
     <>
       <Head><meta name="description" content="InterviewIQ - AI-powered interview intelligence for modern software engineers" /></Head>
-      <Component {...pageProps} />
+      {isReaderArticle ? <div className="reader-article-scroll"><Component {...pageProps} /><ReaderTools key={articlePath} path={articlePath} /></div> : <Component {...pageProps} />}
       <BrandWatermark />
       <SpeedInsights />
     </>

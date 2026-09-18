@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const componentSource = readFileSync(new URL("../components/interview-ready/InterviewReadyQA.js", import.meta.url), "utf8");
-const pageSource = readFileSync(new URL("../pages/index.js", import.meta.url), "utf8");
+const pageSource = readFileSync(new URL("../pages/practice.js", import.meta.url), "utf8");
 const workspaceSource = readFileSync(new URL("../lib/workspaces.mjs", import.meta.url), "utf8");
 
 test("interview ready Q&A workspace is wired into the app shell", () => {

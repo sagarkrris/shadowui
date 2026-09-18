@@ -57,7 +57,7 @@ export async function gotoCleanApp(page) {
       window.__INTERVIEWIQ_ALERTED__ = true;
     };
   });
-  await page.goto("/");
+  await page.goto("/practice");
   await page.getByRole("button", { name: "Skip tour", exact: true }).click();
   await expect(page.getByLabel("Name", { exact: true })).toBeVisible();
 }
@@ -77,7 +77,7 @@ export async function gotoSeededApp(page, options = {}) {
       window.__INTERVIEWIQ_ALERTED__ = true;
     };
   }, { key: SESSION_STORAGE_KEY, value: session, homeDemoSeen: options.homeDemoSeen !== false });
-  await page.goto("/");
+  await page.goto("/practice");
   if (!options.skipReadyCheck && (!options.activeTab || options.activeTab === "chat")) await expect(page.getByRole("button", { name: "Start practice", exact: true })).toBeVisible();
 }
 

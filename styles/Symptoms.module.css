@@ -1,0 +1,9 @@
+.section { padding-block: 22px; scroll-margin-top: 18px; }
+.cause { margin-block: 18px; padding: 22px; border: 1px solid #81908b; background: #fffdf7; border-radius: 6px; }
+.cause dt { font-weight: 700; margin-top: 16px; }
+.cause dd { margin: 4px 0 0; }
+.code { padding: 18px; border-radius: 6px; background: #172f35; color: #f7f4ed; overflow-x: auto; max-width: 100%; line-height: 1.6; font-size: 14px; white-space: pre; }
+
+.filters button[aria-pressed=true] { background: #12382f; outline: 2px solid #12382f; outline-offset: 3px; text-decoration: underline; text-underline-offset: 4px; }
+
+.entry { min-width: 0; overflow-wrap: anywhere; }

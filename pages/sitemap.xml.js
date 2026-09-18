@@ -1,8 +1,13 @@
+import { SCENARIO_SEEDS } from "../lib/scenarioBank.mjs";
+import { SYMPTOMS } from "../lib/engineeringSymptoms.mjs";
+import { READING_SERIES } from "../lib/readerEditorial.mjs";
 import { DETECTIVE_CASES } from "../lib/productionDetective.mjs";
 import { PUBLIC_ARTICLES, PUBLIC_RESOURCES } from "../lib/publicContent.mjs";
 import { JAVA_TUTORIAL_CATALOG, slugifyJavaTutorial } from "../lib/javaDigest.mjs";
 import { PUBLIC_STACK_GUIDES } from "../lib/seoGuides.mjs";
 import { PUBLIC_VERTICAL_LISTICLES } from "../lib/verticalContent.mjs";
+import { ADVICE_FAILS_ARTICLES } from "../lib/adviceFails.mjs";
+import { EXPLAIN_LOGS } from "../lib/explainThisLog.mjs";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://interviewiq.app";
 
@@ -10,8 +15,15 @@ export default function Sitemap() { return null; }
 
 export function getServerSideProps({ res }) {
   const urls = [
+    ...SCENARIO_SEEDS.map(scenario => ({ loc: `${SITE_URL}/scenarios/${scenario.id}`, changefreq: "monthly", priority: "0.7" })),
+    ...["/symptoms", ...SYMPTOMS.map(entry => `/symptoms/${entry.slug}`)].map(path => ({ loc: `${SITE_URL}${path}`, changefreq: "monthly", priority: "0.8" })),
+    ...["/time-machine/database-decisions", "/build/java-dependency-injection", "/series", "/editorial", "/corrections", "/requests", "/digest", ...READING_SERIES.map(s => `/series/${s.slug}`)].map(path => ({ loc: `${SITE_URL}${path}`, changefreq: "weekly", priority: "0.7" })),
     { loc: `${SITE_URL}/detective`, changefreq: "weekly", priority: "0.9" },
     ...DETECTIVE_CASES.map(incident => ({ loc: `${SITE_URL}/detective/${incident.slug}`, changefreq: "monthly", priority: "0.8" })),
+    { loc: `${SITE_URL}/advice-fails`, changefreq: "weekly", priority: "0.9" },
+    ...ADVICE_FAILS_ARTICLES.map(article => ({ loc: `${SITE_URL}/advice-fails/${article.slug}`, changefreq: "monthly", priority: "0.85" })),
+    { loc: `${SITE_URL}/explain-log`, changefreq: "weekly", priority: "0.9" },
+    ...EXPLAIN_LOGS.map(item => ({ loc: `${SITE_URL}/explain-log/${item.slug}`, changefreq: "monthly", priority: "0.85" })),
     { loc: `${SITE_URL}/`, changefreq: "weekly", priority: "1.0" },
     { loc: `${SITE_URL}/java`, changefreq: "weekly", priority: "0.9" },
     { loc: `${SITE_URL}/java/roadmap`, changefreq: "weekly", priority: "0.9" },

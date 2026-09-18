@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-const indexSource = readFileSync(new URL("../pages/index.js", import.meta.url), "utf8");
+const indexSource = readFileSync(new URL("../pages/practice.js", import.meta.url), "utf8");
 
 test("app shell surfaces AI configuration health without blocking local tools", () => {
   assert.match(indexSource, /\/api\/models/);

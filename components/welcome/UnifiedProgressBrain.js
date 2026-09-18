@@ -39,7 +39,7 @@ function ProgressButton({ children, icon, onClick, tone, disabled = false, isLig
 }
 
 function LaneCard({ lane, accent, onOpenWorkspace, isLight = false }) {
-  const tone = lane.status === "Strong" ? "#a7f3d0" : lane.status === "Improving" ? "#facc15" : accent;
+  const tone = lane.status === "Strong" ? "#a7f3d0" : lane.status === "Improving" ? "#facc15" : lane.status === "Not Assessed" ? "#94a3b8" : accent;
 
   return (
     <article style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.075)", borderRadius: 8, display: "grid", gap: 8, minHeight: 142, padding: 10 }}>
@@ -49,11 +49,11 @@ function LaneCard({ lane, accent, onOpenWorkspace, isLight = false }) {
           {lane.label}
         </strong>
         <span style={{ border: `1px solid ${tone}44`, borderRadius: 999, color: tone, flexShrink: 0, fontSize: 10, fontWeight: 900, padding: "3px 7px" }}>
-          {lane.score}%
+          {lane.score === null ? "—" : `${lane.score}%`}
         </span>
       </div>
       <div style={{ background: "rgba(255,255,255,.055)", borderRadius: 999, height: 6, overflow: "hidden" }}>
-        <span style={{ background: tone, display: "block", height: "100%", width: `${lane.score}%` }} />
+        <span style={{ background: tone, display: "block", height: "100%", width: `${lane.score || 0}%` }} />
       </div>
       <span style={{ color: tone, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>{lane.status}</span>
       <p style={{ ...wrap, color: isLight ? "#526579" : "#cbd5e1", fontSize: 11, lineHeight: 1.45, margin: 0 }}>{lane.detail}</p>
@@ -212,7 +212,7 @@ export default function UnifiedProgressBrain({
       <section style={{ alignItems: "center", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between", padding: 10 }}>
         <div style={wrap}>
           <div style={{ color: accent, fontSize: 10.8, fontWeight: 950, textTransform: "uppercase" }}>Export Daily Prep Plan</div>
-          <p style={{ color: "#9ca3af", fontSize: 11.2, lineHeight: 1.4, margin: "4px 0 0" }}>Copy or download today&apos;s generated plan from your real workspace activity.</p>
+          <p style={{ color: "#9ca3af", fontSize: 11.2, lineHeight: 1.4, margin: "4px 0 0" }}>Copy or download a plan from recorded activity; only scored answers contribute to readiness.</p>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
           <ProgressButton icon="ti-copy" tone={accent} onClick={() => onExportPlan?.(progress.dailyPlanMarkdown, "copy")}>Copy Plan</ProgressButton>

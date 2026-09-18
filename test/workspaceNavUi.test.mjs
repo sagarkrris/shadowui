@@ -5,7 +5,7 @@ import test from "node:test";
 const navUrl = new URL("../components/app/WorkspaceNav.js", import.meta.url);
 const navSource = existsSync(navUrl) ? readFileSync(navUrl, "utf8") : "";
 const commandPaletteSource = readFileSync(new URL("../components/app/CommandPalette.js", import.meta.url), "utf8");
-const indexSource = readFileSync(new URL("../pages/index.js", import.meta.url), "utf8");
+const indexSource = readFileSync(new URL("../pages/practice.js", import.meta.url), "utf8");
 const watermarkSource = readFileSync(new URL("../components/BrandWatermark.js", import.meta.url), "utf8");
 const globalsSource = readFileSync(new URL("../styles/globals.css", import.meta.url), "utf8");
 

@@ -1,0 +1,65 @@
+import { test, expect } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
+test.use({ serviceWorkers: 'block' });
+test('tiny container is discoverable and preserves downloadable Java drafts', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('link', { name: 'Build a small Java container →' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Build a small Java dependency-injection container.');
+  const editor = page.getByLabel('Java implementation — 1. Give objects a home');
+  await editor.fill('// my saved Java draft');
+  await page.reload();
+  await expect(editor).toHaveValue('// my saved Java draft');
+  const pending = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download chapter 1 code + tests' }).click();
+  const download = await pending;
+  expect(download.suggestedFilename()).toBe('Main.java');
+  const source = await readFile(await download.path(), 'utf8');
+  expect(source).toContain('// my saved Java draft');
+  expect(source).toContain('registered instance identity');
+  await page.getByLabel('Cache completed instances').check();
+  await page.getByRole('button', { name: 'Run graph model' }).click();
+  await expect(page.getByText('Both lookups share one Service.')).toBeVisible();
+  await page.getByLabel('Add a circular dependency').check();
+  await page.getByLabel('Detect active-path cycles').check();
+  await page.getByRole('button', { name: 'Run graph model' }).click();
+  await expect(page.getByText('Cycle detected at Service', { exact: true })).toBeVisible();
+});
+for (const width of [390, 412, 768, 1440]) {
+  test(`tiny container scroll and chapter links at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto('/build/java-dependency-injection#cycles');
+    await expect(page.locator('#cycles h2')).toBeInViewport();
+    await page.locator('#cycles summary').filter({ hasText: 'Compare with the reference' }).click();
+    const scroll = page.locator('[data-reader-scroll]');
+    expect(await scroll.evaluate(node => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
+    await page.getByRole('heading', { name: 'What this teaches about Spring' }).scrollIntoViewIfNeeded();
+    await expect(page.getByRole('heading', { name: 'What this teaches about Spring' })).toBeInViewport();
+  });
+}
+test('learning checkpoints, honest progress, and reversible chapter transfer survive reload', async ({ page }) => {
+  await page.goto('/build/java-dependency-injection');
+  const first = page.locator('#registry');
+  await first.getByRole('radio', { name: 'A new Repo every time' }).check();
+  await first.getByRole('radio', { name: 'Very sure — 95%' }).check();
+  await first.getByRole('button', { name: 'Check my prediction' }).click();
+  await expect(page.getByRole('heading', { name: 'Revisit these confident predictions' })).toBeVisible();
+  await first.getByRole('textbox').fill('// first draft');
+  await first.getByRole('checkbox', { name: 'I ran chapter 1 locally and all checks passed' }).check();
+  await expect(page.getByText('1 of 4 chapters reported tested locally.', { exact: false })).toBeVisible();
+  const second = page.locator('#constructors');
+  await second.getByRole('textbox').fill('// preserve me');
+  await second.getByRole('button', { name: 'Start chapter 2 from my previous code' }).click();
+  await expect(second.getByRole('textbox')).toHaveValue('// first draft');
+  await second.getByRole('button', { name: 'Undo code transfer' }).click();
+  await expect(second.getByRole('textbox')).toHaveValue('// preserve me');
+  await page.reload();
+  await expect(first.getByRole('checkbox')).toBeChecked();
+  await expect(first.getByText(/Worth revisiting/)).toBeVisible();
+  await first.getByRole('textbox').fill('// changed after testing');
+  await expect(first.getByRole('checkbox')).not.toBeChecked();
+  await page.reload();
+  await expect(first.getByRole('checkbox')).not.toBeChecked();
+  await first.getByRole('button', { name: 'Try the prediction again' }).click();
+  await expect(first.getByRole('button', { name: 'Check my prediction' })).toBeDisabled();
+  await expect(page.getByRole('heading', { name: 'Revisit these confident predictions' })).toHaveCount(0);
+});

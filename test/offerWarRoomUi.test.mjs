@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const componentSource = readFileSync(new URL("../components/offer-war-room/OfferWarRoom.js", import.meta.url), "utf8");
-const pageSource = readFileSync(new URL("../pages/index.js", import.meta.url), "utf8");
+const pageSource = readFileSync(new URL("../pages/practice.js", import.meta.url), "utf8");
 const workspaceSource = readFileSync(new URL("../lib/workspaces.mjs", import.meta.url), "utf8");
 const navSource = readFileSync(new URL("../components/app/WorkspaceNav.js", import.meta.url), "utf8");
 

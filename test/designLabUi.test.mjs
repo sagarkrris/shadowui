@@ -6,7 +6,7 @@ const componentUrl = new URL("../components/design-lab/DesignLab.js", import.met
 const componentSource = existsSync(componentUrl) ? readFileSync(componentUrl, "utf8") : "";
 const globalStylesSource = readFileSync(new URL("../styles/globals.css", import.meta.url), "utf8");
 const catalogSource = readFileSync(new URL("../lib/designLab.mjs", import.meta.url), "utf8");
-const indexSource = readFileSync(new URL("../pages/index.js", import.meta.url), "utf8");
+const indexSource = readFileSync(new URL("../pages/practice.js", import.meta.url), "utf8");
 const sessionSource = readFileSync(new URL("../lib/sessionPersistence.mjs", import.meta.url), "utf8");
 const workspaceSource = readFileSync(new URL("../lib/workspaces.mjs", import.meta.url), "utf8");
 

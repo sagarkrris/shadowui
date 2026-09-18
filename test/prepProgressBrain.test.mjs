@@ -48,10 +48,23 @@ test("builds a unified progress brain from question memory mocks and canvas", ()
   assert.equal(progress.summary.weakSpot, "Indexes");
   assert.equal(progress.summary.activityCount, 1);
   assert.ok(progress.lanes.some((lane) => lane.id === "dsa" && lane.workspaceId === "dsaLab"));
-  assert.ok(progress.lanes.some((lane) => lane.id === "dsa" && lane.detail.includes("DSA event")));
-  assert.ok(progress.lanes.some((lane) => lane.id === "systemDesign" && lane.score >= 70));
+  assert.ok(progress.lanes.some((lane) => lane.id === "dsa" && lane.detail.includes("DSA activity event")));
+  assert.equal(progress.lanes.find((lane) => lane.id === "systemDesign").score, null);
   assert.deepEqual(progress.beginnerPath.map((step) => step.label), ["Watch", "Predict", "Explain", "Practice", "Review"]);
   assert.match(progress.dailyPlanMarkdown, /InterviewIQ Daily Prep Plan/);
+});
+
+test("does not present profile fields, opens, or canvas notes as assessed mastery", () => {
+  const progress = buildUnifiedPrepProgress({
+    profile: { stack: "Java, Spring Boot" },
+    systemDesignCanvas: { problem: "Ticketing", sections: { requirements: "Seat holds" } },
+    prepProgressState: recordPrepActivity(createPrepProgressState(), { workspaceId: "javaDigest", type: "open", label: "Opened Java Digest" }),
+  });
+
+  for (const id of ["dsa", "scenario", "company", "java", "systemDesign"]) {
+    assert.equal(progress.lanes.find((lane) => lane.id === id).score, null, `${id} has no assessed evidence`);
+  }
+  assert.match(progress.lanes.find((lane) => lane.id === "java").detail, /not assessed mastery/);
 });
 
 test("builds beginner guided path with actionable workspace handoffs", () => {

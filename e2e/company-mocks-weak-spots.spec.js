@@ -30,10 +30,11 @@ test.describe("Features C and D: company prep, mock rounds, and weak spots", () 
 
     await expect(page.getByLabel("Message composer")).toHaveAttribute("placeholder", /Type your answer/);
 
-    await page.getByRole("button", { name: "practice" }).click();
+    await page.getByRole("button", { name: "Prep controls", exact: true }).click();
+    await page.getByLabel("Compact prep controls menu").getByRole("button", { name: "practice", exact: true }).click();
     await expect(page.getByLabel("Message composer")).toHaveAttribute("placeholder", /Ask anything/);
 
-    await page.getByRole("button", { name: "interview" }).click();
+    await page.getByLabel("Compact prep controls menu").getByRole("button", { name: "interview", exact: true }).click();
     await expect(page.getByLabel("Message composer")).toHaveAttribute("placeholder", /Type your answer/);
   });
 
@@ -41,12 +42,13 @@ test.describe("Features C and D: company prep, mock rounds, and weak spots", () 
     const chatRequests = await mockChat(page, "Score: 7/10\nStrengths: Good framing.\nGaps: Add trade-offs.\nFollow-up: What changes at scale?");
     await gotoSeededApp(page, { selectedCat: "System Design", selectedSub: "Caching Strategies" });
 
-    await page.getByLabel("Difficulty level").selectOption("Lead");
-    await page.getByLabel("Interview calibration mode").selectOption("barRaiser");
-    await page.getByLabel("Round Strategy Mode").selectOption("systemDesign");
+    await page.getByRole("button", { name: "Prep controls", exact: true }).click();
+    await page.getByLabel("Compact prep controls menu").getByLabel("Difficulty level").selectOption("Lead");
+    await page.getByLabel("Compact prep controls menu").getByLabel("Interview calibration mode").selectOption("barRaiser");
+    await page.getByLabel("Compact prep controls menu").getByLabel("Round Strategy Mode").selectOption("systemDesign");
     await page.getByRole("button", { name: "Start mock round" }).click();
 
-    await expect(page.getByText("Score: 7/10")).toBeVisible();
+    await expect(page.locator(".assistant-message").getByText("Score: 7/10", { exact: true })).toBeVisible();
     expect(chatRequests.at(-1).messages.at(-1).content).toContain("Difficulty: Lead");
     expect(chatRequests.at(-1).messages.at(-1).content).toContain("Bar Raiser");
     expect(chatRequests.at(-1).messages.at(-1).content).toContain("Round Strategy Mode: System Design");
@@ -58,12 +60,13 @@ test.describe("Features C and D: company prep, mock rounds, and weak spots", () 
 
     await page.getByLabel("Message composer").fill("I would store everything in one table and hope it works.");
     await page.getByRole("button", { name: "Send" }).click();
-    await expect(page.getByText("Score: 3/10")).toBeVisible();
+    await expect(page.locator(".assistant-message").getByText("Score: 3/10", { exact: true })).toBeVisible();
 
-    await page.getByRole("button", { name: "Company Prep" }).click();
+    await page.getByRole("button", { name: "Workspace menu", exact: true }).click();
+    await page.getByLabel("Tablet workspace menu").getByRole("button", { name: "Company Prep", exact: true }).click();
 
     await expect(page.getByRole("heading", { name: "Company Prep" })).toBeVisible();
-    await expect(page.getByText("Databases", { exact: true })).toBeVisible();
+    await expect(page.getByLabel("Conversation messages").getByText("Databases", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("Weak spot load")).toBeVisible();
     await assertHealthyApp(page);
   });

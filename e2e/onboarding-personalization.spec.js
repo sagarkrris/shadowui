@@ -73,7 +73,7 @@ test.describe("Feature A: onboarding and personalization", () => {
     });
 
     await expect(page.locator("script", { hasText: "xss" })).toHaveCount(0);
-    await expect(page.getByText('<script>alert("xss")</script>')).toBeVisible();
+    await expect(page.getByText('<script>alert("xss")</script>').first()).toBeVisible();
     await expect.poll(() => page.evaluate(() => window.__INTERVIEWIQ_ALERTED__)).toBe(false);
   });
 });
