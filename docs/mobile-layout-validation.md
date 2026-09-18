@@ -1,5 +1,12 @@
 # Mobile layout and guide regression checks
 
+Public pages use native document scrolling. The global body must allow vertical
+overflow, and direct page `main` elements must not shrink to the viewport height.
+The fixed practice workspace and bounded readers retain their own scroll regions.
+`e2e/public-page-scroll.spec.js` covers advice and log indexes and every article,
+resources, guides, and Java landing pages with wheel and keyboard scrolling,
+plus touch, rotation, navigation, and checks against duplicate reader scrollbars.
+
 At widths up to 1023px, Navigation & settings and Session actions are collapsed
 by default. Prep settings opens the existing controls; Start remains beside
 the composer. The main shell cannot become a focus-driven horizontal scroller.
