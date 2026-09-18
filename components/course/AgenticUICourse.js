@@ -69,7 +69,7 @@ export default function AgenticUICourse({ theme, variant = "full", onOpenCourse 
   }
 
   return (
-    <div className={`workspace-content ${styles.course}`}><section style={{ width: "100%", maxWidth: 1180, margin: "0 auto", display: "grid", gap: 14 }}>
+    <div className="workspace-content"><section className={styles.course} style={{ width: "100%", maxWidth: 1180, margin: "0 auto", display: "grid", gap: 14 }}>
       <div className="glass-card" style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 18 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
           <div>
