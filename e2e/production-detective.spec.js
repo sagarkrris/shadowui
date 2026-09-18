@@ -26,10 +26,10 @@ for (const incident of DETECTIVE_CASES) {
     await expect(page.getByRole("heading", { name: "Investigation complete." })).toBeFocused();
     await expect(page.getByRole("heading", { name: "What actually happened" })).toBeVisible();
     if (incident.lab.kind === "map") { await page.getByRole("button", { name: "Run the trace" }).click(); await expect(page.getByText("null\n1", { exact: true })).toBeVisible(); }
-    if (incident.lab.kind === "transaction") { await page.getByRole("checkbox").check(); await expect(page.getByText(/Both balances unchanged/)).toBeVisible(); }
+    if (incident.lab.kind === "transaction") { await page.getByRole("checkbox", { name: "Call an injected transactional collaborator" }).check(); await expect(page.getByText(/Both balances unchanged/)).toBeVisible(); }
     if (incident.lab.kind === "retry") { await page.getByRole("slider", { name: /Total attempts/ }).fill("1"); await expect(page.getByText("1 leaf attempts per user request")).toBeVisible(); }
     if (incident.lab.kind === "index") { await page.getByRole("slider").fill("0"); await expect(page.getByText("200 work units")).toBeVisible(); }
-    if (incident.lab.kind === "cache") { await page.getByRole("checkbox").check(); await expect(page.getByText("Isolation preserved for these two requests.")).toBeVisible(); }
+    if (incident.lab.kind === "cache") { await page.getByRole("checkbox", { name: "Include the trusted tenant in the cache key" }).check(); await expect(page.getByText("Isolation preserved for these two requests.")).toBeVisible(); }
     await page.reload();
     await expect(page.getByRole("heading", { name: "Investigation complete." })).toBeVisible();
     expect(aiCalls).toBe(0);
@@ -105,10 +105,20 @@ test("mobile keyboard access and accessible evidence / completion views", async 
   await expect(page.locator("#detective-main")).toBeFocused();
   await page.getByRole("button", { name: /01 \/ Two request traces/ }).focus();
   await page.keyboard.press("Enter");
-  await page.getByRole("button", { name: /02 \/ Cache lookup/ }).click();
-  await page.getByRole("radio", { name: DETECTIVE_CASES[4].diagnoses[2].label }).check();
-  await page.getByRole("radio", { name: DETECTIVE_CASES[4].fixes[1].label }).check();
-  await page.getByRole("button", { name: "Complete investigation" }).click();
+  await expect(page.getByRole("button", { name: /01 \/ Two request traces/ })).toHaveAttribute("aria-pressed", "true");
+  // Keep this keyboard test on keyboard input while the evidence panel reflows.
+  await page.getByRole("button", { name: /02 \/ Cache lookup/ }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("button", { name: /02 \/ Cache lookup/ })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("radio", { name: DETECTIVE_CASES[4].diagnoses[2].label }).focus();
+  await page.keyboard.press("Space");
+  await expect(page.getByRole("radio", { name: DETECTIVE_CASES[4].diagnoses[2].label })).toBeChecked();
+  await page.getByRole("radio", { name: DETECTIVE_CASES[4].fixes[1].label }).focus();
+  await page.keyboard.press("Space");
+  await expect(page.getByRole("radio", { name: DETECTIVE_CASES[4].fixes[1].label })).toBeChecked();
+  await page.getByRole("button", { name: "Complete investigation" }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("heading", { name: "Investigation complete." })).toBeVisible();
   await page.addScriptTag({ path: "node_modules/axe-core/axe.min.js" });
   expect(await page.evaluate(async () => (await window.axe.run("main", { runOnly: ["wcag2a", "wcag2aa", "wcag21aa"] })).violations)).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -128,4 +138,16 @@ test("later-day return is measured once and reload does not inflate it", async (
   const events = await page.evaluate(() => JSON.parse(localStorage.getItem("interviewiq.productEvents.v1") || "[]"));
   expect(events.filter(e => e.name === "detective_returned")).toHaveLength(1);
   expect(events.filter(e => e.name === "detective_viewed")).toHaveLength(1);
+});
+
+test("mobile pointer completes a case with notebook controls present", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`/detective/${DETECTIVE_CASES[4].slug}`);
+  await page.getByRole("button", { name: /01 \/ Two request traces/ }).click();
+  await expect(page.getByRole("button", { name: /01 \/ Two request traces/ })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: /02 \/ Cache lookup/ }).click();
+  await page.getByRole("radio", { name: DETECTIVE_CASES[4].diagnoses[2].label }).check();
+  await page.getByRole("radio", { name: DETECTIVE_CASES[4].fixes[1].label }).check();
+  await page.getByRole("button", { name: "Complete investigation" }).click();
+  await expect(page.getByRole("heading", { name: "Investigation complete." })).toBeVisible();
 });

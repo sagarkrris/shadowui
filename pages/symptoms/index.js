@@ -1,11 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import ReaderLayout from '../../components/reader/ReaderLayout';
 import { searchSymptoms, SYMPTOMS, SYMPTOM_CATEGORIES } from '../../lib/engineeringSymptoms.mjs';
 import lab from '../../styles/Symptoms.module.css';
 import styles from '../../styles/Reader.module.css';
 export default function SymptomsAtlas() {
+  const router = useRouter();
   const [query, setQuery] = useState('');
+  useEffect(() => { if (router.isReady) setQuery(typeof router.query.q === 'string' ? router.query.q.slice(0, 200) : ''); }, [router.isReady, router.query.q]);
   const [category, setCategory] = useState('All');
   const results = searchSymptoms(query, category);
   return <ReaderLayout title="Engineering Symptoms Atlas" description="Search observed engineering symptoms, compare plausible causes, and find the next diagnostic step."><div className={lab.entry}>

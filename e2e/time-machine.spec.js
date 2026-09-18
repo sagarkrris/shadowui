@@ -4,7 +4,7 @@ test.use({ serviceWorkers: 'block' });
 test('decisions carry forward, rewind safely, resume and produce a private-notes-free share link', async ({ page }) => {
   await page.addInitScript(() => Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async text => { window.__copied = text; } } }));
   await page.goto('/');
-  await page.getByRole('link', { name: 'Explore the database time machine →' }).click();
+  await page.getByRole('link', { name: 'Revisit a database decision' }).click();
   await page.getByRole('radio', { name: 'Cache catalogue reads' }).check();
   await page.getByLabel('Your reasoning').fill('Private reasoning');
   await page.getByRole('button', { name: 'Record decision and move forward' }).click();

@@ -1,8 +1,10 @@
 import Head from "next/head";
 import Link from "next/link";
 import { listTechBlogs } from "../../lib/techBlogs.mjs";
+import BackendFieldNote from "../../components/reader/BackendFieldNote";
 
 export default function TechBlogCourse({ blog }) {
+  if (blog.format === 'field-note') return <BackendFieldNote key={blog.id} blog={blog} />;
   const url = `/tech-blogs/${blog.id}`;
   return <><Head><title>{`${blog.title} | InterviewIQ`}</title><meta name="description" content={blog.summary} /><link rel="canonical" href={`${process.env.NEXT_PUBLIC_SITE_URL || "https://interviewiq.app"}${url}`} /></Head><main style={pageStyle}><article style={{ maxWidth: 820, margin: "0 auto" }}><nav><Link href="/">InterviewIQ</Link> / <Link href="/tech-blogs">Tech Blogs</Link> / {blog.title}</nav><header><p style={eyebrow}>{blog.category} · PUBLIC COURSE</p><h1>{blog.title}</h1><p style={lede}>{blog.summary}</p><p style={muted}>{blog.chapters.length} chapters with lessons, examples, exercises, and self-checks.</p></header><section style={card}><h2>Course overview</h2>{blog.sections.map((section) => <div key={section.heading}><h3>{section.heading}</h3><p>{section.body}</p></div>)}</section>{blog.patterns?.length ? <section style={{ ...card, marginTop: 22 }}><h2>18 industry design patterns</h2>{blog.patterns.map((pattern) => <div key={pattern.name} style={{ borderTop: "1px solid #253b57", padding: "10px 0" }}><h3 style={{ margin: 0 }}>{pattern.name}</h3><p style={{ margin: "4px 0" }}>{pattern.intent}</p><p style={muted}><b>Use:</b> {pattern.use} <b>Watch:</b> {pattern.caution}</p></div>)}</section> : null}<section style={{ display: "grid", gap: 14, marginTop: 22 }}>{blog.chapters.map((chapter) => <article key={chapter.title} style={card}><p style={eyebrow}>Chapter {chapter.order}</p><h2>{chapter.title}</h2><p>{chapter.lesson}</p><div style={flow}>{chapter.diagram}</div><h3>Worked example</h3><pre style={code}>{chapter.example}</pre><h3>Exercise</h3><p>{chapter.exercise}</p><h3>Self-check</h3><p>{chapter.quiz}</p></article>)}</section><section style={{ ...card, marginTop: 22 }}><h2>Interview checkpoint</h2><ul>{blog.interviewQuestions.map((question) => <li key={question}>{question}</li>)}</ul><Link href="/?workspace=java-digest" style={button}>Practice in workspace</Link></section></article></main></>;
 }
@@ -17,4 +19,14 @@ const code = { background: "#0b1728", borderRadius: 6, color: "#c7e7ff", overflo
 const button = { border: "1px solid #38516e", borderRadius: 6, color: "#dbeafe", display: "inline-block", padding: "8px 11px", textDecoration: "none" };
 
 export function getStaticPaths() { return { paths: listTechBlogs().map((blog) => ({ params: { slug: blog.id } })), fallback: false }; }
-export function getStaticProps({ params }) { const blog = listTechBlogs().find((entry) => entry.id === params.slug); return blog ? { props: { blog } } : { notFound: true }; }
+export async function getStaticProps({ params }) {
+  const blog = listTechBlogs().find((entry) => entry.id === params.slug);
+  if (!blog) return { notFound: true };
+  if (blog.fixture) {
+    const { readFile } = await import('node:fs/promises');
+    const { join } = await import('node:path');
+    const exampleSource = await readFile(join(process.cwd(), 'public/blog-examples', blog.fixture), 'utf8');
+    return { props: { blog: { ...blog, exampleSource } } };
+  }
+  return { props: { blog } };
+}

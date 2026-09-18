@@ -1,3 +1,4 @@
+import { saveNote } from "../../lib/learningNotebook.mjs";
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
@@ -38,6 +39,7 @@ export default function DatabaseDecisions() {
   function save(next) {
     moveFocus.current = true;
     setTimeline(next); setChoice(''); setReason(''); setCopyFallback('');
+    try { saveNote(localStorage, { id: 'database-decisions', title: 'My database design decisions', href: TIME_MACHINE_PATH, repair: decisionMarkdown(next, TIME_MACHINE_PATH), completed: next.length === ERAS.length }); } catch { /* Primary timeline persistence is independent. */ }
     try { localStorage.setItem(TIME_MACHINE_KEY, JSON.stringify(next)); setNotice('Decisions saved in this browser.'); }
     catch { setNotice('Browser storage is unavailable. Download your summary to keep it.'); }
   }

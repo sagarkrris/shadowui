@@ -9,6 +9,9 @@ const nextConfig = {
   outputFileTracingIncludes: {
     "/api/java-senior-refresher": ["./pdf/java-senior-refresher-java-21-jvm-concurrency.pdf"],
   },
+  async redirects() {
+    return [{ source: "/", has: [{ type: "query", key: "workspace" }], destination: "/practice", permanent: false }];
+  },
   async headers() {
     return [{ source: "/(.*)", headers: [
       { key: "X-Content-Type-Options", value: "nosniff" },

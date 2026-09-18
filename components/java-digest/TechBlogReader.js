@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import Link from "next/link";
 import SystemDesignDiagram from "./SystemDesignDiagram";
 
 const wrap = { minWidth: 0, overflowWrap: "anywhere", wordBreak: "break-word" };
@@ -18,6 +19,7 @@ export default function TechBlogReader({ blog, accent, learningProgress, onToggl
           <button type="button" className="glass-button" aria-label="Close lesson reader" onClick={onClose} style={{ border: "1px solid var(--jd-border-strong)", borderRadius: 7, color: "var(--jd-text)", flex: "0 0 auto", padding: "7px 10px" }}><i className="ti ti-x" /></button>
         </header>
         <div className="java-digest-reader-scroll" style={{ display: "grid", gap: 14, minHeight: 0, overflowY: "auto", padding: "0 18px 20px" }}>
+          {blog.format === 'field-note' && <p><Link href={`/tech-blogs/${blog.id}`} style={{ color: accent }}>Open the article, runnable example, references and misconception check →</Link></p>}
           <section style={{ background: "var(--jd-accent-surface)", border: `1px solid ${accent}33`, borderRadius: 8, display: "grid", gap: 7, padding: 11 }}><strong style={{ color: accent, fontSize: 11.5 }}>Course overview</strong>{blog.sections.map((section) => <div key={section.heading}><strong style={{ display: "block", fontSize: 11.5 }}>{section.heading}</strong><p style={{ color: "var(--jd-text-soft)", fontSize: 11.5, lineHeight: 1.55, margin: "3px 0 0" }}>{section.body}</p></div>)}</section>
           <SystemDesignDiagram category={blog.category} concept={blog.title} accent={accent} />
           <section style={{ background: "var(--jd-surface-subtle)", border: "1px solid var(--jd-border)", borderRadius: 8, padding: 11 }}><strong style={{ color: accent, fontSize: 11.5 }}>Key lessons</strong><div style={{ color: "var(--jd-text-soft)", display: "grid", fontSize: 11.3, gap: 6, lineHeight: 1.5, marginTop: 7 }}>{blog.lessons.map((lesson) => <div key={lesson}>✓ {lesson}</div>)}</div></section>

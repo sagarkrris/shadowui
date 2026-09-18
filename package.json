@@ -15,6 +15,7 @@
     "test:e2e:browser-matrix": "E2E_BROWSER_MATRIX=1 playwright test",
     "db:migrate": "node scripts/migrate-postgres.mjs",
     "test:unit": "node --test test/*.test.mjs",
+    "test:tiny-systems": "node scripts/validation/check-tiny-systems.mjs",
     "test:release": "node scripts/validation/release-gate.mjs",
     "test:content": "node scripts/validation/check-java-content.mjs && node scripts/validation/check-blind75.mjs"
   },

@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { saveNote } from "../../lib/learningNotebook.mjs";
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import ReaderLayout from '../../components/reader/ReaderLayout';
 import { CHAPTERS, TINY_CONTAINER_KEY, containerSource, javaExercise, runContainerModel } from '../../lib/tinyContainer.mjs';
@@ -8,6 +9,7 @@ import { LEARNING_KEY, normalizeLearning, chapterTestReported, calibrationFeedba
 import lab from '../../styles/TinyContainer.module.css';
 
 export default function TinyContainer() {
+  const notebookTouched = useRef(false);
   const [drafts, setDrafts] = useState({});
   const [learning, setLearning] = useState({});
   const [undo, setUndo] = useState({});
@@ -33,6 +35,9 @@ export default function TinyContainer() {
   function edit(id, value) {
     const next = { ...drafts, [id]: value };
     setDrafts(next);
+    if (!notebookTouched.current) {
+      try { saveNote(localStorage, { id: 'tiny-container', title: 'Build a tiny Java container', href: '/build/java-dependency-injection', evidence: 'Return to the build to inspect your Java draft and local test checklist.', completed: false }); notebookTouched.current = true; } catch { /* Primary code storage is independent. */ }
+    }
     if (learning[id]?.testedSource !== undefined) updateLearning(id, { testedSource: undefined });
     try { localStorage.setItem(TINY_CONTAINER_KEY, JSON.stringify(next)); setNotice('Draft saved in this browser.'); }
     catch { setNotice('Browser storage unavailable. Download your draft to keep it.'); }
@@ -40,6 +45,7 @@ export default function TinyContainer() {
   function updateLearning(id, patch) {
     const next = { ...learning, [id]: { ...learning[id], ...patch } };
     setLearning(next);
+    try { const completed = CHAPTERS.every((_, index) => chapterTestReported(index, drafts, next)); saveNote(localStorage, { id: 'tiny-container', title: 'Build a tiny Java container', href: '/build/java-dependency-injection', evidence: 'Chapter checks are self-reported; open the build to inspect code and progress.', completed }); notebookTouched.current = !completed; } catch { /* Learning progress has its own persistence below. */ }
     try { localStorage.setItem(LEARNING_KEY, JSON.stringify(next)); setNotice('Learning progress saved in this browser.'); }
     catch { setNotice('Progress could not be saved in this browser. Keep a downloaded copy of your code.'); }
   }

@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 test.use({ serviceWorkers: 'block' });
 test('tiny container is discoverable and preserves downloadable Java drafts', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('link', { name: 'Build a small Java container →' }).click();
+  await page.getByRole('link', { name: 'Build a tiny Java container' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Build a small Java dependency-injection container.');
   const editor = page.getByLabel('Java implementation — 1. Give objects a home');
   await editor.fill('// my saved Java draft');

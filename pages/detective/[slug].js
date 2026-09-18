@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { NOTEBOOK_KEY, normalizeNotebook, saveNote } from "../../lib/learningNotebook.mjs";
+import DiagnosisReflection from "../../components/reader/DiagnosisReflection";
+import InterviewTransfer from "../../components/reader/InterviewTransfer";
 import { useEffect, useRef, useState } from "react";
 import DetectiveLayout from "../../components/detective/DetectiveLayout";
 import DetectiveLab from "../../components/detective/DetectiveLab";
@@ -40,6 +43,10 @@ function Investigation({ incident }) {
   function update(next) {
     const valid = normalizeInvestigation(next, incident);
     setProgress(valid);
+    try {
+      const saved = normalizeNotebook(JSON.parse(localStorage.getItem(NOTEBOOK_KEY) || '[]')).find(item => item.id === `detective-${incident.slug}`);
+      saveNote(localStorage, { ...saved, id: `detective-${incident.slug}`, title: incident.title, href: `/detective/${incident.slug}` });
+    } catch { /* Investigation storage below remains independent of the notebook shortcut. */ }
     try { localStorage.setItem(key, JSON.stringify(valid)); setStorageMessage("Progress saved in this browser."); }
     catch { setStorageMessage("Progress could not be saved. Keep this tab open to finish; a reload may lose it."); }
   }
@@ -82,6 +89,9 @@ function Investigation({ incident }) {
     {progress.completed && <section className={styles.complete}><p className={styles.eyebrow}>CASE CLOSED</p><h2 tabIndex={-1} ref={resolution}>Investigation complete.</h2><p>You connected the evidence to a diagnosis and a repair. Read the trade-offs below, then try changing the conditions.</p><p><strong>Diagnosis:</strong> {diagnosis?.label}<br /><strong>Repair:</strong> {fix?.label}</p><Link href={`/detective/${next.slug}`}>Next case: {next.title} →</Link></section>}
     <p role="status" className={styles.small}>{storageMessage}</p>
     <details className={styles.debrief} open={progress.completed || undefined} key={progress.completed ? "completed" : "unrevealed"}><summary>{progress.completed ? "The debrief · explanation and experiment" : "Read the explanation & experiment (spoilers)"}</summary><div className={styles.debriefBody}><p className={styles.eyebrow}>THE EXPLANATION</p><h2>What actually happened</h2><p>{incident.explanation}</p><h3>Deep explanation</h3><p>{incident.deep}</p><h3>The fix and its trade-offs</h3><p>{incident.tradeoff}</p><h3>How to verify it</h3><p>{incident.verification}</p><DetectiveLab lab={incident.lab} /><h3>References & review</h3><p>By InterviewIQ Editorial · Individual reviewer not yet assigned. <Link href={`/corrections?article=/detective/${incident.slug}`}>Corrections and report a mistake</Link> · <Link href="/editorial">Editorial standards</Link></p><ul>{incident.references.map(reference => <li key={reference.url}><a href={reference.url}>{reference.label}</a></li>)}</ul><p className={styles.small}>Technical review / last content correction: <time dateTime={DETECTIVE_REVIEWED_AT}>{DETECTIVE_REVIEWED_AT}</time>. These are original fictional teaching cases; sources document the underlying mechanisms. Reading this explanation alone does not mark the investigation complete.</p></div></details>
+    <div className="detective-reflection"><DiagnosisReflection id={`detective-${incident.slug}`} title={incident.title} href={`/detective/${incident.slug}`} explanation={incident.explanation} evidence={incident.evidence.map(item => item.insight).join(" ")} tradeoff={incident.tradeoff} /></div>
+    {incident.slug === "the-rollback-that-never-happened" && <p><Link href="/learn/spring-transactions">Continue the Spring transaction journey →</Link></p>}
+    {progress.completed && <InterviewTransfer incident={incident} />}
     <noscript><p>JavaScript enables interactive choices and saved progress. You can read the full explanation in the disclosure above without JavaScript.</p></noscript>
   </DetectiveLayout>;
 }

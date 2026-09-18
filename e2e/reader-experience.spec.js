@@ -6,6 +6,16 @@ test.beforeEach(async ({ page }) => {
   await page.route("**/api/reader-community", route => route.fulfill({ json: { available: false, items: EDITORIAL_REQUESTS, error: "The shared board is not configured yet." } }));
   await page.route("**/api/digest-subscription", route => route.fulfill({ json: { available: false } }));
 });
+test("homepage stays usable without the icon CDN and is statically generated", async ({ page }) => {
+  await page.route("https://cdn.jsdelivr.net/**", route => route.abort());
+  await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await page.getByRole("searchbox", { name: "Search articles" }).fill("slow sql");
+  await expect(page.getByRole("status")).toHaveText("1 articles");
+  expect(await page.evaluate(() => JSON.parse(document.getElementById("__NEXT_DATA__").textContent).gsp)).toBe(true);
+  await page.goto("/?workspace=java-digest&topic=transactions");
+  await expect(page).toHaveURL(/\/practice\?workspace=java-digest&topic=transactions/);
+});
 test("public homepage lets a new reader discover articles and paths without onboarding", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Understand Java and backend failures through working examples.");

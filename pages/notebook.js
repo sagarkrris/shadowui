@@ -1,0 +1,16 @@
+import Head from 'next/head';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import ReaderLayout from '../components/reader/ReaderLayout';
+import { NOTEBOOK_KEY, normalizeNotebook, notebookMarkdown } from '../lib/learningNotebook.mjs';
+import styles from '../styles/Reader.module.css';
+export default function Notebook() {
+  const [notes, setNotes] = useState([]); const [bookmarks, setBookmarks] = useState([]); const [message, setMessage] = useState(''); const [exported, setExported] = useState('');
+  useEffect(() => {
+    try { setNotes(normalizeNotebook(JSON.parse(localStorage.getItem(NOTEBOOK_KEY) || '[]'))); }
+    catch { setMessage('Notebook storage is unavailable or damaged. Existing data has not been changed.'); }
+    import('../lib/readerEditorial.mjs').then(({ normalizeBookmarks, READER_BOOKMARK_KEY }) => { try { setBookmarks(normalizeBookmarks(JSON.parse(localStorage.getItem(READER_BOOKMARK_KEY) || '[]'))); } catch { /* Keep notes available if bookmark data is damaged. */ } });
+  }, []);
+  function remove(id) { try { const current = normalizeNotebook(JSON.parse(localStorage.getItem(NOTEBOOK_KEY) || '[]')); const next = current.filter(note => note.id !== id); localStorage.setItem(NOTEBOOK_KEY, JSON.stringify(next)); setNotes(next); setMessage('Note removed.'); } catch { setMessage('Could not remove the note.'); } }
+  return <ReaderLayout title="My learning notebook" description="Your saved reasoning, misconceptions and explanations."><Head><meta name="robots" content="noindex" /></Head><h1>My learning notebook</h1><p>Your decisions, unfinished explanations, and ideas worth revisiting. Stored only in this browser; clearing browser data removes them. Export your notes for safekeeping.</p><div className={styles.actions}><button onClick={() => setExported(notebookMarkdown(notes))}>Export notes as Markdown</button><Link href="/practice">Resume practice workspace</Link><Link href="/time-machine/database-decisions">Revisit design decisions</Link><Link href="/build">Explore tiny-system projects</Link></div>{exported && <label>Notebook export — select and copy<textarea readOnly rows={10} value={exported} onFocus={event => event.target.select()} /></label>}<p role="status">{message}</p><h2>Reflections and learning paths</h2>{!notes.length && <p>No notes yet. <Link href="/learn/spring-transactions">Start the Spring transaction journey</Link> or save a diagnosis in any detective case.</p>}<div className={styles.grid}>{notes.map(note => <article className={styles.card} key={note.id}><h3><Link href={note.href}>{note.title}</Link></h3><p>{note.completed ? 'Completed activity' : 'In progress'}{note.steps.length ? ` · ${note.steps.length}/5 learning steps` : ''}</p>{[['failure', 'What failed'], ['evidence', 'Evidence'], ['repair', 'Change and risk'], ['misconception', 'What would change my mind'], ['interviewAnswer', 'Interview answer']].map(([field, label]) => note[field] && <p key={field}><strong>{label}:</strong> {note[field]}</p>)}<button onClick={() => remove(note.id)} aria-label={`Remove ${note.title}`}>Remove note</button></article>)}</div><h2>Saved explanations</h2>{bookmarks.length ? <ul>{bookmarks.map(item => <li key={item.href}><Link href={item.href}>{item.title}</Link></li>)}</ul> : <p>Use “Bookmark section” in an article to collect explanations here.</p>}</ReaderLayout>;
+}
