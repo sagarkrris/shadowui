@@ -45,6 +45,43 @@ test('avatar waits for connected, ignores stale speech events, and releases room
   } finally { avatar.close(); globalThis.WebSocket = original; }
 });
 
+test('avatar audio tracks are configured for audible autoplay', async () => {
+  const original = globalThis.WebSocket;
+  let socket;
+  const audio = { playCalls: 0, play() { this.playCalls++; return Promise.resolve(); }, setAttribute() {} };
+  class Socket {
+    static OPEN = 1;
+    constructor() { this.readyState = 1; socket = this; }
+    send() {}
+    close() { this.readyState = 3; }
+  }
+  globalThis.WebSocket = Socket;
+  const avatar = new BuddyAvatarConnection({ appendChild() {}, replaceChildren() {} }, () => {}, () => {}, {
+    fetcher: async () => Response.json({ sessionToken: 'scoped', roomUrl: 'wss://room', roomToken: 'viewer', socketUrl: 'wss://socket' }),
+    loadClient: async () => ({
+      Room: class {
+        on(event, callback) { if (event === 'trackSubscribed') this.trackCallback = callback; }
+        async connect() {}
+        async startAudio() {}
+        async disconnect() {}
+      },
+      RoomEvent: { TrackSubscribed: 'trackSubscribed' },
+    }),
+  });
+  try {
+    const pending = avatar.connect();
+    while (!socket) await new Promise(resolve => setImmediate(resolve));
+    socket.onmessage({ data: JSON.stringify({ type: 'session.state_updated', state: 'connected' }) });
+    await pending;
+    avatar.room.trackCallback({ kind: 'audio', attach: () => audio });
+    assert.equal(audio.autoplay, true);
+    assert.equal(audio.muted, false);
+    assert.equal(audio.volume, 1);
+    assert.equal(audio.playCalls, 1);
+    avatar.close();
+  } finally { avatar.close(); globalThis.WebSocket = original; }
+});
+
 test('closing during avatar creation stops the late-created remote session without connecting media', async () => {
   let release;
   const gate = new Promise(resolve => { release = resolve; });
