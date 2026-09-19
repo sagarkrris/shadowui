@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { conciseSpeechText, pcmToWav, speechPrompt } from '../lib/techBuddySpeech.mjs';
-import { startBuddyAvatar } from '../lib/techBuddyAvatarServer.mjs';
+import { liveAvatarRequest, startBuddyAvatar } from '../lib/techBuddyAvatarServer.mjs';
 
 test('spoken excerpts omit code and links, remain bounded, and retain visible details', () => {
   const text = conciseSpeechText('**Use a closure.**\n```js\nSECRET_CODE();\n```\n[Details](https://example.com)');
@@ -38,4 +38,10 @@ test('failed avatar start releases the remote session', async () => {
     return Response.json({ code: 100, data: { session_token: 'token' } });
   }));
   assert.ok(calls.at(-1).endsWith('/stop'));
+});
+test('avatar provider failures expose only safe diagnostics', async () => {
+  await assert.rejects(
+    liveAvatarRequest('token', null, {}, async () => Response.json({ code: 4002, message: 'invalid token' }, { status: 401 })),
+    (error) => error.name === 'AvatarProviderError' && error.status === 401 && error.code === 4002 && error.message === 'Avatar provider unavailable',
+  );
 });

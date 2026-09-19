@@ -2,11 +2,13 @@ import { requireConfiguredUser } from '../../../lib/apiAuth.mjs';
 import { checkDistributedRateLimit } from '../../../lib/redisRateLimit.mjs';
 import { getClientAddress } from '../../../lib/requestSecurity.mjs';
 import { withApiObservability } from '../../../lib/apiObservability.mjs';
+import { createRequestLogger } from '../../../lib/serverLogger.mjs';
 import { startBuddyAvatar, stopBuddyAvatar } from '../../../lib/techBuddyAvatarServer.mjs';
 export const config = { api: { bodyParser: { sizeLimit: '16kb' } } };
 export default withApiObservability('/api/tech-buddy/avatar', async (req, res) => {
+  const logger = createRequestLogger({ route: '/api/tech-buddy/avatar', requestId: res.getHeader?.('X-Request-Id') || req.requestId });
   res.setHeader('Cache-Control', 'no-store');
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== 'POST') { logger.warn('request.method_not_allowed', { method: req.method }); return res.status(405).json({ error: 'Method not allowed' }); }
   const auth = await requireConfiguredUser(req);
   if (auth.required && !auth.user) return res.status(401).json({ error: 'Sign in to use the live interviewer.' });
   if (!['start', 'stop'].includes(req.body?.action)) return res.status(400).json({ error: 'Invalid avatar action.' });
@@ -23,9 +25,14 @@ export default withApiObservability('/api/tech-buddy/avatar', async (req, res) =
     res.on('close', () => { if (!res.writableEnded) disconnected = true; });
     const session = await startBuddyAvatar();
     if (disconnected && session) { await stopBuddyAvatar(session.sessionToken); return; }
-    if (!session) return res.status(503).json({ error: 'Live interviewer is not configured yet. Continue with the portrait and voice.' });
+    if (!session) {
+      const missing = ['LIVEAVATAR_API_KEY', 'LIVEAVATAR_AVATAR_ID'].filter((name) => !process.env[name]);
+      logger.warn('provider.not_configured', { missing });
+      return res.status(503).json({ error: 'Live interviewer is not configured yet. Continue with the portrait and voice.' });
+    }
     return res.status(200).json(session);
-  } catch {
+  } catch (error) {
+    logger.error('provider.failed', { error, providerStatus: error?.status, providerCode: error?.code });
     return res.status(503).json({ error: 'Live interviewer connection failed. Continue with the portrait and voice.' });
   }
 });
