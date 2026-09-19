@@ -20,19 +20,36 @@ export default function TechBuddy({ initialSession, config, profile, onChange, o
   const [candidateAvatar, setCandidateAvatar] = useState('👤');
   const answerRef = useRef(null);
   const summaryRef = useRef(null);
+  const speakFirstQuestion = useRef(false);
+  const previousQuestionId = useRef(session.current?.id);
+  const speakRef = useRef(media.speak);
   const busy = ['loading', 'evaluating'].includes(session.phase);
   const complete = session.phase === 'complete';
   const summary = summarizeTechBuddy(session);
   const lastTurn = session.turns.at(-1);
+  const currentQuestionId = session.current?.id;
+  const currentQuestionText = session.current?.question;
   const canAnswer = session.phase === 'question';
   const canAsk = ['idle', 'review'].includes(session.phase) && !session.pending;
   const { stopAll } = media;
   useEffect(() => {
     if (complete) { stopAll(); summaryRef.current?.focus(); }
   }, [complete, stopAll]);
-  useEffect(() => { if (canAnswer || isAsk) answerRef.current?.focus(); }, [canAnswer, isAsk, session.current?.id]);
+  useEffect(() => { speakRef.current = media.speak; }, [media.speak]);
+  useEffect(() => { if (canAnswer || isAsk) answerRef.current?.focus(); }, [canAnswer, isAsk, currentQuestionId]);
+  useEffect(() => {
+    if (!speakFirstQuestion.current || !currentQuestionText || currentQuestionId === previousQuestionId.current) return;
+    speakFirstQuestion.current = false;
+    previousQuestionId.current = currentQuestionId;
+    speakRef.current(currentQuestionText);
+  }, [currentQuestionId, currentQuestionText]);
 
   const configure = changes => { media.stopAll(); controller.configure(changes); };
+  const startInterview = () => {
+    speakFirstQuestion.current = true;
+    media.stopSpeech();
+    controller.ask();
+  };
   const submit = event => {
     event.preventDefault();
     event.stopPropagation();
@@ -74,7 +91,7 @@ export default function TechBuddy({ initialSession, config, profile, onChange, o
       {media.notice && <p role="status">{media.notice}</p>}
       {session.targetQuestions > 0 && <p aria-label={session.mode === 'warmup' ? 'Warm-up progress' : 'Session progress'}>{summary.completed} of {session.targetQuestions} questions completed. Retrying a question does not advance the count.</p>}
       {!complete && <div className={styles.controls}>
-        <button hidden={isAsk} disabled={!canAsk || media.listening} onClick={() => { media.stopSpeech(); controller.ask(); }}>{session.current ? 'Next Buddy question' : 'Start Buddy interview'}</button>
+        <button hidden={isAsk} disabled={!canAsk || media.listening} onClick={session.current ? () => { media.stopSpeech(); controller.ask(); } : startInterview}>{session.current ? 'Next Buddy question' : 'Start Buddy interview'}</button>
         <button hidden={isAsk} disabled={!session.current || busy || media.listening} aria-pressed={media.speaking} onClick={() => media.speaking ? media.stopSpeech() : media.speak(session.current.question)}>{media.speaking ? 'Stop reading' : 'Read question aloud'}</button>
         {!isAsk && session.mode !== 'demo' && <><button disabled={!canAnswer || busy || media.listening} onClick={() => { media.stopSpeech(); controller.converse('Give me a hint', true); }}>Give me a hint</button><button disabled={!canAsk || !lastTurn} onClick={() => { media.stopSpeech(); controller.ask('followup'); }}>Deeper follow-up</button><button disabled={!canAsk || !history.length && !session.turns.length} onClick={() => { media.stopSpeech(); controller.ask('revisit'); }}>Revisit a gap</button></>}
         <button onClick={() => { media.stopAll(); controller.end(); }}>End session</button>
