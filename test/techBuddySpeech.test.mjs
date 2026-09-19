@@ -22,7 +22,7 @@ test('avatar start uses LITE and returns only scoped client credentials', async 
   const calls = [];
   const fetcher = async (url, request) => {
     calls.push({ url, ...request });
-    return Response.json({ code: 100, data: url.endsWith('token') ? { session_token: 'scoped.token' } : { livekit_url: 'wss://room.test', ws_url: 'wss://socket.test', livekit_client_token: 'viewer', livekit_agent_token: 'private-agent' } });
+    return Response.json({ code: 1000, data: url.endsWith('token') ? { session_token: 'scoped.token' } : { livekit_url: 'wss://room.test', ws_url: 'wss://socket.test', livekit_client_token: 'viewer', livekit_agent_token: 'private-agent' } });
   };
   const session = await startBuddyAvatar({ LIVEAVATAR_API_KEY: 'master-secret', LIVEAVATAR_AVATAR_ID: 'avatar' }, fetcher);
   assert.equal(JSON.parse(calls[0].body).mode, 'LITE');
