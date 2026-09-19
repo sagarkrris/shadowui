@@ -8,7 +8,7 @@ function buildStarFrame(title, context = "") {
   return `Situation: a project needed a reliable approach to ${title}. Task: apply the concept without weakening correctness. Action: clarified the constraint, implemented the smallest observable change, tested normal and failure paths, and measured the result. Result: the behavior matched the contract and the trade-off was documented. ${context}`;
 }
 
-export default function JavaDigestTutorialCard({ tutorial, accent, completedIds, bookmarkedIds, onToggleStatus, onOpen }) {
+export default function JavaDigestTutorialCard({ tutorial, accent, completedIds, bookmarkedIds, onToggleStatus, onOpen, onBuddy }) {
   return <article className="java-digest-card" style={{ ...wrap, borderRadius: 8, display: "grid", gap: 7, padding: 10 }}>
     <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 7 }}><span style={{ color: accent, fontSize: 10, fontWeight: 900, textTransform: "uppercase" }}>{tutorial.category}</span><span style={{ border: "1px solid var(--jd-border-strong)", borderRadius: 999, color: "var(--jd-warning-text)", fontSize: 9.8, fontWeight: 900, padding: "3px 6px" }}>{tutorial.level}</span></div>
     <h3 style={{ ...wrap, color: "var(--jd-text)", fontSize: 13.5, lineHeight: 1.25 }}>{tutorial.title}</h3>
@@ -32,6 +32,7 @@ export default function JavaDigestTutorialCard({ tutorial, accent, completedIds,
         {tutorial.relatedTopics?.length > 0 && <div style={{ color: "var(--jd-text-muted)", fontSize: 11.1, lineHeight: 1.5 }}><b>Related:</b> {tutorial.relatedTopics.join(" · ")}</div>}
         <div style={{ borderLeft: `3px solid ${accent}`, color: "var(--jd-text-soft)", fontSize: 11.1, lineHeight: 1.5, paddingLeft: 8 }}><b style={{ color: accent }}>Hypothetical STAR practice frame (not your experience):</b> {buildStarFrame(tutorial.title, tutorial.practice)}</div>
       </div>
+      <button type="button" className="glass-button" onClick={() => onBuddy?.(tutorial)}>Practice this topic with Tech Buddy</button>
     </details>
     <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}><a href={`/java/tutorial/${slugifyJavaTutorial(tutorial.title)}`} className="glass-button" style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "var(--jd-text)", fontSize: 10.5, padding: "5px 7px", textDecoration: "none" }}><i className="ti ti-external-link" style={{ color: accent, marginRight: 4 }} />Open article</a><button type="button" className="glass-button" onClick={() => onOpen?.(tutorial)} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "var(--jd-text)", fontSize: 10.5, padding: "5px 7px" }}><i className="ti ti-book-open" style={{ color: accent, marginRight: 4 }} />Read / resume</button><ChipButton label={completedIds.has(tutorial.id) ? "Completed" : "Mark complete"} icon="ti-check" active={completedIds.has(tutorial.id)} accent={accent} onClick={() => onToggleStatus("completedTutorials", tutorial.id)} /><ChipButton label={bookmarkedIds.has(tutorial.id) ? "Bookmarked" : "Bookmark"} icon="ti-bookmark" active={bookmarkedIds.has(tutorial.id)} accent="var(--jd-warning)" onClick={() => onToggleStatus("bookmarkedTutorials", tutorial.id)} /></div>
   </article>;

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   buildAnswerCoachActions,
   buildDailyPrepPlan,
@@ -481,6 +482,7 @@ export default function PrepInsightsPanel({ profile, topics, weakSpots, mockScor
           </div>
           <div style={{ color: theme.accentText, fontSize: 11.5, fontWeight: 900, marginBottom: 6 }}>Top 10 likely questions</div>
           <div style={{ display: "grid", gap: 5 }}>
+            <Link href="/practice?buddy=1&buddyMode=warmup" className="glass-button" style={{ padding: 8, color: "#bae6fd" }}>Five-question Tech Buddy warm-up</Link>
             {dayPack.questions.slice(0, 5).map((question) => (
               <button key={question} className="glass-button" onClick={() => onAction(`Interview Day Pack drill: ${question}`)} style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 7, padding: 7, color: "#cbd5e1", fontSize: 10.8, textAlign: "left", cursor: "pointer" }}>
                 {question}

@@ -116,7 +116,7 @@ test("light workspace keeps Scenario Bank trap cards readable", () => {
 });
 
 test("chat and form controls expose accessibility hooks", () => {
-  assert.match(indexSource, /role="log"/);
+  assert.match(indexSource, /role=\{techBuddyOpen \? "region" : "log"\}/);
   assert.match(indexSource, /aria-live="polite"/);
   assert.match(indexSource, /aria-label="Conversation messages"/);
   assert.match(indexSource, /aria-label="Message composer"/);

@@ -1,0 +1,38 @@
+.buddy { width: 100%; max-width: 960px; margin: 0 auto; line-height: 1.6; }
+.header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+.buddy h2, .buddy h3 { margin: 0 0 8px; }
+.buddy p { margin: 8px 0; }
+.header p, .status, .buddy small { opacity: .75; font-size: 12px; }
+.buddy small { display: block; font-weight: normal; }
+.controls { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 12px 0; }
+.buddy button, .buddy select { font: inherit; font-size: 13px; padding: 9px 12px; border: 1px solid currentColor; border-radius: 8px; color: inherit; background: transparent; cursor: pointer; }
+.buddy option { color: #171717; background: #fff; }
+.buddy button:disabled, .buddy select:disabled { opacity: .5; cursor: not-allowed; }
+.buddy button:focus-visible, .buddy select:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+.stage { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.tile { border: 1px solid #8886; border-radius: 16px; padding: 18px; min-width: 0; overflow-wrap: anywhere; }
+.tile video { width: 100%; max-height: 240px; object-fit: cover; border-radius: 10px; }
+.answer { white-space: pre-wrap; }
+.portrait { margin: 14px 0 8px; }
+.portrait img { width: 100%; height: auto; max-height: 360px; object-fit: cover; object-position: center 32%; border-radius: 10px; display: block; }
+.portrait figcaption { font-size: 11px; opacity: .75; margin-top: 4px; }
+.presence { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.presence::before { content: ''; width: 8px; height: 8px; flex-shrink: 0; border-radius: 50%; background: currentColor; opacity: .5; }
+.presence[data-speaking='true']::before { animation: speakingPulse 1s ease-in-out infinite; }
+@keyframes speakingPulse { 50% { opacity: 1; transform: scale(1.35); } }
+.form { display: grid; gap: 8px; margin: 18px 0; }
+.form textarea { box-sizing: border-box; width: 100%; resize: vertical; color: inherit; background: transparent; border: 1px solid #8888; border-radius: 8px; padding: 12px; font: inherit; }
+.form button { justify-self: start; }
+.buddy select { max-width: 100%; }
+.buddy h4 { margin-bottom: 6px; }
+.buddy ul, .buddy ol { padding-left: 24px; }
+.buddy :focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+.buddy { scroll-behavior: auto; }
+@media (prefers-reduced-motion: reduce) {
+  .buddy, .buddy *, .buddy *::before, .buddy *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+@media (max-width: 640px) { .stage { grid-template-columns: 1fr; } .tile { padding: 14px; } }
+.buddy input { color: inherit; background: transparent; border: 1px solid #8888; border-radius: 8px; padding: 9px; font: inherit; width: min(240px, 100%); box-sizing: border-box; }
+.message { padding: 14px 0; border-bottom: 1px solid #8884; }
+.liveAvatar video { max-height: 360px; width: 100%; border-radius: 10px; }
+.liveAvatar audio { width: 100%; }

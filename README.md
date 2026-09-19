@@ -40,6 +40,9 @@ AI-powered interview intelligence for modern software engineers. It supports per
 - Exportable final interview report with candidate details, resume gaps, job description match, mock performance, mastery map, role pack, system design canvas summary, roadmap, and next actions.
 - Agentic UI Engineering course with Java/Spring Boot, React/Next.js, Node/Python, and enterprise adapter tracks for agent loops, tool calling, approvals, traces, streaming, and guardrails.
 - Chat-based interview and practice modes with difficulty levels.
+- Tech Buddy shares ElevatePrep's conversation and practice history across **Interview me** and unscored **Ask Buddy** modes. It supports any selected topic, hints, adaptive follow-ups, gap revision, unlimited practice and configurable question counts. It reuses Gemini chat/evaluation and adds optional natural Indian English narration.
+- Java lesson links and the Interview Day Pack open topic practice or a five-question preset. `/tech-buddy-demo` retains the original 36 offline Java questions with no AI calls or scoring.
+- The fictional interviewer portrait is the local fallback. Optional LiveAvatar LITE video receives Gemini speech for lip sync and listening/idle poses; it requires server-side provider credentials and a licensed avatar ID. See [Tech Buddy setup and behavior](docs/tech-buddy.md).
 - Code paste/review tools shown only where useful, such as technical prep topics.
 - Live Java Runner surface with safe paused-state guidance while execution providers are being finalized.
 - Screen capture/upload analysis for coding, design, database, and interview prompts.

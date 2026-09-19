@@ -1,0 +1,7 @@
+Tech Buddy fictional interviewer portrait
+Generation mode: built-in imagegen, photorealistic-natural, new image.
+Asset: tech-buddy-interviewer.png
+This is a static AI-generated source portrait, not a real person or an animated avatar.
+
+Prompt:
+Use case: photorealistic-natural. Project asset for ElevatePrep Tech Buddy, an AI technical interviewer. Generate a photorealistic, clearly fictional Indian-presenting adult male professional around age 35, warm medium-brown skin, dark brown eyes, short neatly styled black hair, neat subtle facial stubble, wearing a simple navy blazer over a pale blue open-collar shirt. Calm approachable expression with closed relaxed lips, head facing straight toward camera, attentive eye contact. Seated upright naturally at a desk in a tasteful softly blurred modern office, waist-up composition, both hands resting comfortably visible at bottom of frame. Soft even daylight, realistic skin texture, professional webcam-quality portrait, sharp face with gentle depth of field. Square composition, no text, no logos, no famous person likeness, no cartoon styling, no exaggerated gestures. This is a static source portrait for an interview avatar, so neutral frontal pose and unobstructed face are important.

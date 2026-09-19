@@ -5,8 +5,10 @@ import EvidenceNotebook from "../components/practice/EvidenceNotebook";
 import DataControls from "../components/practice/DataControls";
 import ContentReport from "../components/practice/ContentReport";
 import PracticeReview from "../components/practice/PracticeReview";
+import { suggestTechBuddyLevel, TECH_BUDDY_LEVELS, buildTechBuddyRequest } from "../lib/techBuddy.mjs";
 import { normalizePractice, recordAttempt, evaluationMarkdown, compareAttempts } from "../lib/dailyPractice.mjs";
 import Head from "next/head";
+import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/router";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
@@ -23,6 +25,7 @@ const DesignLab = dynamic(() => import("../components/design-lab/DesignLab"), { 
 const DsaVisualLab = dynamic(() => import("../components/dsa/DsaVisualLab"), { ssr: false });
 const InterviewReadyQA = dynamic(() => import("../components/interview-ready/InterviewReadyQA"), { ssr: false });
 const JavaDigest = dynamic(() => import("../components/java-digest/JavaDigest"), { ssr: false });
+const TechBuddy = dynamic(() => import("../components/chat/TechBuddy"), { ssr: false });
 const OfferWarRoom = dynamic(() => import("../components/offer-war-room/OfferWarRoom"), { ssr: false });
 const ScenarioBank = dynamic(() => import("../components/scenario-bank/ScenarioBank"), { ssr: false });
 const CareerPaths = dynamic(() => import("../components/career-paths/CareerPaths"), { ssr: false });
@@ -186,6 +189,9 @@ export default function Home() {
   const [sessionReady, setSessionReady] = useState(false);
   const [homeDemoSeen, setHomeDemoSeen] = useState(false);
   const [homeView, setHomeView] = useState(false);
+  const [techBuddyOpen, setTechBuddyOpen] = useState(false);
+  const [techBuddyLaunch, setTechBuddyLaunch] = useState(null);
+  const buddyLinkRef = useRef('');
   const [editingProfile, setEditingProfile] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [cloudStatus, setCloudStatus] = useState("idle");
@@ -881,6 +887,7 @@ export default function Home() {
 
   // ── API call ──────────────────────────────────────────────────────────────
   const callAPI = useCallback(async (userText, options = {}) => {
+    if (techBuddyOpen) { showToast('Use the Tech Buddy controls, or return to the conversation first.', 'info'); return; }
     const hasCode = showCodeTools ? codeInput.trim() : "";
     const promptText = String(userText || "").trim() || (hasCode ? "Please review this code." : "");
     if (requestBusy.current || loading || (!promptText && !hasCode)) return;
@@ -941,6 +948,7 @@ export default function Home() {
       apiText: finalText,
       metadata: {
         topic: options.topic,
+        difficulty: options.difficulty,
         chatAttemptId,
         isInterviewPrompt: options.isInterviewPrompt,
         startAnswerTimer: options.startAnswerTimer,
@@ -1010,7 +1018,7 @@ export default function Home() {
       requestSucceeded = true;
       setPractice(prev => {
         const next = { ...prev, pending: null };
-        if (options.isInterviewPrompt || options.startAnswerTimer) return { ...next, active: { question: aiText, topic: options.topic || selectedSub || selectedCat || "General", difficulty, round: roundStrategy, attemptId: crypto.randomUUID() } };
+        if (options.isInterviewPrompt || options.startAnswerTimer) return { ...next, active: { question: aiText, topic: options.topic || selectedSub || selectedCat || "General", difficulty: options.difficulty || difficulty, round: options.roundStrategy || roundStrategy, attemptId: crypto.randomUUID() } };
         const score = aiText.match(/(?:overall\s+)?score\s*:\s*(\d+(?:\.\d+)?)\s*\/\s*10/i);
         return score && !options.skipQuestionMemory && !options.privateTranscript ? recordAttempt(next, { id: chatAttemptId, question: [...baseMessages].reverse().find(m => m.role === "assistant")?.content || selectedSub || "Practice", answer: finalText, score: Number(score[1]), topic: selectedSub || selectedCat || "General", difficulty, round: roundStrategy, feedback: aiText, rubricVersion: 0, completedAt: new Date().toISOString() }) : next;
       });
@@ -1050,11 +1058,12 @@ export default function Home() {
         setMockTimerStatus("answering");
       }
     }
-  }, [messages, codeInput, loading, showToast, candidateProfile, techTheme.key, showCodeTools, mockTimerStatus, interviewMode, roundStrategy, interviewPanel, selectedCat, selectedSub, practice, difficulty]);
+  }, [techBuddyOpen, messages, codeInput, loading, showToast, candidateProfile, techTheme.key, showCodeTools, mockTimerStatus, interviewMode, roundStrategy, interviewPanel, selectedCat, selectedSub, practice, difficulty]);
 
   // ── Screen analyze ────────────────────────────────────────────────────────
   const analyzeScreen = useCallback(async (b64, ctx) => {
     setShowScreen(false);
+    if (techBuddyOpen) { showToast('Return to the conversation to analyze a screen.', 'info'); return; }
     if (loading || requestBusy.current) return;
     requestBusy.current = true;
     setLoading(true);
@@ -1103,7 +1112,7 @@ export default function Home() {
         showToast("Screen analysis failed", "error");
       }
     } finally { clearTimeout(timeout); requestBusy.current = false; setLoading(false); setMessages(prev => prev.map(m => m.streaming ? { ...m, streaming: false, interrupted: true, content: (m.content || "") + "\nScreen analysis stopped. Reopen Analyze Screen to retry." } : m)); }
-  }, [messages, loading, showToast, candidateProfile]);
+  }, [techBuddyOpen, messages, loading, showToast, candidateProfile]);
 
   // ── Voice ─────────────────────────────────────────────────────────────────
   const stopVoice = useCallback(() => {
@@ -1195,13 +1204,66 @@ export default function Home() {
 }, [callAPI, showToast, voiceText]);
 
   const toggleVoice = useCallback(() => {
+    if (techBuddyOpen) { showToast('Use Speak answer inside Tech Buddy to review your transcript before submitting.', 'info'); return; }
     if (isListening) {
       stopVoice();
       return;
     }
 
     startVoice();
-  }, [isListening, startVoice, stopVoice]);
+  }, [isListening, startVoice, stopVoice, techBuddyOpen, showToast]);
+
+  const openTechBuddy = useCallback((config = null) => {
+    if (loading || requestBusy.current) { showToast('Wait for the current response before opening Tech Buddy.', 'info'); return false; }
+    if (recogRef.current) {
+      recogRef.current.onstart = recogRef.current.onend = recogRef.current.onresult = recogRef.current.onerror = null;
+      recogRef.current.abort();
+      recogRef.current = null;
+    }
+    setListening(false);
+    setVoiceText('');
+    setTechBuddyLaunch({ id: crypto.randomUUID(), config: { level: TECH_BUDDY_LEVELS.find(level => level.label === difficulty)?.id || suggestTechBuddyLevel(candidateProfile || {}), topic: selectedSub || selectedCat || '', ...config }, fresh: Boolean(config) });
+    setTechBuddyOpen(true);
+    setHomeView(false);
+    setActiveTab('chat');
+    return true;
+  }, [candidateProfile, difficulty, selectedSub, selectedCat, setActiveTab, showToast, loading]);
+
+  const saveBuddySession = useCallback(buddy => {
+    setPractice(previous => ({ ...previous, buddy }));
+    setTechBuddyLaunch(previous => previous?.fresh ? { ...previous, fresh: false } : previous);
+  }, []);
+  const closeBuddy = useCallback(buddy => {
+    setTechBuddyOpen(false);
+    setInput(buddy.interaction === 'ask' ? buddy.askDraft : buddy.phase === 'question' ? buddy.draft : '');
+    if (buddy.interaction === 'ask') { setMode('practice'); setInterviewMode('directAnswer'); }
+    const { options } = buildTechBuddyRequest(buddy.level, buddy.topic);
+    setPractice(previous => ({ ...previous, active: buddy.interaction === 'interview' && buddy.phase === 'question' ? {
+      question: buddy.current.question, questionId: buddy.current.id, buddySessionId: buddy.id,
+      topic: buddy.topic || 'General interview', difficulty: options.difficulty, round: options.roundStrategy,
+      attemptId: crypto.randomUUID(),
+    } : null }));
+  }, []);
+  const saveBuddyConversation = useCallback(entries => setMessages(previous => [...previous, ...entries.filter(entry => !previous.some(message => message.id === entry.id))]), []);
+  const saveBuddyAttempt = useCallback(attempt => setPractice(previous => ({ ...recordAttempt(previous, attempt), active: previous.active, pending: previous.pending })), []);
+
+  useEffect(() => {
+    if (!sessionReady || !router.isReady || !candidateProfile) return;
+    if (router.query.buddy !== '1') { buddyLinkRef.current = ''; return; }
+    const topic = typeof router.query.buddyTopic === 'string' ? router.query.buddyTopic.slice(0, 180) : '';
+    const mode = router.query.buddyMode === 'warmup' ? 'warmup' : 'practice';
+    const key = `${topic}:${mode}`;
+    if (buddyLinkRef.current === key) return;
+    buddyLinkRef.current = key;
+    if (!openTechBuddy({ topic, mode })) { buddyLinkRef.current = ''; return; }
+    const query = { ...router.query };
+    delete query.buddy;
+    delete query.buddyTopic;
+    delete query.buddyMode;
+    void router.replace({ pathname: router.pathname, query }, undefined, { shallow: true });
+  }, [sessionReady, router, candidateProfile, openTechBuddy]);
+
+  useEffect(() => { if (activeTab !== 'chat') setTechBuddyOpen(false); }, [activeTab]);
 
   const retryLastAiRequest = useCallback(() => {
     const retry = buildAiRetryRequest(lastRequestRef.current);
@@ -1329,6 +1391,7 @@ export default function Home() {
   };
 
   const startJavaDigestAction = (prompt, metadata = {}) => {
+    if (metadata.type === 'techBuddy') { openTechBuddy({ topic: metadata.article?.title || '', mode: 'practice' }); return; }
     setActiveTab("chat");
     if (metadata?.article?.id) {
       setJavaDigestProgress((previous) => ({
@@ -1403,6 +1466,7 @@ export default function Home() {
   };
 
   const goHome = useCallback(() => {
+    setTechBuddyOpen(false);
     const homeState = createHomeNavigationState({
       candidateProfile,
       profileDraft,
@@ -1568,6 +1632,7 @@ export default function Home() {
       return;
     }
     const workspaceState = createTopicSelectionNavigationState({ activeTab });
+    setTechBuddyOpen(false);
     setActiveTab(workspaceState.activeTab);
     setSelCat(cat); setSelSub(sub);
     if (isMobile) setSidebar(false);
@@ -1575,6 +1640,7 @@ export default function Home() {
 
   useEffect(() => {
     const handlePowerKeys = (event) => {
+      if (event.defaultPrevented) return;
       const target = event.target;
       const isEditable = target?.tagName === "TEXTAREA" || target?.tagName === "INPUT" || target?.isContentEditable;
       const hasCommand = event.ctrlKey || event.metaKey;
@@ -1596,6 +1662,7 @@ export default function Home() {
         setCommandPaletteOpen((previous) => !previous);
       } else if (key === "enter") {
         event.preventDefault();
+        if (techBuddyOpen) return;
         startSession();
       } else if (event.shiftKey && key === "c") {
         event.preventDefault();
@@ -1611,7 +1678,7 @@ export default function Home() {
 
     window.addEventListener("keydown", handlePowerKeys);
     return () => window.removeEventListener("keydown", handlePowerKeys);
-  }, [clearChat, startSession, toggleVoice]);
+  }, [clearChat, startSession, toggleVoice, techBuddyOpen]);
 
   const themeVars = {
     "--tech-accent": techTheme.accent,
@@ -1927,9 +1994,10 @@ export default function Home() {
           )}
 
           {/* ── Chat area ── */}
-          <div ref={chatRef} className="chat-scroll" role="log" aria-live="polite" aria-relevant="additions text" aria-busy={loading || !sessionReady} aria-label="Conversation messages" style={{ flex:1, minHeight:0, minWidth:0, overflowX:"hidden", overflowY:"auto", padding: isMobile?"12px 10px":"20px 16px", display:"flex", flexDirection:"column" }}>
+          <div ref={chatRef} className="chat-scroll" role={techBuddyOpen ? "region" : "log"} aria-live={techBuddyOpen ? "off" : "polite"} aria-relevant="additions text" aria-busy={loading || !sessionReady} aria-label="Conversation messages" style={{ flex:1, minHeight:0, minWidth:0, overflowX:"hidden", overflowY:"auto", padding: isMobile?"12px 10px":"20px 16px", display:"flex", flexDirection:"column" }}>
             {!sessionReady ? <div className="dashboard-skeleton" role="status" aria-label="Loading InterviewIQ workspace"><span /><span /><span /><span /></div> : null}
             {sessionReady ? <>
+            {activeTab === "chat" && candidateProfile && !editingProfile && !techBuddyOpen && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}><button type="button" className="glass-button" disabled={loading} style={{ padding: '10px 14px' }} onClick={() => openTechBuddy()}>Open Tech Buddy</button><button type="button" className="glass-button" disabled={loading} onClick={() => openTechBuddy({ mode: 'warmup' })}>Five-question interview warm-up</button><Link href="/tech-buddy-demo">Try offline demo</Link></div>}
             {loading ? <div className="ai-progress-status" role="status" aria-live="polite"><span className="dot" />InterviewIQ is preparing your response…</div> : null}
             {activeTab === "course" ? (
               <AgenticUICourse theme={techTheme} variant="full" />
@@ -2053,6 +2121,8 @@ export default function Home() {
               />
             ) : editingProfile
               ? <ProfileSetup theme={techTheme} draft={profileDraft} onChange={setProfileDraft} onSubmit={saveProfile} onCancel={() => { setProfileDraft(candidateProfile); setEditingProfile(false); }} onSignIn={() => openAuthSettings("login")} onOpenWorkspace={openWorkspace} isSignedIn={Boolean(auth.user)} keyboardOpen={isKeyboardOpen} />
+            : techBuddyOpen && candidateProfile
+              ? <TechBuddy key={techBuddyLaunch?.id} initialSession={techBuddyLaunch?.fresh ? null : practice.buddy} config={techBuddyLaunch?.config} profile={candidateProfile} messages={messages} history={practice.attempts} onConversation={saveBuddyConversation} onChange={saveBuddySession} onAttempt={saveBuddyAttempt} onClose={closeBuddy} />
             : (homeView || messages.length === 0) && !loading
               ? sessionReady && auth.ready && !homeDemoSeen && (!candidateProfile || !auth.user)
                 ? <HomeDemo onContinue={completeHomeDemo} onSignIn={() => openAuthSettings("login")} onOpenWorkspace={openWorkspace} />
@@ -2135,8 +2205,8 @@ export default function Home() {
             }
             </> : null}
             {candidateProfile && <>
-              {activeTab === "chat" && (homeView || messages.length === 0) && <LearningSearch attempts={practice.attempts} designs={practice.designs} onQuestion={(question, topic) => { setPractice(prev => ({ ...prev, active: { question, topic, difficulty, round: roundStrategy, attemptId: crypto.randomUUID() } })); setMessages(prev => [...prev, { role: "assistant", content: question }]); setHomeView(false); }} onSaved={attempt => { setHomeView(false); setMessages(prev => [...prev, { role: "assistant", content: `Saved attempt: ${attempt.question}\n\nYour answer: ${attempt.answer}\n\n${attempt.feedback}`, replay: true }]); }} onDesign={id => { setPractice(prev => ({ ...prev, selectedDesignId: id })); openWorkspace("canvas"); }} />}
-              {activeTab === "chat" && (homeView || messages.length === 0) && <EvidenceNotebook records={practice.evidence} onChange={evidence => setPractice(prev => ({ ...prev, evidence }))} />}
+              {activeTab === "chat" && !techBuddyOpen && (homeView || messages.length === 0) && <LearningSearch attempts={practice.attempts} designs={practice.designs} onQuestion={(question, topic) => { setPractice(prev => ({ ...prev, active: { question, topic, difficulty, round: roundStrategy, attemptId: crypto.randomUUID() } })); setMessages(prev => [...prev, { role: "assistant", content: question }]); setHomeView(false); }} onSaved={attempt => { setHomeView(false); setMessages(prev => [...prev, { role: "assistant", content: `Saved attempt: ${attempt.question}\n\nYour answer: ${attempt.answer}\n\n${attempt.feedback}`, replay: true }]); }} onDesign={id => { setPractice(prev => ({ ...prev, selectedDesignId: id })); openWorkspace("canvas"); }} />}
+              {activeTab === "chat" && !techBuddyOpen && (homeView || messages.length === 0) && <EvidenceNotebook records={practice.evidence} onChange={evidence => setPractice(prev => ({ ...prev, evidence }))} />}
               {activeTab === "dsaLab" && <ExecutableDsa />}
               {activeTab === "canvas" && <DesignWorkbench initialSelectedId={practice.selectedDesignId} designs={practice.designs} onChange={designs => setPractice(prev => ({ ...prev, designs }))} saveStatus={localSaveStatus} canvas={systemDesignCanvas} onRestoreCanvas={setSystemDesignCanvas} onReview={startCanvasAction} />}
               <ContentReport context={`${activeTab}: ${selectedSub || selectedCat || "Home"}`} reports={practice.reports} onChange={reports => setPractice(prev => ({ ...prev, reports }))} />
@@ -2145,15 +2215,15 @@ export default function Home() {
           </div>
 
           {/* ── Input area ── */}
-          {showComposer && <footer className="glass-chrome composer-footer" style={{ padding: isMobile ? (isKeyboardOpen ? "8px 10px" : "8px 10px 10px") : "10px 12px 12px", borderTop:"1px solid rgba(255,255,255,.08)", flexShrink:0 }}>
+          {showComposer && !techBuddyOpen && <footer className="glass-chrome composer-footer" style={{ padding: isMobile ? (isKeyboardOpen ? "8px 10px" : "8px 10px 10px") : "10px 12px 12px", borderTop:"1px solid rgba(255,255,255,.08)", flexShrink:0 }}>
             <div className="practice-context">
               <span>{practice.active?.topic || currentLabel || "General"} · {practice.active?.difficulty || difficulty} · {practice.active?.round || roundStrategy}</span>
               <label>Feedback depth <select value={practice.feedbackDepth} onChange={e => setPractice(prev => ({ ...prev, feedbackDepth: e.target.value }))}>{["Quick review", "Detailed explanation", "Strict interview"].map(v => <option key={v}>{v}</option>)}</select></label>
-              {practice.active && <details open><summary>Current question</summary><p>{practice.active.question}</p></details>}
+              {practice.active && !techBuddyOpen && <details open><summary>Current question</summary><p>{practice.active.question}</p></details>}
               {loading && <p role="status">AI request in progress · {requestElapsed}s {requestElapsed >= 30 ? "· Taking longer than usual. You can stop and retry." : ""}<button onClick={() => abortRef.current?.abort()}>Stop request</button></p>}
               {!loading && practice.pending && <p role="alert">Request unfinished. Your submitted answer is saved. <button onClick={retryLastAiRequest}>Retry saved request</button> Retry replaces this response; it does not add another attempt.</p>}
             </div>
-            {mockTimerStatus !== "idle" && (
+            {mockTimerStatus !== "idle" && !techBuddyOpen && (
               <div role="status" aria-live="polite" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8, border: `1px solid ${techTheme.accentBorder}`, borderRadius: 8, padding: "6px 9px", background: techTheme.accentMuted }}>
                 <span style={{ color: techTheme.accentText, fontSize: 11.5, fontWeight: 800, display: "inline-flex", alignItems: "center", gap: 6 }}>
                   <i className="ti ti-clock" />Mock answer timer
@@ -2175,7 +2245,7 @@ export default function Home() {
             <div style={{ display:"flex", gap:7, alignItems:"flex-end" }}>
               <textarea ref={inputRef} value={input} onChange={e => setInput(e.target.value)}
                 onKeyDown={e => { if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();callAPI(input);} }}
-                rows={2} disabled={loading}
+                rows={2} disabled={loading || (techBuddyOpen && !practice.active)}
                 aria-label="Message composer"
                 placeholder={mode==="interview" ? "Type your answer… or use 📸/🎤" : "Ask anything about frontend, backend, DSA, system design, or databases…"}
                 className="glass-input"
@@ -2185,7 +2255,7 @@ export default function Home() {
                 <button className="icon-btn" onClick={() => setShowScreen(true)} title="Analyze Screen" aria-label="Analyze Screen" style={{ width:30, height:30, fontSize:15 }}><i className="ti ti-screenshot" /></button>
                 <button className={`icon-btn ${isListening?"recording":""}`} onClick={toggleVoice} title="Voice" aria-label="Voice" style={{ width:30, height:30, fontSize:15 }}><i className={`ti ${isListening?"ti-microphone-off":"ti-microphone"}`} /></button>
                 {showCodeTools && <button className={`icon-btn ${showCode?"active":""}`} onClick={() => setShowCode(p=>!p)} title="Code" aria-label="Code" style={{ width:30, height:30, fontSize:15 }}><i className="ti ti-code" /></button>}
-                <button onClick={() => callAPI(input)} disabled={!canSend||loading}
+                <button onClick={() => callAPI(input)} disabled={!canSend||loading || (techBuddyOpen && !practice.active)}
                   className={canSend&&!loading?"glass-button":""}
                   aria-label="Send"
                   style={{ width:30, height:30, borderRadius:7, border:canSend&&!loading?`1px solid ${techTheme.accentBorder}`:"none", background: canSend&&!loading?techTheme.accent:techTheme.accentMuted, color:"white", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, cursor: canSend&&!loading?"pointer":"not-allowed" }}>
@@ -2195,7 +2265,7 @@ export default function Home() {
             </div>
 
             {/* Desktop hint / Mobile mode bar */}
-            {isMobile && !isKeyboardOpen ? (
+            {isMobile && !isKeyboardOpen && !techBuddyOpen ? (
               <div className="composer-mode-bar" style={{ marginTop:8, display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, flexWrap:"wrap" }}>
                 <button type="button" className="glass-button" onClick={() => { setMobileHeaderOpen(true); setTopControlsOpen(true); }}>Prep settings</button>
                 <div style={{ display:"flex", background:"rgba(255,255,255,.04)", borderRadius:7, padding:2, border:"1px solid rgba(255,255,255,.07)", flex:"1 1 148px" }}>
