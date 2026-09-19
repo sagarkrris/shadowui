@@ -145,7 +145,7 @@ export function useTechBuddyMedia(onTranscript, offline = false) {
     } finally { clearTimeout(timeout); if (runtime.current.speechRequest === request) runtime.current.speechRequest = null; }
   };
 
-  const connectAvatar = async () => {
+  const connectAvatar = async (initialText = '') => {
     if (runtime.current.avatarPending) return;
     if (runtime.current.avatar) { stopSpeech(); runtime.current.avatar.close(); runtime.current.avatar = null; update({ avatarStatus: 'off' }); return; }
     stopRecognition(); stopSpeech();
@@ -167,6 +167,7 @@ export function useTechBuddyMedia(onTranscript, offline = false) {
       runtime.current.avatarPending = false;
       avatar.listen(Boolean(runtime.current.recognition));
       update({ avatarStatus: 'connected', speechMode: 'gemini' });
+      if (initialText) speak(initialText);
     } catch (error) {
       avatar.close();
       if (runtime.current.avatar === avatar) { runtime.current.avatarPending = false; runtime.current.avatar = null; update({ avatarStatus: 'off', notice: error.message }); }
@@ -194,5 +195,25 @@ export function useTechBuddyMedia(onTranscript, offline = false) {
       if (ticket === runtime.current.cameraTicket) update({ cameraPending: false });
     }
   };
-  return { ...media, videoRef, avatarRef, connectAvatar, setSpeechMode: speechMode => { stopSpeech(); update({ speechMode }); }, listen, speak, camera, stopAll, stopSpeech, stopRecognition };
+  const requestPermissions = async () => {
+    if (runtime.current.stream) return true;
+    const ticket = ++runtime.current.cameraTicket;
+    update({ cameraPending: true, notice: '' });
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      if (!runtime.current.mounted || ticket !== runtime.current.cameraTicket) { stream.getTracks().forEach(track => track.stop()); return false; }
+      const videoTracks = stream.getVideoTracks();
+      stream.getAudioTracks().forEach(track => track.stop());
+      if (!videoTracks.length) { update({ notice: 'Camera permission was granted, but no camera is available.' }); return false; }
+      runtime.current.stream = new MediaStream(videoTracks);
+      update({ cameraOn: true });
+      return true;
+    } catch {
+      if (ticket === runtime.current.cameraTicket) update({ notice: 'Camera or microphone permission was denied. You can continue without them.' });
+      return false;
+    } finally {
+      if (ticket === runtime.current.cameraTicket) update({ cameraPending: false });
+    }
+  };
+  return { ...media, videoRef, avatarRef, connectAvatar, setSpeechMode: speechMode => { stopSpeech(); update({ speechMode }); }, listen, speak, camera, requestPermissions, stopAll, stopSpeech, stopRecognition };
 }

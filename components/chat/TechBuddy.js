@@ -45,9 +45,10 @@ export default function TechBuddy({ initialSession, config, profile, onChange, o
   }, [currentQuestionId, currentQuestionText]);
 
   const configure = changes => { media.stopAll(); controller.configure(changes); };
-  const startInterview = () => {
+  const startInterview = async () => {
     speakFirstQuestion.current = true;
     media.stopSpeech();
+    await media.requestPermissions();
     controller.ask();
   };
   const submit = event => {
@@ -109,7 +110,7 @@ export default function TechBuddy({ initialSession, config, profile, onChange, o
           <div ref={avatarRef} className={styles.liveAvatar} hidden={media.avatarStatus !== 'connected'} />
           {session.mode !== 'demo' && <div className={styles.controls}>
             <label>Speech voice <select aria-label="Speech voice" disabled={media.avatarStatus !== 'off'} value={media.speechMode} onChange={event => media.setSpeechMode(event.target.value)}><option value="gemini">Natural Indian English · Gemini</option><option value="device">Device voice</option></select></label>
-            <button disabled={complete || media.avatarStatus === 'connecting'} onClick={media.connectAvatar}>{media.avatarStatus === 'connecting' ? 'Connecting interviewer…' : media.avatarStatus === 'connected' ? 'Disconnect live interviewer' : 'Connect live interviewer'}</button>
+            <button disabled={complete || media.avatarStatus === 'connecting'} onClick={() => media.connectAvatar(session.current?.question)}>{media.avatarStatus === 'connecting' ? 'Connecting interviewer…' : media.avatarStatus === 'connected' ? 'Disconnect live interviewer' : 'Connect live interviewer'}</button>
             <p className={styles.status}>Live animation uses the configured provider avatar and shares spoken responses with LiveAvatar. Your camera stays local. Reduced motion: use the static portrait by disconnecting.</p>
           </div>}
           <p className={styles.presence} data-speaking={media.speechActive} role="status">{complete ? 'Session ended' : media.speechActive ? 'Speaking' : media.speaking ? 'Preparing speech…' : media.listening ? 'Listening to your answer' : busy ? 'Considering your session' : 'Ready to practise'}</p>

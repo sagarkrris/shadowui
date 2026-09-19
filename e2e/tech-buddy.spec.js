@@ -288,7 +288,6 @@ test('unconfigured live avatar falls back and cancelling natural speech rejects 
   await buddy.getByRole('button', { name: 'Connect live interviewer' }).click();
   await expect(buddy.getByText('Live interviewer is not configured yet.', { exact: true })).toBeVisible();
   await buddy.getByRole('button', { name: 'Start Buddy interview' }).click();
-  await buddy.getByRole('button', { name: 'Read question aloud' }).click();
   await expect(buddy.getByRole('button', { name: 'Stop spoken response' })).toBeVisible();
   await buddy.getByRole('button', { name: 'Stop spoken response' }).click();
   release();
