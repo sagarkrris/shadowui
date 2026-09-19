@@ -10,6 +10,7 @@ import { withApiObservability } from "../../lib/apiObservability.mjs";
 import { getClientAddress } from "../../lib/requestSecurity.mjs";
 import { checkDistributedRateLimit } from "../../lib/redisRateLimit.mjs";
 import { createGeminiClient, generateContent } from "../../lib/googleGenai.mjs";
+import { listDsaInterviewChallenges } from "../../lib/dsaDrillRoom.mjs";
 
 async function handler(req, res) {
   const logger = createRequestLogger({ route: "/api/dsa-challenges", requestId: res.getHeader?.("X-Request-Id") || req.requestId });
@@ -55,7 +56,9 @@ async function handler(req, res) {
 
     if (!challenges.length) {
       logger.error("response.invalid_json", { modelName, textChars: text.length });
-      return res.status(502).json({ error: "Generated questions were invalid." });
+      const fallback = listDsaInterviewChallenges({ stack }).slice(0, count);
+      logger.warn("response.fallback", { modelName, challengeCount: fallback.length });
+      return res.status(200).json({ source: "fallback", model: modelName, challenges: fallback });
     }
 
     logger.info("request.done", { modelName, challengeCount: challenges.length });

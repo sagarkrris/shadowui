@@ -11,6 +11,12 @@ export function useTechBuddyMedia(onTranscript, offline = false) {
   const transcriptCallback = useRef(onTranscript);
   useEffect(() => { transcriptCallback.current = onTranscript; }, [onTranscript]);
   const update = useCallback(patch => { if (runtime.current.mounted) setMedia(previous => ({ ...previous, ...patch })); }, []);
+  const mediaErrorMessage = error => {
+    if (error?.name === 'NotFoundError' || error?.name === 'DevicesNotFoundError') return 'No camera was found. Select an available camera in Chrome settings.';
+    if (error?.name === 'NotReadableError' || error?.name === 'TrackStartError') return 'Camera is busy or unavailable. Close other apps using it, then try again.';
+    if (error?.name === 'NotAllowedError' || error?.name === 'PermissionDeniedError') return 'Camera permission was denied. Allow camera access in Chrome and try again.';
+    return 'Camera unavailable. Check your camera connection and browser permissions.';
+  };
   const stopSpeech = useCallback(() => {
     runtime.current.speechTicket++;
     window.speechSynthesis?.cancel();
@@ -141,7 +147,10 @@ export function useTechBuddyMedia(onTranscript, offline = false) {
     } catch (error) {
       if (ticket !== runtime.current.speechTicket || !runtime.current.mounted) return;
       stopSpeech();
-      update({ notice: error.name === 'AbortError' ? 'Speech request timed out. Try the device voice.' : 'Natural speech is unavailable. Select Device voice to continue.' });
+      if (error.name !== 'AbortError' && media.speechMode === 'gemini') {
+        deviceSpeak(concise ? conciseSpeechText(text) : text);
+        update({ notice: 'Natural speech is unavailable. Using your device voice instead.' });
+      } else update({ notice: error.name === 'AbortError' ? 'Speech request timed out. Try the device voice.' : 'Natural speech is unavailable. Select Device voice to continue.' });
     } finally { clearTimeout(timeout); if (runtime.current.speechRequest === request) runtime.current.speechRequest = null; }
   };
 
@@ -189,8 +198,8 @@ export function useTechBuddyMedia(onTranscript, offline = false) {
       if (!runtime.current.mounted || ticket !== runtime.current.cameraTicket) { stream.getTracks().forEach(track => track.stop()); return; }
       runtime.current.stream = stream;
       update({ cameraOn: true });
-    } catch {
-      if (ticket === runtime.current.cameraTicket) update({ notice: 'Camera unavailable or permission denied. You can continue without it.' });
+    } catch (error) {
+      if (ticket === runtime.current.cameraTicket) update({ notice: mediaErrorMessage(error) });
     } finally {
       if (ticket === runtime.current.cameraTicket) update({ cameraPending: false });
     }
@@ -208,8 +217,8 @@ export function useTechBuddyMedia(onTranscript, offline = false) {
       runtime.current.stream = new MediaStream(videoTracks);
       update({ cameraOn: true });
       return true;
-    } catch {
-      if (ticket === runtime.current.cameraTicket) update({ notice: 'Camera or microphone permission was denied. You can continue without them.' });
+    } catch (error) {
+      if (ticket === runtime.current.cameraTicket) update({ notice: mediaErrorMessage(error) });
       return false;
     } finally {
       if (ticket === runtime.current.cameraTicket) update({ cameraPending: false });

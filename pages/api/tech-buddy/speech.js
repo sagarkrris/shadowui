@@ -5,9 +5,12 @@ import { withApiObservability } from '../../../lib/apiObservability.mjs';
 import { getRequiredGeminiApiKey, runGeminiRouteOperation } from '../../../lib/aiGateway.mjs';
 import { createGeminiClient, generateContent } from '../../../lib/googleGenai.mjs';
 import { conciseSpeechText, speechPrompt, pcmToWav } from '../../../lib/techBuddySpeech.mjs';
+import { createRequestLogger } from '../../../lib/serverLogger.mjs';
 
 export const config = { api: { bodyParser: { sizeLimit: '64kb' }, responseLimit: '12mb' } };
 export default withApiObservability('/api/tech-buddy/speech', async (req, res) => {
+  const logger = createRequestLogger({ route: '/api/tech-buddy/speech', requestId: res.getHeader?.('X-Request-Id') || req.requestId });
+  res.setHeader('X-Request-Id', logger.requestId);
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   const auth = await requireConfiguredUser(req);
@@ -31,7 +34,13 @@ export default withApiObservability('/api/tech-buddy/speech', async (req, res) =
     const pcm = Buffer.from(audio.data, 'base64');
     const wav = pcmToWav(pcm).toString('base64');
     return res.status(200).json({ transcript, pcm: audio.data, wav, sampleRate: 24000 });
-  } catch {
+  } catch (error) {
+    logger.error('speech.provider_failed', {
+      error,
+      model: process.env.GEMINI_TTS_MODEL || 'gemini-2.5-flash-preview-tts',
+      code: error?.code,
+      status: error?.status,
+    });
     return res.status(503).json({ error: 'Natural speech is unavailable. Use the device voice or try again.' });
   }
 });
