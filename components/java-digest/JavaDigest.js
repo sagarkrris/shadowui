@@ -34,6 +34,7 @@ import AnswerAtAGlance from "../learning/AnswerAtAGlance";
 import MessageContent from "../chat/MessageContent";
 import useJavaDigestProgress from "./useJavaDigestProgress";
 import JavaDigestTutorialCard from "./JavaDigestTutorialCard";
+import MechanismDiagram from "./MechanismDiagram";
 import JavaDigestReviewQueue from "./JavaDigestReviewQueue";
 import TechBlogReader from "./TechBlogReader";
 
@@ -193,6 +194,11 @@ function StarAnswer({ story, accent, label = "STAR answer:", technicalAnswer = "
 function StructuredInterviewAnswer({ entry, accent }) {
   return (
     <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
+      {entry.diagramSteps?.length ? (
+        <section style={{ background: "var(--jd-surface-subtle)", border: "1px solid var(--jd-border)", borderRadius: 7, padding: 10 }}>
+          <MechanismDiagram steps={entry.diagramSteps} accent={accent} title="Mechanism at a glance" />
+        </section>
+      ) : null}
       <section style={{ background: "var(--jd-accent-surface)", border: `1px solid ${accent}33`, borderRadius: 7, padding: 10 }}>
         <strong style={{ color: accent, display: "block", fontSize: 10.5, letterSpacing: ".04em", textTransform: "uppercase" }}>Short answer</strong>
         <p style={{ color: "var(--jd-text)", fontSize: 12, lineHeight: 1.58, margin: "5px 0 0" }}>{entry.answer}</p>
@@ -1049,6 +1055,11 @@ export default function JavaDigest({ theme = {}, onAction, onJavaProgressChange,
               <div style={{ display: "grid", gap: 8, marginTop: 9 }}>
                 <p style={{ color: "var(--jd-text)", fontSize: 11.7, lineHeight: 1.55, margin: 0 }}><strong style={{ color: accent }}>Interviewer prompt:</strong> {scenario.prompt}</p>
                 <p style={{ color: "var(--jd-text-soft)", fontSize: 11.4, lineHeight: 1.5, margin: 0 }}><strong style={{ color: "var(--jd-text)" }}>Customer impact:</strong> {scenario.impact}</p>
+                {scenario.diagramSteps?.length ? (
+                  <section style={{ background: "var(--jd-surface-sunken)", border: "1px solid var(--jd-border)", borderRadius: 7, padding: 10 }}>
+                    <MechanismDiagram steps={scenario.diagramSteps} accent={accent} title="Triage flow at a glance" />
+                  </section>
+                ) : null}
                 <div><strong style={{ color: accent, fontSize: 10.3, textTransform: "uppercase" }}>End-to-end triage</strong><ol style={{ color: "var(--jd-text-soft)", display: "grid", fontSize: 11.4, gap: 5, lineHeight: 1.48, margin: "6px 0 0", paddingLeft: 20 }}>{scenario.triage.map((step) => <li key={step}>{step}</li>)}</ol></div>
                 <p style={{ color: "var(--jd-text-soft)", fontSize: 11.4, lineHeight: 1.5, margin: 0 }}><strong style={{ color: "var(--jd-accent-alt)" }}>Likely diagnosis:</strong> {scenario.diagnosis}</p>
                 <p style={{ color: "var(--jd-text-soft)", fontSize: 11.4, lineHeight: 1.5, margin: 0 }}><strong style={{ color: "#facc15" }}>Prevention:</strong> {scenario.prevention}</p>

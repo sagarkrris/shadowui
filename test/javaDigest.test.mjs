@@ -131,6 +131,14 @@ test("production interview scenarios teach end-to-end incident reasoning", () =>
   }
 });
 
+test("interview and production entries expose complete diagram metadata", () => {
+  assert.ok(JAVA_INTERVIEW_QA.every((entry) => entry.diagramSteps.length === 4));
+  assert.ok(JAVA_PRODUCTION_SCENARIOS.every((scenario) => scenario.diagramSteps.length === 4));
+  assert.ok([...JAVA_INTERVIEW_QA, ...JAVA_PRODUCTION_SCENARIOS].every((entry) => (
+    entry.diagramSteps.every((step) => typeof step === "string" && step.trim().length > 0)
+  )));
+});
+
 test("java digest filters articles by track", () => {
   const springArticles = listJavaDigestArticles("spring-boot");
 
