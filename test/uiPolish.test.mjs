@@ -88,7 +88,7 @@ test("Tech Blogs is a public self-contained study section", () => {
   const readerSource = readFileSync(new URL("../components/java-digest/TechBlogReader.js", import.meta.url), "utf8");
   const diagramSource = readFileSync(new URL("../components/java-digest/SystemDesignDiagram.js", import.meta.url), "utf8");
   assert.match(readerSource, /SystemDesignDiagram/);
-  assert.match(readerSource, /category=\{blog\.category\}/);
+  assert.match(readerSource, /kind=\{BLOG_OVERVIEW_KINDS\[blog\.id\]\}/);
   assert.match(readerSource, /gridTemplateRows: "auto minmax\(0, 1fr\)"/);
   assert.match(readerSource, /minHeight: 0, overflowY: "auto"/);
   assert.match(readerSource, /blog\.capstone/);
