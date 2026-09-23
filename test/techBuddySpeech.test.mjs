@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { conciseSpeechText, pcmToWav, speechPrompt } from '../lib/techBuddySpeech.mjs';
-import { liveAvatarRequest, startBuddyAvatar } from '../lib/techBuddyAvatarServer.mjs';
+import { conciseSpeechText, pcmToWav, speechPrompt, spokenInterviewReview } from '../lib/techBuddySpeech.mjs';
 
 test('spoken excerpts omit code and links, remain bounded, and retain visible details', () => {
   const text = conciseSpeechText('**Use a closure.**\n```js\nSECRET_CODE();\n```\n[Details](https://example.com)');
@@ -18,30 +17,15 @@ test('PCM conversion creates valid mono PCM24k WAV and rejects invalid samples',
   assert.equal(wav.readUInt32LE(40), 48000);
   assert.throws(() => pcmToWav(Buffer.alloc(3)));
 });
-test('avatar start uses LITE and returns only scoped client credentials', async () => {
-  const calls = [];
-  const fetcher = async (url, request) => {
-    calls.push({ url, ...request });
-    return Response.json({ code: 1000, data: url.endsWith('token') ? { session_token: 'scoped.token' } : { livekit_url: 'wss://room.test', ws_url: 'wss://socket.test', livekit_client_token: 'viewer', livekit_agent_token: 'private-agent' } });
-  };
-  const session = await startBuddyAvatar({ LIVEAVATAR_API_KEY: 'master-secret', LIVEAVATAR_AVATAR_ID: 'avatar' }, fetcher);
-  assert.equal(JSON.parse(calls[0].body).mode, 'LITE');
-  assert.equal(calls[1].headers.Authorization, 'Bearer scoped.token');
-  assert.doesNotMatch(JSON.stringify(session), /master-secret|private-agent/);
-  assert.equal(await startBuddyAvatar({}, fetcher), null);
-});
-test('failed avatar start releases the remote session', async () => {
-  const calls = [];
-  await assert.rejects(startBuddyAvatar({ LIVEAVATAR_API_KEY: 'key', LIVEAVATAR_AVATAR_ID: 'avatar' }, async url => {
-    calls.push(url);
-    if (url.endsWith('start')) return new Response('', { status: 503 });
-    return Response.json({ code: 100, data: { session_token: 'token' } });
-  }));
-  assert.ok(calls.at(-1).endsWith('/stop'));
-});
-test('avatar provider failures expose only safe diagnostics', async () => {
-  await assert.rejects(
-    liveAvatarRequest('token', null, {}, async () => Response.json({ code: 4002, message: 'invalid token' }, { status: 401 })),
-    (error) => error.name === 'AvatarProviderError' && error.status === 401 && error.code === 4002 && error.message === 'Avatar provider unavailable',
-  );
+
+test('spoken interview review asks the generated follow-up and keeps feedback concise', () => {
+  const narration = spokenInterviewReview({
+    feedback: 'Explain the transaction boundary and give one concrete recovery example.',
+    strengths: ['You identified the primary failure mode'],
+    gaps: ['Name the isolation guarantee'],
+    followUp: 'How would you retry safely after a timeout?'
+  });
+  assert.match(narration, /^Follow-up question: How would you retry safely/);
+  assert.match(narration, /Concise feedback:/);
+  assert.match(narration, /full feedback is available on screen/i);
 });

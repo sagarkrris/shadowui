@@ -1,5 +1,7 @@
+import { useId } from "react";
+
 function DiagramNode({ x, y, label, detail, accent }) {
-  return <g><rect x={x} y={y} width="138" height="58" rx="9" fill="rgba(255,255,255,.045)" stroke={accent} strokeOpacity=".52" /><text x={x + 69} y={y + 24} fill="var(--jd-text)" fontSize="12" fontWeight="800" textAnchor="middle">{label}</text><text x={x + 69} y={y + 42} fill="var(--jd-text-muted)" fontSize="9.5" textAnchor="middle">{detail}</text></g>;
+  return <g><rect x={x} y={y} width="138" height="58" rx="9" fill="rgba(255,255,255,.045)" stroke={accent} strokeOpacity=".52" /><text x={x + 69} y={y + 24} fill="var(--jd-text)" fontSize="14" fontWeight="800" textAnchor="middle">{label}</text><text x={x + 69} y={y + 42} fill="var(--jd-text-muted)" fontSize="12" textAnchor="middle">{detail}</text></g>;
 }
 
 function Arrow({ x1, y1, x2, y2, accent, label, markerId }) {
@@ -36,42 +38,8 @@ const DIAGRAMS = {
   default: { label: "System design reasoning loop", nodes: [[22, "Requirements", "user + target"], [210, "Components", "boundaries"], [398, "Trade-offs", "cost + risk"], [570, "Operate", "measure + recover"]] },
 };
 
-function diagramKind(category = "", concept = "") {
-  const categoryValue = category.toLocaleLowerCase();
-  const value = concept.toLocaleLowerCase();
-  if (categoryValue.includes("design pattern")) return "pattern";
-  if (categoryValue.includes("low-level")) return "lld";
-  if (categoryValue === "dsa") return "dsa";
-  if (categoryValue.includes("sql")) return "sql";
-  if (categoryValue.includes("distributed")) return "distributed";
-  if (categoryValue.includes("behavioral")) return "behavioral";
-  if (categoryValue.includes("interview craft")) return "communication";
-  if (categoryValue.includes("java evolution")) {
-    if (/java\s*8\b/.test(value)) return "java8";
-    if (/java\s*(9|11)/.test(value)) return "java911";
-    if (/java\s*(12|14)/.test(value)) return "java1214";
-    if (/java\s*(15|17)/.test(value)) return "java1517";
-    if (/java\s*(18|20)/.test(value)) return "java1820";
-    if (/java\s*21\b/.test(value)) return "java21";
-    if (/java\s*(22|24)/.test(value)) return "java2224";
-    if (/java\s*(25|26)/.test(value)) return "java2526";
-    return "javaTimeline";
-  }
-  if (categoryValue.includes("java")) return "java";
-  if (/cache|cdn/.test(value)) return "cache";
-  if (/queue|event|async|real-time|communication/.test(value)) return "event";
-  if (/database|storage|index|partitioning|replication|read and write/.test(value)) return "database";
-  if (/network|http|dns|load balanc/.test(value)) return /load balanc/.test(value) ? "scale" : "network";
-  if (/cap|consistency/.test(value)) return "cap";
-  if (/scal|throughput|bandwidth|capacity/.test(value)) return "scale";
-  if (/reliab|failure|recovery|availability/.test(value)) return "reliability";
-  if (/observ|capacity|monitor|alert/.test(value)) return "observe";
-  if (/api|security/.test(value)) return "api";
-  return "default";
-}
-
-export default function SystemDesignDiagram({ category, concept, accent }) {
-  const diagram = DIAGRAMS[diagramKind(category, concept)];
-  const markerId = `system-design-arrow-${String(concept).toLocaleLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
-  return <figure className="system-design-diagram" style={{ background: "var(--jd-surface-sunken)", border: "1px solid var(--jd-border)", borderRadius: 8, margin: "9px 0 0", padding: "9px 8px 6px" }}><figcaption style={{ color: accent, fontSize: 10.5, fontWeight: 900, marginBottom: 4, textTransform: "uppercase" }}>{diagram.label}</figcaption><svg role="img" aria-label={`${diagram.label}: ${concept}`} viewBox="0 0 720 82" width="100%" preserveAspectRatio="xMidYMid meet"><defs><marker id={markerId} markerHeight="6" markerWidth="7" orient="auto" refX="6" refY="3" viewBox="0 0 7 6"><path d="M0,0 L7,3 L0,6 Z" fill={accent} /></marker></defs>{diagram.nodes.map(([x, label, detail]) => <DiagramNode key={label} x={x} y={12} label={label} detail={detail} accent={accent} />)}{diagram.nodes.slice(0, -1).map(([x], index) => <Arrow key={x} x1={x + 143} y1={41} x2={diagram.nodes[index + 1][0] - 7} y2={41} accent={accent} markerId={markerId} />)}</svg></figure>;
+export default function SystemDesignDiagram({ kind = "default", concept, accent }) {
+  const diagram = DIAGRAMS[kind] || DIAGRAMS.default;
+  const markerId = `system-design-arrow-${useId()}`;
+  return <figure className="system-design-diagram" style={{ background: "var(--jd-surface-sunken)", border: "1px solid var(--jd-border)", borderRadius: 8, minWidth: 0, margin: "9px 0 0", padding: "9px 8px 6px" }}><figcaption style={{ color: accent, fontSize: 10.5, fontWeight: 900, marginBottom: 4, textTransform: "uppercase" }}>{diagram.label}</figcaption><div role="region" aria-label={`${diagram.label} scrollable diagram`} tabIndex={0} style={{ maxWidth: "100%", overflowX: "auto" }}><svg style={{ minWidth: 720, display: "block" }} role="img" aria-label={`${diagram.label}: ${concept}`} viewBox="0 0 720 82" width="100%" preserveAspectRatio="xMidYMid meet"><defs><marker id={markerId} markerHeight="6" markerWidth="7" orient="auto" refX="6" refY="3" viewBox="0 0 7 6"><path d="M0,0 L7,3 L0,6 Z" fill={accent} /></marker></defs>{diagram.nodes.map(([x, label, detail]) => <DiagramNode key={label} x={x} y={12} label={label} detail={detail} accent={accent} />)}{diagram.nodes.slice(0, -1).map(([x], index) => <Arrow key={x} x1={x + 143} y1={41} x2={diagram.nodes[index + 1][0] - 7} y2={41} accent={accent} markerId={markerId} />)}</svg></div></figure>;
 }

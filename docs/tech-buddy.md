@@ -32,61 +32,33 @@ AUDIO-capable Gemini TTS model accessible to that key. The voice is Charon with
 prompted Indian English pronunciation and restrained, context-appropriate delivery.
 These are generation directions, not a guarantee of a particular regional accent.
 
-“Speak concise explanation” summarizes long responses for speech while retaining
-full explanations and code in the conversation. The generated spoken transcript
-is available under “Spoken explanation.” Audio is kept in memory, never persisted.
-Device voice remains selectable when Gemini TTS is unavailable; it prefers en-IN.
-Speech recognition requests en-IN and may use the browser's recognition service.
+Each interview question is read aloud and, once playback finishes, Tech Buddy
+starts browser speech recognition for the candidate's answer. The candidate can
+mute the microphone, stop listening to edit the transcript, stop the speaker, or
+replay a question, follow-up, or concise feedback. “Speak concise explanation”
+summarizes long responses for speech while retaining full explanations and code
+in the conversation. The generated spoken transcript is available under “Spoken
+explanation.” Audio is kept in memory, never persisted. If Gemini TTS fails,
+Tech Buddy automatically switches the session to the device voice; it prefers
+en-IN. Speech recognition requests en-IN and may use the browser's recognition
+service.
 
-## Live interviewer setup
+After an assessed answer, Tech Buddy speaks the generated relevant follow-up
+first and then a short strengths-and-gaps review. The complete feedback, next
+steps, and follow-up remain visible on screen.
 
-Set these **server-only** environment variables in your deployment or `.env.local`:
+## Voice-only interview mode
 
-```
-LIVEAVATAR_API_KEY=<your provider key>
-LIVEAVATAR_AVATAR_ID=<licensed avatar ID from your account>
-LIVEAVATAR_SANDBOX=1
-```
-
-Use the provider’s sandbox avatar while testing (currently Wayne,
-`dd73ea75-1218-4ef3-92ce-606d5f7fbc0a`); it is a connectivity test, not the final
-Indian-presenting interviewer. Sandbox video lasts approximately one minute. For production, choose a licensed
-Indian-presenting avatar with the appearance and gesture range you want, and set
-`LIVEAVATAR_SANDBOX=0`. Restart the server after configuring the environment.
-Then choose **Connect live interviewer** inside Tech Buddy.
-
-The generated static portrait is not automatically converted into a LiveAvatar.
-The connected video uses the configured provider avatar. Facial expression and
-body movement fidelity depend on that avatar; there is no fabricated word-to-face
-animation or stereotyped gesture mapping. Gemini's meaning-sensitive prosody drives
-synchronized video, with explicit listening and idle states between utterances.
-
-The integration uses LiveAvatar LITE, PCM 16-bit mono 24 kHz speech over its control
-WebSocket, and a receive-only LiveKit room. The candidate's camera and microphone
-are never published to that room. The provider receives generated spoken audio.
-Only scoped session/viewer credentials reach the browser; master API keys and
-agent tokens remain server-side. Tokens are never saved with practice history.
-
-Video is opt-in, including for reduced-motion users. Disconnect to use the static
-portrait. Video sessions follow your provider account’s duration limits; reconnect video
-if a provider session expires. This does not limit the practice session.
-Disconnect, End Session, navigation and unmount all close media resources and
-request remote session termination. Provider idle/maximum duration limits remain
-the fallback if a device loses power or its network disappears.
+Tech Buddy intentionally uses voice without live video or camera permissions.
+The interviewer portrait is static; spoken questions and feedback use Gemini TTS
+or the device voice, and browser speech recognition can transcribe the candidate's
+answer. Audio is kept in memory and is not persisted with practice history.
 
 ## Validation and limitations
 
 Provider calls are bounded, authenticated using the app's existing auth policy,
 and rate-limited. Failures keep written answers available. Speech cancellation
-invalidates late responses; avatar events are matched to the current utterance.
-No live provider credentials are required by tests: transport, failure, and cleanup
-contracts use deterministic mocks. Verify real audio quality, chosen-avatar gesture
-quality, autoplay behavior and production account quotas with your configured account
-before enabling live video broadly.
+invalidates late responses, and deterministic mocks cover the voice transport.
 
-Official integration references:
+Official integration reference:
 - [Gemini speech generation](https://ai.google.dev/gemini-api/docs/speech-generation)
-- [LiveAvatar sandbox constraints](https://docs.liveavatar.com/docs/sandbox-mode)
-- [LiveAvatar LITE lifecycle](https://docs.liveavatar.com/docs/lite-mode/lifecycle)
-- [LiveAvatar control events](https://docs.liveavatar.com/docs/lite-mode/events)
-- [LiveKit browser SDK](https://docs.livekit.io/reference/client-sdk-js/)

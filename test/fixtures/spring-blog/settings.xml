@@ -1,0 +1,6 @@
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0">
+  <!-- These public tutorial dependencies do not require a corporate repository. -->
+  <mirrors>
+    <mirror><id>central</id><mirrorOf>*</mirrorOf><url>https://repo.maven.apache.org/maven2</url></mirror>
+  </mirrors>
+</settings>
