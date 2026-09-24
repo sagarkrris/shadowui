@@ -48,6 +48,7 @@ test("production Tech Blogs include full-length courses for the highest-value ga
     "spring-boot-security",
     "resilience-engineering",
     "microservices-migration-patterns",
+    "java-api-evolution-contracts",
   ];
 
   for (const id of ids) {
@@ -83,6 +84,7 @@ test("production Tech Blogs include full-length courses for the highest-value ga
     "spring-boot-security",
     "resilience-engineering",
     "microservices-migration-patterns",
+    "java-api-evolution-contracts",
   ]) {
     const course = blogs.get(id);
     assert.equal(course.chapters.length, 6);

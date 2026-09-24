@@ -936,7 +936,7 @@ export default function JavaDigest({ theme = {}, onAction, onJavaProgressChange,
         onStepSelect={onBeginnerStepChange}
         detail="For Java: read one concept, predict the interview trap, explain the code cue, practice one drill card, then review the follow-up."
       />
-      <AnswerAtAGlance category="Java" takeaway="Read the runtime rule first, then connect it to the API choice and the production behavior you would observe." complexity="State the relevant time/space cost and the safety or throughput trade-off." edgeCases="Nulls, mutable keys, empty collections, concurrent access, lifecycle boundaries, and version compatibility." />
+      {activeView !== "Tech Blogs" && <AnswerAtAGlance category="Java" takeaway="Read the runtime rule first, then connect it to the API choice and the production behavior you would observe." complexity="State the relevant time/space cost and the safety or throughput trade-off." edgeCases="Nulls, mutable keys, empty collections, concurrent access, lifecycle boundaries, and version compatibility." />}
 
       <header style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "space-between" }}>
         <div style={wrap}>
@@ -944,7 +944,7 @@ export default function JavaDigest({ theme = {}, onAction, onJavaProgressChange,
           <h2 style={{ ...wrap, color: "var(--jd-text)", fontSize: 19, lineHeight: 1.25, marginTop: 4 }}>{viewMetadata.title}</h2>
           <p style={{ ...wrap, color: "var(--jd-text-muted)", fontSize: 11.5, lineHeight: 1.45, margin: "4px 0 0" }}>{viewMetadata.description}</p>
         </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 7, minWidth: 0 }}>
+        <div className="java-digest-view-tabs" role="navigation" aria-label="Java Digest sections" style={{ display: "flex", flexWrap: "wrap", gap: 7, minWidth: 0 }}>
           {tabs.map((tab) => (
             <ChipButton
               key={tab.label}
@@ -958,6 +958,8 @@ export default function JavaDigest({ theme = {}, onAction, onJavaProgressChange,
         </div>
       </header>
 
+      <details className="java-digest-progress-details">
+      <summary>Learning progress · Mastery {competencySummary.masteryScore}%</summary>
       <section className="java-digest-progress" style={{ background: "var(--jd-surface-subtle)", border: `1px solid ${accentBorder}`, borderRadius: 8, display: "grid", gap: 9, padding: 10 }}>
         <div className="java-digest-progress-summary" style={{ alignItems: "baseline", display: "flex", flexWrap: "wrap", gap: "6px 18px" }}>
           <span style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Java Digest {JAVA_DIGEST_VERSION}</span>
@@ -974,6 +976,7 @@ export default function JavaDigest({ theme = {}, onAction, onJavaProgressChange,
         </div>
       </section>
 
+      </details>
       <section className="java-digest-search" style={{ border: `1px solid ${accentBorder}`, borderRadius: 10, display: "grid", gap: 8, minWidth: 0, padding: 10, width: "min(100%, 680px)" }}>
         <form className="java-digest-search-form" onSubmit={submitSearch} style={{ ...wrap, display: "grid", gap: 6 }}>
           <span className="java-digest-search-label" style={{ color: "var(--jd-text-muted)", fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Search Interview Topic</span>

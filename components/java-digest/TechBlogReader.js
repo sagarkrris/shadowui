@@ -1,28 +1,33 @@
 import CourseDiagram from "./CourseDiagram";
+import FieldNoteLesson from "./FieldNoteLesson";
 import { BLOG_OVERVIEW_DIAGRAMS, BLOG_OVERVIEW_KINDS } from "../../lib/techBlogDiagrams.mjs";
 import ChapterGuidance from "./ChapterGuidance";
-import { useEffect } from "react";
-import Link from "next/link";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import SystemDesignDiagram from "./SystemDesignDiagram";
 
 const wrap = { minWidth: 0, overflowWrap: "anywhere", wordBreak: "break-word" };
 
 export default function TechBlogReader({ blog, accent, learningProgress, onToggleChapter, onClose }) {
+  const [portalTarget, setPortalTarget] = useState(null);
   useEffect(() => {
+    setPortalTarget(document.querySelector(".app-shell") || document.body);
     const closeOnEscape = (event) => event.key === "Escape" && onClose();
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [onClose]);
 
-  return (
-    <div role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }} style={{ alignItems: "center", background: "rgba(3,8,18,.72)", display: "flex", inset: 0, justifyContent: "center", padding: 16, position: "fixed", zIndex: 300 }}>
+  if (!portalTarget) return null;
+
+  return createPortal(
+    <div className="java-digest tech-blog-reader" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }} style={{ alignItems: "center", background: "rgba(3,8,18,.72)", display: "flex", inset: 0, justifyContent: "center", padding: 16, position: "fixed", zIndex: 300 }}>
       <section role="dialog" aria-modal="true" aria-label={`${blog.title} full lesson`} style={{ background: "var(--jd-background)", border: `1px solid ${accent}55`, borderRadius: 12, boxShadow: "0 24px 80px rgba(0,0,0,.5)", color: "var(--jd-text)", display: "grid", gap: 14, gridTemplateRows: "auto minmax(0, 1fr)", maxHeight: "min(90vh, 900px)", maxWidth: 980, overflow: "hidden", width: "100%" }}>
         <header style={{ alignItems: "flex-start", borderBottom: "1px solid var(--jd-border)", display: "flex", gap: 12, justifyContent: "space-between", padding: "16px 18px 14px" }}>
           <div style={{ minWidth: 0 }}><div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>{blog.category} · STUDY NOTE</div><h2 style={{ ...wrap, fontSize: 21, lineHeight: 1.2, margin: "5px 0" }}>{blog.title}</h2><p style={{ ...wrap, color: "var(--jd-text-muted)", fontSize: 12, lineHeight: 1.5, margin: 0 }}>{blog.summary}</p></div>
           <button type="button" className="glass-button" aria-label="Close lesson reader" onClick={onClose} style={{ border: "1px solid var(--jd-border-strong)", borderRadius: 7, color: "var(--jd-text)", flex: "0 0 auto", padding: "7px 10px" }}><i className="ti ti-x" /></button>
         </header>
         <div className="java-digest-reader-scroll" style={{ display: "grid", gap: 14, minWidth: 0, gridTemplateColumns: "minmax(0, 1fr)", minHeight: 0, overflowY: "auto", padding: "0 18px 20px" }}>
-          {blog.format === 'field-note' && <p><Link href={`/tech-blogs/${blog.id}`} style={{ color: accent }}>Open the article, runnable example, references and misconception check →</Link></p>}
+          {blog.format === 'field-note' ? <FieldNoteLesson key={blog.id} blog={blog} learningProgress={learningProgress} onToggleChapter={onToggleChapter} /> : <>
           <section style={{ background: "var(--jd-accent-surface)", border: `1px solid ${accent}33`, borderRadius: 8, display: "grid", gap: 7, padding: 11 }}><strong style={{ color: accent, fontSize: 11.5 }}>Course overview</strong>{blog.sections.map((section) => <div key={section.heading}><strong style={{ display: "block", fontSize: 11.5 }}>{section.heading}</strong><p style={{ color: "var(--jd-text-soft)", fontSize: 11.5, lineHeight: 1.55, margin: "3px 0 0" }}>{section.body}</p></div>)}</section>
           {BLOG_OVERVIEW_DIAGRAMS[blog.id] ? <CourseDiagram diagramKey={BLOG_OVERVIEW_DIAGRAMS[blog.id]} accent={accent} /> : <SystemDesignDiagram kind={BLOG_OVERVIEW_KINDS[blog.id]} concept={blog.title} accent={accent} />}
           <section style={{ background: "var(--jd-surface-subtle)", border: "1px solid var(--jd-border)", borderRadius: 8, padding: 11 }}><strong style={{ color: accent, fontSize: 11.5 }}>Key lessons</strong><div style={{ color: "var(--jd-text-soft)", display: "grid", fontSize: 11.3, gap: 6, lineHeight: 1.5, marginTop: 7 }}>{blog.lessons.map((lesson) => <div key={lesson}>✓ {lesson}</div>)}</div></section>
@@ -31,8 +36,9 @@ export default function TechBlogReader({ blog, accent, learningProgress, onToggl
           {blog.chapters?.length ? <section style={{ display: "grid", gap: 10, minWidth: 0 }}><strong style={{ color: accent, fontSize: 11.5 }}>Full course · {blog.chapters.length} chapters</strong>{blog.chapters.map((chapter) => { const chapterId = `${blog.id}-chapter-${chapter.order}`; const completed = learningProgress.completedIds.has(chapterId); return <article key={chapter.title} style={{ minWidth: 0, background: "var(--jd-surface-subtle)", border: "1px solid var(--jd-border)", borderRadius: 8, padding: 11 }}><h3 style={{ fontSize: 13, margin: 0 }}>{chapter.title}</h3><CourseDiagram diagramKey={chapter.diagramKey} accent={accent} /><p style={{ color: "var(--jd-text-soft)", fontSize: 11.3, lineHeight: 1.55, margin: "5px 0 0" }}>{chapter.lesson}</p><div style={{ borderLeft: `2px solid ${accent}`, color: "var(--jd-text-soft)", fontSize: 11.1, lineHeight: 1.5, marginTop: 8, paddingLeft: 9 }}><strong style={{ color: accent }}>Walkthrough:</strong> {chapter.walkthrough}</div><div style={{ background: `${accent}0d`, borderRadius: 6, color: accent, fontSize: 10.6, lineHeight: 1.45, marginTop: 8, padding: "7px 8px", whiteSpace: "pre-wrap" }}>{chapter.diagram}</div><p style={{ color: "var(--jd-code-text)", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 10.7, lineHeight: 1.5, margin: "8px 0 0", whiteSpace: "pre-wrap" }}>{chapter.example}</p><p style={{ color: "var(--jd-text-soft)", fontSize: 11.1, lineHeight: 1.5, margin: "7px 0 0" }}><strong style={{ color: accent }}>Exercise:</strong> {chapter.exercise}</p><div style={{ background: "var(--jd-accent-surface)", borderRadius: 6, color: "var(--jd-text-soft)", fontSize: 11, lineHeight: 1.5, marginTop: 8, padding: "8px 9px" }}><strong style={{ color: accent }}>Self-check:</strong> {chapter.quiz}</div><ChapterGuidance chapter={chapter} /><button type="button" className="glass-button" onClick={() => onToggleChapter(chapterId)} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "var(--jd-text)", fontSize: 10.5, marginTop: 8, padding: "5px 8px" }}><i className={`ti ${completed ? "ti-check" : "ti-circle-check"}`} style={{ color: accent, marginRight: 5 }} />{completed ? "Chapter completed" : "Mark chapter complete"}</button></article>; })}</section> : null}
           {blog.capstone ? <section style={{ background: "var(--jd-accent-surface)", border: `1px solid ${accent}55`, borderRadius: 8, display: "grid", gap: 8, padding: 12 }}><strong style={{ color: accent, fontSize: 11.5 }}>{blog.capstone.title}</strong><p style={{ color: "var(--jd-text)", fontSize: 11.5, lineHeight: 1.55, margin: 0 }}>{blog.capstone.scenario}</p><ol style={{ color: "var(--jd-text-soft)", display: "grid", fontSize: 11.2, gap: 6, lineHeight: 1.5, margin: 0, paddingLeft: 18 }}>{blog.capstone.steps.map((step) => <li key={step}>{step}</li>)}</ol><p style={{ color: "var(--jd-text-soft)", fontSize: 11.2, lineHeight: 1.5, margin: 0 }}><strong style={{ color: accent }}>Capstone outcome:</strong> {blog.capstone.outcome}</p></section> : null}
           <section style={{ background: "var(--jd-surface-sunken)", border: "1px solid var(--jd-border)", borderRadius: 8, display: "grid", gap: 7, padding: 11 }}><strong style={{ color: accent, fontSize: 11.5 }}>Interview checkpoint</strong>{blog.interviewQuestions.map((question) => <div key={question} style={{ color: "var(--jd-text-soft)", fontSize: 11.3, lineHeight: 1.5 }}>✓ {question}</div>)}<p style={{ color: "var(--jd-text-muted)", fontSize: 11.2, lineHeight: 1.5, margin: 0 }}><strong style={{ color: accent }}>Practice prompt:</strong> {blog.practice}</p></section>
+          </>}
         </div>
       </section>
-    </div>
+    </div>, portalTarget
   );
 }

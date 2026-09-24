@@ -6,6 +6,7 @@ const courses = [
   ["Spring Boot Security: Identity, Authorization, and Safe Defaults", "/tech-blogs/spring-boot-security", "Capstone: Secure a multi-tenant order API"],
   ["Resilience Engineering: Containing Failure Before It Spreads", "/tech-blogs/resilience-engineering", "Capstone: Stop a dependency outage from cascading"],
   ["Microservices Migration Patterns: From Monolith to Safe Change", "/tech-blogs/microservices-migration-patterns", "Capstone: Extract order history safely"],
+  ["Java API Evolution: Ship Compatible Contracts with Confidence", "/tech-blogs/java-api-evolution-contracts", "Capstone: Evolve an order-status API safely"],
 ];
 
 for (const [title, path, capstone] of courses) {
