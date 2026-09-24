@@ -219,8 +219,6 @@ export default function Home() {
   const pendingPracticeCard = useRef(null);
   const toastTimer = useRef(null);
   const userMenuRef = useRef(null);
-  const scrollPositionsRef = useRef({});
-  const previousActiveTabRef = useRef(activeTab);
   // Keep a compact popover inside the content column when the header wraps.
   useEffect(() => {
     if (!topControlsOpen) return;
@@ -690,7 +688,13 @@ export default function Home() {
   }, [activeTab]);
 
   // ── Auto-scroll ───────────────────────────────────────────────────────────
-  useEffect(() => { chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: "smooth" }); }, [messages, loading]);
+  useEffect(() => {
+    if (!sessionReady || activeTab !== "chat" || homeView || techBuddyOpen || messages.length === 0) return;
+    const scroller = chatRef.current;
+    scroller?.scrollTo({ top: scroller.scrollHeight, behavior: "smooth" });
+    // Stop an in-flight chat animation before this container displays another workspace.
+    return () => scroller?.scrollTo({ top: scroller.scrollTop, behavior: "instant" });
+  }, [messages, loading, activeTab, homeView, techBuddyOpen, sessionReady]);
 
   useEffect(() => {
     if (activeTab === "chat" && messages.length === 0 && !loading) {
@@ -699,12 +703,10 @@ export default function Home() {
   }, [activeTab, messages.length, loading, candidateProfile, selectedCat, selectedSub, mode, interviewMode]);
 
   useEffect(() => {
-    if (previousActiveTabRef.current === activeTab) return;
-    const previousTab = previousActiveTabRef.current;
-    if (chatRef.current) scrollPositionsRef.current[previousTab] = chatRef.current.scrollTop;
-    previousActiveTabRef.current = activeTab;
-    requestAnimationFrame(() => chatRef.current?.scrollTo({ top: scrollPositionsRef.current[activeTab] || 0, behavior: "auto" }));
-  }, [activeTab]);
+    if (sessionReady && (activeTab !== "chat" || homeView || techBuddyOpen)) {
+      chatRef.current?.scrollTo({ top: 0, behavior: "instant" });
+    }
+  }, [activeTab, homeView, techBuddyOpen, sessionReady]);
 
   useEffect(() => {
     if (!showCodeTools) {

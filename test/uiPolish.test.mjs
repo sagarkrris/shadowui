@@ -174,7 +174,7 @@ test("laptop header wraps controls instead of clipping the right edge", () => {
 
 test("workspace loading and navigation preserve user context", () => {
   assert.match(indexSource, /dashboard-skeleton/);
-  assert.match(indexSource, /scrollPositionsRef/);
+  // Initial position and chat follow behavior are verified in workspace-scroll-position.spec.js.
   assert.match(indexSource, /cloudStatus/);
   assert.match(indexSource, /data-tooltip="Topics"/);
   assert.match(globalsSource, /composer-footer/);
