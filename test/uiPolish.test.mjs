@@ -86,16 +86,21 @@ test("Tech Blogs is a public self-contained study section", () => {
   assert.doesNotMatch(javaDigestSource, /Read the lessons here without an account/);
   assert.doesNotMatch(javaDigestSource, /Original study notes|Choose a lesson to open/);
   const readerSource = readFileSync(new URL("../components/java-digest/TechBlogReader.js", import.meta.url), "utf8");
-  const diagramSource = readFileSync(new URL("../components/java-digest/SystemDesignDiagram.js", import.meta.url), "utf8");
-  assert.match(readerSource, /SystemDesignDiagram/);
-  assert.match(readerSource, /kind=\{BLOG_OVERVIEW_KINDS\[blog\.id\]\}/);
+  const overviewSource = readFileSync(new URL("../components/java-digest/CourseOverviewDiagram.js", import.meta.url), "utf8");
+  const diagramSource = readFileSync(new URL("../components/java-digest/CourseDiagram.js", import.meta.url), "utf8");
+  const publicSource = readFileSync(new URL("../pages/tech-blogs/[slug].js", import.meta.url), "utf8");
+  const fieldNoteSource = readFileSync(new URL("../components/reader/BackendFieldNote.js", import.meta.url), "utf8");
+  // All readers must use the authored course mapping, not a generic fallback.
+  for (const source of [readerSource, publicSource, fieldNoteSource]) {
+    assert.match(source, /<CourseOverviewDiagram\s+courseId=\{blog\.id\}/);
+  }
+  assert.match(overviewSource, /<CourseDiagram\s+diagramKey=\{BLOG_OVERVIEW_DIAGRAMS\[courseId\]\}/);
   assert.match(readerSource, /gridTemplateRows: "auto minmax\(0, 1fr\)"/);
   assert.match(readerSource, /minHeight: 0, overflowY: "auto"/);
   assert.match(readerSource, /blog\.capstone/);
   assert.match(diagramSource, /aria-label=/);
-  assert.match(diagramSource, /Load balancer/);
-  assert.match(diagramSource, /Queue/);
-  assert.match(diagramSource, /Consistency/);
+  assert.match(diagramSource, /role="img"/);
+  assert.match(diagramSource, /Text view/);
   assert.match(techBlogsSource, /system-design-handbook/);
   assert.match(techBlogsSource, /practice:/);
 });
