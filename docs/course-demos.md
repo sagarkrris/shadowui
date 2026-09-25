@@ -21,6 +21,21 @@ demonstrations, not one simulation per chapter.
 
 The coverage test intentionally fails when a newly added course has no demo.
 
+## Visual teaching contract
+
+Every course also needs an explicit overview in `BLOG_OVERVIEW_DIAGRAMS` (or
+`SUPPLEMENTAL_OVERVIEWS`). Public articles, field notes, and the workspace
+use `CourseOverviewDiagram`; no reader-specific generic fallback is used.
+Add authored nodes, labeled edges, and an explanation to `COURSE_DIAGRAMS`
+or `SUPPLEMENTAL_DIAGRAMS`. Pattern catalog entries use `PATTERN_DIAGRAMS`.
+Run `node --test test/courseDiagramCoverage.test.mjs` to verify coverage,
+edge references, and canvas bounds.
+
+The player puts the current action before its state cards, offers selectable
+steps, and shows before/after values for changed cells. The Strategy example
+adds a responsive call flow and explicit pricing arithmetic; it is still a
+fixed teaching trace, not an executed Java program.
+
 ## Playback contract
 
 - Start paused; play advances once per selected interval and stops at the end.

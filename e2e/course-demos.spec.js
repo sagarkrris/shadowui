@@ -6,6 +6,7 @@ for (const blog of listTechBlogs()) {
   test(`${blog.id} has a usable interactive demo`, async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto(`/tech-blogs/${blog.id}`);
+    await expect(page.locator('[data-course-diagram]').first()).toBeVisible();
     const demo = page.getByRole('region', { name: 'Interactive course demo' });
     await expect(demo).toBeVisible();
     await expect(demo.getByRole('button', { name: 'Back', exact: true })).toBeDisabled();
@@ -17,6 +18,40 @@ for (const blog of listTechBlogs()) {
     await expect(demo.getByText(/^Step 1 of/)).toBeVisible();
     await expect(demo.getByRole('group', { name: 'Current model state' })).toHaveText(initial, { useInnerText: true });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBeTruthy();
+  });
+}
+
+test('pricing explains the call, calculation, and before/after on mobile', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto('/tech-blogs/design-patterns-in-18-minutes');
+  const demo = page.getByRole('region', { name: 'Interactive course demo' });
+  const flow = demo.getByRole('figure', { name: 'Pricing call flow' });
+  await expect(flow).toContainText('$100 − $0 = $100');
+  await demo.getByRole('button', { name: '3. Complete quote', exact: true }).click();
+  await expect(flow).toContainText('Returned quote: $100');
+  await expect(demo.getByText('Before → after: pending → 100', { exact: true })).toBeVisible();
+  await demo.getByRole('combobox', { name: 'Scenario', exact: true }).selectOption('1');
+  await expect(flow).toContainText('$100 − (10% × $100) = $90');
+  await expect(flow).toContainText('Quote not returned yet.');
+  await demo.getByRole('button', { name: '3. Complete quote', exact: true }).click();
+  await expect(flow).toContainText('Returned quote: $90');
+  await flow.screenshot({ path: testInfo.outputPath('pricing-mobile.png') });
+  await expect(page.locator('[data-course-diagram="patternFactory"]').first()).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBeTruthy();
+});
+
+for (const [slug, key] of [
+  ['design-patterns-in-18-minutes', 'patternChoice'],
+  ['request-timed-out-did-payment-happen', 'paymentUnknown'],
+]) {
+  test(`workspace shares overview for ${slug}`, async ({ page }) => {
+    const blog = listTechBlogs().find(entry => entry.id === slug);
+    await gotoSeededApp(page, { activeTab: 'javaDigest', homeDemoSeen: true });
+    await page.getByRole('button', { name: 'Tech Blogs', exact: true }).click();
+    await page.getByText(blog.title, { exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: `${blog.title} full lesson` });
+    await expect(dialog.locator(`[data-course-diagram="${key}"]`).first()).toBeVisible();
+    if (blog.patterns) await expect(dialog.locator('[data-course-diagram="patternBuilder"]')).toBeVisible();
   });
 }
 

@@ -1,3 +1,4 @@
+import CourseOverviewDiagram from "../java-digest/CourseOverviewDiagram";
 import Head from 'next/head';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -14,7 +15,7 @@ export default function BackendFieldNote({ blog }) {
       <header><p className={styles.eyebrow}>{blog.category} · {blog.minutes} MIN READ</p><h1>{blog.title}</h1><p className={styles.lead}>{blog.summary}</p></header>
       <nav className={styles.actions} aria-label="Article sections"><a href="#overview">2-minute overview</a><a href="#experiment">Predict and experiment</a><a href="#deep-explanation">Deep explanation</a><a href="#try-it">Try it yourself</a><a href="#misconception">Check your understanding</a></nav>
       <section id="overview"><h2>2-minute overview</h2><p>{blog.overview}</p></section>
-      <CourseDemo courseId={blog.id} />
+      <CourseOverviewDiagram courseId={blog.id} /><CourseDemo courseId={blog.id} />
       <ArticleExperiment key={blog.id} id={blog.id} />
       <section><h2>Follow the annotated trace</h2><p>Fictional events chosen to isolate the mechanism; times and positions are illustrative.</p><ol className={styles.trace}>{blog.trace.map(([time, event, meaning]) => <li key={time}><strong>{time} — {event}</strong><p>{meaning}</p></li>)}</ol></section>
       <section id="deep-explanation"><h2>Deep explanation</h2>{blog.chapters.map(chapter => <section key={chapter.order} className={styles.card}><h3>{chapter.order}. {chapter.title}</h3><p>{chapter.lesson}</p><pre tabIndex={0} aria-label={`Trace for ${chapter.title}`}><code>{chapter.example}</code></pre><p><strong>Try reasoning through it:</strong> {chapter.exercise}</p></section>)}</section>

@@ -16,6 +16,13 @@
 .check input { width: 20px; height: 20px; }
 .panel progress { display: block; width: 100%; height: 8px; accent-color: var(--jd-accent, #8bd3ff); }
 .step { font-weight: 700; }
+.stages { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; }
+.stages button { min-height: 44px; padding: 8px; border: 1px solid var(--jd-border-strong, #6d8aaa); border-radius: 6px; font: inherit; text-align: left; color: inherit; background: var(--jd-surface-sunken, #0b1728); cursor: pointer; }
+.stages button[aria-current], .flow li[aria-current] { outline: 2px solid var(--jd-accent, #8bd3ff); outline-offset: 2px; }
+.pricing { margin: 18px 0; padding: 14px; border: 1px solid var(--jd-border, #38516e); border-radius: 8px; }
+.flow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; list-style: none; padding: 0; }
+.flow li { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid var(--jd-border, #38516e); border-radius: 8px; }
+@media (max-width: 600px) { .flow { grid-template-columns: 1fr; } }
 .state { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); gap: 10px; }
 .cell { display: flex; flex-direction: column; gap: 8px; border: 2px solid var(--jd-border, #38516e); border-radius: 9px; padding: 12px; min-width: 0; background: var(--jd-surface-sunken, #0b1728); transition: border-color .25s, background-color .25s; }
 .changed { border-color: var(--jd-accent, #8bd3ff); background: var(--jd-accent-surface, #19314a); }

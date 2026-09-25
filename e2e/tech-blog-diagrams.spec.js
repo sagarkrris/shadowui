@@ -2,6 +2,8 @@ import { test, expect } from "@playwright/test";
 import { gotoSeededApp } from "./helpers/app.js";
 
 const pages = [
+  ["design-patterns-in-18-minutes", ["patternChoice", "patternFactory", "patternStrategy", "patternInjection"]],
+  ["java-design-patterns-with-diagrams", ["patternStrategy", "patternAdapter", "patternState"]],
   ["java-observability-opentelemetry", ["observeSignals", "observeSpans", "observeContext", "observeCardinality", "observeSampling", "observeRecovery"]],
   ["api-gateway-production-patterns", ["gatewayTrust"]],
   ["load-balancing-algorithms", ["lbPipeline", "lbScores", "lbRing"]],
@@ -42,6 +44,9 @@ for (const width of [375, 1366]) {
           await region.evaluate(el => { el.scrollLeft = 0; });
           await diagram.screenshot({ path: testInfo.outputPath("cache-race.png") });
         }
+        if (width === 1366 && ["patternFactory", "patternInjection"].includes(key)) {
+          await diagram.screenshot({ path: testInfo.outputPath(`${key}.png`) });
+        }
       }
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
       const firstAnswer = page.locator("details").filter({
@@ -74,7 +79,7 @@ test("diagram text view preserves branch meaning on mobile and supports keyboard
 test("observability diagram card visual check", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto("/tech-blogs/java-observability-opentelemetry");
-  await page.locator('[data-course-diagram="observeSignals"]').screenshot({ path: testInfo.outputPath("observability-card.png") });
+  await page.locator('[data-course-diagram="observeSignals"]').first().screenshot({ path: testInfo.outputPath("observability-card.png") });
 });
 
 test("workspace displays observability chapter illustrations", async ({ page }) => {

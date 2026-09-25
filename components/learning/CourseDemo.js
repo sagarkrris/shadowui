@@ -99,15 +99,39 @@ function DemoPlayer({ demo }) {
     <p className={styles.hint}>Starts paused. Reset returns to the first step with your selected inputs. Changing inputs starts a new run.</p>
     <progress aria-label="Demo progress" max={frames.length} value={step + 1} />
     <p className={styles.step}>Step {step + 1} of {frames.length}</p>
+    <div className={styles.explanation} aria-live={playing ? 'off' : 'polite'} aria-atomic="true">
+      <h4>{current.title}</h4><p>{current.explanation}</p>
+    </div>
+    {demo.id === 'strategy' && <PricingFlow step={step} discounted={options.scenario === 1} />}
+    <ol className={styles.stages} aria-label="Demo steps">
+      {frames.map((entry, index) => <li key={index}>
+        <button type="button" aria-current={index === step ? 'step' : undefined} onClick={() => move(index)}>
+          {index + 1}. {entry.title}
+        </button>
+      </li>)}
+    </ol>
     <div className={styles.state} role="group" aria-label="Current model state">
       {current.cells.map(item => <div key={item.label} className={`${styles.cell} ${item.active ? styles.changed : ''}`}>
         <strong>{item.label}</strong><span>{item.value}</span>
         <small>{step === 0 ? 'Initial state' : item.active ? 'Changed this step' : 'Unchanged'}</small>
+        {item.active && <small>Before → after: {frames[step - 1].cells.find(previous => previous.label === item.label)?.value ?? 'not present'} → {item.value}</small>}
       </div>)}
-    </div>
-    <div className={styles.explanation} aria-live={playing ? 'off' : 'polite'} aria-atomic="true">
-      <h4>{current.title}</h4><p>{current.explanation}</p>
     </div>
     <p><strong>Explain it:</strong> {demo.question}</p>
   </div>;
+}
+
+function PricingFlow({ step, discounted }) {
+  const policy = discounted ? 'TenPercentOff' : 'Standard';
+  const calculation = discounted ? '$100 − (10% × $100) = $90' : '$100 − $0 = $100';
+  return <figure className={styles.pricing} aria-label="Pricing call flow">
+    <figcaption><strong>Follow one $100 order</strong></figcaption>
+    <p>Setup: inject {policy} as the PricingPolicy. Checkout uses the same price(subtotal) call in both scenarios.</p>
+    <ol className={styles.flow}>
+      <li aria-current={step === 0 ? 'step' : undefined}><strong>1. Checkout receives $100</strong><span>The order subtotal is input, not yet a quote.</span></li>
+      <li aria-current={step === 1 ? 'step' : undefined}><strong>2. Checkout → {policy}</strong><span>price($100): {calculation}</span></li>
+      <li aria-current={step === 2 ? 'step' : undefined}><strong>3. {policy} → Checkout</strong><span>{step === 2 ? `Returned quote: ${discounted ? '$90' : '$100'}` : 'Quote not returned yet.'}</span></li>
+    </ol>
+    <p><strong>What changes?</strong> The injected pricing rule and the result. <strong>What stays the same?</strong> Checkout and its interface call. Choose the other scenario to compare. This illustration excludes tax, shipping, and currency rounding.</p>
+  </figure>;
 }
