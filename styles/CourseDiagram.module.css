@@ -1,0 +1,35 @@
+.figure {
+  min-width: 0;
+  margin: 20px 0;
+  padding: 18px;
+  color: var(--jd-text, #e5edf8);
+  background: var(--jd-surface-subtle, #101d30);
+  border: 1px solid var(--jd-border, #38516e);
+  border-top: 3px solid var(--diagram-accent);
+  border-radius: 12px;
+}
+.header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.header > div { min-width: 0; }
+.eyebrow { display: block; font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--jd-text-muted, #adc2db); margin-bottom: 6px; }
+.title { font-size: 17px; font-weight: 700; line-height: 1.4; }
+.controls { display: flex; gap: 4px; padding: 3px; border: 1px solid var(--jd-border, #38516e); border-radius: 8px; }
+.controls button { font: inherit; font-size: 13px; min-height: 44px; padding: 8px 12px; border: 0; border-radius: 5px; background: transparent; color: inherit; cursor: pointer; }
+.controls button[aria-pressed="true"] { background: var(--jd-accent-surface-strong, #263e58); font-weight: 700; box-shadow: inset 0 -2px var(--diagram-accent); }
+.controls button:focus-visible, .canvas:focus-visible { outline: 2px solid var(--jd-text, #e5edf8); outline-offset: 3px; }
+.description { font-size: 14px; line-height: 1.7; margin: 14px 0; overflow-wrap: anywhere; }
+.canvas { max-width: 100%; overflow-x: auto; border: 1px solid var(--jd-border, #38516e); border-radius: 8px; background: var(--jd-surface-sunken, #101d30); }
+.edgeLabel { paint-order: stroke; stroke: var(--jd-surface-sunken, #101d30); stroke-width: 4px; stroke-linejoin: round; }
+.hint { font-size: 12px; line-height: 1.5; margin: 10px 0 0; color: var(--jd-text-muted, #adc2db); }
+.nodes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); gap: 10px; margin: 0; }
+.nodes > div { padding: 12px; border: 1px solid var(--jd-border, #38516e); border-radius: 8px; background: var(--jd-surface-sunken, #101d30); }
+.nodes dt { font-weight: 700; font-size: 14px; }
+.nodes dd { margin: 5px 0 0; font-size: 13px; line-height: 1.6; }
+.connectionHeading { margin: 18px 0 8px; font-size: 14px; }
+.connections { padding-left: 20px; margin: 0; font-size: 13px; line-height: 1.8; }
+.connections li { padding: 6px 0; overflow-wrap: anywhere; }
+.relationship { display: inline-block; padding: 0 6px; margin: 0 5px; border: 1px solid var(--jd-border, #38516e); border-radius: 4px; }
+.textView { overflow-wrap: anywhere; }
+@media (max-width: 480px) {
+  .figure { padding: 12px; }
+  .title { font-size: 16px; }
+}

@@ -1,4 +1,5 @@
 import CourseDiagram from "./CourseDiagram";
+import CourseDemo from "../learning/CourseDemo";
 import FieldNoteLesson from "./FieldNoteLesson";
 import { BLOG_OVERVIEW_DIAGRAMS, BLOG_OVERVIEW_KINDS } from "../../lib/techBlogDiagrams.mjs";
 import ChapterGuidance from "./ChapterGuidance";
@@ -27,6 +28,7 @@ export default function TechBlogReader({ blog, accent, learningProgress, onToggl
           <button type="button" className="glass-button" aria-label="Close lesson reader" onClick={onClose} style={{ border: "1px solid var(--jd-border-strong)", borderRadius: 7, color: "var(--jd-text)", flex: "0 0 auto", padding: "7px 10px" }}><i className="ti ti-x" /></button>
         </header>
         <div className="java-digest-reader-scroll" style={{ display: "grid", gap: 14, minWidth: 0, gridTemplateColumns: "minmax(0, 1fr)", minHeight: 0, overflowY: "auto", padding: "0 18px 20px" }}>
+          <CourseDemo courseId={blog.id} />
           {blog.format === 'field-note' ? <FieldNoteLesson key={blog.id} blog={blog} learningProgress={learningProgress} onToggleChapter={onToggleChapter} /> : <>
           <section style={{ background: "var(--jd-accent-surface)", border: `1px solid ${accent}33`, borderRadius: 8, display: "grid", gap: 7, padding: 11 }}><strong style={{ color: accent, fontSize: 11.5 }}>Course overview</strong>{blog.sections.map((section) => <div key={section.heading}><strong style={{ display: "block", fontSize: 11.5 }}>{section.heading}</strong><p style={{ color: "var(--jd-text-soft)", fontSize: 11.5, lineHeight: 1.55, margin: "3px 0 0" }}>{section.body}</p></div>)}</section>
           {BLOG_OVERVIEW_DIAGRAMS[blog.id] ? <CourseDiagram diagramKey={BLOG_OVERVIEW_DIAGRAMS[blog.id]} accent={accent} /> : <SystemDesignDiagram kind={BLOG_OVERVIEW_KINDS[blog.id]} concept={blog.title} accent={accent} />}

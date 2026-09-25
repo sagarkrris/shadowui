@@ -18,7 +18,7 @@ export default function LearningPosition({ path }) {
     }
     function schedule() {
       const top = scroll.getBoundingClientRect().top + 100;
-      const sections = [...main.querySelectorAll('section[id], h2[id], h3[id]')];
+      const sections = [...main.querySelectorAll('section[id], h2[id], h3[id]')].filter(element => !element.closest('[data-reader-transient]'));
       const section = sections.filter(element => element.getBoundingClientRect().top <= top).at(-1);
       const label = section?.matches('section') ? section.querySelector('h2, h3')?.textContent : section?.textContent;
       pending = { href: path + (section ? `#${section.id}` : ''), title, section: label || '' };

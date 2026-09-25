@@ -1,6 +1,6 @@
 import { WEEKLY_CHALLENGES } from "../lib/weeklyChallenges.mjs";
 import { TINY_SYSTEMS } from "../lib/tinySystems.mjs";
-import { BACKEND_FIELD_NOTES } from "../lib/backendFieldNotes.mjs";
+import { listTechBlogs } from "../lib/techBlogs.mjs";
 import { SCENARIO_SEEDS } from "../lib/scenarioBank.mjs";
 import { SYMPTOMS } from "../lib/engineeringSymptoms.mjs";
 import { READING_SERIES } from "../lib/readerEditorial.mjs";
@@ -18,7 +18,8 @@ export default function Sitemap() { return null; }
 
 export function getServerSideProps({ res }) {
   const urls = [
-    ...BACKEND_FIELD_NOTES.map(blog => ({ loc: `${SITE_URL}/tech-blogs/${blog.id}`, changefreq: "monthly", priority: "0.8" })),
+    { loc: `${SITE_URL}/tech-blogs`, changefreq: "weekly", priority: "0.8" },
+    ...listTechBlogs().map(blog => ({ loc: `${SITE_URL}/tech-blogs/${blog.id}`, changefreq: "monthly", priority: "0.8" })),
     ...["/build", ...TINY_SYSTEMS.map(project => `/build/${project.slug}`)].map(path => ({ loc: `${SITE_URL}${path}`, changefreq: "monthly", priority: "0.8" })),
     ...["/explore", "/learn/spring-transactions", "/weekly", ...WEEKLY_CHALLENGES.map(issue => `/weekly/${issue.slug}`)].map(path => ({ loc: `${SITE_URL}${path}`, changefreq: "weekly", priority: "0.8" })),
     ...SCENARIO_SEEDS.map(scenario => ({ loc: `${SITE_URL}/scenarios/${scenario.id}`, changefreq: "monthly", priority: "0.7" })),

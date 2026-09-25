@@ -9,6 +9,32 @@ import { listTechBlogs } from "../lib/techBlogs.mjs";
 import { TECH_BLOG_GUIDANCE } from "../lib/techBlogGuidance.mjs";
 import { COURSE_DIAGRAMS } from "../lib/techBlogDiagrams.mjs";
 
+test("load balancing course includes diagrams and a working routing boundary model", () => {
+  const blog = listTechBlogs().find(blog => blog.id === "load-balancing-algorithms");
+  assert.equal(blog.chapters.length, 6);
+  assert.ok(blog.capstone.steps.length >= 3);
+  for (const chapter of blog.chapters) {
+    assert.ok(chapter.answer && chapter.whenToUse && chapter.avoid && chapter.exercise);
+    assert.ok(COURSE_DIAGRAMS[chapter.diagramKey]);
+  }
+  const example = blog.chapters.find(chapter => chapter.exampleRuntime)?.example;
+  assert.ok(example);
+  assert.match(execFileSync(process.execPath, ["--input-type=module", "-e", example], { encoding: "utf8" }), /Routing boundaries passed/);
+});
+
+test("real-time course exposes authored lessons and an executable replay model", () => {
+  const blog = listTechBlogs().find(blog => blog.id === "real-time-communication-patterns");
+  assert.equal(blog.chapters.length, 6);
+  for (const chapter of blog.chapters) {
+    assert.ok(chapter.answer && chapter.whenToUse && chapter.avoid && chapter.walkthrough);
+    assert.ok(COURSE_DIAGRAMS[chapter.diagramKey]);
+  }
+  assert.equal(blog.capstone.steps.length, 3);
+  const example = blog.chapters.find(chapter => chapter.exampleRuntime)?.example;
+  assert.ok(example);
+  assert.match(execFileSync(process.execPath, ["--input-type=module", "-e", example], { encoding: "utf8" }), /Replay boundaries passed/);
+});
+
 test("older course self-checks have authored answers and subject guidance", () => {
   const courses = listTechBlogs().filter(blog => blog.format !== "field-note");
   for (const blog of courses) {
@@ -49,6 +75,7 @@ test("production Tech Blogs include full-length courses for the highest-value ga
     "resilience-engineering",
     "microservices-migration-patterns",
     "java-api-evolution-contracts",
+    "spring-boot-configuration",
   ];
 
   for (const id of ids) {
@@ -85,6 +112,7 @@ test("production Tech Blogs include full-length courses for the highest-value ga
     "resilience-engineering",
     "microservices-migration-patterns",
     "java-api-evolution-contracts",
+    "spring-boot-configuration",
   ]) {
     const course = blogs.get(id);
     assert.equal(course.chapters.length, 6);
@@ -102,6 +130,7 @@ test("standalone examples compile against Java 17 and distributed behavior check
     "spring-boot-security",
     "resilience-engineering",
     "microservices-migration-patterns",
+    "spring-boot-configuration",
   ].includes(blog.id));
   const chapters = blogs.flatMap(blog => blog.chapters).filter(chapter => !chapter.exampleRuntime);
   const dir = mkdtempSync(join(tmpdir(), "pattern-test-"));

@@ -20,7 +20,8 @@ export default function ReaderTools({ path }) {
     const toolbar = hostAfter(title.closest("header") || title);
     const usedIds = new Set([...main.querySelectorAll("[id]")].map(element => element.id));
     const assignedIds = [];
-    const headings = [...main.querySelectorAll("h2, h3")];
+    // Interactive content is indexed through its persistent parent heading.
+    const headings = [...main.querySelectorAll("h2, h3")].filter(heading => !heading.closest('[data-reader-transient]'));
     const sections = headings.map((heading, index) => {
       const label = heading.textContent.trim();
       if (!heading.id) {
@@ -58,7 +59,11 @@ export default function ReaderTools({ path }) {
     catch { setMessage("Copy was unavailable. Select and copy the text below."); setFallback(text); }
   }
   if (!targets) return null;
-  const matches = query.trim() ? targets.sections.filter(section => section.text.toLowerCase().includes(query.trim().toLowerCase())).slice(0, 30) : [];
+  const matches = query.trim() ? targets.sections.filter(section => {
+    // Read the currently selected demo when searching, not its initial snapshot.
+    const text = section.element.closest('[data-course-demo]')?.textContent || section.text;
+    return text.toLowerCase().includes(query.trim().toLowerCase());
+  }).slice(0, 30) : [];
   return <>
     {createPortal(<aside className="reader-tools" aria-label="Article tools and editorial details"><p><strong>By {credit.author}</strong> · {credit.reviewer}</p><p>{credit.updated ? `Updated ${credit.updated}.` : "Update date not yet recorded."} {credit.runtime}</p><p><Link href="/editorial">Editorial standards</Link> · <Link href={`/corrections?article=${encodeURIComponent(path)}`}>Corrections and report a mistake</Link> · <Link href="/series">Reading paths</Link> · <Link href="/notebook">My notebook</Link>{path === "/java/spring-transactional-not-working" && <> · <Link href="/learn/spring-transactions">Continue the Spring journey</Link></>}</p><label>Search within this article<input type="search" value={query} onChange={e => setQuery(e.target.value)} /></label>{query && <div><p role="status">{matches.length} matching sections{matches.length === 30 ? " (first 30)" : ""}</p><ul>{matches.map(section => <li key={section.id}><button onClick={() => jump(section)}>{section.title}</button></li>)}</ul></div>}<details><summary>Bookmarked sections ({bookmarks.length})</summary><p>Saved only in this browser. Use a section’s bookmark button to add or remove it.</p><ul>{bookmarks.map(item => <li key={item.href}><a href={item.href}>{item.title}</a></li>)}</ul></details><p role="status">{message}</p>{fallback && <label>Text to copy<textarea readOnly value={fallback} onFocus={e => e.target.select()} /></label>}</aside>, targets.toolbar)}
     {targets.sections.map(section => createPortal(<div className="reader-section-actions"><button onClick={() => bookmark(section)} aria-pressed={bookmarks.some(item => item.href === `${path}#${section.id}`)} aria-label={`Bookmark ${section.title}`}>{bookmarks.some(item => item.href === `${path}#${section.id}`) ? "Bookmarked ✓" : "Bookmark section"}</button><button onClick={() => copy(`${window.location.origin}${path}#${section.id}`, "Section link copied.")} aria-label={`Share ${section.title}`}>Copy section link</button></div>, section.host, section.id))}
