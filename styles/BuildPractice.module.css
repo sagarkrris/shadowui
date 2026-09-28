@@ -1,0 +1,5 @@
+.filters { align-items: flex-start; }
+.filters label { margin: 0 0 6px; }
+.filters > label, .filters > div { min-width: 160px; max-width: 100%; }
+.filters select { display: block; width: 100%; min-height: 52px; padding: 12px; border: 1px solid #81908b; border-radius: 5px; background: #fff; color: #20363d; font: inherit; }
+.filters select:focus-visible { outline: 3px solid #b64d12; outline-offset: 4px; }

@@ -76,6 +76,7 @@ test("production Tech Blogs include full-length courses for the highest-value ga
     "microservices-migration-patterns",
     "java-api-evolution-contracts",
     "spring-boot-configuration",
+    "java-background-jobs",
   ];
 
   for (const id of ids) {
@@ -113,6 +114,7 @@ test("production Tech Blogs include full-length courses for the highest-value ga
     "microservices-migration-patterns",
     "java-api-evolution-contracts",
     "spring-boot-configuration",
+    "java-background-jobs",
   ]) {
     const course = blogs.get(id);
     assert.equal(course.chapters.length, 6);
@@ -131,7 +133,7 @@ test("standalone examples compile against Java 17 and distributed behavior check
     "resilience-engineering",
     "microservices-migration-patterns",
     "spring-boot-configuration",
-  ].includes(blog.id));
+  ].includes(blog.id) || blog.javaRelease === 17);
   const chapters = blogs.flatMap(blog => blog.chapters).filter(chapter => !chapter.exampleRuntime);
   const dir = mkdtempSync(join(tmpdir(), "pattern-test-"));
   try {

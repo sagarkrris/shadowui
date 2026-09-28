@@ -11,6 +11,7 @@ const courses = [
   ["Microservices Migration Patterns: From Monolith to Safe Change", "/tech-blogs/microservices-migration-patterns", "Capstone: Extract order history safely"],
   ["Java API Evolution: Ship Compatible Contracts with Confidence", "/tech-blogs/java-api-evolution-contracts", "Capstone: Evolve an order-status API safely"],
   ["Spring Boot Configuration: Safe Defaults, Secrets, and Rollouts", "/tech-blogs/spring-boot-configuration", "Capstone: Roll out a new payment-provider configuration safely"],
+  ["Java Background Jobs: Schedules, Leases, Retries, and Safe Shutdown", "/tech-blogs/java-background-jobs", "Capstone: Run a multi-replica invoice close safely"],
 ];
 
 for (const [title, path, capstone] of courses) {
@@ -26,6 +27,11 @@ for (const [title, path, capstone] of courses) {
     if (path.endsWith("/spring-boot-security")) {
       await expect(page.locator("pre").filter({ hasText: "class OrdersSecurity" })).toContainText("JwtDecoder");
       await expect(page.locator("pre").filter({ hasText: "class OrdersSecurity" })).toContainText("SCOPE_orders.read");
+    }
+    if (path.endsWith("/java-background-jobs")) {
+      await expect(page.locator("pre").filter({ hasText: "class JobAdmissionExample" })).toContainText("closed.compareAndSet(false, true)");
+      await expect(page.locator("pre").filter({ hasText: "class DrainDecisionExample" })).toContainText("case UNKNOWN -> Outcome.UNKNOWN");
+      await expect(page.locator("pre").filter({ hasText: "class DrainDecisionExample" })).toContainText("Outcome.DRAINING");
     }
   });
 }

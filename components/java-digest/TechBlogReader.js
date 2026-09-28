@@ -1,4 +1,5 @@
 import CourseOverviewDiagram from "./CourseOverviewDiagram";
+import ChallengeLinks from '../build/ChallengeLinks';
 import CourseDiagram from "./CourseDiagram";
 import CourseDemo from "../learning/CourseDemo";
 import FieldNoteLesson from "./FieldNoteLesson";
@@ -29,6 +30,7 @@ export default function TechBlogReader({ blog, accent, learningProgress, onToggl
         </header>
         <div className="java-digest-reader-scroll" style={{ display: "grid", gap: 14, minWidth: 0, gridTemplateColumns: "minmax(0, 1fr)", minHeight: 0, overflowY: "auto", padding: "0 18px 20px" }}>
           <CourseOverviewDiagram courseId={blog.id} /><CourseDemo courseId={blog.id} />
+          <ChallengeLinks courseId={blog.id} />
           {blog.format === 'field-note' ? <FieldNoteLesson key={blog.id} blog={blog} learningProgress={learningProgress} onToggleChapter={onToggleChapter} /> : <>
           <section style={{ background: "var(--jd-accent-surface)", border: `1px solid ${accent}33`, borderRadius: 8, display: "grid", gap: 7, padding: 11 }}><strong style={{ color: accent, fontSize: 11.5 }}>Course overview</strong>{blog.sections.map((section) => <div key={section.heading}><strong style={{ display: "block", fontSize: 11.5 }}>{section.heading}</strong><p style={{ color: "var(--jd-text-soft)", fontSize: 11.5, lineHeight: 1.55, margin: "3px 0 0" }}>{section.body}</p></div>)}</section>
           <section style={{ background: "var(--jd-surface-subtle)", border: "1px solid var(--jd-border)", borderRadius: 8, padding: 11 }}><strong style={{ color: accent, fontSize: 11.5 }}>Key lessons</strong><div style={{ color: "var(--jd-text-soft)", display: "grid", fontSize: 11.3, gap: 6, lineHeight: 1.5, marginTop: 7 }}>{blog.lessons.map((lesson) => <div key={lesson}>✓ {lesson}</div>)}</div></section>

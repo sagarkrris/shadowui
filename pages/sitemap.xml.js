@@ -1,5 +1,6 @@
 import { WEEKLY_CHALLENGES } from "../lib/weeklyChallenges.mjs";
 import { TINY_SYSTEMS } from "../lib/tinySystems.mjs";
+import { BUILD_CHALLENGES } from "../lib/buildChallenges.mjs";
 import { listTechBlogs } from "../lib/techBlogs.mjs";
 import { SCENARIO_SEEDS } from "../lib/scenarioBank.mjs";
 import { SYMPTOMS } from "../lib/engineeringSymptoms.mjs";
@@ -18,6 +19,7 @@ export default function Sitemap() { return null; }
 
 export function getServerSideProps({ res }) {
   const urls = [
+    ...BUILD_CHALLENGES.map(c => ({ loc: `${SITE_URL}/build/practice/${c.id}`, changefreq: 'monthly', priority: '0.8' })),
     { loc: `${SITE_URL}/tech-blogs`, changefreq: "weekly", priority: "0.8" },
     ...listTechBlogs().map(blog => ({ loc: `${SITE_URL}/tech-blogs/${blog.id}`, changefreq: "monthly", priority: "0.8" })),
     ...["/build", ...TINY_SYSTEMS.map(project => `/build/${project.slug}`)].map(path => ({ loc: `${SITE_URL}${path}`, changefreq: "monthly", priority: "0.8" })),

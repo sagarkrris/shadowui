@@ -15,6 +15,7 @@ const pages = [
   ["sql-performance-interviews", ["sql"]],
   ["leetcode-patterns", ["pointers", "window", "stack", "bfs"]],
   ["spring-boot-configuration", ["configuration"]],
+  ["java-background-jobs", ["jobLifecycle", "jobLease"]],
 ];
 
 for (const width of [375, 1366]) {
@@ -102,6 +103,17 @@ test("workspace selects configuration course and its diagram", async ({ page }) 
   const dialog = page.getByRole("dialog", { name: `${title} full lesson` });
   await expect(dialog.locator("[data-course-diagram='configuration']").first()).toBeVisible();
   await expect(dialog.getByText("valid HTTPS endpoint required", { exact: false }).first()).toBeVisible();
+});
+
+test("workspace selects background-jobs course with its lease diagram", async ({ page }) => {
+  await gotoSeededApp(page, { activeTab: "javaDigest", homeDemoSeen: true });
+  await page.getByRole("button", { name: "Tech Blogs", exact: true }).click();
+  const title = "Java Background Jobs: Schedules, Leases, Retries, and Safe Shutdown";
+  await page.getByText(title, { exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: `${title} full lesson` });
+  await expect(dialog.locator("[data-course-diagram='jobLease']").first()).toBeVisible();
+  await expect(dialog.getByRole('region', { name: 'Related coding challenges' }).getByRole('link')).toHaveCount(4);
+  await expect(dialog.getByText("2. Claim work with leases and fencing", { exact: true }).first()).toBeVisible();
 });
 
 test("workspace opens the gateway course with its trust diagram", async ({ page }) => {

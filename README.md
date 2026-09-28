@@ -4,6 +4,8 @@ AI-powered interview intelligence for modern software engineers. It supports per
 
 ## Features
 
+- [Java engineering practice](docs/build-practice.md): twelve original challenges with editable starters, downloadable Java 17 checks, hints, references, browser progress and optional AI review. Live execution is opt-in; runner provisioning is deferred.
+
 - Personalized onboarding with name, target role, experience, and tech stack.
 - Stack-aware themes, ambient background artwork, and prep topics for Java, Python, React, Node.js, JavaScript, SQL, PostgreSQL, MongoDB, AWS, Azure, Docker, Go, SAP, Ruby, Rust, and fallback full-stack prep.
 - InterviewIQ logo mark in the sidebar brand area.
@@ -44,7 +46,7 @@ AI-powered interview intelligence for modern software engineers. It supports per
 - Java lesson links and the Interview Day Pack open topic practice or a five-question preset. `/tech-buddy-demo` retains the original 36 offline Java questions with no AI calls or scoring.
 - The fictional interviewer portrait is the local fallback. Optional LiveAvatar LITE video receives Gemini speech for lip sync and listening/idle poses; it requires server-side provider credentials and a licensed avatar ID. See [Tech Buddy setup and behavior](docs/tech-buddy.md).
 - Code paste/review tools shown only where useful, such as technical prep topics.
-- Live Java Runner surface with safe paused-state guidance while execution providers are being finalized.
+- Self-hosted Java Runner with selectable JDK 8 through JDK 21.
 - Screen capture/upload analysis for coding, design, database, and interview prompts.
 - Voice input with helpful iOS/Safari fallback guidance.
 - Responsive layout verified across phone, tablet, iPad, and desktop viewport sizes.
@@ -92,13 +94,14 @@ REQUIRE_AUTH=1
 # ERROR_TRACKING_TOKEN=your_monitoring_token
 # GEMINI_INPUT_COST_PER_MILLION=0
 # GEMINI_OUTPUT_COST_PER_MILLION=0
-# Optional only when you are ready to enable live code execution:
-# PISTON_EXECUTE_URL=https://your-piston-host.example.com/api/v2/execute
+# Private self-hosted Java runner; never expose this token to the browser.
+# JAVA_RUNNER_URL=http://java-runner.internal:8080
+# JAVA_RUNNER_SHARED_TOKEN=replace-with-a-long-random-secret
 ```
 
 You can create a Gemini API key from Google AI Studio. Keep the key server-side only; browser requests go through the Next.js API routes.
 
-The runner still supports Piston when `PISTON_EXECUTE_URL` is explicitly set to a self-hosted or approved Piston runner. The old public Piston endpoint became whitelist-only in February 2026. Do not paste secrets, tokens, proprietary code, or private stdin into any external runner.
+The Java runner is an InterviewIQ-owned service. Deploy it on a dedicated Docker host as described in [services/java-runner/README.md](services/java-runner/README.md); it supports Java 8 through Java 21 and is reachable only from the web application over a private network.
 
 ## Useful Commands
 
@@ -200,11 +203,11 @@ shadowui/
 ```text
 Browser
   -> Next.js API route
-  -> Gemini API or an approved Piston API (when enabled)
+  -> Gemini API or the private InterviewIQ Java runner
   -> streamed response back to the browser
 ```
 
-The browser never receives the Gemini API key. Code execution requests go through `/api/run-code` only when the user clicks Run, and remain paused until an approved Piston endpoint is configured.
+The browser never receives the Gemini API key or the Java runner token. Code execution requests go through `/api/run-code`, which validates and rate-limits each submission before forwarding it to the private runner.
 
 Account sync is available through `/api/auth` and `/api/state`. User state is encrypted with `APP_ENCRYPTION_KEY` and persisted in managed PostgreSQL through `lib/serverPersistence.mjs`; set `DATABASE_URL` before enabling account sync in production. The adapter creates its tables and indexes on first use, while database backups, point-in-time recovery, and retention should be configured in the managed provider. AI routes enforce bounded request sizes and distributed rate limits when Upstash is configured. Set `REQUIRE_AUTH=1` before making AI routes public.
 
@@ -218,5 +221,5 @@ Production operations: configure Neon/Vercel automated backups, point-in-time re
 
 - Public company interview data is presented as reported/community-sourced, not official company material.
 - Resume gap analysis in the Career Toolkit supports `.pdf`, `.docx`, `.txt`, `.md`, and pasted text. Extraction runs through InterviewIQ's own API route and is not sent to Gemini or external AI services; legacy `.doc` files should be converted to `.docx` or pasted as text.
-- The Live Java Runner returns `503` until a non-public, approved `PISTON_EXECUTE_URL` is configured. Request-size safeguards remain in place.
+- The Live Java Runner returns `503` until the private `JAVA_RUNNER_URL` and `JAVA_RUNNER_SHARED_TOKEN` are configured. Request-size safeguards remain in place.
 - Voice input depends on browser support. iOS Safari may require microphone permissions, Siri/dictation support, or keyboard dictation fallback.
