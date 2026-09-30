@@ -5,7 +5,7 @@ test.use({ serviceWorkers: 'block' });
 
 test('catalog supports combined filtering and preserves guided projects', async ({ page }) => {
   await page.goto('/build');
-  await expect(page.getByRole('status')).toHaveText('13 challenges shown');
+  await expect(page.getByRole('status')).toHaveText(`${BUILD_CHALLENGES.length} challenges shown`);
   await expect(page.getByRole('link', { name: 'Dependency-injection container', exact: true })).toBeVisible();
   await page.getByLabel('Track', { exact: true }).selectOption('Concurrency');
   await page.getByLabel('Difficulty', { exact: true }).selectOption('Hard');

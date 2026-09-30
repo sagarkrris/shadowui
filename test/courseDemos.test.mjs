@@ -31,6 +31,30 @@ test('every published course has explicitly assigned, valid interactive demos', 
   }
 });
 
+test('rate-limit trace consumes a token per admission and rejects only at exhaustion', () => {
+  const frames = traceFrames(COURSE_DEMOS.rateLimit, 0);
+  let remaining = Number(frames[0].cells[0].value);
+  let admissions = 0;
+  let rejections = 0;
+  for (const frame of frames.slice(1)) {
+    const [tokens, outcome, operation] = frame.cells.map(cell => cell.value);
+    if (outcome === 'accepted') {
+      assert.ok(remaining > 0, 'admission requires quota');
+      remaining--;
+      admissions++;
+      assert.notEqual(operation, 'none');
+    } else if (outcome === 'rejected') {
+      assert.equal(remaining, 0, 'a quota rejection requires exhaustion');
+      assert.equal(operation, 'none', 'rejected work never starts');
+      rejections++;
+    } else {
+      assert.fail(`Unexpected admission outcome: ${outcome}`);
+    }
+    assert.equal(Number(tokens), remaining, 'displayed quota matches consumption');
+  }
+  assert.ok(admissions > 0 && rejections > 0);
+});
+
 test('routing excludes offline nodes and accounts for relative capacity', () => {
   const count = frame => frame.cells.map(cell => Number(cell.value.split(' ')[0]));
   assert.deepEqual(count(routingFrames().at(-1)), [3, 3, 2]);

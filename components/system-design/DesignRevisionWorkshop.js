@@ -7,7 +7,7 @@ function Diagram({ graph, label }) {
   const container = useRef(null);
   const [columns, setColumns] = useState(2);
   useEffect(() => {
-    const observer = new ResizeObserver(entries => setColumns(entries[0].contentRect.width < 360 ? 1 : 2));
+    const observer = new ResizeObserver(entries => setColumns(entries[0].contentRect.width < 600 ? 1 : 2));
     if (container.current) observer.observe(container.current);
     return () => observer.disconnect();
   }, []);
@@ -16,8 +16,8 @@ function Diagram({ graph, label }) {
   return <figure ref={container} className={styles.diagram}><figcaption>{label}</figcaption><svg role="img" aria-label={`${label} architecture diagram`} viewBox={`0 0 ${columns === 1 ? 300 : 600} ${Math.max(140, Math.ceil(graph.nodes.length / columns) * 140)}`}>
     <defs><marker id={arrowId} markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#bd875b" /></marker></defs>
     {graph.edges.map(e => { const a = position(e.from), b = position(e.to), risk = warnings.some(w => w.edge === e.id), dx = b.x - a.x, dy = b.y - a.y, clip = Math.min(100 / Math.abs(dx || .001), 25 / Math.abs(dy || .001)); return <g key={e.id}><title>{`${e.from} → ${e.to}: ${e.protocol}, ${e.mode}, ${e.data}`}</title><line x1={a.x + dx * clip} y1={a.y + dy * clip} x2={b.x - dx * clip} y2={b.y - dy * clip} markerEnd={`url(#${arrowId})`} stroke={risk ? '#db6b4a' : '#668faf'} strokeWidth="3" strokeDasharray={e.mode === 'async' ? '7 5' : undefined} /><text x={columns === 1 ? 135 : (a.x + b.x) / 2} y={(a.y + b.y) / 2 - 13} textAnchor={columns === 1 ? "start" : "middle"} fill="currentColor" fontSize="13">{e.protocol.slice(0, 15)} · {e.mode}</text></g>; })}
-    {graph.nodes.map(n => { const p = position(n.id), risk = warnings.some(w => w.node === n.id); return <g key={n.id}><rect x={p.x - 100} y={p.y - 25} width="200" height="50" rx="8" fill={risk ? '#442d27' : '#153650'} stroke={risk ? '#ffab8b' : '#8bd3ff'} /><text x={p.x} y={p.y + 5} textAnchor="middle" fill="#fff" fontSize="15">{n.name.slice(0, 20)}{risk ? ' ⚠' : ''}</text></g>; })}
-  </svg><p>Arrows show direction; dashed connections are asynchronous. Warning marks and orange paths identify review findings. Full connection details appear below.</p><ul>{graph.edges.map(e => <li key={e.id}>{graph.nodes.find(n => n.id === e.from)?.name} → {graph.nodes.find(n => n.id === e.to)?.name}: {e.protocol}, {e.mode}, {e.data}; timeout {e.timeout} ms, maximum {e.attempts} attempts.</li>)}</ul></figure>;
+    {graph.nodes.map(n => { const p = position(n.id), risk = warnings.some(w => w.node === n.id); return <g key={n.id}><title>{n.name}</title><rect x={p.x - 100} y={p.y - 25} width="200" height="50" rx="8" fill={risk ? '#442d27' : '#153650'} stroke={risk ? '#ffab8b' : '#8bd3ff'} /><text x={p.x} y={p.y + 5} textAnchor="middle" fill="#fff" fontSize="15">{n.name.length > 20 ? `${n.name.slice(0, 19)}…` : n.name}{risk ? ' ⚠' : ''}</text></g>; })}
+  </svg><p>Arrows show direction; dashed connections are asynchronous. Warning marks and orange paths identify review findings. Full component names and connection details appear below.</p><ul aria-label={`${label}: complete component names`}>{graph.nodes.map(n => <li key={n.id}>{n.name || 'Unnamed component'}</li>)}</ul><ul>{graph.edges.map(e => <li key={e.id}>{graph.nodes.find(n => n.id === e.from)?.name} → {graph.nodes.find(n => n.id === e.to)?.name}: {e.protocol}, {e.mode}, {e.data}; timeout {e.timeout} ms, maximum {e.attempts} attempts.</li>)}</ul></figure>;
 }
 export default function DesignRevisionWorkshop({ value, onChange }) {
   const state = useMemo(() => normalizeRevision(value), [value]);

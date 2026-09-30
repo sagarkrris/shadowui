@@ -13,11 +13,11 @@ export default function LessonVisual({ lessonId }) {
     <h3 style={{ margin: '4px 0 10px' }}>{guide.title}</h3>
     <p>{guide.story}</p>
     <figure style={{ margin: '16px 0' }}>
-      <figcaption>Follow the example. Select a numbered card to focus on its explanation.</figcaption>
+      <figcaption>{guide.layout === 'comparison' ? 'Compare these choices; they are not consecutive steps.' : 'Follow the example.'} Select a numbered card to focus on its explanation.</figcaption>
       <ol data-visual-steps style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: 10, padding: 0, listStyle: 'none' }}>
         {guide.steps.map(([title, detail], index) => <li key={title} style={{ minWidth: 0 }}>
           <button type="button" aria-pressed={active === index} onClick={() => setActive(index)} style={{ ...panel, width: '100%', height: '100%', textAlign: 'left', cursor: 'pointer', border: `2px solid ${active === index ? '#93c5fd' : '#475569'}`, background: active === index ? 'rgba(96,165,250,.12)' : 'rgba(127,127,127,.04)' }}>
-            <span style={{ color: '#93c5fd', display: 'block' }}>{index + 1} {index < guide.steps.length - 1 ? '→' : '✓'}</span>
+            <span style={{ color: '#93c5fd', display: 'block' }}>{index + 1} {guide.layout === 'comparison' ? '· Compare' : index < guide.steps.length - 1 ? '→' : ''}</span>
             <strong>{title}</strong><span style={{ display: 'block', marginTop: 8 }}>{detail}</span>
           </button>
         </li>)}

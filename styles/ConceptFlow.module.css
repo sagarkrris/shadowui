@@ -1,0 +1,8 @@
+.figure { margin: 16px 0; min-width: 0; padding: 16px; border: 1px solid var(--jd-border, #38516e); border-radius: 10px; background: var(--jd-surface-subtle, #102b43); color: var(--jd-text, #eaf4ff); }
+.caption { font-size: 14px; font-weight: 700; margin-bottom: 12px; overflow-wrap: anywhere; }
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 12px; list-style: none; margin: 0; padding: 0; }
+.step { min-width: 0; padding: 12px; border: 1px solid var(--jd-border, #38516e); border-radius: 8px; background: var(--jd-surface-sunken, #101d30); font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.number { display: block; font-size: 12px; font-weight: 700; margin-bottom: 6px; }
+.source { overflow: auto; max-width: 100%; font: 14px/1.7 ui-monospace, monospace; white-space: pre; padding: 12px; margin: 0; }
+.source:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.hint { font-size: 13px; line-height: 1.6; }

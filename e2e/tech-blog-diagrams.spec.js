@@ -16,6 +16,7 @@ const pages = [
   ["leetcode-patterns", ["pointers", "window", "stack", "bfs"]],
   ["spring-boot-configuration", ["configuration"]],
   ["java-background-jobs", ["jobLifecycle", "jobLease"]],
+  ["java-rate-limiting", ["rateLimit"]],
 ];
 
 for (const width of [375, 1366]) {

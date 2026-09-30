@@ -1,6 +1,7 @@
 import { useId, useState } from "react";
 import { COURSE_DIAGRAMS } from "../../lib/techBlogDiagrams.mjs";
 import styles from "../../styles/CourseDiagram.module.css";
+import { wrapDiagramLabel } from '../../lib/visualModels.mjs';
 
 export default function CourseDiagram({ diagramKey, accent = "#8bd3ff" }) {
   const id = useId();
@@ -44,11 +45,15 @@ export default function CourseDiagram({ diagramKey, accent = "#8bd3ff" }) {
             <text className={styles.edgeLabel} x={mx} y={sameRow ? y1 - 6 : my - 9} textAnchor="middle" fill="currentColor" fontSize="13">{label}</text>
           </g>;
         })}
-        {diagram.nodes.map(([key, x, y, label, detail]) => <g key={key}>
+        {diagram.nodes.map(([key, x, y, label, detail]) => <g key={key} data-diagram-node={key}>
           <rect x={x} y={y} width="200" height="80" rx="8" fill="var(--jd-surface-sunken, #101d30)" stroke={accent} />
           <path d={`M${x + 12},${y + 1} h176`} stroke={accent} strokeWidth="3" />
-          <text x={x + 100} y={y + 28} textAnchor="middle" fill="currentColor" fontSize="15" fontWeight="700">{label}</text>
-          <text x={x + 100} y={y + 54} textAnchor="middle" fill="currentColor" fontSize="12">{detail}</text>
+          <text textAnchor="middle" fill="currentColor" fontSize="14" fontWeight="700" aria-label={label}>
+            {wrapDiagramLabel(label, 23).map((line, index) => <tspan key={index} x={x + 100} y={y + 21 + index * 16}>{line}</tspan>)}
+          </text>
+          <text textAnchor="middle" fill="currentColor" fontSize="12" aria-label={detail}>
+            {wrapDiagramLabel(detail, 27).map((line, index) => <tspan key={index} x={x + 100} y={y + 55 + index * 14}>{line}</tspan>)}
+          </text>
         </g>)}
       </svg>
     </div>

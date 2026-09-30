@@ -4,14 +4,13 @@ import { BUILD_CHALLENGES, exerciseSource, normalizeChallengeProgress, reference
 import { listTechBlogs } from '../lib/techBlogs.mjs';
 import { runnerConfiguration, validateChallengeRun, challengePayload, parseChallengeResult, executeChallenge } from '../lib/challengeRunner.mjs';
 
-const c = BUILD_CHALLENGES[0];
+const c = BUILD_CHALLENGES.find(challenge => challenge.id === 'window-rate-limiter');
 const input = { challenge: c, code: c.starter, mode: 'all' };
 const env = { JAVA_RUNNER_URL: 'https://runner.example', JAVA_RUNNER_SHARED_TOKEN: 'test-secret'.repeat(4) };
 const success = { phase: 'run', exitCode: 0, stdout: `CHECKS PASSED: ${c.id} v1 all\n`, timedOut: false };
 
-test('thirteen unique challenges have real lesson links, authored failure checks, hints and references', () => {
-  assert.equal(BUILD_CHALLENGES.length, 13);
-  assert.equal(new Set(BUILD_CHALLENGES.map(c => c.id)).size, 13);
+test('unique challenges have real lesson links, authored failure checks, hints and references', () => {
+  assert.equal(new Set(BUILD_CHALLENGES.map(c => c.id)).size, BUILD_CHALLENGES.length);
   for (const challenge of BUILD_CHALLENGES) {
     assert.ok(listTechBlogs().some(blog => blog.id === challenge.lesson), challenge.lesson);
     assert.ok(challenge.cases.some(t => !t.failure));

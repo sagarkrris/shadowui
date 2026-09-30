@@ -16,6 +16,7 @@
     "db:migrate": "node scripts/migrate-postgres.mjs",
     "test:unit": "node --test test/*.test.mjs",
     "verify:background-jobs": "node scripts/validation/verify-background-jobs.mjs",
+    "verify:tech-blog": "node scripts/validation/verify-tech-blog.mjs",
     "test:tiny-systems": "node scripts/validation/check-tiny-systems.mjs",
     "test:build-challenges": "node scripts/validation/check-build-challenges.mjs",
     "test:release": "node scripts/validation/release-gate.mjs",

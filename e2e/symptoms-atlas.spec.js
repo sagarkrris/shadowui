@@ -4,7 +4,7 @@ import { SYMPTOMS } from '../lib/engineeringSymptoms.mjs';
 test.use({ serviceWorkers: 'block' });
 test('reader can search by symptom, filter, recover from no results and download a reproduction', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('link', { name: 'Search engineering symptoms →' }).click();
+  await page.getByRole('navigation', { name: 'Reading navigation' }).getByRole('link', { name: 'Symptoms Atlas', exact: true }).click();
   await page.getByRole('searchbox', { name: 'Search symptoms' }).fill('duplicate messages');
   await expect(page.getByRole('status')).toHaveText('1 symptom found');
   await page.getByRole('button', { name: 'Databases', exact: true }).click();

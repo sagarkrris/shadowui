@@ -19,6 +19,7 @@ export default function Sitemap() { return null; }
 
 export function getServerSideProps({ res }) {
   const urls = [
+    { loc: `${SITE_URL}/system-design/visual-guide`, changefreq: "monthly", priority: "0.8" },
     ...BUILD_CHALLENGES.map(c => ({ loc: `${SITE_URL}/build/practice/${c.id}`, changefreq: 'monthly', priority: '0.8' })),
     { loc: `${SITE_URL}/tech-blogs`, changefreq: "weekly", priority: "0.8" },
     ...listTechBlogs().map(blog => ({ loc: `${SITE_URL}/tech-blogs/${blog.id}`, changefreq: "monthly", priority: "0.8" })),

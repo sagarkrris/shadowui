@@ -1,12 +1,24 @@
-import React from "react";
+import { flowModel } from '../../lib/visualModels.mjs';
+import styles from '../../styles/ConceptFlow.module.css';
 
-function parseSteps(value) {
-  const source = String(value || "").replace(/\\n/g, "\n");
-  const labels = [...source.matchAll(/\["([^"\\]+)"\]/g)].map((match) => match[1]);
-  if (labels.length > 1) return labels;
-  const chunks = source.split(/(?:-->|→|->|⇒|\n\s*└─|\n\s*└──|\n\s*├─)/).map((item) => item.replace(/^[^\w]+/, "").trim()).filter(Boolean);
-  return chunks.length > 1 ? chunks : [source.trim()];
+export default function ReadableFlowDiagram({ value, title = 'How it flows' }) {
+  const model = flowModel(value);
+  if (model.kind === 'empty') return null;
+  return <figure aria-label={title} data-flow-kind={model.kind} className={styles.figure}>
+    <figcaption className={styles.caption}>{title}</figcaption>
+    {model.kind === 'sequence' ? <ol className={styles.steps} aria-label={title}>
+      {model.steps.map((step, index) => <li key={index} className={styles.step}>
+        <span className={styles.number}>Step {index + 1}{index < model.steps.length - 1 ? ' →' : ''}</span>{step}
+      </li>)}
+    </ol> : model.kind === 'graph' ? <>
+      <ul className={styles.steps} aria-label="Components">{model.nodes.map(node => <li key={node.id} className={styles.step}>{node.label}</li>)}</ul>
+      <p className={styles.hint}>Connections below show the authored direction; adjacent cards do not imply a connection.</p>
+      <ul aria-label="Directed connections">{model.edges.map(([from, to], index) => <li key={index}>
+        {model.nodes.find(node => node.id === from).label} <span aria-label="to">→</span> {model.nodes.find(node => node.id === to).label}
+      </li>)}</ul>
+    </> : <>
+      <pre role="region" tabIndex={0} aria-label={`${title}: original relationships`} className={styles.source}>{model.source}</pre>
+      <p className={styles.hint}>Read each arrow in its stated direction. Branches and separate paths keep their original layout; scroll sideways when needed.</p>
+    </>}
+  </figure>;
 }
-
-export default function ReadableFlowDiagram({ value, title = "How it flows", accent = "#8bd3ff" }) { const steps = parseSteps(value); return <div aria-label={title} style={{ background: "linear-gradient(135deg, #102b43, #163b4d)", border: `1px solid ${accent}88`, borderRadius: 9, color: "#f4f9ff", display: "grid", gap: 8, padding: 12 }}><div style={{ color: accent, fontSize: 10.5, fontWeight: 900, letterSpacing: ".08em", textTransform: "uppercase" }}>{title}</div><div style={{ alignItems: "stretch", display: "flex", flexWrap: "wrap", gap: 6 }}>{steps.map((step, index) => <React.Fragment key={`${step}-${index}`}><div style={{ background: "rgba(3,15,27,.5)", border: "1px solid rgba(173,225,240,.28)", borderRadius: 7, color: "#eaf4ff", flex: "1 1 150px", fontSize: 11.5, lineHeight: 1.35, minWidth: 130, padding: "9px 10px" }}><span style={{ color: accent, display: "block", fontSize: 10, fontWeight: 900, marginBottom: 3 }}>STEP {index + 1}</span>{step}</div>{index < steps.length - 1 ? <span aria-hidden="true" style={{ alignSelf: "center", color: accent, fontSize: 18, fontWeight: 900 }}>→</span> : null}</React.Fragment>)}</div></div>; }
-export { parseSteps };

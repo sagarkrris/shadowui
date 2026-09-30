@@ -5,6 +5,8 @@ import { TINY_SYSTEMS, normalizeSystemDrafts, systemExercise } from '../../lib/t
 import { saveNote } from '../../lib/learningNotebook.mjs';
 import styles from '../../styles/Reader.module.css';
 import lab from '../../styles/TinyContainer.module.css';
+import CourseDiagram from '../../components/java-digest/CourseDiagram';
+import { BUILD_DIAGRAMS } from '../../lib/learningDiagrams.mjs';
 
 export default function SystemPage({ project }) { return <SystemWorkshop key={project.slug} project={project} />; }
 function SystemWorkshop({ project }) {
@@ -40,6 +42,7 @@ function SystemWorkshop({ project }) {
     <h1>{project.title}</h1><p className={styles.lead}>{project.description}</p><p>Before you start: Java methods, collections, and exceptions. Each chapter starts with the earlier reference methods already implemented; your saved edits remain in their own chapter.</p>
     <aside className={styles.card}><h2>Model boundaries</h2><p>{project.scope}</p><p>Java 8 source compatibility. Reference chapters and failing starters checked locally on Temurin 21, September 18, 2026. No reader code executes on this site.</p><p>By InterviewIQ Editorial · Individual reviewer unassigned · Updated September 18, 2026.</p></aside>
     <p role="status">{message}</p><p>{project.chapters.filter((_, stage) => passed(stage)).length}/3 checks self-reported · <Link href="/notebook">My notebook</Link></p>
+    <CourseDiagram diagramKey={BUILD_DIAGRAMS[project.slug]} />
     <nav aria-label="Project chapters" className={styles.actions}>{project.chapters.map((chapter, stage) => <a href={`#chapter-${stage + 1}`} key={chapter.title}>Chapter {stage + 1}</a>)}</nav>
     {project.chapters.map((chapter, stage) => <section className={lab.chapter} id={`chapter-${stage + 1}`} key={chapter.title}>
       <h2>{stage + 1}. {chapter.title}</h2><p><strong>Requirement:</strong> {chapter.requirement}</p>
