@@ -16,6 +16,8 @@ test('networking course compiles on Java 17 and exercises trust, ambiguity, and 
   assert.ok(course.chapters.every(chapter => chapter.whenToUse && chapter.avoid && chapter.answer && COURSE_DIAGRAMS[chapter.diagramKey]));
   assert.match(course.chapters[3].lesson, /business outcome is unknown/);
   assert.match(course.chapters[4].lesson, /authenticated principal and resource ownership/);
+  assert.deepEqual(COURSE_DIAGRAMS.networkPath.edges.find(([from]) => from === 'connect'), ['connect', 'tls', 'begin TLS']);
+  assert.deepEqual(COURSE_DIAGRAMS.networkPath.edges.find(([from]) => from === 'tls'), ['tls', 'http', 'authenticated peer']);
   const directory = mkdtempSync(join(tmpdir(), 'networking-course-'));
   try {
     const sources = course.chapters.map((chapter, index) => {

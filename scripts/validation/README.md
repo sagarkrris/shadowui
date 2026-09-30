@@ -25,6 +25,7 @@ The gate fails closed and accepts no skip/filter arguments. It checks:
    practice downloads and mocked adapter behavior. Browser retries are disabled.
    Unit/browser evidence must contain executed tests and no skipped, cancelled,
    todo, flaky, failed, or global-error results; exit code zero alone is insufficient.
+   Browser tests marked as expected failures also block release.
 5. Diff whitespace and an unchanged source fingerprint from start to finish.
    Concurrent edits invalidate the result even when individual commands pass.
 

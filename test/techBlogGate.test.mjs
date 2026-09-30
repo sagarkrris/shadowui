@@ -69,10 +69,14 @@ test('zero, skipped, cancelled, todo and flaky suites cannot count as passing ev
   for (const bad of ['', good.replace('tests 2', 'tests 0'), ...['fail', 'cancelled', 'skipped', 'todo'].map(key => good.replace(`${key} 0`, `${key} 1`))]) {
     assert.throws(() => validateUnitEvidence(bad), /Unit evidence/);
   }
-  const stats = { expected: 3, unexpected: 0, skipped: 0, flaky: 0 };
-  assert.equal(validateBrowserEvidence({ stats }).expected, 3);
+  const stats = { expected: 1, unexpected: 0, skipped: 0, flaky: 0 };
+  const browser = (expectedStatus = 'passed', results = [{ status: 'passed', errors: [] }]) => ({ stats, suites: [{ suites: [{ specs: [{ tests: [{ expectedStatus, results }] }] }] }] });
+  assert.equal(validateBrowserEvidence(browser()).expected, 1);
   for (const bad of [{}, { stats: { ...stats, expected: 0 } }, { stats, errors: ['server failed'] }, ...['unexpected', 'skipped', 'flaky'].map(key => ({ stats: { ...stats, [key]: 1 } }))]) {
     assert.throws(() => validateBrowserEvidence(bad), /Browser evidence/);
+  }
+  for (const bad of [{ stats }, browser('failed', [{ status: 'failed' }]), browser('passed', []), browser('passed', [{ status: 'failed' }, { status: 'passed' }])]) {
+    assert.throws(() => validateBrowserEvidence(bad), /actual passing result/);
   }
   assert.throws(() => runTechBlogGate({ commands: [] }), /empty gate/);
 });

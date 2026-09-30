@@ -46,6 +46,16 @@ export function validateBrowserEvidence(report) {
   if (!(stats?.expected > 0 && stats.unexpected === 0 && stats.skipped === 0 && stats.flaky === 0 && !report.errors?.length)) {
     throw new Error('Browser evidence must contain passing tests with no skipped, flaky, failed, or global errors');
   }
+  const collect = suites => (suites || []).flatMap(suite => [
+    ...(suite.specs || []).flatMap(spec => spec.tests || []), ...collect(suite.suites),
+  ]);
+  const tests = collect(report.suites);
+  // Playwright counts an expected failure as "expected", not "unexpected".
+  // A known failing test must not be presented as a passing release check.
+  if (tests.length !== stats.expected || tests.some(test => test.expectedStatus !== 'passed' ||
+      test.results?.length !== 1 || test.results[0].status !== 'passed' || test.results[0].errors?.length)) {
+    throw new Error('Browser evidence requires one actual passing result per test; expected failures and retries are not release passes');
+  }
   return stats;
 }
 
