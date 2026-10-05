@@ -17,6 +17,7 @@ export const JAVA_BLOG_FIXTURES = {
   'java-service-networking': 'NetworkingExampleChecks',
   'java-multithreading-production': 'MultithreadingExampleChecks',
   'java-file-uploads-production': 'FileUploadsExampleChecks',
+  'java-feature-flags-production': 'FeatureFlagsExampleChecks',
 };
 
 export function validateTechBlogCatalog(blogs = listTechBlogs(), assignments = COURSE_DEMO_ASSIGNMENTS, fixtures = JAVA_BLOG_FIXTURES) {
