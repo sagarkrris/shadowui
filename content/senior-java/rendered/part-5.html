@@ -1,0 +1,1378 @@
+<h2 id="senior-java-question-bank-vol-4">Senior Java Question Bank, Vol. 4</h2>
+
+<p><strong>Modern Java · Design · Spring Ecosystem · Databases · Security ·
+Quality</strong> (Q75–Q98 + 4 programs)</p>
+
+<hr>
+<h2 id="m-modern-java-design">M. Modern Java &amp; Design</h2>
+
+<p><strong>Q75. Which modern Java features do you use, and why?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is">A good SDE-3 interview answer is:</h4>
+
+<p><em>Records</em> (Java 16): immutable data carriers with generated
+<code>equals/hashCode/toString</code>, ideal for DTOs and events (not JPA
+entities). <em>Sealed classes/interfaces</em> (17): restrict the permitted
+subtypes so the compiler can check exhaustiveness. <em>Pattern matching</em>
+(<code>instanceof</code>, and <code>switch</code> in 21): removes casts and gives exhaustive,
+expression-style handling of sealed hierarchies. <em>Text blocks</em>, <code>var</code>
+for local inference, <code>Stream.toList()</code>, and <em>virtual threads</em> (21).
+Together, records + sealed + pattern <code>switch</code> model domain results
+(&quot;Success | Failure&quot;) with the compiler catching missing cases, which
+is a safer alternative to visitor patterns or exceptions for control
+flow.</p>
+<h4 id="how-to-understand-it">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> <em>Records</em> (Java 16): immutable data
+carriers with generated <code>equals/hashCode/toString</code>, ideal for DTOs and
+events (not JPA entities). <em>Sealed classes/interfaces</em> (17): restrict
+the permitted subtypes so the compiler can check exhaustiveness.</p>
+<h4 id="sde-3-interview-checkpoints">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version">30-second version</h4>
+
+<blockquote>
+<p><em>Records</em> (Java 16): immutable data carriers with generated
+<code>equals/hashCode/toString</code>, ideal for DTOs and events (not JPA
+entities). <em>Sealed classes/interfaces</em> (17): restrict the permitted
+subtypes so the compiler can check exhaustiveness.</p>
+</blockquote>
+
+<p><strong>Q76. What are the common Stream pitfalls?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-1">A good SDE-3 interview answer is:</h4>
+
+<p>Streams are lazy: nothing runs without a terminal operation, and a
+stream can be consumed only once. Pitfalls: side effects in <code>map/peek</code>
+(breaks with parallelism), <code>Collectors.toMap</code> throwing
+<code>IllegalStateException</code> on duplicate keys (supply a merge function),
+boxing overhead (use <code>IntStream</code>), unreadable long pipelines (extract
+methods), checked exceptions inside lambdas, and using streams for
+simple loops where performance or debuggability matters. Know <code>flatMap</code>
+(flatten nested), <code>groupingBy</code> with downstream collectors,
+<code>partitioningBy</code>, <code>reduce</code> and short-circuit ops (<code>findFirst</code>,
+<code>anyMatch</code>).</p>
+<h4 id="how-to-understand-it-1">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Streams are lazy: nothing runs without
+a terminal operation, and a stream can be consumed only once. Pitfalls:
+side effects in <code>map/peek</code> (breaks with parallelism), <code>Collectors.toMap</code>
+throwing <code>IllegalStateException</code> on duplicate keys (supply a merge
+function), boxing overhead (use <code>IntStream</code>), unreadable long pipelines
+(extract methods), checked exceptions inside lambdas, and using streams
+for simple loops where performance or debuggability matters.</p>
+<h4 id="sde-3-interview-checkpoints-1">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-1">30-second version</h4>
+
+<blockquote>
+<p>Streams are lazy: nothing runs without a terminal operation, and a
+stream can be consumed only once. Pitfalls: side effects in <code>map/peek</code>
+(breaks with parallelism), <code>Collectors.toMap</code> throwing
+<code>IllegalStateException</code> on duplicate keys (supply a merge function),
+boxing overhead (use <code>IntStream</code>), unreadable long pipelines (extract
+methods), checked exceptions inside lambdas, and using streams for
+simple loops where performance or debuggability matters.</p>
+</blockquote>
+
+<p><strong>Q77. How should <code>Optional</code> be used?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-2">A good SDE-3 interview answer is:</h4>
+
+<p>As a <strong>return type</strong> that signals &quot;may be absent&quot;, chained with <code>map</code>,
+<code>flatMap</code>, <code>filter</code>, <code>orElseGet</code> (lazy, unlike <code>orElse</code> which always
+evaluates), and <code>orElseThrow</code>. Don&#39;t use it for fields, method
+parameters, collections (return empty collections instead) or
+serialization, and never call <code>get()</code> without checking.
+<code>Optional.of(null)</code> throws; use <code>ofNullable</code>. Return <code>Optional</code> from
+repository finders and handle absence explicitly at the service
+boundary.</p>
+<h4 id="how-to-understand-it-2">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> As a <strong>return type</strong> that signals &quot;may
+be absent&quot;, chained with <code>map</code>, <code>flatMap</code>, <code>filter</code>, <code>orElseGet</code> (lazy,
+unlike <code>orElse</code> which always evaluates), and <code>orElseThrow</code>. Don&#39;t use it
+for fields, method parameters, collections (return empty collections
+instead) or serialization, and never call <code>get()</code> without checking.</p>
+<h4 id="key-terms-you-should-know">Key terms you should know</h4>
+
+<ul>
+<li><strong>Application service</strong> — A component coordinating a business use case;
+it may be a Spring-managed bean and is not a Kubernetes Service.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-2">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-2">30-second version</h4>
+
+<blockquote>
+<p>As a <strong>return type</strong> that signals &quot;may be absent&quot;, chained with <code>map</code>,
+<code>flatMap</code>, <code>filter</code>, <code>orElseGet</code> (lazy, unlike <code>orElse</code> which always
+evaluates), and <code>orElseThrow</code>. Don&#39;t use it for fields, method
+parameters, collections (return empty collections instead) or
+serialization, and never call <code>get()</code> without checking.</p>
+</blockquote>
+
+<p><strong>Q78. Explain SOLID with real examples.</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-3">A good SDE-3 interview answer is:</h4>
+
+<p><strong>S</strong>: a class has one reason to change (separate <code>OrderService</code> from
+<code>EmailSender</code>). <strong>O</strong>: extend behaviour without editing existing code
+(new <code>PaymentStrategy</code> implementation, not another <code>if</code> branch). <strong>L</strong>:
+subtypes must be usable wherever the base type is (a
+<code>Square extends Rectangle</code> that breaks width/height contracts violates
+it). <strong>I</strong>: small, role-specific interfaces rather than a fat one.
+<strong>D</strong>: depend on abstractions; Spring&#39;s DI injects implementations.
+Interviewers want a story: &quot;We had a 600-line switch on payment type;
+replaced it with strategies registered in a map keyed by type.&quot;</p>
+<h4 id="how-to-understand-it-3">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> <strong>S</strong>: a class has one reason to
+change (separate <code>OrderService</code> from <code>EmailSender</code>). <strong>O</strong>: extend
+behaviour without editing existing code (new <code>PaymentStrategy</code>
+implementation, not another <code>if</code> branch).</p>
+<h4 id="sde-3-interview-checkpoints-3">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-3">30-second version</h4>
+
+<blockquote>
+<p><strong>S</strong>: a class has one reason to change (separate <code>OrderService</code> from
+<code>EmailSender</code>). <strong>O</strong>: extend behaviour without editing existing code
+(new <code>PaymentStrategy</code> implementation, not another <code>if</code> branch).</p>
+</blockquote>
+
+<p><strong>Q79. Which design patterns does Spring itself use?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-4">A good SDE-3 interview answer is:</h4>
+
+<p><em>Singleton</em> (default bean scope), <em>Factory/BeanFactory</em>, <em>Proxy</em> (AOP,
+<code>@Transactional</code>, <code>@Cacheable</code>), <em>Template Method</em> (<code>JdbcTemplate</code>,
+<code>RestTemplate</code>), <em>Observer</em> (<code>ApplicationEvent</code>/<code>@EventListener</code>),
+<em>Dependency Injection</em>, <em>Front Controller</em> (<code>DispatcherServlet</code>),
+<em>Decorator</em>/<em>Chain of Responsibility</em> (filter chain), <em>Builder</em>
+(<code>ResponseEntity</code>, <code>HttpSecurity</code>), and <em>Strategy</em> (<code>HandlerMapping</code>,
+<code>PasswordEncoder</code>). Explain one in depth, e.g., how the proxy intercepts
+calls.</p>
+<h4 id="how-to-understand-it-4">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> <em>Singleton</em> (default bean scope),
+<em>Factory/BeanFactory</em>, <em>Proxy</em> (AOP, <code>@Transactional</code>, <code>@Cacheable</code>),
+<em>Template Method</em> (<code>JdbcTemplate</code>, <code>RestTemplate</code>), <em>Observer</em>
+(<code>ApplicationEvent</code>/<code>@EventListener</code>), <em>Dependency Injection</em>, <em>Front
+Controller</em> (<code>DispatcherServlet</code>), <em>Decorator</em>/<em>Chain of Responsibility</em>
+(filter chain), <em>Builder</em> (<code>ResponseEntity</code>, <code>HttpSecurity</code>), and
+<em>Strategy</em> (<code>HandlerMapping</code>, <code>PasswordEncoder</code>). Explain one in depth,
+e.g., how the proxy intercepts calls.</p>
+<h4 id="key-terms-you-should-know-1">Key terms you should know</h4>
+
+<ul>
+<li><strong>AOP</strong> — Aspect-oriented programming: applying cross-cutting behavior
+such as transactions, logging or security around method execution.</li>
+<li><strong>bean</strong> — An object managed by the Spring IoC container.</li>
+<li><strong>proxy</strong> — An object that wraps another object and intercepts method
+calls, commonly used by Spring for transactions, security and AOP.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-4">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-4">30-second version</h4>
+
+<blockquote>
+<p><em>Singleton</em> (default bean scope), <em>Factory/BeanFactory</em>, <em>Proxy</em> (AOP,
+<code>@Transactional</code>, <code>@Cacheable</code>), <em>Template Method</em> (<code>JdbcTemplate</code>,
+<code>RestTemplate</code>), <em>Observer</em> (<code>ApplicationEvent</code>/<code>@EventListener</code>),
+<em>Dependency Injection</em>, <em>Front Controller</em> (<code>DispatcherServlet</code>),
+<em>Decorator</em>/<em>Chain of Responsibility</em> (filter chain), <em>Builder</em>
+(<code>ResponseEntity</code>, <code>HttpSecurity</code>), and <em>Strategy</em> (<code>HandlerMapping</code>,
+<code>PasswordEncoder</code>). Explain one in depth, e.g., how the proxy
+intercepts calls.</p>
+</blockquote>
+
+<p><strong>Q80. Describe the JVM architecture and JIT compilation.</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-5">A good SDE-3 interview answer is:</h4>
+
+<p>Class loaders load bytecode into the runtime data areas: heap (objects),
+metaspace (class metadata, native memory), per-thread stacks (frames,
+locals), PC registers and the code cache. The interpreter starts
+executing immediately; hot methods are compiled by <strong>C1</strong> (fast, lightly
+optimised) then <strong>C2</strong> (aggressive: inlining, escape analysis, loop
+unrolling) via tiered compilation, with deoptimisation if assumptions
+break. Consequences: warm-up matters for benchmarks (use JMH), and
+cold-start-sensitive workloads (serverless) benefit from CDS/AppCDS,
+CRaC or GraalVM native image.</p>
+<h4 id="how-to-understand-it-5">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Class loaders load bytecode into the
+runtime data areas: heap (objects), metaspace (class metadata, native
+memory), per-thread stacks (frames, locals), PC registers and the code
+cache. The interpreter starts executing immediately; hot methods are
+compiled by <strong>C1</strong> (fast, lightly optimised) then <strong>C2</strong> (aggressive:
+inlining, escape analysis, loop unrolling) via tiered compilation, with
+deoptimisation if assumptions break.</p>
+<h4 id="key-terms-you-should-know-2">Key terms you should know</h4>
+
+<ul>
+<li><strong>heap</strong> — JVM memory where Java objects are allocated.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-5">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-5">30-second version</h4>
+
+<blockquote>
+<p>Class loaders load bytecode into the runtime data areas: heap
+(objects), metaspace (class metadata, native memory), per-thread
+stacks (frames, locals), PC registers and the code cache. The
+interpreter starts executing immediately; hot methods are compiled by
+<strong>C1</strong> (fast, lightly optimised) then <strong>C2</strong> (aggressive: inlining,
+escape analysis, loop unrolling) via tiered compilation, with
+deoptimisation if assumptions break.</p>
+</blockquote>
+
+<hr>
+<h2 id="n-spring-ecosystem">N. Spring Ecosystem</h2>
+
+<p><strong>Q81. Spring Data JPA: derived queries, <code>@Query</code>, Specifications,
+projections.</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-6">A good SDE-3 interview answer is:</h4>
+
+<p>Derived queries (<code>findByStatusAndCreatedAtAfter</code>) are fine for simple
+cases but become unreadable; use <code>@Query</code> (JPQL/native) for clarity,
+<strong>Specifications</strong> or Querydsl for dynamic filters, and <strong>interface/DTO
+projections</strong> to select only needed columns. Prefer <code>Pageable</code> with a
+stable sort, avoid <code>findAll()</code> on big tables, return <code>Slice</code> when you
+don&#39;t need the count query, and don&#39;t expose entities through the API.</p>
+<h4 id="how-to-understand-it-6">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Derived queries
+(<code>findByStatusAndCreatedAtAfter</code>) are fine for simple cases but become
+unreadable; use <code>@Query</code> (JPQL/native) for clarity, <strong>Specifications</strong>
+or Querydsl for dynamic filters, and <strong>interface/DTO projections</strong> to
+select only needed columns. Prefer <code>Pageable</code> with a stable sort, avoid
+<code>findAll()</code> on big tables, return <code>Slice</code> when you don&#39;t need the count
+query, and don&#39;t expose entities through the API.</p>
+<h4 id="sde-3-interview-checkpoints-6">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-6">30-second version</h4>
+
+<blockquote>
+<p>Derived queries (<code>findByStatusAndCreatedAtAfter</code>) are fine for simple
+cases but become unreadable; use <code>@Query</code> (JPQL/native) for clarity,
+<strong>Specifications</strong> or Querydsl for dynamic filters, and
+<strong>interface/DTO projections</strong> to select only needed columns. Prefer
+<code>Pageable</code> with a stable sort, avoid <code>findAll()</code> on big tables, return
+<code>Slice</code> when you don&#39;t need the count query, and don&#39;t expose entities
+through the API.</p>
+</blockquote>
+
+<p><strong>Q82. When do you use Spring Batch?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-7">A good SDE-3 interview answer is:</h4>
+
+<p>Use Spring Batch for restartable, high-volume processing such as ETL,
+reconciliation and nightly billing. A <code>Job</code> contains <code>Step</code>s. In a typical
+chunk step, an <code>ItemReader</code> reads items, an <code>ItemProcessor</code> transforms
+them, and an <code>ItemWriter</code> writes a chunk within a transaction. The job
+repository records executions and restart state; configure skip/retry
+policies and readers/writers that support the intended restart contract.</p>
+
+<p>A <code>JobInstance</code> is identified by the job name and identifying
+<code>JobParameters</code>. Reuse those parameters when restarting the same logical
+run. A new timestamp or random identifying parameter creates a new
+instance and can start the work again; it does not provide idempotency.
+Protect business writes with stable item/business keys, uniqueness or
+deduplication, and use provider idempotency for external side effects.
+Scale using partitioning or remote chunking when needed. For simpler
+periodic work, scheduling with an appropriate distributed lock may be
+sufficient; that lock also does not make side effects idempotent.</p>
+<h4 id="how-to-understand-it-7">How to understand it</h4>
+
+<p>For daily billing, a business date can identify the logical run. If
+that run fails, keep the same identifying date to resume its instance.
+A distinct execution attempt is a <code>JobExecution</code>, not necessarily a new
+<code>JobInstance</code>. Restartability and idempotent business effects are separate
+properties.</p>
+<h4 id="key-terms-you-should-know-3">Key terms you should know</h4>
+
+<ul>
+<li><strong>JobInstance</strong> — A logical run identified by job name and identifying parameters.</li>
+<li><strong>JobExecution</strong> — One execution attempt for that logical run.</li>
+<li><strong>ExecutionContext</strong> — Persisted state used by restart-aware components.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-7">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li>Fail after a committed chunk, then restart with the same identifying parameters.</li>
+<li>Show what changes when an identifying timestamp is added.</li>
+<li>Test duplicate business inputs and external-side-effect replay.</li>
+</ul>
+<h4 id="30-second-version-7">30-second version</h4>
+
+<blockquote>
+<p>Spring Batch supplies chunk processing and persisted restart metadata. Keep
+identifying JobParameters stable for retries of the same logical run; changing
+them creates a new JobInstance. Business idempotency still requires stable
+keys and deduplication or equivalent safeguards.</p>
+</blockquote>
+
+<p><a href="https://docs.spring.io/spring-batch/reference/domain.html">Spring Batch domain model</a>.</p>
+
+<p><strong>Q83. Which Spring Cloud components are still relevant?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-8">A good SDE-3 interview answer is:</h4>
+
+<p>Gateway (routing/filters), OpenFeign or declarative HTTP interfaces,
+Config Server (centralised config; on Kubernetes ConfigMaps/Secrets
+often replace it), Resilience4j (circuit breaker, retry, rate limiter,
+bulkhead), and Micrometer Tracing. Netflix Eureka/Ribbon are largely
+superseded because Kubernetes provides service discovery and load
+balancing via Services/DNS. Show you choose platform features over
+libraries when available.</p>
+<h4 id="how-to-understand-it-8">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Gateway (routing/filters), OpenFeign
+or declarative HTTP interfaces, Config Server (centralised config; on
+Kubernetes ConfigMaps/Secrets often replace it), Resilience4j (circuit
+breaker, retry, rate limiter, bulkhead), and Micrometer Tracing. Netflix
+Eureka/Ribbon are largely superseded because Kubernetes provides service
+discovery and load balancing via Services/DNS.</p>
+<h4 id="key-terms-you-should-know-4">Key terms you should know</h4>
+
+<ul>
+<li><strong>bulkhead</strong> — A resilience pattern that isolates resources such as
+threads or connections so one overloaded dependency does not exhaust
+the whole service.</li>
+<li><strong>Service</strong> — An application or platform capability exposed through a
+defined interface; a Kubernetes Service is a specific networking resource.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-8">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-8">30-second version</h4>
+
+<blockquote>
+<p>Gateway (routing/filters), OpenFeign or declarative HTTP interfaces,
+Config Server (centralised config; on Kubernetes ConfigMaps/Secrets
+often replace it), Resilience4j (circuit breaker, retry, rate limiter,
+bulkhead), and Micrometer Tracing. Netflix Eureka/Ribbon are largely
+superseded because Kubernetes provides service discovery and load
+balancing via Services/DNS.</p>
+</blockquote>
+
+<p><strong>Q84. <code>RestTemplate</code> vs <code>WebClient</code> vs <code>RestClient</code>, and how do you set
+timeouts?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-9">A good SDE-3 interview answer is:</h4>
+
+<p><code>RestClient</code> is the synchronous fluent client; <code>WebClient</code> supports
+reactive composition and streaming. <code>RestTemplate</code> was in maintenance
+mode in Spring 6 and is deprecated in Spring 7 in favor of <code>RestClient</code>.
+Match the answer to the interview&#39;s version. Configure connection
+acquisition, connect, response/read and overall deadlines on the actual
+underlying client; retries and circuit breakers depend on the failure
+contract. <a href="https://docs.spring.io/spring-framework/reference/integration/rest-clients.html">Spring REST
+clients</a>.</p>
+<h4 id="how-to-understand-it-9">How to understand it</h4>
+
+<p>Compare the options by correctness, operational behavior, performance,
+failure modes, and when you would choose each one—not just by
+definitions.</p>
+
+<p><strong>Plain-English starting point:</strong> <code>RestClient</code> is the synchronous fluent
+client; <code>WebClient</code> supports reactive composition and streaming.
+<code>RestTemplate</code> was in maintenance mode in Spring 6 and is deprecated in
+Spring 7 in favor of <code>RestClient</code>.</p>
+<h4 id="key-terms-you-should-know-5">Key terms you should know</h4>
+
+<ul>
+<li><strong>reactive</strong> — A programming model centered on asynchronous streams
+and non-blocking processing with explicit demand/back-pressure.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-9">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-9">30-second version</h4>
+
+<blockquote>
+<p><code>RestClient</code> is the synchronous fluent client; <code>WebClient</code> supports
+reactive composition and streaming. <code>RestTemplate</code> was in maintenance
+mode in Spring 6 and is deprecated in Spring 7 in favor of
+<code>RestClient</code>.</p>
+</blockquote>
+
+<p><strong>Q85. How do you handle validation and errors consistently?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-10">A good SDE-3 interview answer is:</h4>
+
+<p>Bean Validation (<code>@Valid</code>, <code>@NotNull</code>, <code>@Size</code>, custom constraint
+validators) at the API boundary; domain invariants inside
+entities/services. A single <code>@RestControllerAdvice</code> maps exceptions to
+RFC 9457 problem details (<code>ProblemDetail</code>; RFC 9457 supersedes RFC 7807)
+with stable error codes (not stack traces), HTTP status by cause (400
+validation, 404, 409 conflict, 422, 503), and a correlation ID. Log once
+at the boundary with the right level (client errors at <code>warn</code>/<code>info</code>,
+server errors at <code>error</code>).</p>
+<h4 id="how-to-understand-it-10">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Bean Validation (<code>@Valid</code>, <code>@NotNull</code>,
+<code>@Size</code>, custom constraint validators) at the API boundary; domain
+invariants inside entities/services. A single <code>@RestControllerAdvice</code>
+maps exceptions to RFC 9457 problem details (<code>ProblemDetail</code>; RFC 9457
+supersedes RFC 7807) with stable error codes (not stack traces), HTTP
+status by cause (400 validation, 404, 409 conflict, 422, 503), and a
+correlation ID.</p>
+<h4 id="key-terms-you-should-know-6">Key terms you should know</h4>
+
+<ul>
+<li><strong>bean</strong> — An object managed by the Spring IoC container.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-10">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-10">30-second version</h4>
+
+<blockquote>
+<p>Bean Validation (<code>@Valid</code>, <code>@NotNull</code>, <code>@Size</code>, custom constraint
+validators) at the API boundary; domain invariants inside
+entities/services. A single <code>@RestControllerAdvice</code> maps exceptions to
+RFC 9457 problem details (<code>ProblemDetail</code>; RFC 9457 supersedes RFC
+7807) with stable error codes (not stack traces), HTTP status by cause
+(400 validation, 404, 409 conflict, 422, 503), and a correlation ID.</p>
+</blockquote>
+
+<p><strong>Q86. What is <code>@TransactionalEventListener</code> and why is it useful?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-11">A good SDE-3 interview answer is:</h4>
+
+<p><code>@TransactionalEventListener(AFTER_COMMIT)</code> runs after successful
+commit, but is not durable delivery: a process can fail before an email
+or message is sent. Original transactional resources may still be
+accessible, yet further writes do not become a new committed transaction
+automatically. Put required follow-up writes behind a separate
+transactional boundary and use an outbox when the event must survive
+process failure. Listener failure cannot undo the original commit.
+<a href="https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/transaction/event/TransactionalEventListener.html">TransactionalEventListener
+API</a>.</p>
+<h4 id="how-to-understand-it-11">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong>
+<code>@TransactionalEventListener(AFTER_COMMIT)</code> runs after successful
+commit, but is not durable delivery: a process can fail before an email
+or message is sent. Original transactional resources may still be
+accessible, yet further writes do not become a new committed transaction
+automatically.</p>
+<h4 id="key-terms-you-should-know-7">Key terms you should know</h4>
+
+<ul>
+<li><strong>outbox</strong> — A database table used to store events in the same
+transaction as business data so publication can happen reliably
+afterward.</li>
+<li><strong>transaction</strong> — A unit of database work treated as one logical
+operation with defined commit/rollback behavior.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-11">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-11">30-second version</h4>
+
+<blockquote>
+<p><code>@TransactionalEventListener(AFTER_COMMIT)</code> runs after successful
+commit, but is not durable delivery: a process can fail before an
+email or message is sent. Original transactional resources may still
+be accessible, yet further writes do not become a new committed
+transaction automatically.</p>
+</blockquote>
+
+<p><strong>Q87. What changed with Boot 3 observability and native images?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-12">A good SDE-3 interview answer is:</h4>
+
+<p>Boot 3 integrates Micrometer Observation: an observation can feed
+metrics and tracing, but coverage depends on the libraries, bridges and
+instrumentation actually configured; JDBC tracing is not universally
+automatic. GraalVM native images give millisecond start-up and a lower
+memory footprint (great for Cloud Run), but need ahead-of-time
+processing, reflection/proxy hints, a longer build, and may have
+different steady-state throughput from a warmed-up JIT; benchmark the
+real workload. Choose by workload: native for scale-to-zero, JVM for
+sustained high throughput.</p>
+<h4 id="how-to-understand-it-12">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Boot 3 integrates Micrometer
+Observation: an observation can feed metrics and tracing, but coverage
+depends on the libraries, bridges and instrumentation actually
+configured; JDBC tracing is not universally automatic. GraalVM native
+images give millisecond start-up and a lower memory footprint (great for
+Cloud Run), but need ahead-of-time processing, reflection/proxy hints, a
+longer build, and may have different steady-state throughput from a
+warmed-up JIT; benchmark the real workload.</p>
+<h4 id="key-terms-you-should-know-8">Key terms you should know</h4>
+
+<ul>
+<li><strong>Cloud Run</strong> — GCP&#39;s managed container execution platform where the
+platform handles servers and scales container instances.</li>
+<li><strong>JIT</strong> — Just-in-time compilation: runtime compilation of frequently
+executed bytecode into optimized native machine code.</li>
+<li><strong>proxy</strong> — An object that wraps another object and intercepts method
+calls, commonly used by Spring for transactions, security and AOP.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-12">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-12">30-second version</h4>
+
+<blockquote>
+<p>Boot 3 integrates Micrometer Observation: an observation can feed
+metrics and tracing, but coverage depends on the libraries, bridges
+and instrumentation actually configured; JDBC tracing is not
+universally automatic. GraalVM native images give millisecond start-up
+and a lower memory footprint (great for Cloud Run), but need
+ahead-of-time processing, reflection/proxy hints, a longer build, and
+may have different steady-state throughput from a warmed-up JIT;
+benchmark the real workload.</p>
+</blockquote>
+
+<hr>
+<h2 id="o-databases-caching">O. Databases &amp; Caching</h2>
+
+<p><strong>Q88. How do database indexes work and how do you design them?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-13">A good SDE-3 interview answer is:</h4>
+
+<p>A B-tree index keeps keys ordered. Seeking a key or range start is
+typically O(log n); retrieving k matching entries adds work, commonly
+modeled as O(log n + k). An ordered full scan still visits O(n) entries.
+Real query cost also includes pages read, table lookups, filtering,
+visibility checks and any additional sorting.</p>
+
+<p>A composite B-tree often benefits from equality constraints on leading
+columns followed by a range/order requirement. Some engines can exploit
+later columns through skip scans or other access paths. A covering index
+contains the needed columns and may avoid table reads, but engine-specific
+visibility rules still apply. Indexes cost storage and write work, so
+design them around actual queries and execution plans. Expressions such
+as <code>lower(email)</code> may need expression indexes; leading-wildcard searches
+may need a specialized index. Low selectivity can make a sequential scan
+cheaper; do not assume an index is either always used or always ignored.</p>
+<h4 id="how-to-understand-it-13">How to understand it</h4>
+
+<p>Finding the first matching entry and reading every result are
+different operations. Returning a million matching rows cannot become
+logarithmic just because the index finds the range quickly. In PostgreSQL,
+MVCC visibility determines whether a row version is visible to the current
+transaction snapshot; an index-only scan may still need heap visits.</p>
+<h4 id="key-terms-you-should-know-9">Key terms you should know</h4>
+
+<ul>
+<li><strong>Selectivity</strong> — How much of the data a predicate matches.</li>
+<li><strong>Covering index</strong> — An index containing the columns required by a query.</li>
+<li><strong>MVCC visibility</strong> — Whether a row version is visible to a transaction snapshot.</li>
+<li><strong>Database heap</strong> — Table-row storage; distinct from the JVM object heap.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-13">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li>State n (indexed entries) and k (entries returned or examined).</li>
+<li>Compare selective lookup, large range scan and ordered full scan.</li>
+<li>Inspect execution plans, table visits, filtering and write overhead.</li>
+</ul>
+<h4 id="30-second-version-13">30-second version</h4>
+
+<blockquote>
+<p>A B-tree can find a range start in logarithmic time, but reading k entries
+adds work: typically O(log n + k), plus database-specific costs. Composite and
+covering indexes must match the query. Verify the plan and MVCC visibility
+costs instead of claiming every indexed query is O(log n).</p>
+</blockquote>
+
+<p><a href="https://www.postgresql.org/docs/current/indexes-types.html">PostgreSQL index types</a>, <a href="https://www.postgresql.org/docs/current/indexes-index-only-scans.html">index-only scans</a>.</p>
+
+<p><strong>Q89. A query is slow. How do you tune it?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-14">A good SDE-3 interview answer is:</h4>
+
+<p>For PostgreSQL, <code>EXPLAIN (ANALYZE, BUFFERS)</code> executes the statement, so
+use a safe environment or a carefully controlled read-only query: look
+for sequential scans on large tables, row-estimate mismatches (stale
+stats; <code>ANALYZE</code>), expensive sorts/hash joins and nested loops over big
+sets. Fixes: add or reshape indexes, rewrite (avoid <code>SELECT *</code>, replace
+correlated subqueries with joins, use keyset pagination), reduce data
+returned, partition large tables, cache results, or precompute with
+materialised views. Verify with production-sized data and watch lock
+contention and long transactions.</p>
+<h4 id="how-to-understand-it-14">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> For PostgreSQL,
+<code>EXPLAIN (ANALYZE, BUFFERS)</code> executes the statement, so use a safe
+environment or a carefully controlled read-only query: look for
+sequential scans on large tables, row-estimate mismatches (stale stats;
+<code>ANALYZE</code>), expensive sorts/hash joins and nested loops over big sets.
+Fixes: add or reshape indexes, rewrite (avoid <code>SELECT *</code>, replace
+correlated subqueries with joins, use keyset pagination), reduce data
+returned, partition large tables, cache results, or precompute with
+materialised views.</p>
+<h4 id="sde-3-interview-checkpoints-14">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-14">30-second version</h4>
+
+<blockquote>
+<p>For PostgreSQL, <code>EXPLAIN (ANALYZE, BUFFERS)</code> executes the statement,
+so use a safe environment or a carefully controlled read-only query:
+look for sequential scans on large tables, row-estimate mismatches
+(stale stats; <code>ANALYZE</code>), expensive sorts/hash joins and nested loops
+over big sets. Fixes: add or reshape indexes, rewrite (avoid
+<code>SELECT *</code>, replace correlated subqueries with joins, use keyset
+pagination), reduce data returned, partition large tables, cache
+results, or precompute with materialised views.</p>
+</blockquote>
+
+<p><strong>Q90. SQL vs NoSQL: how do you choose?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-15">A good SDE-3 interview answer is:</h4>
+
+<p>SQL when data is relational, needs ACID transactions, ad-hoc queries and
+joins. NoSQL when you need horizontal scale and a known access pattern:
+key-value/document (Firestore, DynamoDB, MongoDB) for flexible schema
+and low latency lookups, wide-column (Bigtable, Cassandra) for massive
+writes/time-series, graph for relationship traversal, search engines
+(Elasticsearch) for text queries. Polyglot persistence is normal, but
+each store adds operational cost, so justify it with requirements, not
+fashion.</p>
+<h4 id="how-to-understand-it-15">How to understand it</h4>
+
+<p>Compare the options by correctness, operational behavior, performance,
+failure modes, and when you would choose each one—not just by
+definitions.</p>
+
+<p><strong>Plain-English starting point:</strong> SQL when data is relational, needs
+ACID transactions, ad-hoc queries and joins. NoSQL when you need
+horizontal scale and a known access pattern: key-value/document
+(Firestore, DynamoDB, MongoDB) for flexible schema and low latency
+lookups, wide-column (Bigtable, Cassandra) for massive
+writes/time-series, graph for relationship traversal, search engines
+(Elasticsearch) for text queries.</p>
+<h4 id="sde-3-interview-checkpoints-15">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-15">30-second version</h4>
+
+<blockquote>
+<p>SQL when data is relational, needs ACID transactions, ad-hoc queries
+and joins. NoSQL when you need horizontal scale and a known access
+pattern: key-value/document (Firestore, DynamoDB, MongoDB) for
+flexible schema and low latency lookups, wide-column (Bigtable,
+Cassandra) for massive writes/time-series, graph for relationship
+traversal, search engines (Elasticsearch) for text queries.</p>
+</blockquote>
+
+<p><strong>Q91. Which Redis caching patterns do you know, and what are the
+failure modes?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-16">A good SDE-3 interview answer is:</h4>
+
+<p><em>Cache-aside</em> (read: check cache, miss → DB → populate; write: update DB
+then evict), <em>write-through</em>, <em>write-behind</em>. Always set TTLs (with
+jitter) and eviction policy. Failure modes: <strong>stampede</strong> (many requests
+rebuild an expired hot key: use locking/single-flight or early refresh),
+<strong>penetration</strong> (queries for non-existent keys: cache negatives/Bloom
+filter), <strong>avalanche</strong> (mass expiry: jittered TTLs), stale data and
+cache/DB inconsistency. For a distributed lock use
+<code>SET key value NX PX ttl</code> with a unique token and a Lua release script,
+and note locks don&#39;t give strict safety without fencing tokens.</p>
+<h4 id="how-to-understand-it-16">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> <em>Cache-aside</em> (read: check cache, miss
+→ DB → populate; write: update DB then evict), <em>write-through</em>,
+<em>write-behind</em>. Always set TTLs (with jitter) and eviction policy.</p>
+<h4 id="sde-3-interview-checkpoints-16">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-16">30-second version</h4>
+
+<blockquote>
+<p><em>Cache-aside</em> (read: check cache, miss → DB → populate; write: update
+DB then evict), <em>write-through</em>, <em>write-behind</em>. Always set TTLs (with
+jitter) and eviction policy.</p>
+</blockquote>
+
+<hr>
+<h2 id="p-security-performance-quality">P. Security, Performance &amp; Quality</h2>
+
+<p><strong>Q92. Which OWASP vulnerabilities matter most in a Java API, and how do
+you prevent them?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-17">A good SDE-3 interview answer is:</h4>
+
+<p>Injection (use prepared statements/JPA parameters, never concatenate
+SQL), broken access control (check ownership on every object access, not
+just roles: IDOR), cryptographic failures (TLS everywhere, strong
+hashing, no hard-coded secrets), insecure deserialization (avoid Java
+native deserialization; configure Jackson safely), SSRF (allow-list
+outbound URLs), vulnerable components (SCA scanning), security
+misconfiguration (disable actuator exposure, verbose errors), XSS
+(output encoding, CSP) and insufficient logging/monitoring. Add rate
+limiting and input validation.</p>
+<h4 id="how-to-understand-it-17">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Injection (use prepared statements/JPA
+parameters, never concatenate SQL), broken access control (check
+ownership on every object access, not just roles: IDOR), cryptographic
+failures (TLS everywhere, strong hashing, no hard-coded secrets),
+insecure deserialization (avoid Java native deserialization; configure
+Jackson safely), SSRF (allow-list outbound URLs), vulnerable components
+(SCA scanning), security misconfiguration (disable actuator exposure,
+verbose errors), XSS (output encoding, CSP) and insufficient
+logging/monitoring. Add rate limiting and input validation.</p>
+<h4 id="sde-3-interview-checkpoints-17">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-17">30-second version</h4>
+
+<blockquote>
+<p>Injection (use prepared statements/JPA parameters, never concatenate
+SQL), broken access control (check ownership on every object access,
+not just roles: IDOR), cryptographic failures (TLS everywhere, strong
+hashing, no hard-coded secrets), insecure deserialization (avoid Java
+native deserialization; configure Jackson safely), SSRF (allow-list
+outbound URLs), vulnerable components (SCA scanning), security
+misconfiguration (disable actuator exposure, verbose errors), XSS
+(output encoding, CSP) and insufficient logging/monitoring. Add rate
+limiting and input validation.</p>
+</blockquote>
+
+<p><strong>Q93. What are your logging best practices?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-18">A good SDE-3 interview answer is:</h4>
+
+<p>Structured JSON logs through SLF4J, with correlation IDs in the MDC (set
+in a filter, cleared in <code>finally</code>, propagated to async tasks),
+appropriate levels, and no sensitive data (PII, tokens, card numbers).
+Use parameterised messages (<code>log.info(&quot;order {}&quot;, id)</code>), log once per
+failure at the boundary, avoid logging in tight loops, and sample
+high-volume debug logs. Logs explain <em>what happened</em>; metrics tell <em>how
+much</em>; traces show <em>where</em>.</p>
+<h4 id="how-to-understand-it-18">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Structured JSON logs through SLF4J,
+with correlation IDs in the MDC (set in a filter, cleared in <code>finally</code>,
+propagated to async tasks), appropriate levels, and no sensitive data
+(PII, tokens, card numbers). Use parameterised messages
+(<code>log.info(&quot;order {}&quot;, id)</code>), log once per failure at the boundary,
+avoid logging in tight loops, and sample high-volume debug logs.</p>
+<h4 id="sde-3-interview-checkpoints-18">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-18">30-second version</h4>
+
+<blockquote>
+<p>Structured JSON logs through SLF4J, with correlation IDs in the MDC
+(set in a filter, cleared in <code>finally</code>, propagated to async tasks),
+appropriate levels, and no sensitive data (PII, tokens, card numbers).
+Use parameterised messages (<code>log.info(&quot;order {}&quot;, id)</code>), log once per
+failure at the boundary, avoid logging in tight loops, and sample
+high-volume debug logs.</p>
+</blockquote>
+
+<p><strong>Q94. How do you performance-test and benchmark?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-19">A good SDE-3 interview answer is:</h4>
+
+<p>Define SLOs, then load-test realistic scenarios (k6, Gatling, JMeter)
+against a production-like environment with representative data,
+measuring throughput, p50/p95/p99 latency and errors, plus saturation
+(CPU, GC, pool waits). Find bottlenecks with profiling (JFR,
+async-profiler) before changing code. Use <strong>JMH</strong> for micro-benchmarks
+(warm-up, forks, blackhole to avoid dead-code elimination); hand-rolled
+<code>System.nanoTime</code> loops are misleading. Run soak tests to catch leaks
+and put a regression test in CI.</p>
+<h4 id="how-to-understand-it-19">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Define SLOs, then load-test realistic
+scenarios (k6, Gatling, JMeter) against a production-like environment
+with representative data, measuring throughput, p50/p95/p99 latency and
+errors, plus saturation (CPU, GC, pool waits). Find bottlenecks with
+profiling (JFR, async-profiler) before changing code.</p>
+<h4 id="key-terms-you-should-know-10">Key terms you should know</h4>
+
+<ul>
+<li><strong>GC</strong> — Garbage collection: automatic identification and reclamation
+of heap memory that is no longer reachable.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-19">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-19">30-second version</h4>
+
+<blockquote>
+<p>Define SLOs, then load-test realistic scenarios (k6, Gatling, JMeter)
+against a production-like environment with representative data,
+measuring throughput, p50/p95/p99 latency and errors, plus saturation
+(CPU, GC, pool waits). Find bottlenecks with profiling (JFR,
+async-profiler) before changing code.</p>
+</blockquote>
+
+<p><strong>Q95. How do you deal with flaky tests?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-20">A good SDE-3 interview answer is:</h4>
+
+<p>Treat them as defects: find the cause (time/timezone, ordering, shared
+state, async waits with <code>sleep</code>, random data, external dependencies).
+Fixes: inject a <code>Clock</code>, use Awaitility instead of sleeps, isolate data
+per test (transactions or Testcontainers per class), make tests
+independent, mock only external boundaries, and quarantine rather than
+ignore with a ticket and deadline. A flaky suite erodes trust in CI.</p>
+<h4 id="how-to-understand-it-20">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Treat them as defects: find the cause
+(time/timezone, ordering, shared state, async waits with <code>sleep</code>, random
+data, external dependencies). Fixes: inject a <code>Clock</code>, use Awaitility
+instead of sleeps, isolate data per test (transactions or Testcontainers
+per class), make tests independent, mock only external boundaries, and
+quarantine rather than ignore with a ticket and deadline.</p>
+<h4 id="sde-3-interview-checkpoints-20">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-20">30-second version</h4>
+
+<blockquote>
+<p>Treat them as defects: find the cause (time/timezone, ordering, shared
+state, async waits with <code>sleep</code>, random data, external dependencies).
+Fixes: inject a <code>Clock</code>, use Awaitility instead of sleeps, isolate
+data per test (transactions or Testcontainers per class), make tests
+independent, mock only external boundaries, and quarantine rather than
+ignore with a ticket and deadline.</p>
+</blockquote>
+
+<p><strong>Q96. What are the 12-factor principles that matter most for cloud
+services?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-21">A good SDE-3 interview answer is:</h4>
+
+<p>One codebase, many deploys; explicit dependencies; <strong>config in the
+environment</strong>; backing services as attached resources; strict
+build/release/run separation; <strong>stateless processes</strong> (state in
+DB/Redis); port binding; scale out via processes; <strong>disposability</strong>
+(fast start, graceful shutdown); dev/prod parity; logs as event streams
+to stdout; admin tasks as one-off jobs. Tie each to a concrete practice
+(immutable images, readiness probes, no local file state).</p>
+<h4 id="how-to-understand-it-21">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> One codebase, many deploys; explicit
+dependencies; <strong>config in the environment</strong>; backing services as
+attached resources; strict build/release/run separation; <strong>stateless
+processes</strong> (state in DB/Redis); port binding; scale out via processes;
+<strong>disposability</strong> (fast start, graceful shutdown); dev/prod parity; logs
+as event streams to stdout; admin tasks as one-off jobs. Tie each to a
+concrete practice (immutable images, readiness probes, no local file
+state).</p>
+<h4 id="sde-3-interview-checkpoints-21">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-21">30-second version</h4>
+
+<blockquote>
+<p>One codebase, many deploys; explicit dependencies; <strong>config in the
+environment</strong>; backing services as attached resources; strict
+build/release/run separation; <strong>stateless processes</strong> (state in
+DB/Redis); port binding; scale out via processes; <strong>disposability</strong>
+(fast start, graceful shutdown); dev/prod parity; logs as event
+streams to stdout; admin tasks as one-off jobs. Tie each to a concrete
+practice (immutable images, readiness probes, no local file state).</p>
+</blockquote>
+
+<p><strong>Q97. How do you design backward-compatible APIs and events?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-22">A good SDE-3 interview answer is:</h4>
+
+<p>Only additive changes (new optional fields), never repurpose or remove
+fields without a deprecation window; tolerant readers (ignore unknown
+properties: <code>FAIL_ON_UNKNOWN_PROPERTIES=false</code>); version breaking
+changes (<code>/v2</code> or media types); for events use Avro/Protobuf with a
+schema registry and compatibility rules, and run consumer-driven
+contract tests. Roll out producers and consumers independently, which is
+the point of microservices.</p>
+<h4 id="how-to-understand-it-22">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Only additive changes (new optional
+fields), never repurpose or remove fields without a deprecation window;
+tolerant readers (ignore unknown properties:
+<code>FAIL_ON_UNKNOWN_PROPERTIES=false</code>); version breaking changes (<code>/v2</code> or
+media types); for events use Avro/Protobuf with a schema registry and
+compatibility rules, and run consumer-driven contract tests. Roll out
+producers and consumers independently, which is the point of
+microservices.</p>
+<h4 id="sde-3-interview-checkpoints-22">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-22">30-second version</h4>
+
+<blockquote>
+<p>Only additive changes (new optional fields), never repurpose or remove
+fields without a deprecation window; tolerant readers (ignore unknown
+properties: <code>FAIL_ON_UNKNOWN_PROPERTIES=false</code>); version breaking
+changes (<code>/v2</code> or media types); for events use Avro/Protobuf with a
+schema registry and compatibility rules, and run consumer-driven
+contract tests. Roll out producers and consumers independently, which
+is the point of microservices.</p>
+</blockquote>
+
+<p><strong>Q98. How do you approach technical debt and refactoring safely?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-23">A good SDE-3 interview answer is:</h4>
+
+<p>Make it visible (tracked backlog with impact), pay it continuously
+(boy-scout rule, a fixed share of each sprint), and refactor behind
+tests: write characterisation tests first, use small steps,
+branch-by-abstraction or feature flags for large changes, and the
+strangler pattern for legacy replacement. Prioritise debt that slows
+delivery or causes incidents, and explain value in business terms (lead
+time, defect rate).</p>
+<h4 id="how-to-understand-it-23">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Make it visible (tracked backlog with
+impact), pay it continuously (boy-scout rule, a fixed share of each
+sprint), and refactor behind tests: write characterisation tests first,
+use small steps, branch-by-abstraction or feature flags for large
+changes, and the strangler pattern for legacy replacement. Prioritise
+debt that slows delivery or causes incidents, and explain value in
+business terms (lead time, defect rate).</p>
+<h4 id="key-terms-you-should-know-11">Key terms you should know</h4>
+
+<ul>
+<li><strong>Technical debt</strong> — Design or implementation choices that increase future delivery or operational cost.</li>
+<li><strong>Characterisation test</strong> — A test recording existing behavior before a change.</li>
+<li><strong>Branch by abstraction</strong> — Gradually replacing an implementation behind a stable boundary.</li>
+<li><strong>Strangler pattern</strong> — Incrementally replacing legacy functionality.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-23">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-23">30-second version</h4>
+
+<blockquote>
+<p>Make it visible (tracked backlog with impact), pay it continuously
+(boy-scout rule, a fixed share of each sprint), and refactor behind
+tests: write characterisation tests first, use small steps,
+branch-by-abstraction or feature flags for large changes, and the
+strangler pattern for legacy replacement. Prioritise debt that slows
+delivery or causes incidents, and explain value in business terms
+(lead time, defect rate).</p>
+</blockquote>
+
+<hr>
+<h2 id="q-more-coding-programs">Q. More Coding Programs</h2>
+<h4 id="1-sealed-types-with-exhaustive-pattern-matching-switch-java-21">1. Sealed types with exhaustive pattern-matching <code>switch</code> (Java 21)</h4>
+
+<p><strong>Derive the approach:</strong> the operation has a finite set of meaningful
+outcomes. Model each outcome as a type so each consumer must handle the
+known alternatives.</p>
+
+<p><strong>Why this, not the alternatives:</strong> a boolean plus nullable fields
+permits inconsistent combinations. Exceptions fit exceptional failures
+but can obscure ordinary expected outcomes. An interface with
+polymorphic behavior may be better when behavior belongs to each
+subtype; switching is useful when operations vary across a closed model.</p>
+
+<p><strong>What changes:</strong> adding a permitted subtype makes newly compiled
+exhaustive consumers require handling it. Independently deployed clients
+still need compatibility planning. A <code>default</code> can hide a missing case;
+<code>null</code> is not automatically a modeled variant. Records remain shallowly
+immutable.</p>
+
+<p><strong>Trace and checks:</strong> Success maps to a value message, Failure to an
+error message. Test each variant and the declared null policy. Branch
+selection is bounded by the small variant set, but rendering a value may
+cost more.</p>
+
+<p><strong>Strong answer signal:</strong> explain which invalid states the type model
+prevents and where evolution is constrained.</p>
+
+<pre><code class="java">sealed interface Result&lt;T&gt; permits Success, Failure {}
+record Success&lt;T&gt;(T value) implements Result&lt;T&gt; {}
+record Failure&lt;T&gt;(String error) implements Result&lt;T&gt; {}
+
+static &lt;T&gt; String describe(Result&lt;T&gt; r) {
+    return switch (r) {
+        case Success&lt;T&gt; s -&gt; &quot;OK: &quot; + s.value();
+        case Failure&lt;T&gt; f -&gt; &quot;ERR: &quot; + f.error();   // no default needed: compiler checks exhaustiveness
+    };
+}
+</code></pre>
+<h4 id="2-dynamic-filtering-with-spring-data-specification">2. Dynamic filtering with Spring Data <code>Specification</code></h4>
+
+<p><strong>Derive the approach:</strong> optional filters compose into a conjunction;
+independently add predicates for supplied values and let the database
+filter before pagination.</p>
+
+<p><strong>Why this, not the alternatives:</strong> derived-method names become unwieldy
+across many combinations. Fetching all rows and filtering in Java wastes
+memory and can paginate incorrectly. A fixed JPQL query may be simpler
+when there are only one or two stable combinations.</p>
+
+<p><strong>What changes:</strong> absent filters currently match all rows, so enforce
+authorization/tenant predicates separately and cap page size. Empty text
+is different from absent input. Sorting only by creation time is
+unstable on ties; append a unique ID. Joins may duplicate roots and
+complicate count queries.</p>
+
+<p><strong>Trace and checks:</strong> no optional filters, status only, date only and
+both must produce intended SQL predicates. Check inclusive date
+boundaries, null policy and equal timestamps across pages. Complexity
+follows the execution plan and result cardinality, not the number of
+Java predicates.</p>
+
+<p><strong>Strong answer signal:</strong> connect composability to query correctness,
+security and stable pagination.</p>
+
+<pre><code class="java">interface OrderRepository extends JpaRepository&lt;Order, Long&gt;, JpaSpecificationExecutor&lt;Order&gt; {}
+
+static Specification&lt;Order&gt; filter(String status, Instant from) {
+    return (root, q, cb) -&gt; {
+        List&lt;Predicate&gt; p = new ArrayList&lt;&gt;();
+        if (status != null) p.add(cb.equal(root.get(&quot;status&quot;), status));
+        if (from != null)   p.add(cb.greaterThanOrEqualTo(root.get(&quot;createdAt&quot;), from));
+        return cb.and(p.toArray(Predicate[]::new));
+    };
+}
+// repo.findAll(filter(&quot;PAID&quot;, from), PageRequest.of(0, 20, Sort.by(&quot;createdAt&quot;).descending()));
+</code></pre>
+<h4 id="3-bounded-concurrency-with-virtual-threads">3. Bounded concurrency with virtual threads</h4>
+
+<p><strong>Derive the approach:</strong> blocking requests can be represented as
+lightweight threads, but the downstream permits only a fixed number of
+concurrent calls. A semaphore represents that separate resource budget.</p>
+
+<p><strong>Why this, not the alternatives:</strong> a bounded platform-thread pool also
+works but limits execution contexts and downstream access together.
+Unlimited submission without a downstream limit can overwhelm connection
+pools. A semaphore protects active calls; admission limits also control
+waiting tasks and retained inputs.</p>
+
+<p><strong>What changes:</strong> acquiring permits after task creation permits an
+unbounded number of waiting virtual threads. Acquire/admit before
+submission with failure cleanup, or process bounded batches. Release
+only after successful acquisition and in <code>finally</code>. Per-JVM limits
+multiply across replicas. Waiting in executor close can exceed a request
+deadline if tasks do not terminate.</p>
+
+<p><strong>Trace and checks:</strong> with two permits and five tasks, at most two
+fetches run concurrently. Test failures and interruption without leaking
+permits; verify admitted count as well as active count. The shown code
+retains O(number of IDs) futures.</p>
+
+<p><strong>Strong answer signal:</strong> distinguish cheap threads from bounded
+resource and memory use.</p>
+
+<pre><code class="java">Semaphore limit = new Semaphore(50);                       // protect the downstream service
+try (var exec = Executors.newVirtualThreadPerTaskExecutor()) {
+    List&lt;Future&lt;String&gt;&gt; results = ids.stream().map(id -&gt; exec.submit(() -&gt; {
+        limit.acquire();
+        try { return client.fetch(id); } finally { limit.release(); }
+    })).toList();
+    for (var f : results) System.out.println(f.get());
+}   // close() waits for all tasks
+</code></pre>
+
+<p><em>Say:</em> this limits active downstream calls but still submits one task
+and retains one future per input. Bound admitted work or process batches
+for huge inputs; add deadlines and cancellation. <code>close()</code> waits for
+completion, so a hanging task can delay scope exit.</p>
+<h4 id="4-merge-overlapping-intervals-o-n-log-n">4. Merge overlapping intervals (O(n log n))</h4>
+
+<p><strong>Derive the approach:</strong> after sorting by start, a new interval either
+extends the last union interval or starts a disjoint one. Earlier merged
+intervals cannot overlap it without also overlapping the last one.</p>
+
+<p><strong>Why this, not the alternatives:</strong> pairwise comparisons cost O(n²); an
+interval tree is useful for dynamic queries but unnecessary for one
+static merge. If the input is already sorted, skip sorting and scan in
+O(n).</p>
+
+<p><strong>What changes:</strong> the code sorts the input and reuses/mutates its inner
+arrays. Copy when the caller requires preservation. Closed intervals
+that touch merge under the current condition; half-open semantics may
+need a different rule. Reject start &gt; end rather than silently
+interpreting it.</p>
+
+<p><strong>Trace and checks:</strong> <code>[1,4], [2,3], [6,8]</code> becomes <code>[1,4], [6,8]</code>; the
+contained interval must not shrink the right endpoint. Test empty input,
+touching endpoints, duplicates and nested intervals. O(n log n) time,
+O(n) output, plus sorting workspace.</p>
+
+<p><strong>Strong answer signal:</strong> state endpoint and mutation contracts before
+the sweep.</p>
+
+<pre><code class="java">int[][] merge(int[][] in) {
+    Arrays.sort(in, Comparator.comparingInt(a -&gt; a[0]));
+    List&lt;int[]&gt; out = new ArrayList&lt;&gt;();
+    for (int[] cur : in) {
+        if (out.isEmpty() || out.get(out.size() - 1)[1] &lt; cur[0]) out.add(cur);
+        else out.get(out.size() - 1)[1] = Math.max(out.get(out.size() - 1)[1], cur[1]);
+    }
+    return out.toArray(new int[0][]);
+}
+</code></pre>
+
+<hr>

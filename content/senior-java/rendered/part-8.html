@@ -1,0 +1,843 @@
+<h2 id="senior-java-question-bank-vol-7">Senior Java Question Bank, Vol. 7</h2>
+
+<p><strong>Kafka Streams · WebFlux/Reactive · Security Hardening · LeetCode-Style
+Coding · Google-Style Design · Amazon Leadership Principles</strong>
+(Q123–Q133)</p>
+
+<hr>
+<h2 id="ab-kafka-streams">AB. Kafka Streams</h2>
+
+<p><strong>Q123. KStream vs KTable vs GlobalKTable?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is">A good SDE-3 interview answer is:</h4>
+
+<p>A <strong>KStream</strong> is an unbounded sequence of independent events (every
+record matters: clicks, payments). A <strong>KTable</strong> is a changelog view
+where each key holds its <em>latest</em> value (updates replace, a null
+tombstone deletes), such as the current customer profile. A
+<strong>GlobalKTable</strong> is fully replicated to every instance, so you can join
+a stream against it without co-partitioning (suitable only for small
+reference data). The stream-table duality is the key idea: a table is a
+stream of updates, and a stream can be aggregated into a table.</p>
+<h4 id="how-to-understand-it">How to understand it</h4>
+
+<p>Compare the options by correctness, operational behavior, performance,
+failure modes, and when you would choose each one—not just by
+definitions.</p>
+
+<p><strong>Plain-English starting point:</strong> A <strong>KStream</strong> is an unbounded sequence
+of independent events (every record matters: clicks, payments). A
+<strong>KTable</strong> is a changelog view where each key holds its <em>latest</em> value
+(updates replace, a null tombstone deletes), such as the current
+customer profile.</p>
+<h4 id="sde-3-interview-checkpoints">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version">30-second version</h4>
+
+<blockquote>
+<p>A <strong>KStream</strong> is an unbounded sequence of independent events (every
+record matters: clicks, payments). A <strong>KTable</strong> is a changelog view
+where each key holds its <em>latest</em> value (updates replace, a null
+tombstone deletes), such as the current customer profile.</p>
+</blockquote>
+
+<p><strong>Q124. How does Kafka Streams manage state, scaling and fault
+tolerance?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-1">A good SDE-3 interview answer is:</h4>
+
+<p>Stateful operations (aggregations, joins, windows) use local <strong>state
+stores</strong> (RocksDB) backed by compacted <strong>changelog topics</strong>, so a
+restarted or moved task restores its state. Parallelism equals the
+number of input partitions (tasks), and instances in the same
+<code>application.id</code> share them like a consumer group. Joins require
+<strong>co-partitioned</strong> topics (same key and partition count); a key change
+triggers an automatic repartition topic. Use
+<code>processing.guarantee=exactly_once_v2</code> for transactional
+read-process-write inside Kafka, standby replicas for fast failover, and
+monitor restore time and lag.</p>
+<h4 id="how-to-understand-it-1">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Stateful operations (aggregations,
+joins, windows) use local <strong>state stores</strong> (RocksDB) backed by compacted
+<strong>changelog topics</strong>, so a restarted or moved task restores its state.
+Parallelism equals the number of input partitions (tasks), and instances
+in the same <code>application.id</code> share them like a consumer group.</p>
+<h4 id="sde-3-interview-checkpoints-1">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-1">30-second version</h4>
+
+<blockquote>
+<p>Stateful operations (aggregations, joins, windows) use local <strong>state
+stores</strong> (RocksDB) backed by compacted <strong>changelog topics</strong>, so a
+restarted or moved task restores its state. Parallelism equals the
+number of input partitions (tasks), and instances in the same
+<code>application.id</code> share them like a consumer group.</p>
+</blockquote>
+
+<p><strong>Q125. Windowing and late data?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-2">A good SDE-3 interview answer is:</h4>
+
+<p>Window types: <em>tumbling</em> (fixed, non-overlapping), <em>hopping</em> (fixed,
+overlapping), <em>sliding</em>, and <em>session</em> (gaps of inactivity). Processing
+uses <strong>event time</strong>; records that arrive after the window end are
+handled by the <strong>grace period</strong>, after which they are dropped, and
+<code>suppress()</code> emits only the final result. Explain the trade-off: a
+longer grace improves accuracy but delays final output and increases
+state size.</p>
+<h4 id="how-to-understand-it-2">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Window types: <em>tumbling</em> (fixed,
+non-overlapping), <em>hopping</em> (fixed, overlapping), <em>sliding</em>, and
+<em>session</em> (gaps of inactivity). Processing uses <strong>event time</strong>; records
+that arrive after the window end are handled by the <strong>grace period</strong>,
+after which they are dropped, and <code>suppress()</code> emits only the final
+result.</p>
+<h4 id="key-terms-you-should-know">Key terms you should know</h4>
+
+<ul>
+<li><strong>Event time</strong> — Time assigned to an event, as distinct from when the processor handles it.</li>
+<li><strong>Grace period</strong> — The allowed lateness before a window closes under Kafka Streams stream-time rules.</li>
+<li><strong>Window</strong> — A grouping of records over a defined time interval or session.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-2">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-2">30-second version</h4>
+
+<blockquote>
+<p>Window types: <em>tumbling</em> (fixed, non-overlapping), <em>hopping</em> (fixed,
+overlapping), <em>sliding</em>, and <em>session</em> (gaps of inactivity).
+Processing uses <strong>event time</strong>; records that arrive after the window
+end are handled by the <strong>grace period</strong>, after which they are dropped,
+and <code>suppress()</code> emits only the final result.</p>
+</blockquote>
+
+<hr>
+<h2 id="ac-reactive-programming-spring-webflux">AC. Reactive Programming &amp; Spring WebFlux</h2>
+
+<p><strong>Q126. Explain Mono, Flux and back-pressure.</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-3">A good SDE-3 interview answer is:</h4>
+
+<p><code>Mono&lt;T&gt;</code> represents zero or one value; <code>Flux&lt;T&gt;</code> represents zero to
+many. Both also signal completion or failure. Cold, deferred publishers
+start their work on subscription, but this is not a universal property of
+all publishers or of the expressions used to construct them. Hot sources
+may produce independently of subscribers. <code>Mono.just(blockingCall())</code>
+evaluates the call immediately; <code>Mono.fromCallable(() -&gt; blockingCall())</code>
+defers it. Scheduling blocking work safely is a separate decision.</p>
+
+<p>Reactive Streams defines <code>Publisher</code>, <code>Subscriber</code>, <code>Subscription</code> and
+<code>Processor</code>. A subscriber signals demand with <code>request(n)</code>; a compliant
+publisher must honor demand for <code>onNext</code> signals. This does not remove
+the need for bounded buffering and an overflow policy at push-source
+boundaries. Operators such as <code>map</code>, <code>flatMap</code>, <code>zip</code>, <code>concatMap</code>,
+<code>retryWhen</code> and <code>timeout</code> compose work. <code>flatMap</code> can merge concurrent
+inner publishers and interleave output; <code>concatMap</code> processes them
+sequentially while preserving order.</p>
+<h4 id="how-to-understand-it-3">How to understand it</h4>
+
+<p>Distinguish assembly, subscription, production and delivery. Java
+evaluates method arguments before the method call, so putting eager work
+inside <code>just</code> cannot make it lazy. A hot source and a cold deferred source
+also have different behavior for late or repeated subscribers.</p>
+<h4 id="key-terms-you-should-know-1">Key terms you should know</h4>
+
+<ul>
+<li><strong>Cold publisher</strong> — A source that starts its source work for each subscription.</li>
+<li><strong>Hot publisher</strong> — A source that can share production independently of individual subscribers.</li>
+<li><strong>Back-pressure</strong> — Demand signaling that regulates delivery to a subscriber.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-3">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li>Compare eager <code>just(call())</code> with deferred <code>fromCallable</code>.</li>
+<li>Test late subscribers, repeat subscriptions, cancellation and overflow.</li>
+<li>Bound concurrency and keep blocking dependencies off the event loop.</li>
+</ul>
+<h4 id="30-second-version-3">30-second version</h4>
+
+<blockquote>
+<p>Mono models zero or one value and Flux zero to many. Cold deferred work starts
+on subscription, but hot sources and eager assembly-time calls are exceptions.
+Back-pressure controls delivery demand; buffering, overflow and blocking-call
+scheduling still need deliberate policies.</p>
+</blockquote>
+
+<p><a href="https://projectreactor.io/docs/core/release/reference/advancedFeatures/reactor-hotCold.html">Reactor hot versus cold</a>.</p>
+
+<p><strong>Q127. What are the biggest WebFlux mistakes?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-4">A good SDE-3 interview answer is:</h4>
+
+<p>Blocking the event loop stalls unrelated requests. Wrap a synchronous
+dependency as
+<code>Mono.fromCallable(() -&gt; blockingCall()).subscribeOn(Schedulers.boundedElastic())</code>;
+<code>publishOn</code> changes downstream execution and is not a general fix for
+blocking source work. Return the publisher from a WebFlux handler and
+let the framework subscribe. Preserve context, set bounded concurrency
+and deadlines, and test error/cancellation paths. Eager work inside
+<code>Mono.just(blockingCall())</code> already ran before subscription. <a href="https://projectreactor.io/docs/core/release/reference/faq.html">Reactor
+blocking-call
+guidance</a>.</p>
+<h4 id="how-to-understand-it-4">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Blocking the event loop stalls
+unrelated requests. Wrap a synchronous dependency as
+<code>Mono.fromCallable(() -&gt; blockingCall()).subscribeOn(Schedulers.boundedElastic())</code>;
+<code>publishOn</code> changes downstream execution and is not a general fix for
+blocking source work.</p>
+<h4 id="key-terms-you-should-know-2">Key terms you should know</h4>
+
+<ul>
+<li><strong>Mono</strong> — A Reactor type representing zero or one asynchronous value.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-4">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-4">30-second version</h4>
+
+<blockquote>
+<p>Blocking the event loop stalls unrelated requests. Wrap a synchronous
+dependency as
+<code>Mono.fromCallable(() -&gt; blockingCall()).subscribeOn(Schedulers.boundedElastic())</code>;
+<code>publishOn</code> changes downstream execution and is not a general fix for
+blocking source work.</p>
+</blockquote>
+
+<p><strong>Q128. WebFlux or Spring MVC with virtual threads?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-5">A good SDE-3 interview answer is:</h4>
+
+<p>Choose WebFlux for end-to-end non-blocking stacks (R2DBC, reactive
+Mongo/Redis/Kafka, WebClient), streaming (SSE/WebSocket), or
+gateway-style fan-out with heavy back-pressure needs. Choose <strong>MVC +
+virtual threads</strong> when you use blocking libraries such as JDBC/JPA: you
+get high concurrency with simple, debuggable code. A reactive controller
+over a blocking JPA repository gives the complexity of reactive with
+none of the benefits.</p>
+<h4 id="how-to-understand-it-5">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Choose WebFlux for end-to-end
+non-blocking stacks (R2DBC, reactive Mongo/Redis/Kafka, WebClient),
+streaming (SSE/WebSocket), or gateway-style fan-out with heavy
+back-pressure needs. Choose <strong>MVC + virtual threads</strong> when you use
+blocking libraries such as JDBC/JPA: you get high concurrency with
+simple, debuggable code.</p>
+<h4 id="key-terms-you-should-know-3">Key terms you should know</h4>
+
+<ul>
+<li><strong>back-pressure</strong> — A mechanism that prevents an upstream producer
+from overwhelming a downstream consumer.</li>
+<li><strong>reactive</strong> — A programming model centered on asynchronous streams
+and non-blocking processing with explicit demand/back-pressure.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-5">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-5">30-second version</h4>
+
+<blockquote>
+<p>Choose WebFlux for end-to-end non-blocking stacks (R2DBC, reactive
+Mongo/Redis/Kafka, WebClient), streaming (SSE/WebSocket), or
+gateway-style fan-out with heavy back-pressure needs. Choose <strong>MVC +
+virtual threads</strong> when you use blocking libraries such as JDBC/JPA:
+you get high concurrency with simple, debuggable code.</p>
+</blockquote>
+
+<p><strong>Q129. How do you test reactive code?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-6">A good SDE-3 interview answer is:</h4>
+
+<p><code>StepVerifier</code> asserts emitted items, errors and completion, with
+<code>withVirtualTime</code> for delays/timeouts; <code>WebTestClient</code> tests endpoints;
+Testcontainers provide real brokers/DBs. Verify cancellation and error
+paths, not only the happy path.</p>
+<h4 id="how-to-understand-it-6">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> <code>StepVerifier</code> asserts emitted items,
+errors and completion, with <code>withVirtualTime</code> for delays/timeouts;
+<code>WebTestClient</code> tests endpoints; Testcontainers provide real
+brokers/DBs. Verify cancellation and error paths, not only the happy
+path.</p>
+<h4 id="sde-3-interview-checkpoints-6">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-6">30-second version</h4>
+
+<blockquote>
+<p><code>StepVerifier</code> asserts emitted items, errors and completion, with
+<code>withVirtualTime</code> for delays/timeouts; <code>WebTestClient</code> tests
+endpoints; Testcontainers provide real brokers/DBs. Verify
+cancellation and error paths, not only the happy path.</p>
+</blockquote>
+
+<hr>
+<h2 id="ad-security-hardening">AD. Security Hardening</h2>
+
+<p><strong>Q130. How do you manage secrets properly?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-7">A good SDE-3 interview answer is:</h4>
+
+<p>Never in Git, images, env files committed to repos or logs. Use a secret
+manager (GCP Secret Manager, Vault) with IAM-scoped access, versioning
+and audit logs; load at startup or mount as a volume (prefer files over
+env vars, which leak in dumps and <code>ps</code>); <strong>rotate</strong> automatically and
+design the app to reload or restart on rotation; use short-lived
+credentials (Workload Identity, IAM database authentication) wherever
+possible; scan repos for leaked secrets (gitleaks) and revoke
+immediately if exposed.</p>
+<h4 id="how-to-understand-it-7">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Never in Git, images, env files
+committed to repos or logs. Use a secret manager (GCP Secret Manager,
+Vault) with IAM-scoped access, versioning and audit logs; load at
+startup or mount as a volume (prefer files over env vars, which leak in
+dumps and <code>ps</code>); <strong>rotate</strong> automatically and design the app to reload
+or restart on rotation; use short-lived credentials (Workload Identity,
+IAM database authentication) wherever possible; scan repos for leaked
+secrets (gitleaks) and revoke immediately if exposed.</p>
+<h4 id="key-terms-you-should-know-4">Key terms you should know</h4>
+
+<ul>
+<li><strong>IAM</strong> — Identity and Access Management: policies controlling who or
+what can perform which actions on which resources.</li>
+<li><strong>Workload Identity</strong> — A mechanism that lets workloads obtain cloud
+identities without embedding long-lived service-account keys.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-7">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-7">30-second version</h4>
+
+<blockquote>
+<p>Never in Git, images, env files committed to repos or logs. Use a
+secret manager (GCP Secret Manager, Vault) with IAM-scoped access,
+versioning and audit logs; load at startup or mount as a volume
+(prefer files over env vars, which leak in dumps and <code>ps</code>); <strong>rotate</strong>
+automatically and design the app to reload or restart on rotation; use
+short-lived credentials (Workload Identity, IAM database
+authentication) wherever possible; scan repos for leaked secrets
+(gitleaks) and revoke immediately if exposed.</p>
+</blockquote>
+
+<p><strong>Q131. What is zero-trust and how do you implement it between
+services?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-8">A good SDE-3 interview answer is:</h4>
+
+<p>&quot;Never trust, always verify&quot;: no implicit trust from network location.
+Implementation: <strong>mTLS</strong> between services (mesh-issued short-lived
+certificates), service identities (SPIFFE or cloud service accounts),
+per-call authorisation (propagate the user&#39;s JWT plus service-level
+scopes, enforce in each service, not only at the gateway), default-deny
+network policies, least-privilege IAM, and audit logging. The gateway is
+one control, not the whole perimeter.</p>
+<h4 id="how-to-understand-it-8">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> &quot;Never trust, always verify&quot;: no
+implicit trust from network location. Implementation: <strong>mTLS</strong> between
+services (mesh-issued short-lived certificates), service identities
+(SPIFFE or cloud service accounts), per-call authorisation (propagate
+the user&#39;s JWT plus service-level scopes, enforce in each service, not
+only at the gateway), default-deny network policies, least-privilege
+IAM, and audit logging.</p>
+<h4 id="key-terms-you-should-know-5">Key terms you should know</h4>
+
+<ul>
+<li><strong>IAM</strong> — Identity and Access Management: policies controlling who or
+what can perform which actions on which resources.</li>
+<li><strong>Service</strong> — An application or platform capability exposed through a
+defined interface; a Kubernetes Service is a specific networking resource.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-8">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-8">30-second version</h4>
+
+<blockquote>
+<p>&quot;Never trust, always verify&quot;: no implicit trust from network location.
+Implementation: <strong>mTLS</strong> between services (mesh-issued short-lived
+certificates), service identities (SPIFFE or cloud service accounts),
+per-call authorisation (propagate the user&#39;s JWT plus service-level
+scopes, enforce in each service, not only at the gateway),
+default-deny network policies, least-privilege IAM, and audit logging.</p>
+</blockquote>
+
+<p><strong>Q132. How do you secure the software supply chain?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-9">A good SDE-3 interview answer is:</h4>
+
+<p>Pin and verify dependencies, scan with SCA (Dependabot/OWASP/Snyk),
+generate an <strong>SBOM</strong>, sign artifacts/images (cosign) and enforce
+signature and vulnerability policy at deploy time (Binary
+Authorization), use minimal/distroless base images, build in isolated CI
+with ephemeral credentials, require code review and branch protection,
+and prevent dependency-confusion by using a private repository with
+explicit namespaces. Know the Log4Shell lesson: have an inventory so you
+can answer &quot;where do we use library X?&quot; within minutes.</p>
+<h4 id="how-to-understand-it-9">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Pin and verify dependencies, scan with
+SCA (Dependabot/OWASP/Snyk), generate an <strong>SBOM</strong>, sign artifacts/images
+(cosign) and enforce signature and vulnerability policy at deploy time
+(Binary Authorization), use minimal/distroless base images, build in
+isolated CI with ephemeral credentials, require code review and branch
+protection, and prevent dependency-confusion by using a private
+repository with explicit namespaces. Know the Log4Shell lesson: have an
+inventory so you can answer &quot;where do we use library X?&quot; within minutes.</p>
+<h4 id="key-terms-you-should-know-6">Key terms you should know</h4>
+
+<ul>
+<li><strong>OWASP</strong> — An organization that publishes widely used
+application-security guidance, including the OWASP Top 10.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-9">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-9">30-second version</h4>
+
+<blockquote>
+<p>Pin and verify dependencies, scan with SCA (Dependabot/OWASP/Snyk),
+generate an <strong>SBOM</strong>, sign artifacts/images (cosign) and enforce
+signature and vulnerability policy at deploy time (Binary
+Authorization), use minimal/distroless base images, build in isolated
+CI with ephemeral credentials, require code review and branch
+protection, and prevent dependency-confusion by using a private
+repository with explicit namespaces. Know the Log4Shell lesson: have
+an inventory so you can answer &quot;where do we use library X?&quot; within
+minutes.</p>
+</blockquote>
+
+<p><strong>Q133. What is your hardening checklist for a Spring Boot service?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-10">A good SDE-3 interview answer is:</h4>
+
+<p>Expose only needed Actuator endpoints (and secure them), disable stack
+traces in responses, set security headers (HSTS, CSP,
+<code>X-Content-Type-Options</code>), enforce HTTPS and TLS 1.2+, validate and
+size-limit input (request body size, upload types), rate-limit and add
+timeouts, parameterised queries only, strict CORS, disable default
+accounts and verbose error pages, run as non-root in a read-only
+container, keep dependencies patched, and log security events (auth
+failures, access denials) without sensitive data.</p>
+<h4 id="how-to-understand-it-10">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Expose only needed Actuator endpoints
+(and secure them), disable stack traces in responses, set security
+headers (HSTS, CSP, <code>X-Content-Type-Options</code>), enforce HTTPS and TLS
+1.2+, validate and size-limit input (request body size, upload types),
+rate-limit and add timeouts, parameterised queries only, strict CORS,
+disable default accounts and verbose error pages, run as non-root in a
+read-only container, keep dependencies patched, and log security events
+(auth failures, access denials) without sensitive data.</p>
+<h4 id="key-terms-you-should-know-7">Key terms you should know</h4>
+
+<ul>
+<li><strong>Actuator</strong> — Spring Boot endpoints for operational information and application management.</li>
+<li><strong>Least privilege</strong> — Granting only the access needed for a responsibility.</li>
+<li><strong>Hardening</strong> — Reducing unnecessary exposure and strengthening deployed defaults.</li>
+<li><strong>Input limits</strong> — Bounds on request sizes and processing cost.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-10">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-10">30-second version</h4>
+
+<blockquote>
+<p>Expose only needed Actuator endpoints (and secure them), disable stack
+traces in responses, set security headers (HSTS, CSP,
+<code>X-Content-Type-Options</code>), enforce HTTPS and TLS 1.2+, validate and
+size-limit input (request body size, upload types), rate-limit and add
+timeouts, parameterised queries only, strict CORS, disable default
+accounts and verbose error pages, run as non-root in a read-only
+container, keep dependencies patched, and log security events (auth
+failures, access denials) without sensitive data.</p>
+</blockquote>
+
+<hr>
+<h2 id="ae-leetcode-style-programs">AE. LeetCode-Style Programs</h2>
+<h4 id="1-valid-parentheses-stack">1. Valid parentheses (stack)</h4>
+
+<p><strong>Derive the approach:</strong> the most recently opened bracket must close
+first, which is exactly LIFO behavior. Store expected closing characters
+so a close is checked against the top in one step.</p>
+
+<p><strong>Why this, not the alternatives:</strong> a single balance counter works for
+one bracket type but cannot detect crossed types such as <code>([)]</code>.
+Repeated string replacement can be quadratic. A stack makes nesting
+order explicit.</p>
+
+<p><strong>What changes:</strong> the code assumes only bracket characters; other
+characters are rejected. If parsing source text, decide how to treat
+strings, escapes and comments. Empty input is valid. General wildcard
+brackets require a different state representation.</p>
+
+<p><strong>Trace and checks:</strong> <code>([])</code> pushes <code>)</code> then <code>]</code>, and consumes them in
+reverse order. Test <code>([)]</code>, leading close, trailing open and empty
+input. O(n) time, O(n) stack; <code>toCharArray</code> also allocates O(n).</p>
+
+<p><strong>Strong answer signal:</strong> explain why counts alone cannot represent
+nesting.</p>
+
+<pre><code class="java">boolean isValid(String s) {
+    Deque&lt;Character&gt; st = new ArrayDeque&lt;&gt;();
+    for (char c : s.toCharArray()) {
+        switch (c) {
+            case &#39;(&#39; -&gt; st.push(&#39;)&#39;);
+            case &#39;[&#39; -&gt; st.push(&#39;]&#39;);
+            case &#39;{&#39; -&gt; st.push(&#39;}&#39;);
+            default -&gt; { if (st.isEmpty() || st.pop() != c) return false; }
+        }
+    }
+    return st.isEmpty();
+}
+</code></pre>
+<h4 id="2-number-of-islands-dfs-o-rows-cols">2. Number of islands (DFS, O(rows × cols))</h4>
+
+<p><strong>Derive the approach:</strong> each island is a connected component. At an
+unvisited land cell, count one component and mark every reachable land
+cell so none can start another component.</p>
+
+<p><strong>Why this, not the alternatives:</strong> DFS and BFS have the same O(rows ×
+columns) time; iterative traversal avoids recursion-depth failure.
+Union-find is useful for incremental additions but is more machinery for
+a single static count. Checking only neighbors&#39; counts cannot reliably
+merge arbitrarily connected shapes.</p>
+
+<p><strong>What changes:</strong> four-neighbor versus eight-neighbor adjacency changes
+the answer. The snippet mutates land to water and assumes a rectangular
+grid. Preserve input with a visited structure when required. Deep
+snake-shaped islands can overflow the recursive stack.</p>
+
+<p><strong>Trace and checks:</strong> two diagonally touching land cells count as two
+under four-neighbor rules. Test all water, all land, one row and a deep
+component. Worst-case auxiliary traversal space is O(rows × columns),
+even with in-place marking.</p>
+
+<p><strong>Strong answer signal:</strong> distinguish traversal marking, mutation and
+stack space.</p>
+
+<pre><code class="java">int numIslands(char[][] g) {
+    int count = 0;
+    for (int r = 0; r &lt; g.length; r++)
+        for (int c = 0; c &lt; g[0].length; c++)
+            if (g[r][c] == &#39;1&#39;) { sink(g, r, c); count++; }
+    return count;
+}
+void sink(char[][] g, int r, int c) {
+    if (r &lt; 0 || c &lt; 0 || r &gt;= g.length || c &gt;= g[0].length || g[r][c] != &#39;1&#39;) return;
+    g[r][c] = &#39;0&#39;;
+    sink(g, r + 1, c); sink(g, r - 1, c); sink(g, r, c + 1); sink(g, r, c - 1);
+}
+</code></pre>
+
+<p><em>Say:</em> deep recursion can overflow the stack on huge grids; use
+BFS/iterative DFS or union-find. Mention that you mutate the input and
+how to avoid it with a <code>visited</code> array.</p>
+<h4 id="3-coin-change-fewest-coins-dp-o-amount-coins">3. Coin change: fewest coins (DP, O(amount × coins))</h4>
+
+<p><strong>Derive the approach:</strong> after choosing a final coin c, the remaining
+problem is the best solution for amount−c. Let dp[a] be the minimum
+coin count for exact total a, with dp[0]=0 and an unreachable
+sentinel.</p>
+
+<p><strong>Why this, not the alternatives:</strong> greedy fails without special
+denomination guarantees: for {1,3,4}, amount 6, 4+1+1 loses to 3+3.
+Naive recursion repeats amounts; memoization or bottom-up DP reuses
+them. BFS over reachable amounts is valid but adds frontier bookkeeping.</p>
+
+<p><strong>What changes:</strong> counting combinations is a different recurrence with
+order-sensitive loop choices. Limited coin supplies require additional
+state or a bounded-knapsack method. Zero/negative denominations break
+progress; huge amounts make O(amount) memory impractical even with few
+coins.</p>
+
+<p><strong>Trace and checks:</strong> for {2}, odd totals remain unreachable; zero
+amount returns zero. Test {1,3,4}/6, duplicates and invalid input under
+the chosen contract. O(amount × denominations) time, O(amount) space.</p>
+
+<p><strong>Strong answer signal:</strong> define the state and prove the transition
+before writing loops.</p>
+
+<pre><code class="java">int coinChange(int[] coins, int amount) {
+    int[] dp = new int[amount + 1];
+    Arrays.fill(dp, amount + 1);                    // &quot;infinity&quot;
+    dp[0] = 0;
+    for (int a = 1; a &lt;= amount; a++)
+        for (int coin : coins)
+            if (coin &lt;= a) dp[a] = Math.min(dp[a], dp[a - coin] + 1);
+    return dp[amount] &gt; amount ? -1 : dp[amount];
+}
+</code></pre>
+
+<p><em>Contract:</em> require nonnegative, allocation-bounded <code>amount</code> and
+strictly positive denominations; reject invalid input. Greedy fails for
+coin sets like {1, 3, 4}, which is why DP is needed. This is O(amount ×
+number of coins) time and O(amount) space.</p>
+<h4 id="4-binary-tree-level-order-traversal-bfs">4. Binary tree level-order traversal (BFS)</h4>
+
+<p><strong>Derive the approach:</strong> output groups nodes by distance from the root,
+so process a queue breadth-first. Snapshot the queue size before a level
+so newly enqueued children stay in the next level.</p>
+
+<p><strong>Why this, not the alternatives:</strong> DFS can group by depth too, but BFS
+directly matches the requested output. Repeatedly traversing from the
+root for each depth repeats work. A stack alone changes the visitation
+order.</p>
+
+<p><strong>What changes:</strong> a graph may contain cycles/shared vertices and needs
+visited tracking. A very wide tree can make the queue large; a deep tree
+makes recursive DFS risky. Zigzag output can reverse each level or
+change insertion positions without changing the level boundary.</p>
+
+<p><strong>Trace and checks:</strong> root 1 with children 2/3 emits <code>[1]</code>, then
+<code>[2,3]</code>. Test null root, one-sided tree, broad tree and duplicate
+values. O(n) time, O(maximum width) queue, O(n) output.</p>
+
+<p><strong>Strong answer signal:</strong> explain why the level-size snapshot is taken
+before processing children.</p>
+
+<pre><code class="java">List&lt;List&lt;Integer&gt;&gt; levelOrder(TreeNode root) {
+    List&lt;List&lt;Integer&gt;&gt; out = new ArrayList&lt;&gt;();
+    if (root == null) return out;
+    Queue&lt;TreeNode&gt; q = new ArrayDeque&lt;&gt;(List.of(root));
+    while (!q.isEmpty()) {
+        int n = q.size(); List&lt;Integer&gt; level = new ArrayList&lt;&gt;();
+        for (int i = 0; i &lt; n; i++) {
+            TreeNode t = q.poll(); level.add(t.val);
+            if (t.left != null) q.add(t.left);
+            if (t.right != null) q.add(t.right);
+        }
+        out.add(level);
+    }
+    return out;
+}
+</code></pre>
+
+<hr>
+<h2 id="af-google-style-system-design-condensed">AF. Google-Style System Design (condensed)</h2>
+
+<p><strong>Design 7: Distributed Job Scheduler.</strong> <em>Clarify:</em> one-off and
+recurring (cron) jobs, millions per day, at-least-once execution with
+idempotent jobs, retries, priorities, delays up to months. <em>API:</em>
+<code>POST /jobs {payload, runAt|cron, retryPolicy}</code>, <code>GET /jobs/{id}</code>,
+<code>DELETE</code>. <em>Storage:</em> jobs table partitioned by <code>runAt</code> bucket
+(Spanner/Cloud SQL/Bigtable) with <code>status</code>, <code>nextRunAt</code>, <code>attempt</code>,
+<code>leaseUntil</code>. <em>Dispatch:</em> a scheduler tier scans each time bucket for
+due jobs and enqueues them to Pub/Sub; workers pull, take a <strong>lease</strong>
+(visibility timeout), execute and mark complete; expired leases are
+re-dispatched. <em>Reliability:</em> heartbeats extend leases, exponential
+backoff, DLQ after N attempts, deduplication by a stable logical
+execution ID (for recurring jobs: job ID plus scheduled occurrence),
+reused across retries; keep attempt count as separate metadata. Fence
+stale lease holders where external effects require it. <em>Scaling:</em>
+partition the scheduler by hash(jobId) with leader election (or
+lease-based ownership) per partition; avoid hot buckets at &quot;00:00&quot; by
+jittering. <em>Trade-offs:</em> a scheduler alone cannot guarantee exactly-once
+arbitrary external effects; combine retryable delivery with idempotency
+or a transactional effect boundary; clock skew (use server time),
+long-running jobs need checkpointing.</p>
+
+<p><em>Google-style interviews reward:</em> clear requirements, quantified scale,
+trade-offs stated explicitly, and deep dives chosen by the interviewer
+(be ready to go deep on any component).</p>
+
+<hr>
+<h2 id="ag-amazon-leadership-principles-pack">AG. Amazon Leadership Principles Pack</h2>
+
+<p>Prepare <strong>one story per principle</strong> (many stories cover several). Use
+STAR with the <strong>Result quantified</strong> and speak in <strong>&quot;I&quot;</strong> not &quot;we&quot;.</p>
+
+<table><thead>
+<tr>
+<th>Principle</th>
+<th>Story prompt</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>Customer Obsession</td>
+<td>A decision you made from the customer&#39;s pain, not the roadmap</td>
+</tr>
+<tr>
+<td>Ownership</td>
+<td>Something outside your scope you fixed and owned to completion</td>
+</tr>
+<tr>
+<td>Invent and Simplify</td>
+<td>You replaced a complex process/system with a simpler one</td>
+</tr>
+<tr>
+<td>Are Right, A Lot</td>
+<td>A call made with incomplete data; how you validated it</td>
+</tr>
+<tr>
+<td>Learn and Be Curious</td>
+<td>A new technology you learned fast and applied</td>
+</tr>
+<tr>
+<td>Hire and Develop the Best</td>
+<td>Mentoring someone to promotion; a hiring bar you raised</td>
+</tr>
+<tr>
+<td>Insist on the Highest Standards</td>
+<td>You refused to ship, or raised quality, at a cost</td>
+</tr>
+<tr>
+<td>Think Big</td>
+<td>A bold proposal that changed direction or scale</td>
+</tr>
+<tr>
+<td>Bias for Action</td>
+<td>A fast reversible decision that unblocked the team</td>
+</tr>
+<tr>
+<td>Frugality</td>
+<td>Doing more with less (cost cut X% by …)</td>
+</tr>
+<tr>
+<td>Earn Trust</td>
+<td>Admitting a mistake or giving hard feedback</td>
+</tr>
+<tr>
+<td>Dive Deep</td>
+<td>A root cause found by digging into data/logs/code</td>
+</tr>
+<tr>
+<td>Have Backbone; Disagree and Commit</td>
+<td>You challenged a senior decision, then committed</td>
+</tr>
+<tr>
+<td>Deliver Results</td>
+<td>Delivered under adversity with measurable impact</td>
+</tr>
+<tr>
+<td>Strive to be Earth&#39;s Best Employer / Success and Scale Bring Broad Responsibility</td>
+<td>Inclusion, team wellbeing, responsible impact of your system</td>
+</tr>
+</tbody></table>
+
+<p><strong>Story template (90 seconds):</strong> <em>Situation (15 s)</em> → <em>Task (10 s)</em> →
+<em>Action (45 s: what *</em>I** did, why, trade-offs)* → <em>Result (20 s:
+numbers + what I learned)</em>. Expect 3–4 deep follow-ups (&quot;What would you
+do differently?&quot;, &quot;What was the pushback?&quot;), so know your stories&#39;
+details.</p>

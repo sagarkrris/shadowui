@@ -1,0 +1,1915 @@
+<h2 id="senior-java-interview-refresher-9-years">Senior Java Interview Refresher (9+ Years)</h2>
+
+<p><strong>Stack:</strong> Java · Spring Boot · Hibernate/JPA · Microservices · Maven ·
+GCP</p>
+
+<p><strong>Companion volumes:</strong> Vol. 1 (Q1–Q30), Vol. 2 (Q31–Q58), Vol. 3
+(Q59–Q74 + designs + programs).</p>
+
+<p><strong>What interviewers want at 9+ yrs:</strong> not definitions, but <em>trade-offs,
+failure modes, production war stories</em>. Answer pattern: <strong>Concept → Why
+it exists → Pitfall → What I did in production.</strong></p>
+<h3 id="2-week-plan">2-Week Plan</h3>
+
+<table><thead>
+<tr>
+<th>Days</th>
+<th>Focus</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>1–3</td>
+<td>Arrays, hashing, two pointers, sliding windows; Java collections and complexity</td>
+</tr>
+<tr>
+<td>4–5</td>
+<td>Binary search, intervals, stacks, linked lists; one timed coding round</td>
+</tr>
+<tr>
+<td>6–7</td>
+<td>Trees, BFS/DFS, heaps; Java equality, ordering, overflow and generics</td>
+</tr>
+<tr>
+<td>8–9</td>
+<td>Graphs, topological sort, union-find and shortest paths; concurrency exercise</td>
+</tr>
+<tr>
+<td>10–11</td>
+<td>Backtracking and dynamic programming; one backend design deep dive</td>
+</tr>
+<tr>
+<td>12–14</td>
+<td>Two full coding mocks, one machine-coding round, failed-problem revision, STAR stories</td>
+</tr>
+</tbody></table>
+
+<p>Use Part 9 for a daily schedule and readiness criteria. Treat cloud and
+framework chapters as a lookup reference unless the role explicitly
+emphasizes them.</p>
+
+<hr>
+<h3 id="module-1-core-java-concurrency-jvm">Module 1: Core Java, Concurrency, JVM</h3>
+
+<p><em>Detailed answers. More in Vols. 1–3 (Q1–Q74).</em></p>
+
+<p><strong>M1.1 How does HashMap work internally?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is">A good SDE-3 interview answer is:</h4>
+
+<p><code>HashMap</code> stores key-value pairs in an internal array of buckets. Java
+uses the key&#39;s <code>hashCode()</code> and spreads the hash bits to choose a bucket
+index. If multiple keys land in the same bucket, that is a
+<strong>collision</strong>; the bucket starts as a linked structure and can be
+converted to a red-black tree when the implementation&#39;s collision and
+table-capacity thresholds are met. With a good hash distribution,
+<code>get()</code> and <code>put()</code> are expected O(1), while resizing is occasional O(n)
+work, so insertion is amortized O(1).</p>
+<h4 id="first-what-does-bin-mean">First: what does &quot;bin&quot; mean?</h4>
+
+<p><strong>Bin</strong> is OpenJDK implementation terminology for the entries associated
+with one position in the internal hash-table array. In an interview, it
+is perfectly fine to say <strong>bucket</strong>.</p>
+
+<p>Think of it like:</p>
+
+<pre><code class="text">HashMap table
+
+index 0  → null
+index 1  → entry
+index 2  → null
+index 3  → entry → entry
+index 4  → null
+</code></pre>
+
+<p>So, for this discussion:</p>
+
+<pre><code class="text">bucket ≈ bin
+</code></pre>
+<h4 id="what-happens-during-put">What happens during <code>put()</code>?</h4>
+
+<p>Conceptually:</p>
+
+<pre><code class="text">key
+ ↓
+hashCode()
+ ↓
+hash spreading
+ ↓
+bucket index
+ ↓
+find entry / insert entry
+</code></pre>
+
+<p>If another key is already in that bucket, Java compares keys using
+<code>equals()</code> to determine whether it is the same mapping or a collision.</p>
+<h4 id="why-are-hashcode-and-equals-both-needed">Why are <code>hashCode()</code> and <code>equals()</code> both needed?</h4>
+
+<p><code>hashCode()</code> helps find the <strong>bucket</strong>.</p>
+
+<p><code>equals()</code> helps find the <strong>actual key</strong> inside that bucket.</p>
+
+<p>That is why the <code>equals()</code> / <code>hashCode()</code> contract is critical.</p>
+<h4 id="what-happens-when-there-are-many-collisions">What happens when there are many collisions?</h4>
+
+<p>A bucket can initially contain a linked chain of entries. When the
+relevant collision threshold is reached, Java may treeify that bucket.
+However, treeification is not simply &quot;8 entries means tree&quot;: the table
+also needs to be large enough; otherwise resizing may happen first.</p>
+
+<p>The tree is a red-black tree, which is self-balancing. This can reduce collision-search cost when hashes or useful key comparisons
+guide the search; equal-hash keys without useful ordering can still require
+a linear scan of the tree bin.</p>
+<h4 id="what-happens-during-resizing">What happens during resizing?</h4>
+
+<p><code>HashMap</code> grows its table when the number of mappings crosses the
+threshold derived from capacity and load factor. The default load factor
+is <code>0.75</code>.</p>
+
+<p>For example:</p>
+
+<pre><code class="text">capacity = 16
+load factor = 0.75
+threshold ≈ 12
+</code></pre>
+
+<p>When the table grows, entries are redistributed. The stored hash can be
+reused, so Java does not need to call the user&#39;s <code>hashCode()</code> again
+simply because the table resized.</p>
+<h4 id="why-is-lookup-normally-o-1">Why is lookup normally O(1)?</h4>
+
+<p>With a good hash distribution, entries are spread across buckets, so
+each lookup examines only a small number of entries.</p>
+
+<p>Therefore:</p>
+
+<pre><code class="text">get()    → expected O(1)
+put()    → expected O(1)
+remove() → expected O(1)
+</code></pre>
+
+<p>But do <strong>not</strong> say &quot;HashMap is always O(1)&quot;. Collisions and resizing
+matter.</p>
+<h4 id="important-production-pitfall-mutable-keys">Important production pitfall: mutable keys</h4>
+
+<p>If a key changes after insertion and the changed fields participate in
+<code>equals()</code> or <code>hashCode()</code>, the map may no longer find the entry using
+the mutated key.</p>
+
+<p>So keys should normally be immutable with respect to fields used by
+<code>equals()</code> and <code>hashCode()</code>.</p>
+<h4 id="sde-3-takeaway">SDE-3 takeaway</h4>
+
+<p>A strong answer connects four things:</p>
+
+<pre><code class="text">hashCode() → bucket selection
+equals()   → key identity
+collisions → linked structure / possible treeification
+resize     → capacity + load factor + amortized cost
+</code></pre>
+
+<p>The Java 19+ <code>HashMap.newHashMap(expectedMappings)</code> API expresses an
+expected mapping count; older constructors interpret the argument as
+initial capacity. If calculating capacity manually, remember Java
+integer arithmetic when writing expressions such as
+<code>expected / 0.75 + 1</code>.</p>
+<h4 id="30-second-version">30-second version</h4>
+
+<blockquote>
+<p>&quot;<code>HashMap</code> uses an internal array of buckets. It uses the key&#39;s hash
+to select a bucket, and <code>equals()</code> to identify the exact key when
+collisions occur. Collided entries start in a linked structure and can
+be treeified under the implementation&#39;s thresholds. With good hash
+distribution, lookup and insertion are expected O(1); resizing is
+occasional O(n) work, so insertion is amortized O(1). Mutable keys are
+dangerous because changing a key&#39;s hash-related state after insertion
+can make the entry unreachable.&quot;</p>
+</blockquote>
+<h3 id="m1-1-1-red-black-tree-deep-dive-hashmap-follow-up">M1.1.1 Red-Black Tree Deep Dive — HashMap Follow-up</h3>
+
+<p>If the interviewer asks, <strong>“You said a HashMap bucket can become a
+red-black tree. Explain the tree.”</strong>, do not jump straight into
+implementation cases. Start with the purpose.</p>
+<h4 id="a-good-sde-3-interview-answer-is-1">A good SDE-3 interview answer is:</h4>
+
+<blockquote>
+<p>A red-black tree is a self-balancing binary search tree. Each node has
+a red or black color, and the tree maintains balancing invariants that
+keep its height O(log n). With a useful search ordering, search,
+insertion and deletion are O(log n). HashMap uses tree bins to improve
+collision handling, but equal-hash keys without useful comparison
+ordering can still require O(n) lookup.</p>
+</blockquote>
+<h4 id="what-problem-does-it-solve">What problem does it solve?</h4>
+
+<p>A normal binary search tree can become skewed:</p>
+
+<pre><code class="text">10
+  \
+   20
+     \
+      30
+        \
+         40
+</code></pre>
+
+<p>This is effectively a linked list, so search can become O(n).</p>
+
+<p>A balanced tree keeps the height logarithmic:</p>
+
+<pre><code class="text">       20
+      /  \
+    10    30
+            \
+             40
+</code></pre>
+
+<p>The exact shape varies, but the important property is:</p>
+
+<pre><code class="text">height = O(log n)
+search = O(log n)
+insert = O(log n)
+delete = O(log n)
+</code></pre>
+<h4 id="what-does-red-black-mean">What does “red-black” mean?</h4>
+
+<p>Every node has one extra piece of state:</p>
+
+<pre><code class="text">RED
+BLACK
+</code></pre>
+
+<p>The tree maintains these core properties:</p>
+
+<ol>
+<li> Every node is either red or black.</li>
+<li> The root is black.</li>
+<li> <code>null</code> leaves are treated as black.</li>
+<li> A red node cannot have a red child.</li>
+<li> Every path from a node to its descendant <code>null</code> leaves has the same
+number of black nodes (black height).</li>
+</ol>
+
+<p>These rules prevent the tree from becoming arbitrarily skewed.</p>
+<h4 id="how-does-it-stay-balanced">How does it stay balanced?</h4>
+
+<p>Two operations are fundamental:</p>
+
+<pre><code class="text">1. Recoloring
+2. Rotation
+</code></pre>
+
+<p>There are two rotations:</p>
+
+<pre><code class="text">Left rotation
+Right rotation
+</code></pre>
+
+<p>A rotation changes the tree structure while preserving the
+binary-search-tree ordering.</p>
+
+<p>For example:</p>
+
+<pre><code class="text">Before:
+
+    10
+      \
+       20
+         \
+          30
+</code></pre>
+
+<p>After a left rotation around <code>10</code>:</p>
+
+<pre><code class="text">      20
+     /  \
+   10    30
+</code></pre>
+
+<p>The ordering is still:</p>
+
+<pre><code class="text">10 &lt; 20 &lt; 30
+</code></pre>
+
+<p>but the height is improved.</p>
+<h4 id="why-are-new-nodes-generally-inserted-as-red">Why are new nodes generally inserted as red?</h4>
+
+<p>Inserting a black node can immediately increase the black-node count on
+paths through that node.</p>
+
+<p>Inserting red avoids changing black height immediately, although it can
+create another violation:</p>
+
+<pre><code class="text">red parent
+    +
+red child
+</code></pre>
+
+<p>The tree then repairs the violation using recoloring and/or rotations.</p>
+<h4 id="what-happens-during-insertion">What happens during insertion?</h4>
+
+<p>At a high level:</p>
+
+<pre><code class="text">1. Insert as a normal BST node.
+2. Color the new node red.
+3. Check the red-black invariants.
+4. If a red-red violation exists:
+      - recolor when the surrounding structure allows it
+      - otherwise rotate and recolor
+5. Ensure the root is black.
+</code></pre>
+
+<p>You do not need to memorize every insertion case unless the interviewer
+explicitly asks you to implement a red-black tree.</p>
+<h4 id="why-does-hashmap-need-this">Why does HashMap need this?</h4>
+
+<p>Suppose many different keys collide into the same bucket:</p>
+
+<pre><code class="text">bucket 7
+
+A → B → C → D → E → F → G → H
+</code></pre>
+
+<p>A linked structure makes lookup increasingly expensive as the collision
+chain grows.</p>
+
+<p>Treeification changes the structure conceptually to:</p>
+
+<pre><code class="text">          D
+        /   \
+       B     F
+      / \   / \
+     A   C E   G
+                \
+                 H
+</code></pre>
+
+<p>The exact tree shape depends on the implementation and keys, but the key
+idea is:</p>
+
+<pre><code class="text">linked collision chain → balanced tree
+O(n) chain search → O(log n) tree search when ordering distinguishes keys
+Equal hashes without useful key ordering → lookup may still be O(n)
+</code></pre>
+<h4 id="important-the-entire-hashmap-does-not-become-a-tree">Important: the entire HashMap does NOT become a tree</h4>
+
+<p>This is a common interview mistake.</p>
+
+<p><code>HashMap</code> still has its array of buckets:</p>
+
+<pre><code class="text">HashMap
+  |
+  +-- table[0] → entry/list
+  +-- table[1] → null
+  +-- table[2] → entry/list
+  +-- table[3] → tree
+  +-- table[4] → null
+  +-- ...
+</code></pre>
+
+<p>Only a heavily-collided bucket can be treeified.</p>
+<h4 id="when-does-hashmap-treeify">When does HashMap treeify?</h4>
+
+<p>For the OpenJDK implementation relevant to Java 8+ discussions, the
+commonly discussed constants are:</p>
+
+<pre><code class="text">TREEIFY_THRESHOLD     = 8
+UNTREEIFY_THRESHOLD    = 6
+MIN_TREEIFY_CAPACITY   = 64
+</code></pre>
+
+<p>But do <strong>not</strong> say:</p>
+
+<blockquote>
+<p>“At exactly eight entries it always becomes a tree.”</p>
+</blockquote>
+
+<p>The correct interview explanation is:</p>
+
+<blockquote>
+<p>When a bucket becomes sufficiently populated, HashMap can treeify it,
+but it first checks the table capacity. If the table is still small,
+resizing is preferred because spreading entries across more buckets
+may solve the collision problem more cheaply.</p>
+</blockquote>
+
+<p>The implementation details are version-sensitive, so use the target
+JDK&#39;s OpenJDK source if an interviewer asks for exact thresholds.</p>
+<h4 id="can-a-treeified-bucket-become-a-list-again">Can a treeified bucket become a list again?</h4>
+
+<p>Yes.</p>
+
+<p>If the number of entries in that bucket falls sufficiently, the
+implementation can <strong>untreeify</strong> it.</p>
+
+<p>That avoids keeping tree-management overhead for a bucket that is no
+longer heavily populated.</p>
+<h4 id="why-red-black-tree-instead-of-avl">Why red-black tree instead of AVL?</h4>
+
+<p>A good senior-level answer is:</p>
+
+<blockquote>
+<p>Both AVL and red-black trees provide O(log n) operations. AVL is more
+strictly balanced and can provide slightly shorter search paths, but
+it generally performs more rebalancing during updates. Red-black trees
+permit more imbalance while still guaranteeing logarithmic height,
+which is a useful trade-off for workloads involving both lookup and
+updates.</p>
+</blockquote>
+
+<p>Do not claim one is universally faster; workload and implementation
+matter.</p>
+<h4 id="what-about-hashcode-and-equals">What about <code>hashCode()</code> and <code>equals()</code>?</h4>
+
+<p>Another common follow-up is:</p>
+
+<p><strong>“If the bucket is a tree, does HashMap only use hashCode?”</strong></p>
+
+<p>No.</p>
+
+<p>Conceptually:</p>
+
+<pre><code class="text">hashCode()
+    ↓
+find bucket
+    ↓
+find candidate entries
+    ↓
+equals()
+    ↓
+identify the actual key
+</code></pre>
+
+<p><code>hashCode()</code> narrows the search. It does not uniquely identify a key.</p>
+
+<p>When tree bins need ordering/tie-breaking beyond hash values, the
+OpenJDK implementation has additional comparison logic. The important
+interview point is that <strong>HashMap&#39;s correctness still depends on the
+<code>equals()</code>/<code>hashCode()</code> contract</strong>.</p>
+<h4 id="why-can-a-bad-hashcode-be-dangerous">Why can a bad hashCode be dangerous?</h4>
+
+<p>If unrelated keys produce the same hash:</p>
+
+<pre><code class="text">A → hash 42
+B → hash 42
+C → hash 42
+D → hash 42
+</code></pre>
+
+<p>they are forced into the same bucket.</p>
+
+<p>A well-designed <code>hashCode()</code> distributes keys across buckets and reduces
+collisions.</p>
+
+<p>But:</p>
+
+<blockquote>
+<p>Good hashing gives expected performance; it is not a correctness
+replacement for <code>equals()</code>.</p>
+</blockquote>
+<h4 id="what-should-you-say-about-complexity">What should you say about complexity?</h4>
+
+<p>Be precise:</p>
+
+<pre><code class="text">Normal HashMap:
+get/put/remove → expected O(1)
+
+Treeified bucket:
+search/update → O(log n) when hashes or useful comparisons distinguish keys
+equal hashes without useful comparison ordering → lookup may still be O(n)
+
+Resize:
+O(n) work for the resize operation
+
+Overall put:
+expected amortized O(1)
+</code></pre>
+
+<p>Do <strong>not</strong> say:</p>
+
+<blockquote>
+<p>“After Java 8 HashMap is O(log n).”</p>
+</blockquote>
+
+<p>The tree is a defensive mechanism for pathological collision behavior,
+not the normal complexity of the whole map.</p>
+<h4 id="why-can-a-balanced-hashmap-bin-still-need-linear-lookup">Why can a balanced HashMap bin still need linear lookup?</h4>
+
+<p>A red-black tree has logarithmic height. That bounds search only when the
+query can choose a branch at each comparison. OpenJDK HashMap may search
+both subtrees for equal-hash keys without a useful comparison ordering.
+An absent non-comparable key whose hash matches every stored key can
+therefore require O(n) equality checks even in a treeified bin.</p>
+
+<p><a href="https://raw.githubusercontent.com/openjdk/jdk21u/master/src/java.base/share/classes/java/util/HashMap.java">OpenJDK HashMap implementation notes and TreeNode search</a>.</p>
+<h4 id="sde-3-follow-up-questions">SDE-3 follow-up questions</h4>
+
+<p><strong>Q: Why not keep the linked list?</strong></p>
+
+<blockquote>
+<p>Because a heavily-collided bucket could degrade lookup toward O(n). A
+balanced tree can provide logarithmic lookup when hashes or useful key
+comparisons guide the search. Equal-hash, non-orderable keys can still
+require O(n) lookup.</p>
+</blockquote>
+
+<p><strong>Q: Why not treeify immediately?</strong></p>
+
+<blockquote>
+<p>Trees have more structural and memory overhead. For small tables,
+resizing often distributes entries more cheaply.</p>
+</blockquote>
+
+<p><strong>Q: Why insert a red node?</strong></p>
+
+<blockquote>
+<p>It avoids immediately increasing black height; any red-red violation
+can then be repaired.</p>
+</blockquote>
+
+<p><strong>Q: What are the two rotation types?</strong></p>
+
+<blockquote>
+<p>Left rotation and right rotation.</p>
+</blockquote>
+
+<p><strong>Q: What are the two main balancing mechanisms?</strong></p>
+
+<blockquote>
+<p>Recoloring and rotations.</p>
+</blockquote>
+
+<p><strong>Q: Does a treeified bucket make every HashMap lookup O(log n)?</strong></p>
+
+<blockquote>
+<p>No. Only that bucket uses the tree structure; normal HashMap lookup
+remains expected O(1).</p>
+</blockquote>
+
+<p><strong>Q: Red-black tree vs AVL?</strong></p>
+
+<blockquote>
+<p>Both are O(log n); AVL is more strictly balanced, while red-black
+generally trades some balance for fewer update rebalancing operations.</p>
+</blockquote>
+<h4 id="30-second-interview-answer">30-second interview answer</h4>
+
+<blockquote>
+<p>“A red-black tree is a self-balancing BST that maintains color-based
+invariants so its height stays O(log n). HashMap uses it defensively
+when a particular bucket has too many collisions. Instead of searching
+a long linked collision chain, the bucket can be represented as a
+balanced tree. Lookup can be O(log n) when hashes or useful comparisons
+distinguish keys, but can remain O(n) for equal-hash keys without useful
+ordering. Recoloring and rotations keep the tree height logarithmic;
+they do not guarantee that every lookup follows only one branch.
+Importantly, only the heavily-collided bucket becomes a tree; HashMap
+as a whole still provides expected O(1) lookup with a good hash
+distribution.”</p>
+</blockquote>
+<h4 id="what-you-should-know-for-sde-3">What you should know for SDE-3</h4>
+
+<p><strong>Must know:</strong> purpose, five properties, rotations, recoloring, O(log
+n), relationship to HashMap.</p>
+
+<p><strong>Should know:</strong> treeification, untreeification, capacity threshold, why
+resizing may happen first, and red-black vs AVL.</p>
+
+<p><strong>Only if drilled further:</strong> individual insertion/deletion cases, exact
+OpenJDK <code>TreeNode</code> implementation details, and tie-breaking logic.</p>
+
+<p><strong>M1.2 <code>volatile</code> vs <code>synchronized</code> vs atomics vs <code>ReentrantLock</code>?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-2">A good SDE-3 interview answer is:</h4>
+
+<p><code>volatile</code> provides visibility and ordering between threads, but it does
+<strong>not</strong> make compound operations such as <code>count++</code> atomic.
+<code>synchronized</code> provides both mutual exclusion and the memory-visibility
+guarantees associated with monitor locking. <code>ReentrantLock</code> provides
+explicit locking with features such as <code>tryLock</code>, timed/interruptible
+acquisition, fairness and multiple <code>Condition</code>s.
+<code>AtomicInteger</code>/<code>AtomicLong</code> provide atomic single-variable operations
+using CAS, while <code>LongAdder</code> is optimized for high-contention counters
+where an exact instantaneous snapshot is not required.</p>
+<h4 id="think-of-the-choices-like-this">Think of the choices like this</h4>
+
+<pre><code class="text">Need only visibility?
+        ↓
+     volatile
+
+Need one shared value updated atomically?
+        ↓
+   AtomicInteger / AtomicLong
+
+Need very high-throughput counter under contention?
+        ↓
+     LongAdder
+
+Need mutual exclusion around multiple operations/state?
+        ↓
+ synchronized / ReentrantLock
+</code></pre>
+<h4 id="why-isn-t-volatile-enough-for-count">Why isn&#39;t <code>volatile</code> enough for <code>count++</code>?</h4>
+
+<p>This:</p>
+
+<pre><code class="java">volatile int count;
+count++;
+</code></pre>
+
+<p>looks like one operation, but conceptually it is:</p>
+
+<pre><code class="text">read count
+   ↓
+add 1
+   ↓
+write count
+</code></pre>
+
+<p>Two threads can read the same old value and overwrite each other&#39;s
+update.</p>
+
+<p>So <code>volatile</code> is appropriate for things such as:</p>
+
+<pre><code class="java">volatile boolean shutdown;
+</code></pre>
+
+<p>where one thread publishes a new value and other threads need to see it.</p>
+<h4 id="synchronized-vs-reentrantlock"><code>synchronized</code> vs <code>ReentrantLock</code></h4>
+
+<p><code>synchronized</code> is usually the simplest choice:</p>
+
+<pre><code class="java">synchronized (lock) {
+    // critical section
+}
+</code></pre>
+
+<p>Use <code>ReentrantLock</code> when you genuinely need capabilities such as:</p>
+
+<ul>
+<li><code>tryLock()</code></li>
+<li>timed acquisition</li>
+<li>interruptible lock acquisition</li>
+<li>fairness policy</li>
+<li>multiple <code>Condition</code>s</li>
+</ul>
+
+<p>With <code>ReentrantLock</code>, ownership is manual, so always unlock in
+<code>finally</code>.</p>
+<h4 id="atomicinteger-vs-longadder">AtomicInteger vs LongAdder</h4>
+
+<p><code>AtomicInteger</code> is useful when you need an exact atomic value update
+such as:</p>
+
+<pre><code class="java">counter.incrementAndGet();
+</code></pre>
+
+<p><code>LongAdder</code> spreads contention across multiple internal cells. Under
+heavy concurrent writes, this can provide better throughput than
+repeatedly updating one atomic variable.</p>
+
+<p>The trade-off is that <code>sum()</code> is not an instantaneous transactionally
+consistent snapshot.</p>
+<h4 id="sde-3-decision-rule">SDE-3 decision rule</h4>
+
+<p>Start with the <strong>simplest primitive that gives the required
+correctness</strong>.</p>
+
+<p>Do not choose a sophisticated concurrency primitive because it sounds
+faster. First establish:</p>
+
+<ol>
+<li> What state is shared?</li>
+<li> Is the operation single-variable or multi-variable?</li>
+<li> Do we need atomicity, visibility, ordering, or all three?</li>
+<li> Is contention actually high?</li>
+<li> Do we need a consistent snapshot?</li>
+</ol>
+
+<p>Then measure before optimizing.</p>
+<h4 id="30-second-version-1">30-second version</h4>
+
+<blockquote>
+<p>&quot;<code>volatile</code> gives visibility but not atomicity. <code>synchronized</code> gives
+mutual exclusion plus visibility and is my default when I need to
+protect a critical section. <code>ReentrantLock</code> is useful when I need
+advanced lock features such as <code>tryLock</code> or interruptible acquisition.
+Atomics are good for atomic single-variable operations, while
+<code>LongAdder</code> is useful for highly contended counters. I choose the
+simplest primitive that satisfies the correctness requirement and
+optimize only after measuring contention.&quot;</p>
+</blockquote>
+
+<p><strong>M1.3 Explain the Java Memory Model and happens-before.</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-3">A good SDE-3 interview answer is:</h4>
+
+<p>The <strong>Java Memory Model (JMM)</strong> defines the rules for how threads
+interact through memory. The key idea is <strong>happens-before</strong>: if action A
+happens-before action B, the Java memory model guarantees that B can
+observe the relevant effects of A and constrains reordering between
+them.</p>
+
+<p>Important happens-before relationships include:</p>
+
+<pre><code class="text">monitor unlock  → subsequent lock of the same monitor
+volatile write  → subsequent read of that volatile variable
+Thread.start()  → actions in the started thread
+actions in a thread → successful Thread.join() return
+</code></pre>
+
+<p>There are also special initialization guarantees for properly
+constructed objects with <code>final</code> fields, but those are not a general
+replacement for safe publication.</p>
+<h4 id="why-does-this-matter">Why does this matter?</h4>
+
+<p>Without the required synchronization, two threads can have a data race.
+The compiler, JIT and CPU are allowed to reorder operations as permitted
+by the JMM, and another thread is not automatically guaranteed to
+observe ordinary writes in the order you expected.</p>
+
+<p>The common example is double-checked locking:</p>
+
+<pre><code class="java">class Singleton {
+    private static Singleton instance;
+
+    static Singleton getInstance() {
+        if (instance == null) {
+            synchronized (Singleton.class) {
+                if (instance == null) {
+                    instance = new Singleton();
+                }
+            }
+        }
+        return instance;
+    }
+}
+</code></pre>
+
+<p>Without <code>volatile</code> on <code>instance</code>, this pattern is not safely published.</p>
+
+<p>The safer form is:</p>
+
+<pre><code class="java">private static volatile Singleton instance;
+</code></pre>
+
+<p>because the volatile write that publishes the reference establishes the
+required visibility/order relationship for readers.</p>
+<h4 id="happens-before-is-not-execution-order">Happens-before is not &quot;execution order&quot;</h4>
+
+<p>This is a common interview trap.</p>
+
+<p>Happens-before does <strong>not</strong> simply mean:</p>
+
+<blockquote>
+<p>&quot;This line always executes before that line.&quot;</p>
+</blockquote>
+
+<p>It is a memory-model guarantee about visibility and ordering between
+actions in different threads.</p>
+<h4 id="sde-3-takeaway-1">SDE-3 takeaway</h4>
+
+<p>When debugging concurrency, ask:</p>
+
+<pre><code class="text">What state is shared?
+        ↓
+What synchronization establishes visibility?
+        ↓
+What establishes atomicity?
+        ↓
+Is there a happens-before relationship?
+        ↓
+Could the code have a data race?
+</code></pre>
+
+<p>Do not solve a visibility problem with a random lock, and do not assume
+<code>volatile</code> makes a multi-step operation atomic.</p>
+<h4 id="30-second-version-2">30-second version</h4>
+
+<blockquote>
+<p>&quot;The Java Memory Model defines what visibility and ordering guarantees
+exist between threads. Happens-before is the key relationship: for
+example, an unlock happens-before a subsequent lock on the same
+monitor, and a volatile write happens-before a subsequent volatile
+read of that variable. Without an appropriate happens-before
+relationship, ordinary shared mutable state can have visibility and
+ordering problems. A classic example is double-checked locking, where
+the instance reference must be volatile for safe publication.&quot;</p>
+</blockquote>
+
+<p><strong>M1.4 How do you detect, prevent and fix deadlocks?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-4">A good SDE-3 interview answer is:</h4>
+
+<p>For a resource deadlock, look for mutual exclusion, hold-and-wait,
+no preemption and circular wait. Prevent cycles with a global lock order,
+short critical sections and careful resource ownership. Avoid calling
+foreign code while holding a lock. Timed <code>tryLock</code> with a bounded retry
+policy, or message passing, can help when appropriate.</p>
+
+<p>For platform-thread monitor/ownable-synchronizer deadlocks, inspect
+<code>jstack</code>, <code>jcmd &lt;pid&gt; Thread.print</code> and
+<code>ThreadMXBean.findDeadlockedThreads()</code>. Java 21&#39;s <code>ThreadMXBean</code> does not
+monitor virtual threads: a null result does not rule out their deadlocks.
+Use <code>jcmd &lt;pid&gt; Thread.dump_to_file -format=json &lt;file&gt;</code> or its text form
+to inspect virtual-thread stacks, alongside JFR and application state.
+These dumps do not provide the same lock/ownership information as
+traditional dumps and are not an automatic virtual-thread deadlock detector.
+Trace the actual wait/resource dependency cycle.</p>
+<h4 id="how-to-understand-it">How to understand it</h4>
+
+<p>A deadlock is a dependency cycle with no progress path. A livelock
+keeps doing work without useful progress; starvation repeatedly denies
+one task the resources it needs. Select diagnostic tools that cover the
+thread types and resources involved before treating a clean result as
+evidence of safety.</p>
+<h4 id="key-terms-you-should-know">Key terms you should know</h4>
+
+<ul>
+<li><strong>Deadlock</strong> — Tasks cannot progress because they wait on a cyclic set of dependencies.</li>
+<li><strong>Livelock</strong> — Tasks react repeatedly without making useful progress.</li>
+<li><strong>Starvation</strong> — A task repeatedly loses access to needed resources.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li>Draw the lock/resource acquisition order and identify cycles.</li>
+<li>Identify whether the affected tasks use platform or virtual threads.</li>
+<li>Distinguish blocked tasks from CPU saturation, livelock and starvation.</li>
+</ul>
+<h4 id="30-second-version-3">30-second version</h4>
+
+<blockquote>
+<p>Prevent deadlocks with consistent resource order and short critical sections.
+Traditional deadlock detection covers platform-thread monitors and ownable
+synchronizers. For Java 21 virtual threads, inspect thread dumps and actual
+wait dependencies; ThreadMXBean cannot rule out a deadlock.</p>
+</blockquote>
+
+<p><a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.management/java/lang/management/ThreadMXBean.html">Java 21 ThreadMXBean</a>, <a href="https://docs.oracle.com/en/java/javase/21/core/virtual-threads.html">virtual-thread diagnostics</a>.</p>
+
+<p><strong>M1.5 How do you size and configure a thread pool?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-5">A good SDE-3 interview answer is:</h4>
+
+<p>Execution order: new tasks use core threads, then fill the queue, then
+spawn threads up to max, then hit the rejection policy. Sizing:
+CPU-bound ≈ cores + 1; IO-bound ≈ cores × (1 + wait/compute), measured
+under load. Always use a <strong>bounded queue</strong> and a deliberate rejection
+policy (<code>CallerRunsPolicy</code> gives back-pressure);
+<code>Executors.newFixedThreadPool</code> has an unbounded queue and
+<code>newCachedThreadPool</code> an unbounded thread count, and both can take down
+production. Give threads meaningful names, isolate pools per dependency
+(bulkhead), expose queue size and active count as metrics, and shut down
+gracefully (<code>shutdown</code> → <code>awaitTermination</code> → <code>shutdownNow</code>).</p>
+<h4 id="how-to-understand-it-1">How to understand it</h4>
+
+<p>Treat this as a decision/problem-solving question: explain the mechanism
+or approach first, then the failure modes, trade-offs, and how you would
+verify the result.</p>
+
+<p><strong>Plain-English starting point:</strong> Execution order: new tasks use core
+threads, then fill the queue, then spawn threads up to max, then hit the
+rejection policy. Sizing: CPU-bound ≈ cores + 1; IO-bound ≈ cores × (1 +
+wait/compute), measured under load.</p>
+<h4 id="key-terms-you-should-know-1">Key terms you should know</h4>
+
+<ul>
+<li><strong>back-pressure</strong> — A mechanism that prevents an upstream producer
+from overwhelming a downstream consumer.</li>
+<li><strong>bulkhead</strong> — A resilience pattern that isolates resources such as
+threads or connections so one overloaded dependency does not exhaust
+the whole service.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-1">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-4">30-second version</h4>
+
+<blockquote>
+<p>Execution order: new tasks use core threads, then fill the queue, then
+spawn threads up to max, then hit the rejection policy. Sizing:
+CPU-bound ≈ cores + 1; IO-bound ≈ cores × (1 + wait/compute), measured
+under load.</p>
+</blockquote>
+
+<p><strong>M1.6 CompletableFuture vs virtual threads: when do you use which?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-6">A good SDE-3 interview answer is:</h4>
+
+<p>Virtual threads are final in Java 21 and fit workloads that spend much
+of their time waiting. They do not accelerate CPU-bound work or enlarge
+a database connection pool. Use one virtual thread per task and
+separately bound admission and scarce resources. On JDK 21–23, blocking
+while holding <code>synchronized</code> monitors can pin carriers; JDK 24 removes
+this monitor-related pinning, so do not mechanically replace locks on
+newer JDKs. Native/foreign calls still deserve attention.
+<code>CompletableFuture</code> models composition; configure actual I/O deadlines
+and cancellation as well as future timeouts. <a href="https://docs.oracle.com/en/java/javase/24/core/virtual-threads.html">Virtual threads in JDK
+24</a>.</p>
+<h4 id="how-to-understand-it-2">How to understand it</h4>
+
+<p>Compare the options by correctness, operational behavior, performance,
+failure modes, and when you would choose each one—not just by
+definitions.</p>
+
+<p><strong>Plain-English starting point:</strong> Virtual threads are final in Java 21
+and fit workloads that spend much of their time waiting. They do not
+accelerate CPU-bound work or enlarge a database connection pool.</p>
+<h4 id="key-terms-you-should-know-2">Key terms you should know</h4>
+
+<ul>
+<li><strong>CompletableFuture</strong> — A Java API for representing and composing
+asynchronous results and their success/failure stages.</li>
+<li><strong>virtual thread</strong> — A lightweight Java thread managed by the JVM,
+designed to make high-concurrency blocking I/O easier to scale.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-2">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-5">30-second version</h4>
+
+<blockquote>
+<p>Virtual threads are final in Java 21 and fit workloads that spend much
+of their time waiting. They do not accelerate CPU-bound work or
+enlarge a database connection pool.</p>
+</blockquote>
+
+<p><strong>M1.7 Explain garbage collection and how you tune it.</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-7">A good SDE-3 interview answer is:</h4>
+
+<p>Generational heap: young (eden + survivors) collected frequently, old
+collected rarely; objects that survive enough cycles are promoted. G1
+(default) is region-based and works to a pause target
+(<code>-XX:MaxGCPauseMillis</code>); ZGC and Shenandoah target low pauses using
+concurrent work; actual latency depends on the collector, JDK and
+workload; Parallel maximises throughput for batch. Tuning approach:
+define a goal (latency or throughput), enable GC logs (<code>-Xlog:gc*</code>),
+look at pause time, allocation rate, promotion rate and heap after full
+GC; fix allocation hot spots first and only then change flags. Premature
+flag-tweaking is a red flag; reducing garbage is usually the best
+optimisation.</p>
+<h4 id="how-to-understand-it-3">How to understand it</h4>
+
+<p>First understand the core concept, then explain why it exists, how it
+behaves in production, and what trade-off you would make.</p>
+
+<p><strong>Plain-English starting point:</strong> Generational heap: young (eden +
+survivors) collected frequently, old collected rarely; objects that
+survive enough cycles are promoted. G1 (default) is region-based and
+works to a pause target (<code>-XX:MaxGCPauseMillis</code>); ZGC and Shenandoah
+target low pauses using concurrent work; actual latency depends on the
+collector, JDK and workload; Parallel maximises throughput for batch.</p>
+<h4 id="key-terms-you-should-know-3">Key terms you should know</h4>
+
+<ul>
+<li><strong>G1</strong> — A region-based garbage collector with a pause-time target.</li>
+<li><strong>GC</strong> — Reclaiming heap storage no longer needed by reachable objects.</li>
+<li><strong>Tuning goal</strong> — The workload objective, such as throughput or tail latency.</li>
+<li><strong>Heap</strong> — JVM storage used for object allocation.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-3">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-6">30-second version</h4>
+
+<blockquote>
+<p>Generational heap: young (eden + survivors) collected frequently, old
+collected rarely; objects that survive enough cycles are promoted. G1
+(default) is region-based and works to a pause target
+(<code>-XX:MaxGCPauseMillis</code>); ZGC and Shenandoah target low pauses using
+concurrent work; actual latency depends on the collector, JDK and
+workload; Parallel maximises throughput for batch.</p>
+</blockquote>
+
+<hr>
+<h3 id="module-2-spring-spring-boot">Module 2: Spring &amp; Spring Boot</h3>
+
+<p><em>More in Q11–Q19, Q37–Q42.</em></p>
+
+<p><strong>M2.1 How does Spring Boot auto-configuration work?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-8">A good SDE-3 interview answer is:</h4>
+
+<p><code>@SpringBootApplication</code> combines <code>@Configuration</code>, <code>@ComponentScan</code> and
+<code>@EnableAutoConfiguration</code>. The latter loads candidate classes listed in
+<code>META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports</code>
+from every jar on the classpath, and each is guarded by conditions
+(<code>@ConditionalOnClass</code>, <code>@ConditionalOnMissingBean</code>,
+<code>@ConditionalOnProperty</code>). Many auto-configurations back off when a
+matching user bean exists; check the actual conditions and bean types
+rather than assuming every default is overridable this way. To debug,
+run with <code>--debug</code> or use the Actuator <code>conditions</code> endpoint. To build
+your own starter: an autoconfigure module plus a thin starter POM and
+<code>@ConfigurationProperties</code> for settings.</p>
+<h4 id="how-to-understand-it-4">How to understand it</h4>
+
+<p>Treat this as a decision/problem-solving question: explain the mechanism
+or approach first, then the failure modes, trade-offs, and how you would
+verify the result.</p>
+
+<p><strong>Plain-English starting point:</strong> <code>@SpringBootApplication</code> combines
+<code>@Configuration</code>, <code>@ComponentScan</code> and <code>@EnableAutoConfiguration</code>. The
+latter loads candidate classes listed in
+<code>META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports</code>
+from every jar on the classpath, and each is guarded by conditions
+(<code>@ConditionalOnClass</code>, <code>@ConditionalOnMissingBean</code>,
+<code>@ConditionalOnProperty</code>).</p>
+<h4 id="key-terms-you-should-know-4">Key terms you should know</h4>
+
+<ul>
+<li><strong>bean</strong> — An object managed by the Spring IoC container.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-4">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-7">30-second version</h4>
+
+<blockquote>
+<p><code>@SpringBootApplication</code> combines <code>@Configuration</code>, <code>@ComponentScan</code>
+and <code>@EnableAutoConfiguration</code>. The latter loads candidate classes
+listed in
+<code>META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports</code>
+from every jar on the classpath, and each is guarded by conditions
+(<code>@ConditionalOnClass</code>, <code>@ConditionalOnMissingBean</code>,
+<code>@ConditionalOnProperty</code>).</p>
+</blockquote>
+
+<p><strong>M2.2 Describe the bean lifecycle and scopes.</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-9">A good SDE-3 interview answer is:</h4>
+
+<p>Instantiate (constructor) → inject dependencies → <code>Aware</code> callbacks →
+<code>BeanPostProcessor.postProcessBeforeInitialization</code> → <code>@PostConstruct</code> /
+<code>InitializingBean</code> / <code>init-method</code> → <code>postProcessAfterInitialization</code>
+(where AOP proxies and <code>@Transactional</code> wrappers are created) → in use →
+<code>@PreDestroy</code> on shutdown. Scopes: singleton (default, one per
+container, so it must be stateless or thread-safe), prototype, and web
+scopes (request, session). A singleton holding a prototype gets only one
+instance, so use <code>ObjectProvider</code> or a scoped proxy.</p>
+<h4 id="how-to-understand-it-5">How to understand it</h4>
+
+<p>Treat this as a decision/problem-solving question: explain the mechanism
+or approach first, then the failure modes, trade-offs, and how you would
+verify the result.</p>
+
+<p><strong>Plain-English starting point:</strong> Instantiate (constructor) → inject
+dependencies → <code>Aware</code> callbacks →
+<code>BeanPostProcessor.postProcessBeforeInitialization</code> → <code>@PostConstruct</code> /
+<code>InitializingBean</code> / <code>init-method</code> → <code>postProcessAfterInitialization</code>
+(where AOP proxies and <code>@Transactional</code> wrappers are created) → in use →
+<code>@PreDestroy</code> on shutdown. Scopes: singleton (default, one per
+container, so it must be stateless or thread-safe), prototype, and web
+scopes (request, session).</p>
+<h4 id="key-terms-you-should-know-5">Key terms you should know</h4>
+
+<ul>
+<li><strong>AOP</strong> — Aspect-oriented programming: applying cross-cutting behavior
+such as transactions, logging or security around method execution.</li>
+<li><strong>proxy</strong> — An object that wraps another object and intercepts method
+calls, commonly used by Spring for transactions, security and AOP.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-5">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-8">30-second version</h4>
+
+<blockquote>
+<p>Instantiate (constructor) → inject dependencies → <code>Aware</code> callbacks →
+<code>BeanPostProcessor.postProcessBeforeInitialization</code> → <code>@PostConstruct</code>
+/ <code>InitializingBean</code> / <code>init-method</code> →
+<code>postProcessAfterInitialization</code> (where AOP proxies and
+<code>@Transactional</code> wrappers are created) → in use → <code>@PreDestroy</code> on
+shutdown. Scopes: singleton (default, one per container, so it must be
+stateless or thread-safe), prototype, and web scopes (request,
+session).</p>
+</blockquote>
+
+<p><strong>M2.3 Why prefer constructor injection?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-10">A good SDE-3 interview answer is:</h4>
+
+<p>Dependencies are explicit and <code>final</code>, the object is never half-built,
+it can be unit-tested with <code>new</code> and mocks, and an excess of constructor
+parameters exposes a class doing too much (Single Responsibility). Field
+injection hides dependencies, needs reflection in tests, and encourages
+cycles. Use setter injection only for genuinely optional dependencies.</p>
+<h4 id="how-to-understand-it-6">How to understand it</h4>
+
+<p>First understand the core concept, then explain why it exists, how it
+behaves in production, and what trade-off you would make.</p>
+
+<p><strong>Plain-English starting point:</strong> Dependencies are explicit and <code>final</code>,
+the object is never half-built, it can be unit-tested with <code>new</code> and
+mocks, and an excess of constructor parameters exposes a class doing too
+much (Single Responsibility). Field injection hides dependencies, needs
+reflection in tests, and encourages cycles.</p>
+<h4 id="sde-3-interview-checkpoints-6">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-9">30-second version</h4>
+
+<blockquote>
+<p>Dependencies are explicit and <code>final</code>, the object is never half-built,
+it can be unit-tested with <code>new</code> and mocks, and an excess of
+constructor parameters exposes a class doing too much (Single
+Responsibility). Field injection hides dependencies, needs reflection
+in tests, and encourages cycles.</p>
+</blockquote>
+
+<p><strong>M2.4 How does <code>@Transactional</code> work and what are its pitfalls?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-11">A good SDE-3 interview answer is:</h4>
+
+<p>A call through a Spring transaction proxy is intercepted by the
+configured transaction manager. With ordinary JDBC/JPA, work usually
+participates in a thread-bound transaction. The default rollback rule
+covers unchecked exceptions and errors; configure checked-exception
+handling deliberately. Self-invocation bypasses proxy advice. Spring 6
+class-based proxies can also intercept eligible
+protected/package-visible methods; interface proxies require public
+interface methods. Swallowing an exception does not clear rollback-only
+state. <code>REQUIRES_NEW</code> needs independent resources; <code>NESTED</code> depends on
+savepoint support. An async task does not inherit its caller&#39;s
+transaction, but can start its own by calling a transactional service
+through its proxy. Keep transaction scope short; <code>readOnly=true</code> is not
+portable write prevention. <a href="https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/annotations.html">Spring transaction
+annotations</a>,
+<a href="https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/tx-decl-explained.html">transaction
+implementation</a>.</p>
+<h4 id="how-to-understand-it-7">How to understand it</h4>
+
+<p>Treat this as a decision/problem-solving question: explain the mechanism
+or approach first, then the failure modes, trade-offs, and how you would
+verify the result.</p>
+
+<p><strong>Plain-English starting point:</strong> A call through a Spring transaction
+proxy is intercepted by the configured transaction manager. With
+ordinary JDBC/JPA, work usually participates in a thread-bound
+transaction.</p>
+<h4 id="key-terms-you-should-know-6">Key terms you should know</h4>
+
+<ul>
+<li><strong>proxy</strong> — An object that wraps another object and intercepts method
+calls, commonly used by Spring for transactions, security and AOP.</li>
+<li><strong>Application service</strong> — A component coordinating a business use case;
+it may be a Spring-managed bean and is not a Kubernetes Service.</li>
+<li><strong>transaction</strong> — A unit of database work treated as one logical
+operation with defined commit/rollback behavior.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-7">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-10">30-second version</h4>
+
+<blockquote>
+<p>A call through a Spring transaction proxy is intercepted by the
+configured transaction manager. With ordinary JDBC/JPA, work usually
+participates in a thread-bound transaction.</p>
+</blockquote>
+
+<p><strong>M2.5 How do you secure a REST API with JWT?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-12">A good SDE-3 interview answer is:</h4>
+
+<p>Configure a stateless <code>SecurityFilterChain</code> with OAuth2 resource-server JWT support.
+Set <code>spring.security.oauth2.resourceserver.jwt.issuer-uri</code> to the trusted
+issuer, or configure an equivalent issuer validator on a custom decoder.
+An explicit <code>jwk-set-uri</code> supplies verification keys; that URL alone does
+not validate the token&#39;s <code>iss</code> claim. Validate the signature with allowed
+algorithms, <code>exp</code>/<code>nbf</code>, issuer and audience. Use Boot&#39;s <code>audiences</code>
+property where supported, or an explicit audience validator.</p>
+
+<p>Map scopes/roles using <code>JwtAuthenticationConverter</code>; enable method
+security with <code>@EnableMethodSecurity</code> and enforce domain authorization
+with <code>@PreAuthorize</code>. Keep access tokens short-lived, rotate refresh
+tokens at the authorization server, store passwords with an appropriate
+adaptive hash where the application owns credentials, and never log
+tokens. Return 401 for invalid/missing authentication and 403 for denied
+authorization.</p>
+<h4 id="how-to-understand-it-8">How to understand it</h4>
+
+<p>A valid signature proves that a trusted key signed the token. It does
+not by itself prove that the token has the expected issuer or was issued
+for this API. This distinction matters when multiple issuers or
+applications share signing infrastructure. Test each claim independently.</p>
+<h4 id="key-terms-you-should-know-7">Key terms you should know</h4>
+
+<ul>
+<li><strong>JWKS</strong> — A set of keys used here to verify JWT signatures.</li>
+<li><strong>Issuer (<code>iss</code>)</strong> — The token issuer this API explicitly trusts.</li>
+<li><strong>Audience (<code>aud</code>)</strong> — The intended recipient or recipients of a token.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-8">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li>Reject a validly signed token with the wrong issuer or audience.</li>
+<li>Test expired/not-yet-valid tokens and signing-key rotation.</li>
+<li>Verify both endpoint authorization and object ownership.</li>
+</ul>
+<h4 id="30-second-version-11">30-second version</h4>
+
+<blockquote>
+<p>A JWT resource server needs signature, time, issuer and audience validation.
+Configure issuer-uri or an explicit issuer validator; a JWKS URL alone only
+supplies keys. Map authorities, enable method security, and test wrong-issuer
+and wrong-audience tokens even when their signatures are valid.</p>
+</blockquote>
+
+<p><a href="https://docs.spring.io/spring-security/reference/servlet/oauth2/resource-server/jwt.html">Spring Security JWT configuration</a>.</p>
+
+<p><strong>M2.6 What does &quot;production-ready&quot; mean for a Boot service?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-13">A good SDE-3 interview answer is:</h4>
+
+<p>Observability (Actuator health/readiness/liveness, Micrometer metrics to
+Prometheus/Cloud Monitoring, structured logs with trace IDs,
+OpenTelemetry), resilience (timeouts, circuit breakers, bounded pools,
+graceful shutdown), configuration (externalised, validated
+<code>@ConfigurationProperties</code>, secrets from a vault), data safety (Flyway
+migrations, <code>ddl-auto=validate</code>), security (HTTPS, headers, dependency
+scanning), plus tests, CI/CD and runbooks with SLOs and alerts.</p>
+<h4 id="how-to-understand-it-9">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Observability (Actuator
+health/readiness/liveness, Micrometer metrics to Prometheus/Cloud
+Monitoring, structured logs with trace IDs, OpenTelemetry), resilience
+(timeouts, circuit breakers, bounded pools, graceful shutdown),
+configuration (externalised, validated <code>@ConfigurationProperties</code>,
+secrets from a vault), data safety (Flyway migrations,
+<code>ddl-auto=validate</code>), security (HTTPS, headers, dependency scanning),
+plus tests, CI/CD and runbooks with SLOs and alerts.</p>
+<h4 id="key-terms-you-should-know-8">Key terms you should know</h4>
+
+<ul>
+<li><strong>observability</strong> — The ability to understand internal system behavior
+from telemetry such as logs, metrics and traces.</li>
+<li><strong>trace</strong> — A representation of one request&#39;s path through distributed
+services.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-9">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-12">30-second version</h4>
+
+<blockquote>
+<p>Observability (Actuator health/readiness/liveness, Micrometer metrics
+to Prometheus/Cloud Monitoring, structured logs with trace IDs,
+OpenTelemetry), resilience (timeouts, circuit breakers, bounded pools,
+graceful shutdown), configuration (externalised, validated
+<code>@ConfigurationProperties</code>, secrets from a vault), data safety (Flyway
+migrations, <code>ddl-auto=validate</code>), security (HTTPS, headers, dependency
+scanning), plus tests, CI/CD and runbooks with SLOs and alerts.</p>
+</blockquote>
+
+<hr>
+<h3 id="module-3-hibernate-jpa">Module 3: Hibernate / JPA</h3>
+
+<p><em>More in Q20–Q25.</em></p>
+
+<p><strong>M3.1 What is the N+1 problem and how do you fix it?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-14">A good SDE-3 interview answer is:</h4>
+
+<p>One query loads N parents and then lazily triggers one query per parent
+for a child association, giving N+1 round-trips that look fine in dev
+and collapse under production data. Detect it with SQL logging,
+Hibernate statistics, or tests asserting a query count
+(datasource-proxy). Fixes: <code>JOIN FETCH</code> or <code>@EntityGraph</code> for the use
+case, <code>@BatchSize</code> / <code>hibernate.default_batch_fetch_size</code> to load
+children in batches of IN-lists, or DTO projections selecting only
+needed columns. Caveats: joining multiple to-many associations can
+multiply rows; fetching multiple bag mappings can additionally trigger
+<code>MultipleBagFetchException</code>, and collection fetch with pagination is
+applied in memory, so paginate parent IDs first and fetch children
+second.</p>
+<h4 id="how-to-understand-it-10">How to understand it</h4>
+
+<p>First understand the core concept, then explain why it exists, how it
+behaves in production, and what trade-off you would make.</p>
+
+<p><strong>Plain-English starting point:</strong> One query loads N parents and then
+lazily triggers one query per parent for a child association, giving N+1
+round-trips that look fine in dev and collapse under production data.
+Detect it with SQL logging, Hibernate statistics, or tests asserting a
+query count (datasource-proxy).</p>
+<h4 id="key-terms-you-should-know-9">Key terms you should know</h4>
+
+<ul>
+<li><strong>N+1</strong> — A query pattern where one query loads N parent rows and then
+N additional queries load related data, causing excessive database
+round trips.</li>
+<li><strong>proxy</strong> — An object that wraps another object and intercepts method
+calls, commonly used by Spring for transactions, security and AOP.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-10">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-13">30-second version</h4>
+
+<blockquote>
+<p>One query loads N parents and then lazily triggers one query per
+parent for a child association, giving N+1 round-trips that look fine
+in dev and collapse under production data. Detect it with SQL logging,
+Hibernate statistics, or tests asserting a query count
+(datasource-proxy).</p>
+</blockquote>
+
+<p><strong>M3.2 Explain entity states and the persistence context.</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-15">A good SDE-3 interview answer is:</h4>
+
+<p>An entity is <em>transient</em> (new), <em>managed</em> (tracked by the session),
+<em>detached</em> (session closed) or <em>removed</em>. The persistence context is a
+first-level cache and unit of work: reading the same ID twice returns
+the same instance, and at flush Hibernate compares loaded snapshots to
+current state (<strong>dirty checking</strong>) and issues UPDATEs automatically, so
+calling <code>save()</code> on a managed entity is unnecessary. Flush happens
+before queries (auto mode) and at commit. Long-lived contexts or bulk
+loads grow memory, so use <code>clear()</code> or batching.</p>
+<h4 id="how-to-understand-it-11">How to understand it</h4>
+
+<p>First understand the core concept, then explain why it exists, how it
+behaves in production, and what trade-off you would make.</p>
+
+<p><strong>Plain-English starting point:</strong> An entity is <em>transient</em> (new),
+<em>managed</em> (tracked by the session), <em>detached</em> (session closed) or
+<em>removed</em>. The persistence context is a first-level cache and unit of
+work: reading the same ID twice returns the same instance, and at flush
+Hibernate compares loaded snapshots to current state (<strong>dirty
+checking</strong>) and issues UPDATEs automatically, so calling <code>save()</code> on a
+managed entity is unnecessary.</p>
+<h4 id="key-terms-you-should-know-10">Key terms you should know</h4>
+
+<ul>
+<li><strong>dirty checking</strong> — Hibernate/JPA&#39;s mechanism for detecting changes
+to managed entities and generating updates during flush.</li>
+<li><strong>persistence context</strong> — JPA/Hibernate&#39;s managed set of entity
+instances whose changes are tracked and synchronized with the
+database.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-11">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-14">30-second version</h4>
+
+<blockquote>
+<p>An entity is <em>transient</em> (new), <em>managed</em> (tracked by the session),
+<em>detached</em> (session closed) or <em>removed</em>. The persistence context is a
+first-level cache and unit of work: reading the same ID twice returns
+the same instance, and at flush Hibernate compares loaded snapshots to
+current state (<strong>dirty checking</strong>) and issues UPDATEs automatically,
+so calling <code>save()</code> on a managed entity is unnecessary.</p>
+</blockquote>
+
+<p><strong>M3.3 Lazy vs eager, and <code>LazyInitializationException</code>?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-16">A good SDE-3 interview answer is:</h4>
+
+<p>Make associations LAZY by default; JPA&#39;s defaults for
+<code>@ManyToOne</code>/<code>@OneToOne</code> are EAGER, so set <code>fetch = LAZY</code> explicitly.
+The exception occurs when a proxy is touched after the session closed.
+Open-Session-In-View keeps the persistence context available through web
+rendering and can hide uncontrolled queries; connection retention
+depends on acquisition/release settings. For service APIs, consider
+disabling <code>spring.jpa.open-in-view</code> and defining explicit fetch
+boundaries. The right fixes: fetch what you need in the service layer
+(<code>EntityGraph</code>/join fetch) or return DTOs.</p>
+<h4 id="how-to-understand-it-12">How to understand it</h4>
+
+<p>Compare the options by correctness, operational behavior, performance,
+failure modes, and when you would choose each one—not just by
+definitions.</p>
+
+<p><strong>Plain-English starting point:</strong> Make associations LAZY by default;
+JPA&#39;s defaults for <code>@ManyToOne</code>/<code>@OneToOne</code> are EAGER, so set
+<code>fetch = LAZY</code> explicitly. The exception occurs when a proxy is touched
+after the session closed.</p>
+<h4 id="key-terms-you-should-know-11">Key terms you should know</h4>
+
+<ul>
+<li><strong>persistence context</strong> — JPA/Hibernate&#39;s managed set of entity
+instances whose changes are tracked and synchronized with the
+database.</li>
+<li><strong>proxy</strong> — An object that wraps another object and intercepts method
+calls, commonly used by Spring for transactions, security and AOP.</li>
+<li><strong>Application service</strong> — A component coordinating a business use case;
+it may be a Spring-managed bean and is not a Kubernetes Service.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-12">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-15">30-second version</h4>
+
+<blockquote>
+<p>Make associations LAZY by default; JPA&#39;s defaults for
+<code>@ManyToOne</code>/<code>@OneToOne</code> are EAGER, so set <code>fetch = LAZY</code> explicitly.
+The exception occurs when a proxy is touched after the session closed.</p>
+</blockquote>
+
+<p><strong>M3.4 Optimistic vs pessimistic locking?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-17">A good SDE-3 interview answer is:</h4>
+
+<p>Optimistic uses a <code>@Version</code> column:
+<code>UPDATE … WHERE id=? AND version=?</code>; zero rows updated throws
+<code>OptimisticLockException</code>, which you retry or surface as 409. It avoids
+a pessimistic read lock; the eventual UPDATE still takes database locks
+until transaction completion. Pessimistic (<code>PESSIMISTIC_WRITE</code> →
+<code>SELECT … FOR UPDATE</code>) blocks competing writers, suitable for high
+contention or scarce resources like inventory; always set lock timeouts
+and keep transactions short to avoid deadlocks (and use <code>SKIP LOCKED</code>
+for queue-like tables).</p>
+<h4 id="how-to-understand-it-13">How to understand it</h4>
+
+<p>Compare the options by correctness, operational behavior, performance,
+failure modes, and when you would choose each one—not just by
+definitions.</p>
+
+<p><strong>Plain-English starting point:</strong> Optimistic uses a <code>@Version</code> column:
+<code>UPDATE … WHERE id=? AND version=?</code>; zero rows updated throws
+<code>OptimisticLockException</code>, which you retry or surface as 409.</p>
+<h4 id="key-terms-you-should-know-12">Key terms you should know</h4>
+
+<ul>
+<li><strong>transaction</strong> — A unit of database work treated as one logical
+operation with defined commit/rollback behavior.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-13">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-16">30-second version</h4>
+
+<blockquote>
+<p>Optimistic uses a <code>@Version</code> column:
+<code>UPDATE … WHERE id=? AND version=?</code>; zero rows updated throws
+<code>OptimisticLockException</code>, which you retry or surface as 409.</p>
+</blockquote>
+
+<p><strong>M3.5 How do you tune Hibernate performance?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-18">A good SDE-3 interview answer is:</h4>
+
+<p>Measure first (slow-query log, <code>pg_stat_statements</code>, p6spy). Then: fix
+N+1; project to DTOs for read paths; add proper indexes (check
+<code>EXPLAIN</code>); enable JDBC batching (<code>hibernate.jdbc.batch_size</code>,
+<code>order_inserts/updates</code>); use SEQUENCE generators with pooled optimisers
+because IDENTITY disables insert batching; use second-level/query caches
+only for read-mostly data; paginate with keyset; avoid huge <code>IN</code> lists;
+keep transactions short; and use Flyway to manage schema and index
+changes.</p>
+<h4 id="how-to-understand-it-14">How to understand it</h4>
+
+<p>Treat this as a decision/problem-solving question: explain the mechanism
+or approach first, then the failure modes, trade-offs, and how you would
+verify the result.</p>
+
+<p><strong>Plain-English starting point:</strong> Measure first (slow-query log,
+<code>pg_stat_statements</code>, p6spy). Then: fix N+1; project to DTOs for read
+paths; add proper indexes (check <code>EXPLAIN</code>); enable JDBC batching
+(<code>hibernate.jdbc.batch_size</code>, <code>order_inserts/updates</code>); use SEQUENCE
+generators with pooled optimisers because IDENTITY disables insert
+batching; use second-level/query caches only for read-mostly data;
+paginate with keyset; avoid huge <code>IN</code> lists; keep transactions short;
+and use Flyway to manage schema and index changes.</p>
+<h4 id="key-terms-you-should-know-13">Key terms you should know</h4>
+
+<ul>
+<li><strong>N+1</strong> — A query pattern where one query loads N parent rows and then
+N additional queries load related data, causing excessive database
+round trips.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-14">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-17">30-second version</h4>
+
+<blockquote>
+<p>Measure first (slow-query log, <code>pg_stat_statements</code>, p6spy). Then: fix
+N+1; project to DTOs for read paths; add proper indexes (check
+<code>EXPLAIN</code>); enable JDBC batching (<code>hibernate.jdbc.batch_size</code>,
+<code>order_inserts/updates</code>); use SEQUENCE generators with pooled
+optimisers because IDENTITY disables insert batching; use
+second-level/query caches only for read-mostly data; paginate with
+keyset; avoid huge <code>IN</code> lists; keep transactions short; and use Flyway
+to manage schema and index changes.</p>
+</blockquote>
+
+<hr>
+<h3 id="module-4-microservices">Module 4: Microservices</h3>
+
+<p><em>More in Q26–Q30, Q59–Q74.</em></p>
+
+<p><strong>M4.1 How do you split a monolith into microservices?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-19">A good SDE-3 interview answer is:</h4>
+
+<p>Use the <strong>strangler fig</strong> pattern: put a routing layer (gateway) in
+front, carve out one bounded context at a time (often the highest-change
+or most independently scalable, not the shared core), and migrate its
+data so each service owns its database, with an anti-corruption layer
+where models differ. Identify boundaries with DDD (event storming), not
+technical layers, and avoid a <em>distributed monolith</em> where services must
+deploy together. Ensure CI/CD, observability and team ownership exist
+<em>before</em> splitting.</p>
+<h4 id="how-to-understand-it-15">How to understand it</h4>
+
+<p>Treat this as a decision/problem-solving question: explain the mechanism
+or approach first, then the failure modes, trade-offs, and how you would
+verify the result.</p>
+
+<p><strong>Plain-English starting point:</strong> Use the <strong>strangler fig</strong> pattern: put
+a routing layer (gateway) in front, carve out one bounded context at a
+time (often the highest-change or most independently scalable, not the
+shared core), and migrate its data so each service owns its database,
+with an anti-corruption layer where models differ. Identify boundaries
+with DDD (event storming), not technical layers, and avoid a
+<em>distributed monolith</em> where services must deploy together.</p>
+<h4 id="key-terms-you-should-know-14">Key terms you should know</h4>
+
+<ul>
+<li><strong>DDD</strong> — Domain-Driven Design: modeling software around business
+domains, boundaries and domain concepts.</li>
+<li><strong>observability</strong> — The ability to understand internal system behavior
+from telemetry such as logs, metrics and traces.</li>
+<li><strong>Service</strong> — An application or platform capability exposed through a
+defined interface; a Kubernetes Service is a specific networking resource.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-15">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-18">30-second version</h4>
+
+<blockquote>
+<p>Use the <strong>strangler fig</strong> pattern: put a routing layer (gateway) in
+front, carve out one bounded context at a time (often the
+highest-change or most independently scalable, not the shared core),
+and migrate its data so each service owns its database, with an
+anti-corruption layer where models differ. Identify boundaries with
+DDD (event storming), not technical layers, and avoid a <em>distributed
+monolith</em> where services must deploy together.</p>
+</blockquote>
+
+<p><strong>M4.2 How do you handle transactions across services?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-20">A good SDE-3 interview answer is:</h4>
+
+<p>Two-phase commit coordinates atomic commit but can block under failures
+and couples availability. When that trade-off is unsuitable, consider a
+<strong>Saga</strong>: a sequence of local transactions, each followed by an event,
+with compensating actions on failure. <em>Choreography</em> (services react to
+events) is simple for 2–3 steps; <em>orchestration</em> (a coordinator holds
+the state machine) is clearer for complex flows. Use the <strong>transactional
+outbox</strong> to atomically save state and the event, then publish via a
+relay or CDC. Design compensations carefully (a refund is not an undo),
+and make every step idempotent.</p>
+<h4 id="how-to-understand-it-16">How to understand it</h4>
+
+<p>Treat this as a decision/problem-solving question: explain the mechanism
+or approach first, then the failure modes, trade-offs, and how you would
+verify the result.</p>
+
+<p><strong>Plain-English starting point:</strong> Two-phase commit coordinates atomic
+commit but can block under failures and couples availability. When that
+trade-off is unsuitable, consider a <strong>Saga</strong>: a sequence of local
+transactions, each followed by an event, with compensating actions on
+failure.</p>
+<h4 id="key-terms-you-should-know-15">Key terms you should know</h4>
+
+<ul>
+<li><strong>CDC</strong> — Change Data Capture: publishing database changes by reading
+the database&#39;s change log or transaction log.</li>
+<li><strong>outbox</strong> — A database table used to store events in the same
+transaction as business data so publication can happen reliably
+afterward.</li>
+<li><strong>Two-phase commit</strong> — A protocol separating preparation from a
+coordinated commit or abort decision.</li>
+<li><strong>Saga</strong> — A distributed transaction pattern that coordinates a
+sequence of local transactions and compensating actions instead of one
+global database transaction.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-16">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-19">30-second version</h4>
+
+<blockquote>
+<p>Two-phase commit coordinates atomic commit but can block under
+failures and couples availability. When that trade-off is unsuitable,
+consider a <strong>Saga</strong>: a sequence of local transactions, each followed
+by an event, with compensating actions on failure.</p>
+</blockquote>
+
+<p><strong>M4.3 What delivery guarantees exist and how do you cope?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-21">A good SDE-3 interview answer is:</h4>
+
+<p>Brokers provide at-most-once, at-least-once (most common) or
+exactly-once within narrow scopes. Real systems use at-least-once plus
+<strong>idempotent consumers</strong> (dedupe on event ID in the same transaction as
+the business change) so duplicates are harmless. Also handle
+out-of-order delivery with versions or timestamps, and poison messages
+through retries and dead-letter queues.</p>
+<h4 id="how-to-understand-it-17">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Brokers provide at-most-once,
+at-least-once (most common) or exactly-once within narrow scopes. Real
+systems use at-least-once plus <strong>idempotent consumers</strong> (dedupe on event
+ID in the same transaction as the business change) so duplicates are
+harmless.</p>
+<h4 id="key-terms-you-should-know-16">Key terms you should know</h4>
+
+<ul>
+<li><strong>transaction</strong> — A unit of database work treated as one logical
+operation with defined commit/rollback behavior.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-17">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-20">30-second version</h4>
+
+<blockquote>
+<p>Brokers provide at-most-once, at-least-once (most common) or
+exactly-once within narrow scopes. Real systems use at-least-once plus
+<strong>idempotent consumers</strong> (dedupe on event ID in the same transaction
+as the business change) so duplicates are harmless.</p>
+</blockquote>
+
+<p><strong>M4.4 Which resilience patterns do you apply?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-22">A good SDE-3 interview answer is:</h4>
+
+<p>Timeouts on every remote call (shorter than the caller&#39;s budget),
+retries only for idempotent and transient failures with exponential
+backoff + jitter and a retry budget, <strong>circuit breaker</strong> (closed → open
+→ half-open) to fail fast and give the dependency time to recover,
+<strong>bulkhead</strong> (separate pools per dependency), rate limiting and load
+shedding, fallbacks/caches for degraded mode, and health-based routing.
+Verify with chaos or fault-injection tests. Naive retries amplify
+outages (retry storms).</p>
+<h4 id="how-to-understand-it-18">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Timeouts on every remote call (shorter
+than the caller&#39;s budget), retries only for idempotent and transient
+failures with exponential backoff + jitter and a retry budget, <strong>circuit
+breaker</strong> (closed → open → half-open) to fail fast and give the
+dependency time to recover, <strong>bulkhead</strong> (separate pools per
+dependency), rate limiting and load shedding, fallbacks/caches for
+degraded mode, and health-based routing. Verify with chaos or
+fault-injection tests.</p>
+<h4 id="key-terms-you-should-know-17">Key terms you should know</h4>
+
+<ul>
+<li><strong>bulkhead</strong> — A resilience pattern that isolates resources such as
+threads or connections so one overloaded dependency does not exhaust
+the whole service.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-18">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-21">30-second version</h4>
+
+<blockquote>
+<p>Timeouts on every remote call (shorter than the caller&#39;s budget),
+retries only for idempotent and transient failures with exponential
+backoff + jitter and a retry budget, <strong>circuit breaker</strong> (closed →
+open → half-open) to fail fast and give the dependency time to
+recover, <strong>bulkhead</strong> (separate pools per dependency), rate limiting
+and load shedding, fallbacks/caches for degraded mode, and
+health-based routing. Verify with chaos or fault-injection tests.</p>
+</blockquote>
+
+<p><strong>M4.5 Explain CAP and how it influences design.</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-23">A good SDE-3 interview answer is:</h4>
+
+<p>During a network partition you must choose consistency (reject or block
+requests to stay correct) or availability (answer with possibly stale
+data). Banking ledgers lean CP; product catalogues and feeds lean AP
+with eventual consistency. Mention PACELC (even without partitions there
+is a latency-vs-consistency trade-off), and techniques such as quorum
+reads/writes, read-your-writes, and conflict resolution.</p>
+<h4 id="how-to-understand-it-19">How to understand it</h4>
+
+<p>First understand the core concept, then explain why it exists, how it
+behaves in production, and what trade-off you would make.</p>
+
+<p><strong>Plain-English starting point:</strong> During a network partition you must
+choose consistency (reject or block requests to stay correct) or
+availability (answer with possibly stale data). Banking ledgers lean CP;
+product catalogues and feeds lean AP with eventual consistency.</p>
+<h4 id="sde-3-interview-checkpoints-19">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-22">30-second version</h4>
+
+<blockquote>
+<p>During a network partition you must choose consistency (reject or
+block requests to stay correct) or availability (answer with possibly
+stale data). Banking ledgers lean CP; product catalogues and feeds
+lean AP with eventual consistency.</p>
+</blockquote>
+
+<p><strong>M4.6 How do you observe a distributed system?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-24">A good SDE-3 interview answer is:</h4>
+
+<p>Logs (structured JSON, correlation/trace IDs propagated across HTTP and
+messaging), metrics (RED for services, USE for resources, plus business
+KPIs), and traces (OpenTelemetry, sampling, spans for DB and remote
+calls). Define SLIs/SLOs, alert on symptoms (error-budget burn rate)
+rather than causes, and maintain dashboards and runbooks. Tracing is
+what turns &quot;it&#39;s slow somewhere&quot; into a specific span.</p>
+<h4 id="how-to-understand-it-20">How to understand it</h4>
+
+<p>Treat this as a decision/problem-solving question: explain the mechanism
+or approach first, then the failure modes, trade-offs, and how you would
+verify the result.</p>
+
+<p><strong>Plain-English starting point:</strong> Logs (structured JSON,
+correlation/trace IDs propagated across HTTP and messaging), metrics
+(RED for services, USE for resources, plus business KPIs), and traces
+(OpenTelemetry, sampling, spans for DB and remote calls). Define
+SLIs/SLOs, alert on symptoms (error-budget burn rate) rather than
+causes, and maintain dashboards and runbooks.</p>
+<h4 id="key-terms-you-should-know-18">Key terms you should know</h4>
+
+<ul>
+<li><strong>span</strong> — One timed operation within a distributed trace, such as an
+HTTP call or database query.</li>
+<li><strong>trace</strong> — A representation of one request&#39;s path through distributed
+services.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-20">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-23">30-second version</h4>
+
+<blockquote>
+<p>Logs (structured JSON, correlation/trace IDs propagated across HTTP
+and messaging), metrics (RED for services, USE for resources, plus
+business KPIs), and traces (OpenTelemetry, sampling, spans for DB and
+remote calls). Define SLIs/SLOs, alert on symptoms (error-budget burn
+rate) rather than causes, and maintain dashboards and runbooks.</p>
+</blockquote>
+
+<hr>

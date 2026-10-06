@@ -1,0 +1,938 @@
+<h2 id="part-9-coding-interview-practice-track">Part 9 Coding interview practice track</h2>
+
+<p>The aim is to solve unfamiliar problems, explain why the solution is
+correct, and adapt it when constraints change. Use the forty problems
+below as a practice pool over two to four weeks. For a fourteen-day
+sprint, choose twenty to twenty-four based on your weakest patterns and
+reserve time for mocks and repeat attempts.</p>
+<h3 id="what-to-prioritize">What to prioritize</h3>
+
+<table><thead>
+<tr>
+<th>Priority</th>
+<th>Work</th>
+<th>Exit criterion</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>First</td>
+<td>Arrays, hashing, binary search, sliding windows, trees, heaps, graphs</td>
+<td>Derive a solution without naming a memorized template first</td>
+</tr>
+<tr>
+<td>First</td>
+<td>Java implementation, invariants, complexity, boundary tests</td>
+<td>Produce correct code and explain every state variable</td>
+</tr>
+<tr>
+<td>Next</td>
+<td>Dynamic programming, backtracking, union-find, monotonic stacks</td>
+<td>State the recurrence or maintained invariant before coding</td>
+</tr>
+<tr>
+<td>Next</td>
+<td>Machine coding and concurrency</td>
+<td>Define contracts, bound state, handle cancellation and test interactions</td>
+</tr>
+<tr>
+<td>Maintain</td>
+<td>System design, databases and project depth</td>
+<td>Explain one realistic failure timeline and a recovery plan</td>
+</tr>
+<tr>
+<td>Role-dependent</td>
+<td>Detailed GCP, Kubernetes and Terraform trivia</td>
+<td>Study when it appears in the job description or your resume</td>
+</tr>
+</tbody></table>
+
+<p>This is a suggested allocation, not a claim about any company&#39;s
+interview process. Read the recruiter-provided format first.</p>
+<h3 id="forty-problems-organized-by-pattern">Forty problems organized by pattern</h3>
+
+<p>For each problem, first clarify input contracts, give a correct
+baseline, improve it, state an invariant, code, and test. The names
+below identify practice prompts; the solutions need not come from a
+particular platform.</p>
+
+<table><thead>
+<tr>
+<th>Pattern</th>
+<th>Problems</th>
+<th>Recognition cue</th>
+<th>Follow-up to rehearse</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>Hashing and prefix sums</td>
+<td>1. Two Sum; 2. Subarray Sum Equals K; 3. Longest Consecutive Sequence</td>
+<td>Fast membership or a relationship between prefixes</td>
+<td>Negative numbers, duplicate values, integer overflow</td>
+</tr>
+<tr>
+<td>Two pointers</td>
+<td>4. Three Sum; 5. Container With Most Water; 6. Trapping Rain Water</td>
+<td>Sorted choices or boundaries that move monotonically</td>
+<td>Prove why a discarded choice cannot improve the result</td>
+</tr>
+<tr>
+<td>Sliding window</td>
+<td>7. Longest Substring Without Repeats; 8. Minimum Window Substring; 9. Permutation in String</td>
+<td>Maintain a condition on a contiguous range</td>
+<td>Explain why negative numbers break some sum-window arguments</td>
+</tr>
+<tr>
+<td>Binary search</td>
+<td>10. Lower Bound; 11. Search Rotated Array; 12. Minimum Feasible Processing Speed</td>
+<td>Ordered search space or a monotone feasibility predicate</td>
+<td>Duplicates, no feasible answer, overflow in midpoint/ceil division</td>
+</tr>
+<tr>
+<td>Intervals</td>
+<td>13. Merge Intervals; 14. Meeting Rooms II; 15. Insert Interval</td>
+<td>Sorting exposes overlap decisions</td>
+<td>Closed versus half-open intervals; whether touching endpoints overlap</td>
+</tr>
+<tr>
+<td>Linked lists</td>
+<td>16. Reverse List; 17. Detect Cycle; 18. Merge K Sorted Lists</td>
+<td>Pointer ownership or ordered heads</td>
+<td>Empty list, aliasing, cycles, whether input nodes may be reused</td>
+</tr>
+<tr>
+<td>Stack</td>
+<td>19. Valid Parentheses; 20. Daily Temperatures; 21. Largest Rectangle in Histogram</td>
+<td>Unresolved elements await a later boundary</td>
+<td>Equal values and why total pushes/pops remain linear</td>
+</tr>
+<tr>
+<td>Trees</td>
+<td>22. Level Order; 23. Lowest Common Ancestor; 24. Serialize and Deserialize a Tree</td>
+<td>Recursive subproblem or breadth levels</td>
+<td>Missing target nodes, duplicate values, skewed-tree stack depth</td>
+</tr>
+<tr>
+<td>Heap</td>
+<td>25. Top K Frequent; 26. Median of a Stream; 27. Kth Largest</td>
+<td>Retain an ordered frontier or a small best set</td>
+<td>Tie-breaking, invalid k, exact versus approximate streaming answers</td>
+</tr>
+<tr>
+<td>Unweighted graphs</td>
+<td>28. Number of Islands; 29. Clone Graph; 30. Course Schedule</td>
+<td>Reachability, distance by edges, or dependency order</td>
+<td>Disconnected nodes, repeated edges, cycle detection</td>
+</tr>
+<tr>
+<td>Weighted graphs</td>
+<td>31. Network Delay; 32. Minimum-Cost Grid Path</td>
+<td>Nonnegative weighted shortest path</td>
+<td>Why BFS is insufficient; what changes with negative weights</td>
+</tr>
+<tr>
+<td>Union-find</td>
+<td>33. Redundant Connection; 34. Accounts Merge</td>
+<td>Repeated undirected connectivity queries</td>
+<td>Duplicate edges, self edges, deletions and rollback</td>
+</tr>
+<tr>
+<td>Backtracking</td>
+<td>35. Combination Sum; 36. Subsets With Duplicates; 37. Word Search</td>
+<td>Enumerate choices under constraints</td>
+<td>Avoid duplicate outputs; explain pruning and output-size cost</td>
+</tr>
+<tr>
+<td>Dynamic programming</td>
+<td>38. Coin Change; 39. Edit Distance; 40. Longest Increasing Subsequence</td>
+<td>Repeated subproblems with sufficient state</td>
+<td>Base cases, transitions, iteration order, reconstructing a solution</td>
+</tr>
+</tbody></table>
+
+<p>Do not count reading an answer as solving a problem. Mark each attempt
+as independent, hinted, or read. Retry hinted/read problems after two
+days, then a week, with no solution visible.</p>
+<h3 id="a-daily-practice-session">A daily practice session</h3>
+
+<p>Allow about 150 minutes: 10 minutes recalling earlier invariants, two
+40-minute problem attempts, 25 minutes fixing and testing the weaker
+attempt, 20 minutes of Java/backend depth, and 15 minutes recording
+mistakes. On mock days, replace new problems with a timed interview and
+review.</p>
+
+<table><thead>
+<tr>
+<th>Day</th>
+<th>Coding focus</th>
+<th>Short companion revision</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>1</td>
+<td>Arrays and hashing</td>
+<td><code>equals</code>, <code>hashCode</code>, mutable keys</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Prefix sums and two pointers</td>
+<td><code>long</code>, comparator overflow, collection costs</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Sliding windows</td>
+<td>UTF-16 versus code points and input contracts</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Binary search</td>
+<td>Loop invariants and boundary conventions</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Intervals and linked lists</td>
+<td>Mutation, aliasing and defensive copies</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Trees and traversal</td>
+<td>Recursion stack, queue space, serialization</td>
+</tr>
+<tr>
+<td>7</td>
+<td>One 45-minute coding mock; redo two failures</td>
+<td>Explain trade-offs aloud</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Heaps and monotonic stacks</td>
+<td>Amortized complexity and heap ordering</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Graph BFS/DFS and topological ordering</td>
+<td>Disconnected state and cycle detection</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Dijkstra and union-find</td>
+<td>Preconditions and counterexamples</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Backtracking and one-dimensional DP</td>
+<td>Search-tree size and pruning</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Two-dimensional DP; retry weak patterns</td>
+<td>State compression and reconstruction</td>
+</tr>
+<tr>
+<td>13</td>
+<td>One 90-minute machine-coding exercise</td>
+<td>Concurrency, lifecycle and tests</td>
+</tr>
+<tr>
+<td>14</td>
+<td>One 45-minute coding mock and 45-minute design mock</td>
+<td>Project stories and final error-log review</td>
+</tr>
+</tbody></table>
+<h3 id="the-45-minute-coding-round">The 45-minute coding round</h3>
+
+<table><thead>
+<tr>
+<th>Minutes</th>
+<th>Action</th>
+<th>What the interviewer can assess</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>0–5</td>
+<td>Clarify input size, duplicates, ordering, mutation and output</td>
+<td>Whether you solve the actual problem</td>
+</tr>
+<tr>
+<td>5–10</td>
+<td>Explain a baseline and the bottleneck</td>
+<td>Whether optimization has a reason</td>
+</tr>
+<tr>
+<td>10–15</td>
+<td>Choose a representation and state an invariant</td>
+<td>Whether the algorithm is derived</td>
+</tr>
+<tr>
+<td>15–32</td>
+<td>Implement, narrating decisions rather than each keystroke</td>
+<td>Correctness and readable Java</td>
+</tr>
+<tr>
+<td>32–40</td>
+<td>Walk through normal and adversarial tests</td>
+<td>Ability to find your own bugs</td>
+</tr>
+<tr>
+<td>40–45</td>
+<td>Explain time/space cost and handle one changed constraint</td>
+<td>Depth and adaptability</td>
+</tr>
+</tbody></table>
+
+<p>Practice rubric: score each of contract, reasoning, implementation,
+verification, and communication from 0 to 2. Zero means
+missing/incorrect, one means partial or prompted, and two means
+independent and clear. Aim for at least 8/10 twice on unseen problems,
+with no zero in correctness or verification. This is a self-assessment
+tool, not a hiring prediction.</p>
+<h3 id="java-details-that-matter-during-live-coding">Java details that matter during live coding</h3>
+
+<ul>
+<li>Use <code>ArrayDeque</code> for ordinary stacks/queues and <code>PriorityQueue</code> for an
+ordered frontier. Heap iteration is not sorted iteration.</li>
+<li>Prefer <code>Integer.compare</code>, <code>Long.compare</code> or comparator factories;
+<code>a - b</code> can overflow. A <code>TreeSet</code> also uses comparator equality to
+decide whether an element is already present.</li>
+<li>Cast before arithmetic: <code>(long) a * b</code>, not <code>(long) (a * b)</code>. Use
+<code>long</code> for counts of subarrays, accumulated weights and large totals.</li>
+<li><code>char</code> is a UTF-16 code unit. Decide whether text problems mean ASCII,
+code units, Unicode code points, or user-perceived characters; these
+are different contracts.</li>
+<li>State whether a function changes its input. Sorting the caller&#39;s array
+or returning references to mutable interval arrays can be observable
+behavior.</li>
+<li>Track recursion depth as auxiliary space. DFS can be O(V + E) time and
+still overflow the Java call stack on a deep input.</li>
+<li>State expected, amortized and worst-case complexity separately.
+“HashMap is O(1)” needs assumptions; “two nested loops means O(n²)” is
+false when both pointers only advance across the input once.</li>
+<li>Do not stream away an algorithm&#39;s invariant. A short loop is often
+easier to implement, inspect and debug under a timer.</li>
+<li>Describe the output contract for ties, empty results and impossible
+cases. Reject invalid inputs explicitly when that is the agreed
+contract.</li>
+</ul>
+<h3 id="eight-worked-solutions">Eight worked solutions</h3>
+
+<p>The companion
+[InterviewAlgorithms.java](InterviewAlgorithms.java)
+contains all eight implementations and executable checks. The blocks
+below are members of that class and use <code>java.util</code> imports; the file is
+the complete runnable artifact.</p>
+
+<p>From the directory containing the file, run
+<code>java InterviewAlgorithms.java</code>. It was executed on OpenJDK 21.0.9 and
+reported <strong>PASS: 3116 checks across eight algorithms</strong>. Tests include
+explicit edge cases and deterministic comparisons against simpler
+implementations for prefix sums, binary search, monotonic stacks and
+running medians. Separate checks passed for the revised LRU cache,
+bounded queue, concurrent limiter and odd/even cancellation examples.
+This does not imply every earlier framework excerpt was compiled or
+integration-tested.</p>
+<h4 id="solution-1-lower-bound">Solution 1 Lower bound</h4>
+
+<p><strong>Derive and compare:</strong> a linear scan establishes the meaning of the
+first acceptable index. Sortedness makes <code>a[i] &gt;= target</code> monotone, so
+halve the remaining candidate range. A library binary search may return
+any equal position, requiring extra handling for the first duplicate;
+the half-open formulation encodes that contract directly.</p>
+
+<p><strong>What if:</strong> changing <code>&lt; target</code> to <code>&lt;= target</code> searches for the first
+strictly larger value. For <code>[1,2,2,4]</code> and target 2, lower bound is 1
+and upper bound is 3. Returning <code>-1</code> for an absent value loses the
+insertion-position contract. If ordering is removed, binary search is
+invalid.</p>
+
+<p><strong>Strong answer signal:</strong> state what is known on both sides of the open
+search interval and show why every iteration makes progress.</p>
+
+<p><strong>Contract:</strong> sorted ascending array; return the first index whose value
+is at least the target, or array length. Do not add an O(n) sortedness
+scan when claiming O(log n) search.</p>
+
+<p><strong>Reasoning:</strong> all indices before <code>lo</code> are too small; all indices at or
+after <code>hi</code> are known candidates or past the array. A half-open interval
+handles an empty array and an insertion after the last element without a
+special branch.</p>
+
+<pre><code class="java">// 1. Binary search. Precondition: a is sorted ascending. Returns a.length if absent above all values.
+public static int lowerBound(int[] a, int target) {
+    Objects.requireNonNull(a);
+    int lo = 0, hi = a.length;
+    while (lo &lt; hi) {
+        int mid = lo + (hi - lo) / 2;
+        if (a[mid] &lt; target) lo = mid + 1;
+        else hi = mid;
+    }
+    return lo;
+}
+</code></pre>
+
+<p><strong>Cost:</strong> O(log n) time, O(1) extra space. <strong>Tests:</strong> empty array,
+target before/after the range, repeated target, and a single element.
+<strong>Follow-up:</strong> change the comparison to find the first value strictly
+greater than the target; use the two boundaries to count occurrences.</p>
+<h4 id="solution-2-subarray-sum-equals-a-target">Solution 2 Subarray sum equals a target</h4>
+
+<p><strong>Derive and compare:</strong> enumerate all start/end pairs as a baseline,
+then observe that every segment sum is a difference of two prefixes.
+Frequencies matter because multiple earlier prefixes can give distinct
+valid starts. Sorting prefixes loses position information; a simple
+sliding window fails when values can be negative.</p>
+
+<p><strong>What if:</strong> store only a set and <code>[0,0]</code> with target zero is
+undercounted. Insert the current prefix before querying and you count an
+empty segment. With target 1 in <code>[1,-1,1]</code>, all three valid segments are
+counted. For longest length, retain earliest prefix indices; for
+shortest length, reason about which index should be retained.</p>
+
+<p><strong>Strong answer signal:</strong> derive the complement equation and explain
+query-before-update.</p>
+
+<p><strong>Contract:</strong> integer elements may be negative; count nonempty
+contiguous subarrays. The answer and prefix sums use <code>long</code>.</p>
+
+<p><strong>Reasoning:</strong> if the current prefix is p, an earlier prefix p − target
+completes a valid subarray. Seed the empty prefix once and query before
+inserting the current prefix; otherwise target zero incorrectly counts
+an empty subarray. A simple shrinking window is not correct for
+arbitrary negative values.</p>
+
+<pre><code class="java">// 2. Prefix sums. Counts nonempty subarrays; negative numbers and zero are supported.
+public static long countSubarraysWithSum(int[] a, long target) {
+    Objects.requireNonNull(a);
+    Map&lt;Long, Long&gt; counts = new HashMap&lt;&gt;();
+    counts.put(0L, 1L);
+    long prefix = 0, result = 0;
+    for (int value : a) {
+        prefix += value;
+        result += counts.getOrDefault(prefix - target, 0L);
+        counts.merge(prefix, 1L, Long::sum);
+    }
+    return result;
+}
+</code></pre>
+
+<p><strong>Cost:</strong> expected O(n) time and O(n) space under ordinary hash
+distribution. <strong>Tests:</strong> all zeros, cancellation between
+positive/negative values, no match, and totals exceeding <code>int</code>.
+<strong>Follow-up:</strong> for longest matching subarray, store earliest indices
+instead of frequencies.</p>
+<h4 id="solution-3-next-warmer-day">Solution 3 Next warmer day</h4>
+
+<p><strong>Derive and compare:</strong> the quadratic baseline searches right from every
+day. The repeated work is asking whether a later value resolves earlier
+candidates. Keep only unresolved indices; a new warmer value discharges
+a suffix of that stack. A heap could resolve candidates but adds O(log
+n) operations without improving the static task.</p>
+
+<p><strong>What if:</strong> popping on equality incorrectly treats an equal temperature
+as warmer. Storing only values loses the index distance. On
+<code>[30,30,31]</code>, answers are <code>[2,1,0]</code>. For a circular input, scan a second
+pass with controlled insertion so each original index is resolved once.</p>
+
+<p><strong>Strong answer signal:</strong> justify linear total work by charging one push
+and at most one pop to each index.</p>
+
+<p><strong>Contract:</strong> for each temperature, return distance to the next strictly
+warmer day, or zero.</p>
+
+<p><strong>Reasoning:</strong> the stack stores unresolved indices with non-increasing
+temperatures. A warmer day resolves all smaller values on top. Each
+index enters and leaves at most once, so the nested loop is linear in
+total.</p>
+
+<pre><code class="java">// 3. Monotonic stack. Equal temperatures do not count as warmer.
+public static int[] daysUntilWarmer(int[] temperatures) {
+    Objects.requireNonNull(temperatures);
+    int[] result = new int[temperatures.length];
+    Deque&lt;Integer&gt; unresolved = new ArrayDeque&lt;&gt;();
+    for (int i = 0; i &lt; temperatures.length; i++) {
+        while (!unresolved.isEmpty()
+                &amp;&amp; temperatures[i] &gt; temperatures[unresolved.peek()]) {
+            int previous = unresolved.pop();
+            result[previous] = i - previous;
+        }
+        unresolved.push(i);
+    }
+    return result;
+}
+</code></pre>
+
+<p><strong>Cost:</strong> O(n) time, O(n) auxiliary stack and O(n) output. <strong>Tests:</strong>
+equal temperatures, decreasing input, one element, empty input.
+<strong>Follow-up:</strong> adapt to a circular array while avoiding repeated output
+resolution.</p>
+<h4 id="solution-4-dijkstra-shortest-paths">Solution 4 Dijkstra shortest paths</h4>
+
+<p><strong>Derive and compare:</strong> BFS minimizes edge count, not weight.
+Nonnegative weights allow repeatedly choosing the smallest tentative
+distance. A heap makes that choice efficient; a dense graph may justify
+an O(V²) array selection implementation. Bellman–Ford handles negative
+weights but costs more.</p>
+
+<p><strong>What if:</strong> marking a node final when enqueued freezes an early
+expensive route. With edges A→B=10, A→C=1, C→B=1, B must improve to 2.
+Negative edges invalidate the greedy proof. Removing the stale-entry
+guard repeats work; stopping when the destination is first enqueued can
+return 10 instead of 2.</p>
+
+<p><strong>Strong answer signal:</strong> explain why a popped minimum is safe under the
+weight contract and distinguish tentative from final distance.</p>
+
+<p><strong>Contract:</strong> directed adjacency list, nodes numbered 0 through V − 1,
+nonnegative integer weights. <code>Long.MAX_VALUE</code> denotes unreachable.
+Validate every edge, including edges in unreachable components.</p>
+
+<p><strong>Reasoning:</strong> the cheapest current tentative distance cannot be
+improved through a more expensive frontier when all edge weights are
+nonnegative. Because Java&#39;s priority queue has no decrease-key
+operation, insert updated candidates and ignore stale entries when
+popped.</p>
+
+<pre><code class="java">// 4. Weighted graph. Directed adjacency list, nodes 0..V-1, nonnegative int weights.
+public record Edge(int to, int weight) {}
+private record State(int node, long distance) {}
+
+public static long[] shortestPaths(List&lt;List&lt;Edge&gt;&gt; graph, int source) {
+    Objects.requireNonNull(graph);
+    Objects.checkIndex(source, graph.size());
+    for (List&lt;Edge&gt; edges : graph) {
+        Objects.requireNonNull(edges);
+        for (Edge edge : edges) {
+            Objects.requireNonNull(edge);
+            Objects.checkIndex(edge.to(), graph.size());
+            if (edge.weight() &lt; 0) throw new IllegalArgumentException(&quot;Negative edge weight&quot;);
+        }
+    }
+    long[] distance = new long[graph.size()];
+    Arrays.fill(distance, Long.MAX_VALUE);
+    distance[source] = 0;
+    PriorityQueue&lt;State&gt; queue = new PriorityQueue&lt;&gt;(Comparator.comparingLong(State::distance));
+    queue.add(new State(source, 0));
+    while (!queue.isEmpty()) {
+        State current = queue.remove();
+        if (current.distance() != distance[current.node()]) continue;
+        for (Edge edge : graph.get(current.node())) {
+            long candidate = current.distance() + edge.weight();
+            if (candidate &lt; distance[edge.to()]) {
+                distance[edge.to()] = candidate;
+                queue.add(new State(edge.to(), candidate));
+            }
+        }
+    }
+    return distance;
+}
+</code></pre>
+
+<p><strong>Cost:</strong> for this lazy-entry implementation, O(V + E log(E + 1)) time
+and O(V + E) extra space, excluding the input adjacency list. For simple
+graphs, log E is O(log V). Distances use <code>long</code> and weights use
+nonnegative <code>int</code>; a shortest simple path fits this representation.
+<strong>Tests:</strong> zero-weight cycle, unreachable vertex, competing routes,
+stale entry, invalid edge, and large total weight. <strong>Follow-up:</strong> BFS
+for unit weights, 0–1 BFS for weights zero/one, or a negative-edge
+algorithm when the contract changes.</p>
+<h4 id="solution-5-disjoint-sets">Solution 5 Disjoint sets</h4>
+
+<p><strong>Derive and compare:</strong> repeated connectivity questions need component
+membership, not the path itself. Store representatives and merge sets;
+path compression and size-based linking keep representative queries
+cheap. BFS is simpler for one traversal and is needed when returning a
+path. Maintaining a full reachability matrix uses much more memory.</p>
+
+<p><strong>What if:</strong> an undirected edge joins already-connected nodes, it closes
+a cycle under the chosen graph rules. Directed cycle detection needs
+another algorithm. Duplicate edges and self edges require an explicit
+contract. Deleting an edge may split a component, which this structure
+cannot discover.</p>
+
+<p><strong>Trace and strong answer:</strong> union 0–1 then 1–2; find(0)=find(2), while
+3 remains separate. Explain why roots, rather than arbitrary parent
+entries, must be compared.</p>
+
+<p><strong>Contract:</strong> fixed node set, incremental undirected connectivity,
+single-threaded mutation.</p>
+
+<p><strong>Reasoning:</strong> represent each component as a rooted tree. Union attaches
+the smaller component to the larger; path compression shortens future
+searches. Decrease the component count only when two different roots
+merge.</p>
+
+<pre><code class="java">// 5. Disjoint sets. Mutable and single-threaded; union returns false for an existing connection.
+public static final class DisjointSet {
+    private final int[] parent, size;
+    private int components;
+
+    public DisjointSet(int n) {
+        if (n &lt; 0) throw new IllegalArgumentException(&quot;Negative size&quot;);
+        parent = new int[n];
+        size = new int[n];
+        components = n;
+        for (int i = 0; i &lt; n; i++) { parent[i] = i; size[i] = 1; }
+    }
+
+    public int find(int node) {
+        Objects.checkIndex(node, parent.length);
+        while (node != parent[node]) {
+            parent[node] = parent[parent[node]];
+            node = parent[node];
+        }
+        return node;
+    }
+
+    public boolean union(int a, int b) {
+        int rootA = find(a), rootB = find(b);
+        if (rootA == rootB) return false;
+        if (size[rootA] &lt; size[rootB]) { int tmp = rootA; rootA = rootB; rootB = tmp; }
+        parent[rootB] = rootA;
+        size[rootA] += size[rootB];
+        components--;
+        return true;
+    }
+
+    public int components() { return components; }
+}
+</code></pre>
+
+<p><strong>Cost:</strong> O(n) initialization and space; amortized O(α(n)) for
+find/union over a sequence of operations. <strong>Tests:</strong> duplicate union,
+self union, transitive connectivity, zero nodes, invalid node.
+<strong>Follow-up:</strong> ordinary union-find does not support arbitrary deletions;
+discuss rebuilding, offline reversal or rollback variants instead of
+promising an O(1) deletion.</p>
+<h4 id="solution-6-edit-distance">Solution 6 Edit distance</h4>
+
+<p><strong>Derive and compare:</strong> brute recursion explores the final
+insert/delete/replace choices repeatedly. Prefix lengths identify
+repeated subproblems. Bottom-up DP makes dependencies explicit;
+memoization is equally valid but uses recursion. Two rows suffice only
+because the answer is a distance, not a full edit script.</p>
+
+<p><strong>What if:</strong> reusing a row without saving the diagonal corrupts the
+replacement transition. Different operation costs change the recurrence;
+allowing transposition is a different distance definition. For
+<code>cat</code>→<code>cut</code>, replacing one character costs one; empty→<code>abc</code> costs three.
+Unicode code points need a different input representation from <code>charAt</code>.</p>
+
+<p><strong>Strong answer signal:</strong> define dp[i][j] precisely and explain why
+current-row left and previous-row entries have different roles.</p>
+
+<p><strong>Contract:</strong> minimum unit-cost insertions, deletions and replacements
+over UTF-16 code units. For code-point semantics, convert input to
+code-point sequences first.</p>
+
+<p><strong>Reasoning:</strong> the distance between two prefixes depends on matching
+their last character or paying for one of three operations. Only the
+previous and current DP rows are needed when returning the distance
+alone.</p>
+
+<pre><code class="java">// 6. Dynamic programming. Unit-cost insert/delete/replace over UTF-16 code units.
+public static int editDistance(String a, String b) {
+    Objects.requireNonNull(a);
+    Objects.requireNonNull(b);
+    if (a.length() &lt; b.length()) { String tmp = a; a = b; b = tmp; }
+    int[] previous = new int[b.length() + 1], current = new int[b.length() + 1];
+    for (int j = 0; j &lt;= b.length(); j++) previous[j] = j;
+    for (int i = 1; i &lt;= a.length(); i++) {
+        current[0] = i;
+        for (int j = 1; j &lt;= b.length(); j++) {
+            current[j] = a.charAt(i - 1) == b.charAt(j - 1)
+                ? previous[j - 1]
+                : 1 + Math.min(previous[j - 1], Math.min(previous[j], current[j - 1]));
+        }
+        int[] tmp = previous; previous = current; current = tmp;
+    }
+    return previous[b.length()];
+}
+</code></pre>
+
+<p><strong>Cost:</strong> O(mn) time and O(min(m, n)) extra space. <strong>Tests:</strong> empty
+strings, equal strings, repeated letters, and a mixed
+insert/delete/replace example. <strong>Follow-up:</strong> reconstructing the actual
+edit sequence needs additional state or a divide-and-conquer
+reconstruction approach.</p>
+<h4 id="solution-7-combination-sum">Solution 7 Combination sum</h4>
+
+<p><strong>Derive and compare:</strong> choose a candidate, reduce the remaining target,
+and recurse. Keep a nondecreasing candidate-index order so each multiset
+appears once. A DP decision algorithm is better if the question asks
+only whether a target is reachable; enumeration must pay for the output.</p>
+
+<p><strong>What if:</strong> restarting at index zero generates permutations such as
+<code>[2,3]</code> and <code>[3,2]</code>. Advancing to i+1 forbids reuse. A zero candidate
+can recurse forever. For {2,3} and target 6, return <code>[2,2,2]</code> and
+<code>[3,3]</code>. Duplicate candidates require normalization or branch-level
+skipping.</p>
+
+<p><strong>Strong answer signal:</strong> explain both termination and uniqueness, and
+count output construction in complexity.</p>
+
+<p><strong>Contract:</strong> positive candidate values, unlimited reuse, nonnegative
+target, unique combinations. A zero target has one solution: the empty
+combination. Input is not mutated.</p>
+
+<p><strong>Reasoning:</strong> normalize duplicate candidates, sort, and only choose
+indices at or after the current index. This permits reuse while avoiding
+permutations of the same combination. Positivity makes the remaining
+target decrease; zero or negative candidates would break that
+termination argument.</p>
+
+<pre><code class="java">// 7. Backtracking. Unique combinations, unlimited reuse, positive candidates, nonnegative target.
+public static List&lt;List&lt;Integer&gt;&gt; combinationSum(int[] candidates, int target) {
+    Objects.requireNonNull(candidates);
+    if (target &lt; 0) throw new IllegalArgumentException(&quot;Negative target&quot;);
+    for (int value : candidates) {
+        if (value &lt;= 0) throw new IllegalArgumentException(&quot;Candidates must be positive&quot;);
+    }
+    int[] unique = Arrays.stream(candidates).distinct().sorted().toArray();
+    List&lt;List&lt;Integer&gt;&gt; result = new ArrayList&lt;&gt;();
+    combinations(unique, 0, target, new ArrayList&lt;&gt;(), result);
+    return result;
+}
+
+private static void combinations(int[] values, int start, int remaining,
+                                 List&lt;Integer&gt; path, List&lt;List&lt;Integer&gt;&gt; result) {
+    if (remaining == 0) { result.add(List.copyOf(path)); return; }
+    for (int i = start; i &lt; values.length &amp;&amp; values[i] &lt;= remaining; i++) {
+        path.add(values[i]);
+        combinations(values, i, remaining - values[i], path, result);
+        path.remove(path.size() - 1);
+    }
+}
+</code></pre>
+
+<p><strong>Cost:</strong> output-sensitive and potentially exponential. Let d =
+floor(target / minimum candidate) and k be the number of distinct
+candidates. A loose search bound is O((k + 1)^(d + 1)), plus
+normalization and O(total emitted elements) to copy results; do not
+label it O(n). Auxiliary space is O(k + d), excluding output. Large d
+can overflow the call stack. <strong>Tests:</strong> duplicate candidates, no result,
+empty candidates, target zero, invalid candidate, preserved input.
+<strong>Follow-up:</strong> allow each candidate once, then explain how duplicate
+skipping changes.</p>
+<h4 id="solution-8-running-median">Solution 8 Running median</h4>
+
+<p><strong>Derive and compare:</strong> sorting every prefix repeats work; a sorted
+array has O(n) insertion. Two heaps retain exactly the two middle
+boundaries while allowing O(log n) insertion. A balanced ordered
+structure can work too, especially if deletions or other rank queries
+are required.</p>
+
+<p><strong>What if:</strong> balancing sizes without preserving the value partition
+produces the wrong median. Integer addition can overflow before division
+unless widened first. For 5,1,9, the medians are 5,3,5. Sliding windows
+need arbitrary expiry support, while memory-bounded unending streams may
+require approximate quantiles.</p>
+
+<p><strong>Strong answer signal:</strong> state both the size invariant and the
+cross-heap ordering invariant; neither alone is sufficient.</p>
+
+<p><strong>Contract:</strong> exact median after each insertion; no deletions;
+single-threaded. Querying an empty stream throws.</p>
+
+<p><strong>Reasoning:</strong> a max-heap holds the lower half and a min-heap the upper
+half. Every lower value is at most every upper value; the lower heap has
+either the same size or one extra element. Cast before adding the two
+middle values to avoid integer overflow.</p>
+
+<pre><code class="java">// 8. Two heaps. Single-threaded; grows with the stream length.
+public static final class RunningMedian {
+    private final PriorityQueue&lt;Integer&gt; lower = new PriorityQueue&lt;&gt;(Comparator.reverseOrder());
+    private final PriorityQueue&lt;Integer&gt; upper = new PriorityQueue&lt;&gt;();
+
+    public void add(int value) {
+        if (lower.isEmpty() || value &lt;= lower.peek()) lower.add(value);
+        else upper.add(value);
+        if (lower.size() &gt; upper.size() + 1) upper.add(lower.remove());
+        else if (upper.size() &gt; lower.size()) lower.add(upper.remove());
+    }
+
+    public double median() {
+        if (lower.isEmpty()) throw new NoSuchElementException(&quot;Empty stream&quot;);
+        if (lower.size() != upper.size()) return lower.peek();
+        return ((long) lower.peek() + upper.peek()) / 2.0;
+    }
+}
+</code></pre>
+
+<p><strong>Cost:</strong> O(log n) insertion, O(1) median lookup, O(n) space. <strong>Tests:</strong>
+odd/even sizes, duplicate values, mixed signs, integer extremes, sorted
+and reverse inputs. <strong>Follow-up:</strong> a sliding median needs deletion
+support; an unbounded stream with a memory cap may require approximate
+quantiles rather than exact retained history.</p>
+<h3 id="machine-coding-beyond-algorithms">Machine coding beyond algorithms</h3>
+
+<p>For these exercises, agree on requirements before designing classes.
+Start with one working vertical path, then add the smallest abstractions
+justified by a second behavior. Do not introduce a database, framework
+or hierarchy merely to demonstrate familiarity.</p>
+
+<table><thead>
+<tr>
+<th>Exercise</th>
+<th>Minimal scope</th>
+<th>Senior-level follow-up</th>
+<th>Useful tests</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>Bounded LRU cache</td>
+<td>Generic get/put, replacement, eviction, positive capacity</td>
+<td>Access-order reads mutate state; define thread safety and null policy</td>
+<td>Update existing entry, access changes eviction, capacity one, concurrent invariants</td>
+</tr>
+<tr>
+<td>Rate limiter</td>
+<td>One algorithm, injected monotonic ticker, per-client limits</td>
+<td>Admission versus waiting, idle-key eviction races, distributed failure policy</td>
+<td>Exact expiry boundary, simultaneous requests, invalid config, large key population</td>
+</tr>
+<tr>
+<td>In-memory task scheduler</td>
+<td>One-off jobs, cancellation and bounded execution</td>
+<td>Stable execution ID, retry policy, shutdown and task exceptions</td>
+<td>Cancel before dispatch, duplicate dispatch, failure, no late work after shutdown</td>
+</tr>
+<tr>
+<td>Inventory reservation service</td>
+<td>Reserve/release, expiry, no negative available stock</td>
+<td>Idempotency, concurrent updates and clock policy</td>
+<td>Duplicate request, competing reservations, expired reservation, duplicate release</td>
+</tr>
+</tbody></table>
+
+<p><strong>Suggested 90-minute structure:</strong> 10 minutes on contracts, 15 on data
+model and operations, 40 implementing the core flow, 15 on tests, 10 on
+concurrency/failure trade-offs. Keep real HTTP/database integration out
+of the exercise unless requested.</p>
+
+<p>For concurrency tests, coordinate threads with latches/barriers and
+bounded completion waits. Avoid tests whose correctness depends on
+<code>Thread.sleep</code>. Verify invariants such as “accepted reservations never
+exceed stock,” not just the absence of thrown exceptions.</p>
+<h3 id="six-deeper-backend-follow-ups">Six deeper backend follow-ups</h3>
+
+<p><strong>A timeout fires. Has the work stopped?</strong> Not necessarily. Separate
+stopping the caller&#39;s wait, completing a future, interrupting a worker,
+canceling I/O and undoing a committed effect. Preserve interruption or
+propagate it to an owner; do not retry it as a transient business
+failure. Configure actual I/O deadlines and account for work that cannot
+be canceled. <code>CompletableFuture.cancel(true)</code> does not interrupt its
+computation. <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/CompletableFuture.html">CompletableFuture
+cancellation</a>.</p>
+
+<p><strong>Can two transactions preserve each row&#39;s version and still break a
+rule?</strong> Yes. Suppose two doctors are on call and each transaction
+removes a different doctor after observing the other. They update
+different rows, so per-row versions alone do not preserve “at least one
+doctor remains.” Enforce a common guard/locking protocol or use
+serializable transactions with retry handling. PostgreSQL repeatable
+read can permit serialization anomalies. <a href="https://www.postgresql.org/docs/16/transaction-iso.html">PostgreSQL
+isolation</a>.</p>
+
+<p><strong>The payment provider timed out. Should we mark the payment failed?</strong> A
+timeout may mean the outcome is unknown. Persist an operation identity,
+reuse the provider&#39;s idempotency key, reconcile status, and expose a
+pending/unknown state until evidence resolves it. A local transaction
+cannot roll back a completed external charge. This is a design scenario;
+the exact policy depends on the provider contract.</p>
+
+<p><strong>How much concurrency does a service need?</strong> Under stable conditions,
+Little&#39;s Law relates mean in-flight work to mean arrival rate multiplied
+by mean time in the system. At 800 requests/second and 250 ms mean
+response time, mean in-flight work is about 200. This is not a
+thread-pool setting: account separately for queueing, burstiness, time
+spent holding each resource and safety margin. Do not substitute p99
+latency into a mean-value relationship.</p>
+
+<p><strong>Why can an additive API change still break clients?</strong> New enum values
+can break exhaustive client logic; changed null/default behavior can
+alter business outcomes; wider numbers can overflow clients; additional
+JSON fields can fail strict readers. Specify producer/consumer
+compatibility, test representative older consumers and keep rollback
+viable during mixed-version rollout.</p>
+
+<p><strong>How do you represent money and time?</strong> Agree on currency and rounding
+rules before choosing minor-unit integers or <code>BigDecimal</code>.
+Scale-sensitive <code>BigDecimal.equals</code> differs from numeric <code>compareTo</code>;
+avoid binary-floating constructors for decimal input. <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/math/BigDecimal.html">BigDecimal
+API</a>.
+For time, distinguish an instant from a local calendar time and region,
+inject <code>Clock</code> in business logic, and use elapsed monotonic time for
+durations rather than wall-clock subtraction. Test rounding boundaries
+and daylight-saving gaps/overlaps when relevant.</p>
+<h3 id="three-mock-rounds">Three mock rounds</h3>
+
+<ol>
+<li> <strong>Coding, 45 minutes:</strong> count subarrays with a target sum. Introduce
+negatives after the baseline. Ask for longest matching subarray,
+overflow handling, and a brute-force reference test.</li>
+<li> <strong>Coding, 45 minutes:</strong> compute shortest paths in a directed
+weighted graph. Introduce unreachable vertices, zero-weight edges,
+stale heap entries and then a negative edge. Ask which assumptions
+stop holding.</li>
+<li> <strong>Machine coding, 90 minutes:</strong> implement a bounded per-client
+limiter with an injected ticker. Add simultaneous requests, a
+maximum client count, and idle eviction. Ask what changes across
+multiple JVMs.</li>
+</ol>
+
+<p>For each mock, record the first incorrect assumption, time to a
+compiling solution, the test that exposed the bug, and the explanation
+that remained unclear. An example log entry is: “Treated negative-value
+sums as a shrinking window; replace with prefix frequencies; retry after
+two days.”</p>
+<h3 id="version-reference-and-important-corrections">Version reference and important corrections</h3>
+
+<p>The stable practice target is Java 21. The Java 25 entries below
+describe that release specifically; preview status must be checked again
+for a different target release. This table is not a declaration that
+Java 25 is the newest JDK.</p>
+
+<table><thead>
+<tr>
+<th>Topic</th>
+<th>Version-aware answer</th>
+<th>Source</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>Virtual threads</td>
+<td>Final in Java 21; monitor-related pinning changes in JDK 24</td>
+<td><a href="https://openjdk.org/jeps/444">JEP 444</a>, <a href="https://docs.oracle.com/en/java/javase/24/core/virtual-threads.html">JDK 24 guide</a></td>
+</tr>
+<tr>
+<td>Scoped values</td>
+<td>Final API in Java 25; not final in Java 21</td>
+<td><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/ScopedValue.html">Java 25 API</a></td>
+</tr>
+<tr>
+<td>Structured concurrency</td>
+<td><code>StructuredTaskScope</code> is preview in Java 25; API shapes changed between previews</td>
+<td><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/concurrent/StructuredTaskScope.html">Java 25 API</a></td>
+</tr>
+<tr>
+<td>Transaction method visibility</td>
+<td>Spring 6 class proxies can support protected/package-visible methods; interface proxies require public methods</td>
+<td><a href="https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/annotations.html">Spring annotations</a></td>
+</tr>
+<tr>
+<td>HTTP clients</td>
+<td><code>RestTemplate</code> is deprecated in Spring 7; use the correct framework version when answering</td>
+<td><a href="https://docs.spring.io/spring-framework/reference/integration/rest-clients.html">Spring client reference</a></td>
+</tr>
+<tr>
+<td>Boot 4</td>
+<td>Uses Spring Framework 7 and requires at least Java 17; verify the exact release matrix</td>
+<td><a href="https://docs.spring.io/spring-boot/4.0/system-requirements.html">Boot 4 requirements</a></td>
+</tr>
+</tbody></table>
+
+<p>The revised earlier chapters also fix the failed-transaction dedupe
+example, async transaction wording, optimistic-locking claims, keyset
+complexity, reactive blocking guidance, request-based versus time-based
+error budgets, and several coding boundary cases. Primary-source links
+are placed alongside the affected material. Cloud product capabilities
+and framework defaults remain version-dependent; verify the exact target
+before using an example in a real application.</p>

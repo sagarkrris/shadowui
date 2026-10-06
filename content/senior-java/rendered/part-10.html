@@ -1,0 +1,691 @@
+<h2 id="part-10-web-sourced-questions-and-strong-answer-rubrics">Part 10 Web sourced questions and strong answer rubrics</h2>
+
+<p>Sources checked on <strong>5 October 2026</strong>. Q134–Q141 adapt public
+coding-practice prompts and link to their original pages. Q142–Q153 are
+interview-style scenarios derived from official Java documentation;
+those pages establish the technical behavior, not that a particular
+employer asks the question. All answer outlines and implementations here
+are original explanations.</p>
+
+<p>“Strong answer signals” below are coaching judgments based on the
+problem contract and published interview guidance. They are not leaked
+questions, guaranteed questions, or a company&#39;s private scoring key. A
+good interview answer explains a decision that fits the constraints; it
+need not match this guide word for word.</p>
+<h3 id="what-interviewers-publicly-say-they-assess">What interviewers publicly say they assess</h3>
+
+<table><thead>
+<tr>
+<th>Source</th>
+<th>Published emphasis</th>
+<th>How to demonstrate it</th>
+</tr>
+</thead><tbody>
+<tr>
+<td><a href="https://amazon.jobs/content/en/how-we-hire/sde-ii-interview-prep">Amazon SDE II preparation</a></td>
+<td>Executable, robust, scalable code and edge-case testing</td>
+<td>Implement the agreed solution, test it, then explain its bottleneck</td>
+</tr>
+<tr>
+<td><a href="https://careers.microsoft.com/v2/global/en/hiring-tips/technical-interviewing.html">Microsoft technical interviews</a></td>
+<td>Clarifying ambiguity, planning, coding, testing and complexity</td>
+<td>State assumptions and an invariant before coding; check boundaries afterward</td>
+</tr>
+<tr>
+<td><a href="https://www.atlassian.com/company/careers/resources/interviewing/engineering">Atlassian engineering interviews</a></td>
+<td>Data structures, code design, thought process and trade-offs</td>
+<td>Compare credible options and adapt when the interviewer changes a constraint</td>
+</tr>
+</tbody></table>
+
+<p>A reusable spoken structure is: <strong>“Given these constraints, the baseline
+is … Its bottleneck is … The property I can exploit is … I choose …
+because … The invariant is … If this assumption changes, I would … I
+will test …”</strong> Use it to organize an explanation you understand, not as
+a memorized script.</p>
+<h3 id="public-coding-prompts-with-original-java-solutions">Public coding prompts with original Java solutions</h3>
+
+<p>The complete runnable companion is
+[WebInterviewPractice.java](WebInterviewPractice.java).
+Run <code>java WebInterviewPractice.java</code> from its directory. It passed
+<strong>12,417 checks on Java 21</strong>, including fixed-seed comparisons with
+brute-force sliding-window and parentheses solutions and a reference
+minimum stack. Each code block below is extracted from that file;
+imports and the enclosing class are in the companion.</p>
+<h4 id="q134-copy-a-list-whose-nodes-also-have-arbitrary-references">Q134 Copy a list whose nodes also have arbitrary references</h4>
+
+<p><strong>Public prompt:</strong> construct independent nodes while preserving both
+link relationships. <a href="https://leetcode.com/problems/copy-list-with-random-pointer/description/">Copy List with Random
+Pointer</a>.</p>
+
+<p><strong>Derive it:</strong> copying values is insufficient because edges must lead to
+copied nodes. First create one copy per original identity; then
+reconnect both edge types through that mapping.</p>
+
+<p><strong>Choose versus alternatives:</strong> the two-pass identity map is easy to
+verify and preserves the input, using O(n) extra mapping space.
+Interleaving copies between original nodes saves auxiliary mapping space
+but temporarily changes the original list and complicates
+restoration/failure handling. A shallow copy leaves links into the
+original structure.</p>
+
+<p><strong>What if:</strong> duplicate node values rule out a value-keyed map. Cycles in
+<code>random</code> are harmless because copies exist before wiring. A cyclic
+<code>next</code> chain violates this implementation&#39;s precondition; general graph
+cloning needs visited traversal.</p>
+
+<p><strong>Trace/tests:</strong> two nodes with equal values pointing randomly to each
+other must become two distinct new objects with reciprocal new links.
+Test null, self-random, null-random and input preservation. O(n) time
+and mapping space, plus O(n) required output.</p>
+
+<p><strong>Strong answer signals:</strong> identity versus equality; no copied edge
+reaches an original object; honest mutation trade-off.</p>
+
+<pre><code class="java">// Q134. Acyclic next chain; random references must stay inside that chain or be null.
+public static final class RandomNode {
+    public final int value;
+    public RandomNode next, random;
+    public RandomNode(int value) { this.value = value; }
+}
+public static RandomNode copyRandomList(RandomNode head) {
+    Map&lt;RandomNode, RandomNode&gt; copies = new IdentityHashMap&lt;&gt;();
+    for (RandomNode node = head; node != null; node = node.next)
+        copies.put(node, new RandomNode(node.value));
+    for (RandomNode node = head; node != null; node = node.next) {
+        RandomNode copy = copies.get(node);
+        copy.next = copies.get(node.next);
+        copy.random = copies.get(node.random);
+    }
+    return copies.get(head);
+}
+</code></pre>
+<h4 id="q135-decide-whether-a-string-can-be-segmented-using-a-dictionary">Q135 Decide whether a string can be segmented using a dictionary</h4>
+
+<p><strong>Public prompt:</strong> determine whether dictionary words can cover the
+input in order, with reuse allowed. <a href="https://leetcode.com/problems/word-break/description/">Word
+Break</a>.</p>
+
+<p><strong>Derive it:</strong> a reachable prefix followed by a matching word makes a
+longer prefix reachable. A boolean DP table avoids re-solving the same
+prefix.</p>
+
+<p><strong>Choose versus alternatives:</strong> greedy longest-prefix selection fails:
+<code>cars</code> with <code>car</code>, <code>ca</code>, <code>rs</code> requires <code>ca</code> + <code>rs</code>. Plain recursion
+revisits suffixes; memoized recursion is valid. This implementation
+tests dictionary words with <code>startsWith</code>, avoiding repeated substring
+allocation; a trie can reduce repeated prefix comparisons for large
+shared-prefix dictionaries.</p>
+
+<p><strong>What if:</strong> requesting every segmentation requires output construction
+and can be exponential. Empty words must be handled explicitly; this
+implementation rejects them and treats empty input as segmentable.</p>
+
+<p><strong>Trace/tests:</strong> mark 0 reachable, then 2 via <code>ca</code>, then 4 via <code>rs</code>.
+Test impossible suffix, word reuse and overlapping choices. For n input
+length, D distinct words and maximum word length L, O(nDL) matching
+time; preprocessing also reads the dictionary. O(n + D) auxiliary
+references/state.</p>
+
+<p><strong>Strong answer signals:</strong> define reachability precisely and give a
+counterexample to greedy selection.</p>
+
+<pre><code class="java">// Q135. UTF-16 string matching; empty input is segmentable. Empty dictionary words are rejected.
+public static boolean wordBreak(String text, Collection&lt;String&gt; dictionary) {
+    Objects.requireNonNull(text);
+    List&lt;String&gt; words = List.copyOf(new LinkedHashSet&lt;&gt;(dictionary));
+    for (String word : words)
+        if (word.isEmpty()) throw new IllegalArgumentException(&quot;Empty dictionary word&quot;);
+    boolean[] reachable = new boolean[text.length() + 1];
+    reachable[0] = true;
+    for (int start = 0; start &lt; text.length(); start++) {
+        if (!reachable[start]) continue;
+        for (String word : words)
+            if (text.startsWith(word, start)) reachable[start + word.length()] = true;
+    }
+    return reachable[text.length()];
+}
+</code></pre>
+<h4 id="q136-implement-exact-word-and-prefix-lookup">Q136 Implement exact-word and prefix lookup</h4>
+
+<p><strong>Public prompt:</strong> support insertion, exact search and prefix search.
+<a href="https://leetcode.com/problems/implement-trie-prefix-tree/description/">Implement
+Trie</a>.</p>
+
+<p><strong>Derive it:</strong> words sharing prefixes can share the same traversal path.
+A terminal marker distinguishes a complete word from an intermediate
+prefix.</p>
+
+<p><strong>Choose versus alternatives:</strong> a hash set handles exact search well but
+does not directly index prefixes. Scanning every stored word is
+expensive for repeated prefix queries. A trie spends memory on nodes;
+sparse maps or compressed edges can reduce waste for larger alphabets.</p>
+
+<p><strong>What if:</strong> <code>app</code> is a valid prefix after inserting <code>apple</code>, but not a
+stored word until inserted. The array representation assumes lowercase
+ASCII. This version explicitly supports an empty word/prefix extension;
+deletion needs terminal/path-liveness handling. Thread safety is not
+implied.</p>
+
+<p><strong>Trace/tests:</strong> insert <code>apple</code>, check exact <code>app</code> false and prefix
+<code>app</code> true, then insert <code>app</code>. Reject invalid letters before partial
+mutation. O(L) per operation and O(total stored prefix nodes) space with
+fixed alphabet.</p>
+
+<p><strong>Strong answer signals:</strong> separate prefix existence from word
+termination and discuss the memory/alphabet trade-off.</p>
+
+<pre><code class="java">// Q136. Lowercase ASCII only. Empty word/prefix accepted as an explicit extension.
+public static final class Trie {
+    private static final class Node {
+        final Node[] children = new Node[26];
+        boolean terminal;
+    }
+    private final Node root = new Node();
+    private static void validate(String text) {
+        Objects.requireNonNull(text);
+        for (int i = 0; i &lt; text.length(); i++)
+            if (text.charAt(i) &lt; &#39;a&#39; || text.charAt(i) &gt; &#39;z&#39;)
+                throw new IllegalArgumentException(&quot;Expected lowercase ASCII&quot;);
+    }
+    public void insert(String word) {
+        validate(word); // Validate before mutating any nodes.
+        Node node = root;
+        for (int i = 0; i &lt; word.length(); i++) {
+            int index = word.charAt(i) - &#39;a&#39;;
+            if (node.children[index] == null) node.children[index] = new Node();
+            node = node.children[index];
+        }
+        node.terminal = true;
+    }
+    private Node find(String text) {
+        validate(text);
+        Node node = root;
+        for (int i = 0; i &lt; text.length(); i++) {
+            node = node.children[text.charAt(i) - &#39;a&#39;];
+            if (node == null) return null;
+        }
+        return node;
+    }
+    public boolean search(String word) { Node node = find(word); return node != null &amp;&amp; node.terminal; }
+    public boolean startsWith(String prefix) { return find(prefix) != null; }
+}
+</code></pre>
+<h4 id="q137-return-the-maximum-for-every-fixed-size-sliding-window">Q137 Return the maximum for every fixed-size sliding window</h4>
+
+<p><strong>Public prompt:</strong> report the maximum as a fixed-width range advances.
+<a href="https://leetcode.com/problems/sliding-window-maximum/description/">Sliding Window
+Maximum</a>.</p>
+
+<p><strong>Derive it:</strong> an older smaller value can never win while a newer larger
+value remains in the window: the newer one also expires later. Retain
+only useful candidate indices in decreasing-value order.</p>
+
+<p><strong>Choose versus alternatives:</strong> rescanning each window costs O(nk). A
+heap requires expiry management and logarithmic work; a deque exploits
+the fixed left-to-right expiry order for O(n) total time. Arbitrary
+range queries need a different structure, such as a segment tree.</p>
+
+<p><strong>What if:</strong> storing values alone loses expiry positions. Keeping older
+equal values is valid with correct expiry; removing them is simpler
+because the newer equal value lasts longer. If k is zero or exceeds n,
+reject it.</p>
+
+<p><strong>Trace/tests:</strong> for <code>[4,1,3,2]</code>, k=2, return <code>[4,3,3]</code>. Test all equal,
+decreasing data, k=1 and k=n. O(n) time, O(k) deque and O(n−k+1) output.</p>
+
+<p><strong>Strong answer signals:</strong> prove dominance and charge each index one
+insertion/removal.</p>
+
+<pre><code class="java">// Q137. Requires 1 &lt;= k &lt;= values.length; preserves the input.
+public static int[] slidingWindowMaximum(int[] values, int k) {
+    Objects.requireNonNull(values);
+    if (k &lt; 1 || k &gt; values.length) throw new IllegalArgumentException(&quot;Invalid window size&quot;);
+    int[] result = new int[values.length - k + 1];
+    Deque&lt;Integer&gt; deque = new ArrayDeque&lt;&gt;();
+    for (int i = 0; i &lt; values.length; i++) {
+        while (!deque.isEmpty() &amp;&amp; deque.peekFirst() &lt;= i - k) deque.removeFirst();
+        while (!deque.isEmpty() &amp;&amp; values[deque.peekLast()] &lt;= values[i]) deque.removeLast();
+        deque.addLast(i);
+        if (i &gt;= k - 1) result[i - k + 1] = values[deque.peekFirst()];
+    }
+    return result;
+}
+</code></pre>
+<h4 id="q138-select-the-k-points-nearest-the-origin">Q138 Select the k points nearest the origin</h4>
+
+<p><strong>Public prompt:</strong> retain the requested number of nearest coordinates.
+<a href="https://leetcode.com/problems/k-closest-points-to-origin/description/">K Closest Points to
+Origin</a>.</p>
+
+<p><strong>Derive it:</strong> square root preserves nonnegative ordering, so squared
+distance suffices. Maintain a size-k max-heap whose root is the worst
+retained candidate.</p>
+
+<p><strong>Choose versus alternatives:</strong> full sorting is simple but costs O(n log
+n). Quickselect gives expected linear selection but often mutates input
+and needs pivot handling. The heap fits streaming selection and small k;
+this implementation additionally sorts the retained points for
+deterministic output.</p>
+
+<p><strong>What if:</strong> distance ties need a declared rule; this code uses
+coordinates. <code>int</code> multiplication can overflow before assignment, so
+widen first. Even two squared arbitrary int extremes can exceed signed
+long; the code bounds coordinates to ±10⁹. Different origins change the
+arithmetic bounds.</p>
+
+<p><strong>Trace/tests:</strong> distances 25, 2, 2 with k=2 keep the latter two. Test
+k=0, ties, duplicates and coordinate limits. O(n log(k+2) + k log(k+1))
+time, including the linear validation pass when k=0; O(k+1) auxiliary
+storage plus O(k) output. Input is preserved.</p>
+
+<p><strong>Strong answer signals:</strong> relate heap direction to eviction and state
+arithmetic assumptions.</p>
+
+<pre><code class="java">// Q138. Coordinates bounded to +/-1e9 so the squared-distance sum fits long.
+public record Point(int x, int y) {
+    public Point {
+        if (Math.abs((long) x) &gt; 1_000_000_000L || Math.abs((long) y) &gt; 1_000_000_000L)
+            throw new IllegalArgumentException(&quot;Coordinate outside supported range&quot;);
+    }
+    long squaredDistance() { return (long) x * x + (long) y * y; }
+}
+public static List&lt;Point&gt; kClosest(List&lt;Point&gt; points, int k) {
+    Objects.requireNonNull(points);
+    if (k &lt; 0 || k &gt; points.size()) throw new IllegalArgumentException(&quot;Invalid k&quot;);
+    Comparator&lt;Point&gt; order = Comparator.comparingLong(Point::squaredDistance)
+        .thenComparingInt(Point::x).thenComparingInt(Point::y);
+    PriorityQueue&lt;Point&gt; heap = new PriorityQueue&lt;&gt;(order.reversed());
+    for (Point point : points) {
+        heap.add(Objects.requireNonNull(point));
+        if (heap.size() &gt; k) heap.remove();
+    }
+    List&lt;Point&gt; result = new ArrayList&lt;&gt;(heap);
+    result.sort(order); // Deterministic output, including ties.
+    return result;
+}
+</code></pre>
+<h4 id="q139-build-a-stack-with-constant-time-minimum-lookup">Q139 Build a stack with constant-time minimum lookup</h4>
+
+<p><strong>Public prompt:</strong> support ordinary stack operations plus retrieval of
+its current minimum. <a href="https://leetcode.com/problems/min-stack/description/">Min
+Stack</a>.</p>
+
+<p><strong>Derive it:</strong> after a pop, the minimum must revert to the minimum of
+the previous prefix. Store the prefix minimum alongside each pushed
+value.</p>
+
+<p><strong>Choose versus alternatives:</strong> scanning on every minimum query costs
+O(n); a heap supports a different removal order. A second minimum stack
+is valid but needs careful handling of repeated minima. A linked entry
+per push avoids backing-array resize and gives O(1) structural work per
+operation.</p>
+
+<p><strong>What if:</strong> storing only one global minimum cannot restore the previous
+minimum after popping. Arithmetic encoding tricks require overflow care.
+Concurrent use needs synchronization around the whole state transition;
+this implementation is single-threaded.</p>
+
+<p><strong>Trace/tests:</strong> push 2, −1, −1; after one pop the minimum remains −1,
+and after the next it becomes 2. Test integer extremes and empty-stack
+behavior. O(n) stored entries; output operations are constant-time
+structurally.</p>
+
+<p><strong>Strong answer signals:</strong> explain why each entry stores historical
+information, including duplicate minima.</p>
+
+<pre><code class="java">// Q139. Single-threaded linked stack; all four operations have O(1) structural work.
+public static final class MinStack {
+    private record Entry(int value, int minimum, Entry previous) {}
+    private Entry head;
+    public void push(int value) {
+        head = new Entry(value, head == null ? value : Math.min(value, head.minimum()), head);
+    }
+    private Entry topEntry() {
+        if (head == null) throw new NoSuchElementException(&quot;Empty stack&quot;);
+        return head;
+    }
+    public int pop() { Entry entry = topEntry(); head = entry.previous(); return entry.value(); }
+    public int top() { return topEntry().value(); }
+    public int minimum() { return topEntry().minimum(); }
+}
+</code></pre>
+<h4 id="q140-decode-nested-repetition-expressions">Q140 Decode nested repetition expressions</h4>
+
+<p><strong>Public prompt:</strong> expand nested count-and-bracket expressions. <a href="https://leetcode.com/problems/decode-string/description/">Decode
+String</a>.</p>
+
+<p><strong>Derive it:</strong> entering brackets suspends an outer prefix and repetition
+count. A frame stack preserves that context until the matching close
+arrives.</p>
+
+<p><strong>Choose versus alternatives:</strong> recursive descent is equally natural but
+consumes call-stack depth. Repeated regex replacement obscures nesting
+and repeats scans. An explicit stack exposes parser state and enables
+clear validation.</p>
+
+<p><strong>What if:</strong> multiple digits form one count; unmatched brackets or
+missing counts are errors under the extended validated contract.
+Expansion can be much larger than input, so cap output before allocation
+and use checked count arithmetic. Empty groups should not trigger
+billions of empty appends.</p>
+
+<p><strong>Trace/tests:</strong> <code>2[a3[b]]z</code> yields <code>abbbabbbz</code>. Test nested groups,
+adjacent groups, malformed input, count overflow and output limits. Let
+M be decoded length and d nesting depth: this builder implementation can
+copy intermediate expansions at multiple levels, giving O(n + dM) time
+in a conservative bound and O(n + M) space. Do not claim O(input
+length).</p>
+
+<p><strong>Strong answer signals:</strong> distinguish parsing cost from expansion cost
+and bound amplification.</p>
+
+<pre><code class="java">// Q140. Grammar: lowercase literals and positive-int repetitions. Cap expanded output.
+private record DecodeFrame(StringBuilder prefix, int repetitions) {}
+public static String decode(String encoded, int maxOutputLength) {
+    Objects.requireNonNull(encoded);
+    if (maxOutputLength &lt; 0) throw new IllegalArgumentException(&quot;Negative output limit&quot;);
+    Deque&lt;DecodeFrame&gt; frames = new ArrayDeque&lt;&gt;();
+    StringBuilder current = new StringBuilder();
+    int count = 0;
+    boolean digits = false;
+    for (int i = 0; i &lt; encoded.length(); i++) {
+        char c = encoded.charAt(i);
+        if (c &gt;= &#39;0&#39; &amp;&amp; c &lt;= &#39;9&#39;) {
+            count = Math.addExact(Math.multiplyExact(count, 10), c - &#39;0&#39;);
+            digits = true;
+        } else if (c == &#39;[&#39;) {
+            if (!digits || count == 0) throw new IllegalArgumentException(&quot;Missing positive count&quot;);
+            frames.push(new DecodeFrame(current, count));
+            current = new StringBuilder(); count = 0; digits = false;
+        } else if (c == &#39;]&#39;) {
+            if (digits || frames.isEmpty()) throw new IllegalArgumentException(&quot;Malformed close&quot;);
+            DecodeFrame frame = frames.pop();
+            long size = (long) current.length() * frame.repetitions() + frame.prefix().length();
+            if (size &gt; maxOutputLength) throw new IllegalArgumentException(&quot;Output limit exceeded&quot;);
+            StringBuilder expanded = frame.prefix();
+            if (!current.isEmpty())
+                for (int repeat = 0; repeat &lt; frame.repetitions(); repeat++) expanded.append(current);
+            current = expanded;
+        } else {
+            if (digits || c &lt; &#39;a&#39; || c &gt; &#39;z&#39;) throw new IllegalArgumentException(&quot;Invalid literal&quot;);
+            if (current.length() &gt;= maxOutputLength) throw new IllegalArgumentException(&quot;Output limit exceeded&quot;);
+            current.append(c);
+        }
+    }
+    if (digits || !frames.isEmpty()) throw new IllegalArgumentException(&quot;Incomplete encoding&quot;);
+    return current.toString();
+}
+</code></pre>
+<h4 id="q141-find-the-longest-valid-parentheses-substring">Q141 Find the longest valid parentheses substring</h4>
+
+<p><strong>Public prompt:</strong> find the longest contiguous balanced region, not
+merely whether the whole string is balanced. <a href="https://leetcode.com/problems/longest-valid-parentheses/description/">Longest Valid
+Parentheses</a>.</p>
+
+<p><strong>Derive it:</strong> store unmatched opening indices plus a boundary before
+the current candidate region. A matched close exposes the index
+immediately before the valid suffix, giving its length by subtraction.</p>
+
+<p><strong>Choose versus alternatives:</strong> testing all substrings repeats work. DP
+ending at each index is also O(n), but its transition is less direct. A
+two-direction counter method uses O(1) extra space for this
+one-bracket-type problem; the stack makes positional boundaries easy to
+explain.</p>
+
+<p><strong>What if:</strong> using only total counts misses invalid ordering. Without
+the initial −1 boundary, a valid substring starting at zero is awkward
+to measure. When a close has no matching open, reset the boundary to
+that close.</p>
+
+<p><strong>Trace/tests:</strong> <code>)()())</code> has maximum length four. Test empty, all
+openings, nested pairs and multiple separated regions. O(n) time and
+O(n) stack; preserving the winning end index also returns the substring.</p>
+
+<p><strong>Strong answer signals:</strong> explain what each stored index means and why
+a bad close resets the boundary.</p>
+
+<pre><code class="java">// Q141. Parentheses only; returns length, not the substring.
+public static int longestValidParentheses(String text) {
+    Objects.requireNonNull(text);
+    Deque&lt;Integer&gt; positions = new ArrayDeque&lt;&gt;();
+    positions.push(-1); // Boundary immediately before the current candidate region.
+    int best = 0;
+    for (int i = 0; i &lt; text.length(); i++) {
+        char c = text.charAt(i);
+        if (c == &#39;(&#39;) positions.push(i);
+        else if (c == &#39;)&#39;) {
+            positions.pop();
+            if (positions.isEmpty()) positions.push(i);
+            else best = Math.max(best, i - positions.peek());
+        } else throw new IllegalArgumentException(&quot;Expected parentheses only&quot;);
+    }
+    return best;
+}
+</code></pre>
+<h3 id="java-scenarios-with-strong-spoken-answers">Java scenarios with strong spoken answers</h3>
+<h4 id="q142-can-a-method-swap-the-caller-s-two-object-references">Q142 Can a method swap the caller&#39;s two object references</h4>
+
+<p><strong>Source basis:</strong> <a href="https://docs.oracle.com/javase/tutorial/java/javaOO/arguments.html">Java method
+arguments</a>.</p>
+
+<p><strong>Strong answer:</strong> Java passes values. For an object argument, that
+value is a reference. Reassigning two local parameters changes only
+those local copies; mutating a referenced object&#39;s state can be visible
+to the caller. Return the desired pair or mutate an explicitly owned
+container when that is the contract.</p>
+
+<p><strong>Reasoning and alternatives:</strong> distinguish the variable holding a
+reference from the object it identifies. A wrapper does not turn Java
+into pass-by-reference; it introduces shared mutable state.</p>
+
+<p><strong>What if/test:</strong> <code>a.add(x)</code> can affect the caller&#39;s list, whereas
+<code>a = new ArrayList&lt;&gt;()</code> cannot replace the caller&#39;s variable. Test
+aliasing where both arguments refer to the same object. <strong>Signal:</strong> give
+a concrete mutation/reassignment distinction, not just a slogan.</p>
+<h4 id="q143-is-a-record-containing-a-list-immutable-and-safe-as-a-map-key">Q143 Is a record containing a list immutable and safe as a map key</h4>
+
+<p><strong>Source basis:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Record.html">Record
+API</a>,
+<a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/List.html">List copy
+contracts</a>.</p>
+
+<p><strong>Strong answer:</strong> record components have final references; referenced
+objects can still be mutable. Copy the list on construction when the
+type owns it, and ensure its elements are also suitably immutable.
+Changing equality-relevant contents after insertion can invalidate
+hash-collection behavior.</p>
+
+<p><strong>Reasoning and alternatives:</strong> an unmodifiable view still reflects
+changes to its backing collection. A shallow snapshot isolates list
+structure but not mutable elements. Deep copying has costs and requires
+a domain contract.</p>
+
+<p><strong>What if/test:</strong> mutate the original list, then an element, and check
+which changes affect the record. Test null policy before choosing
+<code>List.copyOf</code>. <strong>Signal:</strong> distinguish final reference, unmodifiable
+collection, snapshot and deep immutability.</p>
+<h4 id="q144-why-did-a-treeset-keep-one-of-two-different-objects">Q144 Why did a TreeSet keep one of two different objects</h4>
+
+<p><strong>Source basis:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/TreeSet.html">TreeSet ordering
+contract</a>.</p>
+
+<p><strong>Strong answer:</strong> a sorted set uses comparison result zero to identify
+equivalent entries. Comparing employees only by salary can collapse
+distinct employees with equal salaries. If identity matters, add a
+stable distinguishing key or choose a collection that permits
+duplicates.</p>
+
+<p><strong>Reasoning and alternatives:</strong> a HashSet uses equals/hashCode, while a
+List preserves duplicates. Pick the structure after deciding the
+intended uniqueness rule; do not patch the comparator merely to force
+every comparison nonzero.</p>
+
+<p><strong>What if/test:</strong> compare two equal-salary employees with different IDs,
+then test comparator transitivity and extreme numbers. Subtraction can
+overflow; use comparator factories. <strong>Signal:</strong> connect ordering
+equality to collection identity and preserve comparator laws.</p>
+<h4 id="q145-does-concurrenthashmap-make-a-contained-arraylist-thread-safe">Q145 Does ConcurrentHashMap make a contained ArrayList thread-safe</h4>
+
+<p><strong>Source basis:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ConcurrentHashMap.html">ConcurrentHashMap
+API</a>.</p>
+
+<p><strong>Strong answer:</strong> it protects map operations, not arbitrary later
+mutations of its values. Multiple callers modifying the same ArrayList
+still race. Choose confinement, a suitable concurrent value, immutable
+replacement via an atomic map operation, or one clear lock around the
+compound invariant.</p>
+
+<p><strong>Why not just synchronize put:</strong> the mutation may happen after lookup,
+outside that lock. <strong>What if/test:</strong> two writers append to one value;
+also test removing/replacing that value while another caller retains its
+reference. <strong>Signal:</strong> identify the actual shared state and required
+atomic operation.</p>
+<h4 id="q146-should-computeifabsent-perform-a-slow-remote-call">Q146 Should computeIfAbsent perform a slow remote call</h4>
+
+<p><strong>Source basis:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ConcurrentHashMap.html#computeIfAbsent(K,java.util.function.Function)">ConcurrentHashMap
+computeIfAbsent</a>.</p>
+
+<p><strong>Strong answer:</strong> keep its mapping function short and simple; a long
+computation can block competing updates. For expensive loading, consider
+a bounded cache with explicit load coalescing, timeout and failure
+policy.</p>
+
+<p><strong>Trade-off:</strong> loading outside the map may duplicate work. Caching a
+future can coordinate callers but must define failed-future eviction and
+cancellation ownership. <strong>What if/test:</strong> the loader throws, returns
+null, or recursively updates the map. <strong>Signal:</strong> explain both
+contention and failure lifecycle instead of assuming “atomic” means
+cheap.</p>
+<h4 id="q147-when-should-thencompose-replace-thenapply">Q147 When should thenCompose replace thenApply</h4>
+
+<p><strong>Source basis:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/CompletionStage.html">CompletionStage
+API</a>.</p>
+
+<p><strong>Strong answer:</strong> use <code>thenApply</code> when the function returns an ordinary
+value; use <code>thenCompose</code> when it returns another stage that should
+become part of the dependency chain. Otherwise the result is a nested
+future. Use combination when two independent stages are both required.</p>
+
+<p><strong>Reasoning and alternatives:</strong> blocking with <code>join</code> inside the mapping
+callback can occupy a limited executor and hide asynchronous
+dependencies. Async method names do not by themselves define a
+sufficient resource policy.</p>
+
+<p><strong>What if/test:</strong> let the second stage fail or finish later; verify the
+composed result follows it. Check both failure propagation and execution
+context. <strong>Signal:</strong> draw the dependency relationship and distinguish
+sequencing from parallel fan-out.</p>
+<h4 id="q148-why-is-a-thread-pool-not-growing-to-its-configured-maximum">Q148 Why is a thread pool not growing to its configured maximum</h4>
+
+<p><strong>Source basis:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ThreadPoolExecutor.html">ThreadPoolExecutor sizing and
+queues</a>.</p>
+
+<p><strong>Strong answer:</strong> after reaching core size, the executor normally tries
+to queue work. An unbounded queue accepts it, so the maximum size does
+not create more workers in the usual saturation path. Inspect queue
+depth, task wait time and downstream capacity before changing sizes.</p>
+
+<p><strong>Reasoning and alternatives:</strong> a bounded queue makes overload explicit;
+rejection, caller execution and shedding have different contracts.
+CallerRuns can slow producers but can also block an event loop and
+discards rejected work after shutdown.</p>
+
+<p><strong>What if/test:</strong> run tasks that wait for subtasks submitted to the same
+full pool; spare thread counts alone may not establish progress.
+<strong>Signal:</strong> explain the submission decision order and a deliberate
+rejection/deadline policy.</p>
+<h4 id="q149-which-failure-survives-when-both-work-and-resource-closing-fail">Q149 Which failure survives when both work and resource closing fail</h4>
+
+<p><strong>Source basis:</strong> <a href="https://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html">Try-with-resources
+tutorial</a>.</p>
+
+<p><strong>Strong answer:</strong> if the body throws, that failure remains primary and
+close failures are suppressed; inspect <code>getSuppressed()</code> when diagnosing
+cleanup. Resources close in reverse declaration order. If the body
+succeeds, a close failure can be the thrown exception.</p>
+
+<p><strong>Reasoning and alternatives:</strong> a manual finally block can accidentally
+replace the original error or return over it. Use try-with-resources for
+resources whose ownership belongs to the method; do not close a borrowed
+resource without an ownership contract.</p>
+
+<p><strong>What if/test:</strong> make both body and close throw distinct messages and
+assert primary plus suppressed failures. <strong>Signal:</strong> discuss error
+preservation and ownership, not only “it closes automatically.”</p>
+<h4 id="q150-why-did-adding-to-stream-tolist-fail">Q150 Why did adding to Stream.toList fail</h4>
+
+<p><strong>Source basis:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/stream/Stream.html#toList()">Stream.toList
+API</a>.</p>
+
+<p><strong>Strong answer:</strong> the result is unmodifiable. If callers need a mutable
+collection, collect into an explicit <code>ArrayList</code> or copy the result.
+<code>Collectors.toList()</code> does not promise a particular mutable
+implementation either.</p>
+
+<p><strong>Reasoning and alternatives:</strong> decide whether ownership permits
+mutation; avoid relying on a currently observed concrete class.
+Unmodifiable structure does not make its elements immutable.</p>
+
+<p><strong>What if/test:</strong> adding/removing must fail under the unmodifiable
+contract, while mutating a mutable element may still succeed.
+<strong>Signal:</strong> separate API guarantees from implementation accidents and
+document the return contract.</p>
+<h4 id="q151-why-can-decimal-equality-disagree-with-numeric-ordering">Q151 Why can decimal equality disagree with numeric ordering</h4>
+
+<p><strong>Source basis:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/math/BigDecimal.html">BigDecimal
+API</a>.</p>
+
+<p><strong>Strong answer:</strong> <code>BigDecimal.equals</code> considers scale, while
+<code>compareTo</code> compares numeric value. Consequently 1.0 and 1.00 can
+compare as zero without being equal. Pick a domain policy for scale,
+currency and rounding before normalizing keys or values.</p>
+
+<p><strong>Reasoning and alternatives:</strong> binary floating point is inappropriate
+when exact decimal semantics are required; integer minor units work only
+with an agreed unit and range. Do not apply arbitrary rounding merely to
+make a test pass.</p>
+
+<p><strong>What if/test:</strong> compare HashSet and TreeSet behavior, division with a
+nonterminating decimal result, and rounding boundaries. <strong>Signal:</strong>
+relate representation and equality to the business contract.</p>
+<h4 id="q152-does-loading-a-class-always-execute-its-static-initializer">Q152 Does loading a class always execute its static initializer</h4>
+
+<p><strong>Source basis:</strong> <a href="https://docs.oracle.com/javase/specs/jls/se21/html/jls-12.html#jls-12.4">Java initialization
+rules</a>.</p>
+
+<p><strong>Strong answer:</strong> loading, linking and initialization are different
+stages. Specified active uses trigger initialization; reading a
+compile-time constant can be inlined without initializing the declaring
+class. Class-loading APIs also expose initialization choices.</p>
+
+<p><strong>Reasoning and alternatives:</strong> avoid guessing order solely from source
+appearance. Determine the exact operation and whether it requires
+initialization, then apply superclass rules. Static initialization is
+not a suitable place for arbitrary fragile remote work.</p>
+
+<p><strong>What if/test:</strong> contrast a compile-time constant with a nonconstant
+static field and explicit reflective loading with initialization
+disabled. <strong>Signal:</strong> reason from the trigger rather than asserting “at
+class load.”</p>
+<h4 id="q153-is-volatile-enough-for-publishing-an-object-and-incrementing-a-counter">Q153 Is volatile enough for publishing an object and incrementing a counter</h4>
+
+<p><strong>Source basis:</strong> <a href="https://docs.oracle.com/javase/specs/jls/se21/html/jls-17.html#jls-17.4.5">Java happens-before
+rules</a>.</p>
+
+<p><strong>Strong answer:</strong> a volatile publication can establish visibility for
+preceding initialization writes to a reader observing that publication.
+It does not make subsequent mutable operations atomic. <code>count++</code> still
+combines a read, arithmetic and write, so competing increments can be
+lost.</p>
+
+<p><strong>Reasoning and alternatives:</strong> use an atomic primitive for a single
+atomic update, or locking when multiple fields must change together.
+Immutability or confinement may remove the need for shared mutation.</p>
+
+<p><strong>What if/test:</strong> publishing before initialization completes defeats the
+intended ordering; changing fields later needs its own synchronization.
+Use coordinated concurrency tests to probe invariants, while explaining
+that a passing stress run is not a proof of memory-model correctness.
+<strong>Signal:</strong> identify the specific happens-before edge and the invariant
+it does—and does not—protect.</p>

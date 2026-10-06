@@ -1,0 +1,1112 @@
+<h3 id="module-5-maven">Module 5: Maven</h3>
+
+<p><em>More in Q43–Q46.</em></p>
+
+<p><strong>M5.1 Explain the Maven lifecycle, phases, goals and plugins.</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is">A good SDE-3 interview answer is:</h4>
+
+<p>Maven has three built-in lifecycles: <code>clean</code>, <code>default</code> (build) and
+<code>site</code>. The default lifecycle runs ordered <strong>phases</strong>:
+<code>validate → compile → test → package → verify → install → deploy</code>;
+running a phase runs every earlier phase. A phase does nothing by
+itself: <strong>plugin goals</strong> are bound to phases (<code>compiler:compile</code> to
+<code>compile</code>, <code>surefire:test</code> to <code>test</code>, <code>jar:jar</code> to <code>package</code>) and you
+can attach more through <code>&lt;executions&gt;</code>. <code>install</code> copies the artifact to
+the local <code>~/.m2</code>, <code>deploy</code> publishes it to a remote repository. Invoke
+a goal directly with <code>mvn dependency:tree</code>, or a phase with
+<code>mvn verify</code>.</p>
+<h4 id="how-to-understand-it">How to understand it</h4>
+
+<p>First understand the core concept, then explain why it exists, how it
+behaves in production, and what trade-off you would make.</p>
+
+<p><strong>Plain-English starting point:</strong> Maven has three built-in lifecycles:
+<code>clean</code>, <code>default</code> (build) and <code>site</code>. The default lifecycle runs
+ordered <strong>phases</strong>:
+<code>validate → compile → test → package → verify → install → deploy</code>;
+running a phase runs every earlier phase.</p>
+<h4 id="key-terms-you-should-know">Key terms you should know</h4>
+
+<ul>
+<li><strong>goal</strong> — A specific action provided by a Maven plugin, such as
+compiling code or running tests.</li>
+<li><strong>phase</strong> — A lifecycle stage in Maven, such as compile, test, package
+or verify.</li>
+<li><strong>plugin</strong> — A Maven component that provides build functionality such
+as compilation, testing or packaging.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version">30-second version</h4>
+
+<blockquote>
+<p>Maven has three built-in lifecycles: <code>clean</code>, <code>default</code> (build) and
+<code>site</code>. The default lifecycle runs ordered <strong>phases</strong>:
+<code>validate → compile → test → package → verify → install → deploy</code>;
+running a phase runs every earlier phase.</p>
+</blockquote>
+
+<p><strong>M5.2 <code>dependencyManagement</code> vs <code>dependencies</code>, and parent vs BOM vs
+aggregator?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-1">A good SDE-3 interview answer is:</h4>
+
+<p><code>&lt;dependencies&gt;</code> declares project dependencies, whose scopes determine
+their classpaths and transitivity. <code>&lt;dependencyManagement&gt;</code> centralizes
+dependency metadata and controls versions of matching transitive project
+dependencies as well as defaults for direct declarations. Management
+alone does not add an artifact, but a child need not explicitly declare
+every artifact whose transitive version it manages. An explicit version
+on a direct dependency in that project takes precedence over its managed
+default. Project dependency management does not manage plugin dependencies.</p>
+
+<p>A <strong>parent POM</strong> supplies inheritance, including properties, plugin
+configuration and management sections. A <strong>BOM</strong> is imported with
+<code>&lt;scope&gt;import&lt;/scope&gt;&lt;type&gt;pom&lt;/type&gt;</code> inside <code>dependencyManagement</code> to
+align library versions, useful when the project cannot inherit a platform&#39;s
+parent. An <strong>aggregator</strong> lists <code>&lt;modules&gt;</code> for a reactor build. One POM
+may be both parent and aggregator; these roles are distinct.</p>
+<h4 id="how-to-understand-it-1">How to understand it</h4>
+
+<p>If the application declares A and A depends on B, managing B&#39;s
+version in the application&#39;s effective POM can select B&#39;s version even
+without a direct dependency declaration for B. By contrast, managing C
+does not include C when no dependency path brings C into the project.</p>
+<h4 id="key-terms-you-should-know-1">Key terms you should know</h4>
+
+<ul>
+<li><strong>BOM</strong> — A POM supplying a compatible set of managed dependency versions.</li>
+<li><strong>Transitive dependency</strong> — An artifact introduced through another dependency.</li>
+<li><strong>Aggregator</strong> — A POM listing modules built together by the reactor.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-1">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li>Explain management versus adding a dependency with an A → B example.</li>
+<li>Inspect <code>mvn help:effective-pom</code> and <code>mvn dependency:tree</code>.</li>
+<li>Distinguish project dependency versions from plugin dependency versions.</li>
+</ul>
+<h4 id="30-second-version-1">30-second version</h4>
+
+<blockquote>
+<p>Dependencies add artifacts; dependencyManagement supplies defaults and can
+control transitive project dependency versions without explicit child
+declarations for each artifact. It does not add artifacts by itself. Parent
+means inheritance, BOM means managed library alignment, and aggregator means
+reactor modules.</p>
+</blockquote>
+
+<p><a href="https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html">Maven dependency mechanism</a>.</p>
+
+<p><strong>M5.3 What are the dependency scopes and how are transitive scopes
+resolved?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-2">A good SDE-3 interview answer is:</h4>
+
+<p><code>compile</code> (default: all classpaths, transitive), <code>provided</code> (needed to
+compile, supplied by the container, not packaged, e.g. servlet API),
+<code>runtime</code> (not needed to compile, e.g. JDBC driver), <code>test</code>, <code>system</code>
+(avoid) and <code>import</code> (BOM only). A <code>test</code>-scoped dependency is not
+transitive; a <code>compile</code> dependency of a <code>runtime</code> dependency becomes
+<code>runtime</code>. Use <code>&lt;optional&gt;true&lt;/optional&gt;</code> so a dependency isn&#39;t pulled
+in by consumers. Common production bug: a library accidentally on the
+<code>compile</code> scope causes version clashes or bloated jars; run
+<code>mvn dependency:analyze</code> to find unused-declared and used-undeclared
+dependencies.</p>
+<h4 id="how-to-understand-it-2">How to understand it</h4>
+
+<p>First understand the core concept, then explain why it exists, how it
+behaves in production, and what trade-off you would make.</p>
+
+<p><strong>Plain-English starting point:</strong> <code>compile</code> (default: all classpaths,
+transitive), <code>provided</code> (needed to compile, supplied by the container,
+not packaged, e.g. servlet API), <code>runtime</code> (not needed to compile, e.g.</p>
+<h4 id="key-terms-you-should-know-2">Key terms you should know</h4>
+
+<ul>
+<li><strong>BOM</strong> — Bill of Materials: a dependency-management document that
+centralizes compatible library versions.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-2">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-2">30-second version</h4>
+
+<blockquote>
+<p><code>compile</code> (default: all classpaths, transitive), <code>provided</code> (needed to
+compile, supplied by the container, not packaged, e.g. servlet API),
+<code>runtime</code> (not needed to compile, e.g.</p>
+</blockquote>
+
+<p><strong>M5.4 How do you handle dependency conflicts and vulnerabilities?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-3">A good SDE-3 interview answer is:</h4>
+
+<p>Maven picks the <em>nearest</em> version in the tree (first declared on ties),
+which can silently downgrade a library. Diagnose with
+<code>mvn dependency:tree -Dverbose</code>, fix by pinning in
+<code>dependencyManagement</code>, importing the right BOM, or excluding the
+transitive artifact, and enforce with <code>maven-enforcer-plugin</code>
+(<code>dependencyConvergence</code>, <code>requireUpperBoundDeps</code>,
+<code>banDuplicatePomDependencyVersions</code>). For vulnerabilities, run OWASP
+Dependency-Check or Dependabot/Renovate in CI, fail the build on high
+CVEs, and generate an SBOM (CycloneDX).</p>
+<h4 id="how-to-understand-it-3">How to understand it</h4>
+
+<p>Treat this as a decision/problem-solving question: explain the mechanism
+or approach first, then the failure modes, trade-offs, and how you would
+verify the result.</p>
+
+<p><strong>Plain-English starting point:</strong> Maven picks the <em>nearest</em> version in
+the tree (first declared on ties), which can silently downgrade a
+library. Diagnose with <code>mvn dependency:tree -Dverbose</code>, fix by pinning
+in <code>dependencyManagement</code>, importing the right BOM, or excluding the
+transitive artifact, and enforce with <code>maven-enforcer-plugin</code>
+(<code>dependencyConvergence</code>, <code>requireUpperBoundDeps</code>,
+<code>banDuplicatePomDependencyVersions</code>).</p>
+<h4 id="key-terms-you-should-know-3">Key terms you should know</h4>
+
+<ul>
+<li><strong>BOM</strong> — Bill of Materials: a dependency-management document that
+centralizes compatible library versions.</li>
+<li><strong>OWASP</strong> — An organization that publishes widely used
+application-security guidance, including the OWASP Top 10.</li>
+<li><strong>plugin</strong> — A Maven component that provides build functionality such
+as compilation, testing or packaging.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-3">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-3">30-second version</h4>
+
+<blockquote>
+<p>Maven picks the <em>nearest</em> version in the tree (first declared on
+ties), which can silently downgrade a library. Diagnose with
+<code>mvn dependency:tree -Dverbose</code>, fix by pinning in
+<code>dependencyManagement</code>, importing the right BOM, or excluding the
+transitive artifact, and enforce with <code>maven-enforcer-plugin</code>
+(<code>dependencyConvergence</code>, <code>requireUpperBoundDeps</code>,
+<code>banDuplicatePomDependencyVersions</code>).</p>
+</blockquote>
+
+<p><strong>M5.5 Surefire vs Failsafe, and how do you organise tests in the
+build?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-4">A good SDE-3 interview answer is:</h4>
+
+<p>Surefire runs unit tests (<code>*Test</code>) in the <code>test</code> phase; failing tests
+stop the build immediately. Failsafe runs integration tests (<code>*IT</code>)
+across <code>integration-test</code> and <code>verify</code>, so the build can still run
+<code>post-integration-test</code> (e.g., shut down containers) before failing at
+<code>verify</code>. Add JaCoCo for coverage gates, Checkstyle/SpotBugs/Sonar for
+static analysis, and Testcontainers for real dependencies. Keep fast
+tests on every commit and slower suites on the pipeline.</p>
+<h4 id="how-to-understand-it-4">How to understand it</h4>
+
+<p>Compare the options by correctness, operational behavior, performance,
+failure modes, and when you would choose each one—not just by
+definitions.</p>
+
+<p><strong>Plain-English starting point:</strong> Surefire runs unit tests (<code>*Test</code>) in
+the <code>test</code> phase; failing tests stop the build immediately. Failsafe
+runs integration tests (<code>*IT</code>) across <code>integration-test</code> and <code>verify</code>,
+so the build can still run <code>post-integration-test</code> (e.g., shut down
+containers) before failing at <code>verify</code>.</p>
+<h4 id="key-terms-you-should-know-4">Key terms you should know</h4>
+
+<ul>
+<li><strong>phase</strong> — A lifecycle stage in Maven, such as compile, test, package
+or verify.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-4">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-4">30-second version</h4>
+
+<blockquote>
+<p>Surefire runs unit tests (<code>*Test</code>) in the <code>test</code> phase; failing tests
+stop the build immediately. Failsafe runs integration tests (<code>*IT</code>)
+across <code>integration-test</code> and <code>verify</code>, so the build can still run
+<code>post-integration-test</code> (e.g., shut down containers) before failing at
+<code>verify</code>.</p>
+</blockquote>
+
+<p><strong>M5.6 How do you release and publish artifacts?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-5">A good SDE-3 interview answer is:</h4>
+
+<p><code>-SNAPSHOT</code> versions are mutable and resolved to the latest build;
+releases are immutable and must never be overwritten. Use CI-friendly
+versions (<code>${revision}</code> with <code>flatten-maven-plugin</code>) or the release
+plugin, tag the commit, and deploy to a repository manager (Artifact
+Registry, Nexus, Artifactory) configured through
+<code>distributionManagement</code> and credentials in <code>settings.xml</code> (<code>&lt;servers&gt;</code>,
+<code>&lt;mirrors&gt;</code>) injected from CI secrets, never committed. For services,
+the deliverable is a container image tagged with the commit SHA, not
+just the jar.</p>
+<h4 id="how-to-understand-it-5">How to understand it</h4>
+
+<p>Treat this as a decision/problem-solving question: explain the mechanism
+or approach first, then the failure modes, trade-offs, and how you would
+verify the result.</p>
+
+<p><strong>Plain-English starting point:</strong> <code>-SNAPSHOT</code> versions are mutable and
+resolved to the latest build; releases are immutable and must never be
+overwritten. Use CI-friendly versions (<code>${revision}</code> with
+<code>flatten-maven-plugin</code>) or the release plugin, tag the commit, and
+deploy to a repository manager (Artifact Registry, Nexus, Artifactory)
+configured through <code>distributionManagement</code> and credentials in
+<code>settings.xml</code> (<code>&lt;servers&gt;</code>, <code>&lt;mirrors&gt;</code>) injected from CI secrets,
+never committed.</p>
+<h4 id="key-terms-you-should-know-5">Key terms you should know</h4>
+
+<ul>
+<li><strong>plugin</strong> — A Maven component that provides build functionality such
+as compilation, testing or packaging.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-5">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-5">30-second version</h4>
+
+<blockquote>
+<p><code>-SNAPSHOT</code> versions are mutable and resolved to the latest build;
+releases are immutable and must never be overwritten. Use CI-friendly
+versions (<code>${revision}</code> with <code>flatten-maven-plugin</code>) or the release
+plugin, tag the commit, and deploy to a repository manager (Artifact
+Registry, Nexus, Artifactory) configured through
+<code>distributionManagement</code> and credentials in <code>settings.xml</code>
+(<code>&lt;servers&gt;</code>, <code>&lt;mirrors&gt;</code>) injected from CI secrets, never committed.</p>
+</blockquote>
+
+<p><strong>M5.7 How do you speed up and harden a Maven build?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-6">A good SDE-3 interview answer is:</h4>
+
+<p>Use the wrapper (<code>mvnw</code>) and pinned plugin versions, parallel builds
+(<code>-T 1C</code>), incremental module builds (<code>-pl :svc -am</code>), CI caching of
+<code>.m2</code>, avoid <code>clean</code> when not needed, remote build cache
+(Develocity/Maven build cache extension), and Jib/Buildpacks to build
+images without a Docker daemon. For reproducibility set
+<code>project.build.outputTimestamp</code>; for security use signed artifacts,
+trusted mirrors and checksum verification.</p>
+<h4 id="how-to-understand-it-6">How to understand it</h4>
+
+<p>Treat this as a decision/problem-solving question: explain the mechanism
+or approach first, then the failure modes, trade-offs, and how you would
+verify the result.</p>
+
+<p><strong>Plain-English starting point:</strong> Use the wrapper (<code>mvnw</code>) and pinned
+plugin versions, parallel builds (<code>-T 1C</code>), incremental module builds
+(<code>-pl :svc -am</code>), CI caching of <code>.m2</code>, avoid <code>clean</code> when not needed,
+remote build cache (Develocity/Maven build cache extension), and
+Jib/Buildpacks to build images without a Docker daemon. For
+reproducibility set <code>project.build.outputTimestamp</code>; for security use
+signed artifacts, trusted mirrors and checksum verification.</p>
+<h4 id="key-terms-you-should-know-6">Key terms you should know</h4>
+
+<ul>
+<li><strong>plugin</strong> — A Maven component that provides build functionality such
+as compilation, testing or packaging.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-6">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-6">30-second version</h4>
+
+<blockquote>
+<p>Use the wrapper (<code>mvnw</code>) and pinned plugin versions, parallel builds
+(<code>-T 1C</code>), incremental module builds (<code>-pl :svc -am</code>), CI caching of
+<code>.m2</code>, avoid <code>clean</code> when not needed, remote build cache
+(Develocity/Maven build cache extension), and Jib/Buildpacks to build
+images without a Docker daemon. For reproducibility set
+<code>project.build.outputTimestamp</code>; for security use signed artifacts,
+trusted mirrors and checksum verification.</p>
+</blockquote>
+
+<hr>
+<h3 id="module-6-google-cloud-platform">Module 6: Google Cloud Platform</h3>
+
+<p><em>More in Q47–Q54.</em></p>
+
+<p><strong>M6.1 Which compute option do you choose: Cloud Run, GKE, Compute
+Engine or Cloud Functions?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-7">A good SDE-3 interview answer is:</h4>
+
+<p>Choose from workload requirements and operational cost. Cloud Run
+services fit request-serving applications; Cloud Run also has jobs and
+worker pools, so a background worker does not automatically require
+Kubernetes. Check the selected resource&#39;s scaling, networking, hardware
+and regional capabilities. GKE fits workloads needing Kubernetes APIs,
+scheduling and platform controls. Compute Engine fits VM-level control
+or specialized legacy requirements. Compare cold starts, steady load,
+cost, portability and team expertise. <a href="https://docs.cloud.google.com/run/docs/overview/what-is-cloud-run">Cloud Run resource
+types</a>.</p>
+<h4 id="how-to-understand-it-7">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Choose from workload requirements and
+operational cost. Cloud Run services fit request-serving applications;
+Cloud Run also has jobs and worker pools, so a background worker does
+not automatically require Kubernetes.</p>
+<h4 id="key-terms-you-should-know-7">Key terms you should know</h4>
+
+<ul>
+<li><strong>Cloud Run</strong> — GCP&#39;s managed container execution platform where the
+platform handles servers and scales container instances.</li>
+<li><strong>GKE</strong> — Google Kubernetes Engine, Google&#39;s managed Kubernetes
+service.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-7">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-7">30-second version</h4>
+
+<blockquote>
+<p>Choose from workload requirements and operational cost. Cloud Run
+services fit request-serving applications; Cloud Run also has jobs and
+worker pools, so a background worker does not automatically require
+Kubernetes.</p>
+</blockquote>
+
+<p><strong>M6.2 How do you manage identity and access securely?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-8">A good SDE-3 interview answer is:</h4>
+
+<p>IAM binds <strong>principals</strong> to <strong>roles</strong> at an org/folder/project/resource
+scope, with inheritance downwards. Each workload gets its own <strong>service
+account</strong> with least-privilege roles (avoid <code>Editor</code>/<code>Owner</code>), and no
+downloaded JSON keys: Cloud Run attaches a runtime service account and
+GKE uses <strong>Workload Identity Federation</strong> to map a Kubernetes service
+account to a Google service account, so the client libraries use
+Application Default Credentials automatically. Secrets live in <strong>Secret
+Manager</strong> (versioned, IAM-controlled, mounted or fetched at startup),
+and Cloud Audit Logs record access. Add organisation policies and VPC
+Service Controls for guardrails.</p>
+<h4 id="how-to-understand-it-8">How to understand it</h4>
+
+<p>Treat this as a decision/problem-solving question: explain the mechanism
+or approach first, then the failure modes, trade-offs, and how you would
+verify the result.</p>
+
+<p><strong>Plain-English starting point:</strong> IAM binds <strong>principals</strong> to <strong>roles</strong>
+at an org/folder/project/resource scope, with inheritance downwards.
+Each workload gets its own <strong>service account</strong> with least-privilege
+roles (avoid <code>Editor</code>/<code>Owner</code>), and no downloaded JSON keys: Cloud Run
+attaches a runtime service account and GKE uses <strong>Workload Identity
+Federation</strong> to map a Kubernetes service account to a Google service
+account, so the client libraries use Application Default Credentials
+automatically.</p>
+<h4 id="key-terms-you-should-know-8">Key terms you should know</h4>
+
+<ul>
+<li><strong>Cloud Run</strong> — GCP&#39;s managed container execution platform where the
+platform handles servers and scales container instances.</li>
+<li><strong>GKE</strong> — Google Kubernetes Engine, Google&#39;s managed Kubernetes
+service.</li>
+<li><strong>IAM</strong> — Identity and Access Management: policies controlling who or
+what can perform which actions on which resources.</li>
+<li><strong>service account</strong> — A non-human Google Cloud identity used by
+workloads or applications.</li>
+<li><strong>Workload Identity</strong> — A mechanism that lets workloads obtain cloud
+identities without embedding long-lived service-account keys.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-8">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-8">30-second version</h4>
+
+<blockquote>
+<p>IAM binds <strong>principals</strong> to <strong>roles</strong> at an
+org/folder/project/resource scope, with inheritance downwards. Each
+workload gets its own <strong>service account</strong> with least-privilege roles
+(avoid <code>Editor</code>/<code>Owner</code>), and no downloaded JSON keys: Cloud Run
+attaches a runtime service account and GKE uses <strong>Workload Identity
+Federation</strong> to map a Kubernetes service account to a Google service
+account, so the client libraries use Application Default Credentials
+automatically.</p>
+</blockquote>
+
+<p><strong>M6.3 Design a Spring Boot microservice on GCP end to end.</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-9">A good SDE-3 interview answer is:</h4>
+
+<p>Build with Maven and Jib → image to <strong>Artifact Registry</strong> (vulnerability
+scan) → deploy to Cloud Run/GKE across multiple zones behind a global
+HTTPS load balancer with <strong>Cloud Armor</strong> and managed TLS. The service
+reads config from env/Secret Manager, talks to <strong>Cloud SQL</strong> over
+private IP using the Cloud SQL connector, publishes domain events
+through the outbox to <strong>Pub/Sub</strong>, and caches in Memorystore (Redis).
+Observability: JSON logs correlated with traces, Micrometer metrics to
+Cloud Monitoring, SLO-based alerting. Infrastructure is Terraform and
+delivery uses Cloud Build + Cloud Deploy with canary rollouts and
+automated rollback.</p>
+<h4 id="how-to-understand-it-9">How to understand it</h4>
+
+<p>Treat this as a decision/problem-solving question: explain the mechanism
+or approach first, then the failure modes, trade-offs, and how you would
+verify the result.</p>
+
+<p><strong>Plain-English starting point:</strong> Build with Maven and Jib → image to
+<strong>Artifact Registry</strong> (vulnerability scan) → deploy to Cloud Run/GKE
+across multiple zones behind a global HTTPS load balancer with <strong>Cloud
+Armor</strong> and managed TLS. The service reads config from env/Secret
+Manager, talks to <strong>Cloud SQL</strong> over private IP using the Cloud SQL
+connector, publishes domain events through the outbox to <strong>Pub/Sub</strong>,
+and caches in Memorystore (Redis).</p>
+<h4 id="key-terms-you-should-know-9">Key terms you should know</h4>
+
+<ul>
+<li><strong>Cloud Run</strong> — GCP&#39;s managed container execution platform where the
+platform handles servers and scales container instances.</li>
+<li><strong>GKE</strong> — Google Kubernetes Engine, Google&#39;s managed Kubernetes
+service.</li>
+<li><strong>observability</strong> — The ability to understand internal system behavior
+from telemetry such as logs, metrics and traces.</li>
+<li><strong>outbox</strong> — A database table used to store events in the same
+transaction as business data so publication can happen reliably
+afterward.</li>
+<li><strong>Pub/Sub</strong> — Google Cloud&#39;s asynchronous messaging service for
+publishing messages to topics and delivering them to subscriptions.</li>
+<li><strong>Service</strong> — An application or platform capability exposed through a
+defined interface; a Kubernetes Service is a specific networking resource.</li>
+<li><strong>SLO</strong> — Service Level Objective: a measurable reliability target,
+such as 99.9% successful requests.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-9">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-9">30-second version</h4>
+
+<blockquote>
+<p>Build with Maven and Jib → image to <strong>Artifact Registry</strong>
+(vulnerability scan) → deploy to Cloud Run/GKE across multiple zones
+behind a global HTTPS load balancer with <strong>Cloud Armor</strong> and managed
+TLS. The service reads config from env/Secret Manager, talks to
+<strong>Cloud SQL</strong> over private IP using the Cloud SQL connector, publishes
+domain events through the outbox to <strong>Pub/Sub</strong>, and caches in
+Memorystore (Redis).</p>
+</blockquote>
+
+<p><strong>M6.4 How do you use Pub/Sub from Spring correctly?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-10">A good SDE-3 interview answer is:</h4>
+
+<p>Use Spring Cloud GCP (<code>PubSubTemplate</code>, <code>@ServiceActivator</code>/inbound
+adapter with manual ack). Delivery is at-least-once, so handlers must be
+idempotent (dedupe by message ID or business key). Tune the ack deadline
+to processing time, configure retry with backoff and a <strong>dead-letter
+topic</strong>, use ordering keys only when per-key order matters, set flow
+control (<code>maxOutstandingElementCount</code>) for back-pressure, and monitor
+oldest unacked message age and DLQ size. Never ack before the work is
+durably done.</p>
+<h4 id="how-to-understand-it-10">How to understand it</h4>
+
+<p>Treat this as a decision/problem-solving question: explain the mechanism
+or approach first, then the failure modes, trade-offs, and how you would
+verify the result.</p>
+
+<p><strong>Plain-English starting point:</strong> Use Spring Cloud GCP
+(<code>PubSubTemplate</code>, <code>@ServiceActivator</code>/inbound adapter with manual ack).
+Delivery is at-least-once, so handlers must be idempotent (dedupe by
+message ID or business key).</p>
+<h4 id="key-terms-you-should-know-10">Key terms you should know</h4>
+
+<ul>
+<li><strong>back-pressure</strong> — A mechanism that prevents an upstream producer
+from overwhelming a downstream consumer.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-10">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-10">30-second version</h4>
+
+<blockquote>
+<p>Use Spring Cloud GCP (<code>PubSubTemplate</code>, <code>@ServiceActivator</code>/inbound
+adapter with manual ack). Delivery is at-least-once, so handlers must
+be idempotent (dedupe by message ID or business key).</p>
+</blockquote>
+
+<p><strong>M6.5 How do you choose a data store on GCP?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-11">A good SDE-3 interview answer is:</h4>
+
+<p>Cloud SQL (PostgreSQL/MySQL) for regional relational OLTP with HA and
+read replicas; AlloyDB for higher PostgreSQL performance and analytics;
+<strong>Spanner</strong> for globally consistent, horizontally scalable relational
+data; Firestore for document data with real-time sync; Bigtable for very
+high-throughput wide-column/time-series; <strong>BigQuery</strong> for serverless
+analytics (columnar, partitioned and clustered, never as an OLTP store);
+Memorystore for caching; Cloud Storage for objects. Match consistency,
+query patterns, scale and cost; don&#39;t pick Spanner &quot;because it&#39;s
+powerful&quot;.</p>
+<h4 id="how-to-understand-it-11">How to understand it</h4>
+
+<p>Treat this as a decision/problem-solving question: explain the mechanism
+or approach first, then the failure modes, trade-offs, and how you would
+verify the result.</p>
+
+<p><strong>Plain-English starting point:</strong> Cloud SQL (PostgreSQL/MySQL) for
+regional relational OLTP with HA and read replicas; AlloyDB for higher
+PostgreSQL performance and analytics; <strong>Spanner</strong> for globally
+consistent, horizontally scalable relational data; Firestore for
+document data with real-time sync; Bigtable for very high-throughput
+wide-column/time-series; <strong>BigQuery</strong> for serverless analytics
+(columnar, partitioned and clustered, never as an OLTP store);
+Memorystore for caching; Cloud Storage for objects. Match consistency,
+query patterns, scale and cost; don&#39;t pick Spanner &quot;because it&#39;s
+powerful&quot;.</p>
+<h4 id="sde-3-interview-checkpoints-11">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-11">30-second version</h4>
+
+<blockquote>
+<p>Cloud SQL (PostgreSQL/MySQL) for regional relational OLTP with HA and
+read replicas; AlloyDB for higher PostgreSQL performance and
+analytics; <strong>Spanner</strong> for globally consistent, horizontally scalable
+relational data; Firestore for document data with real-time sync;
+Bigtable for very high-throughput wide-column/time-series;
+<strong>BigQuery</strong> for serverless analytics (columnar, partitioned and
+clustered, never as an OLTP store); Memorystore for caching; Cloud
+Storage for objects. Match consistency, query patterns, scale and
+cost; don&#39;t pick Spanner &quot;because it&#39;s powerful&quot;.</p>
+</blockquote>
+
+<p><strong>M6.6 How do you design for high availability and disaster recovery?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-12">A good SDE-3 interview answer is:</h4>
+
+<p>Define <strong>RTO</strong> (time to recover) and <strong>RPO</strong> (data you can lose) with
+the business, then pick the pattern: multi-zone within a region (default
+HA: regional GKE, regional Cloud SQL with failover, regional load
+balancer), cross-region for DR (read replicas or Spanner multi-region,
+multi-region storage, traffic failover with a global load balancer).
+Automate backups with point-in-time recovery, test restores and failover
+game-days, keep infrastructure as code so a region can be rebuilt, and
+make deployments backward compatible so rollbacks are safe.</p>
+<h4 id="how-to-understand-it-12">How to understand it</h4>
+
+<p>Treat this as a decision/problem-solving question: explain the mechanism
+or approach first, then the failure modes, trade-offs, and how you would
+verify the result.</p>
+
+<p><strong>Plain-English starting point:</strong> Define <strong>RTO</strong> (time to recover) and
+<strong>RPO</strong> (data you can lose) with the business, then pick the pattern:
+multi-zone within a region (default HA: regional GKE, regional Cloud SQL
+with failover, regional load balancer), cross-region for DR (read
+replicas or Spanner multi-region, multi-region storage, traffic failover
+with a global load balancer). Automate backups with point-in-time
+recovery, test restores and failover game-days, keep infrastructure as
+code so a region can be rebuilt, and make deployments backward
+compatible so rollbacks are safe.</p>
+<h4 id="key-terms-you-should-know-11">Key terms you should know</h4>
+
+<ul>
+<li><strong>RTO</strong> — The target duration for restoring service after a disruption.</li>
+<li><strong>RPO</strong> — The acceptable recovery point, often expressed as an amount of time of data loss.</li>
+<li><strong>HA</strong> — Availability maintained through redundancy and failure handling.</li>
+<li><strong>DR</strong> — Recovery of service and data after a major disruption.</li>
+<li><strong>PITR</strong> — Restoring a database to a selected point in time within retained recovery history.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-12">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-12">30-second version</h4>
+
+<blockquote>
+<p>Define <strong>RTO</strong> (time to recover) and <strong>RPO</strong> (data you can lose) with
+the business, then pick the pattern: multi-zone within a region
+(default HA: regional GKE, regional Cloud SQL with failover, regional
+load balancer), cross-region for DR (read replicas or Spanner
+multi-region, multi-region storage, traffic failover with a global
+load balancer). Automate backups with point-in-time recovery, test
+restores and failover game-days, keep infrastructure as code so a
+region can be rebuilt, and make deployments backward compatible so
+rollbacks are safe.</p>
+</blockquote>
+
+<hr>
+<h3 id="module-7-system-design-prompts-practice-45-min-each">Module 7: System Design Prompts (practice 45 min each)</h3>
+
+<ol>
+<li> URL shortener 2. Rate limiter 3. Notification service 4.
+Order/payment platform with saga 5. Ride-hailing/real-time tracking.
+<strong>Framework:</strong> requirements (functional/non-functional) → capacity
+estimates → API → data model → high-level design → deep dive
+(scaling, consistency, failures) → trade-offs.</li>
+</ol>
+
+<hr>
+<h3 id="module-8-coding-programs-with-solutions">Module 8: Coding Programs with Solutions</h3>
+<h4 id="1-lru-cache-o-1-classic">1. LRU Cache (O(1)): classic</h4>
+
+<p><strong>Derive the approach:</strong> the operations require both key lookup and
+recency updates. A hash table solves lookup; a doubly linked list allows
+removal/reinsertion of a known node without searching. Access-ordered
+<code>LinkedHashMap</code> supplies both for the concise solution.</p>
+
+<p><strong>Why this, not the alternatives:</strong> an array/list requires O(n) movement
+or search; a timestamp heap adds O(log n) updates and stale-entry
+handling. Implement the map plus list yourself when the interviewer
+disallows library LRU. Exact global LRU under contention may be more
+expensive than an approximate eviction policy.</p>
+
+<p><strong>What changes:</strong> insertion order evicts an old entry even after a
+recent read. An access-order <code>get</code> mutates ordering, so concurrent reads
+need coordination too. A synchronized wrapper only protects calls
+through that wrapper; multi-step operations need one shared lock.</p>
+
+<p><strong>Trace and checks:</strong> capacity two; put A, put B, read A, put C must
+evict B. Test replacement, capacity one, invalid capacity and mutable
+keys. Expected O(1) operations, O(capacity) state.</p>
+
+<p><strong>Strong answer signal:</strong> connect each data structure to a required
+operation and explain the recency invariant.</p>
+
+<pre><code class="java">class LRUCache&lt;K, V&gt; extends LinkedHashMap&lt;K, V&gt; {
+    private final int capacity;
+    LRUCache(int capacity) {
+        super(Math.max(1, capacity), 0.75f, true);
+        if (capacity &lt; 1) throw new IllegalArgumentException(&quot;capacity must be positive&quot;);
+        this.capacity = capacity;
+    }
+    @Override protected boolean removeEldestEntry(Map.Entry&lt;K, V&gt; e) { return size() &gt; capacity; }
+}
+</code></pre>
+
+<p><em>Interviewer follow-up:</em> implement without LinkedHashMap →
+<code>HashMap&lt;K, Node&gt;</code> + doubly linked list with head/tail sentinels; move
+node to head on access, evict the tail. Make thread-safe with
+<code>synchronized</code> wrapper or a lock (a coarse shared lock can preserve
+exact LRU; specialized caches trade eviction policy against
+concurrency).</p>
+<h4 id="2-streams-top-3-earners-per-department">2. Streams: top 3 earners per department</h4>
+
+<p><strong>Derive the approach:</strong> the ranking is independent per department, so
+partition by department, order each group and retain its first three
+entries. Define whether “three” means three people or three distinct
+salary ranks.</p>
+
+<p><strong>Why this, not the alternatives:</strong> sorting each group is easy to
+inspect and costs O(sum(m<em>d log m</em>d)). For large groups and fixed k,
+maintain a size-k min-heap per department for O(n log k) processing and
+O(departments × k) retained candidates. Sorting the whole dataset is
+unnecessary unless its global order is also required.</p>
+
+<p><strong>What changes:</strong> tied salaries need a stable secondary key for
+reproducibility. A top-three-distinct-salaries requirement can return
+more than three people. For monetary correctness use minor units or
+<code>BigDecimal</code>, rather than assuming <code>double</code> is acceptable. If data lives
+in SQL, consider a partitioned window ranking query and return only
+needed rows.</p>
+
+<p><strong>Trace and checks:</strong> salaries 90, 100, 100, 80 produce three people but
+only two distinct ranks. Test fewer than three employees, missing
+departments and ties. The shown grouping retains O(n) data.</p>
+
+<p><strong>Strong answer signal:</strong> explain the business meaning of ranking before
+optimizing the stream.</p>
+
+<pre><code class="java">record Employee(String name, String dept, double salary) {}
+
+Map&lt;String, List&lt;Employee&gt;&gt; top3 = employees.stream()
+    .collect(Collectors.groupingBy(Employee::dept,
+        Collectors.collectingAndThen(Collectors.toList(),
+            l -&gt; l.stream()
+                  .sorted(Comparator.comparingDouble(Employee::salary).reversed())
+                  .limit(3).toList())));
+</code></pre>
+<h4 id="3-producer-consumer-with-blockingqueue">3. Producer–Consumer with BlockingQueue</h4>
+
+<p><strong>Derive the approach:</strong> producers and consumers run at different speeds
+and need a safe handoff. A bounded blocking queue combines
+synchronization, waiting and a memory bound.</p>
+
+<p><strong>Why this, not the alternatives:</strong> polling a normal list risks races
+and wastes CPU; an unbounded queue hides overload as memory growth. A
+custom wait/notify queue is useful as an interview exercise but adds
+lifecycle and signaling responsibilities already handled by the library.</p>
+
+<p><strong>What changes:</strong> the example assumes one producer, one consumer and a
+sentinel that cannot be real data. Multiple consumers need an agreed
+termination protocol, often one terminal signal per consumer after all
+producers finish. Interrupting a producer before it enqueues the
+sentinel can strand the consumer; a supervisor must cancel/join both
+sides on failure. Durable work needs a broker or persisted queue, not
+only memory.</p>
+
+<p><strong>Trace and checks:</strong> fill ten slots; the next put waits until a take
+frees capacity. Test interruption while full/empty, consumer failure and
+shutdown. Queue operations are O(1), but waiting time is
+workload-dependent; storage is O(capacity).</p>
+
+<p><strong>Strong answer signal:</strong> distinguish backpressure from a complete
+shutdown protocol.</p>
+
+<pre><code class="java">BlockingQueue&lt;Integer&gt; q = new ArrayBlockingQueue&lt;&gt;(10);
+Runnable producer = () -&gt; { try { for (int i = 0; i &lt; 100; i++) q.put(i); q.put(-1); }
+                            catch (InterruptedException e) { Thread.currentThread().interrupt(); } };
+Runnable consumer = () -&gt; { try { int v; while ((v = q.take()) != -1) System.out.println(v); }
+                            catch (InterruptedException e) { Thread.currentThread().interrupt(); } };
+new Thread(producer).start(); new Thread(consumer).start();
+</code></pre>
+
+<p><em>Mention:</em> <code>put</code>/<code>take</code> block (back-pressure); poison pill for shutdown;
+always restore the interrupt flag.</p>
+<h4 id="4-token-bucket-rate-limiter-thread-safe">4. Token-Bucket Rate Limiter (thread-safe)</h4>
+
+<p><strong>Derive the approach:</strong> the requirement permits a short burst but
+limits the average rate. Represent available credit as tokens, refill by
+elapsed monotonic time and cap credit at capacity.</p>
+
+<p><strong>Why this, not the alternatives:</strong> a fixed window can admit two bursts
+around a boundary; an exact sliding log retains each accepted timestamp.
+A leaky-bucket queue controls output pacing and introduces waiting,
+which differs from immediate admit/reject behavior.</p>
+
+<p><strong>What changes:</strong> wall-clock adjustments distort refill, so use an
+injectable monotonic ticker. Validate positive capacity/rate. Without
+the lock, two requests can spend the same token. Multiple JVMs require
+coordinated state or an explicitly approximate per-instance allowance.
+Floating-point refill may need a carefully defined rounding policy at
+exact boundaries.</p>
+
+<p><strong>Trace and checks:</strong> capacity two and one token/second: two immediate
+successes, one rejection, then one success after one simulated second.
+Test idle refill capped at capacity and concurrent callers. Local state
+and work are O(1), excluding lock contention.</p>
+
+<p><strong>Strong answer signal:</strong> distinguish burst capacity, refill rate and
+concurrent request count.</p>
+
+<pre><code class="java">class TokenBucket {
+    private final long capacity, refillPerSec;
+    private double tokens; private long last = System.nanoTime();
+    TokenBucket(long capacity, long refillPerSec) { this.capacity = capacity; this.refillPerSec = refillPerSec; this.tokens = capacity; }
+    synchronized boolean tryAcquire() {
+        long now = System.nanoTime();
+        tokens = Math.min(capacity, tokens + (now - last) / 1e9 * refillPerSec);
+        last = now;
+        if (tokens &gt;= 1) { tokens--; return true; }
+        return false;
+    }
+}
+</code></pre>
+
+<p><em>Follow-up:</em> distributed version → Redis + Lua script for atomic
+refill/consume.</p>
+<h4 id="5-async-fan-out-with-completablefuture">5. Async fan-out with CompletableFuture</h4>
+
+<p><strong>Derive the approach:</strong> user and order reads do not depend on one
+another, so start both and combine only after both results are ready.
+Sequential latency is roughly the sum; parallel latency approaches the
+slower call plus overhead, subject to capacity.</p>
+
+<p><strong>Why this, not the alternatives:</strong> sequential calls are simpler when
+cheap or dependent. Virtual threads make blocking tasks easier to
+express; reactive composition fits an already reactive stack. Futures
+help express the dependency graph, but are not a reason to fan out
+without limits.</p>
+
+<p><strong>What changes:</strong> if the order call requires the user result, compose it
+after the first call instead. A blanket fallback can hide an
+authorization or data error. A future timeout does not necessarily stop
+network work; define deadlines and ownership of cancellation. Waiting on
+subtasks submitted to the same saturated pool can cause starvation.</p>
+
+<p><strong>Trace and checks:</strong> user completes in 100 ms, orders in 300 ms; the
+successful combination waits for orders. Test each branch failing, both
+failing, timeout and executor rejection. Two branches mean constant task
+count, not constant remote cost.</p>
+
+<p><strong>Strong answer signal:</strong> identify independent work, result semantics
+and failure ownership.</p>
+
+<pre><code class="java">CompletableFuture&lt;User&gt; u = CompletableFuture.supplyAsync(() -&gt; userSvc.get(id), pool);
+CompletableFuture&lt;List&lt;Order&gt;&gt; o = CompletableFuture.supplyAsync(() -&gt; orderSvc.get(id), pool);
+Profile p = u.thenCombine(o, Profile::new)
+             .orTimeout(2, TimeUnit.SECONDS)
+             .exceptionally(ex -&gt; Profile.fallback(id))
+             .join();
+</code></pre>
+
+<p><em>Mention:</em> select an executor deliberately, especially for blocking I/O.
+<code>orTimeout</code> completes a future exceptionally but does not stop the
+underlying call; <code>CompletableFuture.cancel(true)</code> does not interrupt its
+computation. Configure downstream deadlines and explicit cancellation,
+and distinguish timeout from business failure before returning a
+fallback. <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/CompletableFuture.html">CompletableFuture
+API</a>.</p>
+<h4 id="6-thread-safe-singleton-with-enum-and-holder-alternatives">6. Thread-safe Singleton with enum and holder alternatives</h4>
+
+<p><strong>Derive the approach:</strong> one instance is required within one
+class-loader scope, and concurrent callers must not observe partial
+construction. Enum initialization or the initialization-on-demand holder
+uses JVM initialization guarantees.</p>
+
+<p><strong>Why this, not the alternatives:</strong> a synchronized accessor is correct
+but adds a locking path; double-checked locking is more subtle and
+requires correct volatile publication. In application code, an injected
+singleton-scoped service often gives better lifecycle control and
+testability than a global singleton. Enum is an option, not universally
+“best.”</p>
+
+<p><strong>What changes:</strong> a singleton does not make its mutable fields
+thread-safe, and separate class loaders can each have an instance. A
+distributed singleton requires coordination beyond this pattern. Lazy
+construction shifts initialization failure to first use; eager
+construction discovers it sooner.</p>
+
+<p><strong>Trace and checks:</strong> concurrent holder access returns one reference
+after class initialization. Test access from multiple threads and avoid
+using static global state as a substitute for dependency injection.
+Access is O(1); retained state depends on the singleton&#39;s contents.</p>
+
+<p><strong>Strong answer signal:</strong> state the scope of “one” and separate
+construction safety from state safety.</p>
+
+<pre><code class="java">public enum Config { INSTANCE; /* safe against reflection &amp; serialization */ }
+
+class Holder { private Holder() {}
+    private static class H { static final Holder I = new Holder(); }
+    static Holder get() { return H.I; } }   // lazy, thread-safe via class loading
+</code></pre>
+<h4 id="7-spring-boot-rest-global-error-handling-n-1-fix">7. Spring Boot: REST + global error handling + N+1 fix</h4>
+
+<p><strong>Derive the approach:</strong> the response needs order fields and items, so
+define that read shape explicitly, map it inside the service transaction
+and return a DTO with a controlled error contract.</p>
+
+<p><strong>Why this, not the alternatives:</strong> serializing an entity can trigger
+lazy queries, expose fields or recurse through associations. Globally
+eager relationships overfetch unrelated use cases. An entity graph fits
+this read; a DTO query can be better when only a few columns are needed.</p>
+
+<p><strong>What changes:</strong> fetching a to-many collection with pagination requires
+care; paginate parent IDs or use an appropriate projection. Two
+collections can multiply rows. A graph expresses required loading, not a
+portable guarantee of one SQL statement. Exposing raw exception messages
+is unsafe unless they are intentionally user-facing.</p>
+
+<p><strong>Trace and checks:</strong> existing order with two items yields one DTO;
+missing order gives 404; an empty order yields an empty items list.
+Measure queries and rows with realistic cardinality and verify
+authorization. Cost depends on fetched rows and query plans, not just
+the Java mapper loop.</p>
+
+<p><strong>Strong answer signal:</strong> tie transaction and fetch boundaries to the
+API contract and verify emitted SQL.</p>
+
+<pre><code class="java">@RestController @RequestMapping(&quot;/orders&quot;) @RequiredArgsConstructor
+class OrderController {
+    private final OrderService svc;
+    @GetMapping(&quot;/{id}&quot;) OrderDto get(@PathVariable Long id) { return svc.get(id); }
+}
+
+@Service @RequiredArgsConstructor
+class OrderService {
+    private final OrderRepository repo;
+    @Transactional(readOnly = true)
+    OrderDto get(Long id) {
+        return repo.findWithItemsById(id).map(OrderDto::from)
+                   .orElseThrow(() -&gt; new OrderNotFoundException(id));
+    }
+}
+
+interface OrderRepository extends JpaRepository&lt;Order, Long&gt; {
+    @EntityGraph(attributePaths = &quot;items&quot;)
+    Optional&lt;Order&gt; findWithItemsById(Long id);
+}
+
+@RestControllerAdvice
+class ApiErrors {
+    @ExceptionHandler(OrderNotFoundException.class)
+    ProblemDetail notFound(OrderNotFoundException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, e.getMessage());
+    }
+}
+</code></pre>
+<h4 id="8-quick-algorithm-warm-ups">8. Quick algorithm warm-ups</h4>
+
+<p><strong>Longest unique substring — derive and choose:</strong> a repeated character
+only invalidates windows containing its previous occurrence. Keep the
+last index and advance the left boundary to <code>max(left, previous + 1)</code>.
+This beats enumerating O(n²) substrings; a set-based shrinking window is
+equally valid but may perform more removals. On <code>abba</code>, moving left
+backward at the last <code>a</code> gives a wrong answer; the maximum is two. The
+code counts UTF-16 units; code-point semantics change representation.
+Expected O(n) time, O(distinct characters) state. A strong explanation
+proves the window remains duplicate-free.</p>
+
+<p><strong>First non-repeating character — derive and choose:</strong> counts determine
+uniqueness; encounter order determines “first.” Count then scan the
+original string, or use insertion-ordered counts. Sorting loses
+encounter order, while a plain map&#39;s iteration order is not the answer.
+On <code>swiss</code>, return <code>w</code>; on <code>aabb</code>, report absence. A live stream needs
+counts plus a queue of candidates. O(n) time and O(alphabet) space;
+define the same character model as above.</p>
+
+<p><strong>Linked-list cycle — derive and choose:</strong> two moving positions inside a
+cycle gain one relative step each iteration and eventually meet. Floyd&#39;s
+method uses O(1) space; a visited identity set is easier to explain and
+can expose the first repeated node but costs O(n). Stop when fast or
+fast.next is null. Duplicate values are not cycles; compare node
+identity. Test self-cycle, two-node cycle, empty and linear lists.
+Finding the cycle entry requires the additional reset-and-walk phase.
+O(n) time.</p>
+
+<p><strong>Merge intervals — derive and choose:</strong> sorting by start makes only the
+last merged interval a possible overlap candidate. Pairwise comparison
+is O(n²), and a heap is unnecessary for a static union. The full
+implementation and boundary analysis appear under “Merge overlapping
+intervals.” Closed <code>[1,2]</code> and <code>[2,3]</code> merge in that implementation;
+half-open intervals require an explicit endpoint policy. O(n log n) time
+plus output space.</p>
+
+<p><strong>Longest substring without repeating characters (sliding window,
+O(n)):</strong></p>
+
+<pre><code class="java">int lengthOfLongestSubstring(String s) {
+    Map&lt;Character, Integer&gt; idx = new HashMap&lt;&gt;(); int best = 0, left = 0;
+    for (int r = 0; r &lt; s.length(); r++) {
+        Integer prev = idx.put(s.charAt(r), r);
+        if (prev != null &amp;&amp; prev &gt;= left) left = prev + 1;
+        best = Math.max(best, r - left + 1);
+    }
+    return best;
+}
+</code></pre>
+
+<p><strong>First non-repeating character:</strong> <code>LinkedHashMap&lt;Character,Integer&gt;</code>
+counts, return the first entry with value 1. <strong>Detect cycle in linked
+list:</strong> Floyd&#39;s slow/fast pointers, O(1) space. <strong>Merge intervals:</strong>
+sort by start, then merge in one pass, O(n log n).</p>
+
+<hr>
+<h3 id="module-9-behavioral-senior-level">Module 9: Behavioral (Senior Level)</h3>
+
+<p>Prepare 5 <strong>STAR</strong> stories with metrics (Situation, Task, Action,
+<strong>Result</strong>):</p>
+
+<ol>
+<li> Production incident you led (root cause, fix, prevention).</li>
+<li> A big architecture decision and its trade-offs.</li>
+<li> Performance improvement (&quot;p99 from 2s → 300ms by …&quot;).</li>
+<li> Disagreement with a peer/manager and how it was resolved.</li>
+<li> Mentoring / raising team standards.</li>
+</ol>
+
+<p><strong>Questions to ask them:</strong> deployment frequency, on-call load, tech-debt
+policy, how architecture decisions are made.</p>
+<h3 id="final-checklist">Final Checklist</h3>
+
+<ul>
+<li>Can explain <code>@Transactional</code> pitfalls, N+1, HashMap internals, and
+saga/outbox <em>without notes</em></li>
+<li>Can code LRU, a rate limiter, and a stream grouping in 10 minutes each</li>
+<li>Have 5 STAR stories and 2 system designs rehearsed aloud</li>
+</ul>
+
+<hr>

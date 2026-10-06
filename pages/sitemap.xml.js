@@ -12,6 +12,7 @@ import { PUBLIC_STACK_GUIDES } from "../lib/seoGuides.mjs";
 import { PUBLIC_VERTICAL_LISTICLES } from "../lib/verticalContent.mjs";
 import { ADVICE_FAILS_ARTICLES } from "../lib/adviceFails.mjs";
 import { EXPLAIN_LOGS } from "../lib/explainThisLog.mjs";
+import { SENIOR_JAVA_GUIDE_ITEMS } from "../lib/seniorJavaGuide.mjs";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://interviewiq.app";
 
@@ -42,6 +43,8 @@ export function getServerSideProps({ res }) {
     ...PUBLIC_ARTICLES.map((article) => ({ loc: `${SITE_URL}/java/${article.slug}`, changefreq: "monthly", priority: "0.9" })),
     ...JAVA_TUTORIAL_CATALOG.map((tutorial) => ({ loc: `${SITE_URL}/java/tutorial/${slugifyJavaTutorial(tutorial.title)}`, changefreq: "monthly", priority: "0.7" })),
     { loc: `${SITE_URL}/guides`, changefreq: "weekly", priority: "0.9" },
+    { loc: `${SITE_URL}/senior-java-interview`, changefreq: "monthly", priority: "0.9" },
+    ...SENIOR_JAVA_GUIDE_ITEMS.map(item => ({ loc: `${SITE_URL}/senior-java-interview/${item.slug}`, changefreq: "monthly", priority: "0.7" })),
     ...PUBLIC_STACK_GUIDES.map((guide) => ({ loc: `${SITE_URL}/guides/${guide.stack}/${guide.slug}`, changefreq: "monthly", priority: "0.85" })),
     ...PUBLIC_VERTICAL_LISTICLES.filter((item) => item.vertical !== "java").map((item) => ({ loc: `${SITE_URL}/${item.vertical}/${item.slug}`, changefreq: "monthly", priority: "0.9" })),
   ];

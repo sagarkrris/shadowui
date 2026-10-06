@@ -1,0 +1,1368 @@
+<h2 id="senior-java-question-bank-vol-6">Senior Java Question Bank, Vol. 6</h2>
+
+<p><strong>Kubernetes in Depth · Terraform · gRPC/GraphQL · Architecture &amp;
+Leadership · Mock Interview Script</strong> (Q99–Q122)</p>
+
+<hr>
+<h2 id="v-kubernetes-in-depth">V. Kubernetes in Depth</h2>
+
+<p><strong>Q99. What happens when you run <code>kubectl apply -f deployment.yaml</code>?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is">A good SDE-3 interview answer is:</h4>
+
+<p><code>kubectl</code> sends the manifest to the <strong>API server</strong>, which authenticates,
+authorises (RBAC), runs admission controllers and persists desired state
+in <strong>etcd</strong>. The <strong>Deployment controller</strong> (in controller-manager)
+creates a ReplicaSet, which creates Pod objects. The <strong>scheduler</strong>
+assigns each unscheduled Pod to a node (resources, affinity, taints).
+The node&#39;s <strong>kubelet</strong> sees the assignment, asks the container runtime
+to pull the image and start containers, wires volumes/secrets, runs
+probes and reports status. <strong>kube-proxy</strong>/CNI program networking so the
+Service routes to ready Pods. Everything works by <em>reconciling desired
+vs actual state</em>, so the answer shows you understand controllers, not
+just commands.</p>
+<h4 id="how-to-understand-it">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> <code>kubectl</code> sends the manifest to the
+<strong>API server</strong>, which authenticates, authorises (RBAC), runs admission
+controllers and persists desired state in <strong>etcd</strong>. The <strong>Deployment
+controller</strong> (in controller-manager) creates a ReplicaSet, which creates
+Pod objects.</p>
+<h4 id="key-terms-you-should-know">Key terms you should know</h4>
+
+<ul>
+<li><strong>Deployment</strong> — A Kubernetes controller that manages replicated Pods
+and supports controlled rollout of new versions.</li>
+<li><strong>Pod</strong> — Kubernetes&#39; smallest deployable unit, containing one or more
+containers that share networking and storage context.</li>
+<li><strong>proxy</strong> — An object that wraps another object and intercepts method
+calls, commonly used by Spring for transactions, security and AOP.</li>
+<li><strong>Service</strong> — A stable Kubernetes networking abstraction that exposes
+a group of Pods behind a stable endpoint.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version">30-second version</h4>
+
+<blockquote>
+<p><code>kubectl</code> sends the manifest to the <strong>API server</strong>, which
+authenticates, authorises (RBAC), runs admission controllers and
+persists desired state in <strong>etcd</strong>. The <strong>Deployment controller</strong> (in
+controller-manager) creates a ReplicaSet, which creates Pod objects.</p>
+</blockquote>
+
+<p><strong>Q100. How do requests, limits and QoS classes affect a Java service?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-1">A good SDE-3 interview answer is:</h4>
+
+<p><em>Requests</em> are what the scheduler reserves; <em>limits</em> are the ceiling.
+Memory over the limit → <strong>OOMKilled</strong>; CPU over the limit →
+<strong>throttling</strong> (latency spikes, slower GC/JIT). QoS: <em>Guaranteed</em>
+(requests = limits), <em>Burstable</em>, <em>BestEffort</em> (evicted first). For
+Java: set memory request = limit, <code>-XX:MaxRAMPercentage</code> around 70%, and
+size CPU requests from load tests; consider omitting CPU limits to avoid
+throttling while keeping requests accurate. Account for startup CPU
+(JIT) with a <code>startupProbe</code> or CPU boost.</p>
+<h4 id="how-to-understand-it-1">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> <em>Requests</em> are what the scheduler
+reserves; <em>limits</em> are the ceiling. Memory over the limit →
+<strong>OOMKilled</strong>; CPU over the limit → <strong>throttling</strong> (latency spikes,
+slower GC/JIT).</p>
+<h4 id="key-terms-you-should-know-1">Key terms you should know</h4>
+
+<ul>
+<li><strong>GC</strong> — Garbage collection: automatic identification and reclamation
+of heap memory that is no longer reachable.</li>
+<li><strong>JIT</strong> — Just-in-time compilation: runtime compilation of frequently
+executed bytecode into optimized native machine code.</li>
+<li><strong>OOMKilled</strong> — A container termination status indicating the
+operating system killed the process because it exceeded its memory
+limit.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-1">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-1">30-second version</h4>
+
+<blockquote>
+<p><em>Requests</em> are what the scheduler reserves; <em>limits</em> are the ceiling.
+Memory over the limit → <strong>OOMKilled</strong>; CPU over the limit →
+<strong>throttling</strong> (latency spikes, slower GC/JIT).</p>
+</blockquote>
+
+<p><strong>Q101. HPA vs VPA vs Cluster Autoscaler: how do you scale?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-2">A good SDE-3 interview answer is:</h4>
+
+<p><strong>HPA</strong> adds/removes Pod replicas from CPU, memory or custom metrics
+(requests per second, Kafka lag via KEDA). <strong>VPA</strong> adjusts requests per
+Pod (restarts them; good for right-sizing, don&#39;t combine with HPA on the
+same metric). <strong>Cluster Autoscaler</strong> (or GKE Autopilot) adds nodes when
+Pods are unschedulable. Java specifics: scale-up lag from JVM warm-up,
+so set sensible stabilisation windows, min replicas, readiness only
+after warm-up, and PDBs so scale-down doesn&#39;t drop capacity.</p>
+<h4 id="how-to-understand-it-2">How to understand it</h4>
+
+<p>Compare the options by correctness, operational behavior, performance,
+failure modes, and when you would choose each one—not just by
+definitions.</p>
+
+<p><strong>Plain-English starting point:</strong> <strong>HPA</strong> adds/removes Pod replicas from
+CPU, memory or custom metrics (requests per second, Kafka lag via KEDA).
+<strong>VPA</strong> adjusts requests per Pod (restarts them; good for right-sizing,
+don&#39;t combine with HPA on the same metric).</p>
+<h4 id="key-terms-you-should-know-2">Key terms you should know</h4>
+
+<ul>
+<li><strong>GKE</strong> — Google Kubernetes Engine, Google&#39;s managed Kubernetes
+service.</li>
+<li><strong>Pod</strong> — Kubernetes&#39; smallest deployable unit, containing one or more
+containers that share networking and storage context.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-2">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-2">30-second version</h4>
+
+<blockquote>
+<p><strong>HPA</strong> adds/removes Pod replicas from CPU, memory or custom metrics
+(requests per second, Kafka lag via KEDA). <strong>VPA</strong> adjusts requests
+per Pod (restarts them; good for right-sizing, don&#39;t combine with HPA
+on the same metric).</p>
+</blockquote>
+
+<p><strong>Q102. How does Kubernetes networking work (Service types, Ingress,
+NetworkPolicy)?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-3">A good SDE-3 interview answer is:</h4>
+
+<p>Every Pod gets its own IP (flat network via the CNI plugin). A
+<strong>Service</strong> gives a stable virtual IP/DNS name
+(<code>svc.namespace.svc.cluster.local</code>) load-balancing across ready Pods:
+<code>ClusterIP</code> (internal), <code>NodePort</code>, <code>LoadBalancer</code> (cloud LB),
+<code>Headless</code> (direct Pod IPs for StatefulSets). <strong>Ingress/Gateway API</strong>
+provides L7 routing, TLS and host/path rules. <strong>NetworkPolicy</strong> is
+default-allow until you add rules; adopt default-deny plus explicit
+allows. Mention DNS caching and <code>ndots</code> as a classic source of latency.</p>
+<h4 id="how-to-understand-it-3">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Every Pod gets its own IP (flat
+network via the CNI plugin). A <strong>Service</strong> gives a stable virtual IP/DNS
+name (<code>svc.namespace.svc.cluster.local</code>) load-balancing across ready
+Pods: <code>ClusterIP</code> (internal), <code>NodePort</code>, <code>LoadBalancer</code> (cloud LB),
+<code>Headless</code> (direct Pod IPs for StatefulSets).</p>
+<h4 id="key-terms-you-should-know-3">Key terms you should know</h4>
+
+<ul>
+<li><strong>plugin</strong> — A Maven component that provides build functionality such
+as compilation, testing or packaging.</li>
+<li><strong>Pod</strong> — Kubernetes&#39; smallest deployable unit, containing one or more
+containers that share networking and storage context.</li>
+<li><strong>Service</strong> — A stable Kubernetes networking abstraction that exposes
+a group of Pods behind a stable endpoint.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-3">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-3">30-second version</h4>
+
+<blockquote>
+<p>Every Pod gets its own IP (flat network via the CNI plugin). A
+<strong>Service</strong> gives a stable virtual IP/DNS name
+(<code>svc.namespace.svc.cluster.local</code>) load-balancing across ready Pods:
+<code>ClusterIP</code> (internal), <code>NodePort</code>, <code>LoadBalancer</code> (cloud LB),
+<code>Headless</code> (direct Pod IPs for StatefulSets).</p>
+</blockquote>
+
+<p><strong>Q103. Deployment vs StatefulSet, and how does storage work?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-4">A good SDE-3 interview answer is:</h4>
+
+<p>Deployments suit stateless, interchangeable Pods. <strong>StatefulSets</strong> give
+stable identities (<code>app-0</code>), ordered rollout, stable network names via a
+headless Service and a per-replica <strong>PersistentVolumeClaim</strong>, which
+databases, Kafka and Zookeeper need. Storage: a PVC requests capacity
+from a StorageClass that dynamically provisions a PV (a persistent
+disk). Prefer managed databases (Cloud SQL) over running them in-cluster
+unless there is a strong reason.</p>
+<h4 id="how-to-understand-it-4">How to understand it</h4>
+
+<p>Compare the options by correctness, operational behavior, performance,
+failure modes, and when you would choose each one—not just by
+definitions.</p>
+
+<p><strong>Plain-English starting point:</strong> Deployments suit stateless,
+interchangeable Pods. <strong>StatefulSets</strong> give stable identities (<code>app-0</code>),
+ordered rollout, stable network names via a headless Service and a
+per-replica <strong>PersistentVolumeClaim</strong>, which databases, Kafka and
+Zookeeper need.</p>
+<h4 id="key-terms-you-should-know-4">Key terms you should know</h4>
+
+<ul>
+<li><strong>Service</strong> — A stable Kubernetes networking abstraction that exposes
+a group of Pods behind a stable endpoint.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-4">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-4">30-second version</h4>
+
+<blockquote>
+<p>Deployments suit stateless, interchangeable Pods. <strong>StatefulSets</strong>
+give stable identities (<code>app-0</code>), ordered rollout, stable network
+names via a headless Service and a per-replica
+<strong>PersistentVolumeClaim</strong>, which databases, Kafka and Zookeeper need.</p>
+</blockquote>
+
+<p><strong>Q104. How do you do safe rollouts and keep availability during node
+maintenance?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-5">A good SDE-3 interview answer is:</h4>
+
+<p>Rolling update with <code>maxUnavailable: 0, maxSurge: 25%</code>, accurate
+readiness probes, <code>preStop</code> sleep plus graceful shutdown,
+<strong>PodDisruptionBudget</strong> (e.g., <code>minAvailable: 2</code>) so drains don&#39;t evict
+too many Pods, anti-affinity/topology spread constraints to distribute
+replicas across zones, and canary or progressive delivery (Argo
+Rollouts, Cloud Deploy) with automated rollback on SLO breach. Rollback
+with <code>kubectl rollout undo</code>.</p>
+<h4 id="how-to-understand-it-5">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Rolling update with
+<code>maxUnavailable: 0, maxSurge: 25%</code>, accurate readiness probes, <code>preStop</code>
+sleep plus graceful shutdown, <strong>PodDisruptionBudget</strong> (e.g.,
+<code>minAvailable: 2</code>) so drains don&#39;t evict too many Pods,
+anti-affinity/topology spread constraints to distribute replicas across
+zones, and canary or progressive delivery (Argo Rollouts, Cloud Deploy)
+with automated rollback on SLO breach. Rollback with
+<code>kubectl rollout undo</code>.</p>
+<h4 id="key-terms-you-should-know-5">Key terms you should know</h4>
+
+<ul>
+<li><strong>SLO</strong> — Service Level Objective: a measurable reliability target,
+such as 99.9% successful requests.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-5">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-5">30-second version</h4>
+
+<blockquote>
+<p>Rolling update with <code>maxUnavailable: 0, maxSurge: 25%</code>, accurate
+readiness probes, <code>preStop</code> sleep plus graceful shutdown,
+<strong>PodDisruptionBudget</strong> (e.g., <code>minAvailable: 2</code>) so drains don&#39;t
+evict too many Pods, anti-affinity/topology spread constraints to
+distribute replicas across zones, and canary or progressive delivery
+(Argo Rollouts, Cloud Deploy) with automated rollback on SLO breach.
+Rollback with <code>kubectl rollout undo</code>.</p>
+</blockquote>
+
+<p><strong>Q105. Helm vs Kustomize, and how do you manage config and secrets?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-6">A good SDE-3 interview answer is:</h4>
+
+<p>Helm templates charts with values and versioned releases (good for
+packaging and third-party apps; templating can get unreadable).
+Kustomize overlays plain YAML per environment with patches (no
+templating, built into <code>kubectl</code>). Config via ConfigMaps (mounted files
+or env), secrets via the cloud secret manager with the CSI driver or
+External Secrets Operator rather than committing base64 Secrets to Git.
+Use GitOps (Argo CD/Config Sync) so Git is the source of truth and drift
+is reverted.</p>
+<h4 id="how-to-understand-it-6">How to understand it</h4>
+
+<p>Compare the options by correctness, operational behavior, performance,
+failure modes, and when you would choose each one—not just by
+definitions.</p>
+
+<p><strong>Plain-English starting point:</strong> Helm templates charts with values and
+versioned releases (good for packaging and third-party apps; templating
+can get unreadable). Kustomize overlays plain YAML per environment with
+patches (no templating, built into <code>kubectl</code>).</p>
+<h4 id="key-terms-you-should-know-6">Key terms you should know</h4>
+
+<ul>
+<li><strong>Helm</strong> — A tool for packaging, templating and managing Kubernetes application releases.</li>
+<li><strong>Kustomize</strong> — A tool for composing Kubernetes manifests using overlays and patches.</li>
+<li><strong>GitOps drift</strong> — A difference between declared state in Git and the running environment.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-6">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-6">30-second version</h4>
+
+<blockquote>
+<p>Helm templates charts with values and versioned releases (good for
+packaging and third-party apps; templating can get unreadable).
+Kustomize overlays plain YAML per environment with patches (no
+templating, built into <code>kubectl</code>).</p>
+</blockquote>
+
+<hr>
+<h2 id="w-terraform-infrastructure-as-code">W. Terraform / Infrastructure as Code</h2>
+
+<p><strong>Q106. How does Terraform state work and why is the backend
+important?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-7">A good SDE-3 interview answer is:</h4>
+
+<p>Terraform maps your configuration to real resources through a <strong>state
+file</strong>. Keep it in a <strong>remote backend</strong> (GCS bucket with versioning)
+with <strong>state locking</strong> so concurrent applies don&#39;t corrupt it, restrict
+access (state may contain secrets), and never edit by hand (use
+<code>terraform state mv/rm</code>, <code>import</code>). Separate state per
+environment/component to reduce blast radius.</p>
+<h4 id="how-to-understand-it-7">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Terraform maps your configuration to
+real resources through a <strong>state file</strong>. Keep it in a <strong>remote backend</strong>
+(GCS bucket with versioning) with <strong>state locking</strong> so concurrent
+applies don&#39;t corrupt it, restrict access (state may contain secrets),
+and never edit by hand (use <code>terraform state mv/rm</code>, <code>import</code>).</p>
+<h4 id="key-terms-you-should-know-7">Key terms you should know</h4>
+
+<ul>
+<li><strong>bucket</strong> — One position in a hash table&#39;s internal array where
+entries can be stored.</li>
+<li><strong>Terraform state</strong> — Terraform&#39;s record of resources it manages and
+the mapping between configuration and real infrastructure.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-7">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-7">30-second version</h4>
+
+<blockquote>
+<p>Terraform maps your configuration to real resources through a <strong>state
+file</strong>. Keep it in a <strong>remote backend</strong> (GCS bucket with versioning)
+with <strong>state locking</strong> so concurrent applies don&#39;t corrupt it,
+restrict access (state may contain secrets), and never edit by hand
+(use <code>terraform state mv/rm</code>, <code>import</code>).</p>
+</blockquote>
+
+<p><strong>Q107. Explain plan/apply, drift, modules and workspaces.</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-8">A good SDE-3 interview answer is:</h4>
+
+<p><code>terraform plan</code> diffs desired config vs state vs reality, <code>apply</code>
+executes it; review plans in PRs. <strong>Drift</strong> (manual console changes)
+shows up in the plan; fix by reverting or importing. <strong>Modules</strong> package
+reusable, parameterised infrastructure (a &quot;cloud-run-service&quot; module)
+with versioned sources. Workspaces help with similar environments, but
+many teams prefer separate directories/state per environment for clearer
+isolation. Use <code>prevent_destroy</code> on critical resources and
+<code>lifecycle.ignore_changes</code> sparingly.</p>
+<h4 id="how-to-understand-it-8">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> <code>terraform plan</code> diffs desired config
+vs state vs reality, <code>apply</code> executes it; review plans in PRs. <strong>Drift</strong>
+(manual console changes) shows up in the plan; fix by reverting or
+importing.</p>
+<h4 id="key-terms-you-should-know-8">Key terms you should know</h4>
+
+<ul>
+<li><strong>drift</strong> — A difference between infrastructure declared in Terraform
+and infrastructure that actually exists.</li>
+<li><strong>Service</strong> — An application or platform capability exposed through a
+defined interface; a Kubernetes Service is a specific networking resource.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-8">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-8">30-second version</h4>
+
+<blockquote>
+<p><code>terraform plan</code> diffs desired config vs state vs reality, <code>apply</code>
+executes it; review plans in PRs. <strong>Drift</strong> (manual console changes)
+shows up in the plan; fix by reverting or importing.</p>
+</blockquote>
+
+<p><strong>Q108. How do you run IaC in CI/CD safely?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-9">A good SDE-3 interview answer is:</h4>
+
+<p>PR → <code>fmt</code>/<code>validate</code>/<code>tflint</code>/policy checks (OPA/Sentinel, Checkov) →
+<code>plan</code> posted to the PR → human approval → <code>apply</code> from a pipeline using
+a least-privilege service account with Workload Identity Federation (no
+long-lived keys). Pin provider and module versions, keep secrets in
+Secret Manager (not variables files), tag/label resources for cost, and
+protect the main branch.</p>
+<h4 id="how-to-understand-it-9">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> PR → <code>fmt</code>/<code>validate</code>/<code>tflint</code>/policy
+checks (OPA/Sentinel, Checkov) → <code>plan</code> posted to the PR → human
+approval → <code>apply</code> from a pipeline using a least-privilege service
+account with Workload Identity Federation (no long-lived keys). Pin
+provider and module versions, keep secrets in Secret Manager (not
+variables files), tag/label resources for cost, and protect the main
+branch.</p>
+<h4 id="key-terms-you-should-know-9">Key terms you should know</h4>
+
+<ul>
+<li><strong>Plan</strong> — Terraform output describing proposed infrastructure changes.</li>
+<li><strong>State locking</strong> — Coordination that prevents concurrent writers to the same supported state backend.</li>
+<li><strong>Workload identity federation</strong> — Exchanging trusted workload identity for cloud access without a long-lived service-account key.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-9">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-9">30-second version</h4>
+
+<blockquote>
+<p>PR → <code>fmt</code>/<code>validate</code>/<code>tflint</code>/policy checks (OPA/Sentinel, Checkov) →
+<code>plan</code> posted to the PR → human approval → <code>apply</code> from a pipeline
+using a least-privilege service account with Workload Identity
+Federation (no long-lived keys). Pin provider and module versions,
+keep secrets in Secret Manager (not variables files), tag/label
+resources for cost, and protect the main branch.</p>
+</blockquote>
+
+<hr>
+<h2 id="x-grpc-graphql-api-styles">X. gRPC, GraphQL &amp; API Styles</h2>
+
+<p><strong>Q109. When and how do you use gRPC?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-10">A good SDE-3 interview answer is:</h4>
+
+<p>gRPC uses HTTP/2 and Protobuf (compact binary, schema-first, generated
+clients) and supports four call types: unary, server streaming, client
+streaming and bidirectional streaming. Strengths: low latency, strict
+contracts, multiplexing, built-in deadlines/cancellation. Practices:
+always set <strong>deadlines</strong>, propagate them downstream, use status codes,
+evolve schemas by only adding fields with new numbers (never reuse or
+renumber), use client-side load balancing or a mesh because long-lived
+HTTP/2 connections defeat L4 load balancers, and add interceptors for
+auth, tracing and metrics. Weaknesses: poor browser support (needs
+gRPC-Web), harder debugging.</p>
+<h4 id="how-to-understand-it-10">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> gRPC uses HTTP/2 and Protobuf (compact
+binary, schema-first, generated clients) and supports four call types:
+unary, server streaming, client streaming and bidirectional streaming.
+Strengths: low latency, strict contracts, multiplexing, built-in
+deadlines/cancellation.</p>
+<h4 id="key-terms-you-should-know-10">Key terms you should know</h4>
+
+<ul>
+<li><strong>gRPC</strong> — A high-performance RPC framework commonly using HTTP/2 and
+Protocol Buffers for service-to-service communication.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-10">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-10">30-second version</h4>
+
+<blockquote>
+<p>gRPC uses HTTP/2 and Protobuf (compact binary, schema-first, generated
+clients) and supports four call types: unary, server streaming, client
+streaming and bidirectional streaming. Strengths: low latency, strict
+contracts, multiplexing, built-in deadlines/cancellation.</p>
+</blockquote>
+
+<p><strong>Q110. GraphQL vs REST: trade-offs and pitfalls?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-11">A good SDE-3 interview answer is:</h4>
+
+<p>GraphQL lets clients select fields through a typed schema, useful for
+different front-end data needs. It can reduce client round trips while
+still causing excessive backend work. Batch resolver loads with
+DataLoader; enforce authorization at the relevant object/field boundary,
+query complexity/depth limits, timeouts and appropriate pagination.</p>
+
+<p>HTTP POST supports query and mutation operations; servers may also
+support GET for queries. GET queries can support HTTP/CDN caching, and
+persisted query identifiers can keep URLs manageable. Cache keys must
+account for the operation, variables and relevant authorization context.
+Mutations must not execute through GET. HTTP status depends on the error
+stage and negotiated response format; execution errors may appear in an
+HTTP 200 response, but not every failure is a 200.</p>
+
+<p>REST can be simpler for resource-oriented, cache-friendly public APIs.
+In Spring for GraphQL, know <code>@QueryMapping</code> and <code>@BatchMapping</code> and the
+server&#39;s enabled transports.</p>
+<h4 id="how-to-understand-it-11">How to understand it</h4>
+
+<p>One GraphQL endpoint does not imply one HTTP method or one cache
+entry. A public product query and a user-specific account query need
+different caching policies. Selecting fewer response fields also does
+not guarantee fewer database queries without resolver design.</p>
+<h4 id="key-terms-you-should-know-11">Key terms you should know</h4>
+
+<ul>
+<li><strong>Resolver</strong> — Code that obtains a requested field value.</li>
+<li><strong>DataLoader</strong> — A facility for batching and caching related loads within its configured scope.</li>
+<li><strong>Persisted query</strong> — A stored query identified by an agreed identifier.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-11">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li>Test query GET support and reject mutations over GET.</li>
+<li>Verify resolver query counts and authorization-aware caching.</li>
+<li>Distinguish request/validation failures from field execution errors.</li>
+</ul>
+<h4 id="30-second-version-11">30-second version</h4>
+
+<blockquote>
+<p>GraphQL offers flexible field selection but needs resolver batching,
+authorization and query-cost controls. It is not POST-only: supported GET
+queries can use HTTP caching, while mutations use POST. Cache keys and error
+handling must follow the actual operation and transport contract.</p>
+</blockquote>
+
+<p><a href="https://graphql.org/learn/serving-over-http/">GraphQL over HTTP</a>.</p>
+
+<p><strong>Q111. WebSocket vs SSE vs long polling vs webhooks?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-12">A good SDE-3 interview answer is:</h4>
+
+<p>Long polling: simple fallback, high overhead. <strong>SSE</strong>: one-way server →
+client over HTTP, auto-reconnect, great for notifications/feeds.
+<strong>WebSocket</strong>: full-duplex, for chat/collaboration, needs sticky-less
+design with a pub/sub backplane and heartbeat handling. <strong>Webhooks</strong>:
+server-to-server callbacks; require signature verification, retries,
+idempotency and replay protection.</p>
+<h4 id="how-to-understand-it-12">How to understand it</h4>
+
+<p>Compare the options by correctness, operational behavior, performance,
+failure modes, and when you would choose each one—not just by
+definitions.</p>
+
+<p><strong>Plain-English starting point:</strong> Long polling: simple fallback, high
+overhead. <strong>SSE</strong>: one-way server → client over HTTP, auto-reconnect,
+great for notifications/feeds.</p>
+<h4 id="key-terms-you-should-know-12">Key terms you should know</h4>
+
+<ul>
+<li><strong>idempotency</strong> — The property that repeating the same logical request
+produces the same intended outcome rather than creating duplicate
+effects.</li>
+<li><strong>Pub/Sub</strong> — Google Cloud&#39;s asynchronous messaging service for
+publishing messages to topics and delivering them to subscriptions.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-12">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-12">30-second version</h4>
+
+<blockquote>
+<p>Long polling: simple fallback, high overhead. <strong>SSE</strong>: one-way server
+→ client over HTTP, auto-reconnect, great for notifications/feeds.</p>
+</blockquote>
+
+<p><strong>Q112. What is contract-first API design?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-13">A good SDE-3 interview answer is:</h4>
+
+<p>Write the <strong>OpenAPI</strong> (or Protobuf) spec first, review it with
+consumers, then generate server stubs/clients and validate
+requests/responses against it, so docs never drift. Add linting
+(Spectral), mock servers for parallel front-end work, and
+consumer-driven contract tests (Pact/Spring Cloud Contract) in CI to
+catch breaking changes before release.</p>
+<h4 id="how-to-understand-it-13">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Write the <strong>OpenAPI</strong> (or Protobuf)
+spec first, review it with consumers, then generate server stubs/clients
+and validate requests/responses against it, so docs never drift. Add
+linting (Spectral), mock servers for parallel front-end work, and
+consumer-driven contract tests (Pact/Spring Cloud Contract) in CI to
+catch breaking changes before release.</p>
+<h4 id="key-terms-you-should-know-13">Key terms you should know</h4>
+
+<ul>
+<li><strong>API contract</strong> — An agreed description of requests, responses and observable behavior.</li>
+<li><strong>Contract drift</strong> — A mismatch between an API specification and its implementation or consumer expectations.</li>
+<li><strong>Consumer-driven contract test</strong> — A test checking a provider against interactions required by a consumer.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-13">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-13">30-second version</h4>
+
+<blockquote>
+<p>Write the <strong>OpenAPI</strong> (or Protobuf) spec first, review it with
+consumers, then generate server stubs/clients and validate
+requests/responses against it, so docs never drift. Add linting
+(Spectral), mock servers for parallel front-end work, and
+consumer-driven contract tests (Pact/Spring Cloud Contract) in CI to
+catch breaking changes before release.</p>
+</blockquote>
+
+<hr>
+<h2 id="y-architecture-leadership">Y. Architecture &amp; Leadership</h2>
+
+<p><strong>Q113. What are the pitfalls of event-driven architecture?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-14">A good SDE-3 interview answer is:</h4>
+
+<p>Hard-to-follow flows (no single place shows the process: need tracing
+and an event catalogue), eventual consistency surprises,
+duplicate/out-of-order events, schema evolution, poison messages,
+accidental coupling through event contents, and debugging complexity.
+Mitigate with clear event ownership, versioned schemas in a registry,
+idempotent consumers, DLQs with replay tooling, correlation IDs, and
+choosing events for facts (&quot;OrderPlaced&quot;) rather than commands.</p>
+<h4 id="how-to-understand-it-14">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Hard-to-follow flows (no single place
+shows the process: need tracing and an event catalogue), eventual
+consistency surprises, duplicate/out-of-order events, schema evolution,
+poison messages, accidental coupling through event contents, and
+debugging complexity. Mitigate with clear event ownership, versioned
+schemas in a registry, idempotent consumers, DLQs with replay tooling,
+correlation IDs, and choosing events for facts (&quot;OrderPlaced&quot;) rather
+than commands.</p>
+<h4 id="sde-3-interview-checkpoints-14">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-14">30-second version</h4>
+
+<blockquote>
+<p>Hard-to-follow flows (no single place shows the process: need tracing
+and an event catalogue), eventual consistency surprises,
+duplicate/out-of-order events, schema evolution, poison messages,
+accidental coupling through event contents, and debugging complexity.
+Mitigate with clear event ownership, versioned schemas in a registry,
+idempotent consumers, DLQs with replay tooling, correlation IDs, and
+choosing events for facts (&quot;OrderPlaced&quot;) rather than commands.</p>
+</blockquote>
+
+<p><strong>Q114. Outbox vs CDC vs dual writes: what is the difference?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-15">A good SDE-3 interview answer is:</h4>
+
+<p><strong>Dual write</strong> (save to DB then publish) can lose or duplicate events if
+one fails: avoid. <strong>Transactional outbox</strong>: write the event to an
+<code>outbox</code> table in the same transaction as the business data; a
+poller/relay publishes and marks it sent (at-least-once). <strong>CDC</strong>
+(Debezium) tails the DB log and publishes outbox rows (or table changes)
+without polling load. Consumers must be idempotent either way; clean the
+outbox periodically.</p>
+<h4 id="how-to-understand-it-15">How to understand it</h4>
+
+<p>Compare the options by correctness, operational behavior, performance,
+failure modes, and when you would choose each one—not just by
+definitions.</p>
+
+<p><strong>Plain-English starting point:</strong> <strong>Dual write</strong> (save to DB then
+publish) can lose or duplicate events if one fails: avoid.
+<strong>Transactional outbox</strong>: write the event to an <code>outbox</code> table in the
+same transaction as the business data; a poller/relay publishes and
+marks it sent (at-least-once).</p>
+<h4 id="key-terms-you-should-know-14">Key terms you should know</h4>
+
+<ul>
+<li><strong>CDC</strong> — Change Data Capture: publishing database changes by reading
+the database&#39;s change log or transaction log.</li>
+<li><strong>dual write</strong> — Writing related state to two independent systems in
+one application operation, which can become inconsistent if one write
+succeeds and the other fails.</li>
+<li><strong>outbox</strong> — A database table used to store events in the same
+transaction as business data so publication can happen reliably
+afterward.</li>
+<li><strong>transaction</strong> — A unit of database work treated as one logical
+operation with defined commit/rollback behavior.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-15">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-15">30-second version</h4>
+
+<blockquote>
+<p><strong>Dual write</strong> (save to DB then publish) can lose or duplicate events
+if one fails: avoid. <strong>Transactional outbox</strong>: write the event to an
+<code>outbox</code> table in the same transaction as the business data; a
+poller/relay publishes and marks it sent (at-least-once).</p>
+</blockquote>
+
+<p><strong>Q115. Explain DDD essentials you actually apply.</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-16">A good SDE-3 interview answer is:</h4>
+
+<p><strong>Ubiquitous language</strong> shared with the business, <strong>bounded contexts</strong>
+(each model valid in its own boundary, which become service boundaries),
+<strong>aggregates</strong> (consistency boundary with a root that enforces
+invariants; one transaction per aggregate; reference other aggregates by
+ID), entities vs value objects, domain events, and an anti-corruption
+layer when integrating with legacy models. Warn against anemic models
+and over-engineering simple CRUD.</p>
+<h4 id="how-to-understand-it-16">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> <strong>Ubiquitous language</strong> shared with
+the business, <strong>bounded contexts</strong> (each model valid in its own
+boundary, which become service boundaries), <strong>aggregates</strong> (consistency
+boundary with a root that enforces invariants; one transaction per
+aggregate; reference other aggregates by ID), entities vs value objects,
+domain events, and an anti-corruption layer when integrating with legacy
+models. Warn against anemic models and over-engineering simple CRUD.</p>
+<h4 id="key-terms-you-should-know-15">Key terms you should know</h4>
+
+<ul>
+<li><strong>Service</strong> — An application or platform capability exposed through a
+defined interface; a Kubernetes Service is a specific networking resource.</li>
+<li><strong>transaction</strong> — A unit of database work treated as one logical
+operation with defined commit/rollback behavior.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-16">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-16">30-second version</h4>
+
+<blockquote>
+<p><strong>Ubiquitous language</strong> shared with the business, <strong>bounded contexts</strong>
+(each model valid in its own boundary, which become service
+boundaries), <strong>aggregates</strong> (consistency boundary with a root that
+enforces invariants; one transaction per aggregate; reference other
+aggregates by ID), entities vs value objects, domain events, and an
+anti-corruption layer when integrating with legacy models. Warn
+against anemic models and over-engineering simple CRUD.</p>
+</blockquote>
+
+<p><strong>Q116. What is hexagonal (ports &amp; adapters) architecture?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-17">A good SDE-3 interview answer is:</h4>
+
+<p>The domain core depends on nothing; it exposes <strong>ports</strong> (interfaces)
+and the outside world connects via <strong>adapters</strong> (REST controller, JPA
+repository, Kafka publisher). Dependencies point inward, so you can test
+business logic without frameworks, swap infrastructure, and enforce
+rules with ArchUnit. In Spring: <code>domain</code> and <code>application</code> packages free
+of Spring annotations where practical, with adapters in
+<code>infrastructure</code>.</p>
+<h4 id="how-to-understand-it-17">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> The domain core depends on nothing; it
+exposes <strong>ports</strong> (interfaces) and the outside world connects via
+<strong>adapters</strong> (REST controller, JPA repository, Kafka publisher).
+Dependencies point inward, so you can test business logic without
+frameworks, swap infrastructure, and enforce rules with ArchUnit.</p>
+<h4 id="sde-3-interview-checkpoints-17">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-17">30-second version</h4>
+
+<blockquote>
+<p>The domain core depends on nothing; it exposes <strong>ports</strong> (interfaces)
+and the outside world connects via <strong>adapters</strong> (REST controller, JPA
+repository, Kafka publisher). Dependencies point inward, so you can
+test business logic without frameworks, swap infrastructure, and
+enforce rules with ArchUnit.</p>
+</blockquote>
+
+<p><strong>Q117. How do you scale a read-heavy system?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-18">A good SDE-3 interview answer is:</h4>
+
+<p>In order of cost: optimise queries and indexes → add caching layers
+(CDN, application cache, Redis) → read replicas (account for replication
+lag; route read-your-writes to the primary) → CQRS read models →
+partition/shard data (choose a key that avoids hotspots; cross-shard
+joins and transactions become hard) → precompute. State the trade-off at
+each step and measure before moving up.</p>
+<h4 id="how-to-understand-it-18">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> In order of cost: optimise queries and
+indexes → add caching layers (CDN, application cache, Redis) → read
+replicas (account for replication lag; route read-your-writes to the
+primary) → CQRS read models → partition/shard data (choose a key that
+avoids hotspots; cross-shard joins and transactions become hard) →
+precompute. State the trade-off at each step and measure before moving
+up.</p>
+<h4 id="sde-3-interview-checkpoints-18">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-18">30-second version</h4>
+
+<blockquote>
+<p>In order of cost: optimise queries and indexes → add caching layers
+(CDN, application cache, Redis) → read replicas (account for
+replication lag; route read-your-writes to the primary) → CQRS read
+models → partition/shard data (choose a key that avoids hotspots;
+cross-shard joins and transactions become hard) → precompute. State
+the trade-off at each step and measure before moving up.</p>
+</blockquote>
+
+<p><strong>Q118. How do you do back-of-the-envelope capacity estimates?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-19">A good SDE-3 interview answer is:</h4>
+
+<p>Example: 10M DAU × 20 requests/day = 200M/day ≈ 2.3k req/s average, ×3–5
+for peak ≈ 10k req/s. Storage: 1 KB/record × 100M/day ≈ 100 GB/day ≈ 36
+TB/year before replication. Bandwidth: 10k req/s × 10 KB ≈ 100 MB/s. Use
+round numbers, state assumptions, and derive node counts from per-node
+throughput. Interviewers want structured reasoning, not exact figures.</p>
+<h4 id="how-to-understand-it-19">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Example: 10M DAU × 20 requests/day =
+200M/day ≈ 2.3k req/s average, ×3–5 for peak ≈ 10k req/s. Storage: 1
+KB/record × 100M/day ≈ 100 GB/day ≈ 36 TB/year before replication.</p>
+<h4 id="sde-3-interview-checkpoints-19">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-19">30-second version</h4>
+
+<blockquote>
+<p>Example: 10M DAU × 20 requests/day = 200M/day ≈ 2.3k req/s average,
+×3–5 for peak ≈ 10k req/s. Storage: 1 KB/record × 100M/day ≈ 100
+GB/day ≈ 36 TB/year before replication.</p>
+</blockquote>
+
+<p><strong>Q119. Explain SLOs, error budgets and incident severity.</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-20">A good SDE-3 interview answer is:</h4>
+
+<p>Define the denominator first. A request-based 99.9% SLO permits 0.1% bad
+eligible requests; at ten million requests that is 10,000 bad requests.
+A time-based 99.9% availability SLO permits 43.2 minutes in a 30-day
+window. These are not interchangeable when traffic varies. Define
+success, latency thresholds, exclusions and measurement windows, then
+use burn-rate alerts and a documented response policy. Incident severity
+follows customer impact, not a single infrastructure metric. <a href="https://sre.google/workbook/implementing-slos/">Google SRE
+workbook</a>.</p>
+<h4 id="how-to-understand-it-20">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Define the denominator first. A
+request-based 99.9% SLO permits 0.1% bad eligible requests; at ten
+million requests that is 10,000 bad requests.</p>
+<h4 id="key-terms-you-should-know-16">Key terms you should know</h4>
+
+<ul>
+<li><strong>SLO</strong> — Service Level Objective: a measurable reliability target,
+such as 99.9% successful requests.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-20">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-20">30-second version</h4>
+
+<blockquote>
+<p>Define the denominator first. A request-based 99.9% SLO permits 0.1%
+bad eligible requests; at ten million requests that is 10,000 bad
+requests.</p>
+</blockquote>
+
+<p><strong>Q120. How do you lead and mentor as a senior engineer?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-21">A good SDE-3 interview answer is:</h4>
+
+<p>Set direction through design docs/ADRs, review for learning not
+gatekeeping, pair on hard problems, delegate with clear context and
+ownership, grow others by giving stretch tasks and feedback, and raise
+the bar through shared standards and automation. Measure impact through
+team outcomes (lead time, change failure rate, onboarding time) rather
+than personal output. Have a concrete mentoring example with a result.</p>
+<h4 id="how-to-understand-it-21">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Set direction through design
+docs/ADRs, review for learning not gatekeeping, pair on hard problems,
+delegate with clear context and ownership, grow others by giving stretch
+tasks and feedback, and raise the bar through shared standards and
+automation. Measure impact through team outcomes (lead time, change
+failure rate, onboarding time) rather than personal output.</p>
+<h4 id="sde-3-interview-checkpoints-21">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-21">30-second version</h4>
+
+<blockquote>
+<p>Set direction through design docs/ADRs, review for learning not
+gatekeeping, pair on hard problems, delegate with clear context and
+ownership, grow others by giving stretch tasks and feedback, and raise
+the bar through shared standards and automation. Measure impact
+through team outcomes (lead time, change failure rate, onboarding
+time) rather than personal output.</p>
+</blockquote>
+
+<p><strong>Q121. Tell me about a time you made a wrong technical decision.</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-22">A good SDE-3 interview answer is:</h4>
+
+<p>Pick a real, moderately significant mistake: what you decided and why it
+seemed right, the signal that showed it was wrong (metric/incident), how
+you owned it, how you corrected course (rollback, migration plan), and
+the <strong>process change</strong> afterward (ADR with revisit date, load test,
+spike). Seniors are valued for learning speed and honesty, not
+perfection.</p>
+<h4 id="how-to-understand-it-22">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Pick a real, moderately significant
+mistake: what you decided and why it seemed right, the signal that
+showed it was wrong (metric/incident), how you owned it, how you
+corrected course (rollback, migration plan), and the <strong>process change</strong>
+afterward (ADR with revisit date, load test, spike). Seniors are valued
+for learning speed and honesty, not perfection.</p>
+<h4 id="sde-3-interview-checkpoints-22">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-22">30-second version</h4>
+
+<blockquote>
+<p>Pick a real, moderately significant mistake: what you decided and why
+it seemed right, the signal that showed it was wrong
+(metric/incident), how you owned it, how you corrected course
+(rollback, migration plan), and the <strong>process change</strong> afterward (ADR
+with revisit date, load test, spike). Seniors are valued for learning
+speed and honesty, not perfection.</p>
+</blockquote>
+
+<p><strong>Q122. Why do you want to leave your current company / why this role?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-23">A good SDE-3 interview answer is:</h4>
+
+<p>Be positive and forward-looking: what you have achieved there and what
+you want next (larger scale, domain, ownership, cloud-native
+architecture), tied to something specific about the new company you
+researched. Never criticise your employer.</p>
+<h4 id="how-to-understand-it-23">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Be positive and forward-looking: what
+you have achieved there and what you want next (larger scale, domain,
+ownership, cloud-native architecture), tied to something specific about
+the new company you researched. Never criticise your employer.</p>
+<h4 id="key-terms-you-should-know-17">Key terms you should know</h4>
+
+<ul>
+<li><strong>Role fit</strong> — How the position matches the responsibilities and growth you seek.</li>
+<li><strong>Evidence</strong> — Specific examples supporting your reasons for the move.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-23">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-23">30-second version</h4>
+
+<blockquote>
+<p>Be positive and forward-looking: what you have achieved there and what
+you want next (larger scale, domain, ownership, cloud-native
+architecture), tied to something specific about the new company you
+researched. Never criticise your employer.</p>
+</blockquote>
+
+<hr>
+<h2 id="z-config-programs-interviewers-ask-you-to-write">Z. Config &quot;Programs&quot; Interviewers Ask You to Write</h2>
+<h4 id="kubernetes-deployment-with-probes-and-graceful-shutdown">Kubernetes Deployment with probes and graceful shutdown</h4>
+
+<p><strong>Derive the approach:</strong> startup, routing readiness and unrecoverable
+liveness are different states. Give each its own probe, reserve
+resources and allow draining before termination.</p>
+
+<p><strong>Why this, not the alternatives:</strong> one liveness check for slow startup
+can cause repeated restarts; restarting on a downstream outage can
+amplify that outage. An immediate kill loses in-flight work. A fixed
+preStop delay is only a simple allowance for routing propagation, not
+proof that traffic has drained.</p>
+
+<p><strong>What changes:</strong> the preStop delay consumes part of the termination
+grace period; keep enough remaining budget for application shutdown. The
+sample exec hook requires <code>sleep</code> in the image, which a distroless image
+may lack. The sample omits CPU limits, so memory request=limit alone
+does not imply Guaranteed QoS. Set limits from measured behavior and
+platform policy.</p>
+
+<p><strong>Trace and checks:</strong> simulate a slow startup, readiness failure and
+SIGTERM during an active request. Verify actual probe paths/security,
+image commands and total shutdown time. This is an operational exercise;
+judge capacity and failure behavior rather than Big O.</p>
+
+<p><strong>Strong answer signal:</strong> connect every setting to an observable
+lifecycle transition.</p>
+
+<pre><code class="yaml">apiVersion: apps/v1
+kind: Deployment
+metadata: { name: orders }
+spec:
+  replicas: 3
+  strategy: { rollingUpdate: { maxUnavailable: 0, maxSurge: 25% } }
+  selector: { matchLabels: { app: orders } }
+  template:
+    metadata: { labels: { app: orders } }
+    spec:
+      terminationGracePeriodSeconds: 40
+      containers:
+      - name: orders
+        image: europe-docker.pkg.dev/proj/repo/orders:1.4.2
+        ports: [{ containerPort: 8080 }]
+        env: [{ name: JAVA_TOOL_OPTIONS, value: &quot;-XX:MaxRAMPercentage=70&quot; }]
+        resources: { requests: { cpu: 500m, memory: 1Gi }, limits: { memory: 1Gi } }
+        startupProbe:   { httpGet: { path: /actuator/health/liveness,  port: 8080 }, failureThreshold: 30, periodSeconds: 2 }
+        readinessProbe: { httpGet: { path: /actuator/health/readiness, port: 8080 }, periodSeconds: 5 }
+        livenessProbe:  { httpGet: { path: /actuator/health/liveness,  port: 8080 }, periodSeconds: 10 }
+        lifecycle: { preStop: { exec: { command: [&quot;sleep&quot;, &quot;10&quot;] } } }
+</code></pre>
+<h4 id="terraform-cloud-run-service-with-a-dedicated-service-account">Terraform: Cloud Run service with a dedicated service account</h4>
+
+<p><strong>Derive the approach:</strong> declare a reproducible service resource and
+bind it to a workload identity with explicitly granted permissions. The
+resource definition makes desired deployment state reviewable.</p>
+
+<p><strong>Why this, not the alternatives:</strong> console changes are quick but harder
+to reproduce and audit. A shared broad-privilege identity increases
+blast radius. Creating a dedicated service account alone grants no
+application permissions; add only required IAM bindings separately.</p>
+
+<p><strong>What changes:</strong> maximum instances influence cost and downstream
+capacity, but do not replace application concurrency controls. Secrets
+should be referenced from a secret store. Remote Terraform state needs
+access control and locking. The snippet assumes project/provider setup,
+deployment permissions and service enablement already exist.</p>
+
+<p><strong>Trace and checks:</strong> inspect a plan, apply in a nonproduction project,
+then check runtime identity and access to one allowed and one denied
+resource. Never interpret successful parsing as proof of working IAM.
+Consider warm-instance cost and rollout behavior rather than algorithmic
+complexity.</p>
+
+<p><strong>Strong answer signal:</strong> separate resource creation, deployment
+identity and runtime permissions.</p>
+
+<pre><code class="hcl">resource &quot;google_service_account&quot; &quot;orders&quot; { account_id = &quot;orders-runtime&quot; }
+
+resource &quot;google_cloud_run_v2_service&quot; &quot;orders&quot; {
+  name     = &quot;orders&quot;
+  location = &quot;europe-west1&quot;
+  template {
+    service_account = google_service_account.orders.email
+    scaling {
+      min_instance_count = 1
+      max_instance_count = 20
+    }
+    containers {
+      image = &quot;europe-docker.pkg.dev/proj/repo/orders:1.4.2&quot;
+      resources { limits = { cpu = &quot;1&quot;, memory = &quot;1Gi&quot; } }
+    }
+  }
+}
+</code></pre>
+<h4 id="protobuf-contract-additive-evolution-rules">Protobuf contract (additive evolution rules)</h4>
+
+<p><strong>Derive the approach:</strong> messages need a stable wire identity
+independent of source field ordering. Assign durable field numbers and
+reserve removed numbers before later schema changes.</p>
+
+<p><strong>Why this, not the alternatives:</strong> JSON is easy to inspect and may be
+sufficient; Protobuf gives compact typed contracts and code generation.
+It introduces tooling and schema-evolution obligations. Generated types
+do not eliminate domain validation.</p>
+
+<p><strong>What changes:</strong> reusing a field number can make an old payload mean
+something different. Adding a field is not automatically behaviorally
+safe if old clients require new semantics. Money needs currency and
+units; an int64 total alone is incomplete. A scalar default zero may not
+distinguish absence unless presence is modeled deliberately.</p>
+
+<p><strong>Trace and checks:</strong> encode with an old schema and decode with the new,
+then reverse direction where supported. Test omitted fields, unknown
+values and currency mismatch. Serialization cost scales with payload
+size; compatibility is the main concern.</p>
+
+<p><strong>Strong answer signal:</strong> distinguish wire readability from business
+compatibility.</p>
+
+<pre><code class="protobuf">syntax = &quot;proto3&quot;;
+service OrderService { rpc GetOrder (GetOrderRequest) returns (Order); }
+message GetOrderRequest { string order_id = 1; }
+message Order { string id = 1; string status = 2; int64 total_minor_units = 3; reserved 4; }
+</code></pre>
+
+<p><em>Say:</em> never reuse field numbers (<code>reserved</code>), only add new fields,
+money in minor units.</p>
+
+<hr>
+<h2 id="aa-mock-interview-script-with-follow-ups">AA. Mock Interview Script (with follow-ups)</h2>
+
+<p><strong>Round 1: Technical deep dive (45 min).</strong></p>
+
+<ol>
+<li> &quot;Walk me through the architecture of your last project.&quot; →
+<em>Follow-ups:</em> Why microservices? How did you split data? What broke
+in production? What would you change?</li>
+<li> &quot;How do you make a Spring service handle 5× traffic?&quot; → profile
+first, DB/index, caching, pool sizing, horizontal scaling, async
+decoupling, load test.</li>
+<li> &quot;A <code>@Transactional</code> method isn&#39;t rolling back.&quot; →
+proxy/self-invocation, checked exception, swallowed exception, wrong
+propagation, non-transactional datasource.</li>
+<li> Live coding: LRU cache or rate limiter → <em>Follow-ups:</em> thread
+safety, complexity, tests, distributed version.</li>
+</ol>
+
+<p><strong>Round 2: System design (45 min).</strong> &quot;Design an order &amp; payment platform
+on GCP.&quot; Clarify requirements and scale → API and data model → services
+and events (saga + outbox) → data stores → failure handling and
+idempotency → security → observability → deployment on GKE/Cloud Run →
+cost and trade-offs. <em>Probe:</em> &quot;What if Pub/Sub delivers twice? If the
+payment provider times out? If a region fails?&quot;</p>
+
+<p><strong>Round 3: Managerial/behavioural (30 min).</strong> Production incident,
+conflict with a colleague, mentoring a junior, delivering under a
+deadline, a mistake you owned, biggest impact. Use STAR with metrics and
+a &quot;what I learned&quot; close.</p>
+
+<p><strong>Closing questions to ask:</strong> &quot;What does success look like in 6 months?&quot;
+&quot;How are architecture decisions made?&quot; &quot;What&#39;s your on-call and incident
+culture like?&quot; &quot;How do you handle tech debt?&quot;</p>
+
+<hr>
+<h3 id="reminder">Reminder</h3>
+
+<p>Depth beats breadth at 9+ years: for each technology on your resume, be
+ready to explain <em>how it works internally, what went wrong, and what
+you&#39;d do differently.</em></p>
+
+<hr>

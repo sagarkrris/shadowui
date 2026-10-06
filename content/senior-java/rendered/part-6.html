@@ -1,0 +1,425 @@
+<h2 id="senior-java-question-bank-vol-5">Senior Java Question Bank, Vol. 5</h2>
+
+<p><strong>Rapid-Fire Revision · Output-Prediction Puzzles · More System Designs
+· Harder Coding</strong> Use this the night before: say each answer aloud in
+one breath, then expand if the interviewer probes.</p>
+
+<hr>
+<h2 id="r-rapid-fire-one-breath-answers">R. Rapid-Fire (one-breath answers)</h2>
+<h3 id="java">Java</h3>
+
+<ol>
+<li> <strong>HashMap vs Hashtable vs ConcurrentHashMap?</strong> Unsynchronized with
+one null key; fully synchronized legacy; per-bin CAS/locks, no
+nulls.</li>
+<li> <strong>ArrayList vs LinkedList?</strong> Array-backed O(1) index and
+cache-friendly vs O(n) index; ArrayList wins almost always.</li>
+<li> <strong><code>final</code>, <code>finally</code>, <code>finalize</code>?</strong> Constant/no-override;
+always-runs block; deprecated GC hook (use
+<code>Cleaner</code>/try-with-resources).</li>
+<li> <strong>Abstract class vs interface?</strong> State and constructors vs multiple
+inheritance of type; interfaces have <code>default</code>/<code>static</code> methods
+since 8.</li>
+<li> <strong><code>==</code> vs <code>equals</code>?</strong> Reference identity vs logical equality.</li>
+<li> <strong>Stack vs heap?</strong> Per-thread frames and primitives/references vs
+shared objects managed by GC.</li>
+<li> <strong>Strong, soft, weak, phantom references?</strong> Never collected while
+reachable; cleared under memory pressure (caches); cleared at next
+GC (<code>WeakHashMap</code>); post-mortem cleanup.</li>
+<li> <strong><code>wait()</code> vs <code>sleep()</code>?</strong> <code>wait</code> releases the monitor and needs the
+lock; <code>sleep</code> keeps locks.</li>
+<li> <strong>Callable vs Runnable?</strong> Returns a value and may throw checked
+exceptions.</li>
+<li><strong>Serialization risks?</strong> Version mismatch, security (gadget chains);
+prefer JSON/Protobuf and set <code>serialVersionUID</code> if you must.</li>
+<li><strong>Shallow vs deep copy?</strong> Copies references vs copies the object
+graph; prefer copy constructors over <code>clone()</code>.</li>
+<li><strong>Why is <code>HashMap</code> capacity a power of two?</strong> Fast index masking
+<code>(n-1) &amp; hash</code> and cheap resize splitting.</li>
+<li><strong>Fork/Join?</strong> Work-stealing pool for recursive divide-and-conquer
+tasks.</li>
+<li><strong><code>CountDownLatch</code> vs <code>CyclicBarrier</code> vs <code>Semaphore</code>?</strong> One-shot
+countdown; reusable rendezvous; permit-based throttling.</li>
+</ol>
+<h3 id="spring-hibernate">Spring / Hibernate</h3>
+
+<ol>
+<li><strong><code>@Component</code> vs <code>@Bean</code>?</strong> Class-level scanned stereotype vs
+method-level explicit factory for third-party classes.</li>
+<li><strong><code>@Controller</code> vs <code>@RestController</code>?</strong> View resolution vs
+<code>@Controller</code> + <code>@ResponseBody</code>.</li>
+<li><strong><code>@Qualifier</code> vs <code>@Primary</code>?</strong> Pick a specific bean by name vs
+default among candidates.</li>
+<li><strong><code>@Value</code> vs <code>@ConfigurationProperties</code>?</strong> Single property vs
+typed, validated, grouped binding.</li>
+<li><strong><code>@RequestParam</code> vs <code>@PathVariable</code> vs <code>@RequestBody</code>?</strong> Query
+string, URI segment, and JSON body.</li>
+<li><strong>Filter vs Interceptor?</strong> Servlet-level, before <code>DispatcherServlet</code>
+vs Spring MVC handler-level with access to the handler.</li>
+<li><strong>Entity lookup vs reference?</strong> <code>find</code>/legacy <code>get</code> returns an
+entity or null and may use the persistence context/cache;
+<code>getReference</code> can defer loading and absence detection. Legacy
+<code>load</code> behavior and availability depend on Hibernate version.</li>
+<li><strong><code>@OneToMany</code> owning side?</strong> The <code>@ManyToOne</code> side with
+<code>@JoinColumn</code>; use <code>mappedBy</code> on the other.</li>
+<li><strong><code>Page</code> vs <code>Slice</code> vs <code>List</code>?</strong> Page reports total information and
+may need a count query; Slice reports whether more results exist. A
+List can still be bounded by a Pageable/limit. Pageable is a request
+parameter, not a result type.</li>
+<li><strong>JPQL vs native vs Criteria?</strong> Portable object queries vs
+DB-specific SQL vs type-safe dynamic queries.</li>
+</ol>
+<h3 id="architecture-cloud">Architecture / Cloud</h3>
+
+<ol>
+<li><strong>Orchestration vs choreography?</strong> Central coordinator vs
+event-driven reactions.</li>
+<li><strong>Idempotency?</strong> Repeating an operation has the same effect as doing
+it once.</li>
+<li><strong>Circuit breaker states?</strong> Closed → open → half-open.</li>
+<li><strong>Sticky sessions: good?</strong> No; keep services stateless and
+externalise sessions (Redis/JWT).</li>
+<li><strong>Blue-green vs canary?</strong> Full parallel switch vs gradual percentage
+rollout.</li>
+<li><strong>SLI vs SLO vs SLA?</strong> The measurement, the internal target, the
+contractual promise.</li>
+<li><strong>Eventual consistency?</strong> Replicas/read models converge after writes
+if no new updates occur.</li>
+<li><strong>Pub/Sub vs queue?</strong> Fan-out to many subscribers vs competing
+consumers on one queue.</li>
+<li><strong>Cloud Run vs GKE one-liner?</strong> Simple stateless containers with
+scale-to-zero vs full Kubernetes control.</li>
+<li><strong>Liveness vs readiness?</strong> Restart me if broken vs stop sending me
+traffic until ready.</li>
+<li><strong>Docker image vs container?</strong> Immutable template vs running
+instance.</li>
+<li><strong>Maven <code>install</code> vs <code>deploy</code>?</strong> Local repo vs remote repository.</li>
+<li><strong><code>mvn clean install</code> vs <code>verify</code>?</strong> <code>verify</code> runs through
+integration tests without copying to <code>~/.m2</code>.</li>
+<li><strong>IaC benefit?</strong> Reproducible, reviewable, versioned infrastructure
+(Terraform).</li>
+<li><strong>PUT vs PATCH vs POST?</strong> Idempotent full replace; partial update;
+create or non-idempotent action.</li>
+<li><strong>401 vs 403?</strong> Not authenticated vs authenticated but not allowed.</li>
+</ol>
+
+<hr>
+<h2 id="s-what-will-this-print-puzzles">S. &quot;What Will This Print?&quot; Puzzles</h2>
+
+<p><strong>1.</strong> For <code>Integer a=127,b=127,c=128,d=128</code>, <code>a == b</code> is <code>true</code>;
+<code>c == d</code> is commonly <code>false</code> but is not guaranteed because
+implementations may cache more values. Use <code>equals</code> for value equality.
+<strong>2.</strong> <code>&quot;a&quot;+&quot;b&quot; == &quot;ab&quot;</code> → <code>true</code> (compile-time constant folding);
+<code>new String(&quot;ab&quot;) == &quot;ab&quot;</code> → <code>false</code>. <strong>3.</strong>
+<code>try { return 1; } finally { return 2; }</code> → returns <strong>2</strong>; a <code>return</code> in
+<code>finally</code> overrides and swallows exceptions. Never do it. <strong>4.</strong>
+<code>Arrays.asList(1,2).add(3)</code> and <code>List.of(1).add(2)</code> →
+<code>UnsupportedOperationException</code> (fixed-size / immutable). <strong>5.</strong>
+Mutating equality/hash-relevant state after insertion can make a
+<code>HashSet</code> lookup fail; the exact output is not guaranteed for every
+mutation. The key must remain stable while stored. <strong>6.</strong> Removing
+through the list inside an enhanced loop may trigger
+<code>ConcurrentModificationException</code>; fail-fast behavior is best effort and
+some cases end iteration without throwing. Use <code>Iterator.remove()</code> where
+the iterator supports it, or a supported collection-level <code>removeIf</code>.
+<code>CopyOnWriteArrayList</code> supports the latter but not iterator removal. <strong>7.</strong> <code>0.1 + 0.2 == 0.3</code> → <code>false</code>; use <code>BigDecimal</code>
+(constructed from <code>String</code>) for money. <strong>8.</strong> Loading and initialization
+are different. Static initialization occurs on active use, with
+superclass initialization first where required. Constructing an instance
+runs superclass construction before subclass instance initializers and
+the subclass constructor body.</p>
+
+<hr>
+<h2 id="t-more-system-designs-condensed">T. More System Designs (condensed)</h2>
+
+<p><strong>Design 4: Distributed Rate Limiter.</strong> Requirements: per-user/API-key
+limits, &lt;5 ms overhead, works across many instances. Algorithms: <em>fixed
+window</em> (simple, burst at boundaries), <em>sliding window log/counter</em>
+(accurate, more memory), <em>token bucket</em> (allows bursts, most common),
+<em>leaky bucket</em> (smooths output). Implementation: enforce at the API
+gateway or a sidecar; keep state in Redis with an atomic Lua script
+(<code>INCR</code> + <code>EXPIRE</code>, or token refill math) keyed by <code>user:route</code>. Return
+<code>429</code> with <code>Retry-After</code> and <code>X-RateLimit-*</code> headers. Trade-offs: Redis
+is a single point (use cluster, fail open vs fail closed per endpoint),
+clock skew (use Redis time), local pre-limiters to reduce round trips.
+Also support tiered limits and rules in config.</p>
+
+<p><strong>Design 5: Chat / Messaging System.</strong> Clients hold WebSocket
+connections to stateless gateway nodes; a presence/session registry
+(Redis) maps <code>userId → gateway</code>. Sending: gateway → message service
+assigns a sequence ID per conversation, persists (wide-column store,
+partitioned by <code>conversationId</code>, clustered by time) and publishes to
+Kafka/Pub/Sub; delivery workers look up the recipient&#39;s gateway and
+push, or store for offline push notification. Guarantees: at-least-once
+with client acks and dedupe by message ID; ordering per conversation via
+the partition key. Scale: shard by conversation, fan-out on write for
+small groups and on read for large channels, media in object storage +
+CDN, end-to-end encryption optional. Discuss read receipts, typing
+indicators (ephemeral, not persisted), and retention.</p>
+
+<p><strong>Design 6: Payments Ledger.</strong> Use <strong>double-entry bookkeeping</strong>: every
+transfer writes balanced debit/credit entries in one ACID transaction;
+entries are immutable and balances are derived (or a materialised
+snapshot). Requests carry an idempotency key with a unique constraint.
+Concurrency via optimistic version on accounts or serialised writes per
+account (partition by account). Integrate with PSPs asynchronously:
+state machine (INITIATED → PENDING → SETTLED/FAILED), webhooks verified
+by signature, a <strong>reconciliation job</strong> matching PSP files against the
+ledger and alerting on mismatches. Use outbox for events, audit logs,
+encryption of PII, PCI scope reduction through tokenisation. Mention
+rounding rules (minor units as <code>long</code>) and multi-currency.</p>
+
+<hr>
+<h2 id="u-harder-coding-programs">U. Harder Coding Programs</h2>
+<h4 id="1-bounded-blocking-queue-from-scratch">1. Bounded blocking queue from scratch</h4>
+
+<p><strong>Derive the approach:</strong> represent capacity with a circular array and
+protect head, tail and count together. Producers wait for not-full;
+consumers wait for not-empty.</p>
+
+<p><strong>Why this, not the alternatives:</strong> two conditions target the relevant
+waiter class. One monitor plus <code>notifyAll</code> can also work but wakes more
+threads. A linked queue allocates nodes; a circular array gives a fixed
+storage bound. Use the standard library outside the learning exercise
+unless special behavior is required.</p>
+
+<p><strong>What changes:</strong> zero capacity is not a rendezvous queue in this
+implementation; reject it. Replacing <code>while</code> with <code>if</code> breaks predicate
+rechecking after wakeups. Leaving removed references in the array
+retains objects unnecessarily. Fair locks can reduce starvation risk but
+may reduce throughput; fairness is not FIFO completion of arbitrary
+caller work.</p>
+
+<p><strong>Trace and checks:</strong> capacity two; put A/B, take A, put C wraps tail,
+then take B/C. Test multiple producers/consumers, interruption on both
+conditions, null policy and full/empty waits. O(1) operations excluding
+waiting, O(capacity) storage.</p>
+
+<p><strong>Strong answer signal:</strong> state <code>0 &lt;= count &lt;= capacity</code> and preserve it
+through every transition.</p>
+
+<pre><code class="java">class BoundedQueue&lt;T&gt; {
+    private final Object[] items; private int head, tail, count;
+    private final ReentrantLock lock = new ReentrantLock();
+    private final Condition notFull = lock.newCondition(), notEmpty = lock.newCondition();
+    BoundedQueue(int capacity) {
+        if (capacity &lt; 1) throw new IllegalArgumentException(&quot;capacity must be positive&quot;);
+        items = new Object[capacity];
+    }
+
+    void put(T t) throws InterruptedException {
+        Objects.requireNonNull(t);
+        lock.lockInterruptibly();
+        try {
+            while (count == items.length) notFull.await();     // loop guards spurious wakeups
+            items[tail] = t; tail = (tail + 1) % items.length; count++;
+            notEmpty.signal();
+        } finally { lock.unlock(); }
+    }
+    @SuppressWarnings(&quot;unchecked&quot;)
+    T take() throws InterruptedException {
+        lock.lockInterruptibly();
+        try {
+            while (count == 0) notEmpty.await();
+            T t = (T) items[head]; items[head] = null; head = (head + 1) % items.length; count--;
+            notFull.signal(); return t;
+        } finally { lock.unlock(); }
+    }
+}
+</code></pre>
+
+<p><em>Say:</em> two conditions avoid waking the wrong waiters; this is what
+<code>ArrayBlockingQueue</code> does.</p>
+<h4 id="2-sliding-window-rate-limiter-per-key">2. Sliding-window rate limiter (per key)</h4>
+
+<p><strong>Derive the approach:</strong> an exact rolling-window contract requires
+remembering accepted timestamps still inside the window. A deque makes
+chronological expiry cheap; one lock protects purge/check/add as a unit.</p>
+
+<p><strong>Why this, not the alternatives:</strong> fixed windows permit boundary
+bursts; token buckets intentionally allow configured bursts; approximate
+counters use less state but relax accuracy. <code>ConcurrentHashMap</code> protects
+lookup, not the mutable deque stored inside it.</p>
+
+<p><strong>What changes:</strong> read time inside the lock so timestamps remain
+ordered. <code>&gt;= window</code> expiry defines the boundary explicitly. Naively
+removing an idle key while another caller still holds its deque can
+create two independent counters. Multiple instances require coordinated
+state or a documented approximation.</p>
+
+<p><strong>Trace and checks:</strong> limit two, timestamps 0 and 1; at exactly
+window-length after 0, its slot expires under this policy. Test
+simultaneous callers and an injectable clock. A call may purge O(limit)
+entries, but each accepted timestamp is removed once; state is O(active
+retained keys × limit), unbounded in the current key-retention sketch.</p>
+
+<p><strong>Strong answer signal:</strong> explain both per-key atomicity and
+key-lifecycle races.</p>
+
+<pre><code class="java">class SlidingWindowLimiter {
+    private final int limit; private final long windowNanos;
+    private final ConcurrentHashMap&lt;String, Deque&lt;Long&gt;&gt; hits = new ConcurrentHashMap&lt;&gt;();
+    SlidingWindowLimiter(int limit, Duration window) {
+        if (limit &lt; 1 || window.isZero() || window.isNegative())
+            throw new IllegalArgumentException(&quot;positive limit and window required&quot;);
+        this.limit = limit;
+        this.windowNanos = window.toNanos();
+    }
+
+    boolean allow(String key) {
+        Deque&lt;Long&gt; q = hits.computeIfAbsent(key, k -&gt; new ArrayDeque&lt;&gt;());
+        synchronized (q) {
+            long now = System.nanoTime(); // sample under the lock to preserve timestamp order
+            while (!q.isEmpty() &amp;&amp; now - q.peekFirst() &gt;= windowNanos) q.pollFirst();
+            if (q.size() &lt; limit) { q.addLast(now); return true; }
+            return false;
+        }
+    }
+}
+</code></pre>
+
+<p><em>Say:</em> this demonstration retains every key, so total memory is
+unbounded as key count grows. Idle-key eviction must coordinate with
+active users of the same deque; naïve removal can create two counters
+for one key. Use a carefully bounded implementation for production.</p>
+<h4 id="3-build-order-with-cycle-detection-kahn-s-topological-sort">3. Build order with cycle detection (Kahn&#39;s topological sort)</h4>
+
+<p><strong>Derive the approach:</strong> a module becomes buildable when all
+prerequisites have completed. Track remaining prerequisite counts and
+reverse edges to dependents; removing a ready node reduces those counts.</p>
+
+<p><strong>Why this, not the alternatives:</strong> repeatedly scanning for buildable
+modules can become quadratic. DFS with visiting/visited colors is
+equally valid and can expose a cycle path, but needs careful stack
+handling. Kahn&#39;s method naturally exposes a set of ready jobs.</p>
+
+<p><strong>What changes:</strong> map iteration does not promise deterministic ordering
+among multiple ready nodes. Use a priority queue if lexicographic order
+is part of the contract, accepting O(V log V + E). Count duplicate edges
+consistently or normalize them. Dependencies mentioned only as values
+are still vertices.</p>
+
+<p><strong>Trace and checks:</strong> A depends on B and C: emit B/C in either allowed
+order, then A. A↔B leaves both with nonzero indegree. Test empty graph,
+disconnected graph, self-cycle and missing map keys. O(V + E) time and
+space.</p>
+
+<p><strong>Strong answer signal:</strong> derive why emitting fewer than V vertices
+proves a remaining cycle.</p>
+
+<p>Relevant to Maven reactor ordering or task dependencies.</p>
+
+<pre><code class="java">List&lt;String&gt; buildOrder(Map&lt;String, List&lt;String&gt;&gt; deps) {   // module -&gt; modules it depends on
+    Map&lt;String, Integer&gt; indeg = new HashMap&lt;&gt;();
+    Map&lt;String, List&lt;String&gt;&gt; dependents = new HashMap&lt;&gt;();
+    deps.forEach((m, ds) -&gt; { indeg.putIfAbsent(m, 0);
+        for (String d : ds) { indeg.putIfAbsent(d, 0); indeg.merge(m, 1, Integer::sum);
+                              dependents.computeIfAbsent(d, k -&gt; new ArrayList&lt;&gt;()).add(m); } });
+    Deque&lt;String&gt; ready = new ArrayDeque&lt;&gt;();
+    indeg.forEach((m, n) -&gt; { if (n == 0) ready.add(m); });
+    List&lt;String&gt; order = new ArrayList&lt;&gt;();
+    while (!ready.isEmpty()) {
+        String m = ready.poll(); order.add(m);
+        for (String next : dependents.getOrDefault(m, List.of()))
+            if (indeg.merge(next, -1, Integer::sum) == 0) ready.add(next);
+    }
+    if (order.size() != indeg.size()) throw new IllegalStateException(&quot;Cyclic dependency&quot;);
+    return order;
+}
+</code></pre>
+
+<p><em>Complexity:</em> O(V + E). If <code>order.size() &lt; V</code> there is a cycle, which is
+exactly how Maven reports &quot;The projects in the reactor contain a cyclic
+reference&quot;.</p>
+<h4 id="4-search-in-a-rotated-sorted-array-o-log-n">4. Search in a rotated sorted array (O(log n))</h4>
+
+<p><strong>Derive the approach:</strong> with distinct values, at least one half around
+the midpoint is sorted. Decide whether the target lies in that half&#39;s
+value range, then discard the other half.</p>
+
+<p><strong>Why this, not the alternatives:</strong> a linear scan is correct but O(n).
+Finding the rotation pivot then binary searching is also O(log n), with
+extra boundary logic. Sorting would destroy original indices and cost
+O(n log n).</p>
+
+<p><strong>What changes:</strong> duplicates can hide which half is sorted; shrinking
+ambiguous equal endpoints can degrade to O(n). If the input is not a
+rotation of a sorted sequence, the elimination proof no longer holds.
+Return original index, not insertion position.</p>
+
+<p><strong>Trace and checks:</strong> <code>[4,5,6,1,2,3]</code>, target 2: identify the sorted
+left half, exclude it, then find 2 on the right. Test no rotation, one
+element, absent target and pivot at an endpoint. O(log n) time, O(1)
+extra space for distinct values.</p>
+
+<p><strong>Strong answer signal:</strong> justify the discarded half and name the
+distinctness assumption.</p>
+
+<pre><code class="java">int search(int[] a, int target) {
+    int lo = 0, hi = a.length - 1;
+    while (lo &lt;= hi) {
+        int mid = (lo + hi) &gt;&gt;&gt; 1;
+        if (a[mid] == target) return mid;
+        if (a[lo] &lt;= a[mid]) {                                   // left half sorted
+            if (a[lo] &lt;= target &amp;&amp; target &lt; a[mid]) hi = mid - 1; else lo = mid + 1;
+        } else {                                                 // right half sorted
+            if (a[mid] &lt; target &amp;&amp; target &lt;= a[hi]) lo = mid + 1; else hi = mid - 1;
+        }
+    }
+    return -1;
+}
+</code></pre>
+
+<p><em>Say:</em> this search assumes distinct values. With duplicates, choosing a
+sorted half may be ambiguous and worst-case search can become O(n). For
+nonnegative array indices, the unsigned-shift midpoint is valid;
+<code>lo + (hi - lo) / 2</code> is easier to explain.</p>
+<h4 id="5-find-the-k-th-largest-element-quickselect-idea-vs-heap">5. Find the K-th largest element (quickselect idea vs heap)</h4>
+
+<p><strong>Derive the approach:</strong> retain the k greatest values seen so far in a
+min-heap. Its smallest retained value is the kth greatest at each
+prefix.</p>
+
+<p><strong>Why this, not the alternatives:</strong> full sorting is simpler for one
+small static input or if full order is needed. Quickselect gives
+expected O(n) selection with mutation and pivot considerations. A size-k
+heap gives O(n log k) work and fits streaming input without retaining
+all n values.</p>
+
+<p><strong>What changes:</strong> duplicates count toward rank unless “distinct kth” is
+explicitly requested. A max-heap of all elements needs O(n) state. For k
+near n, selecting the smaller complementary rank may save space when n
+is known. Invalid k must fail predictably.</p>
+
+<p><strong>Trace and checks:</strong> stream 7, 2, 9, 5 with k=2 ends with 7 and 9;
+return 7. Test ties, k=1, k=n and negative numbers. O(k) retained state.</p>
+
+<p><strong>Strong answer signal:</strong> choose based on streaming, mutation and output
+requirements rather than declaring one universal fastest method.</p>
+
+<pre><code class="java">int kthLargest(int[] nums, int k) {
+    if (k &lt; 1 || k &gt; nums.length) throw new IllegalArgumentException(&quot;invalid k&quot;);
+    PriorityQueue&lt;Integer&gt; minHeap = new PriorityQueue&lt;&gt;(k);
+    for (int n : nums) { minHeap.offer(n); if (minHeap.size() &gt; k) minHeap.poll(); }
+    return minHeap.peek();                                       // O(n log k), O(k) space
+}
+</code></pre>
+
+<p><em>Say:</em> quickselect averages O(n) but O(n²) worst case; the heap works
+for streams too.</p>
+
+<hr>
+<h3 id="how-to-run-the-final-48-hours">How to Run the Final 48 Hours</h3>
+
+<ul>
+<li><strong>Day -2:</strong> read Section R aloud, redo 3 coding programs from memory
+on paper.</li>
+<li><strong>Day -1:</strong> one 45-minute system design against a timer, rehearse 5
+STAR stories, review your resume project by project (be ready to
+defend every line).</li>
+<li><strong>Interview day:</strong> clarify requirements first, think aloud, state
+trade-offs, test your code with edge cases (null, empty, duplicates,
+large input), and ask thoughtful questions at the end.</li>
+</ul>
+
+<hr>

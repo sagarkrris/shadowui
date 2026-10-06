@@ -1,0 +1,1133 @@
+<h2 id="senior-java-question-bank-vol-3">Senior Java Question Bank, Vol. 3</h2>
+
+<p><strong>Scenarios · System Design · Coding Programs</strong> (Q59–Q74 + 3 designs + 6
+programs) For scenarios use: <strong>Detect → Mitigate → Root cause → Fix →
+Prevent.</strong> Always quote a metric.</p>
+
+<hr>
+<h2 id="j-production-scenarios">J. Production Scenarios</h2>
+
+<p><strong>Q59. Production CPU is at 95%. What do you do?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is">A good SDE-3 interview answer is:</h4>
+
+<p>First mitigate (scale out, or roll back the latest deploy if
+correlated). Then find the hot threads: <code>top -H -p &lt;pid&gt;</code>, convert the
+thread ID to hex, match it in <code>jstack</code>/<code>jcmd Thread.print</code>; or use
+async-profiler/JFR for a flame graph. Typical causes:
+infinite/regex-backtracking loops, excessive GC (check GC logs),
+serialization hot spots, N+1 queries, or a busy-spinning consumer. Fix,
+add a load test and CPU alert.</p>
+<h4 id="how-to-understand-it">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> First mitigate (scale out, or roll
+back the latest deploy if correlated). Then find the hot threads:
+<code>top -H -p &lt;pid&gt;</code>, convert the thread ID to hex, match it in
+<code>jstack</code>/<code>jcmd Thread.print</code>; or use async-profiler/JFR for a flame
+graph.</p>
+<h4 id="key-terms-you-should-know">Key terms you should know</h4>
+
+<ul>
+<li><strong>GC</strong> — Garbage collection: automatic identification and reclamation
+of heap memory that is no longer reachable.</li>
+<li><strong>N+1</strong> — A query pattern where one query loads N parent rows and then
+N additional queries load related data, causing excessive database
+round trips.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version">30-second version</h4>
+
+<blockquote>
+<p>First mitigate (scale out, or roll back the latest deploy if
+correlated). Then find the hot threads: <code>top -H -p &lt;pid&gt;</code>, convert the
+thread ID to hex, match it in <code>jstack</code>/<code>jcmd Thread.print</code>; or use
+async-profiler/JFR for a flame graph.</p>
+</blockquote>
+
+<p><strong>Q60. Heap keeps growing and the pod is OOMKilled. How do you
+investigate?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-1">A good SDE-3 interview answer is:</h4>
+
+<p>Confirm the type: heap (Java <code>OutOfMemoryError</code>) vs container kill
+(native memory/limit). Capture a heap dump
+(<code>-XX:+HeapDumpOnOutOfMemoryError</code>, <code>jcmd GC.heap_dump</code>), open it in
+Eclipse MAT, and read the leak suspects/dominator tree. Common roots:
+unbounded caches or static maps, ThreadLocals in pools, unclosed
+streams/connections, listener registration without removal, large result
+sets. For native growth use NMT (<code>-XX:NativeMemoryTracking</code>). Fix with
+bounded caches (Caffeine max size/TTL) and pagination/streaming.</p>
+<h4 id="how-to-understand-it-1">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Confirm the type: heap (Java
+<code>OutOfMemoryError</code>) vs container kill (native memory/limit). Capture a
+heap dump (<code>-XX:+HeapDumpOnOutOfMemoryError</code>, <code>jcmd GC.heap_dump</code>), open
+it in Eclipse MAT, and read the leak suspects/dominator tree.</p>
+<h4 id="key-terms-you-should-know-1">Key terms you should know</h4>
+
+<ul>
+<li><strong>GC</strong> — Garbage collection: automatic identification and reclamation
+of heap memory that is no longer reachable.</li>
+<li><strong>heap</strong> — JVM memory where Java objects are allocated.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-1">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-1">30-second version</h4>
+
+<blockquote>
+<p>Confirm the type: heap (Java <code>OutOfMemoryError</code>) vs container kill
+(native memory/limit). Capture a heap dump
+(<code>-XX:+HeapDumpOnOutOfMemoryError</code>, <code>jcmd GC.heap_dump</code>), open it in
+Eclipse MAT, and read the leak suspects/dominator tree.</p>
+</blockquote>
+
+<p><strong>Q61. An endpoint&#39;s p99 jumped from 200 ms to 3 s. Walk me through
+it.</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-2">A good SDE-3 interview answer is:</h4>
+
+<p>Start from the symptom: is it all requests or specific ones, and since
+when (deploy, traffic, data growth)? Use distributed traces to find the
+slow span. Check DB (slow-query log, <code>EXPLAIN</code>, missing index, lock
+waits), connection-pool wait time (Hikari metrics), GC pauses,
+downstream latency, thread-pool saturation and cold caches. Fix the
+dominant span, not guesses; then add a latency SLO alert and a
+regression performance test.</p>
+<h4 id="how-to-understand-it-2">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Start from the symptom: is it all
+requests or specific ones, and since when (deploy, traffic, data
+growth)? Use distributed traces to find the slow span.</p>
+<h4 id="key-terms-you-should-know-2">Key terms you should know</h4>
+
+<ul>
+<li><strong>GC</strong> — Garbage collection: automatic identification and reclamation
+of heap memory that is no longer reachable.</li>
+<li><strong>SLO</strong> — Service Level Objective: a measurable reliability target,
+such as 99.9% successful requests.</li>
+<li><strong>span</strong> — One timed operation within a distributed trace, such as an
+HTTP call or database query.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-2">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-2">30-second version</h4>
+
+<blockquote>
+<p>Start from the symptom: is it all requests or specific ones, and since
+when (deploy, traffic, data growth)? Use distributed traces to find
+the slow span.</p>
+</blockquote>
+
+<p><strong>Q62. &quot;Connection is not available, request timed out after 30000ms.&quot;
+Diagnose.</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-3">A good SDE-3 interview answer is:</h4>
+
+<p>Hikari pool is exhausted: either too few connections for the load, or
+connections are held too long. Look for transactions spanning remote
+calls, <code>@Transactional</code> on large methods, leaked connections
+(<code>leakDetectionThreshold</code>), long queries or lock waits, and
+Open-Session-In-View. Don&#39;t simply raise <code>maximumPoolSize</code>: total
+connections across all pods must stay under the DB limit. Shorten
+transaction scope, add timeouts, and tune pool sizing (small pools are
+usually faster).</p>
+<h4 id="how-to-understand-it-3">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Hikari pool is exhausted: either too
+few connections for the load, or connections are held too long. Look for
+transactions spanning remote calls, <code>@Transactional</code> on large methods,
+leaked connections (<code>leakDetectionThreshold</code>), long queries or lock
+waits, and Open-Session-In-View.</p>
+<h4 id="key-terms-you-should-know-3">Key terms you should know</h4>
+
+<ul>
+<li><strong>transaction</strong> — A unit of database work treated as one logical
+operation with defined commit/rollback behavior.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-3">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-3">30-second version</h4>
+
+<blockquote>
+<p>Hikari pool is exhausted: either too few connections for the load, or
+connections are held too long. Look for transactions spanning remote
+calls, <code>@Transactional</code> on large methods, leaked connections
+(<code>leakDetectionThreshold</code>), long queries or lock waits, and
+Open-Session-In-View.</p>
+</blockquote>
+
+<p><strong>Q63. Customers were charged twice. How do you prevent it?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-4">A good SDE-3 interview answer is:</h4>
+
+<p>Causes: client retries, gateway timeouts, at-least-once messaging.
+Defence: an <code>Idempotency-Key</code> on the request stored with a unique
+constraint and the stored response; state machine for payment (CREATED →
+AUTHORISED → CAPTURED) with optimistic locking; idempotent consumers
+keyed by event ID; call the PSP with its own idempotency key;
+reconciliation job comparing PSP records with ours. Then add detection
+alerts for duplicates.</p>
+<h4 id="how-to-understand-it-4">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Causes: client retries, gateway
+timeouts, at-least-once messaging. Defence: an <code>Idempotency-Key</code> on the
+request stored with a unique constraint and the stored response; state
+machine for payment (CREATED → AUTHORISED → CAPTURED) with optimistic
+locking; idempotent consumers keyed by event ID; call the PSP with its
+own idempotency key; reconciliation job comparing PSP records with ours.</p>
+<h4 id="key-terms-you-should-know-4">Key terms you should know</h4>
+
+<ul>
+<li><strong>idempotency</strong> — The property that repeating the same logical request
+produces the same intended outcome rather than creating duplicate
+effects.</li>
+<li><strong>optimistic locking</strong> — Concurrency control that detects conflicting
+updates, commonly using a version column, instead of holding a
+database lock throughout the transaction.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-4">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-4">30-second version</h4>
+
+<blockquote>
+<p>Causes: client retries, gateway timeouts, at-least-once messaging.
+Defence: an <code>Idempotency-Key</code> on the request stored with a unique
+constraint and the stored response; state machine for payment (CREATED
+→ AUTHORISED → CAPTURED) with optimistic locking; idempotent consumers
+keyed by event ID; call the PSP with its own idempotency key;
+reconciliation job comparing PSP records with ours.</p>
+</blockquote>
+
+<p><strong>Q64. How do you migrate the database schema with zero downtime?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-5">A good SDE-3 interview answer is:</h4>
+
+<p>Expand → migrate → contract. Deploy a backward-compatible schema first
+(add nullable column/new table), release code that writes to both (or
+reads either), backfill in batches, switch reads, and only later drop
+the old column once no running version depends on it. Use
+Flyway/Liquibase, avoid long locks (<code>CREATE INDEX CONCURRENTLY</code>), and
+test on production-sized data. Never couple a destructive migration with
+the same release.</p>
+<h4 id="how-to-understand-it-5">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Expand → migrate → contract. Deploy a
+backward-compatible schema first (add nullable column/new table),
+release code that writes to both (or reads either), backfill in batches,
+switch reads, and only later drop the old column once no running version
+depends on it.</p>
+<h4 id="sde-3-interview-checkpoints-5">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-5">30-second version</h4>
+
+<blockquote>
+<p>Expand → migrate → contract. Deploy a backward-compatible schema first
+(add nullable column/new table), release code that writes to both (or
+reads either), backfill in batches, switch reads, and only later drop
+the old column once no running version depends on it.</p>
+</blockquote>
+
+<p><strong>Q65. Kafka consumer lag keeps growing. What now?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-6">A good SDE-3 interview answer is:</h4>
+
+<p>Check whether it is a producer spike (temporary) or a slow consumer
+(persistent). Look at per-partition lag, processing time per record,
+rebalances, DB/downstream latency, and errors/retries. Options: scale
+consumers (limited by partitions), batch processing, parallelise per key
+safely, optimise the slow dependency, increase partitions (with ordering
+implications), or shed non-critical work. Alert on lag <em>growth rate</em> and
+time-to-drain.</p>
+<h4 id="how-to-understand-it-6">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Check whether it is a producer spike
+(temporary) or a slow consumer (persistent). Look at per-partition lag,
+processing time per record, rebalances, DB/downstream latency, and
+errors/retries.</p>
+<h4 id="sde-3-interview-checkpoints-6">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-6">30-second version</h4>
+
+<blockquote>
+<p>Check whether it is a producer spike (temporary) or a slow consumer
+(persistent). Look at per-partition lag, processing time per record,
+rebalances, DB/downstream latency, and errors/retries.</p>
+</blockquote>
+
+<p><strong>Q66. REST or gRPC or messaging between services?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-7">A good SDE-3 interview answer is:</h4>
+
+<p>REST (JSON) for public/external APIs and simple CRUD: ubiquitous,
+cacheable, human-debuggable. gRPC for internal, latency-sensitive,
+strongly typed contracts with streaming and code generation (HTTP/2,
+Protobuf), but harder through browsers/gateways. Messaging for
+asynchronous workflows, fan-out and decoupling in time. Mixed in
+practice: REST at the edge, gRPC for hot internal paths, events for
+cross-domain state changes.</p>
+<h4 id="how-to-understand-it-7">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> REST (JSON) for public/external APIs
+and simple CRUD: ubiquitous, cacheable, human-debuggable. gRPC for
+internal, latency-sensitive, strongly typed contracts with streaming and
+code generation (HTTP/2, Protobuf), but harder through
+browsers/gateways.</p>
+<h4 id="key-terms-you-should-know-5">Key terms you should know</h4>
+
+<ul>
+<li><strong>gRPC</strong> — A high-performance RPC framework commonly using HTTP/2 and
+Protocol Buffers for service-to-service communication.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-7">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-7">30-second version</h4>
+
+<blockquote>
+<p>REST (JSON) for public/external APIs and simple CRUD: ubiquitous,
+cacheable, human-debuggable. gRPC for internal, latency-sensitive,
+strongly typed contracts with streaming and code generation (HTTP/2,
+Protobuf), but harder through browsers/gateways.</p>
+</blockquote>
+
+<p><strong>Q67. Describe a major incident you led.</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-8">A good SDE-3 interview answer is:</h4>
+
+<p>Use STAR with numbers: <em>Situation</em> (checkout error rate 18%, revenue
+impact), <em>Task</em> (incident commander), <em>Action</em> (declared severity,
+assigned roles, rolled back, communicated every 15 min, preserved
+evidence), <em>Result</em> (restored in 22 min), then <strong>blameless
+post-mortem</strong>: root cause (connection leak after a library upgrade),
+five-whys, action items (alerts, canary, load test) and what you
+personally changed afterwards.</p>
+<h4 id="how-to-understand-it-8">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Use STAR with numbers: <em>Situation</em>
+(checkout error rate 18%, revenue impact), <em>Task</em> (incident commander),
+<em>Action</em> (declared severity, assigned roles, rolled back, communicated
+every 15 min, preserved evidence), <em>Result</em> (restored in 22 min), then
+<strong>blameless post-mortem</strong>: root cause (connection leak after a library
+upgrade), five-whys, action items (alerts, canary, load test) and what
+you personally changed afterwards.</p>
+<h4 id="sde-3-interview-checkpoints-8">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-8">30-second version</h4>
+
+<blockquote>
+<p>Use STAR with numbers: <em>Situation</em> (checkout error rate 18%, revenue
+impact), <em>Task</em> (incident commander), <em>Action</em> (declared severity,
+assigned roles, rolled back, communicated every 15 min, preserved
+evidence), <em>Result</em> (restored in 22 min), then <strong>blameless
+post-mortem</strong>: root cause (connection leak after a library upgrade),
+five-whys, action items (alerts, canary, load test) and what you
+personally changed afterwards.</p>
+</blockquote>
+
+<p><strong>Q68. How do you upgrade from Java 8/Spring Boot 2 to Java 21/Boot 3?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-9">A good SDE-3 interview answer is:</h4>
+
+<p>Separate the JDK, framework, dependency and behavioral changes. For a
+legacy Boot 2 application, Boot 2.7 may be an intermediate migration
+step, not the final support target. Choose an actively supported
+destination and verify its dependency matrix. Boot 3 moves Jakarta EE
+APIs such as persistence and servlet packages from <code>javax</code> to <code>jakarta</code>;
+do not globally rename Java SE packages such as <code>javax.sql</code> or
+<code>javax.crypto</code>. Revalidate Hibernate queries, serialization, security
+configuration and performance. Boot 4 uses Spring Framework 7 and has
+its own migration requirements; “modern Spring” is not synonymous with
+Boot 3. <a href="https://docs.spring.io/spring-boot/4.0/system-requirements.html">Boot 4
+requirements</a>.</p>
+<h4 id="how-to-understand-it-9">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Separate the JDK, framework,
+dependency and behavioral changes. For a legacy Boot 2 application, Boot
+2.7 may be an intermediate migration step, not the final support target.</p>
+<h4 id="sde-3-interview-checkpoints-9">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-9">30-second version</h4>
+
+<blockquote>
+<p>Separate the JDK, framework, dependency and behavioral changes. For a
+legacy Boot 2 application, Boot 2.7 may be an intermediate migration
+step, not the final support target.</p>
+</blockquote>
+
+<p><strong>Q69. How do you design a multi-tenant SaaS service?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-10">A good SDE-3 interview answer is:</h4>
+
+<p>Choose isolation by risk and cost: shared schema with <code>tenant_id</code>
+(cheapest; enforce via Hibernate filters/row-level security),
+schema-per-tenant (balanced), or database-per-tenant (strong isolation,
+noisy-neighbour control, higher cost). Resolve the tenant from the JWT
+claim in a filter, propagate in context (MDC, <code>TenantContext</code> cleaned in
+<code>finally</code>), key caches by tenant, rate-limit per tenant, and test for
+cross-tenant leakage.</p>
+<h4 id="how-to-understand-it-10">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Choose isolation by risk and cost:
+shared schema with <code>tenant_id</code> (cheapest; enforce via Hibernate
+filters/row-level security), schema-per-tenant (balanced), or
+database-per-tenant (strong isolation, noisy-neighbour control, higher
+cost). Resolve the tenant from the JWT claim in a filter, propagate in
+context (MDC, <code>TenantContext</code> cleaned in <code>finally</code>), key caches by
+tenant, rate-limit per tenant, and test for cross-tenant leakage.</p>
+<h4 id="sde-3-interview-checkpoints-10">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-10">30-second version</h4>
+
+<blockquote>
+<p>Choose isolation by risk and cost: shared schema with <code>tenant_id</code>
+(cheapest; enforce via Hibernate filters/row-level security),
+schema-per-tenant (balanced), or database-per-tenant (strong
+isolation, noisy-neighbour control, higher cost). Resolve the tenant
+from the JWT claim in a filter, propagate in context (MDC,
+<code>TenantContext</code> cleaned in <code>finally</code>), key caches by tenant,
+rate-limit per tenant, and test for cross-tenant leakage.</p>
+</blockquote>
+
+<p><strong>Q70. Reports need data from five services. How do you build them?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-11">A good SDE-3 interview answer is:</h4>
+
+<p>Avoid cross-service joins at query time. Publish domain events to build
+a <strong>read model</strong> (a reporting store, BigQuery or Elasticsearch) via a
+streaming pipeline (Dataflow, Kafka Connect/CDC). Accept eventual
+consistency, expose freshness, and version event schemas. API
+composition is acceptable for small, low-volume cases but couples
+availability.</p>
+<h4 id="how-to-understand-it-11">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Avoid cross-service joins at query
+time. Publish domain events to build a <strong>read model</strong> (a reporting
+store, BigQuery or Elasticsearch) via a streaming pipeline (Dataflow,
+Kafka Connect/CDC).</p>
+<h4 id="key-terms-you-should-know-6">Key terms you should know</h4>
+
+<ul>
+<li><strong>CDC</strong> — Change Data Capture: publishing database changes by reading
+the database&#39;s change log or transaction log.</li>
+<li><strong>Service</strong> — An application or platform capability exposed through a
+defined interface; a Kubernetes Service is a specific networking resource.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-11">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-11">30-second version</h4>
+
+<blockquote>
+<p>Avoid cross-service joins at query time. Publish domain events to
+build a <strong>read model</strong> (a reporting store, BigQuery or Elasticsearch)
+via a streaming pipeline (Dataflow, Kafka Connect/CDC).</p>
+</blockquote>
+
+<p><strong>Q71. You disagree with your architect&#39;s design. What do you do?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-12">A good SDE-3 interview answer is:</h4>
+
+<p>Show collaborative maturity: understand their constraints, write down
+the options with trade-offs and data (a quick prototype or benchmark),
+propose a decision record (ADR) and a reversible experiment, then
+<strong>disagree and commit</strong> once a decision is made, and revisit with
+evidence if it fails. Never go around people or argue opinions without
+data.</p>
+<h4 id="how-to-understand-it-12">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Show collaborative maturity:
+understand their constraints, write down the options with trade-offs and
+data (a quick prototype or benchmark), propose a decision record (ADR)
+and a reversible experiment, then <strong>disagree and commit</strong> once a
+decision is made, and revisit with evidence if it fails. Never go around
+people or argue opinions without data.</p>
+<h4 id="sde-3-interview-checkpoints-12">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-12">30-second version</h4>
+
+<blockquote>
+<p>Show collaborative maturity: understand their constraints, write down
+the options with trade-offs and data (a quick prototype or benchmark),
+propose a decision record (ADR) and a reversible experiment, then
+<strong>disagree and commit</strong> once a decision is made, and revisit with
+evidence if it fails. Never go around people or argue opinions without
+data.</p>
+</blockquote>
+
+<p><strong>Q72. How do you improve code quality across a team?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-13">A good SDE-3 interview answer is:</h4>
+
+<p>Automate first: formatter, Checkstyle/SpotBugs/Sonar quality gates,
+coverage on new code, dependency scanning, in CI. Then human practices:
+small PRs, review checklist (design, tests, security, observability),
+pairing, ADRs, a testing pyramid, runbooks, and tech-debt budget (e.g.,
+15–20% per sprint). Mentor through review comments that explain <em>why</em>.</p>
+<h4 id="how-to-understand-it-13">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Automate first: formatter,
+Checkstyle/SpotBugs/Sonar quality gates, coverage on new code,
+dependency scanning, in CI. Then human practices: small PRs, review
+checklist (design, tests, security, observability), pairing, ADRs, a
+testing pyramid, runbooks, and tech-debt budget (e.g., 15–20% per
+sprint).</p>
+<h4 id="key-terms-you-should-know-7">Key terms you should know</h4>
+
+<ul>
+<li><strong>observability</strong> — The ability to understand internal system behavior
+from telemetry such as logs, metrics and traces.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-13">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-13">30-second version</h4>
+
+<blockquote>
+<p>Automate first: formatter, Checkstyle/SpotBugs/Sonar quality gates,
+coverage on new code, dependency scanning, in CI. Then human
+practices: small PRs, review checklist (design, tests, security,
+observability), pairing, ADRs, a testing pyramid, runbooks, and
+tech-debt budget (e.g., 15–20% per sprint).</p>
+</blockquote>
+
+<p><strong>Q73. Deadline is tight and scope is large. How do you handle it?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-14">A good SDE-3 interview answer is:</h4>
+
+<p>Clarify the business goal, slice into a thin end-to-end MVP, rank by
+value/risk, surface risks and options early (scope, date, resources:
+pick two), use feature flags to ship incrementally, avoid skipping tests
+on critical paths, and record deliberate shortcuts as tracked debt.
+Communicate proactively rather than surprise stakeholders.</p>
+<h4 id="how-to-understand-it-14">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Clarify the business goal, slice into
+a thin end-to-end MVP, rank by value/risk, surface risks and options
+early (scope, date, resources: pick two), use feature flags to ship
+incrementally, avoid skipping tests on critical paths, and record
+deliberate shortcuts as tracked debt. Communicate proactively rather
+than surprise stakeholders.</p>
+<h4 id="key-terms-you-should-know-8">Key terms you should know</h4>
+
+<ul>
+<li><strong>Business goal</strong> — The outcome the team is trying to achieve, used to
+prioritize scope and evaluate delivery trade-offs.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-14">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-14">30-second version</h4>
+
+<blockquote>
+<p>Clarify the business goal, slice into a thin end-to-end MVP, rank by
+value/risk, surface risks and options early (scope, date, resources:
+pick two), use feature flags to ship incrementally, avoid skipping
+tests on critical paths, and record deliberate shortcuts as tracked
+debt. Communicate proactively rather than surprise stakeholders.</p>
+</blockquote>
+
+<p><strong>Q74. How do you decide between monolith and microservices for a new
+product?</strong></p>
+<h4 id="a-good-sde-3-interview-answer-is-15">A good SDE-3 interview answer is:</h4>
+
+<p>Start with a <strong>modular monolith</strong> unless there are clear reasons:
+independent scaling, separate team ownership, different
+tech/availability needs, regulatory isolation. Microservices add network
+failures, distributed data, deployment and observability overhead; a
+well-structured monolith with enforced module boundaries (ArchUnit,
+Spring Modulith) can be split later when pressure is proven.</p>
+<h4 id="how-to-understand-it-15">How to understand it</h4>
+
+<p>Start with the core idea in plain English, then go deeper into
+implementation details, trade-offs, failure modes, and production
+considerations.</p>
+
+<p><strong>Plain-English starting point:</strong> Start with a <strong>modular monolith</strong>
+unless there are clear reasons: independent scaling, separate team
+ownership, different tech/availability needs, regulatory isolation.
+Microservices add network failures, distributed data, deployment and
+observability overhead; a well-structured monolith with enforced module
+boundaries (ArchUnit, Spring Modulith) can be split later when pressure
+is proven.</p>
+<h4 id="key-terms-you-should-know-9">Key terms you should know</h4>
+
+<ul>
+<li><strong>Modular monolith</strong> — A single deployment with explicit internal module boundaries.</li>
+<li><strong>Microservice</strong> — An independently deployable service with a defined responsibility and data ownership.</li>
+<li><strong>Distributed monolith</strong> — Separate services whose coupling forces coordinated changes or deployment.</li>
+</ul>
+<h4 id="sde-3-interview-checkpoints-15">SDE-3 interview checkpoints</h4>
+
+<ul>
+<li><strong>What is the core mechanism?</strong> Be able to explain it without
+unexplained implementation jargon.</li>
+<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
+<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
+edge case.</li>
+<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
+<li><strong>How would you verify it in production?</strong> Mention the relevant test,
+metric, log, trace, profiler, or operational signal when applicable.</li>
+</ul>
+<h4 id="30-second-version-15">30-second version</h4>
+
+<blockquote>
+<p>Start with a <strong>modular monolith</strong> unless there are clear reasons:
+independent scaling, separate team ownership, different
+tech/availability needs, regulatory isolation. Microservices add
+network failures, distributed data, deployment and observability
+overhead; a well-structured monolith with enforced module boundaries
+(ArchUnit, Spring Modulith) can be split later when pressure is
+proven.</p>
+</blockquote>
+
+<hr>
+<h2 id="k-system-design-walkthroughs-condensed">K. System Design Walkthroughs (condensed)</h2>
+
+<p><strong>Design 1: URL Shortener.</strong> Requirements: 100M new URLs/month, 10:1
+read:write, low-latency redirect. API: <code>POST /urls</code>, <code>GET /{code}</code> →
+301/302. Code: base62 of a unique ID (a distributed ID generator or
+pre-allocated ranges per node; avoid hash-collision retries). Storage:
+key-value (Bigtable/DynamoDB-style) <code>code → longUrl, ttl</code>; cache hot
+codes in Redis (read-heavy, ~95% hit rate); CDN for popular links.
+Scale: stateless app tier behind a load balancer, shard by code, async
+click analytics via Pub/Sub. Trade-offs: 301 (cacheable, loses
+analytics) vs 302; custom aliases need a uniqueness check; abuse
+protection with rate limiting and malware checks.</p>
+
+<p><strong>Design 2: Notification Service.</strong> API accepts event + user + channel.
+Flow: validate → persist (outbox) → Pub/Sub/Kafka topic per channel
+(email, SMS, push) → channel workers with provider adapters, retry with
+backoff, DLQ, per-provider circuit breaker and fallback provider.
+Preferences/DND/ templates in a store; deduplicate with an idempotency
+key; rate-limit per user; track delivery status via webhooks.
+Priorities: separate topics for OTP (high priority) vs marketing.
+Observability: delivery latency SLO, failure rate by provider.</p>
+
+<p><strong>Design 3: Order &amp; Payment (Saga).</strong> Orchestrated saga:
+<code>Order(PENDING)</code> → reserve inventory → authorise payment → confirm
+order; on failure run compensations (release stock, void payment). Each
+service uses a local transaction + outbox; events carry the order ID as
+the Kafka key to keep order; consumers are idempotent. Timeouts for
+stuck sagas, a state machine persisted by the orchestrator, and a
+reconciliation job. Expose order status via a read model; clients poll
+or receive a push.</p>
+
+<hr>
+<h2 id="l-coding-programs-with-solutions">L. Coding Programs with Solutions</h2>
+<h4 id="1-print-odd-even-numbers-alternately-using-two-threads">1. Print odd/even numbers alternately using two threads</h4>
+
+<p><strong>Derive the approach:</strong> the shared counter and whose turn it is form
+one invariant. Test the predicate and update the counter under the same
+monitor; a thread that cannot proceed waits and releases that monitor.</p>
+
+<p><strong>Why this, not the alternatives:</strong> sleeping is timing-dependent and
+does not establish the required ordering. Busy-waiting wastes CPU. Two
+semaphores can encode turns more directly, while a single-thread loop is
+the practical choice when parallel work serves no purpose.</p>
+
+<p><strong>What changes:</strong> replacing the predicate loop with a one-time test
+permits spurious wakeups to violate the rule. <code>notify</code> can wake an
+unsuitable waiter in a generalized version; <code>notifyAll</code> plus predicate
+checks is easier to reason about. When one worker is interrupted, cancel
+and wake its partner; otherwise the survivor can wait forever.</p>
+
+<p><strong>Trace and checks:</strong> even starts with n=1, waits; odd prints 1 and
+notifies; even prints 2. Test either starting order, cancellation and
+final termination. O(max) work, O(1) shared state; lock scheduling
+affects elapsed time.</p>
+
+<p><strong>Strong answer signal:</strong> identify the shared predicate and give a
+cancellation timeline.</p>
+
+<pre><code class="java">class OddEven {
+    private int n = 1; private boolean cancelled;
+    private final int max = 10; private final Object lock = new Object();
+    void print(boolean odd) {
+        synchronized (lock) {
+            while (!cancelled &amp;&amp; n &lt;= max) {
+                if ((n % 2 == 1) == odd) { System.out.println(Thread.currentThread().getName() + &quot;: &quot; + n++); lock.notifyAll(); }
+                else { try { lock.wait(); } catch (InterruptedException e) {
+                    cancelled = true; lock.notifyAll();
+                    Thread.currentThread().interrupt(); return;
+                } }
+            }
+            lock.notifyAll();
+        }
+    }
+    public static void main(String[] a) {
+        OddEven o = new OddEven();
+        new Thread(() -&gt; o.print(true), &quot;odd&quot;).start();
+        new Thread(() -&gt; o.print(false), &quot;even&quot;).start();
+    }
+}
+</code></pre>
+
+<p><em>Say:</em> <code>wait</code> always in a <code>while</code> loop (spurious wakeups); the lock must
+be held to call <code>wait/notify</code>.</p>
+<h4 id="2-retry-utility-with-exponential-backoff-jitter">2. Retry utility with exponential backoff + jitter</h4>
+
+<p><strong>Derive the approach:</strong> a transient failure may recover, but immediate
+synchronized retries increase pressure. Retry only safe operations, with
+a bounded attempt count, capped delay, jitter and an overall deadline.</p>
+
+<p><strong>Why this, not the alternatives:</strong> fixed delays synchronize clients;
+immediate retries amplify overload; indefinite retries consume resources
+and hide permanent errors. Fail fast for invalid input or authorization
+failure. A library can centralize policy, but cannot decide business
+idempotency for you.</p>
+
+<p><strong>What changes:</strong> the short snippet is a sketch, not a complete retry
+policy: <code>isTransient</code> is application-specific, arguments need
+validation, exponential arithmetic needs saturation, and there is no
+overall deadline. <code>InterruptedException</code> should propagate rather than
+become retryable. A timed-out payment may already have completed, so
+reuse a stable idempotency key and reconcile uncertain outcomes.</p>
+
+<p><strong>Trace and checks:</strong> fail transiently twice then succeed; assert
+exactly three invocations. Also test permanent failure, attempt
+exhaustion, cancellation and overflow bounds using an injected
+sleeper/ticker. Work is bounded by attempts plus task cost; waiting
+contributes to the deadline.</p>
+
+<p><strong>Strong answer signal:</strong> explain when retrying changes correctness, not
+merely its delay formula.</p>
+
+<pre><code class="java">static &lt;T&gt; T retry(Callable&lt;T&gt; task, int maxAttempts, long baseMs) throws Exception {
+    for (int attempt = 1; ; attempt++) {
+        try { return task.call(); }
+        catch (Exception e) {
+            if (attempt &gt;= maxAttempts || !isTransient(e)) throw e;
+            long delay = (long) (baseMs * Math.pow(2, attempt - 1));
+            Thread.sleep(ThreadLocalRandom.current().nextLong(delay / 2, delay + 1)); // jitter
+        }
+    }
+}
+</code></pre>
+
+<p><em>Say:</em> retry only idempotent operations and transient errors; cap total
+time; in Spring use Resilience4j <code>@Retry</code>.</p>
+<h4 id="3-top-k-frequent-elements-min-heap-o-n-log-k">3. Top K frequent elements (min-heap, O(n log k))</h4>
+
+<p><strong>Derive the approach:</strong> first count values, then retain only the k
+largest frequencies. A min-heap exposes the weakest retained candidate
+for eviction.</p>
+
+<p><strong>Why this, not the alternatives:</strong> sorting d distinct values costs O(d
+log d) and is simple when k is large. A heap costs O(d log k), after
+expected O(n) counting, and suits small k. Frequency buckets can use
+O(n + d) space for expected linear processing. A max-heap holding
+everything uses more state than needed.</p>
+
+<p><strong>What changes:</strong> heap iteration is not sorted; explicitly sort the
+final k if ranked output is required. Ties need a declared rule; for
+deterministic results include a secondary key in both selection and
+output. Exact online counts require updating priorities, not just
+mutating heap entries in place.</p>
+
+<p><strong>Trace and checks:</strong> counts A=4, B=2, C=3, k=2 retain A and C. Test
+k=0, k larger than d, all ties and negative values. Total space O(d +
+k); counting dominates storage.</p>
+
+<p><strong>Strong answer signal:</strong> distinguish input size n, distinct count d and
+requested count k.</p>
+
+<pre><code class="java">List&lt;Integer&gt; topK(int[] nums, int k) {
+    Map&lt;Integer, Integer&gt; freq = new HashMap&lt;&gt;();
+    for (int x : nums) freq.merge(x, 1, Integer::sum);
+    PriorityQueue&lt;Map.Entry&lt;Integer, Integer&gt;&gt; pq = new PriorityQueue&lt;&gt;(Map.Entry.comparingByValue());
+    for (var e : freq.entrySet()) { pq.offer(e); if (pq.size() &gt; k) pq.poll(); }
+    return pq.stream().map(Map.Entry::getKey).toList();
+}
+</code></pre>
+
+<p><em>Contract:</em> validate <code>0 &lt;= k &lt;= distinctCount</code> if exactly k results are
+required. Heap iteration is not ranked output; define ordering and
+tie-breaking. <em>Alternative:</em> frequency buckets trade more space for
+linear expected processing.</p>
+<h4 id="4-group-anagrams">4. Group anagrams</h4>
+
+<p><strong>Derive the approach:</strong> two words belong together when their character
+multisets match. Build a canonical representation, then group by that
+representation.</p>
+
+<p><strong>Why this, not the alternatives:</strong> sorting each word works for a broad
+declared character alphabet and yields an immutable string key. A fixed
+count vector avoids sorting for a known alphabet. Comparing every pair
+of words repeats work and is roughly quadratic in word count.</p>
+
+<p><strong>What changes:</strong> concatenating counts without separators can create
+ambiguous keys; using <code>int[]</code> directly as a HashMap key compares array
+identity unless wrapped correctly. Case folding and Unicode
+normalization are business decisions, not automatic anagram rules.
+Sorted UTF-16 units are not a complete Unicode grapheme model.</p>
+
+<p><strong>Trace and checks:</strong> <code>eat</code>, <code>tea</code>, <code>bat</code> form two groups. Test
+duplicates, empty strings, mixed case and agreed character boundaries.
+For n words of maximum length k, sorting keys costs O(n k log k), plus
+retained keys and output.</p>
+
+<p><strong>Strong answer signal:</strong> prove that equal keys mean exactly the
+intended equivalence relation.</p>
+
+<pre><code class="java">Collection&lt;List&lt;String&gt;&gt; groupAnagrams(String[] words) {
+    return Arrays.stream(words).collect(Collectors.groupingBy(w -&gt; {
+        char[] c = w.toCharArray(); Arrays.sort(c); return new String(c); })).values();
+}
+</code></pre>
+
+<p><em>Complexity:</em> O(n · k log k) for n words of length at most k, plus
+output storage. A 26-count key gives O(n · k) only under an explicit
+lowercase-English alphabet contract; encode the counts without ambiguous
+concatenation.</p>
+<h4 id="5-custom-logexecutiontime-with-spring-aop">5. Custom <code>@LogExecutionTime</code> with Spring AOP</h4>
+
+<p><strong>Derive the approach:</strong> timing is repeated across methods, so intercept
+the method boundary and record elapsed monotonic time in <code>finally</code> to
+cover failure as well as success.</p>
+
+<p><strong>Why this, not the alternatives:</strong> hand-written timers are transparent
+but repetitive. A servlet filter measures an HTTP boundary; it does not
+measure arbitrary service methods. For aggregated latency and
+percentiles, use a metrics instrument rather than one log line per call.</p>
+
+<p><strong>What changes:</strong> proxy self-invocation bypasses this advice. A method
+returning a future/publisher can finish before its work does; measuring
+return time is not completion latency. Do not swallow the exception or
+use a return in <code>finally</code>. Avoid payload logging and expensive
+high-volume logs.</p>
+
+<p><strong>Trace and checks:</strong> a method that throws must still record a duration
+and propagate the same failure. Test proxied external calls,
+self-invocation and asynchronous completion separately. Timing adds
+constant bookkeeping, while logging and the target method have their own
+costs.</p>
+
+<p><strong>Strong answer signal:</strong> define exactly which interval the measurement
+represents.</p>
+
+<pre><code class="java">@Target(METHOD) @Retention(RUNTIME) public @interface LogExecutionTime {}
+
+@Aspect @Component @Slf4j
+class TimingAspect {
+    @Around(&quot;@annotation(LogExecutionTime)&quot;)
+    Object time(ProceedingJoinPoint pjp) throws Throwable {
+        long start = System.nanoTime();
+        try { return pjp.proceed(); }
+        finally { log.info(&quot;{} took {} ms&quot;, pjp.getSignature().toShortString(), (System.nanoTime() - start) / 1_000_000); }
+    }
+}
+</code></pre>
+
+<p><em>Say:</em> needs <code>spring-boot-starter-aop</code>; works only through the proxy (no
+self-invocation); prefer Micrometer <code>@Timed</code> for real metrics.</p>
+<h4 id="6-create-and-fix-a-deadlock">6. Create and fix a deadlock</h4>
+
+<p><strong>Derive the approach:</strong> opposite lock acquisition orders permit a
+cycle. Impose a total order on accounts and acquire both locks in that
+order, independent of transfer direction.</p>
+
+<p><strong>Why this, not the alternatives:</strong> one global lock is simpler but
+serializes unrelated transfers. <code>tryLock</code> with timeout avoids endless
+waiting but introduces retry/livelock policy. Per-account ordering
+preserves concurrency between independent accounts.</p>
+
+<p><strong>What changes:</strong> IDs must be unique and stable and must identify
+canonical lock objects. Equal IDs on different objects or different lock
+instances for the same account break the assumed order. A process-local
+lock does not coordinate other JVMs. Also, two Java mutations are not
+automatically transactional: if credit fails after debit, locking alone
+does not undo the debit.</p>
+
+<p><strong>Trace and checks:</strong> A→B and B→A both lock the lower-ID object first.
+Test same account, insufficient funds, invalid amount, overflow and
+failure between mutations; validate before mutating or use a
+transactional persistence boundary. O(1) local work, excluding waiting.</p>
+
+<p><strong>Strong answer signal:</strong> separate deadlock prevention from atomic
+business effects.</p>
+
+<pre><code class="java">// Deadlock: thread A locks a then b; thread B locks b then a.
+// Fix: impose a global lock order.
+void transfer(Account from, Account to, long amt) {
+    Account first = from.id &lt; to.id ? from : to, second = first == from ? to : from;
+    synchronized (first) { synchronized (second) { from.debit(amt); to.credit(amt); } }
+}
+</code></pre>
+
+<p><em>Say:</em> alternatives are <code>tryLock(timeout)</code> with back-off, or a
+single-writer design; detect with <code>jstack</code> (&quot;Found one Java-level
+deadlock&quot;).</p>
+<h4 id="7-idempotent-event-consumer-with-postgresql-and-spring-jdbc">7. Idempotent event consumer with PostgreSQL and Spring JDBC</h4>
+
+<p><strong>Derive the approach:</strong> redelivery must not apply a business change
+twice. A unique event marker and local business update must commit
+together; let the database arbitrate concurrent duplicate claims.</p>
+
+<p><strong>Why this, not the alternatives:</strong> <code>exists</code> then <code>insert</code> races; an
+in-memory set disappears on restart and is not shared across instances.
+Committing the marker separately can permanently suppress an event whose
+business update failed. An outbox solves reliable publication and
+complements, rather than replaces, consumer deduplication.</p>
+
+<p><strong>What changes:</strong> changing consumer-name scope can make old events
+appear new. Expiring dedupe records before the allowed replay horizon
+re-enables old effects. The same event ID with different payloads should
+be rejected or investigated. External payments require the provider&#39;s
+own idempotency contract.</p>
+
+<p><strong>Trace and checks:</strong> two deliveries race; one inserts and updates, the
+other observes the conflict. If the winner rolls back, a later delivery
+must still apply the event. Test commit-before-ack crash, business
+rollback and concurrent duplicates using PostgreSQL. Unique-index and
+business-query cost dominate.</p>
+
+<p><strong>Strong answer signal:</strong> explain the crash windows and identify the
+atomic boundary.</p>
+
+<pre><code class="sql">CREATE TABLE processed_event (
+    consumer_name text NOT NULL,
+    event_id text NOT NULL,
+    PRIMARY KEY (consumer_name, event_id)
+);
+</code></pre>
+
+<pre><code class="java">@Service
+@RequiredArgsConstructor
+class PaymentEventHandler {
+    private final JdbcTemplate jdbc;
+    private final PaymentService payments;
+
+    @Transactional
+    public void handle(PaymentEvent event) {
+        int inserted = jdbc.update(&quot;&quot;&quot;
+            INSERT INTO processed_event (consumer_name, event_id)
+            VALUES (?, ?)
+            ON CONFLICT (consumer_name, event_id) DO NOTHING
+            &quot;&quot;&quot;, &quot;payment-handler-v1&quot;, event.eventId());
+        if (inserted == 0) return;
+        payments.applyLocal(event);
+    }
+}
+</code></pre>
+
+<p><code>applyLocal</code> must participate in the same physical transaction and
+datasource; it must not perform an uncoordinated external payment or use
+<code>REQUIRES_NEW</code>. A business failure must roll back both writes.
+Acknowledge the broker only after commit. PostgreSQL&#39;s conflict clause
+skips the specified duplicate without aborting the transaction;
+unrelated errors still fail. <a href="https://www.postgresql.org/docs/current/sql-insert.html">PostgreSQL
+INSERT</a>.</p>
+
+<p>Do not catch a JPA constraint violation and assume the surrounding
+transaction remains usable: it may be rollback-only and fail on commit.
+<a href="https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/tx-propagation.html">Spring
+propagation</a>.
+Define event-ID scope and payload consistency; keep dedupe records for
+the supported replay horizon. Test concurrent duplicates, failure after
+dedupe insertion, replay after commit, and unrelated constraint failures
+against the real database.</p>
+
+<hr>
+<h3 id="final-readiness-checklist">Final Readiness Checklist</h3>
+
+<ul>
+<li>~100 Q&amp;As covered across the course and Vols. 1–3; explain 20 of them
+aloud without notes</li>
+<li>Code LRU, rate limiter, odd/even, top-K, and the idempotent consumer
+in under 10 minutes each</li>
+<li>Rehearse 5 STAR stories and 3 system designs against a timer</li>
+</ul>
+
+<hr>

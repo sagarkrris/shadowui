@@ -1,0 +1,1431 @@
+<h2 id="part-11-decision-walkthroughs-for-the-full-practice-roadmap">Part 11 Decision walkthroughs for the full practice roadmap</h2>
+
+<p>Every roadmap item below has either a worked implementation elsewhere in
+the guide or a decision walkthrough here. Walkthrough-only entries
+intentionally focus on deriving a solution; they are not additional
+tested Java programs. Write the implementation yourself, then use the
+stated trace and boundary conditions to review it.</p>
+<h3 id="roadmap-coverage-index">Roadmap coverage index</h3>
+
+<table><thead>
+<tr>
+<th>Problem</th>
+<th>Solution and reasoning</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>1. Two Sum</td>
+<td><a href="#r1-two-sum">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>2. Subarray Sum Equals K</td>
+<td><a href="/senior-java-interview/part-9#solution-2-subarray-sum-equals-a-target">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>3. Longest Consecutive Sequence</td>
+<td><a href="#r3-longest-consecutive-sequence">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>4. Three Sum</td>
+<td><a href="#r4-three-sum">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>5. Container With Most Water</td>
+<td><a href="#r5-container-with-most-water">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>6. Trapping Rain Water</td>
+<td><a href="#r6-trapping-rain-water">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>7. Longest Substring Without Repeats</td>
+<td><a href="/senior-java-interview/part-1b#8-quick-algorithm-warm-ups">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>8. Minimum Window Substring</td>
+<td><a href="#r8-minimum-window-substring">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>9. Permutation in String</td>
+<td><a href="#r9-permutation-in-string">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>10. Lower Bound</td>
+<td><a href="/senior-java-interview/part-9#solution-1-lower-bound">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>11. Search Rotated Array</td>
+<td><a href="/senior-java-interview/part-6#4-search-in-a-rotated-sorted-array-o-log-n">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>12. Minimum Feasible Processing Speed</td>
+<td><a href="#r12-minimum-feasible-processing-speed">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>13. Merge Intervals</td>
+<td><a href="/senior-java-interview/part-5#4-merge-overlapping-intervals-o-n-log-n">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>14. Meeting Rooms II</td>
+<td><a href="#r14-meeting-rooms-ii">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>15. Insert Interval</td>
+<td><a href="#r15-insert-interval">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>16. Reverse List</td>
+<td><a href="#r16-reverse-linked-list">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>17. Detect Cycle</td>
+<td><a href="/senior-java-interview/part-1b#8-quick-algorithm-warm-ups">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>18. Merge K Sorted Lists</td>
+<td><a href="#r18-merge-k-sorted-lists">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>19. Valid Parentheses</td>
+<td><a href="/senior-java-interview/part-8#1-valid-parentheses-stack">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>20. Daily Temperatures</td>
+<td><a href="/senior-java-interview/part-9#solution-3-next-warmer-day">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>21. Largest Rectangle in Histogram</td>
+<td><a href="#r21-largest-rectangle-in-histogram">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>22. Level Order</td>
+<td><a href="/senior-java-interview/part-8#4-binary-tree-level-order-traversal-bfs">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>23. Lowest Common Ancestor</td>
+<td><a href="#r23-lowest-common-ancestor">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>24. Serialize and Deserialize a Tree</td>
+<td><a href="#r24-serialize-and-deserialize-a-tree">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>25. Top K Frequent</td>
+<td><a href="/senior-java-interview/part-4#3-top-k-frequent-elements-min-heap-o-n-log-k">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>26. Median of a Stream</td>
+<td><a href="/senior-java-interview/part-9#solution-8-running-median">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>27. Kth Largest</td>
+<td><a href="/senior-java-interview/part-6#5-find-the-k-th-largest-element-quickselect-idea-vs-heap">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>28. Number of Islands</td>
+<td><a href="/senior-java-interview/part-8#2-number-of-islands-dfs-o-rows-cols">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>29. Clone Graph</td>
+<td><a href="#r29-clone-graph">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>30. Course Schedule</td>
+<td><a href="/senior-java-interview/part-6#3-build-order-with-cycle-detection-kahn-s-topological-sort">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>31. Network Delay</td>
+<td><a href="/senior-java-interview/part-9#solution-4-dijkstra-shortest-paths">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>32. Minimum-Cost Grid Path</td>
+<td><a href="#r32-minimum-cost-grid-path">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>33. Redundant Connection</td>
+<td><a href="#r33-redundant-connection">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>34. Accounts Merge</td>
+<td><a href="#r34-accounts-merge">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>35. Combination Sum</td>
+<td><a href="/senior-java-interview/part-9#solution-7-combination-sum">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>36. Subsets With Duplicates</td>
+<td><a href="#r36-subsets-with-duplicates">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>37. Word Search</td>
+<td><a href="#r37-word-search">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>38. Coin Change</td>
+<td><a href="/senior-java-interview/part-8#3-coin-change-fewest-coins-dp-o-amount-coins">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>39. Edit Distance</td>
+<td><a href="/senior-java-interview/part-9#solution-6-edit-distance">Decision walkthrough</a></td>
+</tr>
+<tr>
+<td>40. Longest Increasing Subsequence</td>
+<td><a href="#r40-longest-increasing-subsequence">Decision walkthrough</a></td>
+</tr>
+</tbody></table>
+<h3 id="additional-algorithm-walkthroughs">Additional algorithm walkthroughs</h3>
+<h4 id="r1-two-sum">R1 Two Sum</h4>
+
+<p><strong>Derive and choose:</strong> enumerate pairs as an O(n²) baseline. For each
+current value x, the needed partner is target−x; a map of earlier values
+answers that lookup in expected O(1). Store indices because the result
+requests positions.</p>
+
+<p><strong>Why not others:</strong> sorting plus two pointers uses O(n log n) time and
+needs original indices; it is attractive if sorted input is already
+available or memory constraints favor that representation.</p>
+
+<p><strong>What if:</strong> insert x before lookup and a value can match itself.
+Duplicate values can still be a valid pair at different indices. Widen
+arithmetic if target−x can overflow. All-pairs output requires a
+different duplicate/output policy.</p>
+
+<p><strong>Trace/test and signal:</strong> <code>[3,3]</code>, target 6: first 3 is stored; second
+finds index zero. Test absent pair and one-element input. Expected O(n)
+time, O(n) space. Explain the “earlier indices only” invariant.</p>
+<h4 id="r3-longest-consecutive-sequence">R3 Longest Consecutive Sequence</h4>
+
+<p><strong>Derive and choose:</strong> use a set for membership, but grow a run only
+from values whose predecessor is absent. Otherwise the same long run is
+traversed repeatedly.</p>
+
+<p><strong>Why not others:</strong> sorting and scanning is a correct O(n log n)
+alternative with straightforward duplicate handling. A set gives
+expected O(n) work because each distinct element belongs to one expanded
+run.</p>
+
+<p><strong>What if:</strong> iterating duplicate input values as starts can repeat whole
+runs; iterate the set. Guard integer minimum/maximum when computing
+predecessor/successor, or store widened values. Sorting in place changes
+the input.</p>
+
+<p><strong>Trace/test and signal:</strong> <code>[100,4,200,1,3,2,2]</code> has run 1–4. Test
+empty, all duplicates and integer extremes. O(distinct values) space.
+Prove each distinct value is expanded at most once.</p>
+<h4 id="r4-three-sum">R4 Three Sum</h4>
+
+<p><strong>Derive and choose:</strong> sort, fix one value, and use two pointers for the
+remaining pair. Sorted order tells which pointer to move when the sum is
+too low or too high.</p>
+
+<p><strong>Why not others:</strong> three nested loops cost O(n³). Repeated hash-based
+pair search gives expected O(n²) too, but deduplicating value triplets
+is often less direct. Sorting plus pointers gives O(n²) scanning after
+sorting.</p>
+
+<p><strong>What if:</strong> skipping all duplicates before finding a pair can lose
+valid repeated-value triplets; skip repeated anchors and skip repeated
+pair values after processing a match. Use long for the sum. Clarify
+unique value triplets versus all index triples.</p>
+
+<p><strong>Trace/test and signal:</strong> <code>[-1,0,1,2,-1,-4]</code> yields two unique zero-sum
+triplets. Test <code>[0,0,0,0]</code>, fewer than three elements and extremes.
+Count output and sorting workspace. Explain both pointer elimination and
+duplicate policy.</p>
+<h4 id="r5-container-with-most-water">R5 Container With Most Water</h4>
+
+<p><strong>Derive and choose:</strong> area is width times the shorter boundary. Start
+at both ends; moving the taller boundary inward cannot improve area
+while the shorter boundary stays fixed, so discard the shorter one.</p>
+
+<p><strong>Why not others:</strong> testing every pair costs O(n²). A stack can
+represent some boundary problems but is unnecessary because the
+shorter-boundary argument directly eliminates candidates.</p>
+
+<p><strong>What if:</strong> moving the taller pointer lacks that proof and can miss the
+optimum. Negative heights violate the model. Widen width×height before
+multiplication; define fewer than two bars as zero area.</p>
+
+<p><strong>Trace/test and signal:</strong> heights <code>[1,8,6,2,5,4,8,3,7]</code> yield area 49.
+Test equal ends, all zeros and two bars. O(n) time, O(1) auxiliary
+space. State the elimination argument rather than simply naming two
+pointers.</p>
+<h4 id="r6-trapping-rain-water">R6 Trapping Rain Water</h4>
+
+<p><strong>Derive and choose:</strong> water above a bar is bounded by the smaller of
+the greatest heights to its left and right. Prefix/suffix maxima give an
+easy O(n)-space solution; two running maxima can reduce space to O(1).</p>
+
+<p><strong>Why not others:</strong> rescanning both sides for every bar costs O(n²). A
+monotonic stack is also O(n) and useful for explaining basin boundaries,
+but needs width calculations.</p>
+
+<p><strong>What if:</strong> in the two-pointer variant, process the side with the
+smaller known maximum because the other side already supplies a
+sufficient boundary. Confusing this with the container objective
+produces a wrong recurrence. Widths other than one require weighting
+accumulated water.</p>
+
+<p><strong>Trace/test and signal:</strong> <code>[3,0,2,0,4]</code> holds seven units. Test
+monotone input, a plateau and all zeros. O(n) time; use long for large
+totals. Explain why the chosen side&#39;s water is final before advancing.</p>
+<h4 id="r8-minimum-window-substring">R8 Minimum Window Substring</h4>
+
+<p><strong>Public practice reference:</strong> <a href="https://leetcode.com/problems/minimum-window-substring/description/">Minimum Window
+Substring</a>.</p>
+
+<p><strong>Derive and choose:</strong> maintain required multiplicities in a moving
+window. Expand until all required counts are satisfied; then shrink
+while still valid, recording the best range.</p>
+
+<p><strong>Why not others:</strong> examining every substring repeats character counts.
+Sorting destroys contiguity. A set loses repeated requirements, such as
+needing two <code>a</code> characters.</p>
+
+<p><strong>What if:</strong> updating the number of satisfied requirements on every
+occurrence instead of threshold crossings breaks duplicates. Define an
+empty-target policy; distinguish ASCII arrays from Unicode maps. Return
+a range first and create the result substring once.</p>
+
+<p><strong>Trace/test and signal:</strong> <code>ABAAC</code> with required <code>AAC</code> yields <code>AAC</code>.
+Test no match and repeated targets. Expected O(source length + target
+length) time and O(alphabet) counts. Explain why each pointer moves only
+forward and how validity changes at a boundary.</p>
+<h4 id="r9-permutation-in-string">R9 Permutation in String</h4>
+
+<p><strong>Derive and choose:</strong> a matching permutation has the same length and
+character counts as the pattern. Slide a fixed-width window, removing
+the outgoing character and adding the incoming one.</p>
+
+<p><strong>Why not others:</strong> generating all permutations is factorial work.
+Sorting every window repeats O(k log k) work; fixed-alphabet counts
+allow linear traversal.</p>
+
+<p><strong>What if:</strong> duplicates require counts, not membership. A mismatch
+counter must change only when a character&#39;s equality with the target
+count changes. If pattern length exceeds input length, fail immediately.
+Declare empty-pattern behavior.</p>
+
+<p><strong>Trace/test and signal:</strong> pattern <code>ab</code> in <code>eidbaooo</code> matches at <code>ba</code>;
+<code>aa</code> does not match a window with one a. O(n + k) time for fixed
+alphabet and O(alphabet) state. Explain the fixed-window invariant and
+test entry/exit of the same character.</p>
+<h4 id="r12-minimum-feasible-processing-speed">R12 Minimum Feasible Processing Speed</h4>
+
+<p><strong>Derive and choose:</strong> if speed v meets the deadline, every larger speed
+also does. Binary search this monotone feasibility predicate; calculate
+work time with ceiling division and stop early if the budget is
+exceeded.</p>
+
+<p><strong>Why not others:</strong> searching every speed is proportional to the numeric
+range. A greedy average ignores indivisible work units and per-item
+rounding.</p>
+
+<p><strong>What if:</strong> no speed is feasible when each nonempty work item needs at
+least one unit of time and the deadline is too short.
+<code>(pile + speed - 1)</code> can overflow; use long or division/remainder. An
+empty workload needs its own minimum-speed convention.</p>
+
+<p><strong>Trace/test and signal:</strong> piles <code>[3,6,7,11]</code> in eight hours need speed
+four. Test deadline equal to item count and one huge pile. O(n log M)
+time, O(1) space for maximum pile M. Prove monotonicity and state the
+feasible-bound invariant.</p>
+<h4 id="r14-meeting-rooms-ii">R14 Meeting Rooms II</h4>
+
+<p><strong>Derive and choose:</strong> when a meeting begins, reuse the room whose
+current meeting ends first if it is available; otherwise allocate
+another. A min-heap stores active room end times.</p>
+
+<p><strong>Why not others:</strong> comparing all pairs does not directly produce peak
+overlap efficiently. Sorting start/end event arrays and sweeping is
+equally valid, often simpler when only the count is needed; a heap can
+also retain room assignments.</p>
+
+<p><strong>What if:</strong> for half-open meetings, end time equal to a new start frees
+a room. Closed intervals need different tie handling. Zero-length events
+need an explicit policy. Reject reversed endpoints.</p>
+
+<p><strong>Trace/test and signal:</strong> <code>[0,30), [5,10), [15,20)</code> needs two rooms.
+Test simultaneous starts and touching meetings. O(n log n) time and O(n)
+worst-case state. Explain why the peak active count is a lower bound and
+is achievable.</p>
+<h4 id="r15-insert-interval">R15 Insert Interval</h4>
+
+<p><strong>Derive and choose:</strong> with sorted, nonoverlapping existing intervals,
+copy those entirely before the new one, merge the contiguous overlap
+block, then copy the rest.</p>
+
+<p><strong>Why not others:</strong> appending and sorting is correct but spends O(n log
+n) on an ordering guarantee already supplied. An interval tree is useful
+for many dynamic updates, not necessary for one insertion.</p>
+
+<p><strong>What if:</strong> unsorted or overlapping input invalidates the three-phase
+assumption; normalize first or use general merge. Decide
+touching-boundary semantics and whether returned intervals may alias
+input arrays.</p>
+
+<p><strong>Trace/test and signal:</strong> insert <code>[2,5]</code> into <code>[1,3], [6,9]</code> to get
+<code>[1,5], [6,9]</code> under closed semantics. Test before all, after all,
+containing all and empty input. O(n) time plus O(n) output. State why
+overlaps form one contiguous block.</p>
+<h4 id="r16-reverse-linked-list">R16 Reverse Linked List</h4>
+
+<p><strong>Derive and choose:</strong> maintain a reversed prefix and an untouched
+suffix. Save the next node before redirecting the current node&#39;s next
+pointer; then advance both boundaries.</p>
+
+<p><strong>Why not others:</strong> recursion is concise but consumes O(n) call-stack
+space. An explicit stack also uses O(n) space. In-place iteration uses
+O(1) auxiliary state when mutation is permitted.</p>
+
+<p><strong>What if:</strong> changing next before saving it loses the suffix. Shared
+external references observe the reversed links; copy nodes if
+preservation is required. A cyclic input violates the ordinary
+terminating traversal contract.</p>
+
+<p><strong>Trace/test and signal:</strong> <code>1→2→3</code> becomes <code>3→2→1</code>; the former head must
+end at null. Test empty, singleton and two nodes. O(n) time. Explain the
+prefix/suffix invariant after each pointer update.</p>
+<h4 id="r18-merge-k-sorted-lists">R18 Merge K Sorted Lists</h4>
+
+<p><strong>Derive and choose:</strong> the next globally smallest value must be among
+the current heads of nonempty lists. Keep those heads in a min-heap;
+after removal, add that node&#39;s successor.</p>
+
+<p><strong>Why not others:</strong> repeatedly scanning k heads costs O(Nk). Balanced
+pairwise merging also gives O(N log k) time and avoids heap bookkeeping;
+concatenating and sorting ignores existing order.</p>
+
+<p><strong>What if:</strong> disjoint acyclic input lists are assumed when reusing
+nodes. Shared tails can cause duplicated output or cycles under careless
+rewiring. Copy nodes when ownership or aliasing requires it. Equal
+values need only stable tie-breaking if the contract requests stability.</p>
+
+<p><strong>Trace/test and signal:</strong> merge <code>[1,4]</code>, <code>[1,3]</code>, and empty into
+<code>[1,1,3,4]</code>. O(N log(k+1)) time, O(k) frontier, plus output if copied.
+Test many empty lists and one very long list. Prove why no hidden
+non-head can be smaller.</p>
+<h4 id="r21-largest-rectangle-in-histogram">R21 Largest Rectangle in Histogram</h4>
+
+<p><strong>Derive and choose:</strong> each bar can define a rectangle extending until a
+smaller bar blocks it on either side. An increasing-height stack
+discovers the right boundary when a smaller incoming height arrives.</p>
+
+<p><strong>Why not others:</strong> expanding from every bar costs O(n²). Precomputing
+previous/next smaller boundaries is another O(n) stack formulation. A
+single-pass stack computes areas as boundaries become known.</p>
+
+<p><strong>What if:</strong> after popping index p, width is currentIndex minus the new
+stack top minus one; if empty, it extends to zero. Equal-height handling
+must be consistent. Add a final zero sentinel or drain the stack. Use
+long for area.</p>
+
+<p><strong>Trace/test and signal:</strong> <code>[2,1,5,6,2,3]</code> has area ten from heights
+5/6. Test increasing, decreasing, all equal and zero bars. O(n) time and
+stack space. Explain both boundaries and why the popped bar cannot
+extend farther.</p>
+<h4 id="r23-lowest-common-ancestor">R23 Lowest Common Ancestor</h4>
+
+<p><strong>Derive and choose:</strong> in a general binary tree, ask each subtree
+whether it contains a target. If targets are found on different sides,
+the current node is their lowest meeting point; otherwise propagate the
+found node upward.</p>
+
+<p><strong>Why not others:</strong> ancestor sets or parent-pointer paths are simple
+when parent links exist. A BST can use ordering to choose one branch,
+but that proof is invalid for an arbitrary binary tree.</p>
+
+<p><strong>What if:</strong> the usual recursion assumes both targets exist; otherwise
+it may return the one found as if it were an LCA. Track presence or
+validate membership when absence is allowed. Compare node identity, not
+only duplicated values.</p>
+
+<p><strong>Trace/test and signal:</strong> targets in different root branches yield
+root; a target that is ancestor of the other yields itself. Test same
+node, missing node and skewed tree. O(n) time and O(height) stack. State
+the meaning of the recursive return value and membership assumptions.</p>
+<h4 id="r24-serialize-and-deserialize-a-tree">R24 Serialize and Deserialize a Tree</h4>
+
+<p><strong>Derive and choose:</strong> values alone do not describe shape. Preorder
+traversal with explicit null markers provides a parseable recursive
+description: node, left subtree, right subtree.</p>
+
+<p><strong>Why not others:</strong> inorder values alone are ambiguous; level order plus
+null markers is also valid and avoids recursive traversal. JSON objects
+may be simpler for an application, with a defined schema and payload
+budget.</p>
+
+<p><strong>What if:</strong> omitting null markers makes a left-only child and
+right-only child indistinguishable. Values containing delimiters need
+escaping or a length-prefixed encoding. Deep trees, huge payloads and
+malformed input need depth/size/token limits.</p>
+
+<p><strong>Trace/test and signal:</strong> tree 1 with left child 2 and no right child
+can encode as <code>1,2,#,#,#</code>. Test <code>decode(encode(tree))</code> for shape and
+values, null root and negative values. O(n) nodes plus encoded-character
+processing; O(height) recursive stack. Explain framing and validate
+complete token consumption.</p>
+<h4 id="r29-clone-graph">R29 Clone Graph</h4>
+
+<p><strong>Derive and choose:</strong> preserve graph topology while creating new
+identities. On first seeing a node, allocate and register its clone
+before exploring neighbors; then reuse the mapping for every edge.</p>
+
+<p><strong>Why not others:</strong> recursively copying without a visited map loops on
+cycles and duplicates shared neighbors. BFS and DFS are both O(V + E);
+iterative BFS avoids deep call-stack limits.</p>
+
+<p><strong>What if:</strong> duplicate node labels rule out a value-keyed map.
+Self-loops must point to the clone itself. A graph reachable from one
+root excludes disconnected components unless they are supplied as
+additional roots.</p>
+
+<p><strong>Trace/test and signal:</strong> A↔B clones into new A′↔B′ with no edges to
+originals. Test self-loop, repeated edges, shared neighbors and null
+root. O(V + E) output and O(V) traversal/mapping state. State the
+one-original-to-one-clone invariant.</p>
+<h4 id="r32-minimum-cost-grid-path">R32 Minimum-Cost Grid Path</h4>
+
+<p><strong>Derive and choose:</strong> define vertices as cells and edges as allowed
+moves. If arbitrary moves have nonnegative costs, use Dijkstra from the
+start; define whether cost belongs to entering a cell or traversing an
+edge.</p>
+
+<p><strong>Why not others:</strong> BFS only minimizes the number of equal-cost moves.
+If movement is restricted to right/down, the graph is acyclic and a
+simpler DP gives O(rows × columns) time. For zero/one edge costs, 0–1
+BFS is another specialized choice.</p>
+
+<p><strong>What if:</strong> negative moves break Dijkstra&#39;s proof; diagonal moves
+change connectivity. A minimum-total-cost path and a path minimizing its
+largest edge are different objectives and require different relaxation
+functions.</p>
+
+<p><strong>Trace/test and signal:</strong> in a 2×2 grid with entry costs
+<code>[[0,100],[1,1]]</code>, right/down total cost is minimized by going down then
+right. Test unreachable cells and one-cell grids. For ordinary
+four-neighbor nonnegative costs, heap-based work is O(RC log(RC)) with
+O(RC) state. Derive the graph and objective before naming an algorithm.</p>
+<h4 id="r33-redundant-connection">R33 Redundant Connection</h4>
+
+<p><strong>Derive and choose:</strong> process undirected edges incrementally; if both
+endpoints already have the same representative, adding the edge creates
+a cycle. Use the disjoint-set implementation in Part 9.</p>
+
+<p><strong>Why not others:</strong> DFS reachability before each edge works but repeats
+traversal. One DFS is appropriate for finding cycles in a static graph,
+whereas union-find matches incremental connectivity.</p>
+
+<p><strong>What if:</strong> a directed graph requires a different cycle criterion.
+Parallel edges and self-edges may themselves be cycles under the chosen
+graph definition. “First redundant edge” and “last removable edge” can
+require different output handling.</p>
+
+<p><strong>Trace/test and signal:</strong> edges 1–2, 2–3, 1–3 flag the third edge.
+Initialization is O(V); processing is O(E α(V)) amortized and O(V)
+space. Explain what union returning false means, and match it to the
+exact requested edge.</p>
+<h4 id="r34-accounts-merge">R34 Accounts Merge</h4>
+
+<p><strong>Derive and choose:</strong> shared email identity connects account records
+transitively. Map each email to a representative account and union
+accounts sharing an email; then group and sort emails by final root.</p>
+
+<p><strong>Why not others:</strong> a graph of email/account relationships plus DFS
+works too. Comparing every pair of accounts repeats expensive
+intersections. Equal display names alone are not evidence of shared
+identity.</p>
+
+<p><strong>What if:</strong> duplicate emails in one account must not duplicate output.
+Conflicting names within one connected group need a policy rather than
+arbitrary selection. Accounts without emails need explicit treatment.
+Never perform real identity merging from this toy rule without a domain
+contract.</p>
+
+<p><strong>Trace/test and signal:</strong> one account shares x with a second, which
+shares y with a third; all three merge even without direct overlap
+between first and third. Expected union work is near-linear in email
+occurrences plus output sorting; space is proportional to accounts and
+distinct emails. Explain the equivalence relation and transitivity.</p>
+<h4 id="r36-subsets-with-duplicates">R36 Subsets With Duplicates</h4>
+
+<p><strong>Derive and choose:</strong> enumerate include/skip choices, but ensure equal
+values do not start the same branch twice. Sort and skip an equal
+candidate only when it is a duplicate sibling at the current recursion
+depth.</p>
+
+<p><strong>Why not others:</strong> generating every index subset then deduplicating
+outputs wastes work and requires canonical keys. Counting multiplicities
+and choosing 0..count copies of each value is an equally sound
+alternative.</p>
+
+<p><strong>What if:</strong> skipping every repeated value globally loses valid subsets
+containing two copies. Store a copy of the current path, not the mutable
+path itself. Sorting mutates input unless copied first.</p>
+
+<p><strong>Trace/test and signal:</strong> <code>[1,2,2]</code> has six unique subsets including
+<code>[2,2]</code>. Test empty and all-equal input. Worst-case O(n 2ⁿ) output work
+and O(n) auxiliary path/recursion space. Explain the difference between
+duplicate sibling choices and legitimate repeated selections.</p>
+<h4 id="r37-word-search">R37 Word Search</h4>
+
+<p><strong>Derive and choose:</strong> try each matching start cell; recursively match
+the next character through permitted neighbors while marking cells used
+on the current path. Undo the mark when that branch returns.</p>
+
+<p><strong>Why not others:</strong> a global visited set rejects valid later paths; this
+constraint is path-specific. BFS that tracks entire used-cell sets can
+use large memory. A trie is useful when searching for many words
+together, not necessary for one word.</p>
+
+<p><strong>What if:</strong> reusing a cell is forbidden in the usual contract. If
+diagonal moves are allowed, branching and answers change. An in-place
+sentinel must not collide with valid input; restore it on every exit
+path.</p>
+
+<p><strong>Trace/test and signal:</strong> board <code>AB</code> cannot form <code>ABA</code> without reuse.
+Test repeated letters, word longer than cell count and failed branches
+followed by success. A simple upper bound is O(RC × 4ᴸ), auxiliary O(L)
+path depth, excluding an optional visited grid. Explain
+choose/explore/unchoose and preservation of input.</p>
+<h4 id="r40-longest-increasing-subsequence">R40 Longest Increasing Subsequence</h4>
+
+<p><strong>Derive and choose:</strong> an O(n²) DP computes the best subsequence ending
+at each index. For length only, maintain the smallest possible tail of
+each length; binary-search the first tail at least as large as the
+current value and replace it.</p>
+
+<p><strong>Why not others:</strong> sorting the input loses original order. Enumerating
+subsequences is exponential. The tails representation gives O(n log n)
+processing and O(n) state but does not by itself store an actual valid
+final subsequence.</p>
+
+<p><strong>What if:</strong> strictly increasing requires lower bound; nondecreasing
+uses upper bound. Reconstructing indices needs predecessor/position
+tracking. Replacing a tail improves future extension options without
+claiming the tails array is the selected subsequence.</p>
+
+<p><strong>Trace/test and signal:</strong> <code>[3,1,2]</code> changes tails <code>[3]</code>→<code>[1]</code>→<code>[1,2]</code>,
+length two. Test duplicates, decreasing input and empty input. Explain
+why a smaller tail of equal length dominates a larger one.</p>
+<h3 id="machine-coding-decision-walkthroughs">Machine coding decision walkthroughs</h3>
+<h4 id="mc1-bounded-lru-cache">MC1 Bounded LRU cache</h4>
+
+<p>Use the LRU implementation and decision walkthrough in Module 8.
+<strong>Derive:</strong> combine direct lookup and recency order. <strong>Alternative:</strong>
+approximate eviction may improve concurrency when exact global recency
+is unnecessary. <strong>What if:</strong> TTL introduces a second expiry rule;
+synchronization must cover accesses that move entries. <strong>Test:</strong> access
+changes eviction, duplicate put replaces, and simultaneous operations
+preserve size/structure. A strong answer states whether nulls, TTL and
+loading are in scope before designing the API.</p>
+<h4 id="mc2-rate-limiter-with-an-injected-ticker">MC2 Rate limiter with an injected ticker</h4>
+
+<p>Use the token-bucket and sliding-window walkthroughs to select semantics
+first. <strong>Derive:</strong> burst credit favors a bucket; exact recent-count
+limits favor timestamp state. <strong>Alternative:</strong> a fixed window is cheaper
+but has a boundary-burst trade-off. <strong>What if:</strong> replacing real time
+with a ticker makes exact expiry tests deterministic; separate idle-key
+eviction from active-counter synchronization. <strong>Test:</strong> limits, exact
+boundaries, rollover, concurrent admission and key-cap rejection. A
+strong answer defines whether the method rejects, waits or reserves
+future capacity.</p>
+<h4 id="mc3-in-memory-task-scheduler">MC3 In-memory task scheduler</h4>
+
+<p><strong>Derive and choose:</strong> place due times in a priority queue, wait until
+the earliest task is due and dispatch through a bounded executor. For
+ordinary production use, first consider <code>ScheduledExecutorService</code>;
+implementing the mechanism is the interview exercise.</p>
+
+<p><strong>Why not others:</strong> periodically scanning all tasks wastes O(number of
+tasks) work per tick and adds scheduling jitter. A timing wheel may suit
+huge numbers of coarse timers but adds complexity.</p>
+
+<p><strong>What if:</strong> cancellation races with dispatch, so define a state
+transition such as scheduled→running or canceled under one
+synchronization policy. One coordinator&#39;s exception must not stop future
+jobs. Wall-clock schedules and elapsed delays need different clock
+rules; in-memory work is lost on restart.</p>
+
+<p><strong>Trace/test and signal:</strong> enqueue a late job, then an earlier job; the
+waiter must wake and revise its deadline. Test cancel-before-dispatch,
+shutdown and executor rejection. Heap updates are O(log n); waiting
+tasks use O(n) state. Explain task ownership and precisely when
+cancellation stops being guaranteed.</p>
+<h4 id="mc4-inventory-reservation-service">MC4 Inventory reservation service</h4>
+
+<p><strong>Derive and choose:</strong> available stock must never become negative, so
+check-and-reserve is one atomic business operation. Model reservation
+IDs and states so repeated reserve/release calls have deliberate
+semantics.</p>
+
+<p><strong>Why not others:</strong> a thread-safe map alone does not make a
+read-check-write sequence atomic. A global lock is simple; per-product
+locks improve unrelated-product concurrency but make multi-product
+acquisition ordering necessary. A database conditional update can
+enforce an invariant across service instances.</p>
+
+<p><strong>What if:</strong> expiry and explicit release can race; only one successful
+state transition returns stock. A retried reservation with changed
+quantity should not silently reuse an old result. Multi-product requests
+need all-or-nothing or clearly documented partial behavior.</p>
+
+<p><strong>Trace/test and signal:</strong> one unit and two simultaneous buyers permits
+at most one reservation. Test duplicate release, expired reservation,
+clock boundary and rollback. Explain the state machine and atomic
+boundary before introducing design patterns.</p>
+<h3 id="explain-the-eight-output-puzzles">Explain the eight output puzzles</h3>
+
+<table><thead>
+<tr>
+<th>Puzzle</th>
+<th>How to derive the answer</th>
+<th>What changes and how to test it</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>Boxed integer identity</td>
+<td><code>==</code> compares references; small constant boxing has specified identity guarantees</td>
+<td>Values outside the guaranteed range may be cached too; do not infer numeric equality from reference equality. Test <code>equals</code> and primitive unboxing separately</td>
+</tr>
+<tr>
+<td>Literal concatenation</td>
+<td>Constant expressions can be folded and interned; <code>new String</code> creates a distinct object</td>
+<td>A runtime expression with nonconstant input does not have the same identity guarantee. Compare values with <code>equals</code></td>
+</tr>
+<tr>
+<td>Return in finally</td>
+<td>The abrupt completion of finally replaces an earlier return/throw</td>
+<td>Remove that return to preserve the original outcome. Test a body exception as well as a return</td>
+</tr>
+<tr>
+<td>List modification</td>
+<td><code>Arrays.asList</code> is fixed-size; <code>List.of</code> is unmodifiable</td>
+<td><code>set</code> works for the former and changes its backing array, but not for the latter. A new ArrayList gives a mutable copy</td>
+</tr>
+<tr>
+<td>Mutable hash key</td>
+<td>Lookup uses equality/hash-relevant state that should remain stable while stored</td>
+<td>A mutation may break lookup; a collision can make a particular experiment still appear to work. Use immutable keys rather than relying on observed output</td>
+</tr>
+<tr>
+<td>Removing during iteration</td>
+<td>The iterator and collection can detect inconsistent structural modification</td>
+<td>Fail-fast detection is not guaranteed on every path. Use iterator removal or a supported bulk operation and test skipped elements, not only exceptions</td>
+</tr>
+<tr>
+<td>Floating-point decimal arithmetic</td>
+<td>Binary representation approximates many decimal fractions</td>
+<td><code>BigDecimal</code> from decimal text gives decimal semantics; specify scale and rounding instead of comparing with an arbitrary epsilon for money</td>
+</tr>
+<tr>
+<td>Initialization order</td>
+<td>Determine whether an operation triggers initialization, then apply superclass/subclass rules</td>
+<td>Compile-time constants and reflective loading options change the trigger. Compare loading with initialization explicitly</td>
+</tr>
+</tbody></table>
+
+<p>For these puzzles, the strong signal is the rule and a counterexample to
+an overgeneralization. Memorizing one observed output is weaker than
+explaining why another valid program or runtime setting changes it.</p>
+<h2 id="sde-3-terminology-and-follow-up-audit">SDE-3 Terminology and Follow-up Audit</h2>
+
+<p>The guide should never require you to memorize a term you cannot
+explain. Use the following as a <strong>depth map</strong>: if one of these terms
+appears in an answer, you should be able to give the one-sentence
+explanation first, then go deeper only if the interviewer asks.</p>
+<h3 id="module-1-core-java-concurrency-and-jvm">Module 1 — Core Java, Concurrency and JVM</h3>
+<h4 id="cas-compare-and-set"><code>CAS</code> — Compare-And-Set</h4>
+
+<p><strong>Simple meaning:</strong> an atomic operation that says, “change this value
+from A to B only if it is still A.”</p>
+
+<p>Conceptually:</p>
+
+<pre><code class="text">read current value
+      ↓
+is it still expected?
+   yes ↓       no → retry/fail
+update value
+</code></pre>
+
+<p>Atomics such as <code>AtomicInteger</code> use CAS-based operations. CAS avoids a
+traditional mutual-exclusion lock for the individual update, but it does
+<strong>not</strong> make an arbitrary multi-variable invariant automatically safe.</p>
+
+<p><strong>Follow-up:</strong> CAS can suffer from retries under contention. That is one
+reason <code>LongAdder</code> can outperform a single atomic counter for highly
+contended updates when an exact instantaneous value is not required.</p>
+
+<hr>
+<h4 id="happens-before"><code>happens-before</code></h4>
+
+<p><strong>Simple meaning:</strong> a Java Memory Model ordering/visibility
+relationship. If action A happens-before action B, the effects that are
+required to be visible through that relationship are visible to B.</p>
+
+<p>Do not describe it as “A literally executes earlier in wall-clock time.”
+It is a <strong>memory-model guarantee</strong>, not simply a timestamp relationship.</p>
+
+<p>Important examples:</p>
+
+<pre><code class="text">unlock(monitor) → later lock(same monitor)
+volatile write → later volatile read of same variable
+Thread.start() → actions in started thread
+actions in thread → successful join() return
+</code></pre>
+
+<p><strong>Follow-up:</strong> happens-before solves visibility/order guarantees; it
+does not make a compound operation such as <code>count++</code> atomic.</p>
+
+<hr>
+<h4 id="jit"><code>JIT</code></h4>
+
+<p><strong>Simple meaning:</strong> the Just-In-Time compiler turns frequently executed
+bytecode into optimized native machine code while the application is
+running.</p>
+
+<p>A useful mental model:</p>
+
+<pre><code class="text">Java source
+   ↓ javac
+bytecode
+   ↓ JVM
+interpret/profile
+   ↓
+JIT optimization
+   ↓
+native machine code
+</code></pre>
+
+<p>The JVM can optimize based on runtime observations. Therefore a
+microbenchmark that ignores warm-up can be misleading.</p>
+
+<hr>
+<h4 id="escape-analysis">Escape analysis</h4>
+
+<p><strong>Simple meaning:</strong> the JVM analyzes whether an object or value can
+escape a method/thread. If it proves useful non-escaping properties, the
+JIT may optimize allocation and synchronization.</p>
+
+<p>Do not promise:</p>
+
+<blockquote>
+<p>“Escape analysis always puts objects on the stack.”</p>
+</blockquote>
+
+<p>That is an implementation optimization, not a Java language guarantee.</p>
+
+<hr>
+<h4 id="metaspace">Metaspace</h4>
+
+<p><strong>Simple meaning:</strong> JVM native memory used for class metadata. It is
+outside the Java heap.</p>
+
+<p>Therefore:</p>
+
+<pre><code class="text">container memory
+ ≠
+-Xmx
+</code></pre>
+
+<p>A Java process also uses memory for thread stacks, metaspace/class
+metadata, direct buffers, code cache, GC structures and native
+libraries.</p>
+
+<p><strong>Production follow-up:</strong> container OOM can happen even when heap usage
+appears below <code>-Xmx</code>.</p>
+
+<hr>
+<h4 id="class-loader">Class loader</h4>
+
+<p><strong>Simple meaning:</strong> a class loader is responsible for locating/loading
+class definitions into the JVM.</p>
+
+<p>A useful senior-level point is that class identity is associated with
+both the <strong>class name and the defining class loader</strong>. Two classes with
+the same fully qualified name loaded by different class loaders can be
+different runtime types.</p>
+
+<p>This is why class-loader leaks can matter in application servers, plugin
+systems and hot-reload environments.</p>
+
+<hr>
+<h4 id="thread-pool-queue-and-back-pressure">Thread pool, queue and back-pressure</h4>
+
+<p>A thread pool is not just “N threads.”</p>
+
+<p>The important execution sequence is:</p>
+
+<pre><code class="text">task
+ ↓
+core threads available?
+ ↓ no
+queue
+ ↓ queue full?
+ ↓ yes
+create thread up to max
+ ↓ max reached?
+ ↓ yes
+rejection policy
+</code></pre>
+
+<p><strong>Back-pressure</strong> means slowing/rejecting producers when downstream
+capacity is exhausted instead of allowing unlimited work to accumulate.</p>
+
+<p>A bounded queue plus a deliberate rejection policy is therefore a
+capacity-protection mechanism.</p>
+
+<hr>
+<h4 id="bulkhead">Bulkhead</h4>
+
+<p>A <strong>bulkhead</strong> isolates resources so one overloaded dependency or
+workload cannot consume all capacity.</p>
+
+<p>Example:</p>
+
+<pre><code class="text">Payment calls → pool A
+Search calls  → pool B
+Email calls   → pool C
+</code></pre>
+
+<p>If email becomes slow, it should not consume every thread needed by
+payments.</p>
+
+<p>This is the same principle as watertight compartments in a ship.</p>
+
+<hr>
+<h4 id="virtual-threads-and-pinning">Virtual threads and pinning</h4>
+
+<p>A <strong>virtual thread</strong> is a lightweight JVM-managed thread designed to
+make high-concurrency blocking-style code practical.</p>
+
+<p>It does <strong>not</strong>:</p>
+
+<ul>
+<li>make CPU work faster;</li>
+<li>increase database connection capacity;</li>
+<li>remove the need to bound scarce resources.</li>
+</ul>
+
+<p><strong>Pinning</strong> means a virtual thread can be prevented from unmounting from
+its carrier while performing certain operations, historically including
+some monitor-based blocking scenarios on older JDKs. Always answer this
+with the target JDK in mind; do not blindly apply old JDK 21 guidance to
+newer JDKs.</p>
+
+<hr>
+<h3 id="module-3-jpa-hibernate">Module 3 — JPA / Hibernate</h3>
+<h4 id="persistence-context">Persistence context</h4>
+
+<p>Think of the JPA persistence context as a managed set of entity
+instances associated with a unit of work.</p>
+
+<p>Conceptually:</p>
+
+<pre><code class="text">database row
+    ↕
+managed entity
+    ↕
+persistence context
+</code></pre>
+
+<p>Within the same persistence context, Hibernate can track entity identity
+and changes.</p>
+<h4 id="dirty-checking">Dirty checking</h4>
+
+<p><strong>Dirty checking</strong> means Hibernate detects changes made to managed
+entities and can generate SQL updates when the persistence context is
+flushed.</p>
+
+<p>Example:</p>
+
+<pre><code class="java">order.setStatus(PAID);
+</code></pre>
+
+<p>You do not necessarily call an explicit <code>UPDATE</code>. Hibernate tracks the
+managed entity and can issue the update during flush/commit.</p>
+
+<p><strong>Follow-up:</strong> dirty checking applies to managed entities; a
+detached/transient object is not automatically tracked in the same way.</p>
+<h4 id="n-1">N+1</h4>
+
+<p><strong>N+1</strong> means one query loads N parent records and then additional
+queries load related data individually:</p>
+
+<pre><code class="text">1 query for parents
++
+N queries for children
+=
+N+1 database round-trips
+</code></pre>
+
+<p>The fix depends on the access pattern: fetch join, entity graph, batch
+fetching, projection, or an explicit query can all be appropriate.
+“Always use eager loading” is not a good solution.</p>
+<h4 id="optimistic-locking">Optimistic locking</h4>
+
+<p>Optimistic locking assumes conflicts are relatively uncommon and detects
+them when updating.</p>
+
+<p>Typical JPA form:</p>
+
+<pre><code class="java">@Version
+private long version;
+</code></pre>
+
+<p>Two transactions read version 5. One commits and changes it to 6. The
+other later tries to update version 5 and can fail rather than silently
+overwrite the first change.</p>
+<h4 id="pessimistic-locking">Pessimistic locking</h4>
+
+<p>Pessimistic locking asks the database to lock the relevant rows while
+the transaction is working with them.</p>
+
+<p>Use it when the concurrency contract genuinely requires database-level
+locking and the expected contention justifies the cost.</p>
+
+<p><strong>Follow-up:</strong> locks can increase blocking and deadlock risk. Do not
+present pessimistic locking as automatically “safer.”</p>
+<h4 id="isolation-level">Isolation level</h4>
+
+<p>An isolation level defines which concurrent transaction effects a
+transaction is allowed to observe.</p>
+
+<p>When answering, separate:</p>
+
+<pre><code class="text">database isolation guarantees
+vs
+application-level locking
+vs
+optimistic version checks
+</code></pre>
+
+<p>Do not claim that <code>@Transactional</code> by itself gives serializable
+behavior.</p>
+
+<hr>
+<h3 id="module-4-microservices-and-distributed-systems">Module 4 — Microservices and distributed systems</h3>
+<h4 id="circuit-breaker">Circuit breaker</h4>
+
+<p>A <strong>circuit breaker</strong> prevents repeated calls to a failing dependency
+from consuming local resources indefinitely.</p>
+
+<p>Typical states:</p>
+
+<pre><code class="text">CLOSED
+  ↓ failures
+OPEN
+  ↓ after recovery delay
+HALF_OPEN
+  ↓ probe succeeds
+CLOSED
+</code></pre>
+
+<p>A circuit breaker is not a substitute for timeouts. A call should have a
+bounded deadline before the circuit breaker even has a chance to help.</p>
+<h4 id="saga">Saga</h4>
+
+<p>A <strong>saga</strong> coordinates a distributed business transaction as a sequence
+of local transactions.</p>
+
+<p>Example:</p>
+
+<pre><code class="text">Create order
+   ↓
+Reserve inventory
+   ↓
+Charge payment
+</code></pre>
+
+<p>If payment fails, the system may execute a compensating action such as
+releasing inventory.</p>
+
+<p>A saga is not the same thing as a database transaction. It trades
+atomicity for a workflow with explicit compensation and consistency
+semantics.</p>
+<h4 id="outbox-pattern">Outbox pattern</h4>
+
+<p>The <strong>outbox pattern</strong> solves the problem of atomically updating a
+database and publishing an event.</p>
+
+<p>Instead of:</p>
+
+<pre><code class="text">DB commit
+   ↓
+publish Kafka event
+</code></pre>
+
+<p>where the two operations can disagree, write the business change and an
+outbox record in the <strong>same database transaction</strong>:</p>
+
+<pre><code class="text">transaction:
+  update business data
+  insert outbox event
+commit
+</code></pre>
+
+<p>A separate publisher then sends the outbox event.</p>
+
+<p><strong>Follow-up:</strong> this usually gives at-least-once delivery, so consumers
+still need idempotency.</p>
+<h4 id="idempotency">Idempotency</h4>
+
+<p>An operation is <strong>idempotent</strong> when repeating the same logical request
+produces the same intended final effect.</p>
+
+<p>For payments, for example:</p>
+
+<pre><code class="text">POST /payments
+Idempotency-Key: abc123
+</code></pre>
+
+<p>A retry with the same key should not charge the customer twice.</p>
+
+<p>Idempotency is especially important when timeouts make it unclear
+whether the server completed the original request.</p>
+<h4 id="at-least-once-vs-exactly-once">At-least-once vs exactly-once</h4>
+
+<p><strong>At-least-once:</strong> a message should not be lost, but duplicates can
+occur.</p>
+
+<p><strong>Exactly-once:</strong> the system attempts to make the processing effect
+occur exactly once under a defined scope and set of guarantees. Do not
+casually equate Kafka&#39;s exactly-once processing semantics with “the
+external database/business side effect can never happen twice.”</p>
+
+<p>For interviews, state the boundary of the guarantee.</p>
+<h4 id="eventual-consistency">Eventual consistency</h4>
+
+<p><strong>Eventual consistency</strong> means replicas or services may temporarily
+disagree, but under the model&#39;s assumptions they converge if updates
+stop.</p>
+
+<p>Do not equate eventual consistency with “random stale data.” The system
+still needs a defined convergence and conflict-resolution model.</p>
+
+<hr>
+<h3 id="kafka-terminology-you-should-be-able-to-explain">Kafka — terminology you should be able to explain</h3>
+<h4 id="topic-partition-and-consumer-group">Topic, partition and consumer group</h4>
+
+<p>A <strong>topic</strong> is a logical stream of records.</p>
+
+<p>A <strong>partition</strong> is an ordered append-only sequence within that topic.</p>
+
+<p>A <strong>consumer group</strong> is a set of consumers cooperating to process
+partitions. Within one consumer group, a partition is normally assigned
+to one consumer at a time.</p>
+
+<p>Therefore:</p>
+
+<pre><code class="text">topic
+ ├── partition 0 → consumer A
+ ├── partition 1 → consumer B
+ └── partition 2 → consumer C
+</code></pre>
+
+<p>Partition count is therefore a major scalability constraint for parallel
+consumption.</p>
+<h4 id="rebalance">Rebalance</h4>
+
+<p>A <strong>rebalance</strong> redistributes partition ownership among consumers in a
+consumer group.</p>
+
+<p>It can happen when consumers join/leave or when group membership
+changes.</p>
+
+<p>A rebalance is not free: it can temporarily affect processing and should
+be considered in latency and throughput design.</p>
+<h4 id="isr">ISR</h4>
+
+<p>In Kafka, <strong>ISR</strong> means <em>in-sync replicas</em>. These are replicas
+considered sufficiently caught up to the leader under Kafka&#39;s
+replication rules.</p>
+
+<p>When discussing durability, distinguish:</p>
+
+<pre><code class="text">replication factor
+vs
+ISR
+vs
+acks
+vs
+min.insync.replicas
+</code></pre>
+
+<p>Do not collapse all four into “Kafka replication.”</p>
+<h4 id="poison-message">Poison message</h4>
+
+<p>A <strong>poison message</strong> is a message that repeatedly fails processing.</p>
+
+<p>If the consumer continually retries it without progress, it can block
+useful processing.</p>
+
+<p>Typical strategies include:</p>
+
+<pre><code class="text">bounded retries
+dead-letter topic/queue
+failure classification
+alerting
+manual replay
+</code></pre>
+
+<hr>
+<h3 id="security-terminology-you-should-be-able-to-explain">Security — terminology you should be able to explain</h3>
+<h4 id="jwt">JWT</h4>
+
+<p>A JWT is a signed token containing claims.</p>
+
+<p>Important distinction:</p>
+
+<blockquote>
+<p>A JWT is normally <strong>encoded and signed</strong>, not encrypted merely because
+it is a JWT.</p>
+</blockquote>
+
+<p>Therefore sensitive secrets should not be placed in ordinary JWT claims.</p>
+<h4 id="jwks">JWKS</h4>
+
+<p><strong>JWKS</strong> is a JSON Web Key Set: a published set of public keys that a
+resource server can use to validate signed tokens.</p>
+
+<p>Mental model:</p>
+
+<pre><code class="text">Issuer
+  ↓ publishes
+JWKS public keys
+  ↓
+Resource server validates JWT signature
+</code></pre>
+<h4 id="oauth2-vs-oidc-vs-pkce">OAuth2 vs OIDC vs PKCE</h4>
+
+<ul>
+<li><strong>OAuth 2.0</strong> — authorization/delegation framework.</li>
+<li><strong>OIDC</strong> — authentication layer built on OAuth 2.0.</li>
+<li><strong>PKCE</strong> — protects authorization-code flows against code interception
+by binding the authorization request to a verifier held by the client.</li>
+</ul>
+
+<p>A common interview mistake is saying:</p>
+
+<blockquote>
+<p>“OAuth2 is authentication.”</p>
+</blockquote>
+
+<p>It is primarily an authorization framework; OIDC adds standardized
+authentication semantics.</p>
+<h4 id="cors-vs-csrf">CORS vs CSRF</h4>
+
+<p><strong>CORS</strong> controls whether browser JavaScript from one origin may access
+resources from another origin.</p>
+
+<p><strong>CSRF</strong> tricks a browser into making an authenticated request using
+ambient credentials such as cookies.</p>
+
+<p>They solve different problems.</p>
+<h4 id="mtls">mTLS</h4>
+
+<p><strong>Mutual TLS</strong> means both sides authenticate during the TLS handshake
+using certificates.</p>
+
+<p>Normal TLS commonly authenticates the server to the client; mTLS adds
+client authentication.</p>
+<h4 id="rbac">RBAC</h4>
+
+<p><strong>Role-Based Access Control</strong> assigns permissions through roles:</p>
+
+<pre><code class="text">user → role → permissions
+</code></pre>
+
+<p>It is different from fine-grained attribute/policy-based authorization.</p>
+<h4 id="ssrf">SSRF</h4>
+
+<p><strong>Server-Side Request Forgery</strong> occurs when an attacker can influence a
+server into making requests to destinations the attacker should not be
+able to reach directly.</p>
+
+<p>Mitigations include strict destination allowlists, URL/IP validation,
+network egress controls and careful redirect handling.</p>
+
+<hr>
+<h3 id="system-design-terminology">System design terminology</h3>
+<h4 id="cap">CAP</h4>
+
+<p>CAP concerns distributed systems under a network partition:</p>
+
+<pre><code class="text">Consistency
+Availability
+Partition tolerance
+</code></pre>
+
+<p>When a partition occurs, a distributed system cannot simultaneously
+guarantee both the strongest form of consistency and availability for
+all operations.</p>
+
+<p>Do not use CAP as “you can only ever choose two.” The interesting
+question is what guarantee the system provides <strong>during a partition</strong>.</p>
+<h4 id="pacelc">PACELC</h4>
+
+<p>PACELC extends the discussion:</p>
+
+<pre><code class="text">If Partition:
+    choose Availability or Consistency
+
+Else:
+    choose Latency or Consistency
+</code></pre>
+
+<p>It is useful when discussing real-world distributed database trade-offs
+beyond CAP.</p>
+<h4 id="quorum">Quorum</h4>
+
+<p>A quorum is a sufficient number of replicas participating in an
+operation to satisfy a consistency/durability rule.</p>
+
+<p>Do not assume every database uses the same quorum formula or semantics.
+Always name the system and its configured behavior.</p>
+<h4 id="consistent-hashing">Consistent hashing</h4>
+
+<p>Consistent hashing maps both nodes and keys onto a logical hash space.</p>
+
+<p>When nodes change, ideally only a relatively small portion of keys
+moves, unlike naive modulo hashing where changing the node count can
+remap a large fraction of keys.</p>
+<h4 id="rate-limiter">Rate limiter</h4>
+
+<p>A rate limiter controls how much work a caller may perform over time.</p>
+
+<p>Know at least:</p>
+
+<pre><code class="text">Fixed window
+Sliding window
+Token bucket
+Leaky bucket
+</code></pre>
+
+<p>For token bucket:</p>
+
+<pre><code class="text">tokens accumulate at a configured rate
+       ↓
+request consumes tokens
+       ↓
+no token → reject/delay
+</code></pre>
+
+<p>It can allow controlled bursts while enforcing an average rate.</p>
+<h4 id="keyset-pagination">Keyset pagination</h4>
+
+<p>Instead of:</p>
+
+<pre><code class="text">OFFSET 100000 LIMIT 20
+</code></pre>
+
+<p>keyset pagination uses the last seen ordered key:</p>
+
+<pre><code class="sql">WHERE (created_at, id) &lt; (?, ?)
+ORDER BY created_at DESC, id DESC
+LIMIT 20
+</code></pre>
+
+<p>It can avoid scanning/skipping large numbers of earlier rows and gives
+stable continuation when the ordering is properly indexed.</p>
+
+<hr>
+<h3 id="kubernetes-deployment-terminology">Kubernetes deployment terminology</h3>
+<h4 id="rolling-blue-green-and-canary">Rolling, blue-green and canary</h4>
+
+<p><strong>Rolling deployment:</strong> gradually replaces old instances with new ones.</p>
+
+<p><strong>Blue-green:</strong> maintains two environments and switches traffic from the
+old environment to the new one.</p>
+
+<p><strong>Canary:</strong> sends a controlled fraction of traffic to the new version
+first, observes behavior, then expands traffic.</p>
+
+<p>The important SDE-3 question is not “define them,” but:</p>
+
+<blockquote>
+<p>Which one gives me the safest rollback and smallest blast radius for
+this workload?</p>
+</blockquote>
+<h4 id="readiness-vs-liveness-vs-startup">Readiness vs liveness vs startup</h4>
+
+<ul>
+<li><strong>Startup probe:</strong> “Has the application finished starting?”</li>
+<li><strong>Readiness probe:</strong> “Should this instance receive traffic?”</li>
+<li><strong>Liveness probe:</strong> “Is this process sufficiently unhealthy that it
+should be restarted?”</li>
+</ul>
+
+<p>Do not put downstream dependency health blindly into liveness; a
+database outage should not necessarily cause every application pod to
+restart.</p>
+
+<hr>
+<h3 id="live-coding-terminology">Live-coding terminology</h3>
+<h4 id="invariant">Invariant</h4>
+
+<p>An <strong>invariant</strong> is a condition that remains true at important points
+during the algorithm.</p>
+
+<p>Example for binary search:</p>
+
+<pre><code class="text">target, if it exists, is still inside [lo, hi)
+</code></pre>
+
+<p>Example for a sliding window:</p>
+
+<pre><code class="text">the current window satisfies the required constraint
+</code></pre>
+
+<p>Stating the invariant makes the solution easier to prove and debug.</p>
+<h4 id="amortized-complexity">Amortized complexity</h4>
+
+<p>Amortized complexity averages expensive operations over a sequence.</p>
+
+<p>For a dynamic array:</p>
+
+<pre><code class="text">most append operations → O(1)
+occasional resize      → O(n)
+overall                 → O(1) amortized append
+</code></pre>
+
+<p>This is different from claiming that every append is worst-case O(1).</p>
+<h4 id="identity-vs-equality">Identity vs equality</h4>
+
+<p>Java&#39;s <code>==</code> on object references asks whether two references point to
+the same object.</p>
+
+<p><code>equals()</code> asks whether the objects are logically equal according to the
+class contract.</p>
+
+<p>This distinction matters for:</p>
+
+<pre><code class="text">HashMap
+IdentityHashMap
+graph cloning
+entity comparison
+caching
+</code></pre>
+
+<hr>
+<h3 id="interview-rule-for-all-remaining-sections">Interview rule for all remaining sections</h3>
+
+<p>Whenever an answer contains a specialized term, use this progression:</p>
+
+<pre><code class="text">1. What is it?
+2. Why does it exist?
+3. How does it work?
+4. Small example
+5. Complexity / guarantee
+6. Failure mode
+7. Trade-off
+8. SDE-3 follow-up
+</code></pre>
+
+<p>You do <strong>not</strong> need to say all eight points every time. The point is to
+make sure you can go one level deeper whenever the interviewer asks.</p>
+
+<p>A strong senior answer is not the longest answer. It is an answer where
+every term you introduce can survive the next “why?”.</p>
