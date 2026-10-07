@@ -613,8 +613,9 @@ instead of scattered <code>@Value</code>.</p>
 <code>TaskExecutor</code>. Pitfalls: self-invocation bypasses it, the default
 <code>SimpleAsyncTaskExecutor</code> (Boot configures a pooled one) may be
 unbounded, so define your own bounded <code>ThreadPoolTaskExecutor</code>;
-exceptions in <code>void</code> methods vanish without an
-<code>AsyncUncaughtExceptionHandler</code>; security and MDC context isn&#39;t
+exceptions in <code>void</code> methods are logged by the default
+<code>SimpleAsyncUncaughtExceptionHandler</code>; configure a custom
+<code>AsyncUncaughtExceptionHandler</code> for application-specific reporting; security and MDC context isn&#39;t
 propagated without a <code>TaskDecorator</code>. Return <code>CompletableFuture</code> to
 compose.</p>
 <h4 id="how-to-understand-it-13">How to understand it</h4>
@@ -627,8 +628,9 @@ considerations.</p>
 that submits the call to a <code>TaskExecutor</code>. Pitfalls: self-invocation
 bypasses it, the default <code>SimpleAsyncTaskExecutor</code> (Boot configures a
 pooled one) may be unbounded, so define your own bounded
-<code>ThreadPoolTaskExecutor</code>; exceptions in <code>void</code> methods vanish without an
-<code>AsyncUncaughtExceptionHandler</code>; security and MDC context isn&#39;t
+<code>ThreadPoolTaskExecutor</code>; exceptions in <code>void</code> methods are logged by the default
+<code>SimpleAsyncUncaughtExceptionHandler</code>; configure a custom
+<code>AsyncUncaughtExceptionHandler</code> for application-specific reporting; security and MDC context isn&#39;t
 propagated without a <code>TaskDecorator</code>.</p>
 <h4 id="key-terms-you-should-know-5">Key terms you should know</h4>
 
@@ -657,8 +659,9 @@ metric, log, trace, profiler, or operational signal when applicable.</li>
 <code>TaskExecutor</code>. Pitfalls: self-invocation bypasses it, the default
 <code>SimpleAsyncTaskExecutor</code> (Boot configures a pooled one) may be
 unbounded, so define your own bounded <code>ThreadPoolTaskExecutor</code>;
-exceptions in <code>void</code> methods vanish without an
-<code>AsyncUncaughtExceptionHandler</code>; security and MDC context isn&#39;t
+exceptions in <code>void</code> methods are logged by the default
+<code>SimpleAsyncUncaughtExceptionHandler</code>; configure a custom handler for
+application-specific reporting; security and MDC context isn&#39;t
 propagated without a <code>TaskDecorator</code>.</p>
 </blockquote>
 
@@ -1263,8 +1266,7 @@ changes.</p>
 <h4 id="a-good-sde-3-interview-answer-is-26">A good SDE-3 interview answer is:</h4>
 
 <p>CQRS separates the write model (validates commands, enforces invariants)
-from read models (denormalised projections optimised for queries), kept
-in sync through events, hence eventual consistency. Event Sourcing
+from read models (denormalised projections optimised for queries), which can share a transactional store; event-driven projections in separate stores are optional and can be eventually consistent. Event Sourcing
 stores the <em>sequence of events</em> as the source of truth, enabling audit,
 replay and temporal queries, but adds complexity: schema evolution of
 events, snapshots, rebuild time, and a steep learning curve. Use for
@@ -1299,7 +1301,7 @@ metric, log, trace, profiler, or operational signal when applicable.</li>
 <blockquote>
 <p>CQRS separates the write model (validates commands, enforces
 invariants) from read models (denormalised projections optimised for
-queries), kept in sync through events, hence eventual consistency.
+queries), which can share a transactional store; event-driven projections in separate stores are optional and can be eventually consistent.
 Event Sourcing stores the <em>sequence of events</em> as the source of truth,
 enabling audit, replay and temporal queries, but adds complexity:
 schema evolution of events, snapshots, rebuild time, and a steep

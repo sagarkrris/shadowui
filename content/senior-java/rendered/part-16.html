@@ -1,0 +1,224 @@
+<h2 id="part-16-hibernate-and-sql-questions-q223-q244">Part 16 Hibernate and SQL Questions (Q223–Q244)</h2>
+
+<p>Hibernate/JPA and SQL practice. SQL examples use <code>employee(id, name, dept, salary, manager_id)</code> unless stated. The SQL examples below were checked against SQLite for the portable cases. JPA snippets are illustrative; check provider behavior and SQL with the Hibernate 6.6 and Spring Data JPA 3.5 references at the end. PostgreSQL-specific notes are identified explicitly.</p>
+<h3 id="hibernate-and-jpa">Hibernate and JPA</h3>
+<h4 id="q223-what-goes-wrong-with-elementcollection-on-a-list">Q223 What goes wrong with @ElementCollection on a List</h4>
+
+<p><strong>Strong answer:</strong> in Hibernate, an unordered <code>List</code> element collection can be mapped as a bag, whose duplicate values give rows no stable position or identity. Removing one value may delete all rows for the owner and re-insert the survivors. A <code>Set</code> or indexed <code>List</code> with <code>@OrderColumn</code> can permit more targeted SQL, but list index shifts may still update multiple rows. The exact plan depends on mapping and version; inspect generated SQL.</p>
+
+<p><strong>Reasoning and alternatives:</strong> for anything that grows, has its own lifecycle or needs queries, model a real entity with <code>@OneToMany</code> instead.</p>
+
+<p><strong>What if/test:</strong> turn on SQL logging, remove one element and count the statements.
+<strong>Signal:</strong> you know the delete-all-and-reinsert behavior and when to promote the collection to an entity.</p>
+<h4 id="q224-why-is-a-lazy-onetoone-hard-and-what-does-mapsid-do">Q224 Why is a lazy @OneToOne hard, and what does @MapsId do</h4>
+
+<p><strong>Strong answer:</strong> on the inverse <code>mappedBy</code> parent side, Hibernate may need a secondary query to learn whether a child exists, so <code>LAZY</code> alone may not defer loading. Lazy-state bytecode enhancement can help when a bidirectional association is required. On the owning side the foreign key is available to form a proxy. With <code>@MapsId</code>, the child&#39;s primary key also serves as its foreign key to the parent; this avoids a separate child identifier column, but it does not eliminate the need for a foreign-key constraint or guarantee no index.</p>
+
+<p><strong>Reasoning and alternatives:</strong> put the foreign key on the side you load more often, or model the child as a separate lookup by the parent&#39;s id.</p>
+
+<p><strong>What if/test:</strong> log SQL when loading the parent and count extra selects.
+<strong>Signal:</strong> explain why null-ability forces the extra query.</p>
+<h4 id="q225-how-should-you-map-manytomany">Q225 How should you map @ManyToMany</h4>
+
+<p><strong>Strong answer:</strong> when links are unique and order is unimportant, use a <code>Set</code> with stable entity equality and helper methods that keep both sides of a bidirectional mapping in sync. Avoid cascading <code>REMOVE</code> to the other entity: it can be shared by other owners. An unordered bag-style <code>List</code> can trigger delete-and-reinsert work on the join table; verify the mapping&#39;s SQL instead of assuming all lists behave alike.</p>
+
+<p><strong>Reasoning and alternatives:</strong> when the relationship has its own data (a role granted on a date) or you need to query it, use an explicit join entity with two <code>@ManyToOne</code> associations.</p>
+
+<p><strong>What if/test:</strong> remove one link and inspect the SQL for bulk deletes.
+<strong>Signal:</strong> prefer an explicit join entity once the relationship has attributes.</p>
+<h4 id="q226-identity-sequence-or-uuid-for-primary-keys">Q226 IDENTITY, SEQUENCE or UUID for primary keys</h4>
+
+<p><strong>Strong answer:</strong> with Hibernate 6.6, <code>IDENTITY</code> prevents JDBC insert batching for those entities because the database must generate each identifier during insert. A database <code>SEQUENCE</code> can support batching; when using a pooled optimizer, align its allocation/increment configuration with the actual database sequence and verify schema validation. Random UUIDs can reduce B-tree locality and enlarge keys; time-ordered identifiers may improve locality, subject to storage byte order and database index behavior.</p>
+
+<p><strong>Reasoning and alternatives:</strong> use UUIDs when ids must be generated client-side or across systems, accepting larger keys and the index cost.</p>
+
+<p><strong>What if/test:</strong> insert 10,000 rows with each strategy and compare the statement count and time.
+<strong>Signal:</strong> connect id strategy to batching and index locality.</p>
+<h4 id="q227-how-do-you-implement-soft-delete-safely">Q227 How do you implement soft delete safely</h4>
+
+<p><strong>Strong answer:</strong> Hibernate 6.4+ provides <code>@SoftDelete</code> for entities and supported collection tables; prefer it when its semantics fit. On older versions, custom delete SQL plus a restriction/filter can implement soft delete, but verify entity loads, associations, bulk operations and caches. <code>@Where</code> was deprecated in favor of <code>@SQLRestriction</code> in newer Hibernate 6 releases; neither turns arbitrary native SQL into a filtered query.</p>
+
+<p><strong>Reasoning and alternatives:</strong> unique constraints still see deleted rows, so use a partial unique index covering only live rows. Native queries and bulk updates bypass the filter, and cascades need thought. If you need history rather than hiding, use an audit table.</p>
+
+<p><strong>What if/test:</strong> delete a row, then insert the same unique value again and query natively.
+<strong>Signal:</strong> mention the unique-constraint trap and the native-query gap.</p>
+<h4 id="q228-what-does-transactional-readonly-true-really-do">Q228 What does @Transactional(readOnly = true) really do</h4>
+
+<p><strong>Strong answer:</strong> Spring&#39;s <code>readOnly = true</code> is a transaction hint, not a write prohibition. With Hibernate integration, Spring Data JPA documents a manual flush mode, which avoids normal dirty checking/flush work. A JDBC read-only hint may also be propagated depending on transaction manager and driver. Replica routing requires an explicitly configured router; the annotation does not move reads to a replica by itself.</p>
+
+<p><strong>Reasoning and alternatives:</strong> it is a hint, not a security boundary. Keep the same transaction rules and do not rely on it to block writes.</p>
+
+<p><strong>What if/test:</strong> modify an entity inside a read-only transaction and check whether anything persists on your stack.
+<strong>Signal:</strong> call it an optimization hint and verify behavior for your versions.</p>
+<h4 id="q229-batch-fetching-versus-subselect-fetching">Q229 Batch fetching versus subselect fetching</h4>
+
+<p><strong>Strong answer:</strong> batch fetching (<code>@BatchSize</code>, <code>default_batch_fetch_size</code>) groups lazy loads for several parents into bounded <code>IN</code> queries. <code>@Fetch(FetchMode.SUBSELECT)</code> uses a subselect tied to the parent load to initialize the matching collection roles for parents held in the persistence context; it can fetch far more children than the one collection you touched.</p>
+
+<p><strong>Reasoning and alternatives:</strong> batching bounds each query&#39;s parent IDs and works with paging. Subselect fetching can reduce query count for a known, modest parent result, but inspect generated SQL, pagination behavior and total rows fetched before choosing it.</p>
+
+<p><strong>What if/test:</strong> load 100 parents and count statements under each setting.
+<strong>Signal:</strong> choose by result size and paging needs, not by habit.</p>
+<h4 id="q230-which-projection-type-should-you-use-for-read-endpoints">Q230 Which projection type should you use for read endpoints</h4>
+
+<p><strong>Strong answer:</strong> project to the fields the API returns. In Spring Data JPA, a closed interface projection exposes known top-level properties and can let the query select fewer columns. Open projections with expression-based accessors limit this optimization; nested properties can require joins and materialize more data. Explicit DTO constructor expressions and tuples can also select narrow columns when the query names them.</p>
+
+<p><strong>Reasoning and alternatives:</strong> returning entities for list screens loads unused columns and risks lazy-loading surprises. Keep entities for writes.</p>
+
+<p><strong>What if/test:</strong> compare the generated SQL and memory for an entity query versus a projection.
+<strong>Signal:</strong> separate read models from write models.</p>
+<h4 id="q231-how-do-second-level-cache-concurrency-strategies-differ">Q231 How do second-level cache concurrency strategies differ</h4>
+
+<p><strong>Strong answer:</strong> <code>READ_ONLY</code> suits immutable data. <code>NONSTRICT_READ_WRITE</code> can allow stale reads around updates. <code>READ_WRITE</code> coordinates updates to a single cached entity more strictly, but it does not provide serializable transaction isolation. <code>TRANSACTIONAL</code> requires a provider that supports its stronger transactional semantics. Verify cache-provider support and cross-node behavior.</p>
+
+<p><strong>Reasoning and alternatives:</strong> cache only read-mostly entities with clear invalidation, and never cache what must be strongly consistent across instances unless the provider guarantees it.</p>
+
+<p><strong>What if/test:</strong> run two application instances, update through one, and read through the other.
+<strong>Signal:</strong> name the strategy and the staleness it allows.</p>
+<h4 id="q232-how-do-you-stop-lost-updates-across-http-requests">Q232 How do you stop lost updates across HTTP requests</h4>
+
+<p><strong>Strong answer:</strong> return the entity version in a strong ETag, require <code>If-Match</code> on update, and enforce the precondition atomically with the write (for example using an <code>@Version</code> update or conditional SQL). For an HTTP <code>If-Match</code> failure, return <code>412 Precondition Failed</code>; an application-level version field may use <code>409 Conflict</code> by contract.</p>
+
+<p><strong>Reasoning and alternatives:</strong> <code>@Version</code> detects concurrent writers to the entity loaded in the update transaction, but it does not know the version the client saw unless that value travels through the API. A read-only comparison followed by an unguarded update is racy; the final write must check the version.</p>
+
+<p><strong>What if/test:</strong> two clients fetch the same resource, both update, and the second must fail.
+<strong>Signal:</strong> know that the version must round-trip through the API.</p>
+<h4 id="q233-how-do-you-add-auditing">Q233 How do you add auditing</h4>
+
+<p><strong>Strong answer:</strong> Spring Data auditing (<code>@CreatedDate</code>, <code>@LastModifiedDate</code>, <code>@CreatedBy</code> with an <code>AuditorAware</code> bean) records who and when on the current row. Hibernate Envers stores revisions for audited entities when changes pass through it.</p>
+
+<p><strong>Reasoning and alternatives:</strong> Envers costs storage and write time and does not automatically cover native SQL or every external writer. Compliance-grade trails need a threat model, restricted mutation rights, retention policy and tamper-evident storage; triggers or change-data-capture can be part of that design.</p>
+
+<p><strong>What if/test:</strong> update an entity twice and confirm both who and when, and the history rows.
+<strong>Signal:</strong> choose between column-level auditing and full history by need.</p>
+<h4 id="q234-how-do-you-manage-schema-migrations-with-flyway-or-liquibase">Q234 How do you manage schema migrations with Flyway or Liquibase</h4>
+
+<p><strong>Strong answer:</strong> Flyway versioned migrations and Liquibase changesets record what ran and their checksums. Treat an applied migration as immutable; fix forward with a new migration rather than silently changing history. Flyway repeatable migrations suit replaceable views or procedures. Baseline an existing database deliberately, and keep Hibernate schema generation at <code>validate</code> or <code>none</code> in production when migrations own the schema.</p>
+
+<p><strong>Reasoning and alternatives:</strong> make migrations backward compatible (expand, migrate, contract) so rolling deploys work. Use the migration tool&#39;s locking/coordination or a single deployment step; do not assume every application replica can safely run arbitrary DDL concurrently.</p>
+
+<p><strong>What if/test:</strong> run the migration against a copy of production-sized data and time lock duration.
+<strong>Signal:</strong> immutable history plus backward-compatible changes.</p>
+<h3 id="sql">SQL</h3>
+<h4 id="q235-not-in-versus-not-exists">Q235 NOT IN versus NOT EXISTS</h4>
+
+<pre><code class="sql">-- customers with no orders (orders.customer_id may contain NULL)
+SELECT c.id FROM customer c WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.id);
+</code></pre>
+
+<p><strong>Strong answer:</strong> if the subquery contains a <code>NULL</code>, <code>NOT IN</code> cannot return a row whose value matches none of the non-null entries: the remaining comparison is unknown, not true. <code>NOT EXISTS</code> avoids that specific null trap. A <code>LEFT JOIN ... IS NULL</code> anti-join also works when the tested right-hand column is non-nullable for matched rows.</p>
+
+<p><strong>Reasoning and alternatives:</strong> <code>NOT EXISTS</code> also expresses intent clearly and usually plans as an anti-join.</p>
+
+<p><strong>What if/test:</strong> insert an order with a null customer and compare both forms.
+<strong>Signal:</strong> explain three-valued logic.</p>
+<h4 id="q236-find-the-n-th-highest-salary">Q236 Find the N-th highest salary</h4>
+
+<pre><code class="sql">SELECT DISTINCT salary FROM (
+  SELECT salary, DENSE_RANK() OVER (ORDER BY salary DESC) AS r
+  FROM employee WHERE salary IS NOT NULL
+) t WHERE r = :n;
+</code></pre>
+
+<p><strong>Strong answer:</strong> bind a positive <code>:n</code>. <code>DENSE_RANK</code> treats equal non-null salaries as one rank, so ties do not skip a position. The query returns one row for the N-th distinct salary, or no row when it does not exist.</p>
+
+<p><strong>Reasoning and alternatives:</strong> <code>ORDER BY salary DESC LIMIT 1 OFFSET n-1</code> over distinct salaries also works, but returns nothing, not null, when n is too large, depending on how it is written.</p>
+
+<p><strong>What if/test:</strong> include tied top salaries and a table with fewer than N distinct values.
+<strong>Signal:</strong> choose <code>DENSE_RANK</code> over <code>RANK</code> or <code>ROW_NUMBER</code> for this.</p>
+<h4 id="q237-walk-an-org-hierarchy-with-a-recursive-cte">Q237 Walk an org hierarchy with a recursive CTE</h4>
+
+<pre><code class="sql">WITH RECURSIVE chain(id, name, depth, path) AS (
+  SELECT id, name, 0, &#39;,&#39; || id || &#39;,&#39; FROM employee WHERE id = 1
+  UNION ALL
+  SELECT e.id, e.name, c.depth + 1, c.path || e.id || &#39;,&#39;
+  FROM employee e JOIN chain c ON e.manager_id = c.id
+  WHERE instr(c.path, &#39;,&#39; || e.id || &#39;,&#39;) = 0
+)
+SELECT id, name, depth FROM chain ORDER BY depth, id;
+</code></pre>
+
+<p><strong>Strong answer:</strong> an anchor query seeds the result and the recursive part joins to the previous iteration until no rows are added. This SQLite example records visited IDs in a delimiter-guarded path, so a cycle on one branch is not expanded forever. Use a database-native cycle clause or array/path expression where available.</p>
+
+<p><strong>Reasoning and alternatives:</strong> a depth limit is a resource bound, not a proof that a hierarchy is acyclic; it can truncate legitimate data. Add an index on <code>manager_id</code> and validate ownership or tenant scope before traversing a production hierarchy.</p>
+
+<p><strong>What if/test:</strong> add a cycle in the data and confirm your guard stops it.
+<strong>Signal:</strong> mention termination and cycle protection.</p>
+<h4 id="q238-where-versus-having-and-conditional-aggregation">Q238 WHERE versus HAVING, and conditional aggregation</h4>
+
+<pre><code class="sql">SELECT dept,
+       COUNT(*) AS headcount,
+       SUM(CASE WHEN salary &gt; 100 THEN 1 ELSE 0 END) AS high_earners
+FROM employee
+GROUP BY dept
+HAVING COUNT(*) &gt;= 2;
+</code></pre>
+
+<p><strong>Strong answer:</strong> <code>WHERE</code> filters rows before grouping; <code>HAVING</code> filters groups after aggregation. <code>CASE</code> inside an aggregate counts or sums by condition portably (PostgreSQL also has <code>FILTER</code>).</p>
+
+<p><strong>Reasoning and alternatives:</strong> push filters into <code>WHERE</code> when possible so fewer rows are grouped.</p>
+
+<p><strong>What if/test:</strong> compare plans when a filter sits in <code>WHERE</code> versus <code>HAVING</code>.
+<strong>Signal:</strong> know the order of evaluation.</p>
+<h4 id="q239-what-causes-database-deadlocks-and-how-do-you-handle-them">Q239 What causes database deadlocks and how do you handle them</h4>
+
+<p><strong>Strong answer:</strong> two transactions each hold a lock the other needs, typically by touching the same rows in opposite order. The database detects the cycle and aborts one transaction. Retry the whole transaction from a fresh read when the operation is safe to repeat; never retry only the failed SQL statement against stale assumptions.</p>
+
+<p><strong>Reasoning and alternatives:</strong> lock rows in a consistent order, keep transactions short, add indexes so fewer rows are locked, and retry on the deadlock error code (for example <code>40P01</code> in PostgreSQL).</p>
+
+<p><strong>What if/test:</strong> reproduce with two sessions updating two rows in opposite order.
+<strong>Signal:</strong> prevention plus an idempotent retry path.</p>
+<h4 id="q240-what-is-write-skew-and-how-do-you-prevent-it">Q240 What is write skew and how do you prevent it</h4>
+
+<p><strong>Strong answer:</strong> two transactions read overlapping data, each updates a different row, and together they break an invariant (two doctors both go off call). PostgreSQL&#39;s <code>REPEATABLE READ</code> uses snapshot isolation and can allow this write skew because the writes do not conflict on one row.</p>
+
+<p><strong>Reasoning and alternatives:</strong> use <code>SERIALIZABLE</code> and retry aborted transactions, enforce the invariant with a database constraint where possible, or coordinate through a shared guard row/lock in every writer. Locking only the rows currently returned by a predicate may miss future rows or other access paths.</p>
+
+<p><strong>What if/test:</strong> run both transactions concurrently under the default isolation level.
+<strong>Signal:</strong> explain the guarantee for the named database and isolation level rather than treating every vendor&#39;s <code>REPEATABLE READ</code> as identical.</p>
+<h4 id="q241-how-do-you-write-an-idempotent-upsert">Q241 How do you write an idempotent upsert</h4>
+
+<pre><code class="sql">INSERT INTO account(id, balance) VALUES (1, 100)
+ON CONFLICT(id) DO UPDATE SET balance = excluded.balance;
+</code></pre>
+
+<p><strong>Strong answer:</strong> an upsert relies on a unique key and performs insert-or-update as one database statement (<code>ON CONFLICT</code> in PostgreSQL and SQLite; vendor alternatives differ). This example sets the same balance on repeat, so the stored balance is unchanged on an identical retry. It does not make audit triggers or other side effects automatically idempotent.</p>
+
+<p><strong>Reasoning and alternatives:</strong> select-then-insert races under concurrency. With JPA, use a database-specific native upsert or recover from a duplicate-key conflict in a fresh transaction after the failed transaction has rolled back; do not continue blindly in a transaction marked failed.</p>
+
+<p><strong>What if/test:</strong> run the statement twice and from two connections at once.
+<strong>Signal:</strong> rely on a unique constraint, not application checks.</p>
+<h4 id="q242-partitioning-versus-sharding">Q242 Partitioning versus sharding</h4>
+
+<p><strong>Strong answer:</strong> partitioning splits a logical table into partitions in one database (range, list or hash). When the planner can use the partition key, partition pruning skips irrelevant partitions; time-range retention can become dropping a partition. Sharding distributes data across separate database instances or servers.</p>
+
+<p><strong>Reasoning and alternatives:</strong> choose partitioning for table management or query pruning when one database can still meet capacity needs; sharding is a separate operational step when data or write load must be distributed. PostgreSQL requires a unique or primary-key constraint declared on a partitioned table to include all partition-key columns, with additional restrictions on expressions.</p>
+
+<p><strong>What if/test:</strong> check <code>EXPLAIN</code> shows partition pruning for your common query.
+<strong>Signal:</strong> keep the two terms distinct and start with partitioning.</p>
+<h4 id="q243-why-can-count-and-offset-pagination-be-slow-and-what-is-the-alternative">Q243 Why can COUNT(*) and offset pagination be slow, and what is the alternative</h4>
+
+<p><strong>Strong answer:</strong> an exact <code>COUNT(*)</code> over a filtered MVCC snapshot must establish which rows are visible; it is not generally a constant-time metadata lookup, though an index-only scan or selective plan can reduce cost. Deep offset pagination still processes or skips many earlier rows, so latency often grows with the offset.</p>
+
+<p><strong>Reasoning and alternatives:</strong> with a stable total ordering and matching index, use keyset pagination and fetch <code>limit + 1</code> rows to know whether another page exists. Use approximate counts or a maintained counter only when the UI accepts their freshness and precision limits.</p>
+
+<p><strong>What if/test:</strong> time page 1 versus page 10,000 under each approach.
+<strong>Signal:</strong> question whether the UI really needs a total.</p>
+<h4 id="q244-remove-duplicate-rows-but-keep-one">Q244 Remove duplicate rows but keep one</h4>
+
+<pre><code class="sql">DELETE FROM person WHERE id IN (
+  SELECT id FROM (
+    SELECT id, ROW_NUMBER() OVER (PARTITION BY email ORDER BY id) AS rn
+    FROM person WHERE email IS NOT NULL
+  ) t WHERE rn &gt; 1
+);
+</code></pre>
+
+<p><strong>Strong answer:</strong> number rows within each non-null email group and delete everything after the first, then add a matching unique constraint so duplicates cannot return. Define normalization (for example case folding) and the survivor rule before running it. The query intentionally leaves null emails untouched; SQL unique constraints often permit multiple nulls.</p>
+
+<p><strong>Reasoning and alternatives:</strong> preview affected rows, back up the data, run the delete in a transaction, and coordinate concurrent writers while establishing the unique constraint. If the survivor needs related rows or richer fields, migrate their references and data before deleting.</p>
+
+<p><strong>What if/test:</strong> verify counts before and after, and that the constraint now rejects a duplicate.
+<strong>Signal:</strong> fix the data and add the constraint that prevents recurrence.</p>
+<h3 id="version-and-source-notes">Version and source notes</h3>
+
+<p>Hibernate mapping, identifier, cache, association and soft-delete behavior above is calibrated to the <a href="https://docs.hibernate.org/orm/6.6/userguide/html_single/">Hibernate ORM 6.6 user guide</a>. The transaction and projection points use the <a href="https://docs.spring.io/spring-data/jpa/reference/jpa/transactions.html">Spring Data JPA transaction reference</a> and <a href="https://docs.spring.io/spring-data/data-jpa/reference/3.5/repositories/projections.html">Spring Data JPA 3.5 projection reference</a>. PostgreSQL-specific isolation and partitioning details should be checked against the deployed version&#39;s <a href="https://www.postgresql.org/docs/current/transaction-iso.html">transaction-isolation</a> and <a href="https://www.postgresql.org/docs/current/ddl-partitioning.html">partitioning</a> documentation. SQL query syntax and plans remain database-specific.</p>

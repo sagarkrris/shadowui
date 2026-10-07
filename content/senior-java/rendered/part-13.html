@@ -1,0 +1,272 @@
+<h2 id="part-13-spring-boot-internals-coding-style-and-leadership-questions-q174-q193">Part 13 Spring Boot Internals, Coding-Style and Leadership Questions (Q174–Q193)</h2>
+
+<p>Twenty more questions in the same layout as Parts 10 and 12. Q174–Q182 cover Spring Boot internals, Q183–Q187 are coding-style questions with solutions, and Q188–Q193 cover leadership. Version-specific points (Boot 3.x, Spring Framework 6.2 and later) should be checked against the versions your target company runs.</p>
+<h3 id="spring-boot-internals">Spring Boot internals</h3>
+<h4 id="q174-what-happens-inside-springapplication-run">Q174 What happens inside SpringApplication.run</h4>
+
+<p><strong>Strong answer:</strong> Boot creates <code>SpringApplicationRunListeners</code>, prepares the <code>Environment</code> (property sources, profiles), creates the <code>ApplicationContext</code> type chosen from the deduced web application type, applies initializers, loads bean definitions, then calls <code>refresh()</code>. During refresh, configuration classes are processed (component scanning, auto-configuration imports), singleton beans are created, and for web applications the embedded server is created and started. After refresh, <code>ApplicationRunner</code> and <code>CommandLineRunner</code> beans execute, and <code>ApplicationReadyEvent</code> is published, at which point the readiness state becomes accepting traffic.</p>
+
+<p><strong>Reasoning and alternatives:</strong> knowing the order tells you where to hook in: <code>EnvironmentPostProcessor</code> for property changes before the context exists, <code>ApplicationContextInitializer</code> for early context customization, <code>@PostConstruct</code> for per-bean setup, runners for post-start work, and <code>ApplicationReadyEvent</code> for &quot;now safe to serve&quot;.</p>
+
+<p><strong>What if/test:</strong> a slow <code>CommandLineRunner</code> delays readiness only if it blocks startup, so long tasks belong in background executors. Test hooks with <code>ApplicationContextRunner</code> or a slice test.
+<strong>Signal:</strong> place each extension point correctly in the sequence.</p>
+<h4 id="q175-how-does-boot-decide-it-is-a-web-application-and-which-server-to-start">Q175 How does Boot decide it is a web application and which server to start</h4>
+
+<p><strong>Strong answer:</strong> <code>WebApplicationType</code> is deduced from the classpath: if Spring MVC&#39;s <code>DispatcherServlet</code> and servlet classes are present it is a servlet application; if only WebFlux&#39;s <code>DispatcherHandler</code> is present it is reactive; otherwise it is a plain application. When both MVC and WebFlux are present, MVC wins. The embedded server comes from the starter on the classpath: <code>spring-boot-starter-web</code> brings Tomcat, and you swap it by excluding Tomcat and adding the Jetty or Undertow starter.</p>
+
+<p><strong>Reasoning and alternatives:</strong> override the deduction with <code>SpringApplication.setWebApplicationType</code> or <code>spring.main.web-application-type</code>. Auto-configuration then creates a <code>ServletWebServerFactory</code> bean and applies <code>server.*</code> properties through customizers.</p>
+
+<p><strong>What if/test:</strong> adding a reactive library to an MVC project can change behavior unexpectedly, so inspect the conditions report (<code>--debug</code>) when startup differs from expectation.
+<strong>Signal:</strong> explain that classpath contents drive both the app type and the server.</p>
+<h4 id="q176-beanfactorypostprocessor-versus-beanpostprocessor">Q176 BeanFactoryPostProcessor versus BeanPostProcessor</h4>
+
+<p><strong>Strong answer:</strong> a <code>BeanFactoryPostProcessor</code> runs after bean <em>definitions</em> are loaded and before any ordinary bean is instantiated, so it can modify definitions (<code>ConfigurationClassPostProcessor</code> handles <code>@Configuration</code>, <code>@Bean</code> and <code>@ComponentScan</code> this way; <code>PropertySourcesPlaceholderConfigurer</code> resolves <code>${...}</code>). A <code>BeanPostProcessor</code> runs around the initialization of each bean <em>instance</em>, so it can wrap or replace it (autowiring annotations are processed this way, and AOP auto-proxy creation wraps beans in proxies).</p>
+
+<p><strong>Reasoning and alternatives:</strong> use the first to change configuration metadata and the second to decorate objects. Declare a <code>BeanFactoryPostProcessor</code> <code>@Bean</code> method as <code>static</code> so the configuration class is not instantiated too early.</p>
+
+<p><strong>What if/test:</strong> beans created before all post-processors are registered are not processed by them; Spring logs an &quot;not eligible for getting processed by all BeanPostProcessors&quot; message. Search the startup log for it when a proxy or annotation seems ignored.
+<strong>Signal:</strong> distinguish definition-time from instance-time hooks and cite one real example of each.</p>
+<h4 id="q177-what-does-configuration-proxybeanmethods-false-change">Q177 What does @Configuration(proxyBeanMethods = false) change</h4>
+
+<p><strong>Strong answer:</strong> by default (<code>true</code>, &quot;full&quot; mode) Spring subclasses the configuration class with CGLIB so that calling one <code>@Bean</code> method from another returns the container&#39;s singleton instead of creating a new object. With <code>proxyBeanMethods = false</code> (&quot;lite&quot; mode) there is no subclass, startup is cheaper, and a direct call to another <code>@Bean</code> method is an ordinary Java call that creates a fresh instance.</p>
+
+<p><strong>Reasoning and alternatives:</strong> Boot&#39;s own auto-configurations use lite mode for speed and native-image friendliness. In lite mode, inject dependencies as method parameters instead of calling other <code>@Bean</code> methods. Keep full mode only if you rely on inter-bean method calls.</p>
+
+<p><strong>What if/test:</strong> switching a legacy configuration to lite mode can silently duplicate singletons. Add a test asserting the same instance is injected in both places.
+<strong>Signal:</strong> state the trade-off between convenience and startup cost.</p>
+<h4 id="q178-how-do-content-negotiation-and-jackson-configuration-work-in-spring-mvc">Q178 How do content negotiation and Jackson configuration work in Spring MVC</h4>
+
+<p><strong>Strong answer:</strong> the <code>Accept</code> header, the controller&#39;s <code>produces</code> and <code>consumes</code> conditions, and the registered <code>HttpMessageConverter</code>s together decide the representation. An unsupported <code>Accept</code> gives <code>406 Not Acceptable</code>; an unsupported request <code>Content-Type</code> gives <code>415 Unsupported Media Type</code>. Boot auto-configures one shared <code>ObjectMapper</code> via <code>spring.jackson.*</code> properties and registers modules found on the classpath (for example Java time); by default Boot disables failing on unknown properties and writing dates as timestamps.</p>
+
+<p><strong>Reasoning and alternatives:</strong> customize through properties or a <code>Jackson2ObjectMapperBuilderCustomizer</code> bean, not by constructing a separate <code>new ObjectMapper()</code> that ignores the shared configuration. For API evolution, being tolerant of unknown fields on input helps backward compatibility, while strict validation protects security-sensitive endpoints.</p>
+
+<p><strong>What if/test:</strong> a hand-built <code>ObjectMapper</code> used in tests may differ from production behavior; inject the bean or use <code>@JsonTest</code>. Test one request each for 406 and 415.
+<strong>Signal:</strong> know the two status codes and why you inject the managed mapper.</p>
+<h4 id="q179-how-does-spring-data-jpa-implement-a-repository-interface-you-only-declared">Q179 How does Spring Data JPA implement a repository interface you only declared</h4>
+
+<p><strong>Strong answer:</strong> at startup, repository scanning registers a factory bean for each interface. The factory creates a <strong>JDK dynamic proxy</strong> that delegates CRUD methods to <code>SimpleJpaRepository</code> and routes query methods to query lookups: an <code>@Query</code>, a named query, or a query <strong>derived from the method name</strong> by parsing it into parts. Because derivation happens at startup, a misspelled property name fails the application context early.</p>
+
+<p><strong>Reasoning and alternatives:</strong> Inherited CRUD methods implemented by <code>SimpleJpaRepository</code> have transaction defaults (read-only at class level with write methods transactional). User-declared query methods, including default methods, have no transaction configuration by default. Without a service transaction, separate inherited CRUD calls normally run in separate transactions; do not assume a custom query participates or that a multi-call unit is atomic. Annotate declared query methods or, commonly, the service operation. Custom behavior can go in a repository fragment interface plus implementation class.</p>
+
+<p><strong>What if/test:</strong> assuming two repository calls share a transaction without a service-level <code>@Transactional</code> is a common bug. Write a test that fails the second call and asserts whether the first persisted.
+<strong>Signal:</strong> explain proxy creation, startup validation and default transaction behavior.</p>
+<h4 id="q180-how-does-the-embedded-tomcat-threading-model-affect-tuning">Q180 How does the embedded Tomcat threading model affect tuning</h4>
+
+<p><strong>Strong answer:</strong> the NIO connector accepts connections and hands request processing to a worker pool. Boot&#39;s defaults are roughly 200 maximum worker threads, 100 for the accept queue (<code>accept-count</code>) and 8192 maximum connections. With Java 21 you can set <code>spring.threads.virtual.enabled=true</code> so request handling uses virtual threads, removing the thread count as the concurrency limit.</p>
+
+<p><strong>Reasoning and alternatives:</strong> more threads do not fix slow downstream calls; they move the bottleneck to the database pool or the dependency. Size worker threads and connection pools together, set timeouts, and use bulkheads or a <code>Semaphore</code> to bound calls to scarce resources, especially with virtual threads.</p>
+
+<p><strong>What if/test:</strong> raising <code>threads.max</code> without raising the connection pool just queues requests inside the app. Load test and watch pool wait time, active threads and p99 latency together.
+<strong>Signal:</strong> tune the whole path (threads, pool, downstream), not one number.</p>
+<h4 id="q181-how-do-actuator-health-groups-liveness-and-readiness-work">Q181 How do Actuator health groups, liveness and readiness work</h4>
+
+<p><strong>Strong answer:</strong> the health endpoint aggregates <code>HealthIndicator</code> beans. <strong>Liveness</strong> and <strong>readiness</strong> are availability states exposed as health groups and driven by <code>ApplicationAvailability</code> and <code>AvailabilityChangeEvent</code>; on Kubernetes the probe groups are enabled automatically. Readiness flips to refusing traffic during shutdown, which lets the platform drain the instance.</p>
+
+<p><strong>Reasoning and alternatives:</strong> keep liveness limited to &quot;the process is irrecoverably broken&quot;, because including a database or downstream check there can cause restart storms when the dependency fails. Readiness may include critical dependencies cautiously. Custom indicators must be fast and time-bounded.</p>
+
+<p><strong>What if/test:</strong> a health check that calls a slow dependency can itself overload it under frequent probing; cache results or use a short timeout. Test by stopping the database and observing the probe states.
+<strong>Signal:</strong> explain why liveness must not depend on downstream services.</p>
+<h4 id="q182-why-are-spring-test-suites-slow-and-what-is-context-caching">Q182 Why are Spring test suites slow, and what is context caching</h4>
+
+<p><strong>Strong answer:</strong> the test framework caches an application context and reuses it for tests with the <strong>same configuration key</strong> (configuration classes, properties, active profiles, mock-bean definitions and so on). Every distinct combination starts a new context, so scattering different <code>@MockBean</code>/<code>@MockitoBean</code> sets or <code>@DirtiesContext</code> across classes multiplies startup cost.</p>
+
+<p><strong>Reasoning and alternatives:</strong> prefer plain unit tests for logic, slice tests (<code>@WebMvcTest</code>, <code>@DataJpaTest</code>) for one layer, and few full <code>@SpringBootTest</code> classes sharing a common base configuration. Recent Spring versions replace <code>@MockBean</code> with <code>@MockitoBean</code>; check the deprecation status for your version.</p>
+
+<p><strong>What if/test:</strong> measure by counting context startups in the test log. Reduce unique configurations, avoid <code>@DirtiesContext</code>, and reuse Testcontainers through a shared static container.
+<strong>Signal:</strong> connect suite speed to the number of distinct context configurations.</p>
+<h3 id="coding-style-questions">Coding-style questions</h3>
+<h4 id="q183-implement-a-thread-safe-ttl-cache-with-a-loader">Q183 Implement a thread-safe TTL cache with a loader</h4>
+
+<p><strong>Strong answer:</strong> use a <code>ConcurrentHashMap</code> and <code>compute</code>, which runs atomically per key, so concurrent callers for the same key trigger one load.</p>
+
+<pre><code class="java">class TtlCache&lt;K, V&gt; {
+    private record Entry&lt;V&gt;(V value, long expiresAt) {}
+    private final ConcurrentHashMap&lt;K, Entry&lt;V&gt;&gt; map = new ConcurrentHashMap&lt;&gt;();
+    private final long ttlNanos;
+    TtlCache(Duration ttl) {
+        Objects.requireNonNull(ttl, &quot;ttl&quot;);
+        if (ttl.isZero() || ttl.isNegative()) throw new IllegalArgumentException(&quot;ttl must be positive&quot;);
+        this.ttlNanos = ttl.toNanos();
+        if (ttlNanos &lt;= 0) throw new IllegalArgumentException(&quot;ttl outside supported range&quot;);
+    }
+
+    V get(K key, Function&lt;K, V&gt; loader) {
+        Objects.requireNonNull(key, &quot;key&quot;);
+        Objects.requireNonNull(loader, &quot;loader&quot;);
+        return map.compute(key, (k, old) -&gt; {
+            long now = System.nanoTime(); // sampled after acquiring this key&#39;s compute lock
+            if (old != null &amp;&amp; now - old.expiresAt() &lt; 0) return old;
+            V value = Objects.requireNonNull(loader.apply(k), &quot;loader returned null&quot;);
+            long expiresAt = System.nanoTime() + ttlNanos; // expiry starts after loading
+            return new Entry&lt;&gt;(value, expiresAt);
+        }).value();
+    }
+}
+</code></pre>
+
+<p><strong>Reasoning and alternatives:</strong> <code>System.nanoTime()</code> is monotonic, and the subtraction form is overflow-safe. This version evicts lazily and never removes entries that are not read again, so for production use Caffeine (size and time bounds, async loading, statistics).</p>
+
+<p><strong>What if/test:</strong> the loader runs while the map holds a bin lock, so it must be short and must not recursively update the same key. Test a slow loader, contention across an expiry boundary and concurrent callers. This teaching cache still evicts lazily, has no size bound, and may block other keys sharing a bin; use a mature cache for production.
+<strong>Signal:</strong> mention single-flight loading, monotonic time and the missing eviction.</p>
+<h4 id="q184-implement-a-minimal-fixed-thread-pool">Q184 Implement a minimal fixed thread pool</h4>
+
+<pre><code class="java">class MiniPool implements AutoCloseable {
+    private final BlockingQueue&lt;Runnable&gt; queue = new LinkedBlockingQueue&lt;&gt;(100);
+    private final List&lt;Thread&gt; workers = new ArrayList&lt;&gt;();
+    private volatile boolean stopped;
+
+    MiniPool(int n) {
+        for (int i = 0; i &lt; n; i++) {
+            Thread t = new Thread(this::loop, &quot;mini-&quot; + i);
+            workers.add(t); t.start();
+        }
+    }
+    void submit(Runnable task) throws InterruptedException {
+        if (stopped) throw new RejectedExecutionException(&quot;pool closed&quot;);
+        queue.put(task);                       // bounded queue gives back-pressure
+    }
+    private void loop() {
+        try {
+            while (!stopped || !queue.isEmpty()) {
+                Runnable r = queue.poll(100, TimeUnit.MILLISECONDS);
+                if (r != null) { try { r.run(); } catch (Throwable ignored) { /* log in real code */ } }
+            }
+        } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+    }
+    @Override public void close() throws InterruptedException {
+        stopped = true;
+        for (Thread t : workers) t.join();
+    }
+}
+</code></pre>
+
+<p><strong>Reasoning and alternatives:</strong> it shows the core of <code>ThreadPoolExecutor</code>: worker threads draining a queue, a bounded queue, and graceful shutdown. Missing features: dynamic sizing, a rejection policy, <code>Future</code> results and thread factories.</p>
+
+<p><strong>What if/test:</strong> a task submitted while <code>close()</code> begins can slip through, and concurrent close/submit can leave work queued after workers exit. A production pool must serialize submission with shutdown, define rejection and interruption behavior, and ensure every accepted task is completed or explicitly cancelled. Test the race with latches; ordinary draining tests do not prove it safe.
+<strong>Signal:</strong> explain the worker loop and why the queue is bounded.</p>
+<h4 id="q185-write-a-spring-filter-that-adds-a-correlation-id-to-the-logging-context">Q185 Write a Spring filter that adds a correlation ID to the logging context</h4>
+
+<pre><code class="java">@Component
+class CorrelationIdFilter extends OncePerRequestFilter {
+    private static final Pattern SAFE = Pattern.compile(&quot;[A-Za-z0-9._-]{1,64}&quot;);
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
+            throws ServletException, IOException {
+        String incoming = req.getHeader(&quot;X-Correlation-Id&quot;);
+        String id = (incoming != null &amp;&amp; SAFE.matcher(incoming).matches()) ? incoming : UUID.randomUUID().toString();
+        MDC.put(&quot;correlationId&quot;, id);
+        res.setHeader(&quot;X-Correlation-Id&quot;, id);
+        try { chain.doFilter(req, res); }
+        finally { MDC.remove(&quot;correlationId&quot;); }   // pooled threads must not leak context
+    }
+}
+</code></pre>
+
+<p><strong>Reasoning and alternatives:</strong> validating the inbound value prevents log injection. Include <code>%X{correlationId}</code> in the log pattern or use JSON logging. With Micrometer Tracing, trace and span IDs may already be placed in the MDC, so reuse them rather than inventing a second ID.</p>
+
+<p><strong>What if/test:</strong> MDC does not propagate to new threads automatically; wrap executors with a <code>TaskDecorator</code> that copies it. Test with <code>MockMvc</code> asserting the response header and that the MDC is empty afterwards.
+<strong>Signal:</strong> clear the context in <code>finally</code> and sanitize the header.</p>
+<h4 id="q186-merge-k-sorted-linked-lists">Q186 Merge K sorted linked lists</h4>
+
+<pre><code class="java">ListNode mergeKLists(ListNode[] lists) {
+    PriorityQueue&lt;ListNode&gt; pq = new PriorityQueue&lt;&gt;(Comparator.comparingInt(n -&gt; n.val));
+    for (ListNode head : lists) if (head != null) pq.add(head);
+    ListNode dummy = new ListNode(0), tail = dummy;
+    while (!pq.isEmpty()) {
+        ListNode node = pq.poll();
+        tail.next = node; tail = node;
+        if (node.next != null) pq.add(node.next);
+    }
+    return dummy.next;
+}
+</code></pre>
+
+<p><strong>Reasoning and alternatives:</strong> the heap holds at most one node per list, giving O(N log k) time and O(k) extra space for N total nodes. Alternative: merge pairwise in a divide-and-conquer fashion, also O(N log k) with O(1) extra space for linked lists (excluding recursion).</p>
+
+<p><strong>What if/test:</strong> test empty input, all-empty lists, one list, and duplicate values across lists.
+<strong>Signal:</strong> give both complexities and explain why the heap stays size k.</p>
+<h4 id="q187-build-a-mini-dependency-injection-container">Q187 Build a mini dependency-injection container</h4>
+
+<pre><code class="java">class MiniContainer {
+    private final Map&lt;Class&lt;?&gt;, Object&gt; singletons = new HashMap&lt;&gt;();
+    private final Set&lt;Class&lt;?&gt;&gt; creating = new HashSet&lt;&gt;();
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    &lt;T&gt; T get(Class&lt;T&gt; type) {
+        Object existing = singletons.get(type);
+        if (existing != null) return (T) existing;
+        if (!creating.add(type)) throw new IllegalStateException(&quot;Circular dependency: &quot; + type.getName());
+        try {
+            Constructor&lt;?&gt; ctor = type.getDeclaredConstructors()[0];      // assume one constructor
+            Object[] args = new Object[ctor.getParameterCount()];
+            Class&lt;?&gt;[] params = ctor.getParameterTypes();
+            for (int i = 0; i &lt; args.length; i++) args[i] = get(params[i]);
+            ctor.setAccessible(true);
+            Object instance = ctor.newInstance(args);
+            singletons.put(type, instance);
+            return (T) instance;
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
+        } finally {
+            creating.remove(type);
+        }
+    }
+}
+</code></pre>
+
+<p><strong>Reasoning and alternatives:</strong> this demonstrates constructor injection, singleton scope, and cycle detection, which is exactly why constructor cycles fail in Spring. Real containers add interface-to-implementation binding, scanning, scopes, lifecycle callbacks and thread safety.</p>
+
+<p><strong>What if/test:</strong> the sketch is not thread-safe and handles only concrete classes. Test a chain A→B→C and a cycle A→B→A.
+<strong>Signal:</strong> relate each simplification to the matching Spring feature.</p>
+<h3 id="leadership">Leadership</h3>
+<h4 id="q188-how-do-you-run-a-design-review-and-write-an-rfc-or-adr">Q188 How do you run a design review and write an RFC or ADR</h4>
+
+<p><strong>Strong answer:</strong> write a short document stating the problem, goals and non-goals, constraints, options considered with trade-offs, the recommendation, risks, a rollout and rollback plan, and open questions. Share it early with the people affected, set a review deadline, and record the decision with the reasoning (an Architecture Decision Record) and a date to revisit.</p>
+
+<p><strong>Reasoning and alternatives:</strong> the aim is a better decision, not approval of your preferred one: invite objections, use data or a small prototype to settle disputes, and separate reversible decisions (decide fast) from one-way doors (review thoroughly).</p>
+
+<p><strong>What if:</strong> the review becomes opinion battles; fix this by agreeing criteria first (latency, cost, delivery time, operability) and scoring options against them.
+<strong>Signal:</strong> show a written process, decision criteria and a record of the outcome.</p>
+<h4 id="q189-how-do-you-handle-a-team-member-who-is-underperforming">Q189 How do you handle a team member who is underperforming</h4>
+
+<p><strong>Strong answer:</strong> start with a private, specific conversation about observed outcomes, not personality. Clarify expectations, ask about blockers (skills, context, workload, personal issues), agree on measurable goals and a short timeline, and check in frequently with support such as pairing, smaller tasks or a mentor. Involve your manager or HR early if the pattern continues.</p>
+
+<p><strong>Reasoning and alternatives:</strong> many cases are unclear expectations or poor fit with the task rather than lack of ability. Document the discussions factually and keep the rest of the team&#39;s workload fair in the meantime.</p>
+
+<p><strong>What if:</strong> performance does not improve despite support; then follow the formal process promptly and respectfully, because delaying harms both the person and the team.
+<strong>Signal:</strong> be specific, empathetic and accountable, with a concrete example and outcome.</p>
+<h4 id="q190-how-do-you-prioritize-technical-debt-against-product-features">Q190 How do you prioritize technical debt against product features</h4>
+
+<p><strong>Strong answer:</strong> quantify debt in business terms: incident count, time lost per release, onboarding time, lead time, or risk exposure (a vulnerable library). Rank by impact and cost to fix, tie work to roadmap goals (&quot;this refactor removes the migration blocker for feature X&quot;), and agree on a standing allocation (for example 15–20% of capacity) plus targeted projects for large items.</p>
+
+<p><strong>Reasoning and alternatives:</strong> the strongest framing is a risk and cost-of-delay conversation with product, not &quot;the code is ugly&quot;. Pay debt incrementally alongside feature work where possible.</p>
+
+<p><strong>What if:</strong> product refuses any time for debt; then propose the smallest high-impact fix, measure the improvement and use the result to justify more.
+<strong>Signal:</strong> use metrics and negotiate trade-offs instead of demanding rewrites.</p>
+<h4 id="q191-how-do-you-drive-a-change-across-teams-when-you-have-no-authority">Q191 How do you drive a change across teams when you have no authority</h4>
+
+<p><strong>Strong answer:</strong> build a case with evidence, find allies and early adopters, make adoption easy (templates, libraries, migration guides, automation), start with a pilot, publish the results, and ask leaders to remove blockers rather than mandate. Keep feedback loops open so the solution adapts to real needs.</p>
+
+<p><strong>Reasoning and alternatives:</strong> people adopt what saves them effort and what they helped shape. Mandates without support create resentment and shallow compliance.</p>
+
+<p><strong>What if:</strong> teams still resist; find out their constraints, adjust the approach, and escalate only for genuine risk (security, compliance) with clear data.
+<strong>Signal:</strong> describe influence through evidence, enablement and empathy, with a real adoption result.</p>
+<h4 id="q192-how-do-you-estimate-work-and-communicate-delays">Q192 How do you estimate work and communicate delays</h4>
+
+<p><strong>Strong answer:</strong> estimate in ranges with stated assumptions, break work into small deliverables, separate known from unknown (add spikes for unknowns), and add buffer for integration and testing. Track progress against milestones. When a delay appears, tell stakeholders <strong>early</strong>, explain the cause and impact, and present options: reduce scope, move the date, or add resources, with your recommendation.</p>
+
+<p><strong>Reasoning and alternatives:</strong> a single-point estimate hides uncertainty; ranges and confidence levels make planning honest. Reduce risk by delivering the riskiest part first.</p>
+
+<p><strong>What if:</strong> pressure to commit to an unrealistic date; present the trade-off explicitly (scope, time, quality) rather than silently absorbing risk.
+<strong>Signal:</strong> early, transparent communication with options, not excuses.</p>
+<h4 id="q193-how-do-you-decide-between-building-and-buying-a-solution">Q193 How do you decide between building and buying a solution</h4>
+
+<p><strong>Strong answer:</strong> compare <strong>total cost of ownership</strong> (licenses or usage fees versus engineering, operations and maintenance), time to value, fit to requirements, integration effort, security and compliance, vendor risk and lock-in, and whether the capability is a <strong>differentiator</strong> for the business. Build what differentiates the product; buy or adopt open source for commodity capabilities.</p>
+
+<p><strong>Reasoning and alternatives:</strong> run a time-boxed proof of concept against the hardest requirements, check exit strategy and data portability, and review support and roadmap. A hybrid (buy the platform, build thin extensions) is common.</p>
+
+<p><strong>What if:</strong> a vendor&#39;s pricing or roadmap changes later; keep an abstraction at the integration boundary and revisit the decision periodically.
+<strong>Signal:</strong> structure the decision with criteria and name the differentiator test.</p>
+
+<hr>

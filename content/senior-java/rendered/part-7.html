@@ -120,12 +120,15 @@ Memory over the limit → <strong>OOMKilled</strong>; CPU over the limit →
 <h4 id="a-good-sde-3-interview-answer-is-2">A good SDE-3 interview answer is:</h4>
 
 <p><strong>HPA</strong> adds/removes Pod replicas from CPU, memory or custom metrics
-(requests per second, Kafka lag via KEDA). <strong>VPA</strong> adjusts requests per
-Pod (restarts them; good for right-sizing, don&#39;t combine with HPA on the
-same metric). <strong>Cluster Autoscaler</strong> (or GKE Autopilot) adds nodes when
+(requests per second, Kafka lag via KEDA). <strong>VPA</strong> recommends or applies per-Pod resource requests according to its
+update mode. Some modes evict/recreate Pods; newer supported clusters can
+apply some changes in place and fall back to recreation. Avoid having VPA
+and HPA independently control the same metric without an explicit policy. <strong>Cluster Autoscaler</strong> (or GKE Autopilot) adds nodes when
 Pods are unschedulable. Java specifics: scale-up lag from JVM warm-up,
 so set sensible stabilisation windows, min replicas, readiness only
-after warm-up, and PDBs so scale-down doesn&#39;t drop capacity.</p>
+after warm-up, and HPA stabilization/minimum replicas to manage replica scale-down. A PDB
+constrains voluntary evictions through the Eviction API, such as node drains;
+it does not block a Deployment or HPA from reducing desired replicas.</p>
 <h4 id="how-to-understand-it-2">How to understand it</h4>
 
 <p>Compare the options by correctness, operational behavior, performance,

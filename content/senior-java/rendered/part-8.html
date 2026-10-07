@@ -59,8 +59,7 @@ stores</strong> (RocksDB) backed by compacted <strong>changelog topics</strong>,
 restarted or moved task restores its state. Parallelism equals the
 number of input partitions (tasks), and instances in the same
 <code>application.id</code> share them like a consumer group. Joins require
-<strong>co-partitioned</strong> topics (same key and partition count); a key change
-triggers an automatic repartition topic. Use
+<strong>co-partitioned</strong> topics (same key and partition count); a key change marks the stream for possible repartitioning; a topic is created when a later key-dependent DSL operation requires records with the new key to be colocated. Processor API paths may need explicit <code>repartition()</code>. Use
 <code>processing.guarantee=exactly_once_v2</code> for transactional
 read-process-write inside Kafka, standby replicas for fast failover, and
 monitor restore time and lag.</p>
@@ -103,10 +102,8 @@ number of input partitions (tasks), and instances in the same
 <p>Window types: <em>tumbling</em> (fixed, non-overlapping), <em>hopping</em> (fixed,
 overlapping), <em>sliding</em>, and <em>session</em> (gaps of inactivity). Processing
 uses <strong>event time</strong>; records that arrive after the window end are
-handled by the <strong>grace period</strong>, after which they are dropped, and
-<code>suppress()</code> emits only the final result. Explain the trade-off: a
-longer grace improves accuracy but delays final output and increases
-state size.</p>
+handled by the <strong>grace period</strong>, after which they are dropped for window-close semantics. Use <code>Suppressed.untilWindowCloses(...)</code> with a strict buffer for final window results; <code>untilTimeLimit</code> has different behavior. Closure follows stream-time progress, so an idle input may not emit just because wall-clock time passes. Explain the trade-off: a
+a longer grace allows more late events but delays final output and increases state/buffer needs. Test idle streams as well as late events.</p>
 <h4 id="how-to-understand-it-2">How to understand it</h4>
 
 <p>Start with the core idea in plain English, then go deeper into

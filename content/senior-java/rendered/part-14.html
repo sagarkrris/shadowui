@@ -1,0 +1,275 @@
+<h2 id="part-14-system-design-data-internals-jvm-and-coding-questions-q194-q213">Part 14 System Design, Data Internals, JVM and Coding Questions (Q194–Q213)</h2>
+
+<p>Twenty more questions in the same layout as Parts 10, 12 and 13. Q194–Q199 are condensed system designs, Q200–Q202 cover Kafka and database internals, Q203–Q206 cover Java I/O and JVM topics, and Q207–Q213 are coding problems with solutions. Where no source is linked, the basis is general engineering practice, so confirm specifics against the documentation for your version.</p>
+<h3 id="condensed-system-designs">Condensed system designs</h3>
+<h4 id="q194-design-a-distributed-cache">Q194 Design a distributed cache</h4>
+
+<p><strong>Strong answer:</strong> partition keys across nodes with consistent hashing or fixed hash slots, replicate each partition to a replica for failover, and bound memory with an eviction policy (LRU, LFU or TTL). Clients route requests directly or through a proxy. Use cache-aside with a TTL so the database stays the source of truth.</p>
+
+<p><strong>Reasoning and alternatives:</strong> asynchronous replication means a failover can lose the most recent writes or serve stale reads; synchronous replication costs latency. Handle <strong>hot keys</strong> with a small local near-cache or by replicating the key, and <strong>stampedes</strong> with single-flight loading, jittered TTLs or early refresh.</p>
+
+<p><strong>What if/test:</strong> a node failure triggers a cold-cache load spike on the database, so rate-limit refills and test by killing a node under load. Track hit rate, evictions and p99 latency.
+<strong>Signal:</strong> cover partitioning, replication trade-offs, hot keys and stampedes, not just &quot;use Redis&quot;.</p>
+<h4 id="q195-design-a-news-feed-or-timeline">Q195 Design a news feed or timeline</h4>
+
+<p><strong>Strong answer:</strong> there are two models. <strong>Fan-out on write</strong> pushes each new post ID into every follower&#39;s precomputed timeline (fast reads, expensive writes, bad for accounts with millions of followers). <strong>Fan-out on read</strong> merges followed accounts&#39; posts at request time (cheap writes, slower reads). A hybrid pushes for ordinary accounts and pulls for high-follower accounts, merging at read time.</p>
+
+<p><strong>Reasoning and alternatives:</strong> store posts in a durable database, and timelines as capped lists of post IDs in a cache, hydrating post content on read. Use cursor-based pagination, and apply ranking as a separate step if the feed is not purely chronological.</p>
+
+<p><strong>What if/test:</strong> deleting or editing a post must propagate to timelines (lazy filtering on read is simplest). Test a celebrity posting during peak and measure write amplification.
+<strong>Signal:</strong> name the celebrity problem and the hybrid solution.</p>
+<h4 id="q196-design-a-webhook-delivery-system">Q196 Design a webhook delivery system</h4>
+
+<p><strong>Strong answer:</strong> persist each event, then deliver it with worker processes that POST to the subscriber&#39;s URL. Sign the payload (HMAC with a per-endpoint secret plus a timestamp to prevent replay), include a unique event ID so receivers can deduplicate, use short timeouts, and retry with exponential backoff for a bounded period. Deliveries are at-least-once and unordered unless you build per-endpoint ordering.</p>
+
+<p><strong>Reasoning and alternatives:</strong> isolate endpoints (a queue or rate limit per endpoint) so one slow subscriber cannot starve others. Disable an endpoint after sustained failure, send failed events to a dead-letter store, and provide a replay tool. Protect against SSRF with an outbound egress policy and destination validation: allow only approved schemes/hosts where possible; resolve and reject private, loopback, link-local and metadata addresses; revalidate every redirect and DNS resolution; and account for IPv4/IPv6 and DNS rebinding. A one-time hostname check or redirect following can bypass a denylist.</p>
+
+<p><strong>What if/test:</strong> a receiver that returns 200 before processing may lose events, so document that they should acknowledge only after durable receipt. Test with a flaky receiver and verify retry timing and deduplication.
+<strong>Signal:</strong> mention signatures, idempotency, isolation and SSRF.</p>
+<h4 id="q197-design-a-file-upload-and-storage-service">Q197 Design a file upload and storage service</h4>
+
+<p><strong>Strong answer:</strong> do not proxy file bytes through application servers. The client requests a signed upload URL, then uploads directly to object storage, using resumable or multipart upload for large files. Store metadata (owner, size, content hash, status) in a database with states such as PENDING → READY. An object-finalized event triggers asynchronous processing (virus scan, thumbnails, indexing). Keep the object quarantined and unavailable for download until required validation and scanning finish; only then transition metadata to READY. Serve READY downloads through signed URLs or a CDN.</p>
+
+<p><strong>Reasoning and alternatives:</strong> deduplicate by content hash if storage cost matters, and apply lifecycle policies for expiry and tiering. Keep the object store and the metadata consistent with a reaper job that cleans abandoned uploads.</p>
+
+<p><strong>What if/test:</strong> a client may upload but never confirm, or confirm without uploading; validate against the object store before marking READY. Test interrupted and resumed uploads.
+<strong>Signal:</strong> keep large data off the app tier and handle the two-system consistency gap.</p>
+<h4 id="q198-design-search-autocomplete">Q198 Design search autocomplete</h4>
+
+<p><strong>Strong answer:</strong> serve suggestions from a precomputed structure: a trie or prefix index where each prefix maps to its top-k completions, built offline or by streaming aggregation from query logs and refreshed periodically. Cache results in memory and at the edge, since latency must be very low.</p>
+
+<p><strong>Reasoning and alternatives:</strong> store the top-k at each node (more memory, faster lookup) instead of traversing the subtree at query time. Debounce on the client, shard by prefix for scale, add typo tolerance and personalization separately, and filter abusive or sensitive terms.</p>
+
+<p><strong>What if/test:</strong> trending queries need a fast update path beside the batch rebuild. Test p99 latency with realistic prefix distributions.
+<strong>Signal:</strong> precompute top-k per prefix and justify the memory trade-off.</p>
+<h4 id="q199-design-a-leaderboard">Q199 Design a leaderboard</h4>
+
+<p><strong>Strong answer:</strong> use a Redis sorted set: <code>ZADD</code>/<code>ZINCRBY</code> update a member in O(log n); rank lookup is O(log n), while returning N members is O(log n + N). Modern Redis can use <code>ZRANGE ... REV</code>. Equal scores already tie-break lexicographically by member bytes. If packing a tie-breaker into scores, bound and prove the encoding preserves order and exactness: Redis scores are doubles, with exact integer representation only through ±2^53. Keep separate keys with TTLs for daily and weekly windows.</p>
+
+<p><strong>Reasoning and alternatives:</strong> a single sorted set is bounded by one node&#39;s memory and throughput. To scale, shard users and merge each shard&#39;s top N (exact for top N), or accept approximate ranks for far-down positions. Treat the sorted set as rebuildable from the event stream.</p>
+
+<p><strong>What if/test:</strong> concurrent updates are atomic per command, but rank queries during bursts can reflect in-flight changes. Test with simulated score bursts and verify rebuild from events.
+<strong>Signal:</strong> name the data structure and the scale-out path.</p>
+<h3 id="kafka-and-database-internals">Kafka and database internals</h3>
+<h4 id="q200-why-is-kafka-fast-and-how-do-log-segments-retention-and-compaction-work">Q200 Why is Kafka fast, and how do log segments, retention and compaction work</h4>
+
+<p><strong>Source basis:</strong> <a href="https://kafka.apache.org/documentation/#design">Kafka design documentation</a>.</p>
+
+<p><strong>Strong answer:</strong> each partition is an append-only log stored as segment files. Writes are sequential, which disks handle efficiently, and Kafka relies on the operating system page cache, batching, compression and zero-copy transfer (<code>sendfile</code>) to serve consumers. Retention deletes whole old segments by time or size. <strong>Log compaction</strong> instead keeps the latest record per key, and a record with a null value (tombstone) deletes a key after a delay.</p>
+
+<p><strong>Reasoning and alternatives:</strong> consumers pull by offset, so replay is just resetting the offset. Compaction suits changelogs and current-state topics; time retention suits event streams.</p>
+
+<p><strong>What if/test:</strong> compaction does not guarantee immediate removal of older values, and consumers can still see superseded records until cleaning runs. Test tombstone behavior and retention settings explicitly.
+<strong>Signal:</strong> explain performance through sequential IO and the page cache, not just &quot;it&#39;s distributed&quot;.</p>
+<h4 id="q201-what-are-isr-acks-and-min-insync-replicas-and-how-can-data-be-lost">Q201 What are ISR, acks and min.insync.replicas, and how can data be lost</h4>
+
+<p><strong>Strong answer:</strong> the in-sync replica set (ISR) contains replicas caught up with the leader. With <code>acks=all</code> the leader waits for all current ISR members; <code>min.insync.replicas</code> makes the broker reject writes when the ISR is smaller than the threshold. A common setting is replication factor 3 with <code>min.insync.replicas=2</code>, tolerating one broker failure without losing acknowledged writes.</p>
+
+<p><strong>Reasoning and alternatives:</strong> with <code>acks=1</code> a leader crash after acknowledging but before replication loses the write. Allowing <strong>unclean leader election</strong> (a non-ISR replica becoming leader) trades data loss for availability, so it is normally disabled. Enable producer idempotence and retries to avoid duplicates and transient loss.</p>
+
+<p><strong>What if/test:</strong> <code>acks=all</code> with <code>min.insync.replicas=1</code> gives weaker protection than people assume. Test by stopping brokers and checking producer errors and acknowledged-write survival.
+<strong>Signal:</strong> show how the three settings combine, not each in isolation.</p>
+<h4 id="q202-which-postgresql-index-types-do-you-know-and-when-do-you-use-each">Q202 Which PostgreSQL index types do you know and when do you use each</h4>
+
+<p><strong>Source basis:</strong> <a href="https://www.postgresql.org/docs/current/indexes-types.html">PostgreSQL index types</a>.</p>
+
+<p><strong>Strong answer:</strong> B-tree (default) handles equality, ranges and ordering. A <strong>partial index</strong> (<code>WHERE status = &#39;ACTIVE&#39;</code>) indexes only the rows queries need. <strong>GIN</strong> suits <code>jsonb</code>, arrays and full-text search. A <strong>covering index</strong> (<code>INCLUDE</code>) allows index-only scans. <strong>BRIN</strong> is a tiny index for very large tables whose values correlate with physical order (for example append-only timestamps). Expression indexes support queries on computed values such as <code>lower(email)</code>.</p>
+
+<p><strong>Reasoning and alternatives:</strong> every index slows writes and uses space, so base them on real queries and drop unused ones. Build on live tables with <code>CREATE INDEX CONCURRENTLY</code> to avoid blocking writes.</p>
+
+<p><strong>What if/test:</strong> index-only scans depend on the visibility map, so a table that is not vacuumed enough falls back to heap reads. Confirm with <code>EXPLAIN (ANALYZE, BUFFERS)</code>.
+<strong>Signal:</strong> match the index type to the access pattern and mention the write cost.</p>
+<h3 id="java-i-o-and-jvm">Java I/O and JVM</h3>
+<h4 id="q203-how-do-you-process-a-very-large-csv-file-in-java">Q203 How do you process a very large CSV file in Java</h4>
+
+<p><strong>Strong answer:</strong> stream it instead of loading it. Use a streaming CSV parser over a <code>Reader</code>; physical lines are not necessarily records because quoted fields may contain line breaks. Parse logical records, validate and process in <strong>batches</strong> (for example 1,000 rows per JDBC batch or a database bulk-load path), keeping memory bounded. Record progress so a failed run can resume.</p>
+
+<p><strong>Reasoning and alternatives:</strong> <code>Files.readAllLines</code> loads everything and fails on large files. For restartable, chunked processing with skip and retry policies use Spring Batch. Use a bounded queue between a reader thread and worker threads for parallelism with back-pressure.</p>
+
+<p><strong>What if/test:</strong> a single bad row should not abort a run silently; route rejects to an error file. Test with a file larger than the heap, quoted delimiters and multiline fields, malformed rows, and restart points at logical-record boundaries.
+<strong>Signal:</strong> bounded memory, batching and restartability.</p>
+<h4 id="q204-how-do-java-nio-and-selectors-differ-from-classic-blocking-i-o">Q204 How do Java NIO and selectors differ from classic blocking I/O</h4>
+
+<p><strong>Strong answer:</strong> classic I/O uses one blocked thread per connection. NIO uses <strong>channels</strong>, <strong>buffers</strong> and a <strong>selector</strong> so a small number of threads can monitor many connections and handle only those that are ready. Netty and Tomcat&#39;s NIO connector build event loops on this model. <code>FileChannel.transferTo</code> can move file data to a socket without copying through user space (zero-copy).</p>
+
+<p><strong>Reasoning and alternatives:</strong> NIO scales connection count but code is more complex. On Java 21, virtual threads let you write simple blocking code that scales well for I/O-bound services. Direct <code>ByteBuffer</code>s live off-heap, reduce copying, but are costly to allocate and need monitoring.</p>
+
+<p><strong>What if/test:</strong> blocking work inside an event-loop thread stalls many connections. Test by adding a slow call and observing latency across unrelated requests.
+<strong>Signal:</strong> explain readiness multiplexing and the event-loop pitfall.</p>
+<h4 id="q205-what-are-g1-humongous-allocations-and-how-do-you-spot-them">Q205 What are G1 humongous allocations and how do you spot them</h4>
+
+<p><strong>Strong answer:</strong> in G1, an object at least half the size of a heap region is <strong>humongous</strong> and is allocated directly in contiguous old-generation regions, bypassing the young generation. Frequent humongous allocations can cause fragmentation, extra GC work and surprising full collections.</p>
+
+<p><strong>Reasoning and alternatives:</strong> spot them in GC logs (<code>-Xlog:gc*</code>) where humongous allocation is reported. Fixes: avoid very large arrays and buffers (process in chunks or stream), or increase the region size with <code>-XX:G1HeapRegionSize</code>. Fixing the allocation pattern is better than only tuning flags.</p>
+
+<p><strong>What if/test:</strong> a service that reads large payloads fully into a <code>byte[]</code> is a typical cause. Reproduce under load, compare GC logs before and after chunking.
+<strong>Signal:</strong> connect a symptom in GC logs to a code-level cause.</p>
+<h4 id="q206-list-of-versus-unmodifiablelist-versus-list-copyof-versus-arrays-aslist">Q206 List.of versus unmodifiableList versus List.copyOf versus Arrays.asList</h4>
+
+<p><strong>Strong answer:</strong> <code>List.of</code> creates a structurally unmodifiable list and rejects nulls. <code>Collections.unmodifiableList</code> is a read-only <strong>view</strong>: changes to the underlying list remain visible through it. <code>List.copyOf</code> makes a shallow, structurally unmodifiable copy; callers must not rely on object identity. <code>Arrays.asList</code> is fixed-size and writes through to the backing array. <code>Stream.toList()</code> returns an unmodifiable list that allows nulls.</p>
+
+<p><strong>Reasoning and alternatives:</strong> for safe publication of collection structure, return an unmodifiable snapshot or defensive copy. If the object graph must also be immutable, its elements must be immutable or deep-copied. Mutating methods on all of these except the <code>Arrays.asList</code> <code>set</code> throw <code>UnsupportedOperationException</code>.</p>
+
+<p><strong>What if/test:</strong> returning <code>unmodifiableList(internalList)</code> and later mutating <code>internalList</code> surprises callers who iterate concurrently. Test by mutating the source after creating each variant.
+<strong>Signal:</strong> distinguish a view from a copy.</p>
+<h3 id="coding-problems">Coding problems</h3>
+<h4 id="q207-longest-consecutive-sequence-in-o-n">Q207 Longest consecutive sequence in O(n)</h4>
+
+<pre><code class="java">int longestConsecutive(int[] nums) {
+    Set&lt;Integer&gt; set = new HashSet&lt;&gt;();
+    for (int n : nums) set.add(n);
+    int best = 0;
+    for (int n : set) {
+        if (n == Integer.MIN_VALUE || !set.contains(n - 1)) { // avoid predecessor wraparound
+            int len = 1;
+            while ((long) n + len &lt;= Integer.MAX_VALUE
+                    &amp;&amp; set.contains((int) ((long) n + len))) len++;
+            best = Math.max(best, len);
+        }
+    }
+    return best;
+}
+</code></pre>
+
+<p><strong>Reasoning and alternatives:</strong> each element is visited at most twice, so the time is O(n) with O(n) space. Sorting is simpler but O(n log n).</p>
+
+<p><strong>What if/test:</strong> test empty input, duplicates, negatives, one long run and both integer endpoints together.
+<strong>Signal:</strong> explain why starting only at sequence starts keeps it linear.</p>
+<h4 id="q208-product-of-array-except-self-no-division">Q208 Product of array except self (no division)</h4>
+
+<pre><code class="java">int[] productExceptSelf(int[] a) {
+    int n = a.length;
+    int[] out = new int[n];
+    if (n == 0) return out;
+    out[0] = 1;
+    for (int i = 1; i &lt; n; i++) out[i] = out[i - 1] * a[i - 1];   // product of everything to the left
+    int right = 1;
+    for (int i = n - 1; i &gt;= 0; i--) { out[i] *= right; right *= a[i]; }
+    return out;
+}
+</code></pre>
+
+<p><strong>Reasoning and alternatives:</strong> O(n) time, O(1) extra space beyond the output. Division fails with zeros and is often disallowed.</p>
+
+<p><strong>What if/test:</strong> test zeros, negatives and overflow (ask whether to use <code>long</code>).
+<strong>Signal:</strong> prefix and suffix products, and the zero case.</p>
+<h4 id="q209-rotting-oranges-multi-source-bfs">Q209 Rotting oranges (multi-source BFS)</h4>
+
+<pre><code class="java">int orangesRotting(int[][] g) {
+    Objects.requireNonNull(g, &quot;grid&quot;);
+    if (g.length == 0) return 0;
+    Objects.requireNonNull(g[0], &quot;grid row&quot;);
+    int R = g.length, C = g[0].length;
+    for (int[] row : g) {
+        Objects.requireNonNull(row, &quot;grid row&quot;);
+        if (row.length != C) throw new IllegalArgumentException(&quot;grid must be rectangular&quot;);
+        for (int cell : row) {
+            if (cell &lt; 0 || cell &gt; 2) throw new IllegalArgumentException(&quot;grid cells must be 0, 1 or 2&quot;);
+        }
+    }
+    int fresh = 0;
+    Deque&lt;int[]&gt; q = new ArrayDeque&lt;&gt;();
+    for (int r = 0; r &lt; R; r++)
+        for (int c = 0; c &lt; C; c++) {
+            if (g[r][c] == 2) q.add(new int[]{r, c});
+            else if (g[r][c] == 1) fresh++;
+        }
+    int minutes = 0;
+    int[][] dirs = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+    while (!q.isEmpty() &amp;&amp; fresh &gt; 0) {
+        for (int s = q.size(); s &gt; 0; s--) {
+            int[] p = q.poll();
+            for (int[] d : dirs) {
+                int nr = p[0] + d[0], nc = p[1] + d[1];
+                if (nr &gt;= 0 &amp;&amp; nc &gt;= 0 &amp;&amp; nr &lt; R &amp;&amp; nc &lt; C &amp;&amp; g[nr][nc] == 1) {
+                    g[nr][nc] = 2; fresh--; q.add(new int[]{nr, nc});
+                }
+            }
+        }
+        minutes++;
+    }
+    return fresh == 0 ? minutes : -1;
+}
+</code></pre>
+
+<p><strong>Reasoning and alternatives:</strong> start BFS from all rotten cells together so each level equals one minute. O(R × C) time and space.</p>
+
+<p><strong>What if/test:</strong> test empty and zero-column grids, no fresh oranges (0), unreachable fresh orange (-1), one cell and malformed nonrectangular input.
+<strong>Signal:</strong> know why multi-source BFS gives the minimum time.</p>
+<h4 id="q210-trapping-rain-water-two-pointers">Q210 Trapping rain water (two pointers)</h4>
+
+<pre><code class="java">long trap(int[] h) {
+    Objects.requireNonNull(h, &quot;heights&quot;);
+    for (int height : h) {
+        if (height &lt; 0) throw new IllegalArgumentException(&quot;heights must be nonnegative&quot;);
+    }
+    int l = 0, r = h.length - 1;
+    long leftMax = 0, rightMax = 0, water = 0;
+    while (l &lt; r) {
+        if (h[l] &lt; h[r]) { leftMax = Math.max(leftMax, (long) h[l]); water += leftMax - h[l]; l++; }
+        else             { rightMax = Math.max(rightMax, (long) h[r]); water += rightMax - h[r]; r--; }
+    }
+    return water;
+}
+</code></pre>
+
+<p><strong>Reasoning and alternatives:</strong> water at a position is bounded by the lower of the tallest bars on each side; the pointer with the smaller height is already limited by its own side&#39;s maximum. O(n) time, O(1) space. The total is accumulated as <code>long</code>; the alternative uses two precomputed max arrays.</p>
+
+<p><strong>What if/test:</strong> test empty, monotonic and valley shapes, including a valley bounded by <code>Integer.MAX_VALUE</code> heights.
+<strong>Signal:</strong> justify why the smaller side can be processed safely.</p>
+<h4 id="q211-minimum-window-substring-sliding-window">Q211 Minimum window substring (sliding window)</h4>
+
+<pre><code class="java">String minWindow(String s, String t) {
+    if (t.isEmpty() || s.length() &lt; t.length()) return &quot;&quot;;
+    int[] need = new int[128];                     // assumes ASCII; use a map for full Unicode
+    for (char c : t.toCharArray()) need[c]++;
+    int missing = t.length(), left = 0, bestStart = 0, bestLen = Integer.MAX_VALUE;
+    for (int r = 0; r &lt; s.length(); r++) {
+        if (need[s.charAt(r)]-- &gt; 0) missing--;
+        while (missing == 0) {
+            if (r - left + 1 &lt; bestLen) { bestLen = r - left + 1; bestStart = left; }
+            if (++need[s.charAt(left++)] &gt; 0) missing++;
+        }
+    }
+    return bestLen == Integer.MAX_VALUE ? &quot;&quot; : s.substring(bestStart, bestStart + bestLen);
+}
+</code></pre>
+
+<p><strong>Reasoning and alternatives:</strong> expand the right edge until all characters are covered, then shrink the left edge while still valid. Each index moves at most once, so O(n).</p>
+
+<p><strong>What if/test:</strong> test repeated characters in <code>t</code>, no valid window, and <code>t</code> longer than <code>s</code>.
+<strong>Signal:</strong> explain the <code>missing</code> counter and the shrink condition.</p>
+<h4 id="q212-lowest-common-ancestor-of-a-binary-tree">Q212 Lowest common ancestor of a binary tree</h4>
+
+<pre><code class="java">TreeNode lca(TreeNode root, TreeNode p, TreeNode q) {
+    if (root == null || root == p || root == q) return root;
+    TreeNode left = lca(root.left, p, q), right = lca(root.right, p, q);
+    return (left != null &amp;&amp; right != null) ? root : (left != null ? left : right);
+}
+</code></pre>
+
+<p><strong>Reasoning and alternatives:</strong> if both subtrees return a node, the current node is the split point. O(n) time, O(h) stack. For a binary search tree you can walk down using the ordering in O(h).</p>
+
+<p><strong>What if/test:</strong> the solution assumes both nodes exist; confirm that or add a verification pass. Test when one node is an ancestor of the other.
+<strong>Signal:</strong> state the assumption and give the BST shortcut.</p>
+<h4 id="q213-time-based-key-value-store">Q213 Time-based key-value store</h4>
+
+<pre><code class="java">class TimeMap {
+    private final Map&lt;String, TreeMap&lt;Integer, String&gt;&gt; store = new HashMap&lt;&gt;();
+
+    void set(String key, String value, int timestamp) {
+        store.computeIfAbsent(key, k -&gt; new TreeMap&lt;&gt;()).put(timestamp, value);
+    }
+    String get(String key, int timestamp) {
+        TreeMap&lt;Integer, String&gt; versions = store.get(key);
+        if (versions == null) return &quot;&quot;;
+        Map.Entry&lt;Integer, String&gt; e = versions.floorEntry(timestamp);   // latest version at or before timestamp
+        return e == null ? &quot;&quot; : e.getValue();
+    }
+}
+</code></pre>
+
+<p><strong>Reasoning and alternatives:</strong> <code>floorEntry</code> is O(log n). If timestamps always increase, an <code>ArrayList</code> with binary search uses less memory.</p>
+
+<p><strong>What if/test:</strong> this class is not thread-safe; for concurrency use <code>ConcurrentHashMap</code> with <code>ConcurrentSkipListMap</code>. Test a get before the first set, equal timestamps and overwriting.
+<strong>Signal:</strong> pick a floor lookup structure and discuss thread safety.</p>

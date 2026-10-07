@@ -1,6 +1,6 @@
 # Java engineering practice
 
-`/build` includes seventeen original Java 17 challenges across system components,
+`/build` includes eighteen original Java 17 challenges across system components,
 object design, and concurrency. Existing multi-chapter projects remain available.
 Each challenge has an editable starter, explicit contract, visible examples and
 failure checks, progressive hints, authored reference, design follow-up, and

@@ -7,12 +7,12 @@ require "cgi"
 
 root = File.expand_path("..", __dir__)
 source = File.read(File.join(root, "content/senior-java/Senior-Java-Interview-Master-Guide-Corrected.md"))
-markers = source.to_enum(:scan, /^<!-- ===== Part [1-8]:.*?===== -->$|^# Part (?:9|10|11) .+$/).map { Regexp.last_match.begin(0) }
-abort "Expected 11 guide parts, found #{markers.length}" unless markers.length == 11
+markers = source.to_enum(:scan, /^<!-- ===== Part [1-8]:.*?===== -->$|^# Part (?:9|10|11|12|13|14|15|16) .+$/).map { Regexp.last_match.begin(0) }
+abort "Expected 16 guide parts, found #{markers.length}" unless markers.length == 16
 refresher_split = source.index("\n## Module 5: Maven")
 abort "Refresher split point is missing" unless refresher_split && refresher_split.between?(markers[0], markers[1])
 boundaries = [markers[0], refresher_split + 1, *markers[1..]]
-slugs = ["part-1a", "part-1b", *(2..11).map { |number| "part-#{number}" }]
+slugs = ["part-1a", "part-1b", *(2..16).map { |number| "part-#{number}" }]
 
 class GuideRenderer < Redcarpet::Render::HTML
   def header(text, level)

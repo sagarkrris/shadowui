@@ -1,0 +1,207 @@
+<h2 id="part-15-full-system-design-walkthroughs-and-dp-graph-problems-q214-q222">Part 15 Full System Design Walkthroughs and DP/Graph Problems (Q214–Q222)</h2>
+
+<p>Q214–Q216 are full walkthroughs you can follow in a 45-minute design round. Each uses the same flow: requirements, estimates, API, data model, architecture, deep dives, failure handling, trade-offs and a timing plan. The numbers are illustrative assumptions to show the method; in an interview, state your own assumptions and adjust. Q217–Q222 are dynamic programming and graph problems with solutions.</p>
+<h3 id="full-system-design-walkthroughs">Full system design walkthroughs</h3>
+<h4 id="q214-design-a-flash-sale-checkout-that-never-oversells-inventory">Q214 Design a flash-sale checkout that never oversells inventory</h4>
+
+<p><strong>Requirements.</strong> Functional: browse a product, add to cart, reserve stock, pay, confirm the order. Non-functional: never sell more units than exist, tolerate a sudden traffic spike (assume 1M users, 100K requests/second on the product page, 10K order attempts/second, 5,000 units), stay available if payment is slow, and stay idempotent on retries.</p>
+
+<p><strong>API.</strong>
+<code>POST /reservations {sku, qty}</code> returns a reservation with an expiry, <code>POST /orders {reservationId, paymentToken}</code> with an <code>Idempotency-Key</code> header returns the order, and <code>GET /orders/{id}</code> returns its status.</p>
+
+<p><strong>Data model.</strong> <code>stock(sku, available)</code>, <code>reservation(id, sku, qty, user, expires_at, status)</code>, <code>order(id, reservation_id, status, amount)</code>, and an idempotency table with a unique key scoped to the caller and operation plus a request fingerprint.</p>
+
+<p><strong>Architecture.</strong> A CDN serves the static product page. A <strong>waiting room</strong> (a queue that admits users at a controlled rate) protects the backend. The reservation service decrements stock atomically, the order service runs a saga (reserve → charge → confirm), and events flow through a message queue with an outbox.</p>
+
+<p><strong>Deep dive: preventing oversell.</strong> In one database transaction, validate positive quantity, perform <code>UPDATE stock SET available = available - :qty WHERE sku = :sku AND available &gt;= :qty</code>, and create exactly one reservation if one row was updated. Zero updated rows means insufficient stock or a missing SKU; distinguish them if the API needs to. The database remains the inventory authority. A hot row can limit throughput: preallocate the 5,000 units into disjoint stock buckets and atomically decrement only a bucket with enough stock, or use a carefully reconciled reservation service. A Redis counter alone cannot prove the no-oversell guarantee across failover and database commits. Expiry releases a hold only after an atomic <code>ACTIVE → EXPIRED</code> transition that loses to a concurrent confirmation; credit stock once in the same transaction.</p>
+
+<p><strong>Failure handling.</strong> Move a reservation to <code>PAYMENT_PENDING</code> before charging so ordinary expiry does not release it mid-payment. A confirmed payment failure may release the reservation. A timeout is ambiguous: first query or reconcile the provider&#39;s payment state, using the same provider idempotency key, before refunding or releasing a hold. Bound how long pending holds can remain unresolved and escalate for reconciliation. Make order creation and compensation idempotent, and let a recovery worker finish interrupted state transitions. Reject traffic early with rate limiting and bot protection.</p>
+
+<p><strong>Trade-offs.</strong> A cache can serve availability hints but must not independently authorize a sale. A single database stock row is simple but limited by contention; disjoint buckets need careful allocation and reconciliation to avoid stranded units. Reserving before payment temporarily holds inventory. A waiting room protects capacity but needs an explicit fairness policy.</p>
+
+<p><strong>Timing plan.</strong> 5 min requirements and estimates, 5 min API and data, 10 min architecture, 15 min the oversell deep dive, 10 min failures and trade-offs.
+<strong>Signal:</strong> a precise oversell mechanism (conditional update, sub-counters, expiring reservations), a saga with compensation and a plan for the traffic spike.</p>
+<h4 id="q215-design-a-ride-hailing-dispatch-system">Q215 Design a ride-hailing dispatch system</h4>
+
+<p><strong>Requirements.</strong> Functional: drivers send locations, riders request a ride, the system finds and offers the trip to a nearby driver, tracks the trip and shows ETA. Non-functional: matching in a few seconds, high-volume location updates (assume 1M online drivers sending a location every 4 seconds, about 250K updates/second), no driver offered two trips at once.</p>
+
+<p><strong>API.</strong>
+Drivers stream locations over a persistent connection (WebSocket or gRPC) or <code>POST /drivers/{id}/location</code>. Riders call <code>POST /rides {pickup, dropoff}</code> and receive updates through push or streaming. Drivers respond with <code>POST /offers/{id}/accept</code> or <code>decline</code>.</p>
+
+<p><strong>Data model.</strong> The <strong>latest</strong> driver location lives in an in-memory geospatial store (for example Redis geospatial commands or an index keyed by geohash/S2/H3 cell), with driver state <code>AVAILABLE | OFFERED | ON_TRIP</code>. Trips, riders and drivers live in a durable database. Location history is written asynchronously to a stream and analytics storage.</p>
+
+<p><strong>Architecture.</strong> Location gateways (stateless, many instances) update the geo index. A matching service queries nearby available drivers in the pickup cell and neighboring cells, ranks them by ETA (from a routing service) and offers the trip to the best one with a timeout. A trip service owns the trip state machine, and a pricing service computes fares and surge per cell from supply and demand.</p>
+
+<p><strong>Deep dive: matching without double-booking.</strong> Choose one authoritative store for driver offer state. Atomically change <code>AVAILABLE → OFFERED</code> with a unique offer ID, expiry and version/fencing token, and persist the matching trip transition before notifying the driver. Acceptance must atomically verify that the offer is still current before moving to <code>ON_TRIP</code>. Decline and timeout may restore <code>AVAILABLE</code> only if they still own that offer; a late timeout must not clear a newer offer. Expanding search rings (nearby cells first, then wider) bounds candidate work per request.</p>
+
+<p><strong>Failure handling.</strong> Stale locations expire by a TTL; do not offer drivers whose location or availability is stale. Recover unexpired offers from the authoritative trip/offer store after a restart, and reconcile the geo index as a derived view. Partitioning by city or region limits the failure radius. Retry notifications without repeating a trip transition.</p>
+
+<p><strong>Trade-offs.</strong> Location updates need not be durable (the next update replaces them), which allows in-memory storage; trip state must be durable. Larger cells mean fewer lookups but more candidates to rank. Frequent updates improve accuracy but cost bandwidth and battery.</p>
+
+<p><strong>Timing plan.</strong> 5 min requirements and scale, 10 min geo index and updates, 15 min matching and state machine, 10 min failures and scaling, 5 min trade-offs.
+<strong>Signal:</strong> separating ephemeral location data from durable trip data, and the atomic driver-state transition.</p>
+<h4 id="q216-design-a-real-time-clickstream-analytics-pipeline-on-gcp">Q216 Design a real-time clickstream analytics pipeline on GCP</h4>
+
+<p><strong>Requirements.</strong> Functional: collect events from web and mobile clients, make near-real-time aggregates available (page views per minute, funnel counts) and keep raw events for later analysis. Non-functional: handle bursts (assume 200K events/second peak), tolerate duplicates and late events, keep results correct within minutes, control cost.</p>
+
+<p><strong>API.</strong> <code>POST /events</code> accepts a batch of events, each with a client-generated <code>eventId</code>, timestamp, user or session ID and payload, validated against a schema.</p>
+
+<p><strong>Data model.</strong> Raw events in a date-partitioned, clustered BigQuery table (and an archive in Cloud Storage), aggregates in a separate table keyed by window and dimensions, and a dead-letter topic for invalid events.</p>
+
+<p><strong>Architecture.</strong> Clients send to a stateless collector on Cloud Run, which validates and publishes to <strong>Pub/Sub</strong>. A <strong>Dataflow</strong> (Apache Beam) streaming job reads the subscription, validates, deduplicates stable client <code>eventId</code> values within a defined retention period, enriches, computes windowed aggregates and writes raw and aggregated results to <strong>BigQuery</strong>. Route invalid records to a dead-letter destination explicitly in the pipeline. Dashboards query the aggregate tables.</p>
+
+<p><strong>Deep dive: time, duplicates and late data.</strong> Aggregate by <strong>event time</strong>, not arrival time, using windows with a watermark and allowed lateness. A late event updates an earlier window only while that window remains open under the chosen trigger and accumulation policy. Dataflow&#39;s default exactly-once mode covers committed pipeline results, not arbitrary external side effects. Deduplicate client retries by stable <code>eventId</code>; Pub/Sub message deduplication alone does not identify separately published copies of one client event. Choose a BigQuery sink mode with the required write guarantee, or reconcile duplicate rows downstream. State the end-to-end guarantee only after checking the source, sink and deduplication window. Partition BigQuery tables by event date and cluster by common filters to cut query cost.</p>
+
+<p><strong>Failure handling.</strong> The collector acknowledges only a confirmed publish; an ambiguous publish failure may still produce a duplicate when the client retries with the same <code>eventId</code>. Route poison records explicitly instead of relying solely on Pub/Sub subscription dead lettering after pipeline acknowledgement. If the pipeline is down, Pub/Sub retains messages within the configured retention period; recovery depends on backlog, quota and capacity. Monitor backlog age, watermark lag and error rates.</p>
+
+<p><strong>Trade-offs.</strong> A longer allowed lateness improves accuracy but delays final results and increases state. Streaming aggregation gives low latency at higher cost than batch recomputation; a common design keeps both, with batch as the correction layer. Schema evolution needs versioned, backward-compatible event formats.</p>
+
+<p><strong>Timing plan.</strong> 5 min requirements and scale, 10 min ingestion path, 15 min windows/dedupe/late data, 10 min failures and cost, 5 min trade-offs.
+<strong>Signal:</strong> event time versus processing time, idempotent sinks and honest delivery guarantees.</p>
+<h3 id="dynamic-programming-and-graph-problems">Dynamic programming and graph problems</h3>
+<h4 id="q217-longest-increasing-subsequence-in-o-n-log-n">Q217 Longest increasing subsequence in O(n log n)</h4>
+
+<pre><code class="java">int lengthOfLIS(int[] nums) {
+    int[] tails = new int[nums.length];          // tails[i] = smallest tail of an increasing subsequence of length i+1
+    int size = 0;
+    for (int x : nums) {
+        int i = Arrays.binarySearch(tails, 0, size, x);
+        if (i &lt; 0) i = -(i + 1);                 // insertion point
+        tails[i] = x;
+        if (i == size) size++;
+    }
+    return size;
+}
+</code></pre>
+
+<p><strong>Reasoning and alternatives:</strong> each number replaces the first tail that is greater or equal, keeping tails as small as possible, which leaves the most room to extend. O(n log n) time. The simpler O(n²) DP (<code>dp[i] = 1 + max(dp[j])</code> for smaller earlier values) is acceptable first, then optimize.</p>
+
+<p><strong>What if/test:</strong> the array <code>tails</code> is not itself a valid subsequence, only its length is meaningful. Test empty input, all equal values (answer 1) and strictly decreasing input.
+<strong>Signal:</strong> explain what <code>tails</code> means and why equal values replace instead of extend.</p>
+<h4 id="q218-partition-equal-subset-sum-0-1-knapsack">Q218 Partition equal subset sum (0/1 knapsack)</h4>
+
+<pre><code class="java">boolean canPartition(int[] nums) {
+    long sum = 0;
+    for (int n : nums) {
+        if (n &lt; 0) throw new IllegalArgumentException(&quot;non-negative values required&quot;);
+        sum += n;
+    }
+    if (sum % 2 != 0) return false;
+    int target = Math.toIntExact(sum / 2); // array-backed DP requires a feasible target
+    boolean[] dp = new boolean[target + 1];
+    dp[0] = true;
+    for (int n : nums)
+        for (int s = target; s &gt;= n; s--)        // go downward so each number is used at most once
+            dp[s] |= dp[s - n];
+    return dp[target];
+}
+</code></pre>
+
+<p><strong>Reasoning and alternatives:</strong> the question reduces to &quot;can some subset sum to half the total&quot;. O(n × target) time, O(target) space. Iterating upward would let a number be reused, which solves the unbounded variant instead.</p>
+
+<p><strong>What if/test:</strong> this array-backed method assumes non-negative integers and a feasible target size; reject negative values and use another representation if the target is too large for memory. Test an odd total, an empty input (two empty subsets are allowed), a single element, and a case that needs several elements.
+<strong>Signal:</strong> explain the reverse loop and the reduction.</p>
+<h4 id="q219-longest-common-subsequence">Q219 Longest common subsequence</h4>
+
+<pre><code class="java">int longestCommonSubsequence(String a, String b) {
+    int[][] dp = new int[a.length() + 1][b.length() + 1];
+    for (int i = 1; i &lt;= a.length(); i++)
+        for (int j = 1; j &lt;= b.length(); j++)
+            dp[i][j] = a.charAt(i - 1) == b.charAt(j - 1)
+                    ? dp[i - 1][j - 1] + 1
+                    : Math.max(dp[i - 1][j], dp[i][j - 1]);
+    return dp[a.length()][b.length()];
+}
+</code></pre>
+
+<p><strong>Reasoning and alternatives:</strong> <code>dp[i][j]</code> is the answer for the first <code>i</code> characters of <code>a</code> and the first <code>j</code> of <code>b</code>. O(m × n) time and space; keep only two rows to reduce space to O(n). Walk the table backwards to reconstruct the sequence itself.</p>
+
+<p><strong>What if/test:</strong> test empty strings, identical strings and no common characters.
+<strong>Signal:</strong> define the state precisely and mention the space optimization.</p>
+<h4 id="q220-word-ladder-shortest-transformation-bfs">Q220 Word ladder (shortest transformation, BFS)</h4>
+
+<pre><code class="java">int ladderLength(String begin, String end, List&lt;String&gt; words) {
+    if (begin.equals(end)) return 1; // if a zero-transformation ladder is allowed
+    Set&lt;String&gt; dict = new HashSet&lt;&gt;(words);
+    if (!dict.contains(end)) return 0;
+    Deque&lt;String&gt; q = new ArrayDeque&lt;&gt;();
+    Set&lt;String&gt; seen = new HashSet&lt;&gt;();
+    q.add(begin); seen.add(begin);
+    int steps = 1;                                   // counts words in the sequence
+    while (!q.isEmpty()) {
+        for (int s = q.size(); s &gt; 0; s--) {
+            String w = q.poll();
+            if (w.equals(end)) return steps;
+            char[] c = w.toCharArray();
+            for (int i = 0; i &lt; c.length; i++) {
+                char old = c[i];
+                for (char x = &#39;a&#39;; x &lt;= &#39;z&#39;; x++) {
+                    if (x == old) continue;
+                    c[i] = x;
+                    String next = new String(c);
+                    if (dict.contains(next) &amp;&amp; seen.add(next)) q.add(next);
+                }
+                c[i] = old;
+            }
+        }
+        steps++;
+    }
+    return 0;
+}
+</code></pre>
+
+<p><strong>Reasoning and alternatives:</strong> words are nodes and a single-letter change is an edge; BFS finds the shortest path in an unweighted graph. For each visited word of length L, generating 26L candidates costs O(26L²) in Java because constructing and hashing each candidate string costs O(L); memory is O(NL) for N dictionary words. Bidirectional BFS can reduce explored nodes on large dictionaries but must coordinate the two visited frontiers correctly.</p>
+
+<p><strong>What if/test:</strong> assume non-null, equal-length lowercase words; clarify whether a zero-transformation ladder counts as one word, and whether the end must appear in the dictionary. This implementation returns 1 when begin equals end. Test an unreachable target and a target missing from the dictionary.
+<strong>Signal:</strong> model it as a graph, mark visited when enqueuing, and offer bidirectional BFS.</p>
+<h4 id="q221-cheapest-flights-within-k-stops-bellman-ford-style">Q221 Cheapest flights within K stops (Bellman-Ford style)</h4>
+
+<pre><code class="java">int findCheapestPrice(int n, int[][] flights, int src, int dst, int k) {
+    long INF = Long.MAX_VALUE / 4;
+    long[] dist = new long[n];
+    Arrays.fill(dist, INF);
+    dist[src] = 0;
+    for (int i = 0; i &lt;= k; i++) {                   // at most k+1 edges
+        long[] next = dist.clone();                  // use only last round&#39;s values
+        for (int[] f : flights)
+            if (dist[f[0]] &lt; INF)
+                next[f[1]] = Math.min(next[f[1]], dist[f[0]] + f[2]);
+        dist = next;
+    }
+    return dist[dst] &gt;= INF ? -1 : Math.toIntExact(dist[dst]);
+}
+</code></pre>
+
+<p><strong>Reasoning and alternatives:</strong> each round allows one more edge, so after <code>k + 1</code> rounds the array holds the cheapest cost using at most <code>k</code> intermediate stops. O((k + 1) × (E + V)) time and O(V) space, including each clone. Assume non-negative fares and a final answer in the <code>int</code> range; <code>long</code> distances avoid ordinary intermediate overflow. Plain Dijkstra using only one best cost per city can discard a path with fewer edges that is needed under the stop limit; a correct priority-queue variant tracks stops in its state.</p>
+
+<p><strong>What if/test:</strong> cloning the array each round prevents using an edge twice in one round. Test unreachable destinations, <code>k = 0</code> and a case where a cheaper path needs too many stops.
+<strong>Signal:</strong> explain why the stop limit rules out standard Dijkstra and why the clone matters.</p>
+<h4 id="q222-redundant-connection-union-find">Q222 Redundant connection (Union-Find)</h4>
+
+<pre><code class="java">int[] findRedundantConnection(int[][] edges) {
+    int[] parent = new int[edges.length + 1];
+    int[] rank = new int[parent.length];
+    for (int i = 0; i &lt; parent.length; i++) parent[i] = i;
+    for (int[] e : edges) {
+        int a = find(parent, e[0]), b = find(parent, e[1]);
+        if (a == b) return e;                        // this edge closes a cycle
+        if (rank[a] &lt; rank[b]) parent[a] = b;
+        else if (rank[a] &gt; rank[b]) parent[b] = a;
+        else { parent[b] = a; rank[a]++; }
+    }
+    return new int[0];
+}
+
+int find(int[] p, int x) {
+    while (p[x] != x) { p[x] = p[p[x]]; x = p[x]; } // path halving
+    return x;
+}
+</code></pre>
+
+<p><strong>Reasoning and alternatives:</strong> assume n edges over node labels 1 through n and an original tree plus one extra edge. The edge joining two already connected nodes closes the unique cycle. Path compression plus union by rank gives O(E α(n)) total union-find time after initialization; α is the inverse Ackermann function. A fresh DFS reachability check before every edge can take O(n²) overall.</p>
+
+<p><strong>What if/test:</strong> under the tree-plus-one-edge premise, the first edge that closes a cycle is the last edge of that cycle in input order, matching the usual tie rule. This implementation is not a general solver for arbitrary graphs or sparse labels. Test a simple triangle and a longer cycle.
+<strong>Signal:</strong> know when union-find beats DFS and name path compression and union by rank.</p>
+<h3 id="version-and-source-notes">Version and source notes</h3>
+
+<p>The system-design figures are illustrative estimates. Delivery guarantees and sink behavior are based on <a href="https://docs.cloud.google.com/dataflow/docs/concepts/exactly-once">Google Cloud Dataflow&#39;s exactly-once explanation</a>, <a href="https://docs.cloud.google.com/dataflow/docs/concepts/streaming-with-cloud-pubsub">Pub/Sub to Dataflow behavior</a>, and <a href="https://docs.cloud.google.com/dataflow/docs/guides/write-to-bigquery">Dataflow&#39;s BigQuery write modes</a>. These sources do not prove an arbitrary application&#39;s end-to-end exactly-once behavior.</p>

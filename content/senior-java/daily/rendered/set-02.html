@@ -1,0 +1,357 @@
+<p><strong>Set 2 · 7 October 2026 — Coordinating concurrent work and failures</strong></p>
+
+<p>This is today’s second run: <strong>12 new questions</strong>, checked against the earlier set and cumulative ledger. Baseline: your <a href="/senior-java-interview">Senior Java Interview Master Guide</a>, using <strong>Java 21 without preview features</strong>.</p>
+
+<p>Practise the “Say aloud” paragraphs in 45–90 seconds, then tackle the follow-ups. All examples are illustrative.</p>
+
+<hr>
+<h3 id="1-writing-a-report-throws-an-exception-and-closing-its-output-stream-also-throws-which-exception-should-the-caller-receive">1. Writing a report throws an exception, and closing its output stream also throws. Which exception should the caller receive?</h3>
+
+<p><strong>Say aloud:</strong><br>
+“I would use try-with-resources, Java’s language construct for closing resources automatically. A resource is something such as a file or socket whose lifetime needs explicit management; garbage collection does not provide timely closure.</p>
+
+<p>If the body throws and closing also throws, try-with-resources preserves the body’s exception as the primary failure. The closing failure becomes a suppressed exception—additional diagnostic information attached to the primary exception. This prevents cleanup from hiding the original problem.</p>
+
+<p>Resources close in reverse declaration order. If acquiring a later resource fails, already acquired resources still close. I would also establish ownership: a method should normally close resources it creates and owns, while a borrowed stream may belong to its caller. Automatic cleanup is useful only when the lifetime boundary is correct.”</p>
+
+<pre><code class="java">try (var out = Files.newOutputStream(path)) {
+    writeReport(out); // Application-specific operation
+}
+</code></pre>
+
+<ul>
+<li><strong>Example:</strong> Writing throws <code>IOException(&quot;disk full&quot;)</code>; closing also fails. The write exception escapes, with the close exception available through <code>getSuppressed()</code>.</li>
+<li><strong>Guarantee/cost:</strong> Each successfully initialized, non-null resource gets a closing attempt during normal language-level exit. For r resources, there are r attempts; their duration depends on the resource.</li>
+<li><strong>Trade-off/failure:</strong> A manual <code>finally</code> that throws can replace the original failure. Closing a caller-owned stream can break subsequent work. Process termination can prevent cleanup entirely.</li>
+<li><strong>Follow-ups:</strong> “Only closing fails?” → That closing exception escapes. “Does closing guarantee durable storage?” → No; closure and durability are separate contracts.</li>
+</ul>
+
+<p>Reference: <a href="https://docs.oracle.com/javase/specs/jls/se21/html/jls-14.html#jls-14.20.3">Java 21 try-with-resources rules</a>.</p>
+
+<hr>
+<h3 id="2-an-in-memory-seat-allocator-uses-separate-atomic-counters-for-available-and-reserved-seats-can-its-totals-still-become-inconsistent">2. An in-memory seat allocator uses separate atomic counters for available and reserved seats. Can its totals still become inconsistent?</h3>
+
+<p><strong>Say aloud:</strong><br>
+“Yes. An atomic counter makes an individual operation indivisible, but it does not combine operations on different counters. Our invariant—the condition that must always remain true—is that available plus reserved equals capacity, with neither count negative.</p>
+
+<p>A reservation contains several steps: check availability, decrease available, and increase reserved. Two callers can both pass the check, or a reader can observe the state between updates.</p>
+
+<p>I would protect validation, both updates, and any combined read using the same lock. A lock allows one participating thread at a time into that protected operation. For a small in-memory allocator, this makes the business rule easy to verify. All access must follow that discipline. The guarantee stops at this Java process; multiple service instances need coordination around shared authoritative state.”</p>
+
+<pre><code class="java">synchronized boolean reserve(int seats) {
+    if (seats &lt;= 0) throw new IllegalArgumentException(&quot;seats&quot;);
+    if (seats &gt; available) return false;
+
+    available -= seats;
+    reserved += seats;
+    return true;
+}
+</code></pre>
+
+<ul>
+<li><strong>Example:</strong> Available is 1; two callers each request 1. The lock permits one success and one rejection.</li>
+<li><strong>Guarantee/cost:</strong> O(1) state work per request; lock waiting has no fixed upper bound. Combined snapshots must acquire the same lock.</li>
+<li><strong>Trade-off/failure:</strong> Serialization limits concurrency. Exposing either field through an unsynchronized reader breaks the observation guarantee.</li>
+<li><strong>Follow-ups:</strong> “Could one count be derived?” → Yes; storing capacity and reserved removes redundant state. “What about many independent shows?” → Separate locks by show can reduce contention, with careful lifecycle management.</li>
+</ul>
+
+<hr>
+<h3 id="3-a-completablefuture-times-out-after-200-ms-but-the-remote-operation-continues-for-five-seconds-is-that-a-java-bug">3. A <code>CompletableFuture</code> times out after 200 ms, but the remote operation continues for five seconds. Is that a Java bug?</h3>
+
+<p><strong>Say aloud:</strong><br>
+“No. A future represents a computation’s eventual result; it is not necessarily the owner of the running computation. <code>orTimeout</code> completes the future exceptionally if it has not completed in time. It does not automatically stop the underlying network request.</p>
+
+<p>I would distinguish the response deadline, which limits how long the caller waits, from cancellation, which asks the actual operation to stop. The network client needs appropriate time limits and, where supported, an operation-specific cancellation handle.</p>
+
+<p>Even cancellation cannot prove that a remote side effect did not happen. The server may have completed it before receiving the cancellation. Also, <code>orTimeout</code> changes the future it is called on. If several callers share that future, I would apply an individual caller’s timeout to a copy rather than unexpectedly timing out everyone.”</p>
+
+<pre><code class="java">CompletableFuture&lt;Quote&gt; callerView =
+        sharedWork.copy().orTimeout(200, TimeUnit.MILLISECONDS);
+</code></pre>
+
+<ul>
+<li><strong>Example:</strong> The caller receives a timeout while the original quote request continues. Cancelling it requires coordination with the client performing that request.</li>
+<li><strong>Guarantee/cost:</strong> Bounds the caller’s intended waiting policy, subject to scheduling delays; it does not guarantee termination or rollback. Algorithmic complexity is not the useful measure here.</li>
+<li><strong>Trade-off/failure:</strong> Continued work wastes resources; cancelling shared work may harm other callers.</li>
+<li><strong>Follow-ups:</strong> “Does <code>cancel(true)</code> interrupt <code>CompletableFuture</code> work?” → Its interrupt flag has no effect on processing. “Should capacity be released on timeout?” → Only when the underlying operation actually releases the resource.</li>
+</ul>
+
+<p>Reference: <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/CompletableFuture.html">Java 21 <code>CompletableFuture</code></a>.</p>
+
+<hr>
+<h3 id="4-a-request-occasionally-runs-under-the-previous-customer-s-tenant-context-how-could-a-thread-pool-cause-this">4. A request occasionally runs under the previous customer’s tenant context. How could a thread pool cause this?</h3>
+
+<p><strong>Say aloud:</strong><br>
+“<code>ThreadLocal</code> stores a separate value for each thread. It can make request context available without passing it through every method, but its lifetime follows the thread, not the request.</p>
+
+<p>A thread pool reuses worker threads. If request A stores tenant A and fails before removing it, request B may run on that worker and observe tenant A. This can become an authorization defect, not just incorrect logging. The stored value can also retain objects for longer than intended.</p>
+
+<p>At the outer request boundary, I would set trusted context and remove it in a finally block. For nested temporary context, I would restore the previous value instead. Work submitted to another executor needs deliberate context transfer and cleanup; ordinary thread-local values do not automatically follow the task.”</p>
+
+<pre><code class="java">tenantContext.set(verifiedTenant);
+try {
+    handleRequest();
+} finally {
+    tenantContext.remove();
+}
+</code></pre>
+
+<ul>
+<li><strong>Example:</strong> A worker handles tenant A, then a request with no tenant context. Without cleanup, the second request may inherit A accidentally.</li>
+<li><strong>Guarantee/cost:</strong> Cleanup removes this thread’s stored association. Retained memory otherwise scales with live worker associations and their reachable objects.</li>
+<li><strong>Trade-off/failure:</strong> Thread-local access simplifies signatures but hides dependencies. Copying mutable context into asynchronous tasks creates additional sharing risks.</li>
+<li><strong>Follow-ups:</strong> “Why not inheritance between threads?” → Pool workers may predate the request; thread creation is not task submission. “Simpler alternative?” → Pass an immutable context explicitly.</li>
+</ul>
+
+<p>Reference: <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/ThreadLocal.html">Java 21 <code>ThreadLocal</code></a>.</p>
+
+<hr>
+<h3 id="5-two-buyers-read-stock-quantity-1-and-both-attempt-a-purchase-how-does-a-jpa-version-field-help-and-where-does-it-stop-helping">5. Two buyers read stock quantity 1 and both attempt a purchase. How does a JPA version field help, and where does it stop helping?</h3>
+
+<p><strong>Say aloud:</strong><br>
+“Optimistic locking detects conflicting updates instead of reserving exclusive access when data is read. It exists to prevent one writer silently overwriting another writer’s changes.</p>
+
+<p>With a JPA version field, each buyer reads both quantity and version. A typical update succeeds only if the stored version still matches the version originally read, and then advances it. If both buyers read version seven, one update can win; the other encounters a conflict.</p>
+
+<p>The losing operation must roll back. If retry is appropriate, it needs a fresh transaction, fresh data, and a new availability check. It must not blindly repeat the old decision.</p>
+
+<p>This protects the versioned entity. It does not automatically enforce a business rule spread across independently updated rows, and direct bulk updates need explicit attention to version handling.”</p>
+
+<pre><code class="sql">-- Illustrative version-check mechanism:
+UPDATE stock
+SET remaining = 0, version = 8
+WHERE id = 42 AND version = 7;
+</code></pre>
+
+<ul>
+<li><strong>Example:</strong> Buyer A changes version 7 to 8. Buyer B’s version-7 update affects no row; a fresh read reveals no stock.</li>
+<li><strong>Guarantee/cost:</strong> Detects stale updates to participating versioned entities. Indexed row access is efficient, but contention may cause repeated failed attempts.</li>
+<li><strong>Trade-off/failure:</strong> Good when conflicts are uncommon; frequent conflicts waste work. Detection may occur when changes are sent to the database or when the transaction commits.</li>
+<li><strong>Follow-ups:</strong> “Can two different rows violate a shared limit?” → Yes; coordinate around the shared rule. “Does versioning replace quantity validation?” → No.</li>
+</ul>
+
+<p>Reference: <a href="https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2.html#locking">Jakarta Persistence 3.2 locking specification</a>.</p>
+
+<hr>
+<h3 id="6-a-spring-boot-service-has-20-database-connections-twenty-requests-each-start-a-transaction-then-call-an-audit-service-using-requires-new-why-might-everything-stall">6. A Spring Boot service has 20 database connections. Twenty requests each start a transaction, then call an audit service using <code>REQUIRES_NEW</code>. Why might everything stall?</h3>
+
+<p><strong>Say aloud:</strong><br>
+“Transaction propagation defines how a called operation participates in an existing transaction. <code>REQUIRES_NEW</code> starts an independent transaction, suspending the outer one.</p>
+
+<p>With a typical local database transaction manager, the outer transaction keeps its connection while the inner transaction needs another. If all twenty requests already hold the twenty connections, none can acquire a connection for auditing. They wait until a timeout or some other intervention releases resources.</p>
+
+<p>I would first decide whether the audit must commit independently. If it should commit only with the business change, a shared transaction is a better fit. If independent persistence is required, I would bound concurrent outer work and provide capacity for the inner work. I would also inspect database lock dependencies: more connections cannot fix an inner operation waiting on a row locked by its suspended outer transaction.”</p>
+
+<ul>
+<li><strong>Example:</strong> Twenty outer connections remain occupied; twenty inner audit calls queue for a connection.</li>
+<li><strong>Guarantee/cost:</strong> Independent transactions can commit separately. With one inner level, a request can simultaneously hold two connections.</li>
+<li><strong>Trade-off/failure:</strong> An audit record may survive a business rollback. More pool capacity consumes database resources and does not remove lock conflicts.</li>
+<li><strong>Follow-ups:</strong> “Would one extra connection help?” → It can permit progress under simple assumptions, but is not a universal sizing rule. “Does the outer rollback undo the audit?” → No.</li>
+</ul>
+
+<p>Reference: <a href="https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/tx-propagation.html">Spring Framework transaction propagation</a>.</p>
+
+<hr>
+<h3 id="7-a-descending-activity-feed-duplicates-entries-between-pages-when-new-rows-arrive-how-would-you-redesign-pagination">7. A descending activity feed duplicates entries between pages when new rows arrive. How would you redesign pagination?</h3>
+
+<p><strong>Say aloud:</strong><br>
+“Offset pagination skips a number of rows before returning a page. Inserts near the beginning shift those positions, so the next offset can revisit rows already shown.</p>
+
+<p>I would use keyset pagination: continue after the last ordering key seen, rather than after a row count. A cursor carries that boundary. For descending creation time, I would also include a unique ID so rows with identical timestamps have a deterministic order.</p>
+
+<p>The next query requests rows older than the timestamp boundary, or rows with the same timestamp and a smaller ID. An index matching the filters and ordering helps it seek directly to that boundary.</p>
+
+<p>This improves traversal through changing data, but it does not create a frozen dataset. Updated ordering fields, deletions, and changing filters still require an explicit consistency policy.”</p>
+
+<pre><code class="sql">WHERE tenant_id = :tenant
+  AND (
+       created_at &lt; :lastTime
+       OR (created_at = :lastTime AND id &lt; :lastId)
+  )
+ORDER BY created_at DESC, id DESC
+LIMIT :pageSize;
+</code></pre>
+
+<ul>
+<li><strong>Example:</strong> After <code>(10:00, 105)</code>, request keys below that pair. A new <code>(10:01, 120)</code> does not shift the continuation boundary.</li>
+<li><strong>Guarantee/cost:</strong> With a suitable index and filters, approximately O(log N + page size) retrieval; verify the query plan. Stable ordering keys prevent position-shift duplicates.</li>
+<li><strong>Trade-off/failure:</strong> Efficient sequential navigation, but arbitrary “jump to page 500” becomes harder. Mutable ordering keys can still cause skips or repeats.</li>
+<li><strong>Follow-ups:</strong> “Need an exact export?” → Use a consistent database snapshot or materialized result. “Is an encoded cursor authorization?” → No; independently enforce tenant and filter scope.</li>
+</ul>
+
+<hr>
+<h3 id="8-three-layers-each-allow-three-total-attempts-how-can-one-request-produce-27-calls-to-the-deepest-dependency">8. Three layers each allow three total attempts. How can one request produce 27 calls to the deepest dependency?</h3>
+
+<p><strong>Say aloud:</strong><br>
+“Retries multiply when each layer repeats the work of the layers below it. If three layers each allow three total attempts, one original request can produce three cubed, or twenty-seven, attempts at the deepest dependency.</p>
+
+<p>I would assign retry ownership to the layer that understands whether the operation can safely repeat. An end-to-end deadline limits the total time, including waiting and retries. A retry budget limits additional attempts across traffic, so a struggling dependency does not receive unlimited extra load.</p>
+
+<p>Between eligible attempts, backoff increases the delay, while jitter randomizes it so many clients do not retry together. Neither creates capacity; both only shape demand. I would stop when the deadline or budget is exhausted and avoid retrying permanent validation failures or side effects whose outcome cannot safely be repeated.”</p>
+
+<ul>
+<li><strong>Example:</strong> A 900 ms budget allows a 250 ms first attempt, 100 ms delay, and another attempt capped by the remaining time, with response overhead reserved.</li>
+<li><strong>Guarantee/cost:</strong> With a attempts at d independently retrying layers, worst-case downstream attempts can reach aᵈ. One owner with limit a avoids that multiplication for a single call chain.</li>
+<li><strong>Trade-off/failure:</strong> Retries can recover transient failures but increase load and latency. Random delay alone does not cap retries.</li>
+<li><strong>Follow-ups:</strong> “What does a 10% budget mean?” → At most one extra attempt per ten original requests over a defined window. “Retry a timeout?” → Only when repeating the operation is safe and time remains.</li>
+</ul>
+
+<hr>
+<h3 id="9-kafka-events-for-an-order-use-the-same-key-event-12-goes-to-a-retry-topic-while-event-13-succeeds-why-is-the-order-still-wrong">9. Kafka events for an order use the same key. Event 12 goes to a retry topic, while event 13 succeeds. Why is the order still wrong?</h3>
+
+<p><strong>Say aloud:</strong><br>
+“A Kafka partition is an ordered log, but log order is not automatically the order in which business effects complete. Routing related events to one partition helps only if processing preserves that order.</p>
+
+<p>A retry topic is a separate log used to delay failed processing. Moving event twelve there and continuing with thirteen allows thirteen’s effect to happen first. Kafka has not reordered the original partition; the application has changed the processing path.</p>
+
+<p>For strict order, I would prevent later events for that order from taking effect until the failed event is resolved. I could also store the expected business sequence with the order and accept only the next sequence. A gap then triggers bounded waiting or recovery. That choice sacrifices availability for the affected order, so the business must decide whether strict sequencing is necessary.”</p>
+
+<ul>
+<li><strong>Example:</strong> <code>12 = approve order</code>, <code>13 = dispatch order</code>. Applying dispatch first violates the workflow.</li>
+<li><strong>Guarantee/cost:</strong> Sequential processing preserves effects only within its coordinated scope. Sequence validation can be constant application work plus a database operation; buffering gaps needs bounded storage.</li>
+<li><strong>Trade-off/failure:</strong> Pausing a whole partition also delays unrelated keys. Per-key coordination permits more concurrency but requires more state and recovery logic.</li>
+<li><strong>Follow-ups:</strong> “Skip old sequence numbers?” → Only when known to be already applied or safely obsolete. “Increase partition count?” → Key routing may change; plan migration if historical per-key order matters.</li>
+</ul>
+
+<p>Kafka’s log guarantees: <a href="https://kafka.apache.org/40/design/design/">Kafka 4.0 design documentation</a>. The retry scenario illustrates an application-level consequence.</p>
+
+<hr>
+<h3 id="10-a-refresh-token-is-stolen-why-does-issuing-a-replacement-token-on-every-refresh-help-and-what-race-does-it-introduce">10. A refresh token is stolen. Why does issuing a replacement token on every refresh help, and what race does it introduce?</h3>
+
+<p><strong>Say aloud:</strong><br>
+“An access token authorizes API calls. A refresh token obtains replacement access tokens, allowing access tokens to expire quickly without requiring frequent sign-in.</p>
+
+<p>Refresh-token rotation replaces the refresh token after each successful use and invalidates its predecessor. The server retains the relationship between replacements, often called a token family. If an invalidated predecessor appears again, that reuse can reveal theft. The server can revoke the active replacement, forcing fresh authorization.</p>
+
+<p>The transition must be atomic so two simultaneous uses cannot independently create valid successor branches. However, legitimate requests can also race—for example, two browser tabs refreshing together, or a retry after a lost response. I would coordinate refreshes in the client and define recovery explicitly. A broad grace period reduces accidental sign-outs but gives a stolen token more opportunity for reuse.”</p>
+
+<ul>
+<li><strong>Example:</strong> <code>R1 → R2</code>; later reuse of R1 causes the active family to be revoked.</li>
+<li><strong>Guarantee/cost:</strong> Rotation detects reuse of an invalidated token; it does not prevent the thief’s first successful use. It requires server-side state and coordinated updates.</li>
+<li><strong>Trade-off/failure:</strong> Strong replay detection can force legitimate users to sign in again after races.</li>
+<li><strong>Follow-ups:</strong> “Are existing access tokens immediately invalid?” → Not necessarily; local validation may accept them until expiration. “Can rotation identify which caller is the attacker?” → No.</li>
+</ul>
+
+<p>Reference: <a href="https://www.rfc-editor.org/rfc/rfc9700.html#section-4.14">RFC 9700, refresh-token protection</a>.</p>
+
+<hr>
+<h3 id="11-merge-overlapping-maintenance-intervals-without-changing-the-caller-s-input-what-invariant-makes-the-algorithm-correct">11. Merge overlapping maintenance intervals without changing the caller’s input. What invariant makes the algorithm correct?</h3>
+
+<p><strong>Say aloud:</strong><br>
+“I would first clarify the endpoint convention. For this problem, intervals are closed: both endpoints belong to the interval, so intervals touching at an endpoint overlap.</p>
+
+<p>I would copy the input and sort by start time. Then I maintain one current merged interval. Because starts are sorted, the next interval either overlaps the current interval or begins after it ends. On overlap, I extend the current end to the larger end. Otherwise, I emit the current interval and start another.</p>
+
+<p>The invariant is that everything already emitted is complete and cannot overlap any future interval. Future starts cannot move backward. This explains why comparing with the current interval is sufficient. Sorting dominates the runtime. Copying the list and using immutable interval values avoids changing the caller’s data.”</p>
+
+<pre><code class="java">// Uses java.util.ArrayList, Comparator, List, and Objects.
+record Interval(int start, int end) {
+    Interval {
+        if (start &gt; end) {
+            throw new IllegalArgumentException(&quot;start &gt; end&quot;);
+        }
+    }
+}
+
+static List&lt;Interval&gt; merge(List&lt;Interval&gt; input) {
+    Objects.requireNonNull(input, &quot;input&quot;);
+    var sorted = new ArrayList&lt;&gt;(input);
+    sorted.forEach(x -&gt; Objects.requireNonNull(x, &quot;interval&quot;));
+    sorted.sort(Comparator.comparingInt(Interval::start));
+
+    var result = new ArrayList&lt;Interval&gt;();
+    if (sorted.isEmpty()) return result;
+
+    Interval current = sorted.get(0);
+    for (int i = 1; i &lt; sorted.size(); i++) {
+        Interval next = sorted.get(i);
+        if (next.start() &lt;= current.end()) {
+            current = new Interval(
+                    current.start(),
+                    Math.max(current.end(), next.end()));
+        } else {
+            result.add(current);
+            current = next;
+        }
+    }
+    result.add(current);
+    return result;
+}
+</code></pre>
+
+<ul>
+<li><strong>Example:</strong> <code>[1,4], [4,7], [2,3], [10,12]</code> → <code>[1,7], [10,12]</code>.</li>
+<li><strong>Complexity/guarantee:</strong> O(n log n) time; O(n) additional space including copy and output. Handles empty input, nesting, duplicates, and negative endpoints.</li>
+<li><strong>Trade-off/failure:</strong> Sorting a caller-owned list saves a copy but mutates input. Comparing integers by subtraction can overflow; <code>comparingInt</code> avoids that.</li>
+<li><strong>Follow-ups:</strong> “Half-open intervals <code>[start,end)</code>?” → Touching endpoints do not overlap; use <code>&lt;</code> if merging only overlaps, and define empty-interval handling. “Input already sorted?” → O(n) scan.</li>
+</ul>
+
+<hr>
+<h3 id="12-given-build-tasks-and-prerequisites-return-a-valid-execution-order-or-report-a-dependency-cycle-how-would-you-implement-it">12. Given build tasks and prerequisites, return a valid execution order or report a dependency cycle. How would you implement it?</h3>
+
+<p><strong>Say aloud:</strong><br>
+“I would model this as a directed graph: each task is a vertex, and an edge from prerequisite to dependent means the prerequisite must come first. A topological order is an ordering that respects every such edge.</p>
+
+<p>I would use Kahn’s algorithm. For each task, count its unmet prerequisites; that count is called its indegree. Initially, tasks with zero indegree can run. I put them in a queue, remove one, append it to the result, and reduce the counts of its dependents. A dependent enters the queue when its count reaches zero.</p>
+
+<p>If I process every task, the result is valid. Otherwise, some tasks remain blocked by a cycle. I must initialize every task, including isolated tasks, and be explicit about edge direction. Multiple valid orders are possible.”</p>
+
+<pre><code class="java">// Uses java.util.ArrayDeque, ArrayList, List, and Objects.
+// Each edge is [prerequisite, dependent]; task IDs are 0..n-1.
+static List&lt;Integer&gt; buildOrder(int n, int[][] edges) {
+    if (n &lt; 0) throw new IllegalArgumentException(&quot;negative n&quot;);
+    Objects.requireNonNull(edges, &quot;edges&quot;);
+
+    List&lt;List&lt;Integer&gt;&gt; dependents = new ArrayList&lt;&gt;(n);
+    for (int i = 0; i &lt; n; i++) {
+        dependents.add(new ArrayList&lt;&gt;());
+    }
+    int[] remaining = new int[n];
+
+    for (int[] edge : edges) {
+        if (edge == null || edge.length != 2
+                || edge[0] &lt; 0 || edge[0] &gt;= n
+                || edge[1] &lt; 0 || edge[1] &gt;= n) {
+            throw new IllegalArgumentException(&quot;invalid edge&quot;);
+        }
+        dependents.get(edge[0]).add(edge[1]);
+        remaining[edge[1]]++;
+    }
+
+    var ready = new ArrayDeque&lt;Integer&gt;();
+    for (int task = 0; task &lt; n; task++) {
+        if (remaining[task] == 0) ready.addLast(task);
+    }
+
+    var order = new ArrayList&lt;Integer&gt;(n);
+    while (!ready.isEmpty()) {
+        int task = ready.removeFirst();
+        order.add(task);
+        for (int next : dependents.get(task)) {
+            if (--remaining[next] == 0) ready.addLast(next);
+        }
+    }
+
+    if (order.size() != n) {
+        throw new IllegalArgumentException(&quot;dependency cycle&quot;);
+    }
+    return order;
+}
+</code></pre>
+
+<ul>
+<li><strong>Example:</strong> Tasks 0–3, edges <code>0→2</code>, <code>1→2</code>, <code>2→3</code> → valid order <code>[0,1,2,3]</code>. Adding <code>3→1</code> creates a cycle.</li>
+<li><strong>Complexity/guarantee:</strong> O(V + E) time and space, where V is tasks and E is dependency entries. Duplicate edges are counted and removed consistently.</li>
+<li><strong>Trade-off/failure:</strong> Detects a cycle but does not identify its exact path. Reversing the edge direction produces the wrong build semantics.</li>
+<li><strong>Follow-ups:</strong> “Always choose the smallest ready task?” → Use a minimum-priority queue, costing O(E + V log V). “Execute tasks concurrently?” → Release dependents only after prerequisites successfully finish, not when they are merely scheduled.</li>
+</ul>
+
+<p>The code examples are illustrative and were not executed in this run.</p>
+
+<hr>
+
+<p><strong>Today’s coverage:</strong> Resource ownership and exception preservation; multi-field concurrency; cancellation; thread-local lifecycle; JPA optimistic locking; Spring transaction resource use; pagination under writes; retry amplification; Kafka processing order; refresh-token security; interval merging; dependency ordering.</p>
+
+<p><strong>Next day’s progression:</strong> Virtual-thread resource limits, JVM CPU diagnosis, cache invalidation races, reliable database-to-Kafka publication, schema evolution, Spring startup validation, and sliding-window/heap coding.</p>
+
+<p>The cumulative ledger now tracks <strong>24 distinct questions across two sets</strong>.</p>

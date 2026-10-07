@@ -1,0 +1,186 @@
+<h2 id="part-12-more-senior-level-questions-q154-q173">Part 12 More Senior-Level Questions (Q154–Q173)</h2>
+
+<p>Twenty additional questions on topics the guide did not yet cover: consensus and data distribution, database internals, low-level concurrency, JVM performance, Spring operations, and engineering practice. Each follows the same layout as Part 10: <strong>Source basis</strong>, <strong>Strong answer</strong>, <strong>Reasoning and alternatives</strong>, <strong>What if/test</strong>, and <strong>Signal</strong>. Where no specific source is cited, the basis is general engineering practice, so check details against the documentation for your version before quoting numbers.</p>
+<h3 id="distributed-systems-and-data">Distributed systems and data</h3>
+<h4 id="q154-how-does-raft-elect-a-leader-and-why-do-systems-use-consensus">Q154 How does Raft elect a leader and why do systems use consensus</h4>
+
+<p><strong>Source basis:</strong> <a href="https://raft.github.io/raft.pdf">Raft paper</a>.</p>
+
+<p><strong>Strong answer:</strong> Raft keeps a replicated log consistent across nodes by electing at most one leader per <em>term</em>. A follower that hears no heartbeat before a randomized election timeout becomes a candidate, increments the term and requests votes. A node grants at most one vote per term, and only to a candidate whose log is at least as up to date as its own. A candidate with a majority becomes leader; at most one leader is elected in a term, and some terms have no leader. The leader replicates entries through <code>AppendEntries</code>. To advance <code>commitIndex</code> by replica count, it must count an entry from its <strong>current term</strong>. Committing that entry also commits its preceding log prefix; a prior-term entry replicated to a majority alone is not sufficient.</p>
+
+<p><strong>Reasoning and alternatives:</strong> a majority quorum means 3 nodes tolerate 1 failure and 5 tolerate 2, and any two majorities overlap. Raft&#39;s election and log-safety rules preserve committed entries across leader changes. Systems such as etcd (Kubernetes&#39; store) and Consul use Raft; others use Paxos variants. Consensus has coordination costs. It can govern metadata or durable application data, depending on the system; replicated databases also use consensus in their data path.</p>
+
+<p><strong>What if/test:</strong> a minority partition cannot elect a leader or commit, trading availability for consistency. Randomized timeouts reduce split votes. Test with fault injection: kill the leader, partition the network, and verify no committed write is lost.
+<strong>Signal:</strong> explain terms, majority overlap and the up-to-date-log rule, not just &quot;a leader is elected&quot;.</p>
+<h4 id="q155-what-is-consistent-hashing-and-why-use-virtual-nodes">Q155 What is consistent hashing and why use virtual nodes</h4>
+
+<p><strong>Strong answer:</strong> nodes and keys are hashed onto a ring; each key belongs to the first node clockwise. Adding or removing a node moves only the keys in the adjacent range, roughly <code>K/N</code> of them, whereas <code>hash(key) % N</code> remaps almost every key when <code>N</code> changes. <strong>Virtual nodes</strong> give each physical node many ring positions, which evens out load and lets stronger machines take more positions.</p>
+
+<p><strong>Reasoning and alternatives:</strong> Dynamo-style stores, Cassandra and cache client libraries use it. For replication, copy each key to the next <em>R</em> distinct physical nodes. Alternatives: fixed hash slots (Redis Cluster uses 16,384) that are moved between nodes, or a lookup directory.</p>
+
+<p><strong>What if/test:</strong> hot keys stay hot regardless of the ring; they need caching, splitting or key salting. Test balance by measuring keys per node with realistic keys, and measure data moved when adding a node.
+<strong>Signal:</strong> quantify the remapping difference and name the virtual-node benefit.</p>
+<h4 id="q156-what-is-mvcc-and-why-do-readers-not-block-writers">Q156 What is MVCC and why do readers not block writers</h4>
+
+<p><strong>Source basis:</strong> <a href="https://www.postgresql.org/docs/current/mvcc-intro.html">PostgreSQL MVCC introduction</a>.</p>
+
+<p><strong>Strong answer:</strong> multi-version concurrency control keeps several versions of a row and gives each transaction a snapshot, so a reader sees the data as of its snapshot while writers create new versions. Readers do not take locks that block writers, and writers do not block readers; write-write conflicts on the same row still wait or fail.</p>
+
+<p><strong>Reasoning and alternatives:</strong> PostgreSQL stores old row versions in the table and relies on <code>VACUUM</code> to reclaim them; InnoDB keeps old versions in undo logs. The visible-version rules depend on the isolation level (READ COMMITTED takes a fresh snapshot per statement, REPEATABLE READ one per transaction).</p>
+
+<p><strong>What if/test:</strong> long-running transactions prevent cleanup of old versions, causing table bloat and slower queries. Monitor oldest transaction age and dead tuples, and set statement and idle-in-transaction timeouts.
+<strong>Signal:</strong> connect MVCC to isolation levels and to the operational bloat risk.</p>
+<h4 id="q157-when-do-you-use-sql-window-functions">Q157 When do you use SQL window functions</h4>
+
+<p><strong>Source basis:</strong> <a href="https://www.postgresql.org/docs/current/tutorial-window.html">PostgreSQL window function tutorial</a>.</p>
+
+<p><strong>Strong answer:</strong> a window function computes a value over a set of related rows <em>without collapsing them</em>, unlike <code>GROUP BY</code>. Typical uses: top-N per group, running totals, ranking, and comparing a row with the previous one (<code>LAG</code>).</p>
+
+<pre><code class="sql">SELECT * FROM (
+  SELECT e.*, ROW_NUMBER() OVER (PARTITION BY dept ORDER BY salary DESC, id) AS rn
+  FROM employee e
+) t WHERE rn &lt;= 3;            -- top 3 earners per department
+</code></pre>
+
+<p><strong>Reasoning and alternatives:</strong> use <code>RANK</code>/<code>DENSE_RANK</code> instead of <code>ROW_NUMBER</code> when ties must share a position. A correlated subquery can do the same but is usually slower and harder to read. Portable JPQL has no window-function syntax. Use native SQL mapped to a projection, or a provider extension such as Hibernate HQL window functions; a projection alone does not add the missing syntax.</p>
+
+<p><strong>What if/test:</strong> an <code>ORDER BY</code> inside <code>OVER</code> without a frame uses a default frame that can surprise running totals. Check the plan with <code>EXPLAIN</code> and add an index matching the partition and order columns.
+<strong>Signal:</strong> write the top-N-per-group query from memory and explain tie handling.</p>
+<h4 id="q158-what-is-a-bloom-filter-and-where-would-you-use-one">Q158 What is a Bloom filter and where would you use one</h4>
+
+<p><strong>Strong answer:</strong> a Bloom filter is a bit array plus <em>k</em> hash functions that answers &quot;possibly present&quot; or &quot;definitely absent&quot;. It has <strong>no false negatives</strong> but can produce false positives, and standard versions cannot delete entries (counting variants can).</p>
+
+<p><strong>Reasoning and alternatives:</strong> use it to skip expensive lookups for keys that do not exist, for example blocking cache-penetration queries before they hit the database, or checking SSTables in LSM-tree stores. The false-positive rate depends on bit-array size and the number of items; size it from the expected count and target rate. Guava provides <code>BloomFilter</code>. Alternatives: a cache of negative results, or a cuckoo filter if deletion matters.</p>
+
+<p><strong>What if/test:</strong> if the filter fills beyond its design capacity, false positives climb; rebuild it periodically. Test by inserting the expected number of items and measuring the observed false-positive rate.
+<strong>Signal:</strong> state the one-sided error guarantee and a concrete use.</p>
+<h4 id="q159-how-do-systems-resolve-concurrent-writes-to-the-same-data">Q159 How do systems resolve concurrent writes to the same data</h4>
+
+<p><strong>Strong answer:</strong> options, from simplest to most capable: avoid conflicts with a single writer per key; <strong>last-write-wins</strong> using timestamps (simple but silently discards writes and is vulnerable to clock skew); <strong>vector clocks</strong> that detect concurrent updates and keep siblings for the application to merge; <strong>CRDTs</strong> whose state-based merge is associative, commutative and idempotent, or whose operation-based design meets its delivery and commutativity requirements. They can provide convergence without coordinating each update, subject to their model assumptions; or application-specific merge rules.</p>
+
+<p><strong>Reasoning and alternatives:</strong> pick based on the business meaning: a shopping cart can merge by union, a bank balance cannot be last-write-wins. A linearizable store orders individual operations but does not make a multi-step read-modify-write atomic. Use an atomic update, compare-and-swap/version check or transaction for business invariants; coordination can add latency.</p>
+
+<p><strong>What if/test:</strong> clock skew makes last-write-wins lose newer data. Test by writing concurrently from two replicas during a partition and checking the converged result against the business rule.
+<strong>Signal:</strong> tie the resolution strategy to what the data means.</p>
+<h4 id="q160-how-do-you-choose-a-sharding-strategy">Q160 How do you choose a sharding strategy</h4>
+
+<p><strong>Strong answer:</strong> common strategies are <strong>range</strong> (supports range scans but suffers hotspots with monotonic keys such as timestamps), <strong>hash</strong> (balances load but loses range queries), <strong>directory/lookup</strong> (flexible but the directory is a dependency) and <strong>geo</strong> (data residency and latency). Pick the shard key from the dominant access pattern, with high cardinality and even distribution.</p>
+
+<p><strong>Reasoning and alternatives:</strong> sharding adds cross-shard joins, transactions and resharding work, so exhaust simpler steps first: indexing, caching, read replicas and table partitioning. Use consistent hashing or many logical shards mapped to fewer physical nodes so resharding moves whole shards.</p>
+
+<p><strong>What if/test:</strong> a celebrity tenant or hot key overloads one shard; handle it with key salting, dedicated shards or caching. Test with production-like skewed traffic, not uniform random keys.
+<strong>Signal:</strong> justify the shard key and name the cost of resharding.</p>
+<h3 id="low-level-concurrency-and-jvm-performance">Low-level concurrency and JVM performance</h3>
+<h4 id="q161-what-is-the-aba-problem-and-how-do-you-avoid-it">Q161 What is the ABA problem and how do you avoid it</h4>
+
+<p><strong>Source basis:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/atomic/AtomicStampedReference.html">AtomicStampedReference</a>.</p>
+
+<p><strong>Strong answer:</strong> a compare-and-set succeeds when the current value equals the expected value, but the value may have changed from A to B and back to A in between, so the CAS succeeds although the state is different. It matters in lock-free structures that reuse nodes or recycle identifiers.</p>
+
+<p><strong>Reasoning and alternatives:</strong> attach a version or stamp so equality also requires the same version: <code>AtomicStampedReference</code> (reference plus changing int stamp). <code>AtomicMarkableReference</code> has only one boolean bit: it suits protocols such as irreversible logical deletion but does not detect arbitrary A→B→A reuse if the mark returns to its old value. On the JVM, garbage collection prevents many reference-reuse cases because a node cannot be reclaimed while referenced, but pooled objects and numeric values remain exposed. Often the better answer is to avoid hand-written lock-free code and use <code>ConcurrentLinkedQueue</code> or a lock.</p>
+
+<p><strong>What if/test:</strong> State a stamp wraparound assumption. Test A→B→A while retaining the old stamp and assert the stamped CAS fails; restoring both a reference and mark bit can let a marked CAS succeed.
+<strong>Signal:</strong> explain why CAS equality is not state equality.</p>
+<h4 id="q162-stampedlock-optimistic-reads-versus-reentrantreadwritelock">Q162 StampedLock optimistic reads versus ReentrantReadWriteLock</h4>
+
+<p><strong>Source basis:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/locks/StampedLock.html">StampedLock</a>.</p>
+
+<p><strong>Strong answer:</strong> <code>StampedLock.tryOptimisticRead()</code> returns a stamp without locking; the reader copies the fields it needs and calls <code>validate(stamp)</code>. If a writer intervened, the read is retried under a real read lock. For read-heavy data with short critical sections this avoids lock traffic.</p>
+
+<p><strong>Reasoning and alternatives:</strong> <code>StampedLock</code> is not reentrant, has no <code>Condition</code> support, and must be used carefully: never act on optimistic data before validating. <code>ReentrantReadWriteLock</code> is simpler and reentrant but reads still contend on the lock state. Often a <code>volatile</code> immutable snapshot or <code>ConcurrentHashMap</code> is simpler than either.</p>
+
+<p><strong>What if/test:</strong> using unvalidated data or acting on it before validation can expose an inconsistent snapshot. A delay before validation does not bypass the validation check, but it increases retry likelihood and can waste work. Verify under a mixed reader/writer stress test and compare performance with JMH before choosing the complexity.
+<strong>Signal:</strong> describe the read-copy-validate pattern and its restrictions.</p>
+<h4 id="q163-what-is-false-sharing">Q163 What is false sharing</h4>
+
+<p><strong>Strong answer:</strong> CPU caches move data in cache lines (commonly 64 bytes). If two threads write different variables that sit on the same line, each write invalidates the other core&#39;s copy, so performance collapses even though the threads never share data logically.</p>
+
+<p><strong>Reasoning and alternatives:</strong> mitigate by separating hot, independently written fields onto different lines through padding, or the JDK-internal <code>@Contended</code> annotation. Application use also needs module access (for example <code>--add-exports java.base/jdk.internal.vm.annotation=ALL-UNNAMED</code> for an unnamed module) and the VM option <code>-XX:-RestrictContended</code>; it is nonportable, not an ordinary application API. <code>LongAdder</code> spreads updates across padded cells for this reason. Another approach is per-thread accumulation merged later.</p>
+
+<p><strong>What if/test:</strong> the effect is hardware and layout dependent, so prove it with a JMH benchmark that pads versus does not pad, rather than assuming.
+<strong>Signal:</strong> know the cache-line mechanism and insist on measurement.</p>
+<h4 id="q164-why-is-object-allocation-cheap-on-the-jvm-and-what-is-escape-analysis">Q164 Why is object allocation cheap on the JVM, and what is escape analysis</h4>
+
+<p><strong>Strong answer:</strong> allocation in the young generation is typically a pointer bump inside a thread-local allocation buffer (TLAB), so it needs no lock. Short-lived objects die young and are cheap to collect. The JIT&#39;s <strong>escape analysis</strong> can find objects that never leave a method and may eliminate the allocation (scalar replacement), keeping fields in registers.</p>
+
+<p><strong>Reasoning and alternatives:</strong> consequences: do not pool ordinary objects out of habit, because pooling adds synchronization and keeps garbage alive; optimize allocation only when profiling (JFR allocation profiling) shows it matters. Large allocation rates still increase GC frequency, and optimizations are not guaranteed.</p>
+
+<p><strong>What if/test:</strong> microbenchmarks can mislead because the JIT removes allocations that real code retains; use JMH with a blackhole and check allocation rate in a realistic load test.
+<strong>Signal:</strong> avoid cargo-cult object pooling and ground claims in profiling.</p>
+<h3 id="spring-operations-and-engineering-practice">Spring operations and engineering practice</h3>
+<h4 id="q165-spring-retry-or-resilience4j-and-what-is-the-ordering-trap-with-transactions">Q165 Spring Retry or Resilience4j, and what is the ordering trap with transactions</h4>
+
+<p><strong>Strong answer:</strong> both provide retry with backoff. Spring Retry offers <code>@Retryable</code>/<code>RetryTemplate</code> through proxies; Resilience4j offers composable decorators (retry, circuit breaker, bulkhead, rate limiter) with metrics. Newer Spring Framework releases also bring retry support into the core framework, so check what your version provides.</p>
+
+<p><strong>Reasoning and alternatives:</strong> the retry boundary must enclose a <strong>new physical transaction for each attempt</strong>. An outer retry proxy alone does not guarantee that: if the caller already has a transaction and each attempt uses default <code>REQUIRED</code>, all attempts join the same transaction. A failure can leave it rollback-only, so a later retry cannot commit. Establish the transaction boundary deliberately, such as by invoking a separate proxied <code>REQUIRES_NEW</code> unit per attempt or using <code>TransactionTemplate</code> per attempt when independent commits are intended. Account for connection-pool use and the business consequences of separate commits. Retry only transient failures on idempotent operations, with exponential backoff and jitter, and combine with a circuit breaker so retries do not amplify an outage.</p>
+
+<p><strong>What if/test:</strong> retries around a call that is not idempotent create duplicates (charges, emails). Test failure injection: first two attempts fail and the third succeeds; verify transaction identities, rollback-only behavior and the actual side-effect/idempotency contract.
+<strong>Signal:</strong> state the retry-outside-transaction rule and the idempotency requirement.</p>
+<h4 id="q166-how-do-you-run-scheduled-jobs-safely-across-many-instances">Q166 How do you run scheduled jobs safely across many instances</h4>
+
+<p><strong>Strong answer:</strong> <code>@Scheduled</code> runs on every instance, so a job executes N times with N replicas. Options: a distributed lock (ShedLock with a database or Redis lock and an expiry), Quartz with a clustered JDBC job store, or moving scheduling out of the app to a Kubernetes <code>CronJob</code> or Cloud Scheduler that calls one endpoint.</p>
+
+<p><strong>Reasoning and alternatives:</strong> make jobs <strong>idempotent</strong> regardless, because lock expiry, retries and failover can still cause a duplicate run. Set the lock duration longer than the typical run but short enough to recover, and decide what to do about missed runs (misfire policy).</p>
+
+<p><strong>What if/test:</strong> if a job outlives its lock, a second instance starts concurrently. Test by running two instances and killing one mid-job.
+<strong>Signal:</strong> combine a locking choice with idempotent job design.</p>
+<h4 id="q167-how-do-you-reduce-spring-boot-startup-time-and-memory">Q167 How do you reduce Spring Boot startup time and memory</h4>
+
+<p><strong>Strong answer:</strong> measure first: use the startup actuator endpoint with <code>BufferingApplicationStartup</code> to see which beans and phases are slow. Then trim: remove unused starters and auto-configurations, narrow component scanning, defer expensive initialization, and consider <code>spring.main.lazy-initialization=true</code>.</p>
+
+<p><strong>Reasoning and alternatives:</strong> lazy initialization moves cost to the first request and delays discovery of wiring errors, so use it knowingly. Heavier options: Class Data Sharing archives (AppCDS), Spring AOT with GraalVM native image (fast start and low memory, with build-time and reflection constraints), or checkpoint/restore approaches where supported. On serverless platforms combine with minimum instances and startup CPU boost.</p>
+
+<p><strong>What if/test:</strong> a faster start can hide slower peak throughput (native image) or first-request latency spikes (lazy beans). Compare cold start, memory and steady-state latency before and after.
+<strong>Signal:</strong> diagnose before optimizing and list the trade-off of each lever.</p>
+<h4 id="q168-what-are-the-risks-of-lombok-and-why-use-mapstruct">Q168 What are the risks of Lombok, and why use MapStruct</h4>
+
+<p><strong>Strong answer:</strong> Lombok removes boilerplate, but <code>@Data</code> on JPA entities generates <code>equals</code>, <code>hashCode</code> and <code>toString</code> that can touch lazy collections, trigger extra queries or recurse through bidirectional associations. Builders and annotation-processor ordering can also confuse debugging and tooling. MapStruct generates mapping code at compile time (no reflection) between entities and DTOs.</p>
+
+<p><strong>Reasoning and alternatives:</strong> use records for immutable DTOs, which reduces the need for Lombok there; for entities write <code>equals</code>/<code>hashCode</code> deliberately. Configure MapStruct with <code>unmappedTargetPolicy = ERROR</code> so a new field cannot be silently unmapped.</p>
+
+<p><strong>What if/test:</strong> test the mapper with a contract test, and verify <code>toString</code> never loads lazy associations.
+<strong>Signal:</strong> name the entity-specific Lombok hazards and the compile-time-mapping benefit.</p>
+<h4 id="q169-how-do-you-prevent-sql-injection-beyond-use-prepared-statements">Q169 How do you prevent SQL injection beyond &quot;use prepared statements&quot;</h4>
+
+<p><strong>Source basis:</strong> <a href="https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html">OWASP SQL Injection Prevention Cheat Sheet</a>.</p>
+
+<p><strong>Strong answer:</strong> parameterize all <em>values</em>. The gaps are things that cannot be parameters: table or column names and sort direction in dynamic <code>ORDER BY</code>. Map user input to an allow-list of known identifiers instead of concatenating it. Also escape wildcard characters in <code>LIKE</code> when the input must be literal, avoid string-built JPQL/native queries, and review dynamic SQL inside stored procedures.</p>
+
+<p><strong>Reasoning and alternatives:</strong> an ORM does not make you immune if you concatenate into queries. Apply least privilege to the database account, validate input shape, and monitor for anomalous queries as defense in depth.</p>
+
+<p><strong>What if/test:</strong> include injection payloads and unusual sort parameters in automated tests, and run static analysis plus dynamic scanning in CI.
+<strong>Signal:</strong> handle the dynamic <code>ORDER BY</code> case with an allow-list.</p>
+<h4 id="q170-what-makes-a-test-suite-good-beyond-coverage-and-what-are-mutation-and-property-based-testing">Q170 What makes a test suite good beyond coverage, and what are mutation and property-based testing</h4>
+
+<p><strong>Strong answer:</strong> coverage shows which lines ran, not whether tests would detect a bug. <strong>Mutation testing</strong> (for example PIT) changes the code in small ways and checks whether tests fail; surviving mutants reveal weak assertions. <strong>Property-based testing</strong> (for example jqwik) states a rule that must hold for all inputs, generates many cases and shrinks a failing case to a minimal example.</p>
+
+<p><strong>Reasoning and alternatives:</strong> use them selectively on core logic such as pricing, parsing and state machines, because mutation runs are slow. A healthy suite is fast, deterministic, behavior-focused, and has few mocks of types you own.</p>
+
+<p><strong>What if/test:</strong> quarantine flaky tests with an owner and deadline. Track defect escape rate and test duration, not just percentage coverage.
+<strong>Signal:</strong> argue that assertion quality matters more than line coverage.</p>
+<h4 id="q171-trunk-based-development-versus-gitflow">Q171 Trunk-based development versus GitFlow</h4>
+
+<p><strong>Strong answer:</strong> trunk-based development uses short-lived branches merged to the main branch at least daily, with <strong>feature flags</strong> hiding incomplete work and CI keeping main releasable. GitFlow uses long-lived <code>develop</code> and release branches, which suits scheduled, versioned releases but increases merge pain and delays integration.</p>
+
+<p><strong>Reasoning and alternatives:</strong> for services deployed continuously, trunk-based development shortens lead time and reduces risk because changes are small. Pair it with expand-and-contract database migrations and automated rollback. Flags need ownership and cleanup, or they become debt.</p>
+
+<p><strong>What if/test:</strong> a flag combination matrix can explode; remove flags after rollout and test both states of any flag that guards risky logic.
+<strong>Signal:</strong> connect branching strategy to delivery metrics (lead time, change failure rate).</p>
+<h4 id="q172-what-goes-wrong-with-multi-region-active-active">Q172 What goes wrong with multi-region active-active</h4>
+
+<p><strong>Strong answer:</strong> you must handle write conflicts across regions, cross-region replication lag, globally unique IDs, split-brain during partitions, and the latency of any synchronous cross-region coordination. A common design assigns each user or tenant a <strong>home region</strong> for writes, with other regions serving reads or standby, and uses a global load balancer for failover.</p>
+
+<p><strong>Reasoning and alternatives:</strong> active-passive is simpler and often meets the recovery objective. Truly multi-writer designs need a conflict strategy (see Q159) or a globally consistent database such as Spanner, accepting its cost and latency. Define RTO and RPO first.</p>
+
+<p><strong>What if/test:</strong> failover drills reveal hidden dependencies (a single-region cache, DNS TTLs, shared secrets). Run regular game days that fail a whole region.
+<strong>Signal:</strong> start from RTO/RPO and prefer the simplest topology that meets them.</p>
+<h4 id="q173-when-do-you-add-a-search-engine-such-as-elasticsearch-and-how-do-you-keep-it-in-sync">Q173 When do you add a search engine such as Elasticsearch, and how do you keep it in sync</h4>
+
+<p><strong>Strong answer:</strong> a search engine builds an <strong>inverted index</strong> (term to documents), applies analyzers (tokenizing, stemming) and ranks results (BM25 by default in Elasticsearch). It is built for full-text search, faceting and relevance, where an unindexed leading-wildcard <code>LIKE &#39;%term%&#39;</code> may require a scan. For simple needs, database full-text search or a PostgreSQL <code>pg_trgm</code> GIN/GiST index may be enough. A normal B-tree generally cannot accelerate a leading-wildcard <code>LIKE</code>, but trigram indexes support patterns such as <code>LIKE &#39;%term%&#39;</code> when useful trigrams can be extracted. Check the plan; patterns without extractable trigrams can still scan.</p>
+
+<p><strong>Reasoning and alternatives:</strong> treat the search index as a <strong>derived store</strong>, not the system of record. Populate it from change events (outbox or CDC) so it can be rebuilt; reindex into a new index and switch an alias for zero-downtime mapping changes. Search is near-real-time (a refresh interval), so a write is not instantly searchable.</p>
+
+<p><strong>What if/test:</strong> the index drifts from the database if events are lost. Add a reconciliation job comparing counts and checksums, and test a full rebuild from source.
+<strong>Signal:</strong> call the index derived data and explain how you rebuild it.</p>
+
+<hr>
