@@ -17,6 +17,7 @@ const pages = [
   ["spring-boot-configuration", ["configuration"]],
   ["java-background-jobs", ["jobLifecycle", "jobLease"]],
   ["java-rate-limiting", ["rateLimit"]],
+  ["java-webhooks-production", ["webhookBoundary"]],
 ];
 
 for (const width of [375, 1366]) {
@@ -139,4 +140,14 @@ test("workspace selects cache diagram explicitly and supports horizontal scrolli
   const region = dialog.locator("[data-course-diagram='cache']").first().getByRole("region");
   expect(await region.evaluate(el => el.scrollWidth > el.clientWidth)).toBeTruthy();
   expect(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBeTruthy();
+});
+
+test("workspace renders the webhook course and its trust boundary", async ({ page }) => {
+  await gotoSeededApp(page, { activeTab: "javaDigest", homeDemoSeen: true });
+  await page.getByRole("button", { name: "Tech Blogs", exact: true }).click();
+  const title = "Java Webhooks in Production: Verify, Deduplicate, Recover";
+  await page.getByText(title, { exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: `${title} full lesson` });
+  await expect(dialog.locator("[data-course-diagram='webhookBoundary']").first()).toBeVisible();
+  await expect(dialog.getByText("5. Keep retryable transport failure separate from UNKNOWN effects", { exact: true }).first()).toBeVisible();
 });

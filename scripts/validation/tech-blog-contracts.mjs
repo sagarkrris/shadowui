@@ -20,6 +20,7 @@ export const JAVA_BLOG_FIXTURES = {
   'java-feature-flags-production': 'FeatureFlagsExampleChecks',
   'java-money-production': 'MoneyExampleChecks',
   'java-time-production': 'JavaTimeExampleChecks',
+  'java-webhooks-production': 'WebhookExampleChecks',
 };
 
 export function validateTechBlogCatalog(blogs = listTechBlogs(), assignments = COURSE_DEMO_ASSIGNMENTS, fixtures = JAVA_BLOG_FIXTURES) {

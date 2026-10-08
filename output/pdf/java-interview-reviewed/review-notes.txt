@@ -1,0 +1,108 @@
+Senior Java Interview Master Guide: review and corrections
+Reviewed 7 October 2026
+
+INPUTS
+  senior-java-interview-sde3-master-v22-final.md
+  senior-java-interview-sde3-master-v22-final.pdf
+  Both originals remain in Downloads. The corrected copies are edition v23.
+
+CONFIRMED ISSUES FIXED
+
+1. Damaged document structure and inconsistent navigation
+   The v22 Markdown was a text extraction with lost code fences, spacing,
+   table structure and links. Its navigation did not consistently match the
+   actual parts. The original PDF had stale v14 metadata and a v15 cover.
+   Recovered formatting and references from the matching earlier editable
+   guide, retained later material from v22, and generated both formats from
+   one Markdown source. Removed extraction artifacts and repeated generic
+   coaching. Retained Q1-Q272, 36 daily scenarios and 24 simulations.
+
+2. Incomplete Java examples
+   The top-three-earners collector was missing its list-to-stream step.
+   Q183's TTL cache was missing the map.compute call. Restored both and
+   compiled the resulting examples. Ranking now uses decimal salaries and
+   a deterministic employee-ID tie-breaker.
+
+3. Concurrency and cancellation errors
+   The custom pool could accept a submission after shutdown had allowed
+   workers to exit, leaving accepted work unprocessed. Submission and shutdown
+   now share one synchronization boundary; rejected work and task failures
+   are visible. The pool validates its size and rejects close from a worker.
+   The complete producer/consumer example used a data value as termination
+   and could strand a peer after failure/interruption. A separate end marker
+   and owner-managed completion/cancellation now cover those transitions.
+   The guide explicitly states the cooperative-termination limits.
+
+4. Missing input and arithmetic boundaries
+   Validated token-bucket capacity/refill parameters; added an injectable
+   monotonic clock. Corrected retry-policy validation, overflow handling and
+   interruption propagation. Added coin-change and partition-size guards.
+
+5. Inaccurate or overly broad explanations
+   Corrected PECS add/read restrictions, checked/runtime exception claims,
+   class-loading delegation, async-execution defaults, JWT revocation, record
+   immutability, API evolution, JVM/container memory and Kubernetes QoS.
+   Qualified Hibernate natural-ID mutability, JPA nested savepoints, local
+   versus distributed transactions, SKIP LOCKED queue-claim lifecycle,
+   concurrent materialized-view refresh and row-security bypass roles.
+   Clarified SQL ties, duplicate dates and NULL aggregate/cleanup behavior.
+   Primary-source references are included alongside relevant explanations.
+
+6. PDF usability and visual defects
+   Rebuilt a consistent contents page, working part and question navigation,
+   PDF bookmarks, external source links, readable code blocks and tables.
+   Replaced stale cover/document metadata and removed visible anchor markup.
+   Long tables split with repeated headers, and short code blocks stay intact.
+
+EXECUTED VALIDATION
+
+  Environment: Temurin/OpenJDK 21.0.9; Java 21 target, no preview features.
+
+  java code/InterviewAlgorithms.java
+    PASS: 3,116 checks.
+  java code/WebInterviewPractice.java
+    PASS: 12,417 checks.
+  javac --release 21 -d <temporary classes directory>
+    code/GuideExamples.java code/ProducerConsumerDemo.java
+    code/GuideRegressionTests.java
+    PASS: 58 standalone snippet groups plus complete program/test harness.
+  java -cp <temporary classes directory> GuideRegressionTests
+    PASS: 3,288 checks.
+  python3 code/SqlRegressionTests.py
+    PASS: 17 assertions on SQLite 3.53.1.
+
+  Total: 18,821 Java checks and 17 portable SQL assertions passed.
+  Coverage includes repaired inputs, monetary ranking ties, limiter clock
+  boundaries, cancellation, pool rejection and 100 submit/shutdown races,
+  plus deterministic algorithm comparisons. SQL tests use the exact Markdown
+  excerpts and exercise ties, duplicate days, NULLs, cycles and repeat upserts.
+
+  Final PDF: 206 pages; all 272 numbered questions present in Markdown.
+  All 4,073 extracted content blocks matched normalized PDF text. Every page
+  was rendered and reviewed at contact-sheet scale, with representative code,
+  navigation, table and appendix pages inspected at higher resolution.
+  Text geometry checks found no content outside the checked page margins.
+  All internal PDF destinations resolved; the 20 contents links were checked
+  against their actual part start pages. The PDF contains 65 internal link
+  annotations and 117 external URI annotations (wrapped links can create
+  multiple annotations). Extracted Java harness snippets and the complete
+  producer/consumer file were checked against the final Markdown.
+
+VALIDATION LIMITS
+
+  Framework/JPA mappings, PostgreSQL locking/RLS, cloud deployments,
+  Kubernetes and external integrations were not executed end to end.
+  SQLite does not establish PostgreSQL-specific behavior. Compilation uses
+  test wrappers/imports/fixtures for fragments; it does not make every example
+  a standalone application. Concurrency checks sample schedules, not all
+  possible interleavings. Product limits and support matrices must be checked
+  for the deployed version. This review does not establish zero defects.
+
+  No application or tech-blog source was changed, so repository build and
+  tech-blog completion gates were not applicable to this standalone review.
+
+DELIVERY
+
+  The Markdown is the editable source for the corrected PDF. The code folder
+  includes runnable companions, regressions and instructions in README.txt.
+  The ZIP contains both documents, these notes and the complete code folder.

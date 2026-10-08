@@ -5,9 +5,13 @@ import { SENIOR_JAVA_DAILY_SETS } from "../lib/seniorJavaDaily.mjs";
 
 const root = new URL("../content/senior-java/daily/", import.meta.url);
 
-test("the three archived daily sets are published intact and uniquely routed", async () => {
-  assert.deepEqual(SENIOR_JAVA_DAILY_SETS.map(set => set.number), [1, 2, 3]);
-  assert.equal(new Set(SENIOR_JAVA_DAILY_SETS.map(set => set.slug)).size, 3);
+test("daily sets preserve sequential identities, complete answers, and unique routes", async () => {
+  assert.deepEqual(SENIOR_JAVA_DAILY_SETS.slice(0, 4).map(set => set.slug), [
+    "2026-10-07-set-01", "2026-10-07-set-02", "2026-10-07-set-03", "2026-10-08-set-04",
+  ], "existing dated URLs cannot move when later sets are added");
+  assert.deepEqual(SENIOR_JAVA_DAILY_SETS.map(set => set.number), Array.from({ length: SENIOR_JAVA_DAILY_SETS.length }, (_, index) => index + 1));
+  assert.equal(new Set(SENIOR_JAVA_DAILY_SETS.map(set => set.slug)).size, SENIOR_JAVA_DAILY_SETS.length);
+  assert.equal(new Set(SENIOR_JAVA_DAILY_SETS.map(set => set.file)).size, SENIOR_JAVA_DAILY_SETS.length);
   const questionHeadings = [];
   for (const set of SENIOR_JAVA_DAILY_SETS) {
     const markdown = await readFile(new URL(`${set.file}.md`, root), "utf8");
@@ -20,6 +24,6 @@ test("the three archived daily sets are published intact and uniquely routed", a
     assert.doesNotMatch(html, /<\/?(?:script|iframe|style|img)\b|href="(?:javascript:|data:)|\/Users\/sagkrish\/|::inbox-item/i);
     assert.match(html, /<pre><code/);
   }
-  assert.equal(questionHeadings.length, 36);
-  assert.equal(new Set(questionHeadings).size, 36, "all question scenarios remain distinct");
+  assert.equal(questionHeadings.length, 12 * SENIOR_JAVA_DAILY_SETS.length);
+  assert.equal(new Set(questionHeadings).size, questionHeadings.length, "all question scenarios remain distinct");
 });
