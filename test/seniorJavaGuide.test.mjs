@@ -10,7 +10,7 @@ test("the complete guide is available as safe reading pages with both companion 
   const source = await readFile(new URL("Senior-Java-Interview-Master-Guide-Corrected.md", contentRoot), "utf8");
   assert.equal((source.match(/^<!-- ===== Part [1-8]:/gm) || []).length, 8);
   assert.equal((source.match(/^# Part (?:9|10|11|12|13|14|15|16) /gm) || []).length, 8);
-  assert.equal(SENIOR_JAVA_GUIDE_PARTS.length, 17); // Part 1 is split for page size.
+  assert.equal(SENIOR_JAVA_GUIDE_PARTS.length, 18); // Part 1 is split; supplemental Part 21 follows Part 16.
   const introduction = await readFile(new URL("rendered/introduction.html", contentRoot), "utf8");
   assert.match(introduction, /Revised 9 October 2026/);
   assert.match(introduction, /Framework, database, cloud and Kubernetes examples are not integration-tested/);

@@ -8,7 +8,7 @@ import styles from "../../styles/Reader.module.css";
 export default function SeniorJavaGuideSection({ item, content, isCode, previous, next }) {
   return <ReaderLayout title={`${item.title} · Senior Java interview guide`} description={item.description}>
     <nav aria-label="Guide breadcrumb" className={styles.guideBreadcrumb}><Link href="/senior-java-interview">Senior Java interview guide</Link> / {item.title}</nav>
-    <p className={styles.eyebrow}>{isCode ? "COMPANION JAVA FILE" : `${item.label || `PART ${item.slug.slice(5)}`} OF 16`}</p>
+    <p className={styles.eyebrow}>{isCode ? "COMPANION JAVA FILE" : item.label || `PART ${item.slug.slice(5)}`}</p>
     <h1>{item.title}</h1>
     <p className={styles.lead}>{item.description}</p>
     <GuidePagination previous={previous} next={next} label="Guide pages, top" />

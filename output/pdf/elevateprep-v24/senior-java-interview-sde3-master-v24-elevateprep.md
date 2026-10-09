@@ -1,90 +1,58 @@
-# Senior Java Interview Master Guide (9+ Years)
+# ElevatePrep Senior Java Interview Master Guide - SDE-3
 
-**Java · Spring Boot · Hibernate · Microservices · Maven · GCP ·
-Kubernetes**
+**Java 21 baseline | ElevatePrep edition v24 | 9 October 2026**
 
-A preparation guide for an experienced Java engineer targeting
-coding-heavy product-company interviews. Contains 244 numbered Q&As, the core refresher, coding exercises, thirteen
-condensed system designs, and a coding practice track with sixteen companion
-algorithms plus seven additional coding solutions.
+Java, Spring Boot, Hibernate/JPA, microservices, Maven, GCP and Kubernetes.
 
-**Revised 9 October 2026.**
+272 numbered Q&As, core module questions, 60 daily scenarios and 24 interview simulations across 20 parts. Java examples use Java 21 without preview features unless explicitly labeled as a later-version comparison. Framework snippets may require their named dependencies and application types; they are not complete applications.
 
-**Supplemental Part 21:** Q273–Q292 add production resilience, delivery and JVM operations in four-tier learning ladders. Read the [new chapter](/senior-java-interview/part-21#part-21-production-resilience-delivery-and-jvm-operations-q273-q292) after Part 16 or by topic. Its two Java fragments have a dedicated Java 21 behavioral fixture; Q289 requires preview flags. Parts 17–20 and Q245–Q272 remain supplemental material in the combined export, so website numbering intentionally jumps from Q244 to Q273.
+This edition aligns Parts 01-16 and all five daily practice sets with the current local ElevatePrep source as of 9 October 2026. It includes the expanded foundation paths, worked explanations, topic-specific follow-ups, annotation and persistence lessons, and reasoning before coding. Parts 17-20 preserve the supplied reviewed guide's additional Q245-Q272 and 24 interview simulations. Those supplemental sections are not currently listed in ElevatePrep's website catalog. The repaired thread pool and complete producer-consumer example are retained as worked alternatives. Historical validation claims are not evidence for this export; see Appendix B.
 
-**Updated 9 October 2026:** the answer review replaces repeated learning text with worked explanations and topic-specific follow-ups, clarifies version-dependent guarantees, and adds reasoning before the later coding solutions. Use the foundation paths first, then practise explaining the mechanism without reading the page.
+## How to use the guide
 
-**Updated 7 October 2026:** Parts 15–16 add Q214–Q244 on full system-design
-walkthroughs, dynamic programming, graphs, Hibernate/JPA and SQL. The new
-Java solutions were compiled and exercised on Java 21; portable SQL examples
-were checked with SQLite. Framework mappings and cloud architectures remain
-illustrative and require validation against the deployed versions.
+Explain the mechanism, why it exists, a realistic failure, the trade-off and how to verify it. A definition-only answer is a starting point. Work toward a decision supported by constraints and evidence. Treat all example incidents and metrics as illustrative, and substitute your own experience.
 
-**Updated 6 October 2026:** This edition adds Q154–Q213 on consensus, databases,
-concurrency, Spring Boot, system design, JVM topics, coding and leadership. The
-earlier 170 M/Q learning layers remain restructured for interview preparation. Each section
-now separates the direct answer from a plain-English learning layer,
-defines important terminology where the source supports it, adds SDE-3
-checkpoints, and provides a short version to practise aloud. The
-examples, code, practice roadmap and question numbering are retained.
-Technical corrections are reflected consistently in affected direct answers,
-learning layers and spoken summaries. Start with Part 9 for the coding plan, Part 10 for
-web-sourced questions and strong answers, Part 11 for all forty roadmap problems,
-and Parts 12–16 for the additional questions. Use the earlier parts for
-targeted backend revision. The suggested study allocation is 60%
-algorithms, 20% Java and machine coding, 15% system design, and 5%
-behavioral preparation; adjust it to the actual interview loop.
-
-**Code baseline:** use Java 21 without preview features for the new
-practice file; ask which JDK the interview platform supports. Existing
-excerpts omit imports and application-specific types unless stated
-otherwise. Framework excerpts are teaching examples, not complete applications. The sixteen
-companion algorithms passed 15,533 checks on Java 21.0.9. Eleven new self-contained
-Java sketches passed 2,514 ordinary-input assertions with helper types supplied.
-Framework, database, cloud and Kubernetes examples are not integration-tested.
-
-**Experience examples:** incident numbers and company-style prompts are
-illustrative. Replace them with your own evidence; do not present sample
-stories as personal experience. Company labels describe practice styles,
-not a verified hiring rubric.
+| Score | What the answer demonstrates |
+|---|---|
+| 1 | Definition only |
+| 2 | Correct mechanism, limited reasoning |
+| 3 | Mechanism, purpose and common pitfall |
+| 4 | Trade-offs, alternatives and failure handling |
+| 5 | A defensible decision and production evidence |
 
 ## Contents
 
-1.  [Part 1: Course (Core Modules, Plan, Maven, GCP, Design, Programs,
-    Behavioral)](#senior-java-interview-refresher-9-years)
-2.  [Part 2: Question Bank Vol. 1 (Core Java, Spring, JPA,
-    Microservices)](#senior-java-question-bank-vol-1-detailed-answers)
-3.  [Part 3: Question Bank Vol. 2 (Kafka, Security, Maven, GCP,
-    Kubernetes)](#senior-java-question-bank-vol-2)
-4.  [Part 4: Question Bank Vol. 3 (Scenarios, System Design,
-    Coding)](#senior-java-question-bank-vol-3)
-5.  [Part 5: Question Bank Vol. 4 (Modern Java, Spring Ecosystem, DB,
-    Security, Quality)](#senior-java-question-bank-vol-4)
-6.  [Part 6: Question Bank Vol. 5 (Rapid-Fire, Puzzles, Designs,
-    Coding)](#senior-java-question-bank-vol-5)
-7.  [Part 7: Question Bank Vol. 6 (Kubernetes, Terraform, APIs,
-    Leadership, Mock Interview)](#senior-java-question-bank-vol-6)
-8.  [Part 8: Question Bank Vol. 7 (Kafka Streams, WebFlux, Hardening,
-    LeetCode, Google, Amazon)](#senior-java-question-bank-vol-7)
-9.  [Part 9: Coding interview practice
-    track](#part-9-coding-interview-practice-track)
-10. [Part 10: Web sourced questions and strong answer
-    rubrics](#part-10-web-sourced-questions-and-strong-answer-rubrics)
-11. [Part 11: Decision walkthroughs for the full
-    roadmap](#part-11-decision-walkthroughs-for-the-full-practice-roadmap)
-12. [Part 12: Distributed systems, data and concurrency](#part-12-more-senior-level-questions-q154q173)
-13. [Part 13: Spring Boot, coding style and leadership](#part-13-spring-boot-internals-coding-style-and-leadership-questions-q174q193)
-14. [Part 14: System design, JVM and coding](#part-14-system-design-data-internals-jvm-and-coding-questions-q194q213)
-15. [Part 15: Full design walkthroughs and DP/graph problems](#part-15-full-system-design-walkthroughs-and-dpgraph-problems-q214q222)
-16. [Part 16: Hibernate and SQL](#part-16-hibernate-and-sql-questions-q223q244)
-17. [Part 21: Production resilience, delivery and JVM operations (Q273–Q292)](part-21.md#part-21-production-resilience-delivery-and-jvm-operations-q273-q292)
-18. [Version reference and important corrections](#version-reference-and-important-corrections)
+1. [Part 01: Course and core modules](#part-1)
+2. [Part 02: Question Bank Vol. 1 - Java, Spring, JPA and microservices](#part-2)
+3. [Part 03: Question Bank Vol. 2 - Kafka, security, Maven, GCP and Kubernetes](#part-3)
+4. [Part 04: Question Bank Vol. 3 - Scenarios, design and coding](#part-4)
+5. [Part 05: Question Bank Vol. 4 - Modern Java and the Spring ecosystem](#part-5)
+6. [Part 06: Question Bank Vol. 5 - Rapid-fire, puzzles and harder coding](#part-6)
+7. [Part 07: Question Bank Vol. 6 - Kubernetes, Terraform, APIs and leadership](#part-7)
+8. [Part 08: Question Bank Vol. 7 - Streams, WebFlux and interview practice](#part-8)
+9. [Part 09: Coding interview practice track](#part-9)
+10. [Part 10: Web sourced questions and strong answer rubrics](#part-10)
+11. [Part 11: Decision walkthroughs for the full practice roadmap](#part-11)
+12. [Part 12: More Senior-Level Questions (Q154-Q173)](#part-12)
+13. [Part 13: Spring Boot Internals, Coding-Style and Leadership Questions (Q174-Q193)](#part-13)
+14. [Part 14: System Design, Data Internals, JVM and Coding Questions (Q194-Q213)](#part-14)
+15. [Part 15: Full System Design Walkthroughs and DP/Graph Problems (Q214-Q222)](#part-15)
+16. [Part 16: Hibernate and SQL Questions (Q223-Q244)](#part-16)
+17. [Part 17: More Hibernate and SQL Questions (Q245-Q272)](#part-17)
+18. [Part 18: SDE-3 Interview Simulation Lab](#part-18)
+19. [Part 19: 30-Minute SDE-3 Mock Interview Protocol](#part-19)
+20. [Part 20: Interviewer Follow-Up Rules](#part-20)
 
-------------------------------------------------------------------------
+[Daily practice sets 1-5](#daily-practice) · [Appendix C: repaired thread pool](#appendix-c)
 
-<!-- ===== Part 1: Course (Core Modules, Plan, Maven, GCP, Design, Programs, Behavioral) ===== -->
+[Appendix A: complete producer-consumer example](#appendix-a) · [Appendix B: review and validation](#validation)
 
-# Senior Java Interview Refresher (9+ Years)
+Website navigation: [Senior Java guide](https://elevateprep.vercel.app/senior-java-interview) · [Daily practice](https://elevateprep.vercel.app/senior-java-interview/daily). Alignment uses the local editable website source; a deployed-site comparison was not performed.
+
+<a id="part-1"></a>
+## Part 01 - Course and core modules
+
+## Senior Java Interview Refresher (9+ Years)
 
 **Stack:** Java · Spring Boot · Hibernate/JPA · Microservices · Maven ·
 GCP
@@ -96,7 +64,7 @@ GCP
 failure modes, production war stories*. Answer pattern: **Concept → Why
 it exists → Pitfall → What I did in production.**
 
-## 2-Week Plan
+### 2-Week Plan
 
 | Days  | Focus                                                                                  |
 |-------|----------------------------------------------------------------------------------------|
@@ -113,7 +81,7 @@ emphasizes them.
 
 ------------------------------------------------------------------------
 
-## Topic learning order: start with the foundations
+### Topic learning order: start with the foundations
 
 For each topic, begin with its starting question, explain the mechanism, then handle failures and trade-offs. Follow the linked foundation before the advanced question bank; the existing Q/M identifiers remain revision references rather than a required numerical reading order.
 
@@ -142,11 +110,11 @@ For each topic, begin with its starting question, explain the mechanism, then ha
 | APIs and reactive programming | How does a request complete, and how does a subscriber receive data? | [API foundations](#api-questions-before-protocol-choices) → contracts/retries → protocol choice; [reactive foundations](#ac-reactive-programming-spring-webflux) → subscription/demand → operators → WebFlux failures and testing. |
 | System design | Which requirements and guarantees should we establish first? | [Design interview sequence](#module-7-system-design-prompts-practice-45-min-each) → estimates → API/data → architecture → failures/scale → trade-offs and full walkthroughs. |
 
-## Module 1: Core Java, Concurrency, JVM
+### Module 1: Core Java, Concurrency, JVM
 
 *Detailed answers. More in Vols. 1–3 (Q1–Q74).*
 
-### C1 What should you explain before collection internals
+#### C1 What should you explain before collection internals
 
 **Strong answer:** distinguish primitive values from references to objects. Java passes argument values, including reference values, by value; assigning a parameter does not replace the caller's reference, while mutating a shared object can be visible through both references. Explain object identity versus logical equality, and define whether your value is mutable before using it as a collection key.
 
@@ -157,7 +125,7 @@ For each topic, begin with its starting question, explain the mechanism, then ha
 
 **M1.1 How does HashMap work internally?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 `HashMap` stores key-value pairs in an internal array of buckets. Java
 uses the key's `hashCode()` and spreads the hash bits to choose a bucket
@@ -168,7 +136,7 @@ table-capacity thresholds are met. With a good hash distribution,
 `get()` and `put()` are expected O(1), while resizing is occasional O(n)
 work, so insertion is amortized O(1).
 
-### First: what does "bin" mean?
+#### First: what does "bin" mean?
 
 **Bin** is OpenJDK implementation terminology for the entries associated
 with one position in the internal hash-table array. In an interview, it
@@ -192,7 +160,7 @@ So, for this discussion:
 bucket ≈ bin
 ```
 
-### What happens during `put()`?
+#### What happens during `put()`?
 
 Conceptually:
 
@@ -211,7 +179,7 @@ find entry / insert entry
 If another key is already in that bucket, Java compares keys using
 `equals()` to determine whether it is the same mapping or a collision.
 
-### Why are `hashCode()` and `equals()` both needed?
+#### Why are `hashCode()` and `equals()` both needed?
 
 `hashCode()` helps find the **bucket**.
 
@@ -219,7 +187,7 @@ If another key is already in that bucket, Java compares keys using
 
 That is why the `equals()` / `hashCode()` contract is critical.
 
-### What happens when there are many collisions?
+#### What happens when there are many collisions?
 
 A bucket can initially contain a linked chain of entries. When the
 relevant collision threshold is reached, Java may treeify that bucket.
@@ -230,7 +198,7 @@ The tree is a red-black tree, which is self-balancing. This can reduce collision
 guide the search; equal-hash keys without useful ordering can still require
 a linear scan of the tree bin.
 
-### What happens during resizing?
+#### What happens during resizing?
 
 `HashMap` grows its table when the number of mappings crosses the
 threshold derived from capacity and load factor. The default load factor
@@ -248,7 +216,7 @@ When the table grows, entries are redistributed. The stored hash can be
 reused, so Java does not need to call the user's `hashCode()` again
 simply because the table resized.
 
-### Why is lookup normally O(1)?
+#### Why is lookup normally O(1)?
 
 With a good hash distribution, entries are spread across buckets, so
 each lookup examines only a small number of entries.
@@ -264,7 +232,7 @@ remove() → expected O(1)
 But do **not** say "HashMap is always O(1)". Collisions and resizing
 matter.
 
-### Important production pitfall: mutable keys
+#### Important production pitfall: mutable keys
 
 If a key changes after insertion and the changed fields participate in
 `equals()` or `hashCode()`, the map may no longer find the entry using
@@ -273,7 +241,7 @@ the mutated key.
 So keys should normally be immutable with respect to fields used by
 `equals()` and `hashCode()`.
 
-### SDE-3 takeaway
+#### SDE-3 takeaway
 
 A strong answer connects four things:
 
@@ -290,7 +258,7 @@ initial capacity. If calculating capacity manually, remember Java
 integer arithmetic when writing expressions such as
 `expected / 0.75 + 1`.
 
-### 30-second version
+#### 30-second version
 
 > "`HashMap` uses an internal array of buckets. It uses the key's hash
 > to select a bucket, and `equals()` to identify the exact key when
@@ -301,13 +269,13 @@ integer arithmetic when writing expressions such as
 > dangerous because changing a key's hash-related state after insertion
 > can make the entry unreachable."
 
-## M1.1.1 Red-Black Tree Deep Dive — HashMap Follow-up
+### M1.1.1 Red-Black Tree Deep Dive — HashMap Follow-up
 
 If the interviewer asks, **“You said a HashMap bucket can become a
 red-black tree. Explain the tree.”**, do not jump straight into
 implementation cases. Start with the purpose.
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 > A red-black tree is a self-balancing binary search tree. Each node has
 > a red or black color, and the tree maintains balancing invariants that
@@ -316,7 +284,7 @@ implementation cases. Start with the purpose.
 > collision handling, but equal-hash keys without useful comparison
 > ordering can still require O(n) lookup.
 
-### What problem does it solve?
+#### What problem does it solve?
 
 A normal binary search tree can become skewed:
 
@@ -351,7 +319,7 @@ insert = O(log n)
 delete = O(log n)
 ```
 
-### What does “red-black” mean?
+#### What does “red-black” mean?
 
 Every node has one extra piece of state:
 
@@ -371,7 +339,7 @@ The tree maintains these core properties:
 
 These rules prevent the tree from becoming arbitrarily skewed.
 
-### How does it stay balanced?
+#### How does it stay balanced?
 
 Two operations are fundamental:
 
@@ -418,7 +386,7 @@ The ordering is still:
 
 but the height is improved.
 
-### Why are new nodes generally inserted as red?
+#### Why are new nodes generally inserted as red?
 
 Inserting a black node can immediately increase the black-node count on
 paths through that node.
@@ -434,7 +402,7 @@ red child
 
 The tree then repairs the violation using recoloring and/or rotations.
 
-### What happens during insertion?
+#### What happens during insertion?
 
 At a high level:
 
@@ -451,7 +419,7 @@ At a high level:
 You do not need to memorize every insertion case unless the interviewer
 explicitly asks you to implement a red-black tree.
 
-### Why does HashMap need this?
+#### Why does HashMap need this?
 
 Suppose many different keys collide into the same bucket:
 
@@ -485,7 +453,7 @@ O(n) chain search → O(log n) tree search when ordering distinguishes keys
 Equal hashes without useful key ordering → lookup may still be O(n)
 ```
 
-### Important: the entire HashMap does NOT become a tree
+#### Important: the entire HashMap does NOT become a tree
 
 This is a common interview mistake.
 
@@ -504,7 +472,7 @@ HashMap
 
 Only a heavily-collided bucket can be treeified.
 
-### When does HashMap treeify?
+#### When does HashMap treeify?
 
 For the OpenJDK implementation relevant to Java 8+ discussions, the
 commonly discussed constants are:
@@ -529,7 +497,7 @@ The correct interview explanation is:
 The implementation details are version-sensitive, so use the target
 JDK's OpenJDK source if an interviewer asks for exact thresholds.
 
-### Can a treeified bucket become a list again?
+#### Can a treeified bucket become a list again?
 
 Yes.
 
@@ -539,7 +507,7 @@ implementation can **untreeify** it.
 That avoids keeping tree-management overhead for a bucket that is no
 longer heavily populated.
 
-### Why red-black tree instead of AVL?
+#### Why red-black tree instead of AVL?
 
 A good senior-level answer is:
 
@@ -553,7 +521,7 @@ A good senior-level answer is:
 Do not claim one is universally faster; workload and implementation
 matter.
 
-### What about `hashCode()` and `equals()`?
+#### What about `hashCode()` and `equals()`?
 
 Another common follow-up is:
 
@@ -582,7 +550,7 @@ OpenJDK implementation has additional comparison logic. The important
 interview point is that **HashMap's correctness still depends on the
 `equals()`/`hashCode()` contract**.
 
-### Why can a bad hashCode be dangerous?
+#### Why can a bad hashCode be dangerous?
 
 If unrelated keys produce the same hash:
 
@@ -603,7 +571,7 @@ But:
 > Good hashing gives expected performance; it is not a correctness
 > replacement for `equals()`.
 
-### What should you say about complexity?
+#### What should you say about complexity?
 
 Be precise:
 
@@ -629,7 +597,7 @@ Do **not** say:
 The tree is a defensive mechanism for pathological collision behavior,
 not the normal complexity of the whole map.
 
-### Why can a balanced HashMap bin still need linear lookup?
+#### Why can a balanced HashMap bin still need linear lookup?
 
 A red-black tree has logarithmic height. That bounds search only when the
 query can choose a branch at each comparison. OpenJDK HashMap may search
@@ -639,7 +607,7 @@ therefore require O(n) equality checks even in a treeified bin.
 
 [OpenJDK HashMap implementation notes and TreeNode search](https://raw.githubusercontent.com/openjdk/jdk21u/master/src/java.base/share/classes/java/util/HashMap.java).
 
-### SDE-3 follow-up questions
+#### SDE-3 follow-up questions
 
 **Q: Why not keep the linked list?**
 
@@ -676,7 +644,7 @@ therefore require O(n) equality checks even in a treeified bin.
 > Both are O(log n); AVL is more strictly balanced, while red-black
 > generally trades some balance for fewer update rebalancing operations.
 
-### 30-second interview answer
+#### 30-second interview answer
 
 > “A red-black tree is a self-balancing BST that maintains color-based
 > invariants so its height stays O(log n). HashMap uses it defensively
@@ -690,7 +658,7 @@ therefore require O(n) equality checks even in a treeified bin.
 > as a whole still provides expected O(1) lookup with a good hash
 > distribution.”
 
-### What you should know for SDE-3
+#### What you should know for SDE-3
 
 **Must know:** purpose, five properties, rotations, recoloring, O(log
 n), relationship to HashMap.
@@ -701,11 +669,11 @@ resizing may happen first, and red-black vs AVL.
 **Only if drilled further:** individual insertion/deletion cases, exact
 OpenJDK `TreeNode` implementation details, and tie-breaking logic.
 
-## Multithreading Questions: foundations to senior follow-ups
+### Multithreading Questions: foundations to senior follow-ups
 
 Start here before M1.2–M1.6: why threads → creation → lifecycle → shared state → synchronization → coordination → executors → results → cancellation → collections/context → virtual threads → diagnosis. **Foundation:** explain the API and a small example. **Mid-level:** explain the mechanism and ownership. **Senior/SDE-3:** identify the invariant, capacity limit, failure path and a test that proves the required behavior. Explanations target Java 17/21; virtual-thread APIs require Java 21. These are conceptual walkthroughs and proposed exercises, not new executable examples or benchmarks.
 
-### T1 Why do we use multiple threads, and is concurrency the same as parallelism
+#### T1 Why do we use multiple threads, and is concurrency the same as parallelism
 
 **Strong answer:** a thread is an execution path within a process. Threads share process resources and can access the same heap objects, while each executes its own call stack. Concurrency means tasks can make progress over overlapping lifetimes; parallelism means work executes at the same time on multiple execution resources. One CPU core can support concurrency without parallel execution. Threads help overlap waiting and can divide CPU work, but scheduling, coordination and shared-state costs can outweigh the benefit.
 
@@ -713,7 +681,7 @@ Start here before M1.2–M1.6: why threads → creation → lifecycle → shared
 
 **Senior follow-up:** first classify CPU work, blocking I/O and downstream capacity. Measure throughput, p99 latency and queueing against the sequential baseline. Do not promise a speedup merely because execution is concurrent.
 
-### T2 How do you create and start a thread in Java
+#### T2 How do you create and start a thread in Java
 
 **Strong answer:** describe work with `Runnable`, construct a `Thread` with that task and call `start()`. In Java 21, `Thread.ofPlatform()` and `Thread.ofVirtual()` provide builders. Calling `run()` directly on a platform Thread is an ordinary method call on the current thread; it does not schedule a new execution path. Directly calling run on a virtual Thread does not execute its task. A Thread can be started only once; starting it again throws `IllegalThreadStateException`, even after it has terminated. Executors usually separate task submission from thread creation in application code.
 
@@ -721,7 +689,7 @@ Start here before M1.2–M1.6: why threads → creation → lifecycle → shared
 
 **Senior follow-up:** decide who owns completion, uncaught exceptions and cleanup. A daemon thread does not keep the JVM alive; it is not a reliable place for work that must finish. Do not rely on thread names or priorities to provide ordering or fairness.
 
-### T3 What are the thread states, and how do sleep, wait and join differ
+#### T3 What are the thread states, and how do sleep, wait and join differ
 
 **Strong answer:** Java exposes NEW, RUNNABLE, BLOCKED, WAITING, TIMED_WAITING and TERMINATED. RUNNABLE includes execution and readiness for execution; it does not prove a thread is consuming CPU. BLOCKED specifically concerns entering a monitor. Other waits, including explicit locks, can appear as WAITING or TIMED_WAITING. State is a diagnostic snapshot, not a synchronization protocol.
 
@@ -729,7 +697,7 @@ Start here before M1.2–M1.6: why threads → creation → lifecycle → shared
 
 **Senior follow-up:** sleep and yield create no shared-memory visibility guarantee. A successful termination observation through join provides an ordering/visibility boundary. Avoid sleeps as a way to “ensure the other thread has finished.”
 
-### T4 What is a race condition, and how do visibility and atomicity differ
+#### T4 What is a race condition, and how do visibility and atomicity differ
 
 **Strong answer:** a race condition occurs when correctness depends on an uncontrolled interleaving. A data race specifically involves conflicting accesses without the required happens-before relationship. Visibility concerns observing another thread's writes; atomicity concerns an operation being indivisible relative to other operations; ordering concerns which effects can be observed. `count++` reads, adds and writes, so two threads can overwrite each other's increments even if the field is volatile.
 
@@ -737,7 +705,7 @@ Start here before M1.2–M1.6: why threads → creation → lifecycle → shared
 
 **Senior follow-up:** identify the shared state and the exact invariant before choosing a primitive. Prefer immutable data or single ownership when possible. Continue with M1.3 for publication and the Java Memory Model; a test that happened to pass does not prove a data race absent.
 
-### T5 How does synchronized work, and when would you use ReentrantLock
+#### T5 How does synchronized work, and when would you use ReentrantLock
 
 **Strong answer:** synchronized acquires the specified object's monitor and releases it on normal or exceptional exit. An instance synchronized method locks that instance; a static synchronized method locks the class object. Different instances do not share an instance lock. Unlocking and subsequent locking of the same monitor establish visibility as well as mutual exclusion. Reentrant means the owner can reacquire the lock without blocking itself.
 
@@ -745,7 +713,7 @@ Start here before M1.2–M1.6: why threads → creation → lifecycle → shared
 
 **Senior follow-up:** keep blocking I/O and untrusted callbacks outside critical sections when the invariant permits it. Replacing a lock with a concurrent collection does not automatically preserve a multi-object invariant. M1.2 compares locks, atomics and volatile in more detail.
 
-### T6 How do threads coordinate work without polling
+#### T6 How do threads coordinate work without polling
 
 **Strong answer:** for a monitor protocol, check a condition in a while loop while holding the same monitor that protects the state. `wait` can return spuriously; notification means recheck, not that the condition is certainly true. The notifier changes protected state before notifying and does not release the monitor merely by calling notify. Higher-level `BlockingQueue` operations often express producer/consumer coordination more safely.
 
@@ -753,7 +721,7 @@ Start here before M1.2–M1.6: why threads → creation → lifecycle → shared
 
 **Senior follow-up:** distinguish an empty queue from completed production. Design explicit completion, failure and cancellation signals. A poison pill must account for all consumers and must not get permanently stuck behind a full queue during shutdown. Continue with the odd/even exercise in Part 4 after learning the guarded-condition protocol.
 
-### T7 When do volatile, atomic classes and LongAdder fit
+#### T7 When do volatile, atomic classes and LongAdder fit
 
 **Strong answer:** volatile supports visibility/order for that variable, but not an arbitrary compound state transition. Atomic classes provide operations such as compare-and-set, increment and update on their represented state. CAS checks the expected value and conditionally changes it atomically; retry logic may execute its computation more than once, so keep such functions free from non-repeatable side effects. LongAdder reduces contention for accumulating counters, but `sum()` is not an atomic snapshot under concurrent updates.
 
@@ -761,7 +729,7 @@ Start here before M1.2–M1.6: why threads → creation → lifecycle → shared
 
 **Senior follow-up:** ask whether A→B→A matters, whether retry can starve, and whether the algorithm is actually simpler than a lock. Q161 covers stamped references and ABA; Q163 discusses false sharing. Do not equate lock-free with wait-free or with guaranteed better performance.
 
-### T8 What are Executor, ExecutorService and a thread pool
+#### T8 What are Executor, ExecutorService and a thread pool
 
 **Strong answer:** Executor accepts Runnable work and abstracts execution; it need not create a new thread or execute asynchronously. ExecutorService adds submission/results and lifecycle. ThreadPoolExecutor manages workers, a work queue and rejection behavior. For its usual configuration, a new task creates a worker below the core size, then is queued, then may create a worker up to the maximum when queueing fails; otherwise it is rejected. An unbounded queue can prevent normal growth toward the maximum.
 
@@ -769,7 +737,7 @@ Start here before M1.2–M1.6: why threads → creation → lifecycle → shared
 
 **Senior follow-up:** waiting tasks retain memory and consume deadline budget. Separate workloads where justified, bound admission and instrument queue age, active workers, rejections and downstream saturation. M1.5 covers sizing; Q148 explains a maximum-size trap. Never block a worker waiting for child work queued behind it in the same saturated pool.
 
-### T9 How do Runnable, Callable, execute, submit and Future fit together
+#### T9 How do Runnable, Callable, execute, submit and Future fit together
 
 **Strong answer:** Runnable has no returned result; Callable returns a value and may throw checked exceptions. `execute` accepts a Runnable without returning a Future. `submit` wraps work and returns a Future: get waits for completion and exposes execution failure through ExecutionException. With ordinary ThreadPoolExecutor submission, the wrapper captures task exceptions, so an uncaught-exception handler alone will not report every submitted failure. Observe the Future or another deliberate error channel.
 
@@ -777,7 +745,7 @@ Start here before M1.2–M1.6: why threads → creation → lifecycle → shared
 
 **Senior follow-up:** define who owns every submitted result, how abandoned work is cancelled and how failures are aggregated. Submission establishes publication to the task, and successful Future.get establishes result visibility. Avoid fire-and-forget operations that can silently lose failures or outlive their owner.
 
-### T10 How does CompletableFuture compose work, and which thread runs a stage
+#### T10 How does CompletableFuture compose work, and which thread runs a stage
 
 **Strong answer:** CompletableFuture represents a completion and supports dependent stages. `thenApply` transforms a value; `thenCompose` flattens a function returning another stage; `thenCombine` combines independently obtained results. Non-async callbacks may run on a completing thread or another caller of completion methods. Async variants use their supplied executor or the documented default facility, commonly the common pool. Do not assume every stage has its own thread.
 
@@ -785,7 +753,7 @@ Start here before M1.2–M1.6: why threads → creation → lifecycle → shared
 
 **Senior follow-up:** distinguish a future's timeout/cancellation from cancellation of the actual HTTP/JDBC operation. `CompletableFuture.cancel(true)` does not use the flag to interrupt its computation. Configure underlying I/O deadlines and explicit cancellation support. Use a deliberately owned executor for blocking operations; Q147 explores flattening and M1.6 compares composition with virtual threads.
 
-### T11 How do interruption, cancellation and shutdown work
+#### T11 How do interruption, cancellation and shutdown work
 
 **Strong answer:** interrupt is a cooperative signal, not a forced stop. Interruptible waits such as sleep/wait/join throw InterruptedException and clear the interrupt status. Either propagate it or, when handling it at a boundary, restore the status and exit or hand control to an owner that will handle it. `Thread.interrupted()` tests and clears the current thread's status; `isInterrupted()` does not clear it. Do not use deprecated stop/suspend/resume APIs for lifecycle control.
 
@@ -793,7 +761,7 @@ Start here before M1.2–M1.6: why threads → creation → lifecycle → shared
 
 **Senior follow-up:** Java 21 ExecutorService.close waits for termination; try-with-resources is not a bounded shutdown policy for a stuck task. Cancellation of a caller's Future is not proof that a side effect did not happen. Stop admitting work, propagate remaining deadlines, release resources only when ownership ends, and reconcile ambiguous external outcomes.
 
-### T12 Which concurrent collections and coordination tools should you know
+#### T12 Which concurrent collections and coordination tools should you know
 
 **Strong answer:** ConcurrentHashMap provides documented atomic map operations, not thread safety for an arbitrary mutable value inside it. BlockingQueue coordinates handoff with optional bounded capacity. CopyOnWriteArrayList favors frequent traversal and rare writes, with snapshot iterators. CountDownLatch is one-shot completion/starting coordination; CyclicBarrier coordinates a fixed group repeatedly; Phaser supports phased coordination with changing parties; Semaphore bounds permits to a resource.
 
@@ -801,7 +769,7 @@ Start here before M1.2–M1.6: why threads → creation → lifecycle → shared
 
 **Senior follow-up:** choose collection and primitive from the invariant, not their “concurrent” name. Q145 covers mutable map values and Q146 covers slow computeIfAbsent callbacks. Barrier failure, missing countdown and broken ownership can prevent progress; include failure paths in the protocol.
 
-### T13 Why does ThreadLocal need cleanup and deliberate propagation
+#### T13 Why does ThreadLocal need cleanup and deliberate propagation
 
 **Strong answer:** ThreadLocal stores per-thread state. Pooled workers can outlive requests, so values can leak into the next task or retain request objects unless removed in finally at the owning boundary. InheritableThreadLocal copies context at thread creation, not at each submission to an already existing worker. Neither automatically propagates the right request context into every asynchronous stage.
 
@@ -809,7 +777,7 @@ Start here before M1.2–M1.6: why threads → creation → lifecycle → shared
 
 **Senior follow-up:** test two unrelated requests on the same worker, exceptions and nested context installation. Virtual threads still need context ownership, and storing an expensive object per virtual thread can consume large aggregate memory. Q8 in Part 2 develops the cleanup discussion.
 
-### T14 When do virtual threads and structured concurrency help
+#### T14 When do virtual threads and structured concurrency help
 
 **Strong answer:** Java 21 virtual threads make many blocking tasks economical; they do not make CPU work faster or increase a database's capacity. Use a virtual thread per task and limit admission/scarce resources separately. Do not build a worker pool to reuse virtual threads. Their daemon status means essential work needs an explicit lifetime owner.
 
@@ -817,7 +785,7 @@ Start here before M1.2–M1.6: why threads → creation → lifecycle → shared
 
 **Senior follow-up:** define child failure, cancellation, deadlines and partial-result policy before choosing an API. Avoid copying a preview example across JDK versions. M1.6 discusses the virtual-thread/composition choice; Part 11 explains version-sensitive pinning.
 
-### T15 How do you distinguish deadlock, livelock, starvation and overload
+#### T15 How do you distinguish deadlock, livelock, starvation and overload
 
 **Strong answer:** deadlock is a dependency cycle with no progress path; livelock repeatedly reacts without useful progress; starvation denies a task needed resources; overload admits work faster than useful capacity can finish it. A waiting thread alone does not identify which problem exists. Follow locks, queued child tasks, permits, connections and remote dependencies to the actual cycle or bottleneck.
 
@@ -825,7 +793,7 @@ Start here before M1.2–M1.6: why threads → creation → lifecycle → shared
 
 **Senior follow-up:** Java 21 ThreadMXBean does not monitor virtual threads; a null deadlock result cannot rule out their deadlock. Use tools that cover the actual threads and trace application resource dependencies. Continue with M1.4 and Q162–Q163 only after this distinction is clear.
 
-### T16 How should you test a concurrency contract
+#### T16 How should you test a concurrency contract
 
 **Strong answer:** assert an invariant after a controlled interleaving. Use latches/barriers or deterministic fakes to hold tasks at the critical boundary, release them deliberately and await completion with a bounded deadline. Do not assert one scheduler-dependent ordering or rely on sleep. A bounded test timeout is a failure guard, not proof that work was cancelled.
 
@@ -835,13 +803,13 @@ Start here before M1.2–M1.6: why threads → creation → lifecycle → shared
 
 **Primary references:** [Java 21 Thread](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Thread.html), [Object wait/notify](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html), [concurrent package contracts](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/package-summary.html), [ExecutorService](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ExecutorService.html), [ThreadPoolExecutor](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ThreadPoolExecutor.html), [CompletableFuture](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/CompletableFuture.html), [ReentrantLock](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/locks/ReentrantLock.html), and [JDK 24 virtual-thread behavior](https://docs.oracle.com/en/java/javase/24/core/virtual-threads.html).
 
-## Multithreading deep dives after the foundations
+### Multithreading deep dives after the foundations
 
 The retained M1.2–M1.6 answers below deepen synchronization, memory ordering, deadlocks, pool sizing and async/virtual-thread choices. Then try Q145–Q148 in Part 10, Q161–Q163 in Part 12 and Q183–Q184 in Part 13. Keep the existing question identifiers for revision; use the ladder above as the learning order.
 
 **M1.2 `volatile` vs `synchronized` vs atomics vs `ReentrantLock`?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 `volatile` provides visibility and ordering between threads, but it does
 **not** make compound operations such as `count++` atomic.
@@ -853,7 +821,7 @@ acquisition, fairness and multiple `Condition`s.
 using CAS, while `LongAdder` is optimized for high-contention counters
 where an exact instantaneous snapshot is not required.
 
-### Think of the choices like this
+#### Think of the choices like this
 
 ``` text
 Need only visibility?
@@ -873,7 +841,7 @@ Need mutual exclusion around multiple operations/state?
  synchronized / ReentrantLock
 ```
 
-### Why isn't `volatile` enough for `count++`?
+#### Why isn't `volatile` enough for `count++`?
 
 This:
 
@@ -903,7 +871,7 @@ volatile boolean shutdown;
 
 where one thread publishes a new value and other threads need to see it.
 
-### `synchronized` vs `ReentrantLock`
+#### `synchronized` vs `ReentrantLock`
 
 `synchronized` is usually the simplest choice:
 
@@ -924,7 +892,7 @@ Use `ReentrantLock` when you genuinely need capabilities such as:
 With `ReentrantLock`, ownership is manual, so always unlock in
 `finally`.
 
-### AtomicInteger vs LongAdder
+#### AtomicInteger vs LongAdder
 
 `AtomicInteger` is useful when you need an exact atomic value update
 such as:
@@ -940,7 +908,7 @@ repeatedly updating one atomic variable.
 The trade-off is that `sum()` is not an instantaneous transactionally
 consistent snapshot.
 
-### SDE-3 decision rule
+#### SDE-3 decision rule
 
 Start with the **simplest primitive that gives the required
 correctness**.
@@ -956,7 +924,7 @@ faster. First establish:
 
 Then measure before optimizing.
 
-### 30-second version
+#### 30-second version
 
 > "`volatile` gives visibility but not atomicity. `synchronized` gives
 > mutual exclusion plus visibility and is my default when I need to
@@ -969,7 +937,7 @@ Then measure before optimizing.
 
 **M1.3 Explain the Java Memory Model and happens-before.**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 The **Java Memory Model (JMM)** defines the rules for how threads
 interact through memory. The key idea is **happens-before**: if action A
@@ -990,7 +958,7 @@ There are also special initialization guarantees for properly
 constructed objects with `final` fields, but those are not a general
 replacement for safe publication.
 
-### Why does this matter?
+#### Why does this matter?
 
 Without the required synchronization, two threads can have a data race.
 The compiler, JIT and CPU are allowed to reorder operations as permitted
@@ -1027,7 +995,7 @@ private static volatile Singleton instance;
 because the volatile write that publishes the reference establishes the
 required visibility/order relationship for readers.
 
-### Happens-before is not "execution order"
+#### Happens-before is not "execution order"
 
 This is a common interview trap.
 
@@ -1038,7 +1006,7 @@ Happens-before does **not** simply mean:
 It is a memory-model guarantee about visibility and ordering between
 actions in different threads.
 
-### SDE-3 takeaway
+#### SDE-3 takeaway
 
 When debugging concurrency, ask:
 
@@ -1057,7 +1025,7 @@ Could the code have a data race?
 Do not solve a visibility problem with a random lock, and do not assume
 `volatile` makes a multi-step operation atomic.
 
-### 30-second version
+#### 30-second version
 
 > "The Java Memory Model defines what visibility and ordering guarantees
 > exist between threads. Happens-before is the key relationship: for
@@ -1070,7 +1038,7 @@ Do not solve a visibility problem with a random lock, and do not assume
 
 **M1.4 How do you detect, prevent and fix deadlocks?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 For a resource deadlock, look for mutual exclusion, hold-and-wait,
 no preemption and circular wait. Prevent cycles with a global lock order,
@@ -1088,21 +1056,21 @@ These dumps do not provide the same lock/ownership information as
 traditional dumps and are not an automatic virtual-thread deadlock detector.
 Trace the actual wait/resource dependency cycle.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Imagine transfer A locks account 1 then waits for account 2, while transfer B holds 2 and waits for 1. Neither can release its first lock because each waits inside the operation. Sorting account IDs before acquiring both locks removes that cycle.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Deadlock** — Tasks cannot progress because they wait on a cyclic set of dependencies.
 - **Livelock** — Tasks react repeatedly without making useful progress.
 - **Starvation** — A task repeatedly loses access to needed resources.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does a timeout fix correctness? Only if the operation releases owned resources and leaves a valid state; blind retries can recreate the cycle.
 
-### 30-second version
+#### 30-second version
 
 > Prevent deadlocks with consistent resource order and short critical sections.
 > Traditional deadlock detection covers platform-thread monitors and ownable
@@ -1113,15 +1081,15 @@ Trace the actual wait/resource dependency cycle.
 
 **M1.5 How do you size and configure a thread pool?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 For ThreadPoolExecutor, submissions normally create workers up to core size, then enter the queue; if queueing fails, workers may grow to maximum size, then rejection applies. Size CPU work around effective available CPU and waiting-heavy work from measured wait/compute time and downstream limits. Use bounded admission and an explicit rejection contract. CallerRunsPolicy can slow producers but blocks the submitting thread and discards rejected tasks after shutdown. Monitor queue delay, active work and rejection; shut down with a deadline and define treatment of unfinished tasks. [Java 21 executor contract](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ThreadPoolExecutor.html).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** If tasks arrive faster than workers finish them, the queue stores delay and memory. With an unbounded queue, a ThreadPoolExecutor normally queues after reaching its core size, so raising maximumPoolSize may do nothing.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **back-pressure** — A mechanism that prevents an upstream producer
   from overwhelming a downstream consumer.
@@ -1129,17 +1097,17 @@ For ThreadPoolExecutor, submissions normally create workers up to core size, the
   threads or connections so one overloaded dependency does not exhaust
   the whole service.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** What should happen when full? Choose explicit rejection, shedding or bounded caller participation; CallerRunsPolicy can block a request thread and discards tasks after shutdown.
 
-### 30-second version
+#### 30-second version
 
 > A pool controls workers, queueing and rejection together. An unbounded queue can prevent growth beyond core size. Bound admission, measure queue delay and downstream capacity, and define shutdown and rejection behavior.
 
 **M1.6 CompletableFuture vs virtual threads: when do you use which?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Virtual threads are final in Java 21 and fit workloads that spend much
 of their time waiting. They do not accelerate CPU-bound work or enlarge
@@ -1152,30 +1120,30 @@ newer JDKs. Native/foreign calls still deserve attention.
 and cancellation as well as future timeouts. [Virtual threads in JDK
 24](https://docs.oracle.com/en/java/javase/24/core/virtual-threads.html).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** For three independent remote reads, futures can describe the result-combination graph; virtual threads let each read use ordinary blocking code cheaply. Both still wait for the same remote services and share their limits.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **CompletableFuture** — A Java API for representing and composing
   asynchronous results and their success/failure stages.
 - **virtual thread** — A lightweight Java thread managed by the JVM,
   designed to make high-concurrency blocking I/O easier to scale.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does a future timeout stop the remote call? Not necessarily; configure the client's deadline and the cancellation path as well.
 
-### 30-second version
+#### 30-second version
 
 > Virtual threads are final in Java 21 and fit workloads that spend much
 > of their time waiting. They do not accelerate CPU-bound work or
 > enlarge a database connection pool.
 
-## JVM foundations before garbage-collector choices
+### JVM foundations before garbage-collector choices
 
-### J1 What do the JDK, JVM, heap and thread stacks do
+#### J1 What do the JDK, JVM, heap and thread stacks do
 
 **Strong answer:** the JDK provides development tools and a runtime; the JVM executes bytecode through interpretation and compilation while managing memory and other runtime services. Heap objects can be shared by threads; thread stacks hold frames, local values and references for their execution paths. A stack-held reference can keep a heap object reachable. Garbage collection reclaims unreachable heap objects, not objects that an application merely “finished using.”
 
@@ -1185,32 +1153,32 @@ and cancellation as well as future timeouts. [Virtual threads in JDK
 
 **M1.7 Explain garbage collection and how you tune it.**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 GC reclaims unreachable objects; the layout and collection process depend on the collector and JDK. G1 uses regions and generational collection; young collections and mixed collections do different work. ZGC and Shenandoah use concurrent techniques to reduce pauses, while Parallel GC targets throughput. Define latency, throughput and memory objectives, then inspect GC logs, allocation rate and live-set retention before tuning. A pause target is a goal rather than a hard deadline, and reducing allocation helps only if it is a measured bottleneck.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Allocation creates objects; reachability determines which can be reclaimed. A growing heap before GC can be normal, whereas an increasing live set after collections suggests retention. Compare these before changing collector settings.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **G1** — A region-based garbage collector with a pause-time target.
 - **GC** — Reclaiming heap storage no longer needed by reachable objects.
 - **Tuning goal** — The workload objective, such as throughput or tail latency.
 - **Heap** — JVM storage used for object allocation.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Will a larger heap fix a leak? It can delay failure while retaining the same unwanted objects; inspect retaining paths and measured pauses.
 
-### 30-second version
+#### 30-second version
 
 > Start from reachability and the chosen collector. Measure allocation, retained live data and pauses, then fix the dominant cause. Avoid treating every collector as the same young/old layout or a pause target as a guarantee.
 
 ------------------------------------------------------------------------
 
-## Module 2: Spring & Spring Boot
+### Module 2: Spring & Spring Boot
 
 *More in Q11–Q19, Q37–Q42.*
 
@@ -1218,7 +1186,7 @@ GC reclaims unreachable objects; the layout and collection process depend on the
 
 **M2.1 How does Spring Boot auto-configuration work?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 `@SpringBootApplication` combines `@Configuration`, `@ComponentScan` and
 `@EnableAutoConfiguration`. The latter loads candidate classes listed in
@@ -1232,19 +1200,19 @@ run with `--debug` or use the Actuator `conditions` endpoint. To build
 your own starter: an autoconfigure module plus a thin starter POM and
 `@ConfigurationProperties` for settings.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Adding a JDBC driver and connection settings can make Boot register database infrastructure when its conditions match. Providing a matching custom bean can make that particular default back off. Component scanning and conditional auto-configuration are separate discovery paths.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **bean** — An object managed by the Spring IoC container.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Why is a bean missing? Read the condition report for the unmet class, property or bean condition before adding exclusions.
 
-### 30-second version
+#### 30-second version
 
 > `@SpringBootApplication` combines `@Configuration`, `@ComponentScan`
 > and `@EnableAutoConfiguration`. The latter loads candidate classes
@@ -1256,32 +1224,32 @@ your own starter: an autoconfigure module plus a thin starter POM and
 
 **M2.2 Describe the bean lifecycle and scopes.**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Spring creates a bean, populates dependencies, invokes applicable awareness and initialization callbacks, and exposes the processed instance, often a proxy. Annotation processors invoke @PostConstruct during before-initialization processing; InitializingBean and custom init callbacks then participate in the configured lifecycle. Managed singleton destruction can invoke @PreDestroy; prototype cleanup is the caller's responsibility. Singleton means one instance per bean definition per container, not automatic thread safety. Injecting a prototype once into a singleton gives that injection one instance; use a provider for repeated retrieval. [Spring lifecycle](https://docs.spring.io/spring-framework/reference/6.2/core/beans/factory-nature.html), [scopes](https://docs.spring.io/spring-framework/reference/6.2/core/beans/factory-scopes.html).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** The container creates an object, supplies dependencies, initializes it and exposes the resulting bean, potentially through a proxy. A singleton consumer receives a prototype once during injection; the prototype scope does not turn that field into a factory.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **AOP** — Aspect-oriented programming: applying cross-cutting behavior
   such as transactions, logging or security around method execution.
 - **proxy** — An object that wraps another object and intercepts method
   calls, commonly used by Spring for transactions, security and AOP.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** How do you obtain a fresh prototype per operation? Ask an ObjectProvider; also define cleanup because Spring does not automatically destroy prototype instances.
 
-### 30-second version
+#### 30-second version
 
 > Explain construction, dependency population, initialization, post-processing and managed destruction. Singleton scope is container-local and does not imply thread safety. Prototype retrieval and cleanup need deliberate ownership.
 
 **M2.3 Why prefer constructor injection?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Dependencies are explicit and `final`, the object is never half-built,
 it can be unit-tested with `new` and mocks, and an excess of constructor
@@ -1289,15 +1257,15 @@ parameters exposes a class doing too much (Single Responsibility). Field
 injection hides dependencies, needs reflection in tests, and encourages
 cycles. Use setter injection only for genuinely optional dependencies.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** An OrderService constructed with a PaymentGateway makes the dependency visible at its creation point. A test can supply a fake gateway directly. Missing dependencies become construction failures instead of surprising null fields later.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does final make the dependency thread-safe? No; it prevents reassignment of the reference, not mutation inside the referenced gateway.
 
-### 30-second version
+#### 30-second version
 
 > Dependencies are explicit and `final`, the object is never half-built,
 > it can be unit-tested with `new` and mocks, and an excess of
@@ -1307,7 +1275,7 @@ cycles. Use setter injection only for genuinely optional dependencies.
 
 **M2.4 How does `@Transactional` work and what are its pitfalls?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 A call through a Spring transaction proxy is intercepted by the
 configured transaction manager. With ordinary JDBC/JPA, work usually
@@ -1326,11 +1294,11 @@ annotations](https://docs.spring.io/spring-framework/reference/6.2/data-access/t
 [transaction
 implementation](https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/tx-decl-explained.html).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Trace an external call through the proxy: begin or join a transaction, invoke the target, then commit or roll back. A target calling its own method skips that proxy boundary, so a different annotation on the inner method may have no effect.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **proxy** — An object that wraps another object and intercepts method
   calls, commonly used by Spring for transactions, security and AOP.
@@ -1339,11 +1307,11 @@ implementation](https://docs.spring.io/spring-framework/reference/data-access/tr
 - **transaction** — A unit of database work treated as one logical
   operation with defined commit/rollback behavior.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** What if an inner call marks rollback-only and the caller catches its exception? The transaction may still fail at commit; catching does not repair it.
 
-### 30-second version
+#### 30-second version
 
 > A call through a Spring transaction proxy is intercepted by the
 > configured transaction manager. With ordinary JDBC/JPA, work usually
@@ -1351,7 +1319,7 @@ implementation](https://docs.spring.io/spring-framework/reference/data-access/tr
 
 **M2.5 How do you secure a REST API with JWT?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Configure a stateless `SecurityFilterChain` with OAuth2 resource-server JWT support.
 Set `spring.security.oauth2.resourceserver.jwt.issuer-uri` to the trusted
@@ -1369,21 +1337,21 @@ adaptive hash where the application owns credentials, and never log
 tokens. Return 401 for invalid/missing authentication and 403 for denied
 authorization.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** For an orders request, first verify the token's signature and trusted claims, then map its authorities, then check access to the requested order. A valid token proves neither ownership of every order nor permission for every action.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **JWKS** — A set of keys used here to verify JWT signatures.
 - **Issuer (`iss`)** — The token issuer this API explicitly trusts.
 - **Audience (`aud`)** — The intended recipient or recipients of a token.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Why check audience? A token valid for a different API must not automatically authorize this API.
 
-### 30-second version
+#### 30-second version
 
 > A JWT resource server needs signature, time, issuer and audience validation.
 > Configure issuer-uri or an explicit issuer validator; a JWKS URL alone only
@@ -1394,7 +1362,7 @@ authorization.
 
 **M2.6 What does "production-ready" mean for a Boot service?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Observability (Actuator health/readiness/liveness, Micrometer metrics to
 Prometheus/Cloud Monitoring, structured logs with trace IDs,
@@ -1404,22 +1372,22 @@ graceful shutdown), configuration (externalised, validated
 migrations, `ddl-auto=validate`), security (HTTPS, headers, dependency
 scanning), plus tests, CI/CD and runbooks with SLOs and alerts.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Take one payment request and ask how you detect failure, limit its duration, protect its data and recover its outcome. Each production control should answer one of those operational questions rather than merely add a library.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **observability** — The ability to understand internal system behavior
   from telemetry such as logs, metrics and traces.
 - **trace** — A representation of one request's path through distributed
   services.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** What proves readiness? A tested deployment and recovery path with observable user outcomes, not simply an Actuator endpoint returning UP.
 
-### 30-second version
+#### 30-second version
 
 > Observability (Actuator health/readiness/liveness, Micrometer metrics
 > to Prometheus/Cloud Monitoring, structured logs with trace IDs,
@@ -1431,7 +1399,7 @@ scanning), plus tests, CI/CD and runbooks with SLOs and alerts.
 
 ------------------------------------------------------------------------
 
-## Module 3: Hibernate / JPA
+### Module 3: Hibernate / JPA
 
 *More in Q20–Q25.*
 
@@ -1439,7 +1407,7 @@ scanning), plus tests, CI/CD and runbooks with SLOs and alerts.
 
 **M3.1 What is the N+1 problem and how do you fix it?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 One query loads N parents and then lazily triggers one query per parent
 for a child association, giving N+1 round-trips that look fine in dev
@@ -1454,11 +1422,11 @@ multiply rows; fetching multiple bag mappings can additionally trigger
 applied in memory, so paginate parent IDs first and fetch children
 second.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Loading 50 orders in one query and then touching each customer's proxy can cause 50 additional selects. A use-case fetch plan loads the required relationship deliberately, reducing round trips without making every association globally eager.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **N+1** — A query pattern where one query loads N parent rows and then
   N additional queries load related data, causing excessive database
@@ -1466,11 +1434,11 @@ second.
 - **proxy** — An object that wraps another object and intercepts method
   calls, commonly used by Spring for transactions, security and AOP.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Why not fetch every collection? Joined rows multiply, and collection pagination may require a separate parent-ID page.
 
-### 30-second version
+#### 30-second version
 
 > One query loads N parents and then lazily triggers one query per
 > parent for a child association, giving N+1 round-trips that look fine
@@ -1480,15 +1448,15 @@ second.
 
 **M3.2 Explain entity states and the persistence context.**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 An entity can be new/transient, managed, detached or removed. A persistence context tracks entity identity and changes; modifying a managed entity can produce SQL at flush without another save call. Detachment can follow close, clear or explicit detach. Flush synchronizes changes without committing; AUTO flushing depends on transaction and query semantics and does not mean every query always flushes. Bound context size during bulk work and flush deliberately before clearing pending changes.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Load an order inside a persistence context, change its status and flush: Hibernate tracks the managed instance and synchronizes the change. Closing the context detaches it; changing that detached object alone no longer schedules an update.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **dirty checking** — Hibernate/JPA's mechanism for detecting changes
   to managed entities and generating updates during flush.
@@ -1496,17 +1464,17 @@ An entity can be new/transient, managed, detached or removed. A persistence cont
   instances whose changes are tracked and synchronized with the
   database.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Is flush a commit? No; SQL can run and still be rolled back by the surrounding transaction.
 
-### 30-second version
+#### 30-second version
 
 > The persistence context supplies identity and change tracking. Managed changes reach SQL at flush, while detached changes do not automatically persist. Flush and commit differ, and clearing can discard unflushed work.
 
 **M3.3 Lazy vs eager, and `LazyInitializationException`?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Make associations LAZY by default; JPA's defaults for
 `@ManyToOne`/`@OneToOne` are EAGER, so set `fetch = LAZY` explicitly.
@@ -1518,11 +1486,11 @@ disabling `spring.jpa.open-in-view` and defining explicit fetch
 boundaries. The right fixes: fetch what you need in the service layer
 (`EntityGraph`/join fetch) or return DTOs.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A service returns an order whose lines were never loaded. Serialization later touches the lines after the context closed and fails. Build the required DTO while the deliberate fetch boundary is still active.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **persistence context** — JPA/Hibernate's managed set of entity
   instances whose changes are tracked and synchronized with the
@@ -1532,11 +1500,11 @@ boundaries. The right fixes: fetch what you need in the service layer
 - **Application service** — A component coordinating a business use case;
   it may be a Spring-managed bean and is not a Kubernetes Service.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does EAGER guarantee one query? No; it specifies fetching semantics, and providers can issue additional selects.
 
-### 30-second version
+#### 30-second version
 
 > Make associations LAZY by default; JPA's defaults for
 > `@ManyToOne`/`@OneToOne` are EAGER, so set `fetch = LAZY` explicitly.
@@ -1544,7 +1512,7 @@ boundaries. The right fixes: fetch what you need in the service layer
 
 **M3.4 Optimistic vs pessimistic locking?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Optimistic uses a `@Version` column:
 `UPDATE … WHERE id=? AND version=?`; zero rows updated throws
@@ -1556,20 +1524,20 @@ contention or scarce resources like inventory; always set lock timeouts
 and keep transactions short to avoid deadlocks (and use `SKIP LOCKED`
 for queue-like tables).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Two transactions read version 4. The first updates with version=4 and advances it; the second update matches no row and detects stale state. A pessimistic strategy instead acquires a database lock before the conflicting work.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **transaction** — A unit of database work treated as one logical
   operation with defined commit/rollback behavior.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** What should be retried? Re-read and re-evaluate the business operation in a new transaction; never blindly replay an external charge.
 
-### 30-second version
+#### 30-second version
 
 > Optimistic uses a `@Version` column:
 > `UPDATE … WHERE id=? AND version=?`; zero rows updated throws
@@ -1577,7 +1545,7 @@ for queue-like tables).
 
 **M3.5 How do you tune Hibernate performance?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Measure first (slow-query log, `pg_stat_statements`, p6spy). Then: fix
 N+1; project to DTOs for read paths; add proper indexes (check
@@ -1588,21 +1556,21 @@ only for read-mostly data; paginate with keyset; avoid huge `IN` lists;
 keep transactions short; and use Flyway to manage schema and index
 changes.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Separate time spent waiting for a connection, executing SQL, transferring rows and materializing objects. An ORM setting cannot repair a missing index or a transaction holding connections during a slow HTTP call.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **N+1** — A query pattern where one query loads N parent rows and then
   N additional queries load related data, causing excessive database
   round trips.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** How do you prove improvement? Compare query count, plans and latency on representative data with the same result contract.
 
-### 30-second version
+#### 30-second version
 
 > Measure first (slow-query log, `pg_stat_statements`, p6spy). Then: fix
 > N+1; project to DTOs for read paths; add proper indexes (check
@@ -1615,11 +1583,11 @@ changes.
 
 ------------------------------------------------------------------------
 
-## Module 4: Microservices
+### Module 4: Microservices
 
 *More in Q26–Q30, Q59–Q74.*
 
-### F1 What is a microservice and how does one request cross services
+#### F1 What is a microservice and how does one request cross services
 
 **Strong answer:** a microservice is an independently deployable service around a coherent business capability with explicit API and data ownership. A client/request enters an API, invokes local business logic and may call another service synchronously or publish an event. Crossing a service boundary introduces network delay, partial failure and separate deployment/lifecycle ownership. A modular monolith may satisfy the need with less operational cost.
 
@@ -1629,7 +1597,7 @@ changes.
 
 **M4.1 How do you split a monolith into microservices?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Use the **strangler fig** pattern: put a routing layer (gateway) in
 front, carve out one bounded context at a time (often the highest-change
@@ -1640,11 +1608,11 @@ technical layers, and avoid a *distributed monolith* where services must
 deploy together. Ensure CI/CD, observability and team ownership exist
 *before* splitting.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Extracting inventory means giving it ownership of reservation rules and data, not merely moving its controller into another process. The old application calls that boundary while migration proceeds incrementally.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **DDD** — Domain-Driven Design: modeling software around business
   domains, boundaries and domain concepts.
@@ -1653,11 +1621,11 @@ deploy together. Ensure CI/CD, observability and team ownership exist
 - **Service** — An application or platform capability exposed through a
   defined interface; a Kubernetes Service is a specific networking resource.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** When should extraction stop? If independent deployment and ownership are not achievable, the added network boundary may only create a distributed monolith.
 
-### 30-second version
+#### 30-second version
 
 > Use the **strangler fig** pattern: put a routing layer (gateway) in
 > front, carve out one bounded context at a time (often the
@@ -1669,7 +1637,7 @@ deploy together. Ensure CI/CD, observability and team ownership exist
 
 **M4.2 How do you handle transactions across services?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Two-phase commit coordinates atomic commit but can block under failures
 and couples availability. When that trade-off is unsuitable, consider a
@@ -1681,11 +1649,11 @@ outbox** to atomically save state and the event, then publish via a
 relay or CDC. Design compensations carefully (a refund is not an undo),
 and make every step idempotent.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** An order flow reserves stock, charges payment and confirms delivery in separate local transactions. If payment fails, release the reservation through a compensating step; persist progress so recovery knows what already happened.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **CDC** — Change Data Capture: publishing database changes by reading
   the database's change log or transaction log.
@@ -1698,11 +1666,11 @@ and make every step idempotent.
   sequence of local transactions and compensating actions instead of one
   global database transaction.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Is compensation rollback? No; it is another business action that can fail and require retry or manual reconciliation.
 
-### 30-second version
+#### 30-second version
 
 > Two-phase commit coordinates atomic commit but can block under
 > failures and couples availability. When that trade-off is unsuitable,
@@ -1711,7 +1679,7 @@ and make every step idempotent.
 
 **M4.3 What delivery guarantees exist and how do you cope?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Brokers provide at-most-once, at-least-once (most common) or
 exactly-once within narrow scopes. Real systems use at-least-once plus
@@ -1720,20 +1688,20 @@ the business change) so duplicates are harmless. Also handle
 out-of-order delivery with versions or timestamps, and poison messages
 through retries and dead-letter queues.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A consumer commits an order update and crashes before acknowledging the event. Redelivery is expected. Saving the event ID atomically with that update lets the next attempt recognize completed work.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **transaction** — A unit of database work treated as one logical
   operation with defined commit/rollback behavior.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Can a separate deduplication cache guarantee this? Not if it can disagree with the business transaction; define an atomic boundary or reconciliation protocol.
 
-### 30-second version
+#### 30-second version
 
 > Brokers provide at-most-once, at-least-once (most common) or
 > exactly-once within narrow scopes. Real systems use at-least-once plus
@@ -1742,7 +1710,7 @@ through retries and dead-letter queues.
 
 **M4.4 Which resilience patterns do you apply?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Timeouts on every remote call (shorter than the caller's budget),
 retries only for idempotent and transient failures with exponential
@@ -1753,21 +1721,21 @@ shedding, fallbacks/caches for degraded mode, and health-based routing.
 Verify with chaos or fault-injection tests. Naive retries amplify
 outages (retry storms).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A slow dependency retains caller threads and connections; retries increase its load. Deadlines limit waiting, a bulkhead limits the affected capacity, and a breaker temporarily stops calls likely to fail.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **bulkhead** — A resilience pattern that isolates resources such as
   threads or connections so one overloaded dependency does not exhaust
   the whole service.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Is a fallback always safe? Only when its result preserves the business contract; a stale price or invented payment success is not harmless degradation.
 
-### 30-second version
+#### 30-second version
 
 > Timeouts on every remote call (shorter than the caller's budget),
 > retries only for idempotent and transient failures with exponential
@@ -1779,25 +1747,25 @@ outages (retry storms).
 
 **M4.5 Explain CAP and how it influences design.**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 CAP says that during a network partition, a system cannot guarantee both linearizable behavior and successful responses to every request at a non-failing node. Preserving the single up-to-date history can require refusing some operations; serving both sides needs a defined consistency/conflict contract. Choose by operation and business invariant, not broad labels such as banking versus catalogue. PACELC additionally asks about latency and consistency when no partition exists.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** During a partition, two replicas cannot always coordinate before answering. Requiring one up-to-date order forces some requests to wait or fail; accepting operations on both sides requires a conflict strategy.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** What does consistency mean here? CAP uses linearizability, not simply valid business data or the C in ACID.
 
-### 30-second version
+#### 30-second version
 
 > Define consistency as linearizability and describe one operation during a partition. Explain which requests may fail or become stale and why the business accepts that trade-off; CAP is not a blanket pick-two product label.
 
 **M4.6 How do you observe a distributed system?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Logs (structured JSON, correlation/trace IDs propagated across HTTP and
 messaging), metrics (RED: rate, errors, duration for services; USE: utilization, saturation, errors for resources; plus business indicators), and traces (OpenTelemetry, sampling, spans for DB and remote
@@ -1805,22 +1773,22 @@ calls). Define service-level indicators (SLIs) and their objectives (SLOs), aler
 rather than causes, and maintain dashboards and runbooks. Tracing is
 what turns "it's slow somewhere" into a specific span.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** When checkout is slow, a latency metric identifies the widespread symptom, a trace locates the long payment span, and correlated logs explain the failure at that point. Each signal answers a different question.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **span** — One timed operation within a distributed trace, such as an
   HTTP call or database query.
 - **trace** — A representation of one request's path through distributed
   services.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** What is an SLO? A target for a measured user-facing indicator over a stated window, with a defined denominator.
 
-### 30-second version
+#### 30-second version
 
 > Logs (structured JSON, correlation/trace IDs propagated across HTTP
 > and messaging), metrics (RED for services, USE for resources, plus
@@ -1830,9 +1798,9 @@ what turns "it's slow somewhere" into a specific span.
 
 ------------------------------------------------------------------------
 
-## Module 5: Maven
+### Module 5: Maven
 
-### B1 How does Maven build a Java application
+#### B1 How does Maven build a Java application
 
 **Strong answer:** a POM declares the project, dependencies and build configuration. Maven runs ordered lifecycle phases; plugins provide goals bound to those phases. Running package normally runs preceding default phases such as compilation and tests before producing the artifact. Clean is a separate lifecycle. A dependency supplies classes/libraries; a plugin performs build work; dependencyManagement supplies defaults without itself adding a dependency.
 
@@ -1844,7 +1812,7 @@ what turns "it's slow somewhere" into a specific span.
 
 **M5.1 Explain the Maven lifecycle, phases, goals and plugins.**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Maven has three built-in lifecycles: `clean`, `default` (build) and
 `site`. The default lifecycle runs ordered **phases**:
@@ -1857,11 +1825,11 @@ the local `~/.m2`, `deploy` publishes it to a remote repository. Invoke
 a goal directly with `mvn dependency:tree`, or a phase with
 `mvn verify`.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Running verify reaches compile, unit tests, packaging and configured integration verification in lifecycle order. A plugin goal does the actual work at a phase; the phase name alone does not install a test runner.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **goal** — A specific action provided by a Maven plugin, such as
   compiling code or running tests.
@@ -1870,11 +1838,11 @@ a goal directly with `mvn dependency:tree`, or a phase with
 - **plugin** — A Maven component that provides build functionality such
   as compilation, testing or packaging.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Why avoid invoking integration-test alone? Later verification and cleanup phases may be needed to finish the integration-test lifecycle correctly.
 
-### 30-second version
+#### 30-second version
 
 > Maven has three built-in lifecycles: `clean`, `default` (build) and
 > `site`. The default lifecycle runs ordered **phases**:
@@ -1884,7 +1852,7 @@ a goal directly with `mvn dependency:tree`, or a phase with
 **M5.2 `dependencyManagement` vs `dependencies`, and parent vs BOM vs
 aggregator?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 `<dependencies>` declares project dependencies, whose scopes determine
 their classpaths and transitivity. `<dependencyManagement>` centralizes
@@ -1902,21 +1870,21 @@ align library versions, useful when the project cannot inherit a platform's
 parent. An **aggregator** lists `<modules>` for a reactor build. One POM
 may be both parent and aggregator; these roles are distinct.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A BOM can choose version 2 of a library, but an application still needs a dependency path that brings the library in. A parent supplies inherited configuration; an aggregator decides which modules participate in the reactor.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **BOM** — A POM supplying a compatible set of managed dependency versions.
 - **Transitive dependency** — An artifact introduced through another dependency.
 - **Aggregator** — A POM listing modules built together by the reactor.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Must parent and aggregator be the same POM? No; inheritance and multi-module build membership solve different problems.
 
-### 30-second version
+#### 30-second version
 
 > Dependencies add artifacts; dependencyManagement supplies defaults and can
 > control transitive project dependency versions without explicit child
@@ -1929,7 +1897,7 @@ may be both parent and aggregator; these roles are distinct.
 **M5.3 What are the dependency scopes and how are transitive scopes
 resolved?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 `compile` (default: all classpaths, transitive), `provided` (needed to
 compile, supplied by the container, not packaged, e.g. servlet API),
@@ -1942,20 +1910,20 @@ in by consumers. Common production bug: a library accidentally on the
 `mvn dependency:analyze` to find unused-declared and used-undeclared
 dependencies.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A JDBC driver may be needed only at runtime, while JUnit belongs on the test classpath. Scope controls where a dependency is available and how it reaches consumers; it is not just documentation.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **BOM** — Bill of Materials: a dependency-management document that
   centralizes compatible library versions.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does optional mean unused? No; it tells downstream consumers they must opt in if they need that dependency's functionality.
 
-### 30-second version
+#### 30-second version
 
 > `compile` (default: all classpaths, transitive), `provided` (needed to
 > compile, supplied by the container, not packaged, e.g. servlet API),
@@ -1963,7 +1931,7 @@ dependencies.
 
 **M5.4 How do you handle dependency conflicts and vulnerabilities?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Maven picks the *nearest* version in the tree (first declared on ties),
 which can silently downgrade a library. Diagnose with
@@ -1975,11 +1943,11 @@ transitive artifact, and enforce with `maven-enforcer-plugin`
 Dependency-Check or Dependabot/Renovate in CI, fail the build on high
 CVEs, and generate an SBOM (CycloneDX).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Two libraries request incompatible versions of the same artifact. Inspect the resolved graph first, then choose a compatible aligned version; removing the losing dependency without checking its caller can produce linkage failures.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **BOM** — Bill of Materials: a dependency-management document that
   centralizes compatible library versions.
@@ -1988,11 +1956,11 @@ CVEs, and generate an SBOM (CycloneDX).
 - **plugin** — A Maven component that provides build functionality such
   as compilation, testing or packaging.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does a clean vulnerability scan prove compatibility? No; run the relevant integration behavior against the resolved runtime graph.
 
-### 30-second version
+#### 30-second version
 
 > Maven picks the *nearest* version in the tree (first declared on
 > ties), which can silently downgrade a library. Diagnose with
@@ -2005,7 +1973,7 @@ CVEs, and generate an SBOM (CycloneDX).
 **M5.5 Surefire vs Failsafe, and how do you organise tests in the
 build?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Surefire runs unit tests (`*Test`) in the `test` phase; failing tests
 stop the build immediately. Failsafe runs integration tests (`*IT`)
@@ -2015,20 +1983,20 @@ across `integration-test` and `verify`, so the build can still run
 static analysis, and Testcontainers for real dependencies. Keep fast
 tests on every commit and slower suites on the pipeline.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Start a database before integration-test, run integration tests, stop it in post-integration-test and report failures in verify. Delaying the failure verdict allows lifecycle cleanup to run.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **phase** — A lifecycle stage in Maven, such as compile, test, package
   or verify.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Are naming conventions sufficient? Only when the matching plugins and executions are configured; confirm which tests actually ran.
 
-### 30-second version
+#### 30-second version
 
 > Surefire runs unit tests (`*Test`) in the `test` phase; failing tests
 > stop the build immediately. Failsafe runs integration tests (`*IT`)
@@ -2038,30 +2006,30 @@ tests on every commit and slower suites on the pipeline.
 
 **M5.6 How do you release and publish artifacts?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Publish traceable release artifacts from validated commits into an authorized repository. Releases should be immutable; snapshots are changing development coordinates whose refresh depends on repository update policy, not an unconditional latest-build lookup. Configure publication through distributionManagement and matching server credentials supplied securely to CI. Pin the release version and toolchain, record the commit, and promote the tested artifact or container digest rather than rebuilding it differently for each environment.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A release should be traceable from an immutable artifact to its source commit and validation. A snapshot is a development coordinate whose resolved contents can change according to repository update policy.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **plugin** — A Maven component that provides build functionality such
   as compilation, testing or packaging.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Why promote an existing image? Rebuilding separately for production can produce different bytes from the artifact tested in staging.
 
-### 30-second version
+#### 30-second version
 
 > A release needs immutable bytes, source/validation provenance and controlled repository credentials. Snapshots can change according to update policy. Promote the artifact that was tested instead of assuming a rebuild is identical.
 
 **M5.7 How do you speed up and harden a Maven build?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Use the wrapper (`mvnw`) and pinned plugin versions, parallel builds
 (`-T 1C`), incremental module builds (`-pl :svc -am`), CI caching of
@@ -2071,20 +2039,20 @@ images without a Docker daemon. For reproducibility set
 `project.build.outputTimestamp`; for security use signed artifacts,
 trusted mirrors and checksum verification.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Caching dependencies saves downloads; selecting modules saves build work; parallelism runs independent reactor work concurrently. Each optimization affects a different bottleneck and must preserve required checks.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **plugin** — A Maven component that provides build functionality such
   as compilation, testing or packaging.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Can parallel builds always be enabled? Verify plugin thread safety and resource contention, and compare clean reproducibility separately from cache speed.
 
-### 30-second version
+#### 30-second version
 
 > Use the wrapper (`mvnw`) and pinned plugin versions, parallel builds
 > (`-T 1C`), incremental module builds (`-pl :svc -am`), CI caching of
@@ -2096,9 +2064,9 @@ trusted mirrors and checksum verification.
 
 ------------------------------------------------------------------------
 
-## Module 6: Google Cloud Platform
+### Module 6: Google Cloud Platform
 
-### G1 What must you understand before choosing a cloud runtime
+#### G1 What must you understand before choosing a cloud runtime
 
 **Strong answer:** identify the application process, compute runtime, network boundaries, workload identity, state/storage and deployment lifecycle. A managed runtime changes which operations the provider handles; it does not remove application ownership of timeouts, authorization, data correctness or cost. Choose after establishing traffic shape, statefulness, latency needs and operational capacity.
 
@@ -2111,7 +2079,7 @@ trusted mirrors and checksum verification.
 **M6.1 Which compute option do you choose: Cloud Run, GKE, Compute
 Engine or Cloud Functions?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Choose from workload requirements and operational cost. Cloud Run
 services fit request-serving applications; Cloud Run also has jobs and
@@ -2123,22 +2091,22 @@ or specialized legacy requirements. Compare cold starts, steady load,
 cost, portability and team expertise. [Cloud Run resource
 types](https://docs.cloud.google.com/run/docs/overview/what-is-cloud-run).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Start with whether the workload serves requests, runs to completion or processes continuously. Then compare runtime constraints, scaling behavior, networking and ownership costs for that concrete workload.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Cloud Run** — GCP's managed container execution platform where the
   platform handles servers and scales container instances.
 - **GKE** — Google Kubernetes Engine, Google's managed Kubernetes
   service.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Why choose GKE over Cloud Run? Name the Kubernetes control you require and the operational cost you accept, rather than using scale alone as the reason.
 
-### 30-second version
+#### 30-second version
 
 > Choose from workload requirements and operational cost. Cloud Run
 > services fit request-serving applications; Cloud Run also has jobs and
@@ -2147,15 +2115,15 @@ types](https://docs.cloud.google.com/run/docs/overview/what-is-cloud-run).
 
 **M6.2 How do you manage identity and access securely?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 IAM binds permissions through roles to principals at the relevant resource scope. Give each workload least-privilege identity and avoid exported service-account keys. Cloud Run can use a runtime service account. Workload Identity Federation for GKE supports direct access by a federated Kubernetes workload principal, or IAM service-account impersonation where needed. Client libraries can obtain short-lived credentials through ADC. Secrets, IAM bindings, audit access and organizational controls still require explicit configuration. [GKE workload identity](https://docs.cloud.google.com/kubernetes-engine/docs/concepts/workload-identity).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** The workload authenticates as an identity; IAM decides what that identity may do to a resource. Short-lived credentials remove a stored key, but overly broad roles still grant overly broad access.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Cloud Run** — GCP's managed container execution platform where the
   platform handles servers and scales container instances.
@@ -2168,17 +2136,17 @@ IAM binds permissions through roles to principals at the relevant resource scope
 - **Workload Identity** — A mechanism that lets workloads obtain cloud
   identities without embedding long-lived service-account keys.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does federation grant permissions automatically? No; the relevant principal or impersonated service account still needs deliberate IAM bindings.
 
-### 30-second version
+#### 30-second version
 
 > Separate identity from permissions. Use least-privilege workload identities and short-lived credentials; GKE federation can grant direct resource access or use service-account impersonation without distributing private keys.
 
 **M6.3 Design a Spring Boot microservice on GCP end to end.**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Build with Maven and Jib → image to **Artifact Registry** (vulnerability
 scan) → deploy to Cloud Run/GKE across multiple zones behind a global
@@ -2191,11 +2159,11 @@ Cloud Monitoring, SLO-based alerting. Infrastructure is Terraform and
 delivery uses Cloud Build + Cloud Deploy with canary rollouts and
 automated rollback.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Follow an order from the load balancer to the service, database commit, outbox relay and subscriber. Explain the identity, timeout and retry boundary at each hop before listing cloud products.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Cloud Run** — GCP's managed container execution platform where the
   platform handles servers and scales container instances.
@@ -2213,11 +2181,11 @@ automated rollback.
 - **SLO** — Service Level Objective: a measurable reliability target,
   such as 99.9% successful requests.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Where can partial failure occur? Database commit can succeed before publication; the durable outbox and idempotent consumer handle that gap.
 
-### 30-second version
+#### 30-second version
 
 > Build with Maven and Jib → image to **Artifact Registry**
 > (vulnerability scan) → deploy to Cloud Run/GKE across multiple zones
@@ -2229,7 +2197,7 @@ automated rollback.
 
 **M6.4 How do you use Pub/Sub from Spring correctly?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Use Spring Cloud GCP (`PubSubTemplate`, `@ServiceActivator`/inbound
 adapter with manual ack). Delivery is at-least-once, so handlers must be
@@ -2240,20 +2208,20 @@ control (`maxOutstandingElementCount`) for back-pressure, and monitor
 oldest unacked message age and DLQ size. Never ack before the work is
 durably done.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** The handler receives a message, commits its business effect and only then acknowledges it. Losing that acknowledgement can still cause redelivery, so successful work must be recognizable on a second attempt.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **back-pressure** — A mechanism that prevents an upstream producer
   from overwhelming a downstream consumer.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Why bound outstanding messages? It limits memory and downstream demand while slow processing or acknowledgements accumulate.
 
-### 30-second version
+#### 30-second version
 
 > Use Spring Cloud GCP (`PubSubTemplate`, `@ServiceActivator`/inbound
 > adapter with manual ack). Delivery is at-least-once, so handlers must
@@ -2261,7 +2229,7 @@ durably done.
 
 **M6.5 How do you choose a data store on GCP?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Cloud SQL (PostgreSQL/MySQL) for regional relational OLTP with HA and
 read replicas; AlloyDB for higher PostgreSQL performance and analytics;
@@ -2273,15 +2241,15 @@ Memorystore for caching; Cloud Storage for objects. Match consistency,
 query patterns, scale and cost; don't pick Spanner "because it's
 powerful".
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** List required queries and invariants first: a financial transaction, a document lookup and an analytical scan need different access patterns. Compare specific products' guarantees and costs against those requirements.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Can one product serve everything? Sometimes, but demonstrate the workload fit; another datastore adds synchronization, recovery and operational work.
 
-### 30-second version
+#### 30-second version
 
 > Cloud SQL (PostgreSQL/MySQL) for regional relational OLTP with HA and
 > read replicas; AlloyDB for higher PostgreSQL performance and
@@ -2295,7 +2263,7 @@ powerful".
 
 **M6.6 How do you design for high availability and disaster recovery?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Define **RTO** (time to recover) and **RPO** (data you can lose) with
 the business, then pick the pattern: multi-zone within a region (default
@@ -2306,11 +2274,11 @@ Automate backups with point-in-time recovery, test restores and failover
 game-days, keep infrastructure as code so a region can be rebuilt, and
 make deployments backward compatible so rollbacks are safe.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A zone failure and a region failure are different recovery events. Replicas can improve availability, while backups recover deleted or corrupted data; one does not replace the other.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **RTO** — The target duration for restoring service after a disruption.
 - **RPO** — The acceptable recovery point, often expressed as an amount of time of data loss.
@@ -2318,11 +2286,11 @@ make deployments backward compatible so rollbacks are safe.
 - **DR** — Recovery of service and data after a major disruption.
 - **PITR** — Restoring a database to a selected point in time within retained recovery history.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** How do you validate RPO and RTO? Restore and fail over with measured data loss and elapsed recovery time, including application dependencies.
 
-### 30-second version
+#### 30-second version
 
 > Define **RTO** (time to recover) and **RPO** (data you can lose) with
 > the business, then pick the pattern: multi-zone within a region
@@ -2336,7 +2304,7 @@ make deployments backward compatible so rollbacks are safe.
 
 ------------------------------------------------------------------------
 
-## Module 7: System Design Prompts (practice 45 min each)
+### Module 7: System Design Prompts (practice 45 min each)
 
 1.  URL shortener 2. Rate limiter 3. Notification service 4.
     Order/payment platform with saga 5. Ride-hailing/real-time tracking.
@@ -2346,9 +2314,9 @@ make deployments backward compatible so rollbacks are safe.
 
 ------------------------------------------------------------------------
 
-## Module 8: Coding Programs with Solutions
+### Module 8: Coding Programs with Solutions
 
-### 1. LRU Cache (O(1)): classic
+#### 1. LRU Cache (O(1)): classic
 
 **Derive the approach:** the operations require both key lookup and
 recency updates. A hash table solves lookup; a doubly linked list allows
@@ -2392,7 +2360,7 @@ node to head on access, evict the tail. Make thread-safe with
 exact LRU; specialized caches trade eviction policy against
 concurrency).
 
-### 2. Streams: top 3 earners per department
+#### 2. Streams: top 3 earners per department
 
 **Derive the approach:** the ranking is independent per department, so
 partition by department, order each group and retain its first three
@@ -2430,7 +2398,7 @@ Map<String, List<Employee>> top3 = employees.stream()
                   .limit(3).toList())));
 ```
 
-### 3. Producer–Consumer with BlockingQueue
+#### 3. Producer–Consumer with BlockingQueue
 
 **Derive the approach:** producers and consumers run at different speeds
 and need a safe handoff. A bounded blocking queue combines
@@ -2469,7 +2437,7 @@ new Thread(producer).start(); new Thread(consumer).start();
 *Mention:* `put`/`take` block (back-pressure); poison pill for shutdown;
 always restore the interrupt flag.
 
-### 4. Token-Bucket Rate Limiter (thread-safe)
+#### 4. Token-Bucket Rate Limiter (thread-safe)
 
 **Derive the approach:** the requirement permits a short burst but
 limits the average rate. Represent available credit as tokens, refill by
@@ -2513,7 +2481,7 @@ class TokenBucket {
 *Follow-up:* distributed version → Redis + Lua script for atomic
 refill/consume.
 
-### 5. Async fan-out with CompletableFuture
+#### 5. Async fan-out with CompletableFuture
 
 **Derive the approach:** user and order reads do not depend on one
 another, so start both and combine only after both results are ready.
@@ -2557,7 +2525,7 @@ and distinguish timeout from business failure before returning a
 fallback. [CompletableFuture
 API](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/CompletableFuture.html).
 
-### 6. Thread-safe Singleton with enum and holder alternatives
+#### 6. Thread-safe Singleton with enum and holder alternatives
 
 **Derive the approach:** one instance is required within one
 class-loader scope, and concurrent callers must not observe partial
@@ -2593,7 +2561,7 @@ class Holder { private Holder() {}
     static Holder get() { return H.I; } }   // lazy, thread-safe via class loading
 ```
 
-### 7. Spring Boot: REST + global error handling + N+1 fix
+#### 7. Spring Boot: REST + global error handling + N+1 fix
 
 **Derive the approach:** the response needs order fields and items, so
 define that read shape explicitly, map it inside the service transaction
@@ -2650,7 +2618,7 @@ class ApiErrors {
 }
 ```
 
-### 8. Quick algorithm warm-ups
+#### 8. Quick algorithm warm-ups
 
 **Longest unique substring — derive and choose:** a repeated character
 only invalidates windows containing its previous occurrence. Keep the
@@ -2709,7 +2677,7 @@ sort by start, then merge in one pass, O(n log n).
 
 ------------------------------------------------------------------------
 
-## Module 9: Behavioral (Senior Level)
+### Module 9: Behavioral (Senior Level)
 
 Prepare 5 **STAR** stories with metrics (Situation, Task, Action,
 **Result**):
@@ -2723,7 +2691,7 @@ Prepare 5 **STAR** stories with metrics (Situation, Task, Action,
 **Questions to ask them:** deployment frequency, on-call load, tech-debt
 policy, how architecture decisions are made.
 
-## Final Checklist
+### Final Checklist
 
 - Can explain `@Transactional` pitfalls, N+1, HashMap internals, and
   saga/outbox *without notes*
@@ -2732,9 +2700,10 @@ policy, how architecture decisions are made.
 
 ------------------------------------------------------------------------
 
-<!-- ===== Part 2: Question Bank Vol. 1 (Core Java, Spring, JPA, Microservices) ===== -->
+<a id="part-2"></a>
+## Part 02 - Question Bank Vol. 1 - Java, Spring, JPA and microservices
 
-# Senior Java Question Bank, Vol. 1 (Detailed Answers)
+## Senior Java Question Bank, Vol. 1 (Detailed Answers)
 
 Companion to the refresher course. Each answer follows what senior
 interviewers score: **definition → internals → trade-off → pitfall →
@@ -2742,14 +2711,14 @@ real-world example.** Practise saying them aloud in 60–90 seconds.
 
 ------------------------------------------------------------------------
 
-# A. Core Java
+## A. Core Java
 
 **Learning order:** begin with [Java foundations](#c1-what-should-you-explain-before-collection-internals); for Q7–Q9, first read the [multithreading ladder](#multithreading-questions-foundations-to-senior-follow-ups).
 
 **Q1. Explain the `equals()`/`hashCode()` contract and what breaks if
 you violate it.**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 If `a.equals(b)` is true, `a.hashCode() == b.hashCode()` must hold;
 equals must be reflexive, symmetric, transitive, consistent and false
@@ -2760,15 +2729,15 @@ Mutating fields used in `hashCode` after inserting into a hash
 collection "loses" the entry. *Production tip:* use immutable keys or
 records; for JPA entities use a stable business key.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Two distinct customer-key objects representing the same customer must compare equal and produce the same hash. The hash narrows the search; equality identifies the mapping. Changing the key after insertion can make lookup search a different bucket.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Can unequal keys share a hash? Yes; collisions are legal and must be resolved with equality.
 
-### 30-second version
+#### 30-second version
 
 > If `a.equals(b)` is true, `a.hashCode() == b.hashCode()` must hold;
 > equals must be reflexive, symmetric, transitive, consistent and false
@@ -2776,7 +2745,7 @@ records; for JPA entities use a stable business key.
 
 **Q2. Why is `String` immutable and what is the String pool?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Immutability gives thread-safety, safe use as map keys (hash cached),
 security (class names, URLs, credentials cannot be altered after
@@ -2786,19 +2755,19 @@ in the heap (since Java 7). `new String("a")` creates a separate object;
 thread-safe, fast) or `StringBuffer` (synchronized, rarely needed).
 Store passwords in `char[]` so they can be wiped.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Two references can safely share a String because neither can change its characters. Concatenation creates a result rather than editing the old string. The pool reuses selected equal strings; equality of contents still uses equals.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **heap** — JVM memory where Java objects are allocated.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does an immutable password String become erasable? No; a char array offers explicit clearing, although copies and runtime behavior still limit guarantees.
 
-### 30-second version
+#### 30-second version
 
 > Immutability gives thread-safety, safe use as map keys (hash cached),
 > security (class names, URLs, credentials cannot be altered after
@@ -2808,7 +2777,7 @@ Store passwords in `char[]` so they can be wiped.
 
 **Q3. How do fail-fast and fail-safe iterators differ?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 “Fail-safe” is an informal label; distinguish the actual iterator
 contracts. `ArrayList` and `HashMap` iterators detect many structural
@@ -2826,21 +2795,21 @@ For that list, use a supported collection-level operation such as
 `removeIf`. Choose copy-on-write collections for read-heavy,
 rarely-modified data such as listener registrations.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A snapshot iterator keeps seeing its original array after a writer replaces the collection's array. A weakly consistent iterator can observe concurrent changes without promising that snapshot. Fail-fast detection is a debugging aid.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Fail-fast** — Best-effort detection of incompatible structural modification.
 - **Snapshot iterator** — Traversal of a previously captured collection structure.
 - **Weak consistency** — Concurrent traversal without a fixed snapshot or fail-fast guarantee.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Can ConcurrentModificationException prove thread safety? No; its absence is not a synchronization guarantee, and same-thread structural changes can also cause it.
 
-### 30-second version
+#### 30-second version
 
 > ArrayList and HashMap iterators are best-effort fail-fast;
 > CopyOnWriteArrayList uses snapshots; ConcurrentHashMap is weakly consistent.
@@ -2852,63 +2821,63 @@ rarely-modified data such as listener registrations.
 
 **Q4. What is PECS in generics?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 PECS means Producer Extends, Consumer Super. With `List<? extends Number>`, values can be read as Number, but adding an arbitrary Integer or Double is unsafe because the actual subtype is unknown; null is the general exception. `List<? super Integer>` can accept Integers, but reads guarantee only Object. Neither wildcard promises immutability. Use a concrete type parameter when an API must both consume and produce the same type. Generic type checks are limited by erasure; for example, `instanceof List<?>` is permitted, while `instanceof List<String>` is not. [Java wildcard rules](https://docs.oracle.com/javase/specs/jls/se21/html/jls-4.html).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A List of an unknown subtype of Number might actually contain only Doubles, so adding an Integer would be unsafe. A list of an unknown supertype of Integer can accept Integers, but reading guarantees only Object.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does extends make the list immutable? No; supported removal or clearing may still work, and null is the only generally addable value.
 
-### 30-second version
+#### 30-second version
 
 > Extends gives a readable upper bound; super gives a safe input type. Explain what can be read and written, and remember that wildcard variance does not make a collection immutable.
 
 **Q5. Checked vs unchecked exceptions: what is your strategy?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Checked exceptions require a caller to catch or declare them; unchecked exceptions do not. Recoverability is an API design consideration, not a rule determined solely by that classification. Translate lower-level failures at meaningful boundaries while preserving causes, use try-with-resources for owned AutoCloseable resources, and retain suppressed cleanup failures. Catch only when you can recover, add useful context or map to a public contract; avoid swallowing errors or logging the same failure at every layer.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Distinguish the language rule from your API policy: checked exceptions require catching or declaration; unchecked ones do not. Either category can describe a condition a particular caller chooses to recover from.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Where should translation happen? At a boundary that can add domain meaning while preserving the cause and avoiding duplicate logging.
 
-### 30-second version
+#### 30-second version
 
 > Explain the compiler rule first, then your recovery and translation policy. Preserve causes and cleanup failures, and handle an exception at the boundary that can take a meaningful action.
 
 **Q6. Explain class loading and when you meet `ClassNotFoundException`
 vs `NoClassDefFoundError`.**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Separate loading, linking and initialization. Standard application loading normally delegates to a parent; custom loaders can use other policies. ClassNotFoundException is a checked failure from an explicit class-loading request. NoClassDefFoundError is a linkage failure when a required definition cannot be used, including subsequent use of a class whose initialization previously failed. Inspect the earliest failure and cause chain, resolved dependencies and class-loading logs; a missing jar is one possibility, not the only explanation.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A plugin loader explicitly asks for a named class and cannot find it: ClassNotFoundException. A class needed during execution cannot be defined or was left erroneous after initialization: a linkage error such as NoClassDefFoundError can follow.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Why inspect the cause chain? A later class-initialization failure can hide the earlier exception that first made the class unusable.
 
-### 30-second version
+#### 30-second version
 
 > Loading, linking and initialization differ. ClassNotFoundException comes from explicit lookup; NoClassDefFoundError can reflect a missing definition or earlier initialization failure. Diagnose the original cause and actual runtime classpath.
 
 **Q7. How does `ConcurrentHashMap` achieve thread safety and why does it
 forbid null?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Java 8+: a table of bins; empty-bin inserts use CAS, non-empty bins lock
 only the head node (`synchronized`), so contention is per-bucket. Reads
@@ -2918,11 +2887,11 @@ concurrent setting where you cannot do a safe `containsKey` follow-up.
 Use `compute`, `merge`, `putIfAbsent` for atomic compound operations;
 `check-then-put` is a race.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Two threads doing get-then-put can both see absence. putIfAbsent or compute combines that decision with the update for one key. The map protects its mappings, not mutable fields inside stored values.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **bin** — A bucket position in HashMap's internal table; OpenJDK
   source commonly calls the entries at one index a bin.
@@ -2931,11 +2900,11 @@ Use `compute`, `merge`, `putIfAbsent` for atomic compound operations;
 - **CAS** — Compare-and-set, an atomic CPU/JVM operation that updates a
   value only if it still equals an expected value.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Can a slow compute block other work? Yes; keep callbacks short and avoid recursive updates or remote I/O inside them.
 
-### 30-second version
+#### 30-second version
 
 > Java 8+: a table of bins; empty-bin inserts use CAS, non-empty bins
 > lock only the head node (`synchronized`), so contention is per-bucket.
@@ -2943,7 +2912,7 @@ Use `compute`, `merge`, `putIfAbsent` for atomic compound operations;
 
 **Q8. What are ThreadLocals' dangers?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 They store per-thread state (user context, MDC, date formatters), but
 with pooled threads values outlive the request unless you `remove()` in
@@ -2956,15 +2925,15 @@ values support bounded-lifetime context sharing, not arbitrary mutable
 thread-local storage. [Java 25
 ScopedValue](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/ScopedValue.html).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A worker handles Alice, then Bob. If Alice's context remains in its ThreadLocal, Bob can inherit the stale value even though requests are unrelated. Restore or remove context at the operation boundary.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does copying context permit sharing mutable state? No; choose which values may cross threads and how they are isolated.
 
-### 30-second version
+#### 30-second version
 
 > They store per-thread state (user context, MDC, date formatters), but
 > with pooled threads values outlive the request unless you `remove()`
@@ -2975,25 +2944,25 @@ ScopedValue](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/l
 
 **Q9. Are parallel streams a good idea?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Parallel streams can help substantial, independent CPU work on efficiently splittable sources when combining results is cheap. Common implementations use fork/join execution, often the common pool; context and implementation matter, so do not treat a fixed executor as a universal Stream API contract. Blocking callbacks can consume shared capacity and hurt unrelated work. Preserve non-interference, associativity and required ordering, measure representative workloads, and prefer explicitly controlled execution for I/O.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Parallel execution splits work and combines partial results. Splitting, scheduling and merging cost time, so a cheap mapping over a short list can become slower. Shared blocking work also competes for execution capacity.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** How would you decide? Benchmark representative CPU work and validate ordering, reduction associativity and side-effect safety first.
 
-### 30-second version
+#### 30-second version
 
 > Parallel streams add splitting, scheduling and merging costs. Use them only after proving the operation's parallel correctness and measuring a benefit; blocking shared workers and assuming executor isolation are common mistakes.
 
 **Q10. Immutability: how do you design an immutable class?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 `final` class, private final fields, no setters, defensive copies in
 constructor and getters for mutable components (`List.copyOf`, `Date`
@@ -3002,15 +2971,15 @@ without locks, safe sharing and caching. Java 16+ `record` gives this
 for shallow immutability; collections inside still need `List.copyOf` in
 the compact constructor.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** An immutable wrapper around a caller-owned list is unsafe if that list remains mutable through another reference. Copy the structure on entry and avoid exposing mutable internals on exit.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Is List.copyOf a deep copy? No; mutable elements are still shared and need their own ownership or immutability policy.
 
-### 30-second version
+#### 30-second version
 
 > `final` class, private final fields, no setters, defensive copies in
 > constructor and getters for mutable components (`List.copyOf`, `Date`
@@ -3019,13 +2988,13 @@ the compact constructor.
 
 ------------------------------------------------------------------------
 
-# B. Spring & Spring Boot
+## B. Spring & Spring Boot
 
 **Learning order:** start with the [Spring annotation ladder](#spring-boot-annotations-usage-to-internals-to-senior-diagnosis), then return here for circular dependencies, AOP, async, caching and API follow-ups.
 
 **Q11. How does Spring resolve circular dependencies?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 For singleton beans with *setter/field* injection, Spring exposes an
 early reference via a three-level cache (`singletonObjects`,
@@ -3036,20 +3005,20 @@ cycle as a design smell and break it by extracting a third service,
 publishing events, or injecting `ObjectProvider`/`@Lazy` only as a last
 resort.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A constructor for A needs B, whose constructor needs A; neither object can finish construction. Early references can help some setter-based cycles but do not make the dependency design healthy.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Application service** — A component coordinating a business use case;
   it may be a Spring-managed bean and is not a Kubernetes Service.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** What is the first refactoring? Identify the shared responsibility or orchestration and move it to a suitable third component.
 
-### 30-second version
+#### 30-second version
 
 > For singleton beans with *setter/field* injection, Spring exposes an
 > early reference via a three-level cache (`singletonObjects`,
@@ -3059,7 +3028,7 @@ resort.
 
 **Q12. Explain Spring AOP and its limitations.**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Spring AOP applies cross-cutting concerns such as transactions,
 security, logging and caching through runtime proxies. JDK dynamic
@@ -3080,21 +3049,21 @@ times (a deliberate retry policy). Return-value and exception behavior
 must preserve the intended API contract; always rethrowing is not a
 universal rule.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** The caller invokes a proxy, advice executes, and the proxy delegates to the target. A call from one target method to another stays on that target, bypassing the external interception path.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **AOP** — Applying cross-cutting behavior at selected execution points.
 - **Proxy** — An intermediary that intercepts calls before delegating.
 - **Around advice** — Advice that controls target invocation and the caller-visible result.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Why can an interface proxy advise a final implementation method? It delegates through the interface instead of overriding that method.
 
-### 30-second version
+#### 30-second version
 
 > Spring AOP intercepts eligible calls through proxies. Final-method
 > restrictions apply to subclass proxies; JDK proxies can advise interface calls
@@ -3105,7 +3074,7 @@ universal rule.
 
 **Q13. How do you manage configuration across environments?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Externalised config precedence: command-line args \> env vars \>
 `application-{profile}.yml` \> `application.yml`. Use
@@ -3115,15 +3084,15 @@ never from Git. In Kubernetes use ConfigMaps/Secrets and, for live
 reload, Spring Cloud Config or `@RefreshScope`. Same artifact, different
 config (12-factor).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** The same image can use different connection endpoints through external properties. Grouped typed settings make invalid combinations fail at startup instead of surfacing as scattered parsing errors during requests.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does updating a ConfigMap update every bean? No; environment variables and existing bound objects need an explicit reload or restart strategy.
 
-### 30-second version
+#### 30-second version
 
 > Externalised config precedence: command-line args \> env vars \>
 > `application-{profile}.yml` \> `application.yml`. Use
@@ -3132,32 +3101,32 @@ config (12-factor).
 
 **Q14. How does `@Async` work, and what goes wrong?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 With async support enabled, an eligible call through the proxy is submitted to the selected executor. Self-invocation bypasses that advice. Configure admission, rejection, deadlines and failure reporting explicitly. In Boot 3.5, the usual auto-configured executor is a ThreadPoolTaskExecutor; with Java 21+ virtual threads enabled it can be a virtual-thread SimpleAsyncTaskExecutor. Thread-bound transactions and context do not automatically transfer. CompletableFuture exposes result/failure composition; void methods need AsyncUncaughtExceptionHandler reporting. [Boot task execution](https://docs.spring.io/spring-boot/3.5/reference/features/task-execution-and-scheduling.html).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A proxy hands work to an executor and the caller continues. The new thread has its own transaction and context boundaries, and a void return gives the caller no future through which to observe failure.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **CompletableFuture** — A Java API for representing and composing
   asynchronous results and their success/failure stages.
 - **proxy** — An object that wraps another object and intercepts method
   calls, commonly used by Spring for transactions, security and AOP.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does virtual-thread execution remove overload? No; bound admission and scarce resources even when threads are cheap.
 
-### 30-second version
+#### 30-second version
 
 > Async advice dispatches proxy calls to a configured executor. Bound work and resources, propagate only intended context, and handle failures. Boot's executor choice changes when virtual threads are enabled.
 
 **Q15. Spring caching: how and what are the traps?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 `@EnableCaching` + `@Cacheable`/`@CachePut`/`@CacheEvict` through a
 proxy, backed by Caffeine (local) or Redis (distributed). Traps:
@@ -3166,20 +3135,20 @@ self-invocation, caching mutable objects, missing TTL/size limits
 stampede (use `sync=true` or request coalescing), and key design
 (`key = "#id"`). Always ask "what is the invalidation strategy?"
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** On a cache hit, advice can return the stored value without running the target method. If the key omits tenant identity, one tenant can receive another's result even though the method itself is correct.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **proxy** — An object that wraps another object and intercepts method
   calls, commonly used by Spring for transactions, security and AOP.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does sync=true coordinate every instance? Its scope and support depend on the cache provider; it is not a universal distributed lock.
 
-### 30-second version
+#### 30-second version
 
 > `@EnableCaching` + `@Cacheable`/`@CachePut`/`@CacheEvict` through a
 > proxy, backed by Caffeine (local) or Redis (distributed). Traps:
@@ -3190,7 +3159,7 @@ stampede (use `sync=true` or request coalescing), and key design
 
 **Q16. How do you test a Spring Boot application?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Pyramid: plain JUnit 5 + Mockito for domain logic (fast, no Spring);
 slice tests (`@WebMvcTest` with `MockMvc`, `@DataJpaTest`) for one
@@ -3199,15 +3168,15 @@ real PostgreSQL/Kafka instead of H2 (dialect differences hide bugs);
 WireMock for HTTP dependencies; contract tests between services. Keep
 the context cache hot by minimising `@MockBean`/`@DirtiesContext`.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A plain unit test proves pricing rules, a MVC slice proves request binding and error responses, and a real-database test proves SQL constraints. Select the smallest boundary that can expose the failure.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Why can an H2 test pass while PostgreSQL fails? SQL dialects, constraints and transaction behavior can differ.
 
-### 30-second version
+#### 30-second version
 
 > Pyramid: plain JUnit 5 + Mockito for domain logic (fast, no Spring);
 > slice tests (`@WebMvcTest` with `MockMvc`, `@DataJpaTest`) for one
@@ -3218,7 +3187,7 @@ the context cache hot by minimising `@MockBean`/`@DirtiesContext`.
 
 **Q17. Design a good REST API. What do you check?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Resource-oriented nouns, correct verbs/status codes (201 + `Location`,
 204, 400 vs 422, 409 conflict), idempotent `PUT`/`DELETE`,
@@ -3228,21 +3197,21 @@ for large sets), filtering, versioning, consistent error format
 OpenAPI docs, rate limiting, and authentication/authorisation on every
 endpoint. Never expose entities directly; use DTOs.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** For an order-creation request, explain validation, authorization, creation status, resource location and retry behavior. The API contract includes failure and duplicate requests, not just the JSON shape.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **idempotency** — The property that repeating the same logical request
   produces the same intended outcome rather than creating duplicate
   effects.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Is repeated DELETE required to return the same status? No; idempotency concerns intended state effects, not identical responses.
 
-### 30-second version
+#### 30-second version
 
 > Resource-oriented nouns, correct verbs/status codes (201 + `Location`,
 > 204, 400 vs 422, 409 conflict), idempotent `PUT`/`DELETE`,
@@ -3254,7 +3223,7 @@ endpoint. Never expose entities directly; use DTOs.
 
 **Q18. What happens when a request hits a Spring MVC app?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Servlet container (Tomcat) → filter chain (Security, etc.) →
 `DispatcherServlet` → `HandlerMapping` finds the controller method →
@@ -3265,15 +3234,15 @@ runs → return value handler/converter serialises → interceptors
 `HandlerExceptionResolver` (`@ExceptionHandler`). Knowing filter vs
 interceptor distinction is a common probe.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A filter can reject a request before MVC selects a controller. MVC then resolves arguments, invokes the handler and converts its result; response-body conversion can happen before interceptor postHandle.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Where should exception mapping live? MVC resolvers handle controller-processing exceptions; failures outside MVC need handling at their own boundary.
 
-### 30-second version
+#### 30-second version
 
 > Servlet container (Tomcat) → filter chain (Security, etc.) →
 > `DispatcherServlet` → `HandlerMapping` finds the controller method →
@@ -3286,7 +3255,7 @@ interceptor distinction is a common probe.
 
 **Q19. How do you handle graceful shutdown and zero-downtime deploys?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 `server.shutdown=graceful` with
 `spring.lifecycle.timeout-per-shutdown-phase`; readiness probe flips to
@@ -3297,11 +3266,11 @@ sleep covers endpoint propagation lag. Pair with rolling updates
 (`maxUnavailable: 0`) and backward-compatible DB migrations (expand →
 migrate → contract).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Stopping new routing and finishing accepted work take time. Coordinate readiness, endpoint propagation, server draining and the platform termination deadline; keep old and new schema contracts compatible during overlap.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Shutdown phase** — A stage of Spring lifecycle shutdown with its own
   configured timeout; distinct from a Maven build phase.
@@ -3310,11 +3279,11 @@ migrate → contract).
 - **Service** — An application or platform capability exposed through a
   defined interface; a Kubernetes Service is a specific networking resource.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does a preStop sleep guarantee safety? No; it consumes the same grace period and must be justified by measured propagation and drain times.
 
-### 30-second version
+#### 30-second version
 
 > `server.shutdown=graceful` with
 > `spring.lifecycle.timeout-per-shutdown-phase`; readiness probe flips
@@ -3327,13 +3296,13 @@ migrate → contract).
 
 ------------------------------------------------------------------------
 
-# C. Hibernate / JPA
+## C. Hibernate / JPA
 
 **Learning order:** start with [connections, sessions, transactions and mapping annotations](#start-here-database-connections-and-session-management), then return here for inheritance, lifecycle, bulk operations and isolation.
 
 **Q20. Compare JPA inheritance strategies.**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 `SINGLE_TABLE`: one table + discriminator, fastest queries, but nullable
 columns and weak constraints. `JOINED`: normalised table per class,
@@ -3343,15 +3312,15 @@ recommended. `@MappedSuperclass` shares fields without polymorphism.
 Default to SINGLE_TABLE for small hierarchies, JOINED when integrity
 matters.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A payment hierarchy can use one table with a type column or several joined tables. The choice moves cost between nullability/constraints, writes and polymorphic queries.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does SINGLE_TABLE always win? No; evaluate actual query plans and integrity requirements rather than claiming a universally fastest strategy.
 
-### 30-second version
+#### 30-second version
 
 > `SINGLE_TABLE`: one table + discriminator, fastest queries, but
 > nullable columns and weak constraints. `JOINED`: normalised table per
@@ -3359,7 +3328,7 @@ matters.
 
 **Q21. Explain cascade types and `orphanRemoval`.**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 `CascadeType` propagates operations (PERSIST, MERGE, REMOVE, REFRESH,
 DETACH) from parent to child; `ALL` combines them. `orphanRemoval=true`
@@ -3370,15 +3339,15 @@ sides of bidirectional associations in sync with helper
 `addItem/removeItem` methods; the owning side (the one with
 `@JoinColumn`) writes the FK.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Removing a privately owned OrderLine can mean deleting that row; removing a shared Product reference must not mean deleting the product. Cascades propagate lifecycle operations, while association ownership controls relationship updates.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Why update both sides? It keeps the in-memory graph consistent even though only the owning side writes the relationship.
 
-### 30-second version
+#### 30-second version
 
 > `CascadeType` propagates operations (PERSIST, MERGE, REMOVE, REFRESH,
 > DETACH) from parent to child; `ALL` combines them.
@@ -3387,7 +3356,7 @@ sides of bidirectional associations in sync with helper
 
 **Q22. Why does offset pagination degrade and what's the alternative?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 `OFFSET n` forces the DB to scan and discard n rows, so deep pages get
 slow and unstable under concurrent inserts. **Keyset (seek) pagination**
@@ -3398,15 +3367,15 @@ offset. With a suitable index, seek plus retrieval is approximately
 O(log n + page size); changing sort keys can still move rows between
 pages. Spring Data's `Window`/`ScrollPosition` (3.1+) supports it.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Page 10,000 by offset asks the database to pass many earlier rows. A cursor carries the last stable sort key so the next query can seek after it using an index.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Why include a unique tie-breaker? Equal timestamps alone cannot define an unambiguous page boundary.
 
-### 30-second version
+#### 30-second version
 
 > `OFFSET n` forces the DB to scan and discard n rows, so deep pages get
 > slow and unstable under concurrent inserts. **Keyset (seek)
@@ -3418,7 +3387,7 @@ pages. Spring Data's `Window`/`ScrollPosition` (3.1+) supports it.
 **Q23. `save()` vs `saveAndFlush()` vs `flush()`, and how does `merge`
 vs `persist` differ?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 `persist` makes a *new* transient entity managed (void; ID assigned per
 generator). `merge` copies the detached state onto a managed instance
@@ -3428,20 +3397,20 @@ trigger an extra SELECT for assigned IDs. `flush` only syncs the context
 to the DB; it doesn't commit. Dirty checking means managed entities are
 updated without calling `save`.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** merge returns the managed destination of copied state; the detached argument does not become managed. Editing only that original argument afterward may never reach the database.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **dirty checking** — Hibernate/JPA's mechanism for detecting changes
   to managed entities and generating updates during flush.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** What does saveAndFlush add? It requests synchronization now, while transaction commit and durability still occur at the enclosing boundary.
 
-### 30-second version
+#### 30-second version
 
 > `persist` makes a *new* transient entity managed (void; ID assigned
 > per generator). `merge` copies the detached state onto a managed
@@ -3449,7 +3418,7 @@ updated without calling `save`.
 
 **Q24. How do you do bulk updates safely?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Bulk JPQL/native updates bypass normal entity dirty checking and can
 leave managed entities stale; automatic optimistic-version handling is
@@ -3461,20 +3430,20 @@ work. Preserve tenant filters, version predicates and row-count checks
 explicitly. For imports, use chunked transactions and bounded
 persistence contexts.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A bulk update changes rows directly while an already loaded entity still contains its old value. Later application logic can act on that stale copy unless the persistence context is refreshed or cleared deliberately.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **dirty checking** — Hibernate/JPA's mechanism for detecting changes
   to managed entities and generating updates during flush.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Why flush before clear? Clearing can otherwise discard pending managed changes that have not reached SQL.
 
-### 30-second version
+#### 30-second version
 
 > Bulk JPQL/native updates bypass normal entity dirty checking and can
 > leave managed entities stale; automatic optimistic-version handling is
@@ -3484,60 +3453,60 @@ persistence contexts.
 **Q25. What isolation levels exist and which anomalies do they
 prevent?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Isolation constrains concurrent transaction histories. Read committed prevents dirty reads but may allow different committed results across statements. Repeatable read and serializable behavior must be described for the named database: PostgreSQL repeatable read uses snapshot isolation and can permit write skew; serializable detects unsafe histories and can abort transactions. Constraints, atomic updates and appropriate locking can enforce specific invariants. Retrying a serialization/deadlock failure must restart the whole safe business transaction. [PostgreSQL isolation](https://www.postgresql.org/docs/17/transaction-iso.html).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Read committed prevents reading another transaction's uncommitted data but can show different committed results across statements. Stronger isolation changes the allowed histories; database-specific implementation matters.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Isolation level** — A database contract governing which effects concurrent transactions can observe.
 - **Optimistic locking** — Detecting conflicting updates, often with a version predicate; the eventual database write still acquires locks.
 - **Serializable** — An isolation guarantee equivalent to some serial ordering of committed transactions.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does serializable mean no failures? No; conflicts may require aborting and retrying an entire transaction.
 
-### 30-second version
+#### 30-second version
 
 > Name the database and invariant. Read committed, repeatable read and serializable provide different guarantees; serializable can require retries. An isolation annotation requests behavior from the database rather than implementing it itself.
 
 ------------------------------------------------------------------------
 
-# D. Microservices & Distributed Systems
+## D. Microservices & Distributed Systems
 
 Start with the [service boundary and request foundation](#f1-what-is-a-microservice-and-how-does-one-request-cross-services), then gateways, resilience and distributed consistency in Q26–Q30.
 
 **Q26. API Gateway vs service mesh: what is the difference?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 A gateway controls edge traffic: routing, authentication, rate limits and public API concerns. A service mesh supplies service-to-service transport controls such as workload identity, encryption, routing and telemetry. Mesh architectures can use sidecars or other data-plane arrangements. Both can be useful, but neither is mandatory; justify their operational cost and keep business rules in their owning application boundary.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** An edge gateway routes a customer's request to a service; a mesh can secure and observe calls between services. Neither should automatically become the owner of order-pricing rules.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Service** — An application or platform capability exposed through a
   defined interface; a Kubernetes Service is a specific networking resource.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Must every system have both? No; justify each boundary's controls and operational cost. Mesh implementations are not limited to sidecars.
 
-### 30-second version
+#### 30-second version
 
 > A gateway manages the external API boundary; a mesh manages service-to-service transport. Explain the concrete control required and its cost instead of assuming every system needs both.
 
 **Q27. Explain CQRS and Event Sourcing, and when not to use them.**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 CQRS separates the write model (validates commands, enforces invariants)
 from read models (denormalised projections optimised for queries), which can share a transactional store; event-driven projections in separate stores are optional and can be eventually consistent. Event Sourcing
@@ -3546,15 +3515,15 @@ replay and temporal queries, but adds complexity: schema evolution of
 events, snapshots, rebuild time, and a steep learning curve. Use for
 complex domains with audit/read-scale needs, not CRUD apps.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A command validates and changes an order; a projection serves a convenient order-summary view. CQRS can use one database. Event sourcing additionally makes the sequence of business events the authoritative history.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does CQRS require event sourcing? No; they are independent choices with different complexity and recovery costs.
 
-### 30-second version
+#### 30-second version
 
 > CQRS separates the write model (validates commands, enforces
 > invariants) from read models (denormalised projections optimised for
@@ -3566,7 +3535,7 @@ complex domains with audit/read-scale needs, not CRUD apps.
 
 **Q28. How do you choose between Kafka and Pub/Sub (or RabbitMQ)?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Kafka: a distributed log with partition-based ordering, consumer groups,
 long retention, replay and very high throughput; you manage
@@ -3577,20 +3546,20 @@ broker, routing flexibility, low-latency task queues. Explain
 partition-key choice (ordering per key, hot partitions), DLQs, and
 idempotent consumers.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Ask whether consumers need replay, per-key ordering, routing flexibility or managed operations. Then describe how the chosen broker acknowledges work and exposes retry/failure behavior.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Pub/Sub** — Google Cloud's asynchronous messaging service for
   publishing messages to topics and delivering them to subscriptions.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does changing brokers remove duplicate effects? No; consumers still need a deliberate processing and deduplication contract.
 
-### 30-second version
+#### 30-second version
 
 > Kafka: a distributed log with partition-based ordering, consumer
 > groups, long retention, replay and very high throughput; you manage
@@ -3600,7 +3569,7 @@ idempotent consumers.
 
 **Q29. How do you deploy safely: rolling, blue-green, canary?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Rolling replaces instances gradually (cheap, mixed versions coexist, so
 API/DB must be backward compatible). Blue-green runs two full
@@ -3610,22 +3579,22 @@ watching SLOs, then ramps up (best risk control; needs good metrics).
 Feature flags decouple deploy from release. On GKE use Cloud Deploy/Argo
 Rollouts; on Cloud Run use traffic splitting by revision.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** During a rolling release, old and new instances serve traffic together. A canary adds a measured stop/go decision before wider rollout; blue-green changes traffic between environments.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Cloud Run** — GCP's managed container execution platform where the
   platform handles servers and scales container instances.
 - **GKE** — Google Kubernetes Engine, Google's managed Kubernetes
   service.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Can traffic rollback undo a schema change? No; data and schema compatibility must be designed separately.
 
-### 30-second version
+#### 30-second version
 
 > Rolling replaces instances gradually (cheap, mixed versions coexist,
 > so API/DB must be backward compatible). Blue-green runs two full
@@ -3635,7 +3604,7 @@ Rollouts; on Cloud Run use traffic splitting by revision.
 **Q30. A downstream service is slow and your service is falling over.
 What do you do?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Immediately: check dashboards (RED metrics), identify saturation, apply
 a circuit breaker/fallback and shed load. Root causes of cascading
@@ -3646,15 +3615,15 @@ and a retry budget, caching, async decoupling via queue, autoscaling
 with sensible limits, and a post-mortem with action items. This is the
 "tell me about an outage" answer; use a real story.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Trace how one slow dependency fills connections, then worker slots, then the request queue. Limit that chain before adding replicas that may send even more traffic to the same bottleneck.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Which signal proves recovery? End-user error/latency plus reduced saturation, not merely an open circuit breaker.
 
-### 30-second version
+#### 30-second version
 
 > Immediately: check dashboards (RED metrics), identify saturation,
 > apply a circuit breaker/fallback and shed load. Root causes of
@@ -3663,16 +3632,17 @@ with sensible limits, and a post-mortem with action items. This is the
 
 ------------------------------------------------------------------------
 
-## Self-Assessment
+### Self-Assessment
 
 After each answer, ask: *Did I give a trade-off? A pitfall? An example
 from my own project?* If not, the answer is junior-level.
 
 ------------------------------------------------------------------------
 
-<!-- ===== Part 3: Question Bank Vol. 2 (Kafka, Security, Maven, GCP, Kubernetes) ===== -->
+<a id="part-3"></a>
+## Part 03 - Question Bank Vol. 2 - Kafka, security, Maven, GCP and Kubernetes
 
-# Senior Java Question Bank, Vol. 2
+## Senior Java Question Bank, Vol. 2
 
 **Kafka · Spring Security · Maven · GCP · Docker/Kubernetes** (Q31–Q58)
 Answer shape: **what it is → how it works → trade-off → pitfall → your
@@ -3680,9 +3650,9 @@ experience.**
 
 ------------------------------------------------------------------------
 
-# E. Kafka & Messaging
+## E. Kafka & Messaging
 
-### K1 How do producers, brokers and consumers fit together
+#### K1 How do producers, brokers and consumers fit together
 
 **Strong answer:** a producer sends a record/event to a broker; a consumer reads or receives it and processes it. In Kafka, a topic is split into partitions that hold ordered logs, and an offset identifies a position within one partition. A consumer group tracks its processing position; record ordering within a partition is distinct from business completion order across parallel workers.
 
@@ -3692,7 +3662,7 @@ experience.**
 
 **Q31. Explain Kafka's architecture and how consumer groups scale.**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 A topic is split into partitions, each an append-only, ordered log
 replicated across brokers (one leader, N-1 followers). Producers write
@@ -3703,20 +3673,20 @@ idle, so partition count is your scaling ceiling and is hard to reduce
 later. Different groups read independently, which enables pub/sub with
 replay. Offsets live in `__consumer_offsets`.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** In an ordinary consumer group, each assigned partition has one active consumer; another group can read the same partition independently. More group members than partitions do not add partition-processing parallelism.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Pub/Sub** — Google Cloud's asynchronous messaging service for
   publishing messages to topics and delivering them to subscriptions.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Can you process records asynchronously within a partition? Yes, but you must preserve required ordering and commit only a safely completed prefix.
 
-### 30-second version
+#### 30-second version
 
 > A topic is split into partitions, each an append-only, ordered log
 > replicated across brokers (one leader, N-1 followers). Producers write
@@ -3726,7 +3696,7 @@ replay. Offsets live in `__consumer_offsets`.
 
 **Q32. How do you get "exactly-once" with Kafka?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Say honestly: end-to-end exactly-once needs cooperation. Producer
 idempotence prevents duplicate log entries from supported retries;
@@ -3740,11 +3710,11 @@ REST), you need an idempotent consumer: dedupe by event ID in a
 unique-constrained table, or the transactional outbox. Default design
 target: at-least-once + idempotency.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A Kafka transaction can commit produced records and consumed offsets together. Charging a card through HTTP is outside that transaction, so a replay can still repeat the external effect.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **idempotency** — The property that repeating the same logical request
   produces the same intended outcome rather than creating duplicate
@@ -3753,11 +3723,11 @@ target: at-least-once + idempotency.
   transaction as business data so publication can happen reliably
   afterward.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** What closes that gap? Provider idempotency, durable operation state and reconciliation, rather than calling the entire workflow exactly-once.
 
-### 30-second version
+#### 30-second version
 
 > Say honestly: end-to-end exactly-once needs cooperation. Producer
 > idempotence prevents duplicate log entries from supported retries;
@@ -3767,25 +3737,25 @@ target: at-least-once + idempotency.
 **Q33. What causes consumer rebalances and how do you reduce their
 impact?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Membership changes, failures and poll/heartbeat violations can move partition assignments. Disruption depends on the configured group protocol and assignment strategy: classic eager rebalances revoke broadly, while cooperative or newer incremental protocols can reduce movement. Keep processing within the applicable poll contract, coordinate in-flight completion and offset commits with revocation, and use static membership or batching when suitable. Moving work off the poll thread requires an explicit completion/ordering protocol.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** When partition ownership changes, in-flight work can finish after the old owner lost the assignment. Coordinate revocation, completion and commits to prevent stale ownership from advancing progress.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Are all rebalances stop-the-world? No; cooperative and newer protocols reduce disruption. Explain the deployed client/protocol behavior.
 
-### 30-second version
+#### 30-second version
 
 > A rebalance changes partition ownership. Explain your protocol's disruption, why polling or membership changed, and how unfinished work and commits are handled. Not every rebalance stops every consumer.
 
 **Q34. Auto-commit vs manual commit?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Auto-commit can acknowledge records before they are processed (loss on
 crash) or reprocess after a crash (duplicates). With Spring Kafka I use
@@ -3793,20 +3763,20 @@ crash) or reprocess after a crash (duplicates). With Spring Kafka I use
 transaction succeeds, and make handlers idempotent. Commit after
 processing = at-least-once; commit before = at-most-once.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** An offset commit is a progress claim for a partition, not an individual database commit. Advancing past unfinished earlier records can skip their effects after a restart.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **transaction** — A unit of database work treated as one logical
   operation with defined commit/rollback behavior.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** What must asynchronous handlers track? The contiguous completed offset frontier, including failures and revoked assignments.
 
-### 30-second version
+#### 30-second version
 
 > Auto-commit can acknowledge records before they are processed (loss on
 > crash) or reprocess after a crash (duplicates). With Spring Kafka I
@@ -3815,7 +3785,7 @@ processing = at-least-once; commit before = at-most-once.
 
 **Q35. How do you handle poison messages and retries?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Distinguish transient (retry) from permanent (deserialisation,
 validation) failures. Spring Kafka `DefaultErrorHandler` with
@@ -3826,15 +3796,15 @@ non-blocking retry topics (`@RetryableTopic`) so one bad record doesn't
 block a partition. Alert on DLT depth and provide a replay tool. Use
 `ErrorHandlingDeserializer` so bad bytes don't crash-loop the consumer.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A malformed payload will not become valid after ten retries. Classify permanent errors and preserve the failed record with enough context for diagnosis and controlled replay.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** What if publishing to the dead-letter topic fails? Do not silently treat the original record as recovered; define and verify the recovery/offset policy.
 
-### 30-second version
+#### 30-second version
 
 > Distinguish transient (retry) from permanent (deserialisation,
 > validation) failures. Spring Kafka `DefaultErrorHandler` with
@@ -3844,7 +3814,7 @@ block a partition. Alert on DLT depth and provide a replay tool. Use
 
 **Q36. How do you guarantee ordering and avoid hot partitions?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Kafka orders only **within a partition**, so choose a key whose events
 must be ordered (e.g., `orderId`, `accountId`). A single hot key remains
@@ -3855,15 +3825,15 @@ ordering and key-migration plan. With retries, set
 order. Schema evolution via Avro/Protobuf + Schema Registry with
 backward-compatible rules.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Keying events by order ID groups each order's history into a partition. One extremely hot order stays a bottleneck; salting that key spreads load only by changing the ordering problem.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Can adding partitions reorder a key's history? A new mapping may put later events elsewhere, so plan migration and consumption explicitly.
 
-### 30-second version
+#### 30-second version
 
 > Kafka orders only **within a partition**, so choose a key whose events
 > must be ordered (e.g., `orderId`, `accountId`). A single hot key
@@ -3871,9 +3841,9 @@ backward-compatible rules.
 
 ------------------------------------------------------------------------
 
-# F. Spring Security & OAuth2
+## F. Spring Security & OAuth2
 
-### A1 How do authentication and authorization fit into a request
+#### A1 How do authentication and authorization fit into a request
 
 **Strong answer:** authentication establishes the caller's identity; authorization decides what that identity may do to the requested resource. A request passes through configured security processing, establishes or resolves the security context, and is checked against access rules. Possessing a token does not by itself grant access to every object named in a request.
 
@@ -3883,7 +3853,7 @@ backward-compatible rules.
 
 **Q37. Walk through the Spring Security filter chain.**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 `DelegatingFilterProxy` → `FilterChainProxy` → a `SecurityFilterChain`
 matched by request. Key filters: `SecurityContextHolderFilter`,
@@ -3896,15 +3866,15 @@ matched by request. Key filters: `SecurityContextHolderFilter`,
 deliberately). Configure with one or more `SecurityFilterChain` beans
 using lambda DSL.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** The servlet delegates to Spring Security's selected chain. Authentication establishes an identity; authorization evaluates the requested action. Enabled filters and their order depend on the chain's configuration.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** What if multiple chains match? The first matching security chain is selected; test ordering and uncovered routes.
 
-### 30-second version
+#### 30-second version
 
 > `DelegatingFilterProxy` → `FilterChainProxy` → a `SecurityFilterChain`
 > matched by request. Key filters: `SecurityContextHolderFilter`,
@@ -3915,7 +3885,7 @@ using lambda DSL.
 
 **Q38. Explain OAuth2/OIDC flows and when to use each.**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 **Authorization Code + PKCE** for user login (web, SPA, mobile); the
 PKCE verifier protects the code from interception. **Client
@@ -3926,20 +3896,20 @@ OAuth2 delegates *authorisation*; OIDC adds an ID token (JWT) for
 tokens) and BFF/web apps are **clients**; the IdP (Keycloak, Okta,
 Google Identity Platform) is the authorisation server.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A browser exchanges a code using its verifier, receives tokens and calls an API with an access token. The ID token describes authentication for the client; it is not a generic API credential.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Service** — An application or platform capability exposed through a
   defined interface; a Kubernetes Service is a specific networking resource.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does PKCE replace client authentication? No; confidential clients still use their required authentication, and tokens must target the intended recipient.
 
-### 30-second version
+#### 30-second version
 
 > **Authorization Code + PKCE** for user login (web, SPA, mobile); the
 > PKCE verifier protects the code from interception. **Client
@@ -3947,25 +3917,25 @@ Google Identity Platform) is the authorisation server.
 
 **Q39. JWT vs opaque tokens: how do you revoke a JWT?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 A locally validated signed JWT does not by itself tell the API whether that particular token has been revoked. Short lifetimes, refresh-token policy, a denylist or another online policy check can limit exposure; opaque-token introspection centralizes the decision at network and caching cost. Key rotation generally affects more than one token. Verify signature, allowed algorithms, issuer, audience and time claims. A signed JWT payload is readable unless encryption is separately used.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A signed token can be verified without asking its issuer whether it was revoked. That independence saves a lookup but means revocation requires extra state, a policy check or waiting for expiry.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does key rotation revoke one user? Usually it affects all tokens signed by that key; choose the appropriate revocation granularity.
 
-### 30-second version
+#### 30-second version
 
 > JWT validation can be local, but immediate selective revocation needs extra state or policy. Compare short expiry, denylisting and introspection, and distinguish signing from encrypting token contents.
 
 **Q40. CORS vs CSRF: what are they and how do you configure them?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 CORS controls whether browser JavaScript can access cross-origin
 responses. Configure allowed origins, methods and headers through a
@@ -3982,21 +3952,21 @@ cookie, Basic or other ambient-authentication fallback. Check every enabled
 authentication mechanism and endpoint; a JWT stored in a cookie still
 needs a CSRF strategy.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A browser can automatically send a session cookie on a forged request. Blocking JavaScript from reading a cross-origin response does not necessarily prevent that request from changing server state.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **CORS** — Browser-enforced rules for cross-origin response access.
 - **CSRF** — Forging authenticated requests using ambient credentials.
 - **Ambient credentials** — Credentials automatically attached by the browser.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does storing a JWT in a cookie remove CSRF? No; the browser's automatic credential behavior is the relevant property.
 
-### 30-second version
+#### 30-second version
 
 > CORS and CSRF solve different problems. Keep CSRF protection when the browser
 > sends credentials automatically, including cookies and Basic authentication.
@@ -4007,7 +3977,7 @@ needs a CSRF strategy.
 
 **Q41. How do you store passwords and secure service-to-service calls?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Use adaptive, salted hashes: `DelegatingPasswordEncoder` with
 BCrypt/Argon2 (work factor tuned to ~250 ms), never SHA/MD5 alone.
@@ -4016,22 +3986,22 @@ service-account identity tokens (OIDC) verified by the receiver. Apply
 least privilege, rotate secrets, scan dependencies (OWASP
 Dependency-Check/Dependabot), and validate input to prevent injection.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Password verification deliberately performs expensive hashing using the stored salt and parameters. Service authentication instead proves a workload's identity; authorization still decides which operation it may perform.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **OWASP** — An organization that publishes widely used
   application-security guidance, including the OWASP Top 10.
 - **Service** — An application or platform capability exposed through a
   defined interface; a Kubernetes Service is a specific networking resource.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Should hash cost be a fixed copied number? No; calibrate against hardware, expected traffic and abuse resistance.
 
-### 30-second version
+#### 30-second version
 
 > Use adaptive, salted hashes: `DelegatingPasswordEncoder` with
 > BCrypt/Argon2 (work factor tuned to ~250 ms), never SHA/MD5 alone.
@@ -4040,7 +4010,7 @@ Dependency-Check/Dependabot), and validate input to prevent injection.
 
 **Q42. `@PreAuthorize` vs URL-based authorisation?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 URL rules (`requestMatchers("/admin/**").hasRole(...)`) give coarse
 perimeter control; method security (`@EnableMethodSecurity`,
@@ -4050,15 +4020,15 @@ and works for non-HTTP entry points (messaging). Use both (defence in
 depth); method security relies on proxies, so self-invocation bypasses
 it.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** An /orders route rule can require login, while a service method checks that the caller may read this particular order. The method boundary also covers callers that do not arrive through HTTP.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Can a self-call skip method advice? Yes with ordinary proxies; test the actual invocation path and object ownership checks.
 
-### 30-second version
+#### 30-second version
 
 > URL rules (`requestMatchers("/admin/**").hasRole(...)`) give coarse
 > perimeter control; method security (`@EnableMethodSecurity`,
@@ -4070,13 +4040,13 @@ it.
 
 ------------------------------------------------------------------------
 
-# G. Maven & Build
+## G. Maven & Build
 
 Start with the [Maven lifecycle and artifact foundation](#b1-how-does-maven-build-a-java-application), then dependency mediation, scopes and reproducible builds in Q43–Q46.
 
 **Q43. How does Maven resolve conflicting dependency versions?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 "Nearest definition wins" (shallowest in the tree), ties broken by first
 declaration. This can silently select an old, vulnerable version.
@@ -4086,22 +4056,22 @@ and the `maven-enforcer-plugin` (`dependencyConvergence`,
 `banDuplicatePomDependencyVersions`). Diagnose with
 `mvn dependency:tree -Dverbose -Dincludes=group:artifact`.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** If the same artifact appears along two paths, Maven mediates versions unless management or an explicit declaration determines the result. The winning dependency can satisfy compilation yet break a transitive caller at runtime.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **BOM** — Bill of Materials: a dependency-management document that
   centralizes compatible library versions.
 - **plugin** — A Maven component that provides build functionality such
   as compilation, testing or packaging.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** What do you inspect? The effective POM, resolved dependency tree and actual packaged artifact, followed by relevant compatibility tests.
 
-### 30-second version
+#### 30-second version
 
 > "Nearest definition wins" (shallowest in the tree), ties broken by
 > first declaration. This can silently select an old, vulnerable
@@ -4109,7 +4079,7 @@ and the `maven-enforcer-plugin` (`dependencyConvergence`,
 
 **Q44. How do you structure a multi-module project?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 A parent POM (packaging `pom`) holds `dependencyManagement`,
 `pluginManagement` and properties; `<modules>` aggregates children
@@ -4119,22 +4089,22 @@ versions. Build selectively with `-pl :service -am`, in parallel with
 `-T 1C`. Avoid shared "utils" dumping grounds that couple microservices
 (share contracts, not code).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A domain module should not depend back on the web application that uses it. Directed module dependencies make ownership and build order visible; common version configuration belongs in deliberate management.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **BOM** — Bill of Materials: a dependency-management document that
   centralizes compatible library versions.
 - **Service** — An application or platform capability exposed through a
   defined interface; a Kubernetes Service is a specific networking resource.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does listing a module make it inherit the parent? No; reactor aggregation and the child's parent declaration are separate.
 
-### 30-second version
+#### 30-second version
 
 > A parent POM (packaging `pom`) holds `dependencyManagement`,
 > `pluginManagement` and properties; `<modules>` aggregates children
@@ -4144,7 +4114,7 @@ versions. Build selectively with `-pl :service -am`, in parallel with
 
 **Q45. Profiles, plugins and what belongs where?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Profiles activate per environment/OS/property (`-Pci`) to vary plugins
 or dependencies, but avoid using them for runtime configuration (that
@@ -4154,20 +4124,20 @@ via `<executions>`; know `compiler`, `surefire`, `failsafe`, `jacoco`,
 `spring-boot-maven-plugin` (repackage/build-image), `jib`, `versions`,
 and `enforcer`.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A Maven profile changes the build model; a Spring profile changes application configuration. Mixing them can create separately built artifacts whose differences are hard to verify during promotion.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **plugin** — A Maven component that provides build functionality such
   as compilation, testing or packaging.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Where should plugin defaults live? pluginManagement centralizes defaults; the build must still activate the relevant plugin execution.
 
-### 30-second version
+#### 30-second version
 
 > Profiles activate per environment/OS/property (`-Pci`) to vary plugins
 > or dependencies, but avoid using them for runtime configuration (that
@@ -4179,7 +4149,7 @@ and `enforcer`.
 
 **Q46. How do you make builds fast, reproducible and secure?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Use the Maven wrapper (`mvnw`), pin plugin and dependency versions, set
 `project.build.outputTimestamp` for reproducible jars, cache `~/.m2` in
@@ -4189,20 +4159,20 @@ Registry/Nexus) configured in `settings.xml` mirrors with credentials
 from CI secrets; sign and scan artifacts, generate an SBOM (CycloneDX),
 and fail on critical CVEs.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Reproducibility means identical intended inputs yield identical artifact bytes. Pinning versions helps, but toolchains, generated timestamps and environment-sensitive tasks also affect the result.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **plugin** — A Maven component that provides build functionality such
   as compilation, testing or packaging.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** How do you verify it? Compare independent clean-build outputs and keep that check separate from performance benefits of caching.
 
-### 30-second version
+#### 30-second version
 
 > Use the Maven wrapper (`mvnw`), pin plugin and dependency versions,
 > set `project.build.outputTimestamp` for reproducible jars, cache
@@ -4214,14 +4184,14 @@ and fail on critical CVEs.
 
 ------------------------------------------------------------------------
 
-# H. Google Cloud Platform
+## H. Google Cloud Platform
 
 Start with the [cloud runtime foundation](#g1-what-must-you-understand-before-choosing-a-cloud-runtime), then compare services and operational guarantees in Q47–Q52.
 
 **Q47. Cloud Run vs GKE vs App Engine vs Compute Engine: how do you
 decide?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Cloud Run offers several execution models, including services, jobs and
 worker pools; choose the appropriate model before comparing it with GKE.
@@ -4232,22 +4202,22 @@ application. Avoid deciding solely from labels such as “stateless” or
 “background worker.” [Cloud Run
 overview](https://docs.cloud.google.com/run/docs/overview/what-is-cloud-run).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Compare a stateless HTTP service, a batch import and a runtime needing privileged host control. Each imposes different lifecycle and control requirements, so one product ranking cannot answer all three.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Cloud Run** — GCP's managed container execution platform where the
   platform handles servers and scales container instances.
 - **GKE** — Google Kubernetes Engine, Google's managed Kubernetes
   service.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** What is the senior trade-off? State the required platform capability and who will operate it when failures occur.
 
-### 30-second version
+#### 30-second version
 
 > Cloud Run offers several execution models, including services, jobs
 > and worker pools; choose the appropriate model before comparing it
@@ -4256,7 +4226,7 @@ overview](https://docs.cloud.google.com/run/docs/overview/what-is-cloud-run).
 
 **Q48. Explain Pub/Sub delivery, acknowledgements and ordering.**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Publishers send to a topic; subscriptions (pull, push or streaming-pull)
 get **at-least-once** delivery. If not acked within the ack deadline
@@ -4267,15 +4237,15 @@ topic** (`maxDeliveryAttempts`). Ordering keys give per-key order
 subscriptions in a region but you still need idempotent side effects.
 Use Spring Cloud GCP's `PubSubTemplate`/message channel adapters.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** An acknowledgement tells the subscription the message is complete. If a subscriber commits work but its acknowledgement is lost, redelivery can happen; ordering keys do not make business side effects atomic.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does exactly-once delivery remove every duplicate business event? No; separately published duplicates and effects outside the delivery protocol still need handling.
 
-### 30-second version
+#### 30-second version
 
 > Publishers send to a topic; subscriptions (pull, push or
 > streaming-pull) get **at-least-once** delivery. If not acked within
@@ -4284,7 +4254,7 @@ Use Spring Cloud GCP's `PubSubTemplate`/message channel adapters.
 
 **Q49. How do you run Cloud SQL reliably from Spring Boot?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Enable **HA** (regional, automatic failover), automated backups + PITR,
 read replicas for read scaling (route read-only transactions
@@ -4294,11 +4264,11 @@ Java Connector** or Auth Proxy (IAM auth, TLS). Size HikariCP carefully
 DB/proxy timeouts, and use PgBouncer/connection pooling for Cloud Run
 bursts.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Ten instances with 20 pooled connections can ask for 200 database sessions before administrative or other application demand. Autoscaling must respect the database's total capacity.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Cloud Run** — GCP's managed container execution platform where the
   platform handles servers and scales container instances.
@@ -4307,11 +4277,11 @@ bursts.
 - **proxy** — An object that wraps another object and intercepts method
   calls, commonly used by Spring for transactions, security and AOP.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does a connector provide network reachability? No; configure the required private/public network path as well as authentication and encryption.
 
-### 30-second version
+#### 30-second version
 
 > Enable **HA** (regional, automatic failover), automated backups +
 > PITR, read replicas for read scaling (route read-only transactions
@@ -4323,33 +4293,33 @@ bursts.
 
 **Q50. When would you choose Spanner or Bigtable over Cloud SQL?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Choose Spanner when distributed relational transactions and horizontal scale justify its cost and design constraints; choose Bigtable for suitable high-volume keyed/wide-column access patterns. Cloud SQL remains a strong fit for many relational workloads. There is no universal few-TB cutoff. Benchmark the actual query mix, consistency needs, key distribution and operational cost. Availability commitments depend on the selected service configuration and SLA conditions. [Spanner configuration guarantees](https://docs.cloud.google.com/spanner/docs/instance-configurations).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A relational transaction spanning business records, a high-volume keyed time-series lookup and an analytical scan imply different storage requirements. Test the hardest query and invariant before choosing a product.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Is there a universal data-size cutoff? No; throughput, indexes, consistency, configuration and cost determine suitability, not one TB threshold.
 
-### 30-second version
+#### 30-second version
 
 > Start from queries, invariants and measured scale. Spanner, Bigtable and Cloud SQL solve different workload problems; neither a headline SLA nor a fixed data-size threshold is enough to choose.
 
 **Q51. Explain IAM, service accounts and Workload Identity.**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 IAM roles collect permissions granted to principals at resource scopes. Use a dedicated least-privilege workload identity and avoid downloaded service-account keys. GKE federation can authorize the Kubernetes workload principal directly for supported resources or use IAM service-account impersonation. Cloud Run can attach a runtime service account. Test permissions and audit access; identity federation alone does not grant permission. [GKE identity model](https://docs.cloud.google.com/kubernetes-engine/docs/concepts/workload-identity).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Authentication establishes the workload identity; an IAM policy binds permissions to that identity at a resource boundary. Federation avoids distributing a long-lived private key, but does not replace authorization.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Cloud Run** — GCP's managed container execution platform where the
   platform handles servers and scales container instances.
@@ -4362,17 +4332,17 @@ IAM roles collect permissions granted to principals at resource scopes. Use a de
 - **Workload Identity** — A mechanism that lets workloads obtain cloud
   identities without embedding long-lived service-account keys.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Must GKE always impersonate a Google service account? No; supported resources can grant access directly to the federated workload principal.
 
-### 30-second version
+#### 30-second version
 
 > Federation supplies an identity and short-lived credentials; IAM grants access. Direct workload-principal bindings and service-account impersonation are distinct supported approaches.
 
 **Q52. Describe a secure GCP network and edge design.**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Global external Application Load Balancer + **Cloud Armor** (WAF, DDoS,
 rate limits) + managed certificates → services in a VPC with **private
@@ -4382,22 +4352,22 @@ Cloud NAT for outbound; firewall rules by tags/service accounts; VPC
 Service Controls for data-exfiltration perimeters; IAP for internal
 tools.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Trace inbound traffic through TLS termination and routing, then trace the service's outbound path to data and external APIs. Ingress controls, egress controls and IAM protect different boundaries.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Cloud Run** — GCP's managed container execution platform where the
   platform handles servers and scales container instances.
 - **VPC Service Controls** — Google Cloud controls that constrain access
   to supported managed services using service perimeters.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does a private IP prove authorization? No; a reachable workload must still authenticate and receive only permitted access.
 
-### 30-second version
+#### 30-second version
 
 > Global external Application Load Balancer + **Cloud Armor** (WAF,
 > DDoS, rate limits) + managed certificates → services in a VPC with
@@ -4409,7 +4379,7 @@ tools.
 
 **Q53. How would you design CI/CD on GCP?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Commit → **Cloud Build** trigger: `mvn verify` (unit + Testcontainers
 integration), static analysis/SCA, build image with Jib/Buildpacks, push
@@ -4419,20 +4389,20 @@ prod with approvals and canary, automated rollback on failed SLO checks.
 Infrastructure via Terraform with remote state; GitOps (Config Sync/Argo
 CD) is an alternative.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Build and validate an artifact once, then promote its immutable digest across environments. A release controller changes deployment state; rollback and verification require explicit policy and signals.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **SLO** — Service Level Objective: a measurable reliability target,
   such as 99.9% successful requests.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does the product name guarantee automated rollback? No; explain the configured checks, failure trigger and actual rollback mechanism.
 
-### 30-second version
+#### 30-second version
 
 > Commit → **Cloud Build** trigger: `mvn verify` (unit + Testcontainers
 > integration), static analysis/SCA, build image with Jib/Buildpacks,
@@ -4444,7 +4414,7 @@ CD) is an alternative.
 
 **Q54. How do you do observability and cost control on GCP?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Structured JSON logs with `trace` fields (Cloud Logging correlates to
 Cloud Trace), Micrometer → Managed Service for Prometheus/Cloud
@@ -4454,11 +4424,11 @@ discounts, Spot VMs for batch, autoscaling, log exclusion/retention
 policies, BigQuery partitioning/clustering, budgets + alerts, and labels
 for cost attribution.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Measure cost per useful outcome alongside total spend. A logging change can reduce storage costs but remove diagnostic evidence; right-sizing can save money but create saturation.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Service** — An application or platform capability exposed through a
   defined interface; a Kubernetes Service is a specific networking resource.
@@ -4467,11 +4437,11 @@ for cost attribution.
 - **trace** — A representation of one request's path through distributed
   services.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does a budget alert cap expenditure? An alert alone reports a threshold; stopping or limiting spend requires a separate control.
 
-### 30-second version
+#### 30-second version
 
 > Structured JSON logs with `trace` fields (Cloud Logging correlates to
 > Cloud Trace), Micrometer → Managed Service for Prometheus/Cloud
@@ -4483,9 +4453,9 @@ for cost attribution.
 
 ------------------------------------------------------------------------
 
-# I. Docker & Kubernetes for Java
+## I. Docker & Kubernetes for Java
 
-### D1 How do an image, container, Pod and Deployment differ
+#### D1 How do an image, container, Pod and Deployment differ
 
 **Strong answer:** an image packages an application and its runtime filesystem; a container is an executing instance with configured isolation/resources. A Kubernetes Pod groups containers with a shared network/lifecycle context; a Deployment manages a desired set of replaceable Pods and rollout behavior. Local files and process memory are not automatically durable or shared across replicas.
 
@@ -4495,7 +4465,7 @@ for cost attribution.
 
 **Q55. How do you build a production Docker image for Spring Boot?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Multi-stage or Jib/Buildpacks; **layered jars**
 (`java -Djarmode=tools extract --layers`) so dependencies cache
@@ -4504,15 +4474,15 @@ tags/digests, **non-root user**, read-only filesystem, no secrets in
 layers, `.dockerignore`, vulnerability scanning, and exec-form
 `ENTRYPOINT` so the JVM receives SIGTERM for graceful shutdown.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Image layers separate stable dependencies from frequently changing application files, improving reuse. Running without root and removing unnecessary tools reduces privileges and image contents; it does not replace patching.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Why use exec-form startup? It allows the intended JVM process to receive lifecycle signals directly.
 
-### 30-second version
+#### 30-second version
 
 > Multi-stage or Jib/Buildpacks; **layered jars**
 > (`java -Djarmode=tools extract --layers`) so dependencies cache
@@ -4524,15 +4494,15 @@ layers, `.dockerignore`, vulnerability scanning, and exec-form
 **Q56. Why do Java containers get `OOMKilled`, and how do you tune the
 JVM?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Container memory includes heap, metaspace, stacks, direct buffers, code cache, GC structures and other native allocations. Setting Xmx equal to the container limit leaves no headroom when the heap grows; a kill is a risk, not a guaranteed immediate outcome. Measure native and heap demand before choosing MaxRAMPercentage or Xmx. Bound threads and buffers, inspect termination reasons, and distinguish a Java OutOfMemoryError from an external cgroup OOM kill, which may produce no heap dump. CPU throttling can also worsen latency and GC progress.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A container accounts for heap plus native allocations, stacks and other process memory. A heap below its maximum does not prove the process is below its cgroup limit.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **CAP** — The distributed-systems theorem describing the trade-off
   among consistency, availability and partition tolerance when a network
@@ -4543,17 +4513,17 @@ Container memory includes heap, metaspace, stacks, direct buffers, code cache, G
 - **JIT** — Just-in-time compilation: runtime compilation of frequently
   executed bytecode into optimized native machine code.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Will every container kill produce a Java heap dump? No; an external OOM kill can terminate the process before Java handles any exception.
 
-### 30-second version
+#### 30-second version
 
 > The heap is only part of process memory. Leave measured headroom, inspect native usage and distinguish JVM allocation failure from a container kill. A fixed heap percentage is a starting hypothesis, not a universal safe setting.
 
 **Q57. Core Kubernetes objects and probes you must explain.**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 **Pod** (smallest unit) → **Deployment/ReplicaSet** (rolling updates) →
 **Service** (stable virtual IP, load balancing) → **Ingress/Gateway**
@@ -4564,11 +4534,11 @@ boot), **readiness** (take out of rotation; Boot
 unrecoverable state; never include downstream dependencies or you cause
 restart storms).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A Deployment maintains desired replicas, a Service selects endpoints, and readiness determines whether an endpoint should receive traffic. A liveness failure asks for restart, which is a different action.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Deployment** — A Kubernetes controller that manages replicated Pods
   and supports controlled rollout of new versions.
@@ -4577,11 +4547,11 @@ restart storms).
 - **Service** — A stable Kubernetes networking abstraction that exposes
   a group of Pods behind a stable endpoint.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Why separate startup and liveness? Slow healthy initialization should not repeatedly trigger restarts before the application can become ready.
 
-### 30-second version
+#### 30-second version
 
 > **Pod** (smallest unit) → **Deployment/ReplicaSet** (rolling updates)
 > → **Service** (stable virtual IP, load balancing) →
@@ -4594,7 +4564,7 @@ restart storms).
 
 **Q58. A pod is in `CrashLoopBackOff`. How do you troubleshoot?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 `kubectl describe pod` (events, exit code, OOMKilled, probe failures),
 `kubectl logs --previous`, check config/secret mounts and env vars,
@@ -4603,11 +4573,11 @@ image pull and tag, resource limits, failing liveness/startup probes
 (DNS, network policy, DB credentials), then `kubectl exec`/ephemeral
 debug container. Fix root cause and add alerting on restart count.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** CrashLoopBackOff describes delayed restart attempts after repeated exits. Read the previous container's logs and termination reason to distinguish application failure, a killed process and a probe-driven restart.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **OOMKilled** — A container termination status indicating the
   operating system killed the process because it exceeded its memory
@@ -4615,11 +4585,11 @@ debug container. Fix root cause and add alerting on restart count.
 - **Pod** — Kubernetes' smallest deployable unit, containing one or more
   containers that share networking and storage context.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Will increasing the restart delay fix it? No; repair the cause and verify the workload reaches and remains ready.
 
-### 30-second version
+#### 30-second version
 
 > `kubectl describe pod` (events, exit code, OOMKilled, probe failures),
 > `kubectl logs --previous`, check config/secret mounts and env vars,
@@ -4631,16 +4601,17 @@ debug container. Fix root cause and add alerting on restart count.
 
 ------------------------------------------------------------------------
 
-## Next: Vol. 3
+### Next: Vol. 3
 
 Scenario-based/behavioral questions, system-design walkthroughs and more
 coding programs with solutions.
 
 ------------------------------------------------------------------------
 
-<!-- ===== Part 4: Question Bank Vol. 3 (Scenarios, System Design, Coding) ===== -->
+<a id="part-4"></a>
+## Part 04 - Question Bank Vol. 3 - Scenarios, design and coding
 
-# Senior Java Question Bank, Vol. 3
+## Senior Java Question Bank, Vol. 3
 
 **Scenarios · System Design · Coding Programs** (Q59–Q74 + 3 designs + 6
 programs) For scenarios use: **Detect → Mitigate → Root cause → Fix →
@@ -4648,11 +4619,11 @@ Prevent.** Always quote a metric.
 
 ------------------------------------------------------------------------
 
-# J. Production Scenarios
+## J. Production Scenarios
 
 **Q59. Production CPU is at 95%. What do you do?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 First mitigate (scale out, or roll back the latest deploy if
 correlated). Then find the hot threads: `top -H -p <pid>`, convert the
@@ -4662,11 +4633,11 @@ infinite/regex-backtracking loops, excessive GC (check GC logs),
 serialization hot spots, N+1 queries, or a busy-spinning consumer. Fix,
 add a load test and CPU alert.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** High CPU is a symptom; a profile identifies where execution time goes. Compare application work with GC, retries and busy loops, then choose mitigation that does not overload downstream services.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **GC** — Garbage collection: automatic identification and reclamation
   of heap memory that is no longer reachable.
@@ -4674,11 +4645,11 @@ add a load test and CPU alert.
   N additional queries load related data, causing excessive database
   round trips.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Why capture several samples? A single stack can miss intermittent hot paths and cannot establish their share of CPU time.
 
-### 30-second version
+#### 30-second version
 
 > First mitigate (scale out, or roll back the latest deploy if
 > correlated). Then find the hot threads: `top -H -p <pid>`, convert the
@@ -4688,7 +4659,7 @@ add a load test and CPU alert.
 **Q60. Heap keeps growing and the pod is OOMKilled. How do you
 investigate?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Confirm the type: heap (Java `OutOfMemoryError`) vs container kill
 (native memory/limit). Capture a heap dump
@@ -4699,21 +4670,21 @@ streams/connections, listener registration without removal, large result
 sets. For native growth use NMT (`-XX:NativeMemoryTracking`). Fix with
 bounded caches (Caffeine max size/TTL) and pagination/streaming.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Track the live set after collections and follow retaining paths from GC roots. A large temporary allocation and an object retained forever require different fixes.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **GC** — Garbage collection: automatic identification and reclamation
   of heap memory that is no longer reachable.
 - **heap** — JVM memory where Java objects are allocated.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** What if the heap is stable but memory rises? Investigate native/direct memory, threads and container accounting instead of assuming a heap leak.
 
-### 30-second version
+#### 30-second version
 
 > Confirm the type: heap (Java `OutOfMemoryError`) vs container kill
 > (native memory/limit). Capture a heap dump
@@ -4723,7 +4694,7 @@ bounded caches (Caffeine max size/TTL) and pagination/streaming.
 **Q61. An endpoint's p99 jumped from 200 ms to 3 s. Walk me through
 it.**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Start from the symptom: is it all requests or specific ones, and since
 when (deploy, traffic, data growth)? Use distributed traces to find the
@@ -4733,11 +4704,11 @@ downstream latency, thread-pool saturation and cold caches. Fix the
 dominant span, not guesses; then add a latency SLO alert and a
 regression performance test.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A percentile describes the slow tail of a distribution. Break latency into queueing, connection acquisition, dependency calls and local processing, then compare the changed component with earlier behavior.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **GC** — Garbage collection: automatic identification and reclamation
   of heap memory that is no longer reachable.
@@ -4746,11 +4717,11 @@ regression performance test.
 - **span** — One timed operation within a distributed trace, such as an
   HTTP call or database query.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Can averages prove the fix? No; validate the relevant percentiles, errors and load distribution under comparable traffic.
 
-### 30-second version
+#### 30-second version
 
 > Start from the symptom: is it all requests or specific ones, and since
 > when (deploy, traffic, data growth)? Use distributed traces to find
@@ -4759,7 +4730,7 @@ regression performance test.
 **Q62. "Connection is not available, request timed out after 30000ms."
 Diagnose.**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Hikari pool is exhausted: either too few connections for the load, or
 connections are held too long. Look for transactions spanning remote
@@ -4770,20 +4741,20 @@ connections across all pods must stay under the DB limit. Shorten
 transaction scope, add timeouts, and tune pool sizing (small pools are
 usually faster).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Borrowing a connection waits when no usable session is available. Slow SQL, long transactions, leaked ownership or failed connection creation can all produce this symptom.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **transaction** — A unit of database work treated as one logical
   operation with defined commit/rollback behavior.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Why not immediately enlarge the pool? More concurrent SQL can saturate the same database and worsen latency across every instance.
 
-### 30-second version
+#### 30-second version
 
 > Hikari pool is exhausted: either too few connections for the load, or
 > connections are held too long. Look for transactions spanning remote
@@ -4793,7 +4764,7 @@ usually faster).
 
 **Q63. Customers were charged twice. How do you prevent it?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Causes: client retries, gateway timeouts, at-least-once messaging.
 Defence: an `Idempotency-Key` on the request stored with a unique
@@ -4803,11 +4774,11 @@ keyed by event ID; call the PSP with its own idempotency key;
 reconciliation job comparing PSP records with ours. Then add detection
 alerts for duplicates.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** The provider may charge successfully while the caller times out before saving the response. A repeated request must refer to the same durable operation and provider idempotency key.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **idempotency** — The property that repeating the same logical request
   produces the same intended outcome rather than creating duplicate
@@ -4816,11 +4787,11 @@ alerts for duplicates.
   updates, commonly using a version column, instead of holding a
   database lock throughout the transaction.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** What if the same key has different payment details? Reject the mismatch rather than returning or executing a result for another request.
 
-### 30-second version
+#### 30-second version
 
 > Causes: client retries, gateway timeouts, at-least-once messaging.
 > Defence: an `Idempotency-Key` on the request stored with a unique
@@ -4831,7 +4802,7 @@ alerts for duplicates.
 
 **Q64. How do you migrate the database schema with zero downtime?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Expand → migrate → contract. Deploy a backward-compatible schema first
 (add nullable column/new table), release code that writes to both (or
@@ -4841,15 +4812,15 @@ Flyway/Liquibase, avoid long locks (`CREATE INDEX CONCURRENTLY`), and
 test on production-sized data. Never couple a destructive migration with
 the same release.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** During rollout, old code still uses the old schema while new code introduces the replacement. Expand support first, backfill with verification, then retire old readers/writers before contraction.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does application rollback restore dropped data? No; preserve a compatible rollback window and test migration failure/restart behavior.
 
-### 30-second version
+#### 30-second version
 
 > Expand → migrate → contract. Deploy a backward-compatible schema first
 > (add nullable column/new table), release code that writes to both (or
@@ -4858,7 +4829,7 @@ the same release.
 
 **Q65. Kafka consumer lag keeps growing. What now?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Check whether it is a producer spike (temporary) or a slow consumer
 (persistent). Look at per-partition lag, processing time per record,
@@ -4868,15 +4839,15 @@ safely, optimise the slow dependency, increase partitions (with ordering
 implications), or shed non-critical work. Alert on lag *growth rate* and
 time-to-drain.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Lag grows when arrival rate exceeds completion rate. A single slow partition can dominate even while other consumers are idle, so inspect partition-level work rather than only group averages.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** How do you estimate recovery? Compare backlog with sustainable processing capacity above the continuing arrival rate.
 
-### 30-second version
+#### 30-second version
 
 > Check whether it is a producer spike (temporary) or a slow consumer
 > (persistent). Look at per-partition lag, processing time per record,
@@ -4884,7 +4855,7 @@ time-to-drain.
 
 **Q66. REST or gRPC or messaging between services?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 REST (JSON) for public/external APIs and simple CRUD: ubiquitous,
 cacheable, human-debuggable. gRPC for internal, latency-sensitive,
@@ -4894,20 +4865,20 @@ asynchronous workflows, fan-out and decoupling in time. Mixed in
 practice: REST at the edge, gRPC for hot internal paths, events for
 cross-domain state changes.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A synchronous call couples the caller's completion to the callee's availability. A message decouples completion in time but adds delivery, freshness and workflow-state questions.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **gRPC** — A high-performance RPC framework commonly using HTTP/2 and
   Protocol Buffers for service-to-service communication.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Is messaging automatically more reliable? Only with durable publication, bounded retries, idempotent processing and an operational recovery path.
 
-### 30-second version
+#### 30-second version
 
 > REST (JSON) for public/external APIs and simple CRUD: ubiquitous,
 > cacheable, human-debuggable. gRPC for internal, latency-sensitive,
@@ -4916,7 +4887,7 @@ cross-domain state changes.
 
 **Q67. Describe a major incident you led.**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Use STAR with numbers: *Situation* (checkout error rate 18%, revenue
 impact), *Task* (incident commander), *Action* (declared severity,
@@ -4926,15 +4897,15 @@ post-mortem**: root cause (connection leak after a library upgrade),
 five-whys, action items (alerts, canary, load test) and what you
 personally changed afterwards.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Describe your actual responsibility and decisions in the incident, separate from the team's work. Explain what evidence supported mitigation, what restored customer service and how recurrence was reduced.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** What if you lack exact numbers? Use honest ranges or qualitative evidence; never adopt the guide's illustrative incident as your own.
 
-### 30-second version
+#### 30-second version
 
 > Use STAR with numbers: *Situation* (checkout error rate 18%, revenue
 > impact), *Task* (incident commander), *Action* (declared severity,
@@ -4946,7 +4917,7 @@ personally changed afterwards.
 
 **Q68. How do you upgrade from Java 8/Spring Boot 2 to Java 21/Boot 3?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Separate the JDK, framework, dependency and behavioral changes. For a
 legacy Boot 2 application, Boot 2.7 may be an intermediate migration
@@ -4960,15 +4931,15 @@ its own migration requirements; “modern Spring” is not synonymous with
 Boot 3. [Boot 4
 requirements](https://docs.spring.io/spring-boot/4.0/system-requirements.html).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A JDK upgrade can change runtime behavior while a Boot upgrade changes framework contracts and managed dependencies. Separate these dimensions so a failing test points to a manageable cause.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Why not globally rename javax? Java SE packages such as javax.sql remain; only the relevant Jakarta EE APIs migrated.
 
-### 30-second version
+#### 30-second version
 
 > Separate the JDK, framework, dependency and behavioral changes. For a
 > legacy Boot 2 application, Boot 2.7 may be an intermediate migration
@@ -4976,7 +4947,7 @@ requirements](https://docs.spring.io/spring-boot/4.0/system-requirements.html).
 
 **Q69. How do you design a multi-tenant SaaS service?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Choose isolation by risk and cost: shared schema with `tenant_id`
 (cheapest; enforce via Hibernate filters/row-level security),
@@ -4986,15 +4957,15 @@ claim in a filter, propagate in context (MDC, `TenantContext` cleaned in
 `finally`), key caches by tenant, rate-limit per tenant, and test for
 cross-tenant leakage.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Tenant identity must constrain database access, cache keys and background work. A correctly filtered query is insufficient if a later cache lookup ignores the tenant.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does a Hibernate filter cover every access path? No; audit native SQL and other bypasses, and test authorization across tenant boundaries.
 
-### 30-second version
+#### 30-second version
 
 > Choose isolation by risk and cost: shared schema with `tenant_id`
 > (cheapest; enforce via Hibernate filters/row-level security),
@@ -5006,7 +4977,7 @@ cross-tenant leakage.
 
 **Q70. Reports need data from five services. How do you build them?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Avoid cross-service joins at query time. Publish domain events to build
 a **read model** (a reporting store, BigQuery or Elasticsearch) via a
@@ -5015,22 +4986,22 @@ consistency, expose freshness, and version event schemas. API
 composition is acceptable for small, low-volume cases but couples
 availability.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A report assembled synchronously from five services inherits five latency and availability dependencies. A projection makes reads simpler by accepting a defined delay between source changes and reporting visibility.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **CDC** — Change Data Capture: publishing database changes by reading
   the database's change log or transaction log.
 - **Service** — An application or platform capability exposed through a
   defined interface; a Kubernetes Service is a specific networking resource.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** How do you recover a bad projection? Retain a rebuildable source and reconcile missing, duplicate and out-of-order updates.
 
-### 30-second version
+#### 30-second version
 
 > Avoid cross-service joins at query time. Publish domain events to
 > build a **read model** (a reporting store, BigQuery or Elasticsearch)
@@ -5038,7 +5009,7 @@ availability.
 
 **Q71. You disagree with your architect's design. What do you do?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Show collaborative maturity: understand their constraints, write down
 the options with trade-offs and data (a quick prototype or benchmark),
@@ -5047,15 +5018,15 @@ propose a decision record (ADR) and a reversible experiment, then
 evidence if it fails. Never go around people or argue opinions without
 data.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Turn disagreement into a decision about explicit constraints. Compare two feasible designs against the same criteria and document what evidence would justify revisiting the choice.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** What makes the answer credible? A real example of listening, changing or defending your view, and supporting the resulting decision.
 
-### 30-second version
+#### 30-second version
 
 > Show collaborative maturity: understand their constraints, write down
 > the options with trade-offs and data (a quick prototype or benchmark),
@@ -5066,7 +5037,7 @@ data.
 
 **Q72. How do you improve code quality across a team?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Automate first: formatter, Checkstyle/SpotBugs/Sonar quality gates,
 coverage on new code, dependency scanning, in CI. Then human practices:
@@ -5074,20 +5045,20 @@ small PRs, review checklist (design, tests, security, observability),
 pairing, ADRs, a testing pyramid, runbooks, and tech-debt budget (e.g.,
 15–20% per sprint). Mentor through review comments that explain *why*.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Choose one recurring defect class, add a useful automated check, and coach reviewers on the underlying reasoning. Measure fewer escapes or faster reviews rather than the number of rules added.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **observability** — The ability to understand internal system behavior
   from telemetry such as logs, metrics and traces.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Can a quality gate replace review? No; it detects encoded conditions and still needs judgment about behavior and design.
 
-### 30-second version
+#### 30-second version
 
 > Automate first: formatter, Checkstyle/SpotBugs/Sonar quality gates,
 > coverage on new code, dependency scanning, in CI. Then human
@@ -5097,7 +5068,7 @@ pairing, ADRs, a testing pyramid, runbooks, and tech-debt budget (e.g.,
 
 **Q73. Deadline is tight and scope is large. How do you handle it?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Clarify the business goal, slice into a thin end-to-end MVP, rank by
 value/risk, surface risks and options early (scope, date, resources:
@@ -5105,20 +5076,20 @@ pick two), use feature flags to ship incrementally, avoid skipping tests
 on critical paths, and record deliberate shortcuts as tracked debt.
 Communicate proactively rather than surprise stakeholders.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Identify the smallest complete user outcome and make excluded scope visible. Reducing scope can preserve validation of that outcome; secretly omitting critical checks changes delivery risk.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Business goal** — The outcome the team is trying to achieve, used to
   prioritize scope and evaluate delivery trade-offs.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Do more people always recover the date? No; onboarding and coordination can increase the critical path, so explain realistic options.
 
-### 30-second version
+#### 30-second version
 
 > Clarify the business goal, slice into a thin end-to-end MVP, rank by
 > value/risk, surface risks and options early (scope, date, resources:
@@ -5129,7 +5100,7 @@ Communicate proactively rather than surprise stakeholders.
 **Q74. How do you decide between monolith and microservices for a new
 product?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Start with a **modular monolith** unless there are clear reasons:
 independent scaling, separate team ownership, different
@@ -5138,21 +5109,21 @@ failures, distributed data, deployment and observability overhead; a
 well-structured monolith with enforced module boundaries (ArchUnit,
 Spring Modulith) can be split later when pressure is proven.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A modular monolith can keep inventory and billing boundaries explicit within one deployment. Splitting later is easier if ownership and APIs are already clear.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Modular monolith** — A single deployment with explicit internal module boundaries.
 - **Microservice** — An independently deployable service with a defined responsibility and data ownership.
 - **Distributed monolith** — Separate services whose coupling forces coordinated changes or deployment.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** What evidence justifies a service split? A concrete need for independent change, scaling or isolation that outweighs distributed-operation costs.
 
-### 30-second version
+#### 30-second version
 
 > Start with a **modular monolith** unless there are clear reasons:
 > independent scaling, separate team ownership, different
@@ -5164,7 +5135,7 @@ Spring Modulith) can be split later when pressure is proven.
 
 ------------------------------------------------------------------------
 
-# K. System Design Walkthroughs (condensed)
+## K. System Design Walkthroughs (condensed)
 
 Use the [requirements-first design sequence](#module-7-system-design-prompts-practice-45-min-each) before the examples: requirements → estimates → API/data → architecture → failure/scaling analysis → trade-offs. These prompts assume that interview process.
 
@@ -5199,9 +5170,9 @@ or receive a push.
 
 ------------------------------------------------------------------------
 
-# L. Coding Programs with Solutions
+## L. Coding Programs with Solutions
 
-### 1. Print odd/even numbers alternately using two threads
+#### 1. Print odd/even numbers alternately using two threads
 
 **Derive the approach:** the shared counter and whose turn it is form
 one invariant. Test the predicate and update the counter under the same
@@ -5253,7 +5224,7 @@ class OddEven {
 *Say:* `wait` always in a `while` loop (spurious wakeups); the lock must
 be held to call `wait/notify`.
 
-### 2. Retry utility with exponential backoff + jitter
+#### 2. Retry utility with exponential backoff + jitter
 
 **Derive the approach:** a transient failure may recover, but immediate
 synchronized retries increase pressure. Retry only safe operations, with
@@ -5297,7 +5268,7 @@ static <T> T retry(Callable<T> task, int maxAttempts, long baseMs) throws Except
 *Say:* retry only idempotent operations and transient errors; cap total
 time; in Spring use Resilience4j `@Retry`.
 
-### 3. Top K frequent elements (min-heap, O(n log k))
+#### 3. Top K frequent elements (min-heap, O(n log k))
 
 **Derive the approach:** first count values, then retain only the k
 largest frequencies. A min-heap exposes the weakest retained candidate
@@ -5337,7 +5308,7 @@ required. Heap iteration is not ranked output; define ordering and
 tie-breaking. *Alternative:* frequency buckets trade more space for
 linear expected processing.
 
-### 4. Group anagrams
+#### 4. Group anagrams
 
 **Derive the approach:** two words belong together when their character
 multisets match. Build a canonical representation, then group by that
@@ -5374,7 +5345,7 @@ output storage. A 26-count key gives O(n · k) only under an explicit
 lowercase-English alphabet contract; encode the counts without ambiguous
 concatenation.
 
-### 5. Custom `@LogExecutionTime` with Spring AOP
+#### 5. Custom `@LogExecutionTime` with Spring AOP
 
 **Derive the approach:** timing is repeated across methods, so intercept
 the method boundary and record elapsed monotonic time in `finally` to
@@ -5417,7 +5388,7 @@ class TimingAspect {
 *Say:* needs `spring-boot-starter-aop`; works only through the proxy (no
 self-invocation); prefer Micrometer `@Timed` for real metrics.
 
-### 6. Create and fix a deadlock
+#### 6. Create and fix a deadlock
 
 **Derive the approach:** opposite lock acquisition orders permit a
 cycle. Impose a total order on accounts and acquire both locks in that
@@ -5456,7 +5427,7 @@ void transfer(Account from, Account to, long amt) {
 single-writer design; detect with `jstack` ("Found one Java-level
 deadlock").
 
-### 7. Idempotent event consumer with PostgreSQL and Spring JDBC
+#### 7. Idempotent event consumer with PostgreSQL and Spring JDBC
 
 **Derive the approach:** redelivery must not apply a business change
 twice. A unique event marker and local business update must commit
@@ -5530,7 +5501,7 @@ against the real database.
 
 ------------------------------------------------------------------------
 
-## Final Readiness Checklist
+### Final Readiness Checklist
 
 - ~100 Q&As covered across the course and Vols. 1–3; explain 20 of them
   aloud without notes
@@ -5540,26 +5511,27 @@ against the real database.
 
 ------------------------------------------------------------------------
 
-<!-- ===== Part 5: Question Bank Vol. 4 (Modern Java, Spring Ecosystem, DB, Security, Quality) ===== -->
+<a id="part-5"></a>
+## Part 05 - Question Bank Vol. 4 - Modern Java and the Spring ecosystem
 
-# Senior Java Question Bank, Vol. 4
+## Senior Java Question Bank, Vol. 4
 
 **Modern Java · Design · Spring Ecosystem · Databases · Security ·
 Quality** (Q75–Q98 + 4 programs)
 
 ------------------------------------------------------------------------
 
-# M. Modern Java & Design
+## M. Modern Java & Design
 
-## Stream questions before pitfalls
+### Stream questions before pitfalls
 
-### ST1 How do lambdas, functional interfaces and streams fit together
+#### ST1 How do lambdas, functional interfaces and streams fit together
 
 **Foundation:** A lambda supplies behavior for a functional interface, such as a predicate or mapping function. A stream describes a computation over a source; it is not a collection storing the results. Explain source → intermediate operations such as filter/map → terminal operation such as collect/reduce.
 
 **Mid-level follow-up:** Intermediate operations are lazy. A terminal operation drives evaluation, which can short-circuit or omit work through valid optimizations. Do not rely on side effects in a mapping function to perform required work.
 
-### ST2 How do you choose map, flatMap, reduction and collection
+#### ST2 How do you choose map, flatMap, reduction and collection
 
 **Foundation:** map transforms each element; flatMap flattens resulting streams. Reduction combines values; collection accumulates a result such as a list or grouped map.
 
@@ -5569,25 +5541,25 @@ Quality** (Q75–Q98 + 4 programs)
 
 **Q75. Which modern Java features do you use, and why?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Records (Java 16) are shallowly immutable data carriers with generated accessors, equality and display methods; mutable components still require deliberate copying/ownership. Sealed types (17) restrict variants, and pattern matching for switch (21) can make handling those variants explicit. Use these for suitable DTOs and domain results, alongside features such as text blocks and virtual threads when their contracts fit. Explain a concrete benefit and runtime baseline rather than assuming every feature is always preferable. [Record contract](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Record.html).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A record removes boilerplate for a data shape; a sealed hierarchy restricts its permitted variants. These solve different problems. A record containing a mutable list still exposes mutable contents unless ownership is handled.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Which feature would you defend in an interview? Explain one real simplification and its compatibility or mutability limit, rather than reciting release names.
 
-### 30-second version
+#### 30-second version
 
 > Records reduce data-carrier boilerplate but are shallowly immutable. Sealed types and pattern matching express bounded alternatives. Justify a feature through clearer behavior, its limits and the supported JDK.
 
 **Q76. What are the common Stream pitfalls?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Streams are lazy: nothing runs without a terminal operation, and a
 stream can be consumed only once. Pitfalls: side effects in `map/peek`
@@ -5600,15 +5572,15 @@ simple loops where performance or debuggability matters. Know `flatMap`
 `partitioningBy`, `reduce` and short-circuit ops (`findFirst`,
 `anyMatch`).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A stream pipeline describes transformations; a terminal operation produces the result. Short-circuiting and optimization mean not every intermediate callback must run, so required side effects do not belong in peek.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** What happens with duplicate map keys? Decide whether to reject, merge or group them; an arbitrary merge can silently lose business data.
 
-### 30-second version
+#### 30-second version
 
 > Streams are lazy: nothing runs without a terminal operation, and a
 > stream can be consumed only once. Pitfalls: side effects in `map/peek`
@@ -5620,7 +5592,7 @@ simple loops where performance or debuggability matters. Know `flatMap`
 
 **Q77. How should `Optional` be used?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 As a **return type** that signals "may be absent", chained with `map`,
 `flatMap`, `filter`, `orElseGet` (lazy, unlike `orElse` which always
@@ -5631,20 +5603,20 @@ serialization, and never call `get()` without checking.
 repository finders and handle absence explicitly at the service
 boundary.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A missing customer is an expected result distinct from a failed database call. Optional can model absence, while an exception can still carry the operational failure.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Application service** — A component coordinating a business use case;
   it may be a Spring-managed bean and is not a Kubernetes Service.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Why prefer orElseGet for expensive fallback? Its supplier is invoked only when empty; an orElse argument is evaluated before the method call.
 
-### 30-second version
+#### 30-second version
 
 > As a **return type** that signals "may be absent", chained with `map`,
 > `flatMap`, `filter`, `orElseGet` (lazy, unlike `orElse` which always
@@ -5654,7 +5626,7 @@ boundary.
 
 **Q78. Explain SOLID with real examples.**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 **S**: a class has one reason to change (separate `OrderService` from
 `EmailSender`). **O**: extend behaviour without editing existing code
@@ -5666,15 +5638,15 @@ it). **I**: small, role-specific interfaces rather than a fat one.
 Interviewers want a story: "We had a 600-line switch on payment type;
 replaced it with strategies registered in a map keyed by type."
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** When adding a payment method, isolate the varying behavior behind a useful contract. The design succeeds if callers can use every implementation without new special cases that violate its promised behavior.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does SOLID require an interface for every class? No; add boundaries where they clarify responsibility or variation, not mechanically.
 
-### 30-second version
+#### 30-second version
 
 > **S**: a class has one reason to change (separate `OrderService` from
 > `EmailSender`). **O**: extend behaviour without editing existing code
@@ -5682,15 +5654,15 @@ replaced it with strategies registered in a map keyed by type."
 
 **Q79. Which design patterns does Spring itself use?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Explain patterns through actual collaboration: BeanFactory creates and resolves beans; AOP proxies intercept calls; DispatcherServlet centralizes request dispatch; strategies such as PasswordEncoder vary behavior; application events decouple publishers from listeners. Spring template classes commonly combine a fixed resource-management workflow with callbacks, so calling every JdbcTemplate use classic inheritance-based Template Method is imprecise. Singleton bean scope is per bean definition per container, not a JVM-wide GoF singleton.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A transaction proxy wraps a service call; a strategy such as PasswordEncoder supplies replaceable behavior. Show how the call moves through the objects and why that indirection helps.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **AOP** — Aspect-oriented programming: applying cross-cutting behavior
   such as transactions, logging or security around method execution.
@@ -5698,17 +5670,17 @@ Explain patterns through actual collaboration: BeanFactory creates and resolves 
 - **proxy** — An object that wraps another object and intercepts method
   calls, commonly used by Spring for transactions, security and AOP.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Are all classes named Template literal Template Method implementations? No; Spring templates also rely heavily on callbacks. Explain their actual structure.
 
-### 30-second version
+#### 30-second version
 
 > Choose a pattern and trace the objects involved. A proxy intercepts, a strategy varies behavior, and a template manages a workflow with callbacks. Explain scope and structure instead of matching names to a pattern list.
 
 **Q80. Describe the JVM architecture and JIT compilation.**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Class loaders load bytecode into the runtime data areas: heap (objects),
 metaspace (class metadata, native memory), per-thread stacks (frames,
@@ -5720,19 +5692,19 @@ break. Consequences: warm-up matters for benchmarks (use JMH), and
 cold-start-sensitive workloads (serverless) benefit from CDS/AppCDS,
 CRaC or GraalVM native image.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A frequently executed method may be compiled using runtime profile information. If later behavior invalidates an optimization assumption, execution can deoptimize and return to a less specialized path.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **heap** — JVM memory where Java objects are allocated.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Why does warm-up matter? Early measurements include loading and compilation costs that differ from steady-state service behavior.
 
-### 30-second version
+#### 30-second version
 
 > Class loaders load bytecode into the runtime data areas: heap
 > (objects), metaspace (class metadata, native memory), per-thread
@@ -5744,14 +5716,14 @@ CRaC or GraalVM native image.
 
 ------------------------------------------------------------------------
 
-# N. Spring Ecosystem
+## N. Spring Ecosystem
 
 Complete the [Spring annotation ladder](#spring-boot-annotations-usage-to-internals-to-senior-diagnosis) and [JPA session/transaction foundations](#start-here-database-connections-and-session-management) before repository, batch and integration follow-ups.
 
 **Q81. Spring Data JPA: derived queries, `@Query`, Specifications,
 projections.**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Derived queries (`findByStatusAndCreatedAtAfter`) are fine for simple
 cases but become unreadable; use `@Query` (JPQL/native) for clarity,
@@ -5760,15 +5732,15 @@ projections** to select only needed columns. Prefer `Pageable` with a
 stable sort, avoid `findAll()` on big tables, return `Slice` when you
 don't need the count query, and don't expose entities through the API.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A repository proxy interprets a derived method name or declared query and binds parameters. The selected result shape determines how much data is fetched and exposed.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Why choose Slice instead of Page? If only next-page availability is needed, avoiding a total count can remove expensive work.
 
-### 30-second version
+#### 30-second version
 
 > Derived queries (`findByStatusAndCreatedAtAfter`) are fine for simple
 > cases but become unreadable; use `@Query` (JPQL/native) for clarity,
@@ -5780,7 +5752,7 @@ don't need the count query, and don't expose entities through the API.
 
 **Q82. When do you use Spring Batch?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Use Spring Batch for restartable, high-volume processing such as ETL,
 reconciliation and nightly billing. A `Job` contains `Step`s. In a typical
@@ -5799,21 +5771,21 @@ Scale using partitioning or remote chunking when needed. For simpler
 periodic work, scheduling with an appropriate distributed lock may be
 sufficient; that lock also does not make side effects idempotent.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A failed chunk can restart using recorded execution state, but restarting with new identifying parameters creates a different logical job instance. That can repeat business work rather than resume it.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **JobInstance** — A logical run identified by job name and identifying parameters.
 - **JobExecution** — One execution attempt for that logical run.
 - **ExecutionContext** — Persisted state used by restart-aware components.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** What protects a charge on restart? Stable business/provider idempotency and durable state, not the mere existence of a job repository.
 
-### 30-second version
+#### 30-second version
 
 > Spring Batch supplies chunk processing and persisted restart metadata. Keep
 > identifying JobParameters stable for retries of the same logical run; changing
@@ -5824,7 +5796,7 @@ sufficient; that lock also does not make side effects idempotent.
 
 **Q83. Which Spring Cloud components are still relevant?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Gateway (routing/filters), OpenFeign or declarative HTTP interfaces,
 Config Server (centralised config; on Kubernetes ConfigMaps/Secrets
@@ -5834,11 +5806,11 @@ superseded because Kubernetes provides service discovery and load
 balancing via Services/DNS. Show you choose platform features over
 libraries when available.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Ask which capability the deployment platform already supplies, then fill actual gaps with application libraries. Discovery, request balancing and resilience remain separate responsibilities even when packaged together.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **bulkhead** — A resilience pattern that isolates resources such as
   threads or connections so one overloaded dependency does not exhaust
@@ -5846,11 +5818,11 @@ libraries when available.
 - **Service** — An application or platform capability exposed through a
   defined interface; a Kubernetes Service is a specific networking resource.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Is a Kubernetes Service a retry policy? No; the caller still needs deadlines and deliberate handling of dependency failures.
 
-### 30-second version
+#### 30-second version
 
 > Gateway (routing/filters), OpenFeign or declarative HTTP interfaces,
 > Config Server (centralised config; on Kubernetes ConfigMaps/Secrets
@@ -5862,7 +5834,7 @@ libraries when available.
 **Q84. `RestTemplate` vs `WebClient` vs `RestClient`, and how do you set
 timeouts?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 `RestClient` is the synchronous fluent client; `WebClient` supports
 reactive composition and streaming. `RestTemplate` was in maintenance
@@ -5873,20 +5845,20 @@ underlying client; retries and circuit breakers depend on the failure
 contract. [Spring REST
 clients](https://docs.spring.io/spring-framework/reference/integration/rest-clients.html).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A synchronous client waits in the calling thread; a reactive client returns a composition representing eventual signals. Either can hang or exhaust connections if underlying timeout and capacity controls are missing.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **reactive** — A programming model centered on asynchronous streams
   and non-blocking processing with explicit demand/back-pressure.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Which timeout is being discussed? Distinguish pool acquisition, connection establishment, response reading and total operation budget.
 
-### 30-second version
+#### 30-second version
 
 > `RestClient` is the synchronous fluent client; `WebClient` supports
 > reactive composition and streaming. `RestTemplate` was in maintenance
@@ -5895,7 +5867,7 @@ clients](https://docs.spring.io/spring-framework/reference/integration/rest-clie
 
 **Q85. How do you handle validation and errors consistently?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Bean Validation (`@Valid`, `@NotNull`, `@Size`, custom constraint
 validators) at the API boundary; domain invariants inside
@@ -5906,19 +5878,19 @@ validation, 404, 409 conflict, 422, 503), and a correlation ID. Log once
 at the boundary with the right level (client errors at `warn`/`info`,
 server errors at `error`).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Reject malformed input at the boundary and enforce business invariants where state changes occur. Translate the resulting error into a stable public contract while preserving detailed diagnostics privately.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **bean** — An object managed by the Spring IoC container.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does bean validation authorize an update? No; a syntactically valid request can still target another user's resource.
 
-### 30-second version
+#### 30-second version
 
 > Bean Validation (`@Valid`, `@NotNull`, `@Size`, custom constraint
 > validators) at the API boundary; domain invariants inside
@@ -5929,7 +5901,7 @@ server errors at `error`).
 
 **Q86. What is `@TransactionalEventListener` and why is it useful?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 `@TransactionalEventListener(AFTER_COMMIT)` runs after successful
 commit, but is not durable delivery: a process can fail before an email
@@ -5941,11 +5913,11 @@ process failure. Listener failure cannot undo the original commit.
 [TransactionalEventListener
 API](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/transaction/event/TransactionalEventListener.html).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A transaction can commit and the process can die before an AFTER_COMMIT listener sends its email. Running after commit gives ordering but no durable delivery guarantee.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **outbox** — A database table used to store events in the same
   transaction as business data so publication can happen reliably
@@ -5953,11 +5925,11 @@ API](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/spring
 - **transaction** — A unit of database work treated as one logical
   operation with defined commit/rollback behavior.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** When is an outbox needed? When the follow-up must be recoverable after process failure, with duplicate-safe handling by the receiver.
 
-### 30-second version
+#### 30-second version
 
 > `@TransactionalEventListener(AFTER_COMMIT)` runs after successful
 > commit, but is not durable delivery: a process can fail before an
@@ -5967,15 +5939,15 @@ API](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/spring
 
 **Q87. What changed with Boot 3 observability and native images?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Boot 3's Micrometer Observation integration can feed metrics and traces when the required instrumentation, bridges and exporters are configured. GraalVM native images can improve startup and memory for suitable applications, but need AOT processing, compatible libraries and reflection/proxy hints; builds and steady-state behavior differ from the JVM. Compare actual cold start, resource use, throughput and diagnostic needs. Neither millisecond startup nor lower memory is a universal promise for every application.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Instrumentation must create observations and connect them to exporters before useful metrics or traces appear. Native compilation changes startup and runtime trade-offs; it is not merely another packaging extension.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Cloud Run** — GCP's managed container execution platform where the
   platform handles servers and scales container instances.
@@ -5984,23 +5956,23 @@ Boot 3's Micrometer Observation integration can feed metrics and traces when the
 - **proxy** — An object that wraps another object and intercepts method
   calls, commonly used by Spring for transactions, security and AOP.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** How would you compare JVM and native? Use the same workload, resource limits, startup and steady-state measurements, including failure diagnostics.
 
-### 30-second version
+#### 30-second version
 
 > Observation requires configured instrumentation and export. Native compilation can trade build complexity and runtime behavior for startup or memory gains; choose from measurements of the real application.
 
 ------------------------------------------------------------------------
 
-# O. Databases & Caching
+## O. Databases & Caching
 
 Begin database questions with the [connection, session and transaction sequence](#start-here-database-connections-and-session-management), then the [SQL foundations](#sql-foundations-before-advanced-scenarios). Q88–Q90 cover indexing, query diagnosis and storage choices after those prerequisites.
 
 **Q88. How do database indexes work and how do you design them?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 A B-tree index keeps keys ordered. Seeking a key or range start is
 typically O(log n); retrieving k matching entries adds work, commonly
@@ -6018,22 +5990,22 @@ as `lower(email)` may need expression indexes; leading-wildcard searches
 may need a specialized index. Low selectivity can make a sequential scan
 cheaper; do not assume an index is either always used or always ignored.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** An index narrows candidate rows by an ordered key or another access structure. Fetching many matches can still touch many pages, so an index is not a promise of cheap execution.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Selectivity** — How much of the data a predicate matches.
 - **Covering index** — An index containing the columns required by a query.
 - **MVCC visibility** — Whether a row version is visible to a transaction snapshot.
 - **Database heap** — Table-row storage; distinct from the JVM object heap.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Why inspect actual plans? Selectivity, statistics and required columns determine whether the index reduces total work.
 
-### 30-second version
+#### 30-second version
 
 > A B-tree can find a range start in logarithmic time, but reading k entries
 > adds work: typically O(log n + k), plus database-specific costs. Composite and
@@ -6044,7 +6016,7 @@ cheaper; do not assume an index is either always used or always ignored.
 
 **Q89. A query is slow. How do you tune it?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 For PostgreSQL, `EXPLAIN (ANALYZE, BUFFERS)` executes the statement, so
 use a safe environment or a carefully controlled read-only query: look
@@ -6056,15 +6028,15 @@ returned, partition large tables, cache results, or precompute with
 materialised views. Verify with production-sized data and watch lock
 contention and long transactions.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Compare estimated and actual row counts, then locate expensive scans, joins, sorts and waits. Optimize the dominant work while preserving results; replacing syntax alone does not prove improvement.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Why is EXPLAIN ANALYZE sensitive? It executes the statement, including writes and other effects; choose a safe verification context.
 
-### 30-second version
+#### 30-second version
 
 > For PostgreSQL, `EXPLAIN (ANALYZE, BUFFERS)` executes the statement,
 > so use a safe environment or a carefully controlled read-only query:
@@ -6077,31 +6049,31 @@ contention and long transactions.
 
 **Q90. SQL vs NoSQL: how do you choose?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Choose a database from required queries, transactions, consistency, scale, durability and operational cost. Relational systems support rich joins and constraints; document, key-value, wide-column, graph and search systems emphasize other models. Some non-relational products support transactions, and some SQL products scale horizontally, so SQL versus NoSQL is not itself a guarantee. Use additional stores only when their measured benefit justifies data synchronization and recovery work.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Compare the exact invariant, query shape and operational requirements against a specific database. SQL/NoSQL labels do not by themselves determine transactions, consistency or horizontal scalability.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** What is the cost of a second store? Data propagation, reconciliation, backup and failure handling must be owned and tested.
 
-### 30-second version
+#### 30-second version
 
 > Start with the invariant and access pattern, then compare specific products. SQL/NoSQL labels do not determine all transaction or scaling guarantees, and every extra store adds operational obligations.
 
-## Cache questions before Redis patterns
+### Cache questions before Redis patterns
 
-### CA1 What is a cache and how does cache-aside serve a read
+#### CA1 What is a cache and how does cache-aside serve a read
 
 **Foundation:** A cache stores reusable results to reduce repeated work. In cache-aside, the application checks a key, returns a hit, or reads the primary store on a miss and fills the cache. Define keys, capacity and expiry; distinguish this from the authoritative store.
 
 **Mid-level follow-up:** Explain TTL expiry, eviction, negative caching and invalidation after a committed write. An absent cache entry and a cached “not found” result need distinct representations.
 
-### CA2 Why can caching return stale data or overload the database
+#### CA2 Why can caching return stale data or overload the database
 
 **Senior follow-up:** A reader can load an old value, race with a write and its invalidation, then refill stale data. TTL alone does not ensure strong consistency. Specify acceptable staleness, versioning/invalidation strategy, bounded loaders and cache-outage behavior. Test duplicate fills, expiry, failed loads and write/read races before choosing the Redis patterns in Q91.
 
@@ -6110,7 +6082,7 @@ Choose a database from required queries, transactions, consistency, scale, durab
 **Q91. Which Redis caching patterns do you know, and what are the
 failure modes?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 *Cache-aside* (read: check cache, miss → DB → populate; write: update DB
 then evict), *write-through*, *write-behind*. Always set TTLs (with
@@ -6122,15 +6094,15 @@ cache/DB inconsistency. For a distributed lock use
 `SET key value NX PX ttl` with a unique token and a Lua release script,
 and note locks don't give strict safety without fencing tokens.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A hot cache entry expires and many callers simultaneously load it from the database. Coalescing reduces duplicate loads; expiry jitter spreads unrelated expirations. Neither alone solves every stale-write race.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Why is a lease token insufficient for strict ownership? An expired holder can continue working; the protected resource may need to reject stale fencing values.
 
-### 30-second version
+#### 30-second version
 
 > *Cache-aside* (read: check cache, miss → DB → populate; write: update
 > DB then evict), *write-through*, *write-behind*. Always set TTLs (with
@@ -6138,19 +6110,19 @@ and note locks don't give strict safety without fencing tokens.
 
 ------------------------------------------------------------------------
 
-# P. Security, Performance & Quality
+## P. Security, Performance & Quality
 
 Start security with the [authentication and authorization foundation](#a1-how-do-authentication-and-authorization-fit-into-a-request). For quality questions, establish the following before discussing benchmarks or flaky tests.
 
-## Quality questions before performance and flakiness
+### Quality questions before performance and flakiness
 
-### QE1 What makes an automated test useful and what should it exercise
+#### QE1 What makes an automated test useful and what should it exercise
 
 **Foundation:** Arrange a known input/state, perform an operation and assert its observable result or failure. A unit test isolates a small behavior; integration tests exercise component boundaries; end-to-end tests exercise a user journey. Choose the boundary that can expose the defect rather than treating coverage as proof.
 
 **Mid-level follow-up:** Include empty/invalid inputs, failures and repeated operations. Control clocks, randomness and shared state. A mock proves behavior against a simulated collaborator; verify database, framework and network contracts at the relevant integration boundary.
 
-### QE2 How do logs, metrics and traces help diagnose a failure
+#### QE2 How do logs, metrics and traces help diagnose a failure
 
 **Foundation:** Logs describe events, metrics summarize measurements and traces connect spans along an operation. Correlate them to distinguish one failed request from a system-wide symptom.
 
@@ -6161,7 +6133,7 @@ Start security with the [authentication and authorization foundation](#a1-how-do
 **Q92. Which OWASP vulnerabilities matter most in a Java API, and how do
 you prevent them?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Injection (use prepared statements/JPA parameters, never concatenate
 SQL), broken access control (check ownership on every object access, not
@@ -6173,15 +6145,15 @@ misconfiguration (disable actuator exposure, verbose errors), XSS
 (output encoding, CSP) and insufficient logging/monitoring. Add rate
 limiting and input validation.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Trace untrusted input from request to database, outbound HTTP and rendered output. Each sink needs the matching control: parameterized values, destination policy or output encoding, plus object-level authorization.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Can an allowlisted hostname alone stop SSRF? No; redirects, DNS changes and resolved private addresses must be included in the outbound policy.
 
-### 30-second version
+#### 30-second version
 
 > Injection (use prepared statements/JPA parameters, never concatenate
 > SQL), broken access control (check ownership on every object access,
@@ -6195,7 +6167,7 @@ limiting and input validation.
 
 **Q93. What are your logging best practices?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Structured JSON logs through SLF4J, with correlation IDs in the MDC (set
 in a filter, cleared in `finally`, propagated to async tasks),
@@ -6205,15 +6177,15 @@ failure at the boundary, avoid logging in tight loops, and sample
 high-volume debug logs. Logs explain *what happened*; metrics tell *how
 much*; traces show *where*.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Log enough context to connect a failed operation to its trace without exposing credentials or private payloads. A correlation field must be cleaned up when a pooled thread finishes the request.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Will parameterized logging make unsafe data safe? No; parameterization avoids eager formatting, but sensitive data and log-injection boundaries still need policy.
 
-### 30-second version
+#### 30-second version
 
 > Structured JSON logs through SLF4J, with correlation IDs in the MDC
 > (set in a filter, cleared in `finally`, propagated to async tasks),
@@ -6224,7 +6196,7 @@ much*; traces show *where*.
 
 **Q94. How do you performance-test and benchmark?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Define SLOs, then load-test realistic scenarios (k6, Gatling, JMeter)
 against a production-like environment with representative data,
@@ -6235,20 +6207,20 @@ async-profiler) before changing code. Use **JMH** for micro-benchmarks
 `System.nanoTime` loops are misleading. Run soak tests to catch leaks
 and put a regression test in CI.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Define the traffic model and success criteria before generating load. A service can report low latency by rejecting most requests, so latency without throughput and error rates is incomplete.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **GC** — Garbage collection: automatic identification and reclamation
   of heap memory that is no longer reachable.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Can a JMH result predict endpoint p99? No; microbenchmarks isolate code while endpoint latency includes queues, I/O and contention.
 
-### 30-second version
+#### 30-second version
 
 > Define SLOs, then load-test realistic scenarios (k6, Gatling, JMeter)
 > against a production-like environment with representative data,
@@ -6258,7 +6230,7 @@ and put a regression test in CI.
 
 **Q95. How do you deal with flaky tests?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Treat them as defects: find the cause (time/timezone, ordering, shared
 state, async waits with `sleep`, random data, external dependencies).
@@ -6267,15 +6239,15 @@ per test (transactions or Testcontainers per class), make tests
 independent, mock only external boundaries, and quarantine rather than
 ignore with a ticket and deadline. A flaky suite erodes trust in CI.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A test waiting a fixed 100 ms assumes a scheduling deadline it does not control. Wait for the observable condition with a bound, and isolate the data and clock driving it.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Do retries fix flakiness? They can hide a defect; diagnose the nondeterministic contract and make failures reproducible.
 
-### 30-second version
+#### 30-second version
 
 > Treat them as defects: find the cause (time/timezone, ordering, shared
 > state, async waits with `sleep`, random data, external dependencies).
@@ -6287,7 +6259,7 @@ ignore with a ticket and deadline. A flaky suite erodes trust in CI.
 **Q96. What are the 12-factor principles that matter most for cloud
 services?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 One codebase, many deploys; explicit dependencies; **config in the
 environment**; backing services as attached resources; strict
@@ -6297,15 +6269,15 @@ DB/Redis); port binding; scale out via processes; **disposability**
 to stdout; admin tasks as one-off jobs. Tie each to a concrete practice
 (immutable images, readiness probes, no local file state).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Build immutable application bits, combine them with explicit configuration for a release, and run disposable instances whose durable state lives elsewhere. Restarting an instance should not erase required business data.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does stateless mean no memory or cache? No; it means required durable/session state cannot depend on one disposable process.
 
-### 30-second version
+#### 30-second version
 
 > One codebase, many deploys; explicit dependencies; **config in the
 > environment**; backing services as attached resources; strict
@@ -6317,25 +6289,25 @@ to stdout; admin tasks as one-off jobs. Tie each to a concrete practice
 
 **Q97. How do you design backward-compatible APIs and events?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Compatibility includes syntax and semantics. Additive optional fields often help, but strict parsers, new enum values, changed defaults or tighter validation can still break consumers. Preserve field meanings, reserve removed Protobuf numbers, use schema-compatibility checks and consumer tests, and plan deprecation windows. Tolerant deserialization is one tool, not permission to accept unsafe or misspelled input indiscriminately. Test old and new components in the rollout combinations that must work.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A new optional field can still break a strict parser, and a new enum value can break an exhaustive consumer. Compatibility includes consumer behavior and semantic assumptions, not just schema syntax.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** How do you prove independent rollout? Test old/new producer and consumer combinations and keep a deliberate deprecation window.
 
-### 30-second version
+#### 30-second version
 
 > Additive changes are not automatically safe. Validate old/new consumer behavior, preserve field meanings and use explicit migration windows for breaking changes.
 
 **Q98. How do you approach technical debt and refactoring safely?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Make it visible (tracked backlog with impact), pay it continuously
 (boy-scout rule, a fixed share of each sprint), and refactor behind
@@ -6345,22 +6317,22 @@ strangler pattern for legacy replacement. Prioritise debt that slows
 delivery or causes incidents, and explain value in business terms (lead
 time, defect rate).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Before changing internals, capture externally required behavior. Make a small change, verify it and observe whether the targeted delivery or reliability problem improves.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Technical debt** — Design or implementation choices that increase future delivery or operational cost.
 - **Characterisation test** — A test recording existing behavior before a change.
 - **Branch by abstraction** — Gradually replacing an implementation behind a stable boundary.
 - **Strangler pattern** — Incrementally replacing legacy functionality.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** What distinguishes useful refactoring from churn? A named risk or cost is reduced with evidence, rather than only changing code shape.
 
-### 30-second version
+#### 30-second version
 
 > Make it visible (tracked backlog with impact), pay it continuously
 > (boy-scout rule, a fixed share of each sprint), and refactor behind
@@ -6372,9 +6344,9 @@ time, defect rate).
 
 ------------------------------------------------------------------------
 
-# Q. More Coding Programs
+## Q. More Coding Programs
 
-### 1. Sealed types with exhaustive pattern-matching `switch` (Java 21)
+#### 1. Sealed types with exhaustive pattern-matching `switch` (Java 21)
 
 **Derive the approach:** the operation has a finite set of meaningful
 outcomes. Model each outcome as a type so each consumer must handle the
@@ -6413,7 +6385,7 @@ static <T> String describe(Result<T> r) {
 }
 ```
 
-### 2. Dynamic filtering with Spring Data `Specification`
+#### 2. Dynamic filtering with Spring Data `Specification`
 
 **Derive the approach:** optional filters compose into a conjunction;
 independently add predicates for supplied values and let the database
@@ -6453,7 +6425,7 @@ static Specification<Order> filter(String status, Instant from) {
 // repo.findAll(filter("PAID", from), PageRequest.of(0, 20, Sort.by("createdAt").descending()));
 ```
 
-### 3. Bounded concurrency with virtual threads
+#### 3. Bounded concurrency with virtual threads
 
 **Derive the approach:** blocking requests can be represented as
 lightweight threads, but the downstream permits only a fixed number of
@@ -6496,7 +6468,7 @@ and retains one future per input. Bound admitted work or process batches
 for huge inputs; add deadlines and cancellation. `close()` waits for
 completion, so a hanging task can delay scope exit.
 
-### 4. Merge overlapping intervals (O(n log n))
+#### 4. Merge overlapping intervals (O(n log n))
 
 **Derive the approach:** after sorting by start, a new interval either
 extends the last union interval or starts a disjoint one. Earlier merged
@@ -6535,9 +6507,10 @@ int[][] merge(int[][] in) {
 
 ------------------------------------------------------------------------
 
-<!-- ===== Part 6: Question Bank Vol. 5 (Rapid-Fire, Puzzles, Designs, Coding) ===== -->
+<a id="part-6"></a>
+## Part 06 - Question Bank Vol. 5 - Rapid-fire, puzzles and harder coding
 
-# Senior Java Question Bank, Vol. 5
+## Senior Java Question Bank, Vol. 5
 
 **Rapid-Fire Revision · Output-Prediction Puzzles · More System Designs
 · Harder Coding** Use this the night before: say each answer aloud in
@@ -6545,11 +6518,11 @@ one breath, then expand if the interviewer probes.
 
 ------------------------------------------------------------------------
 
-# R. Rapid-Fire (one-breath answers)
+## R. Rapid-Fire (one-breath answers)
 
 Use these as recall prompts after the detailed answers. For an interview follow-up, expand the mechanism and example from the [topic learning paths](#topic-learning-order-start-with-the-foundations); a one-line comparison is not a full explanation.
 
-## Java
+### Java
 
 1.  **HashMap vs Hashtable vs ConcurrentHashMap?** Unsynchronized with
     one null key; fully synchronized legacy; per-bin CAS/locks, no
@@ -6585,7 +6558,7 @@ Use these as recall prompts after the detailed answers. For an interview follow-
 14. **`CountDownLatch` vs `CyclicBarrier` vs `Semaphore`?** One-shot
     countdown; reusable rendezvous; permit-based throttling.
 
-## Spring / Hibernate
+### Spring / Hibernate
 
 15. **`@Component` vs `@Bean`?** Class-level discovery candidate vs
     method-level factory registration, useful for third-party or application classes.
@@ -6614,7 +6587,7 @@ Use these as recall prompts after the detailed answers. For an interview follow-
 24. **JPQL vs native vs Criteria?** Portable object queries vs
     DB-specific SQL vs type-safe dynamic queries.
 
-## Architecture / Cloud
+### Architecture / Cloud
 
 25. **Orchestration vs choreography?** Central coordinator vs
     event-driven reactions.
@@ -6652,7 +6625,7 @@ Use these as recall prompts after the detailed answers. For an interview follow-
 
 ------------------------------------------------------------------------
 
-# S. "What Will This Print?" Puzzles
+## S. "What Will This Print?" Puzzles
 
 **1.** For `Integer a=127,b=127,c=128,d=128`, `a == b` is `true`;
 `c == d` is commonly `false` but is not guaranteed because
@@ -6679,7 +6652,7 @@ the subclass constructor body.
 
 ------------------------------------------------------------------------
 
-# T. More System Designs (condensed)
+## T. More System Designs (condensed)
 
 Use the [requirements-first design sequence](#module-7-system-design-prompts-practice-45-min-each) before the examples: requirements → estimates → API/data → architecture → failure/scaling analysis → trade-offs. These prompts assume that interview process.
 
@@ -6722,9 +6695,9 @@ rounding rules (minor units as `long`) and multi-currency.
 
 ------------------------------------------------------------------------
 
-# U. Harder Coding Programs
+## U. Harder Coding Programs
 
-### 1. Bounded blocking queue from scratch
+#### 1. Bounded blocking queue from scratch
 
 **Derive the approach:** represent capacity with a circular array and
 protect head, tail and count together. Producers wait for not-full;
@@ -6785,7 +6758,7 @@ class BoundedQueue<T> {
 *Say:* two conditions avoid waking the wrong waiters; this is what
 `ArrayBlockingQueue` does.
 
-### 2. Sliding-window rate limiter (per key)
+#### 2. Sliding-window rate limiter (per key)
 
 **Derive the approach:** an exact rolling-window contract requires
 remembering accepted timestamps still inside the window. A deque makes
@@ -6839,7 +6812,7 @@ unbounded as key count grows. Idle-key eviction must coordinate with
 active users of the same deque; naïve removal can create two counters
 for one key. Use a carefully bounded implementation for production.
 
-### 3. Build order with cycle detection (Kahn's topological sort)
+#### 3. Build order with cycle detection (Kahn's topological sort)
 
 **Derive the approach:** a module becomes buildable when all
 prerequisites have completed. Track remaining prerequisite counts and
@@ -6890,7 +6863,7 @@ List<String> buildOrder(Map<String, List<String>> deps) {   // module -> modules
 exactly how Maven reports "The projects in the reactor contain a cyclic
 reference".
 
-### 4. Search in a rotated sorted array (O(log n))
+#### 4. Search in a rotated sorted array (O(log n))
 
 **Derive the approach:** with distinct values, at least one half around
 the midpoint is sorted. Decide whether the target lies in that half's
@@ -6935,7 +6908,7 @@ sorted half may be ambiguous and worst-case search can become O(n). For
 nonnegative array indices, the unsigned-shift midpoint is valid;
 `lo + (hi - lo) / 2` is easier to explain.
 
-### 5. Find the K-th largest element (quickselect idea vs heap)
+#### 5. Find the K-th largest element (quickselect idea vs heap)
 
 **Derive the approach:** retain the k greatest values seen so far in a
 min-heap. Its smallest retained value is the kth greatest at each
@@ -6972,7 +6945,7 @@ for streams too.
 
 ------------------------------------------------------------------------
 
-## How to Run the Final 48 Hours
+### How to Run the Final 48 Hours
 
 - **Day -2:** read Section R aloud, redo 3 coding programs from memory
   on paper.
@@ -6985,22 +6958,23 @@ for streams too.
 
 ------------------------------------------------------------------------
 
-<!-- ===== Part 7: Question Bank Vol. 6 (Kubernetes, Terraform, APIs, Leadership, Mock Interview) ===== -->
+<a id="part-7"></a>
+## Part 07 - Question Bank Vol. 6 - Kubernetes, Terraform, APIs and leadership
 
-# Senior Java Question Bank, Vol. 6
+## Senior Java Question Bank, Vol. 6
 
 **Kubernetes in Depth · Terraform · gRPC/GraphQL · Architecture &
 Leadership · Mock Interview Script** (Q99–Q122)
 
 ------------------------------------------------------------------------
 
-# V. Kubernetes in Depth
+## V. Kubernetes in Depth
 
 First explain [images, containers, Pods and Deployments](#d1-how-do-an-image-container-pod-and-deployment-differ); then use Q99–Q105 to discuss reconciliation, traffic, resources and rollout diagnosis.
 
 **Q99. What happens when you run `kubectl apply -f deployment.yaml`?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 `kubectl` sends the manifest to the **API server**, which authenticates,
 authorises (RBAC), runs admission controllers and persists desired state
@@ -7014,11 +6988,11 @@ Service routes to ready Pods. Everything works by *reconciling desired
 vs actual state*, so the answer shows you understand controllers, not
 just commands.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** The API stores desired state; controllers repeatedly compare it with observed state and take corrective action. The successful apply response therefore precedes actual Pod readiness.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Deployment** — A Kubernetes controller that manages replicated Pods
   and supports controlled rollout of new versions.
@@ -7029,11 +7003,11 @@ just commands.
 - **Service** — A stable Kubernetes networking abstraction that exposes
   a group of Pods behind a stable endpoint.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does apply success prove rollout success? No; inspect deployment conditions, scheduling, image startup and readiness separately.
 
-### 30-second version
+#### 30-second version
 
 > `kubectl` sends the manifest to the **API server**, which
 > authenticates, authorises (RBAC), runs admission controllers and
@@ -7042,15 +7016,15 @@ just commands.
 
 **Q100. How do requests, limits and QoS classes affect a Java service?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Requests inform scheduling and resource allocation; limits constrain runtime usage. CPU limits normally throttle, while memory-limit breaches can trigger OOM termination. Under container-level QoS rules, Guaranteed requires matching nonzero CPU and memory requests/limits for every container; equal memory settings alone are insufficient. Measure Java heap and native headroom plus startup/steady-state CPU before selecting values. Omitting CPU limits is a platform-policy trade-off, not a universal recommendation. [Kubernetes QoS](https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Scheduling uses requests to decide placement; limits constrain runtime use. CPU throttling slows work, whereas memory pressure can kill a container, so their failure symptoms differ.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **GC** — Garbage collection: automatic identification and reclamation
   of heap memory that is no longer reachable.
@@ -7060,17 +7034,17 @@ Requests inform scheduling and resource allocation; limits constrain runtime usa
   operating system killed the process because it exceeded its memory
   limit.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does equal memory request/limit guarantee Guaranteed QoS? No; the required CPU and memory settings must match for every relevant container under the QoS rules.
 
-### 30-second version
+#### 30-second version
 
 > Requests, limits and QoS have different roles. Distinguish throttling from memory kills, account for every container, and choose Java resource settings from measured demand rather than a copied percentage.
 
 **Q101. HPA vs VPA vs Cluster Autoscaler: how do you scale?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 **HPA** adds/removes Pod replicas from CPU, memory or custom metrics
 (requests per second, Kafka lag via KEDA). **VPA** recommends or applies per-Pod resource requests according to its
@@ -7083,22 +7057,22 @@ after warm-up, and HPA stabilization/minimum replicas to manage replica scale-do
 constrains voluntary evictions through the Eviction API, such as node drains;
 it does not block a Deployment or HPA from reducing desired replicas.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** HPA changes replica count, VPA changes per-Pod resource requests, and a node autoscaler changes available cluster capacity. A new replica remains Pending if no suitable node can host it.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **GKE** — Google Kubernetes Engine, Google's managed Kubernetes
   service.
 - **Pod** — Kubernetes' smallest deployable unit, containing one or more
   containers that share networking and storage context.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Will a PDB block HPA scale-down? No; it constrains supported voluntary evictions, not every change to desired replicas.
 
-### 30-second version
+#### 30-second version
 
 > **HPA** adds/removes Pod replicas from CPU, memory or custom metrics
 > (requests per second, Kafka lag via KEDA). **VPA** adjusts requests
@@ -7108,7 +7082,7 @@ it does not block a Deployment or HPA from reducing desired replicas.
 **Q102. How does Kubernetes networking work (Service types, Ingress,
 NetworkPolicy)?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Every Pod gets its own IP (flat network via the CNI plugin). A
 **Service** gives a stable virtual IP/DNS name
@@ -7119,11 +7093,11 @@ provides L7 routing, TLS and host/path rules. **NetworkPolicy** is
 default-allow until you add rules; adopt default-deny plus explicit
 allows. Mention DNS caching and `ndots` as a classic source of latency.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A Service gives clients a stable discovery/routing boundary while Pod addresses change. Network policy controls permitted flows when supported by the network implementation; DNS and routing still need to work.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **plugin** — A Maven component that provides build functionality such
   as compilation, testing or packaging.
@@ -7132,11 +7106,11 @@ allows. Mention DNS caching and `ndots` as a classic source of latency.
 - **Service** — A stable Kubernetes networking abstraction that exposes
   a group of Pods behind a stable endpoint.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does one policy isolate every Pod? No; isolation depends on selected Pods, direction and applicable policies. Test required ingress and egress explicitly.
 
-### 30-second version
+#### 30-second version
 
 > Every Pod gets its own IP (flat network via the CNI plugin). A
 > **Service** gives a stable virtual IP/DNS name
@@ -7146,7 +7120,7 @@ allows. Mention DNS caching and `ndots` as a classic source of latency.
 
 **Q103. Deployment vs StatefulSet, and how does storage work?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Deployments suit stateless, interchangeable Pods. **StatefulSets** give
 stable identities (`app-0`), ordered rollout, stable network names via a
@@ -7156,20 +7130,20 @@ from a StorageClass that dynamically provisions a PV (a persistent
 disk). Prefer managed databases (Cloud SQL) over running them in-cluster
 unless there is a strong reason.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A StatefulSet preserves per-replica identity and storage association across replacement. That helps a database recognize its member, but database replication and consistency still belong to the database.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Service** — A stable Kubernetes networking abstraction that exposes
   a group of Pods behind a stable endpoint.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does a persistent volume replace backup? No; persistent storage can retain corruption or deletion and needs an independent recovery strategy.
 
-### 30-second version
+#### 30-second version
 
 > Deployments suit stateless, interchangeable Pods. **StatefulSets**
 > give stable identities (`app-0`), ordered rollout, stable network
@@ -7179,7 +7153,7 @@ unless there is a strong reason.
 **Q104. How do you do safe rollouts and keep availability during node
 maintenance?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Rolling update with `maxUnavailable: 0, maxSurge: 25%`, accurate
 readiness probes, `preStop` sleep plus graceful shutdown,
@@ -7189,20 +7163,20 @@ replicas across zones, and canary or progressive delivery (Argo
 Rollouts, Cloud Deploy) with automated rollback on SLO breach. Rollback
 with `kubectl rollout undo`.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** During a drain, keep enough ready capacity elsewhere, allow in-flight work to finish and prevent replacement replicas from receiving traffic too early. Availability requires both placement and lifecycle behavior.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **SLO** — Service Level Objective: a measurable reliability target,
   such as 99.9% successful requests.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Can rollout undo reverse external effects? No; schema and business side effects require their own compatibility and recovery plan.
 
-### 30-second version
+#### 30-second version
 
 > Rolling update with `maxUnavailable: 0, maxSurge: 25%`, accurate
 > readiness probes, `preStop` sleep plus graceful shutdown,
@@ -7214,7 +7188,7 @@ with `kubectl rollout undo`.
 
 **Q105. Helm vs Kustomize, and how do you manage config and secrets?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Helm templates charts with values and versioned releases (good for
 packaging and third-party apps; templating can get unreadable).
@@ -7225,21 +7199,21 @@ External Secrets Operator rather than committing base64 Secrets to Git.
 Use GitOps (Argo CD/Config Sync) so Git is the source of truth and drift
 is reverted.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Helm renders parameterized manifests; Kustomize applies overlays to manifests. In either case, inspect the final resources and how secret values reach the runtime.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Helm** — A tool for packaging, templating and managing Kubernetes application releases.
 - **Kustomize** — A tool for composing Kubernetes manifests using overlays and patches.
 - **GitOps drift** — A difference between declared state in Git and the running environment.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Are base64 Kubernetes Secrets encrypted by that encoding? No; access control, storage encryption and secret lifecycle remain necessary.
 
-### 30-second version
+#### 30-second version
 
 > Helm templates charts with values and versioned releases (good for
 > packaging and third-party apps; templating can get unreadable).
@@ -7248,17 +7222,17 @@ is reverted.
 
 ------------------------------------------------------------------------
 
-# W. Terraform / Infrastructure as Code
+## W. Terraform / Infrastructure as Code
 
-## Terraform questions before state internals
+### Terraform questions before state internals
 
-### TF1 How does Terraform turn configuration into infrastructure
+#### TF1 How does Terraform turn configuration into infrastructure
 
 **Foundation:** Configuration describes desired resources; providers communicate with platform APIs. A resource represents a managed object, a data source reads information, and a module groups configuration.
 
 **Mid-level follow-up:** Explain init → validate → plan → review → apply. A plan proposes changes using configuration, state and refreshed observations; apply performs the selected changes. Check replacement/destruction before approving a plan.
 
-### TF2 Why does infrastructure as code still need state and recovery
+#### TF2 Why does infrastructure as code still need state and recovery
 
 **Senior follow-up:** State associates configuration addresses with remote objects. A failed apply can leave some changes completed; inspect reality and state before planning recovery. Concurrent applies, manual drift, provider changes and secrets require backend-specific locking, access controls and reviewed plans. Continue with Q106–Q108 for state, modules and CI workflows.
 
@@ -7267,7 +7241,7 @@ is reverted.
 **Q106. How does Terraform state work and why is the backend
 important?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Terraform maps your configuration to real resources through a **state
 file**. Keep it in a **remote backend** (GCS bucket with versioning)
@@ -7276,22 +7250,22 @@ access (state may contain secrets), and never edit by hand (use
 `terraform state mv/rm`, `import`). Separate state per
 environment/component to reduce blast radius.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** State connects a configuration address to an existing remote object, allowing Terraform to update rather than recreate it. Losing or sharing the wrong state can change which resources an apply believes it owns.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **bucket** — One position in a hash table's internal array where
   entries can be stored.
 - **Terraform state** — Terraform's record of resources it manages and
   the mapping between configuration and real infrastructure.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does every remote backend lock state? No; verify that backend's locking and recovery semantics instead of assuming remote storage implies coordination.
 
-### 30-second version
+#### 30-second version
 
 > Terraform maps your configuration to real resources through a **state
 > file**. Keep it in a **remote backend** (GCS bucket with versioning)
@@ -7301,32 +7275,32 @@ environment/component to reduce blast radius.
 
 **Q107. Explain plan/apply, drift, modules and workspaces.**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 A plan compares desired configuration with state and refreshed remote observations; apply performs planned changes. Drift is an out-of-band difference: decide whether to restore the declaration or deliberately adopt the change. Import associates an existing unmanaged object with a configuration address; it is not a generic fix for drift in already managed resources. Modules package configuration; separate state boundaries constrain impact. Lifecycle protections such as prevent_destroy and ignore_changes have configuration-dependent limits and need review.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Drift means real infrastructure diverged from the declared or recorded model. Decide whether to restore configuration or intentionally adopt the change; import associates an unmanaged object rather than automatically fixing all drift.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **drift** — A difference between infrastructure declared in Terraform
   and infrastructure that actually exists.
 - **Service** — An application or platform capability exposed through a
   defined interface; a Kubernetes Service is a specific networking resource.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Can prevent_destroy guarantee permanent protection? No; it has configuration-dependent limits and must be complemented by permissions, review and recovery controls.
 
-### 30-second version
+#### 30-second version
 
 > Explain configuration, state and reality separately. Resolve drift deliberately; import is for ownership association. Review lifecycle exceptions and state boundaries before applying changes.
 
 **Q108. How do you run IaC in CI/CD safely?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 PR → `fmt`/`validate`/`tflint`/policy checks (OPA/Sentinel, Checkov) →
 `plan` posted to the PR → human approval → `apply` from a pipeline using
@@ -7335,21 +7309,21 @@ long-lived keys). Pin provider and module versions, keep secrets in
 Secret Manager (not variables files), tag/label resources for cost, and
 protect the main branch.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A reviewed plan describes intended mutations at a point in time. Protect its artifact and apply the approved changes under controlled credentials; changed inputs or intervening state require renewed planning.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Plan** — Terraform output describing proposed infrastructure changes.
 - **State locking** — Coordination that prevents concurrent writers to the same supported state backend.
 - **Workload identity federation** — Exchanging trusted workload identity for cloud access without a long-lived service-account key.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Can marking a variable sensitive keep it out of state? It mainly redacts display; protect state and plan data according to actual provider behavior.
 
-### 30-second version
+#### 30-second version
 
 > PR → `fmt`/`validate`/`tflint`/policy checks (OPA/Sentinel, Checkov) →
 > `plan` posted to the PR → human approval → `apply` from a pipeline
@@ -7360,17 +7334,17 @@ protect the main branch.
 
 ------------------------------------------------------------------------
 
-# X. gRPC, GraphQL & API Styles
+## X. gRPC, GraphQL & API Styles
 
-## API questions before protocol choices
+### API questions before protocol choices
 
-### API1 How does a client request become a server response
+#### API1 How does a client request become a server response
 
 **Foundation:** Identify the endpoint, request method, headers/body, authentication and response status/body. Define the contract before selecting REST, RPC or GraphQL. Distinguish transport success from business success and include validation/error behavior.
 
 **Mid-level follow-up:** Trace the request through routing, authorization, application logic and its data/dependency calls. Set timeouts and cancellation boundaries; explain versioning, pagination and compatibility.
 
-### API2 What happens if the response is lost after the server commits
+#### API2 What happens if the response is lost after the server commits
 
 **Senior follow-up:** A timeout can leave an ambiguous outcome. Retrying a write needs a safe method contract or an application-level idempotency strategy. HTTP idempotency concerns the intended server effect, not identical responses. Establish retry and ordering guarantees before Q109–Q112 compare gRPC, GraphQL and streaming styles.
 
@@ -7378,7 +7352,7 @@ protect the main branch.
 
 **Q109. When and how do you use gRPC?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 gRPC uses HTTP/2 and Protobuf (compact binary, schema-first, generated
 clients) and supports four call types: unary, server streaming, client
@@ -7391,20 +7365,20 @@ HTTP/2 connections defeat L4 load balancers, and add interceptors for
 auth, tracing and metrics. Weaknesses: poor browser support (needs
 gRPC-Web), harder debugging.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A client stub serializes a typed request, performs an RPC and receives a result or status. A deadline bounds the caller's wait; the server must also observe cancellation and stop unnecessary work.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **gRPC** — A high-performance RPC framework commonly using HTTP/2 and
   Protocol Buffers for service-to-service communication.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Why can L4 balancing be uneven? Many RPCs share a long-lived connection, so balancing connections does not necessarily balance individual requests.
 
-### 30-second version
+#### 30-second version
 
 > gRPC uses HTTP/2 and Protobuf (compact binary, schema-first, generated
 > clients) and supports four call types: unary, server streaming, client
@@ -7413,7 +7387,7 @@ gRPC-Web), harder debugging.
 
 **Q110. GraphQL vs REST: trade-offs and pitfalls?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 GraphQL lets clients select fields through a typed schema, useful for
 different front-end data needs. It can reduce client round trips while
@@ -7433,21 +7407,21 @@ REST can be simpler for resource-oriented, cache-friendly public APIs.
 In Spring for GraphQL, know `@QueryMapping` and `@BatchMapping` and the
 server's enabled transports.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A small GraphQL query can trigger many resolver/database calls. Batch related loads and authorize each relevant object or field, while measuring total backend work rather than only HTTP request count.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Resolver** — Code that obtains a requested field value.
 - **DataLoader** — A facility for batching and caching related loads within its configured scope.
 - **Persisted query** — A stored query identified by an agreed identifier.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Can all query results share one cache key? No; variables and authorization context can change both data and visibility.
 
-### 30-second version
+#### 30-second version
 
 > GraphQL offers flexible field selection but needs resolver batching,
 > authorization and query-cost controls. It is not POST-only: supported GET
@@ -7458,7 +7432,7 @@ server's enabled transports.
 
 **Q111. WebSocket vs SSE vs long polling vs webhooks?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Long polling: simple fallback, high overhead. **SSE**: one-way server →
 client over HTTP, auto-reconnect, great for notifications/feeds.
@@ -7467,11 +7441,11 @@ design with a pub/sub backplane and heartbeat handling. **Webhooks**:
 server-to-server callbacks; require signature verification, retries,
 idempotency and replay protection.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** SSE delivers server events over an HTTP response; WebSocket allows both ends to send messages. A webhook instead calls another server, whose acknowledgement and retries form a delivery protocol.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **idempotency** — The property that repeating the same logical request
   produces the same intended outcome rather than creating duplicate
@@ -7479,48 +7453,48 @@ idempotency and replay protection.
 - **Pub/Sub** — Google Cloud's asynchronous messaging service for
   publishing messages to topics and delivering them to subscriptions.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does reconnect restore lost messages? Only if the application defines replay, cursors or resynchronization; transport reconnection alone is insufficient.
 
-### 30-second version
+#### 30-second version
 
 > Long polling: simple fallback, high overhead. **SSE**: one-way server
 > → client over HTTP, auto-reconnect, great for notifications/feeds.
 
 **Q112. What is contract-first API design?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Agree the API schema and behavioral contract with consumers first, then generate suitable stubs/clients and validate implementations in CI. Include errors, compatibility, authorization and retry semantics, not only fields. Linting, schema checks and consumer contracts reduce drift but cannot make it impossible; custom code and semantic changes still need tests and review.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Review the request, response and failure contract with consumers before generating code. Generation reduces mechanical mismatch, while compatibility tests check whether implementations still honor the agreed behavior.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **API contract** — An agreed description of requests, responses and observable behavior.
 - **Contract drift** — A mismatch between an API specification and its implementation or consumer expectations.
 - **Consumer-driven contract test** — A test checking a provider against interactions required by a consumer.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Do generated clients prevent all drift? No; validation and tests must detect custom implementation changes and semantic differences.
 
-### 30-second version
+#### 30-second version
 
 > Contract-first aligns producers and consumers before implementation. Generated code helps, while validation and behavioral compatibility tests catch the drift generation alone cannot prevent.
 
 ------------------------------------------------------------------------
 
-# Y. Architecture & Leadership
+## Y. Architecture & Leadership
 
 First explain [service boundaries](#f1-what-is-a-microservice-and-how-does-one-request-cross-services), then follow the [design interview sequence](#module-7-system-design-prompts-practice-45-min-each). For distributed-event questions, review [saga](/senior-java-interview/part-11#saga), [outbox](/senior-java-interview/part-11#outbox-pattern) and [idempotency](/senior-java-interview/part-11#idempotency) before choosing an architecture.
 
 **Q113. What are the pitfalls of event-driven architecture?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Hard-to-follow flows (no single place shows the process: need tracing
 and an event catalogue), eventual consistency surprises,
@@ -7530,15 +7504,15 @@ Mitigate with clear event ownership, versioned schemas in a registry,
 idempotent consumers, DLQs with replay tooling, correlation IDs, and
 choosing events for facts ("OrderPlaced") rather than commands.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** An event describes a fact another service may react to later. That delay creates visible intermediate states, and duplicate delivery means the same fact may be handled again.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** When is a command appropriate? When requesting an action from a responsible handler; name the intent explicitly instead of disguising it as a past-tense fact.
 
-### 30-second version
+#### 30-second version
 
 > Hard-to-follow flows (no single place shows the process: need tracing
 > and an event catalogue), eventual consistency surprises,
@@ -7550,7 +7524,7 @@ choosing events for facts ("OrderPlaced") rather than commands.
 
 **Q114. Outbox vs CDC vs dual writes: what is the difference?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 **Dual write** (save to DB then publish) can lose or duplicate events if
 one fails: avoid. **Transactional outbox**: write the event to an
@@ -7560,11 +7534,11 @@ poller/relay publishes and marks it sent (at-least-once). **CDC**
 without polling load. Consumers must be idempotent either way; clean the
 outbox periodically.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Committing business data and an outbox row together closes the database/publication gap. The relay can still publish twice if it crashes before recording success, so consumers remain duplicate-safe.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **CDC** — Change Data Capture: publishing database changes by reading
   the database's change log or transaction log.
@@ -7577,11 +7551,11 @@ outbox periodically.
 - **transaction** — A unit of database work treated as one logical
   operation with defined commit/rollback behavior.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Is CDC an alternative to the outbox invariant? It can relay outbox rows; raw table changes still need deliberate business-event semantics.
 
-### 30-second version
+#### 30-second version
 
 > **Dual write** (save to DB then publish) can lose or duplicate events
 > if one fails: avoid. **Transactional outbox**: write the event to an
@@ -7590,32 +7564,32 @@ outbox periodically.
 
 **Q115. Explain DDD essentials you actually apply.**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 DDD starts with a shared business language and bounded contexts in which each model has a clear meaning. Aggregates group state whose invariants a root controls; entities have identity, while value objects are defined by value. Bounded contexts can inform service boundaries but do not require one service each. Keeping transactions within an aggregate is a useful design guideline, not a universal prohibition on broader atomic work. Apply domain events and anti-corruption layers where they clarify real complexity.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** An Order aggregate protects rules such as valid status transitions; its root controls changes to owned parts. A bounded context defines the meaning of that model, rather than dictating one deployment per concept.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Service** — An application or platform capability exposed through a
   defined interface; a Kubernetes Service is a specific networking resource.
 - **transaction** — A unit of database work treated as one logical
   operation with defined commit/rollback behavior.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Must each aggregate be a microservice? No; model boundaries and deployment boundaries are distinct decisions.
 
-### 30-second version
+#### 30-second version
 
 > Explain one business invariant and its model boundary. Aggregates control consistent state changes; bounded contexts define meaning. Deployment choices and transaction scope still require judgment.
 
 **Q116. What is hexagonal (ports & adapters) architecture?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 The domain core depends on nothing; it exposes **ports** (interfaces)
 and the outside world connects via **adapters** (REST controller, JPA
@@ -7625,15 +7599,15 @@ rules with ArchUnit. In Spring: `domain` and `application` packages free
 of Spring annotations where practical, with adapters in
 `infrastructure`.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** An application use case asks a payment port to charge; an adapter translates that request into a provider API. The use case can be tested with a controlled implementation of the port.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Who owns the interface? The boundary should express application needs rather than expose every detail of the external SDK.
 
-### 30-second version
+#### 30-second version
 
 > The domain core depends on nothing; it exposes **ports** (interfaces)
 > and the outside world connects via **adapters** (REST controller, JPA
@@ -7643,7 +7617,7 @@ of Spring annotations where practical, with adapters in
 
 **Q117. How do you scale a read-heavy system?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 In order of cost: optimise queries and indexes → add caching layers
 (CDN, application cache, Redis) → read replicas (account for replication
@@ -7652,15 +7626,15 @@ partition/shard data (choose a key that avoids hotspots; cross-shard
 joins and transactions become hard) → precompute. State the trade-off at
 each step and measure before moving up.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Measure which reads dominate and whether they tolerate staleness. An index reduces database work; a cache reuses results; a replica shifts reads but may lag behind writes.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** How do you preserve read-your-writes? Route the relevant reads appropriately or use a verified consistency mechanism instead of assuming replicas are current.
 
-### 30-second version
+#### 30-second version
 
 > In order of cost: optimise queries and indexes → add caching layers
 > (CDN, application cache, Redis) → read replicas (account for
@@ -7671,7 +7645,7 @@ each step and measure before moving up.
 
 **Q118. How do you do back-of-the-envelope capacity estimates?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Example: 10M DAU × 20 requests/day = 200M/day ≈ 2.3k req/s average, ×3–5
 for peak ≈ 10k req/s. Storage: 1 KB/record × 100M/day ≈ 100 GB/day ≈ 36
@@ -7679,15 +7653,15 @@ TB/year before replication. Bandwidth: 10k req/s × 10 KB ≈ 100 MB/s. Use
 round numbers, state assumptions, and derive node counts from per-node
 throughput. Interviewers want structured reasoning, not exact figures.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Convert daily volume to average rate, state a peak multiplier, then estimate bytes and concurrent work. Each estimate should expose an assumption that can be revised.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** How do you estimate concurrency? Arrival rate multiplied by average time in the system gives average in-flight work under the model's stable conditions.
 
-### 30-second version
+#### 30-second version
 
 > Example: 10M DAU × 20 requests/day = 200M/day ≈ 2.3k req/s average,
 > ×3–5 for peak ≈ 10k req/s. Storage: 1 KB/record × 100M/day ≈ 100
@@ -7695,7 +7669,7 @@ throughput. Interviewers want structured reasoning, not exact figures.
 
 **Q119. Explain SLOs, error budgets and incident severity.**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Define the denominator first. A request-based 99.9% SLO permits 0.1% bad
 eligible requests; at ten million requests that is 10,000 bad requests.
@@ -7706,20 +7680,20 @@ use burn-rate alerts and a documented response policy. Incident severity
 follows customer impact, not a single infrastructure metric. [Google SRE
 workbook](https://sre.google/workbook/implementing-slos/).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** An SLO defines which outcomes count as good and what fraction must meet that rule over a window. The remaining allowance is the error budget, which can be consumed quickly during an incident.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **SLO** — Service Level Objective: a measurable reliability target,
   such as 99.9% successful requests.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Are request-based and time-based budgets interchangeable? No; traffic variation changes their meaning and the associated response policy.
 
-### 30-second version
+#### 30-second version
 
 > Define the denominator first. A request-based 99.9% SLO permits 0.1%
 > bad eligible requests; at ten million requests that is 10,000 bad
@@ -7727,7 +7701,7 @@ workbook](https://sre.google/workbook/implementing-slos/).
 
 **Q120. How do you lead and mentor as a senior engineer?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Set direction through design docs/ADRs, review for learning not
 gatekeeping, pair on hard problems, delegate with clear context and
@@ -7736,15 +7710,15 @@ the bar through shared standards and automation. Measure impact through
 team outcomes (lead time, change failure rate, onboarding time) rather
 than personal output. Have a concrete mentoring example with a result.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Describe a person or team capability that improved because of your coaching or design work. Explain what you delegated, what support you supplied and how ownership increased.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** What is the senior evidence? A concrete team outcome and what you learned, not a list of mentoring practices.
 
-### 30-second version
+#### 30-second version
 
 > Set direction through design docs/ADRs, review for learning not
 > gatekeeping, pair on hard problems, delegate with clear context and
@@ -7755,7 +7729,7 @@ than personal output. Have a concrete mentoring example with a result.
 
 **Q121. Tell me about a time you made a wrong technical decision.**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Pick a real, moderately significant mistake: what you decided and why it
 seemed right, the signal that showed it was wrong (metric/incident), how
@@ -7764,15 +7738,15 @@ the **process change** afterward (ADR with revisit date, load test,
 spike). Seniors are valued for learning speed and honesty, not
 perfection.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Reconstruct the decision using what was known then, identify the later evidence that invalidated an assumption, and explain your correction. Owning the mistake includes changing the decision process.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Should you choose a harmless fake weakness? No; use a real example you can discuss honestly without disclosing confidential details.
 
-### 30-second version
+#### 30-second version
 
 > Pick a real, moderately significant mistake: what you decided and why
 > it seemed right, the signal that showed it was wrong
@@ -7783,27 +7757,27 @@ perfection.
 
 **Q122. Why do you want to leave your current company / why this role?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Be positive and forward-looking: what you have achieved there and what
 you want next (larger scale, domain, ownership, cloud-native
 architecture), tied to something specific about the new company you
 researched. Never criticise your employer.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Connect the role's actual responsibilities to the work you want to do and experience you can contribute. Explain motivation specifically enough that it would not fit every employer.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Role fit** — How the position matches the responsibilities and growth you seek.
 - **Evidence** — Specific examples supporting your reasons for the move.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** How do you substantiate the fit? Refer to verified role/team information and your own relevant experience, avoiding invented company claims.
 
-### 30-second version
+#### 30-second version
 
 > Be positive and forward-looking: what you have achieved there and what
 > you want next (larger scale, domain, ownership, cloud-native
@@ -7812,9 +7786,9 @@ researched. Never criticise your employer.
 
 ------------------------------------------------------------------------
 
-# Z. Config "Programs" Interviewers Ask You to Write
+## Z. Config "Programs" Interviewers Ask You to Write
 
-### Kubernetes Deployment with probes and graceful shutdown
+#### Kubernetes Deployment with probes and graceful shutdown
 
 **Derive the approach:** startup, routing readiness and unrecoverable
 liveness are different states. Give each its own probe, reserve
@@ -7865,7 +7839,7 @@ spec:
         lifecycle: { preStop: { exec: { command: ["sleep", "10"] } } }
 ```
 
-### Terraform: Cloud Run service with a dedicated service account
+#### Terraform: Cloud Run service with a dedicated service account
 
 **Derive the approach:** declare a reproducible service resource and
 bind it to a workload identity with explicitly granted permissions. The
@@ -7911,7 +7885,7 @@ resource "google_cloud_run_v2_service" "orders" {
 }
 ```
 
-### Protobuf contract (additive evolution rules)
+#### Protobuf contract (additive evolution rules)
 
 **Derive the approach:** messages need a stable wire identity
 independent of source field ordering. Assign durable field numbers and
@@ -7948,7 +7922,7 @@ money in minor units.
 
 ------------------------------------------------------------------------
 
-# AA. Mock Interview Script (with follow-ups)
+## AA. Mock Interview Script (with follow-ups)
 
 **Round 1: Technical deep dive (45 min).**
 
@@ -7982,7 +7956,7 @@ culture like?" "How do you handle tech debt?"
 
 ------------------------------------------------------------------------
 
-## Reminder
+### Reminder
 
 Depth beats breadth at 9+ years: for each technology on your resume, be
 ready to explain *how it works internally, what went wrong, and what
@@ -7990,9 +7964,10 @@ you'd do differently.*
 
 ------------------------------------------------------------------------
 
-<!-- ===== Part 8: Question Bank Vol. 7 (Kafka Streams, WebFlux, Hardening, LeetCode, Google, Amazon) ===== -->
+<a id="part-8"></a>
+## Part 08 - Question Bank Vol. 7 - Streams, WebFlux and interview practice
 
-# Senior Java Question Bank, Vol. 7
+## Senior Java Question Bank, Vol. 7
 
 **Kafka Streams · WebFlux/Reactive · Security Hardening · LeetCode-Style
 Coding · Google-Style Design · Amazon Leadership Principles**
@@ -8000,13 +7975,13 @@ Coding · Google-Style Design · Amazon Leadership Principles**
 
 ------------------------------------------------------------------------
 
-# AB. Kafka Streams
+## AB. Kafka Streams
 
 Begin with [producers, brokers and consumers](#k1-how-do-producers-brokers-and-consumers-fit-together). Then Q123–Q125 introduce stream/table views before state management and windows.
 
 **Q123. KStream vs KTable vs GlobalKTable?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 A **KStream** is an unbounded sequence of independent events (every
 record matters: clicks, payments). A **KTable** is a changelog view
@@ -8017,15 +7992,15 @@ a stream against it without co-partitioning (suitable only for small
 reference data). The stream-table duality is the key idea: a table is a
 stream of updates, and a stream can be aggregated into a table.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A stream records each customer-address change; a table keeps the latest address per customer. Joining orders to that table answers a different question from preserving every address-change event.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Why not always use GlobalKTable? Each instance bears the full replicated reference-state cost, so size and update rate matter.
 
-### 30-second version
+#### 30-second version
 
 > A **KStream** is an unbounded sequence of independent events (every
 > record matters: clicks, payments). A **KTable** is a changelog view
@@ -8035,46 +8010,46 @@ stream of updates, and a stream can be aggregated into a table.
 **Q124. How does Kafka Streams manage state, scaling and fault
 tolerance?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Kafka Streams assigns partition-based tasks to instances sharing an application.id. Stateful operations can use local stores with changelogs for restoration and optional standby replicas. Parallelism depends on the topology and its partitioning. Keyed joins commonly need compatible partitioning; GlobalKTable joins differ. Changing a key can cause a later key-dependent DSL operation to repartition, while Processor API paths may need explicit handling. Exactly-once processing covers supported Kafka transactional work, not arbitrary external effects. Measure lag and state restore time.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A stateful task updates local state while its changelog supports restoration elsewhere. Partitioning determines which task owns a key and whether related records meet for a join.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Must every join repartition? No; existing co-partitioning and join type matter, and GlobalKTable joins have different requirements.
 
-### 30-second version
+#### 30-second version
 
 > Explain key ownership, local state and changelog restoration. Scaling and repartitioning depend on the topology; join requirements and transactional guarantees must be stated for the operation being used.
 
 **Q125. Windowing and late data?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Window types: *tumbling* (fixed, non-overlapping), *hopping* (fixed,
 overlapping), *sliding*, and *session* (gaps of inactivity). Processing
 uses **event time**; records that arrive after the window end are
 handled by the **grace period**, after which they are dropped for window-close semantics. Use `Suppressed.untilWindowCloses(...)` with a strict buffer for final window results; `untilTimeLimit` has different behavior. Closure follows stream-time progress, so an idle input may not emit just because wall-clock time passes. Explain the trade-off: a longer grace allows more late events but delays final output and increases state/buffer needs. Test idle streams as well as late events.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A window groups events by their timestamps; stream-time progress determines when it is too late to update the window. Wall-clock waiting alone may not close it during idle input.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Event time** — Time assigned to an event, as distinct from when the processor handles it.
 - **Grace period** — The allowed lateness before a window closes under Kafka Streams stream-time rules.
 - **Window** — A grouping of records over a defined time interval or session.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Why increase grace? It accepts more late data at the cost of later final results and more retained state.
 
-### 30-second version
+#### 30-second version
 
 > Window types: *tumbling* (fixed, non-overlapping), *hopping* (fixed,
 > overlapping), *sliding*, and *session* (gaps of inactivity).
@@ -8084,13 +8059,13 @@ handled by the **grace period**, after which they are dropped for window-close s
 
 ------------------------------------------------------------------------
 
-# AC. Reactive Programming & Spring WebFlux
+## AC. Reactive Programming & Spring WebFlux
 
 First establish the [thread lifecycle and executor foundation](#multithreading-questions-foundations-to-senior-follow-ups) and [request contract](#api-questions-before-protocol-choices). Q126 already supplies the reactive foundation: publisher/subscriber → subscription/demand → Mono/Flux → operators. Continue with Q127–Q129 for blocking mistakes, runtime choices and testing.
 
 **Q126. Explain Mono, Flux and back-pressure.**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 `Mono<T>` represents zero or one value; `Flux<T>` represents zero to
 many. Both also signal completion or failure. Cold, deferred publishers
@@ -8109,21 +8084,21 @@ boundaries. Operators such as `map`, `flatMap`, `zip`, `concatMap`,
 inner publishers and interleave output; `concatMap` processes them
 sequentially while preserving order.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** The subscriber requests capacity, the publisher emits permitted values, and completion or error terminates the sequence. A Mono may complete empty; a Flux may emit many values. Source and scheduling semantics determine when work starts.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Cold publisher** — A source that starts its source work for each subscription.
 - **Hot publisher** — A source that can share production independently of individual subscribers.
 - **Back-pressure** — Demand signaling that regulates delivery to a subscriber.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does back-pressure eliminate memory limits? No; buffers and push-source overflow policies still need explicit bounds.
 
-### 30-second version
+#### 30-second version
 
 > Mono models zero or one value and Flux zero to many. Cold deferred work starts
 > on subscription, but hot sources and eager assembly-time calls are exceptions.
@@ -8134,7 +8109,7 @@ sequentially while preserving order.
 
 **Q127. What are the biggest WebFlux mistakes?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Blocking the event loop stalls unrelated requests. Wrap a synchronous
 dependency as
@@ -8147,19 +8122,19 @@ and deadlines, and test error/cancellation paths. Eager work inside
 blocking-call
 guidance](https://projectreactor.io/docs/core/release/reference/faq.html).
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** One blocking database call on an event loop can delay many unrelated connections. Deferring that call and assigning it to an appropriate bounded scheduler separates it from the event loop.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Mono** — A Reactor type representing zero or one asynchronous value.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does publishOn fix work already evaluated in Mono.just? No; that expression ran before the reactive pipeline could schedule it.
 
-### 30-second version
+#### 30-second version
 
 > Blocking the event loop stalls unrelated requests. Wrap a synchronous
 > dependency as
@@ -8169,47 +8144,47 @@ guidance](https://projectreactor.io/docs/core/release/reference/faq.html).
 
 **Q128. WebFlux or Spring MVC with virtual threads?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Choose from the entire workload and library stack. MVC with virtual threads can suit blocking JDBC/JPA workflows while retaining straightforward control flow. WebFlux can suit non-blocking composition, streaming and demand control. A mixed stack is possible with deliberate offloading, bounded concurrency and context handling, but keeps the blocking dependency's limits and adds integration cost. Neither model removes database capacity limits or automatically improves throughput.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Choose based on the whole dependency path. A blocking JDBC workload fits ordinary blocking code well; an end-to-end reactive path can compose streaming and demand control.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **back-pressure** — A mechanism that prevents an upstream producer
   from overwhelming a downstream consumer.
 - **reactive** — A programming model centered on asynchronous streams
   and non-blocking processing with explicit demand/back-pressure.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Can a mixed stack work? Yes with deliberate offloading and limits, but it retains blocking resource costs and added integration complexity.
 
-### 30-second version
+#### 30-second version
 
 > Compare the complete dependency path and required streaming/concurrency behavior. Virtual threads simplify many blocking workloads; reactive composition can help suitable non-blocking flows. Mixed stacks need explicit scheduling and limits.
 
 **Q129. How do you test reactive code?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 `StepVerifier` asserts emitted items, errors and completion, with
 `withVirtualTime` for delays/timeouts; `WebTestClient` tests endpoints;
 Testcontainers provide real brokers/DBs. Verify cancellation and error
 paths, not only the happy path.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Describe the expected signals in order: values, terminal success or error, and cancellation behavior. Virtual time lets time-based operators be exercised without real delays when publishers are created appropriately.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Can a passing value assertion miss a resource leak? Yes; verify termination, cancellation and cleanup as well as emitted data.
 
-### 30-second version
+#### 30-second version
 
 > `StepVerifier` asserts emitted items, errors and completion, with
 > `withVirtualTime` for delays/timeouts; `WebTestClient` tests
@@ -8218,11 +8193,11 @@ paths, not only the happy path.
 
 ------------------------------------------------------------------------
 
-# AD. Security Hardening
+## AD. Security Hardening
 
 **Q130. How do you manage secrets properly?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Never in Git, images, env files committed to repos or logs. Use a secret
 manager (GCP Secret Manager, Vault) with IAM-scoped access, versioning
@@ -8233,22 +8208,22 @@ credentials (Workload Identity, IAM database authentication) wherever
 possible; scan repos for leaked secrets (gitleaks) and revoke
 immediately if exposed.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** A secret has an owner, permitted readers, expiry/rotation policy and response to exposure. Updating the stored value is only half of rotation; running clients must begin using it safely.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **IAM** — Identity and Access Management: policies controlling who or
   what can perform which actions on which resources.
 - **Workload Identity** — A mechanism that lets workloads obtain cloud
   identities without embedding long-lived service-account keys.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** What happens during overlap? Plan how old and new credentials coexist, refresh, fail and are revoked without exposing values in logs.
 
-### 30-second version
+#### 30-second version
 
 > Never in Git, images, env files committed to repos or logs. Use a
 > secret manager (GCP Secret Manager, Vault) with IAM-scoped access,
@@ -8262,7 +8237,7 @@ immediately if exposed.
 **Q131. What is zero-trust and how do you implement it between
 services?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 "Never trust, always verify": no implicit trust from network location.
 Implementation: **mTLS** between services (mesh-issued short-lived
@@ -8272,22 +8247,22 @@ scopes, enforce in each service, not only at the gateway), default-deny
 network policies, least-privilege IAM, and audit logging. The gateway is
 one control, not the whole perimeter.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Authenticating a service's certificate proves its workload identity, not its right to read every user's data. Each hop must enforce the intended authorization context and trusted token audience.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **IAM** — Identity and Access Management: policies controlling who or
   what can perform which actions on which resources.
 - **Service** — An application or platform capability exposed through a
   defined interface; a Kubernetes Service is a specific networking resource.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Should the same user token be forwarded everywhere? Only when intended for that recipient and permitted by the delegation model; otherwise use appropriate exchange or service credentials.
 
-### 30-second version
+#### 30-second version
 
 > "Never trust, always verify": no implicit trust from network location.
 > Implementation: **mTLS** between services (mesh-issued short-lived
@@ -8298,7 +8273,7 @@ one control, not the whole perimeter.
 
 **Q132. How do you secure the software supply chain?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Pin and verify dependencies, scan with SCA (Dependabot/OWASP/Snyk),
 generate an **SBOM**, sign artifacts/images (cosign) and enforce
@@ -8309,20 +8284,20 @@ and prevent dependency-confusion by using a private repository with
 explicit namespaces. Know the Log4Shell lesson: have an inventory so you
 can answer "where do we use library X?" within minutes.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** Trace a deployed image back to source, dependencies and a trusted build. Signatures verify who signed particular bytes; policy and provenance decide whether those bytes should run.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **OWASP** — An organization that publishes widely used
   application-security guidance, including the OWASP Top 10.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does signing make a vulnerable image safe? No; inventory, review, vulnerability response and deployment enforcement remain distinct controls.
 
-### 30-second version
+#### 30-second version
 
 > Pin and verify dependencies, scan with SCA (Dependabot/OWASP/Snyk),
 > generate an **SBOM**, sign artifacts/images (cosign) and enforce
@@ -8336,7 +8311,7 @@ can answer "where do we use library X?" within minutes.
 
 **Q133. What is your hardening checklist for a Spring Boot service?**
 
-### A good SDE-3 interview answer is:
+#### A good SDE-3 interview answer is:
 
 Expose only needed Actuator endpoints (and secure them), disable stack
 traces in responses, set security headers (HSTS, CSP,
@@ -8347,22 +8322,22 @@ accounts and verbose error pages, run as non-root in a read-only
 container, keep dependencies patched, and log security events (auth
 failures, access denials) without sensitive data.
 
-### How to understand it
+#### How to understand it
 
 **Worked explanation:** For each attack surface, name a control and an observable failure test: unauthorized object access, oversized payloads, unsafe outbound destinations or exposed management endpoints.
 
-### Key terms you should know
+#### Key terms you should know
 
 - **Actuator** — Spring Boot endpoints for operational information and application management.
 - **Least privilege** — Granting only the access needed for a responsibility.
 - **Hardening** — Reducing unnecessary exposure and strengthening deployed defaults.
 - **Input limits** — Bounds on request sizes and processing cost.
 
-### SDE-3 interview checkpoints
+#### SDE-3 interview checkpoints
 
 **Follow-up with expected reasoning:** Does a checklist prove security? No; test the real configuration and request paths, including alternate entry points and failure responses.
 
-### 30-second version
+#### 30-second version
 
 > Expose only needed Actuator endpoints (and secure them), disable stack
 > traces in responses, set security headers (HSTS, CSP,
@@ -8375,9 +8350,9 @@ failures, access denials) without sensitive data.
 
 ------------------------------------------------------------------------
 
-# AE. LeetCode-Style Programs
+## AE. LeetCode-Style Programs
 
-### 1. Valid parentheses (stack)
+#### 1. Valid parentheses (stack)
 
 **Derive the approach:** the most recently opened bracket must close
 first, which is exactly LIFO behavior. Store expected closing characters
@@ -8415,7 +8390,7 @@ boolean isValid(String s) {
 }
 ```
 
-### 2. Number of islands (DFS, O(rows × cols))
+#### 2. Number of islands (DFS, O(rows × cols))
 
 **Derive the approach:** each island is a connected component. At an
 unvisited land cell, count one component and mark every reachable land
@@ -8459,7 +8434,7 @@ void sink(char[][] g, int r, int c) {
 BFS/iterative DFS or union-find. Mention that you mutate the input and
 how to avoid it with a `visited` array.
 
-### 3. Coin change: fewest coins (DP, O(amount × coins))
+#### 3. Coin change: fewest coins (DP, O(amount × coins))
 
 **Derive the approach:** after choosing a final coin c, the remaining
 problem is the best solution for amount−c. Let dp\[a\] be the minimum
@@ -8501,7 +8476,7 @@ strictly positive denominations; reject invalid input. Greedy fails for
 coin sets like {1, 3, 4}, which is why DP is needed. This is O(amount ×
 number of coins) time and O(amount) space.
 
-### 4. Binary tree level-order traversal (BFS)
+#### 4. Binary tree level-order traversal (BFS)
 
 **Derive the approach:** output groups nodes by distance from the root,
 so process a queue breadth-first. Snapshot the queue size before a level
@@ -8544,7 +8519,7 @@ List<List<Integer>> levelOrder(TreeNode root) {
 
 ------------------------------------------------------------------------
 
-# AF. Google-Style System Design (condensed)
+## AF. Google-Style System Design (condensed)
 
 Use the [requirements-first design sequence](#module-7-system-design-prompts-practice-45-min-each) before the examples: requirements → estimates → API/data → architecture → failure/scaling analysis → trade-offs. These prompts assume that interview process.
 
@@ -8575,7 +8550,7 @@ trade-offs stated explicitly, and deep dives chosen by the interviewer
 
 ------------------------------------------------------------------------
 
-# AG. Amazon Leadership Principles Pack
+## AG. Amazon Leadership Principles Pack
 
 Prepare **one story per principle** (many stories cover several). Use
 STAR with the **Result quantified** and speak in **"I"** not "we".
@@ -8604,7 +8579,10 @@ numbers + what I learned)*. Expect 3–4 deep follow-ups ("What would you
 do differently?", "What was the pushback?"), so know your stories'
 details.
 
-# Part 9 Coding interview practice track
+<a id="part-9"></a>
+## Part 09 - Coding interview practice track
+
+<a id="part-9-coding-interview-practice-track"></a>
 
 The aim is to solve unfamiliar problems, explain why the solution is
 correct, and adapt it when constraints change. Use the forty problems
@@ -8612,7 +8590,7 @@ below as a practice pool over two to four weeks. For a fourteen-day
 sprint, choose twenty to twenty-four based on your weakest patterns and
 reserve time for mocks and repeat attempts.
 
-## What to prioritize
+### What to prioritize
 
 | Priority       | Work                                                                  | Exit criterion                                                           |
 |----------------|-----------------------------------------------------------------------|--------------------------------------------------------------------------|
@@ -8626,7 +8604,7 @@ reserve time for mocks and repeat attempts.
 This is a suggested allocation, not a claim about any company's
 interview process. Read the recruiter-provided format first.
 
-## Forty problems organized by pattern
+### Forty problems organized by pattern
 
 For each problem, first clarify input contracts, give a correct
 baseline, improve it, state an invariant, code, and test. The names
@@ -8654,7 +8632,7 @@ Do not count reading an answer as solving a problem. Mark each attempt
 as independent, hinted, or read. Retry hinted/read problems after two
 days, then a week, with no solution visible.
 
-## A daily practice session
+### A daily practice session
 
 Allow about 150 minutes: 10 minutes recalling earlier invariants, two
 40-minute problem attempts, 25 minutes fixing and testing the weaker
@@ -8679,7 +8657,7 @@ review.
 | 13  | One 90-minute machine-coding exercise               | Concurrency, lifecycle and tests              |
 | 14  | One 45-minute coding mock and 45-minute design mock | Project stories and final error-log review    |
 
-## The 45-minute coding round
+### The 45-minute coding round
 
 | Minutes | Action                                                        | What the interviewer can assess      |
 |---------|---------------------------------------------------------------|--------------------------------------|
@@ -8697,7 +8675,7 @@ independent and clear. Aim for at least 8/10 twice on unseen problems,
 with no zero in correctness or verification. This is a self-assessment
 tool, not a hiring prediction.
 
-## Java details that matter during live coding
+### Java details that matter during live coding
 
 - Use `ArrayDeque` for ordinary stacks/queues and `PriorityQueue` for an
   ordered frontier. Heap iteration is not sorted iteration.
@@ -8723,7 +8701,7 @@ tool, not a hiring prediction.
   cases. Reject invalid inputs explicitly when that is the agreed
   contract.
 
-## Eight worked solutions
+### Eight worked solutions
 
 The companion
 [InterviewAlgorithms.java](InterviewAlgorithms.java)
@@ -8741,7 +8719,7 @@ bounded queue, concurrent limiter and odd/even cancellation examples.
 This does not imply every earlier framework excerpt was compiled or
 integration-tested.
 
-### Solution 1 Lower bound
+#### Solution 1 Lower bound
 
 **Derive and compare:** a linear scan establishes the meaning of the
 first acceptable index. Sortedness makes `a[i] >= target` monotone, so
@@ -8786,7 +8764,7 @@ target before/after the range, repeated target, and a single element.
 **Follow-up:** change the comparison to find the first value strictly
 greater than the target; use the two boundaries to count occurrences.
 
-### Solution 2 Subarray sum equals a target
+#### Solution 2 Subarray sum equals a target
 
 **Derive and compare:** enumerate all start/end pairs as a baseline,
 then observe that every segment sum is a difference of two prefixes.
@@ -8834,7 +8812,7 @@ positive/negative values, no match, and totals exceeding `int`.
 **Follow-up:** for longest matching subarray, store earliest indices
 instead of frequencies.
 
-### Solution 3 Next warmer day
+#### Solution 3 Next warmer day
 
 **Derive and compare:** the quadratic baseline searches right from every
 day. The repeated work is asking whether a later value resolves earlier
@@ -8881,7 +8859,7 @@ equal temperatures, decreasing input, one element, empty input.
 **Follow-up:** adapt to a circular array while avoiding repeated output
 resolution.
 
-### Solution 4 Dijkstra shortest paths
+#### Solution 4 Dijkstra shortest paths
 
 **Derive and compare:** BFS minimizes edge count, not weight.
 Nonnegative weights allow repeatedly choosing the smallest tentative
@@ -8953,7 +8931,7 @@ stale entry, invalid edge, and large total weight. **Follow-up:** BFS
 for unit weights, 0–1 BFS for weights zero/one, or a negative-edge
 algorithm when the contract changes.
 
-### Solution 5 Disjoint sets
+#### Solution 5 Disjoint sets
 
 **Derive and compare:** repeated connectivity questions need component
 membership, not the path itself. Store representatives and merge sets;
@@ -9023,7 +9001,7 @@ self union, transitive connectivity, zero nodes, invalid node.
 discuss rebuilding, offline reversal or rollback variants instead of
 promising an O(1) deletion.
 
-### Solution 6 Edit distance
+#### Solution 6 Edit distance
 
 **Derive and compare:** brute recursion explores the final
 insert/delete/replace choices repeatedly. Prefix lengths identify
@@ -9076,7 +9054,7 @@ insert/delete/replace example. **Follow-up:** reconstructing the actual
 edit sequence needs additional state or a divide-and-conquer
 reconstruction approach.
 
-### Solution 7 Combination sum
+#### Solution 7 Combination sum
 
 **Derive and compare:** choose a candidate, reduce the remaining target,
 and recurse. Keep a nondecreasing candidate-index order so each multiset
@@ -9137,7 +9115,7 @@ empty candidates, target zero, invalid candidate, preserved input.
 **Follow-up:** allow each candidate once, then explain how duplicate
 skipping changes.
 
-### Solution 8 Running median
+#### Solution 8 Running median
 
 **Derive and compare:** sorting every prefix repeats work; a sorted
 array has O(n) insertion. Two heaps retain exactly the two middle
@@ -9189,7 +9167,7 @@ and reverse inputs. **Follow-up:** a sliding median needs deletion
 support; an unbounded stream with a memory cap may require approximate
 quantiles rather than exact retained history.
 
-## Machine coding beyond algorithms
+### Machine coding beyond algorithms
 
 For these exercises, agree on requirements before designing classes.
 Start with one working vertical path, then add the smallest abstractions
@@ -9213,7 +9191,7 @@ bounded completion waits. Avoid tests whose correctness depends on
 `Thread.sleep`. Verify invariants such as “accepted reservations never
 exceed stock,” not just the absence of thrown exceptions.
 
-## Six deeper backend follow-ups
+### Six deeper backend follow-ups
 
 **A timeout fires. Has the work stopped?** Not necessarily. Separate
 stopping the caller's wait, completing a future, interrupting a worker,
@@ -9265,7 +9243,7 @@ inject `Clock` in business logic, and use elapsed monotonic time for
 durations rather than wall-clock subtraction. Test rounding boundaries
 and daylight-saving gaps/overlaps when relevant.
 
-## Three mock rounds
+### Three mock rounds
 
 1.  **Coding, 45 minutes:** count subarrays with a target sum. Introduce
     negatives after the baseline. Ask for longest matching subarray,
@@ -9285,7 +9263,7 @@ that remained unclear. An example log entry is: “Treated negative-value
 sums as a shrinking window; replace with prefix frequencies; retry after
 two days.”
 
-## Version reference and important corrections
+### Version reference and important corrections
 
 The stable practice target is Java 21. The Java 25 entries below
 describe that release specifically; preview status must be checked again
@@ -9309,7 +9287,8 @@ are placed alongside the affected material. Cloud product capabilities
 and framework defaults remain version-dependent; verify the exact target
 before using an example in a real application.
 
-# Part 10 Web sourced questions and strong answer rubrics
+<a id="part-10"></a>
+## Part 10 - Web sourced questions and strong answer rubrics
 
 Sources checked on **5 October 2026**. Q134–Q141 adapt public
 coding-practice prompts and link to their original pages. Q142–Q153 are
@@ -9324,7 +9303,7 @@ questions, guaranteed questions, or a company's private scoring key. A
 good interview answer explains a decision that fits the constraints; it
 need not match this guide word for word.
 
-## What interviewers publicly say they assess
+### What interviewers publicly say they assess
 
 | Source                                                                                                               | Published emphasis                                             | How to demonstrate it                                                        |
 |----------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------|------------------------------------------------------------------------------|
@@ -9338,7 +9317,7 @@ because … The invariant is … If this assumption changes, I would … I
 will test …”** Use it to organize an explanation you understand, not as
 a memorized script.
 
-## Public coding prompts with original Java solutions
+### Public coding prompts with original Java solutions
 
 The complete runnable companion is
 [WebInterviewPractice.java](WebInterviewPractice.java).
@@ -9348,7 +9327,7 @@ brute-force sliding-window and parentheses solutions and a reference
 minimum stack. Each code block below is extracted from that file;
 imports and the enclosing class are in the companion.
 
-### Q134 Copy a list whose nodes also have arbitrary references
+#### Q134 Copy a list whose nodes also have arbitrary references
 
 **Public prompt:** construct independent nodes while preserving both
 link relationships. [Copy List with Random
@@ -9398,7 +9377,7 @@ public static RandomNode copyRandomList(RandomNode head) {
 }
 ```
 
-### Q135 Decide whether a string can be segmented using a dictionary
+#### Q135 Decide whether a string can be segmented using a dictionary
 
 **Public prompt:** determine whether dictionary words can cover the
 input in order, with reuse allowed. [Word
@@ -9446,7 +9425,7 @@ public static boolean wordBreak(String text, Collection<String> dictionary) {
 }
 ```
 
-### Q136 Implement exact-word and prefix lookup
+#### Q136 Implement exact-word and prefix lookup
 
 **Public prompt:** support insertion, exact search and prefix search.
 [Implement
@@ -9513,7 +9492,7 @@ public static final class Trie {
 }
 ```
 
-### Q137 Return the maximum for every fixed-size sliding window
+#### Q137 Return the maximum for every fixed-size sliding window
 
 **Public prompt:** report the maximum as a fixed-width range advances.
 [Sliding Window
@@ -9556,7 +9535,7 @@ public static int[] slidingWindowMaximum(int[] values, int k) {
 }
 ```
 
-### Q138 Select the k points nearest the origin
+#### Q138 Select the k points nearest the origin
 
 **Public prompt:** retain the requested number of nearest coordinates.
 [K Closest Points to
@@ -9611,7 +9590,7 @@ public static List<Point> kClosest(List<Point> points, int k) {
 }
 ```
 
-### Q139 Build a stack with constant-time minimum lookup
+#### Q139 Build a stack with constant-time minimum lookup
 
 **Public prompt:** support ordinary stack operations plus retrieval of
 its current minimum. [Min
@@ -9658,7 +9637,7 @@ public static final class MinStack {
 }
 ```
 
-### Q140 Decode nested repetition expressions
+#### Q140 Decode nested repetition expressions
 
 **Public prompt:** expand nested count-and-bracket expressions. [Decode
 String](https://leetcode.com/problems/decode-string/description/).
@@ -9727,7 +9706,7 @@ public static String decode(String encoded, int maxOutputLength) {
 }
 ```
 
-### Q141 Find the longest valid parentheses substring
+#### Q141 Find the longest valid parentheses substring
 
 **Public prompt:** find the longest contiguous balanced region, not
 merely whether the whole string is balanced. [Longest Valid
@@ -9775,9 +9754,9 @@ public static int longestValidParentheses(String text) {
 }
 ```
 
-## Java scenarios with strong spoken answers
+### Java scenarios with strong spoken answers
 
-### Q142 Can a method swap the caller's two object references
+#### Q142 Can a method swap the caller's two object references
 
 **Source basis:** [Java method
 arguments](https://docs.oracle.com/javase/tutorial/java/javaOO/arguments.html).
@@ -9797,7 +9776,7 @@ into pass-by-reference; it introduces shared mutable state.
 aliasing where both arguments refer to the same object. **Signal:** give
 a concrete mutation/reassignment distinction, not just a slogan.
 
-### Q143 Is a record containing a list immutable and safe as a map key
+#### Q143 Is a record containing a list immutable and safe as a map key
 
 **Source basis:** [Record
 API](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Record.html),
@@ -9820,7 +9799,7 @@ which changes affect the record. Test null policy before choosing
 `List.copyOf`. **Signal:** distinguish final reference, unmodifiable
 collection, snapshot and deep immutability.
 
-### Q144 Why did a TreeSet keep one of two different objects
+#### Q144 Why did a TreeSet keep one of two different objects
 
 **Source basis:** [TreeSet ordering
 contract](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/TreeSet.html).
@@ -9841,7 +9820,7 @@ then test comparator transitivity and extreme numbers. Subtraction can
 overflow; use comparator factories. **Signal:** connect ordering
 equality to collection identity and preserve comparator laws.
 
-### Q145 Does ConcurrentHashMap make a contained ArrayList thread-safe
+#### Q145 Does ConcurrentHashMap make a contained ArrayList thread-safe
 
 **Prerequisite for Q145–Q148:** [multithreading foundations](#multithreading-questions-foundations-to-senior-follow-ups) → concurrent collections → executors and completion stages.
 
@@ -9860,7 +9839,7 @@ also test removing/replacing that value while another caller retains its
 reference. **Signal:** identify the actual shared state and required
 atomic operation.
 
-### Q146 Should computeIfAbsent perform a slow remote call
+#### Q146 Should computeIfAbsent perform a slow remote call
 
 **Source basis:** [ConcurrentHashMap
 computeIfAbsent](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ConcurrentHashMap.html#computeIfAbsent(K,java.util.function.Function)).
@@ -9877,7 +9856,7 @@ null, or recursively updates the map. **Signal:** explain both
 contention and failure lifecycle instead of assuming “atomic” means
 cheap.
 
-### Q147 When should thenCompose replace thenApply
+#### Q147 When should thenCompose replace thenApply
 
 **Source basis:** [CompletionStage
 API](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/CompletionStage.html).
@@ -9897,7 +9876,7 @@ composed result follows it. Check both failure propagation and execution
 context. **Signal:** draw the dependency relationship and distinguish
 sequencing from parallel fan-out.
 
-### Q148 Why is a thread pool not growing to its configured maximum
+#### Q148 Why is a thread pool not growing to its configured maximum
 
 **Source basis:** [ThreadPoolExecutor sizing and
 queues](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ThreadPoolExecutor.html).
@@ -9917,7 +9896,7 @@ full pool; spare thread counts alone may not establish progress.
 **Signal:** explain the submission decision order and a deliberate
 rejection/deadline policy.
 
-### Q149 Which failure survives when both work and resource closing fail
+#### Q149 Which failure survives when both work and resource closing fail
 
 **Source basis:** [Try-with-resources
 tutorial](https://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html).
@@ -9936,7 +9915,7 @@ resource without an ownership contract.
 assert primary plus suppressed failures. **Signal:** discuss error
 preservation and ownership, not only “it closes automatically.”
 
-### Q150 Why did adding to Stream.toList fail
+#### Q150 Why did adding to Stream.toList fail
 
 **Source basis:** [Stream.toList
 API](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/stream/Stream.html#toList()).
@@ -9955,7 +9934,7 @@ contract, while mutating a mutable element may still succeed.
 **Signal:** separate API guarantees from implementation accidents and
 document the return contract.
 
-### Q151 Why can decimal equality disagree with numeric ordering
+#### Q151 Why can decimal equality disagree with numeric ordering
 
 **Source basis:** [BigDecimal
 API](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/math/BigDecimal.html).
@@ -9974,7 +9953,7 @@ make a test pass.
 nonterminating decimal result, and rounding boundaries. **Signal:**
 relate representation and equality to the business contract.
 
-### Q152 Does loading a class always execute its static initializer
+#### Q152 Does loading a class always execute its static initializer
 
 **Source basis:** [Java initialization
 rules](https://docs.oracle.com/javase/specs/jls/se21/html/jls-12.html#jls-12.4).
@@ -9994,7 +9973,7 @@ static field and explicit reflective loading with initialization
 disabled. **Signal:** reason from the trigger rather than asserting “at
 class load.”
 
-### Q153 Is volatile enough for publishing an object and incrementing a counter
+#### Q153 Is volatile enough for publishing an object and incrementing a counter
 
 **Source basis:** [Java happens-before
 rules](https://docs.oracle.com/javase/specs/jls/se21/html/jls-17.html#jls-17.4.5).
@@ -10016,7 +9995,8 @@ that a passing stress run is not a proof of memory-model correctness.
 **Signal:** identify the specific happens-before edge and the invariant
 it does—and does not—protect.
 
-# Part 11 Decision walkthroughs for the full practice roadmap
+<a id="part-11"></a>
+## Part 11 - Decision walkthroughs for the full practice roadmap
 
 Every roadmap item below has either a worked implementation elsewhere in
 the guide or a decision walkthrough here. Walkthrough-only entries
@@ -10024,7 +10004,7 @@ intentionally focus on deriving a solution; they are not additional
 tested Java programs. Write the implementation yourself, then use the
 stated trace and boundary conditions to review it.
 
-## Roadmap coverage index
+### Roadmap coverage index
 
 | Problem                                | Solution and reasoning                                                             |
 |----------------------------------------|------------------------------------------------------------------------------------|
@@ -10069,9 +10049,9 @@ stated trace and boundary conditions to review it.
 | 39\. Edit Distance                     | [Decision walkthrough](#solution-6-edit-distance)                                  |
 | 40\. Longest Increasing Subsequence    | [Decision walkthrough](#r40-longest-increasing-subsequence)                        |
 
-## Additional algorithm walkthroughs
+### Additional algorithm walkthroughs
 
-### R1 Two Sum
+#### R1 Two Sum
 
 **Derive and choose:** enumerate pairs as an O(n²) baseline. For each
 current value x, the needed partner is target−x; a map of earlier values
@@ -10091,7 +10071,7 @@ different duplicate/output policy.
 finds index zero. Test absent pair and one-element input. Expected O(n)
 time, O(n) space. Explain the “earlier indices only” invariant.
 
-### R3 Longest Consecutive Sequence
+#### R3 Longest Consecutive Sequence
 
 **Derive and choose:** use a set for membership, but grow a run only
 from values whose predecessor is absent. Otherwise the same long run is
@@ -10111,7 +10091,7 @@ the input.
 empty, all duplicates and integer extremes. O(distinct values) space.
 Prove each distinct value is expanded at most once.
 
-### R4 Three Sum
+#### R4 Three Sum
 
 **Derive and choose:** sort, fix one value, and use two pointers for the
 remaining pair. Sorted order tells which pointer to move when the sum is
@@ -10132,7 +10112,7 @@ triplets. Test `[0,0,0,0]`, fewer than three elements and extremes.
 Count output and sorting workspace. Explain both pointer elimination and
 duplicate policy.
 
-### R5 Container With Most Water
+#### R5 Container With Most Water
 
 **Derive and choose:** area is width times the shorter boundary. Start
 at both ends; moving the taller boundary inward cannot improve area
@@ -10151,7 +10131,7 @@ Test equal ends, all zeros and two bars. O(n) time, O(1) auxiliary
 space. State the elimination argument rather than simply naming two
 pointers.
 
-### R6 Trapping Rain Water
+#### R6 Trapping Rain Water
 
 **Derive and choose:** water above a bar is bounded by the smaller of
 the greatest heights to its left and right. Prefix/suffix maxima give an
@@ -10171,7 +10151,7 @@ accumulated water.
 monotone input, a plateau and all zeros. O(n) time; use long for large
 totals. Explain why the chosen side's water is final before advancing.
 
-### R8 Minimum Window Substring
+#### R8 Minimum Window Substring
 
 **Public practice reference:** [Minimum Window
 Substring](https://leetcode.com/problems/minimum-window-substring/description/).
@@ -10194,7 +10174,7 @@ Test no match and repeated targets. Expected O(source length + target
 length) time and O(alphabet) counts. Explain why each pointer moves only
 forward and how validity changes at a boundary.
 
-### R9 Permutation in String
+#### R9 Permutation in String
 
 **Derive and choose:** a matching permutation has the same length and
 character counts as the pattern. Slide a fixed-width window, removing
@@ -10214,7 +10194,7 @@ Declare empty-pattern behavior.
 alphabet and O(alphabet) state. Explain the fixed-window invariant and
 test entry/exit of the same character.
 
-### R12 Minimum Feasible Processing Speed
+#### R12 Minimum Feasible Processing Speed
 
 **Derive and choose:** if speed v meets the deadline, every larger speed
 also does. Binary search this monotone feasibility predicate; calculate
@@ -10235,7 +10215,7 @@ four. Test deadline equal to item count and one huge pile. O(n log M)
 time, O(1) space for maximum pile M. Prove monotonicity and state the
 feasible-bound invariant.
 
-### R14 Meeting Rooms II
+#### R14 Meeting Rooms II
 
 **Derive and choose:** when a meeting begins, reuse the room whose
 current meeting ends first if it is available; otherwise allocate
@@ -10255,7 +10235,7 @@ Test simultaneous starts and touching meetings. O(n log n) time and O(n)
 worst-case state. Explain why the peak active count is a lower bound and
 is achievable.
 
-### R15 Insert Interval
+#### R15 Insert Interval
 
 **Derive and choose:** with sorted, nonoverlapping existing intervals,
 copy those entirely before the new one, merge the contiguous overlap
@@ -10275,7 +10255,7 @@ input arrays.
 containing all and empty input. O(n) time plus O(n) output. State why
 overlaps form one contiguous block.
 
-### R16 Reverse Linked List
+#### R16 Reverse Linked List
 
 **Derive and choose:** maintain a reversed prefix and an untouched
 suffix. Save the next node before redirecting the current node's next
@@ -10294,7 +10274,7 @@ terminating traversal contract.
 end at null. Test empty, singleton and two nodes. O(n) time. Explain the
 prefix/suffix invariant after each pointer update.
 
-### R18 Merge K Sorted Lists
+#### R18 Merge K Sorted Lists
 
 **Derive and choose:** the next globally smallest value must be among
 the current heads of nonempty lists. Keep those heads in a min-heap;
@@ -10314,7 +10294,7 @@ values need only stable tie-breaking if the contract requests stability.
 Test many empty lists and one very long list. Prove why no hidden
 non-head can be smaller.
 
-### R21 Largest Rectangle in Histogram
+#### R21 Largest Rectangle in Histogram
 
 **Derive and choose:** each bar can define a rectangle extending until a
 smaller bar blocks it on either side. An increasing-height stack
@@ -10334,7 +10314,7 @@ long for area.
 stack space. Explain both boundaries and why the popped bar cannot
 extend farther.
 
-### R23 Lowest Common Ancestor
+#### R23 Lowest Common Ancestor
 
 **Derive and choose:** in a general binary tree, ask each subtree
 whether it contains a target. If targets are found on different sides,
@@ -10355,7 +10335,7 @@ root; a target that is ancestor of the other yields itself. Test same
 node, missing node and skewed tree. O(n) time and O(height) stack. State
 the meaning of the recursive return value and membership assumptions.
 
-### R24 Serialize and Deserialize a Tree
+#### R24 Serialize and Deserialize a Tree
 
 **Derive and choose:** values alone do not describe shape. Preorder
 traversal with explicit null markers provides a parseable recursive
@@ -10377,7 +10357,7 @@ values, null root and negative values. O(n) nodes plus encoded-character
 processing; O(height) recursive stack. Explain framing and validate
 complete token consumption.
 
-### R29 Clone Graph
+#### R29 Clone Graph
 
 **Derive and choose:** preserve graph topology while creating new
 identities. On first seeing a node, allocate and register its clone
@@ -10397,7 +10377,7 @@ originals. Test self-loop, repeated edges, shared neighbors and null
 root. O(V + E) output and O(V) traversal/mapping state. State the
 one-original-to-one-clone invariant.
 
-### R32 Minimum-Cost Grid Path
+#### R32 Minimum-Cost Grid Path
 
 **Derive and choose:** define vertices as cells and edges as allowed
 moves. If arbitrary moves have nonnegative costs, use Dijkstra from the
@@ -10420,7 +10400,7 @@ right. Test unreachable cells and one-cell grids. For ordinary
 four-neighbor nonnegative costs, heap-based work is O(RC log(RC)) with
 O(RC) state. Derive the graph and objective before naming an algorithm.
 
-### R33 Redundant Connection
+#### R33 Redundant Connection
 
 **Derive and choose:** process undirected edges incrementally; if both
 endpoints already have the same representative, adding the edge creates
@@ -10440,7 +10420,7 @@ Initialization is O(V); processing is O(E α(V)) amortized and O(V)
 space. Explain what union returning false means, and match it to the
 exact requested edge.
 
-### R34 Accounts Merge
+#### R34 Accounts Merge
 
 **Derive and choose:** shared email identity connects account records
 transitively. Map each email to a representative account and union
@@ -10463,7 +10443,7 @@ between first and third. Expected union work is near-linear in email
 occurrences plus output sorting; space is proportional to accounts and
 distinct emails. Explain the equivalence relation and transitivity.
 
-### R36 Subsets With Duplicates
+#### R36 Subsets With Duplicates
 
 **Derive and choose:** enumerate include/skip choices, but ensure equal
 values do not start the same branch twice. Sort and skip an equal
@@ -10484,7 +10464,7 @@ path itself. Sorting mutates input unless copied first.
 and O(n) auxiliary path/recursion space. Explain the difference between
 duplicate sibling choices and legitimate repeated selections.
 
-### R37 Word Search
+#### R37 Word Search
 
 **Derive and choose:** try each matching start cell; recursively match
 the next character through permitted neighbors while marking cells used
@@ -10506,7 +10486,7 @@ followed by success. A simple upper bound is O(RC × 4ᴸ), auxiliary O(L)
 path depth, excluding an optional visited grid. Explain
 choose/explore/unchoose and preservation of input.
 
-### R40 Longest Increasing Subsequence
+#### R40 Longest Increasing Subsequence
 
 **Derive and choose:** an O(n²) DP computes the best subsequence ending
 at each index. For length only, maintain the smallest possible tail of
@@ -10527,9 +10507,9 @@ claiming the tails array is the selected subsequence.
 length two. Test duplicates, decreasing input and empty input. Explain
 why a smaller tail of equal length dominates a larger one.
 
-## Machine coding decision walkthroughs
+### Machine coding decision walkthroughs
 
-### MC1 Bounded LRU cache
+#### MC1 Bounded LRU cache
 
 Use the LRU implementation and decision walkthrough in Module 8.
 **Derive:** combine direct lookup and recency order. **Alternative:**
@@ -10540,7 +10520,7 @@ changes eviction, duplicate put replaces, and simultaneous operations
 preserve size/structure. A strong answer states whether nulls, TTL and
 loading are in scope before designing the API.
 
-### MC2 Rate limiter with an injected ticker
+#### MC2 Rate limiter with an injected ticker
 
 Use the token-bucket and sliding-window walkthroughs to select semantics
 first. **Derive:** burst credit favors a bucket; exact recent-count
@@ -10552,7 +10532,7 @@ boundaries, rollover, concurrent admission and key-cap rejection. A
 strong answer defines whether the method rejects, waits or reserves
 future capacity.
 
-### MC3 In-memory task scheduler
+#### MC3 In-memory task scheduler
 
 **Derive and choose:** place due times in a priority queue, wait until
 the earliest task is due and dispatch through a bounded executor. For
@@ -10575,7 +10555,7 @@ shutdown and executor rejection. Heap updates are O(log n); waiting
 tasks use O(n) state. Explain task ownership and precisely when
 cancellation stops being guaranteed.
 
-### MC4 Inventory reservation service
+#### MC4 Inventory reservation service
 
 **Derive and choose:** available stock must never become negative, so
 check-and-reserve is one atomic business operation. Model reservation
@@ -10598,7 +10578,7 @@ at most one reservation. Test duplicate release, expired reservation,
 clock boundary and rollback. Explain the state machine and atomic
 boundary before introducing design patterns.
 
-## Explain the eight output puzzles
+### Explain the eight output puzzles
 
 | Puzzle                            | How to derive the answer                                                                     | What changes and how to test it                                                                                                                               |
 |-----------------------------------|----------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -10615,16 +10595,16 @@ For these puzzles, the strong signal is the rule and a counterexample to
 an overgeneralization. Memorizing one observed output is weaker than
 explaining why another valid program or runtime setting changes it.
 
-# SDE-3 Terminology and Follow-up Audit
+## SDE-3 Terminology and Follow-up Audit
 
 The guide should never require you to memorize a term you cannot
 explain. Use the following as a **depth map**: if one of these terms
 appears in an answer, you should be able to give the one-sentence
 explanation first, then go deeper only if the interviewer asks.
 
-## Module 1 — Core Java, Concurrency and JVM
+### Module 1 — Core Java, Concurrency and JVM
 
-### `CAS` — Compare-And-Set
+#### `CAS` — Compare-And-Set
 
 **Simple meaning:** an atomic operation that says, “change this value
 from A to B only if it is still A.”
@@ -10649,7 +10629,7 @@ contended updates when an exact instantaneous value is not required.
 
 ------------------------------------------------------------------------
 
-### `happens-before`
+#### `happens-before`
 
 **Simple meaning:** a Java Memory Model ordering/visibility
 relationship. If action A happens-before action B, the effects that are
@@ -10672,7 +10652,7 @@ does not make a compound operation such as `count++` atomic.
 
 ------------------------------------------------------------------------
 
-### `JIT`
+#### `JIT`
 
 **Simple meaning:** the Just-In-Time compiler turns frequently executed
 bytecode into optimized native machine code while the application is
@@ -10697,7 +10677,7 @@ microbenchmark that ignores warm-up can be misleading.
 
 ------------------------------------------------------------------------
 
-### Escape analysis
+#### Escape analysis
 
 **Simple meaning:** the JVM analyzes whether an object or value can
 escape a method/thread. If it proves useful non-escaping properties, the
@@ -10711,7 +10691,7 @@ That is an implementation optimization, not a Java language guarantee.
 
 ------------------------------------------------------------------------
 
-### Metaspace
+#### Metaspace
 
 **Simple meaning:** JVM native memory used for class metadata. It is
 outside the Java heap.
@@ -10733,7 +10713,7 @@ appears below `-Xmx`.
 
 ------------------------------------------------------------------------
 
-### Class loader
+#### Class loader
 
 **Simple meaning:** a class loader is responsible for locating/loading
 class definitions into the JVM.
@@ -10748,7 +10728,7 @@ systems and hot-reload environments.
 
 ------------------------------------------------------------------------
 
-### Thread pool, queue and back-pressure
+#### Thread pool, queue and back-pressure
 
 A thread pool is not just “N threads.”
 
@@ -10776,7 +10756,7 @@ capacity-protection mechanism.
 
 ------------------------------------------------------------------------
 
-### Bulkhead
+#### Bulkhead
 
 A **bulkhead** isolates resources so one overloaded dependency or
 workload cannot consume all capacity.
@@ -10796,7 +10776,7 @@ This is the same principle as watertight compartments in a ship.
 
 ------------------------------------------------------------------------
 
-### Virtual threads and pinning
+#### Virtual threads and pinning
 
 A **virtual thread** is a lightweight JVM-managed thread designed to
 make high-concurrency blocking-style code practical.
@@ -10815,9 +10795,9 @@ newer JDKs.
 
 ------------------------------------------------------------------------
 
-## Module 3 — JPA / Hibernate
+### Module 3 — JPA / Hibernate
 
-### Persistence context
+#### Persistence context
 
 Think of the JPA persistence context as a managed set of entity
 instances associated with a unit of work.
@@ -10835,7 +10815,7 @@ persistence context
 Within the same persistence context, Hibernate can track entity identity
 and changes.
 
-### Dirty checking
+#### Dirty checking
 
 **Dirty checking** means Hibernate detects changes made to managed
 entities and can generate SQL updates when the persistence context is
@@ -10853,7 +10833,7 @@ managed entity and can issue the update during flush/commit.
 **Follow-up:** dirty checking applies to managed entities; a
 detached/transient object is not automatically tracked in the same way.
 
-### N+1
+#### N+1
 
 **N+1** means one query loads N parent records and then additional
 queries load related data individually:
@@ -10870,7 +10850,7 @@ The fix depends on the access pattern: fetch join, entity graph, batch
 fetching, projection, or an explicit query can all be appropriate.
 “Always use eager loading” is not a good solution.
 
-### Optimistic locking
+#### Optimistic locking
 
 Optimistic locking assumes conflicts are relatively uncommon and detects
 them when updating.
@@ -10886,7 +10866,7 @@ Two transactions read version 5. One commits and changes it to 6. The
 other later tries to update version 5 and can fail rather than silently
 overwrite the first change.
 
-### Pessimistic locking
+#### Pessimistic locking
 
 Pessimistic locking asks the database to lock the relevant rows while
 the transaction is working with them.
@@ -10897,7 +10877,7 @@ locking and the expected contention justifies the cost.
 **Follow-up:** locks can increase blocking and deadlock risk. Do not
 present pessimistic locking as automatically “safer.”
 
-### Isolation level
+#### Isolation level
 
 An isolation level defines which concurrent transaction effects a
 transaction is allowed to observe.
@@ -10917,9 +10897,9 @@ behavior.
 
 ------------------------------------------------------------------------
 
-## Module 4 — Microservices and distributed systems
+### Module 4 — Microservices and distributed systems
 
-### Circuit breaker
+#### Circuit breaker
 
 A **circuit breaker** prevents repeated calls to a failing dependency
 from consuming local resources indefinitely.
@@ -10939,7 +10919,7 @@ CLOSED
 A circuit breaker is not a substitute for timeouts. A call should have a
 bounded deadline before the circuit breaker even has a chance to help.
 
-### Saga
+#### Saga
 
 A **saga** coordinates a distributed business transaction as a sequence
 of local transactions.
@@ -10961,7 +10941,7 @@ A saga is not the same thing as a database transaction. It trades
 atomicity for a workflow with explicit compensation and consistency
 semantics.
 
-### Outbox pattern
+#### Outbox pattern
 
 The **outbox pattern** solves the problem of atomically updating a
 database and publishing an event.
@@ -10989,7 +10969,7 @@ A separate publisher then sends the outbox event.
 **Follow-up:** this usually gives at-least-once delivery, so consumers
 still need idempotency.
 
-### Idempotency
+#### Idempotency
 
 An operation is **idempotent** when repeating the same logical request
 produces the same intended final effect.
@@ -11006,7 +10986,7 @@ A retry with the same key should not charge the customer twice.
 Idempotency is especially important when timeouts make it unclear
 whether the server completed the original request.
 
-### At-least-once vs exactly-once
+#### At-least-once vs exactly-once
 
 **At-least-once:** a message should not be lost, but duplicates can
 occur.
@@ -11018,7 +10998,7 @@ external database/business side effect can never happen twice.”
 
 For interviews, state the boundary of the guarantee.
 
-### Eventual consistency
+#### Eventual consistency
 
 **Eventual consistency** means replicas or services may temporarily
 disagree, but under the model's assumptions they converge if updates
@@ -11029,9 +11009,9 @@ still needs a defined convergence and conflict-resolution model.
 
 ------------------------------------------------------------------------
 
-## Kafka — terminology you should be able to explain
+### Kafka — terminology you should be able to explain
 
-### Topic, partition and consumer group
+#### Topic, partition and consumer group
 
 A **topic** is a logical stream of records.
 
@@ -11053,7 +11033,7 @@ topic
 Partition count is therefore a major scalability constraint for parallel
 consumption.
 
-### Rebalance
+#### Rebalance
 
 A **rebalance** redistributes partition ownership among consumers in a
 consumer group.
@@ -11064,7 +11044,7 @@ changes.
 A rebalance is not free: it can temporarily affect processing and should
 be considered in latency and throughput design.
 
-### ISR
+#### ISR
 
 In Kafka, **ISR** means *in-sync replicas*. These are replicas
 considered sufficiently caught up to the leader under Kafka's
@@ -11084,7 +11064,7 @@ min.insync.replicas
 
 Do not collapse all four into “Kafka replication.”
 
-### Poison message
+#### Poison message
 
 A **poison message** is a message that repeatedly fails processing.
 
@@ -11103,9 +11083,9 @@ manual replay
 
 ------------------------------------------------------------------------
 
-## Security — terminology you should be able to explain
+### Security — terminology you should be able to explain
 
-### JWT
+#### JWT
 
 A JWT is a signed token containing claims.
 
@@ -11116,7 +11096,7 @@ Important distinction:
 
 Therefore sensitive secrets should not be placed in ordinary JWT claims.
 
-### JWKS
+#### JWKS
 
 **JWKS** is a JSON Web Key Set: a published set of public keys that a
 resource server can use to validate signed tokens.
@@ -11131,7 +11111,7 @@ JWKS public keys
 Resource server validates JWT signature
 ```
 
-### OAuth2 vs OIDC vs PKCE
+#### OAuth2 vs OIDC vs PKCE
 
 - **OAuth 2.0** — authorization/delegation framework.
 - **OIDC** — authentication layer built on OAuth 2.0.
@@ -11145,7 +11125,7 @@ A common interview mistake is saying:
 It is primarily an authorization framework; OIDC adds standardized
 authentication semantics.
 
-### CORS vs CSRF
+#### CORS vs CSRF
 
 **CORS** controls whether browser JavaScript from one origin may access
 resources from another origin.
@@ -11155,7 +11135,7 @@ ambient credentials such as cookies.
 
 They solve different problems.
 
-### mTLS
+#### mTLS
 
 **Mutual TLS** means both sides authenticate during the TLS handshake
 using certificates.
@@ -11163,7 +11143,7 @@ using certificates.
 Normal TLS commonly authenticates the server to the client; mTLS adds
 client authentication.
 
-### RBAC
+#### RBAC
 
 **Role-Based Access Control** assigns permissions through roles:
 
@@ -11173,7 +11153,7 @@ user → role → permissions
 
 It is different from fine-grained attribute/policy-based authorization.
 
-### SSRF
+#### SSRF
 
 **Server-Side Request Forgery** occurs when an attacker can influence a
 server into making requests to destinations the attacker should not be
@@ -11184,9 +11164,9 @@ network egress controls and careful redirect handling.
 
 ------------------------------------------------------------------------
 
-## System design terminology
+### System design terminology
 
-### CAP
+#### CAP
 
 CAP concerns distributed systems under a network partition:
 
@@ -11203,7 +11183,7 @@ all operations.
 Do not use CAP as “you can only ever choose two.” The interesting
 question is what guarantee the system provides **during a partition**.
 
-### PACELC
+#### PACELC
 
 PACELC extends the discussion:
 
@@ -11218,7 +11198,7 @@ Else:
 It is useful when discussing real-world distributed database trade-offs
 beyond CAP.
 
-### Quorum
+#### Quorum
 
 A quorum is a sufficient number of replicas participating in an
 operation to satisfy a consistency/durability rule.
@@ -11226,7 +11206,7 @@ operation to satisfy a consistency/durability rule.
 Do not assume every database uses the same quorum formula or semantics.
 Always name the system and its configured behavior.
 
-### Consistent hashing
+#### Consistent hashing
 
 Consistent hashing maps both nodes and keys onto a logical hash space.
 
@@ -11234,7 +11214,7 @@ When nodes change, ideally only a relatively small portion of keys
 moves, unlike naive modulo hashing where changing the node count can
 remap a large fraction of keys.
 
-### Rate limiter
+#### Rate limiter
 
 A rate limiter controls how much work a caller may perform over time.
 
@@ -11259,7 +11239,7 @@ no token → reject/delay
 
 It can allow controlled bursts while enforcing an average rate.
 
-### Keyset pagination
+#### Keyset pagination
 
 Instead of:
 
@@ -11280,9 +11260,9 @@ stable continuation when the ordering is properly indexed.
 
 ------------------------------------------------------------------------
 
-## Kubernetes deployment terminology
+### Kubernetes deployment terminology
 
-### Rolling, blue-green and canary
+#### Rolling, blue-green and canary
 
 **Rolling deployment:** gradually replaces old instances with new ones.
 
@@ -11297,7 +11277,7 @@ The important SDE-3 question is not “define them,” but:
 > Which one gives me the safest rollback and smallest blast radius for
 > this workload?
 
-### Readiness vs liveness vs startup
+#### Readiness vs liveness vs startup
 
 - **Startup probe:** “Has the application finished starting?”
 - **Readiness probe:** “Should this instance receive traffic?”
@@ -11310,9 +11290,9 @@ restart.
 
 ------------------------------------------------------------------------
 
-## Live-coding terminology
+### Live-coding terminology
 
-### Invariant
+#### Invariant
 
 An **invariant** is a condition that remains true at important points
 during the algorithm.
@@ -11331,7 +11311,7 @@ the current window satisfies the required constraint
 
 Stating the invariant makes the solution easier to prove and debug.
 
-### Amortized complexity
+#### Amortized complexity
 
 Amortized complexity averages expensive operations over a sequence.
 
@@ -11345,7 +11325,7 @@ overall                 → O(1) amortized append
 
 This is different from claiming that every append is worst-case O(1).
 
-### Identity vs equality
+#### Identity vs equality
 
 Java's `==` on object references asks whether two references point to
 the same object.
@@ -11365,7 +11345,7 @@ caching
 
 ------------------------------------------------------------------------
 
-## Interview rule for all remaining sections
+### Interview rule for all remaining sections
 
 Whenever an answer contains a specialized term, use this progression:
 
@@ -11386,15 +11366,16 @@ make sure you can go one level deeper whenever the interviewer asks.
 A strong senior answer is not the longest answer. It is an answer where
 every term you introduce can survive the next “why?”.
 
-# Part 12 More Senior-Level Questions (Q154–Q173)
+<a id="part-12"></a>
+## Part 12 - More Senior-Level Questions (Q154-Q173)
 
 Twenty additional questions on topics the guide did not yet cover: consensus and data distribution, database internals, low-level concurrency, JVM performance, Spring operations, and engineering practice. Each follows the same layout as Part 10: **Source basis**, **Strong answer**, **Reasoning and alternatives**, **What if/test**, and **Signal**. Where no specific source is cited, the basis is general engineering practice, so check details against the documentation for your version before quoting numbers.
 
-## Distributed systems and data
+### Distributed systems and data
 
 Before consensus and sharding, review [CAP](/senior-java-interview/part-11#cap), [quorums](/senior-java-interview/part-11#quorum) and [consistency terminology](/senior-java-interview/part-11#eventual-consistency), plus [SQL transactions](#sql-foundations-before-advanced-scenarios). Then use Q154–Q160 for the deeper mechanisms.
 
-### Q154 How does Raft elect a leader and why do systems use consensus
+#### Q154 How does Raft elect a leader and why do systems use consensus
 
 **Source basis:** [Raft paper](https://raft.github.io/raft.pdf).
 
@@ -11405,7 +11386,7 @@ Before consensus and sharding, review [CAP](/senior-java-interview/part-11#cap),
 **What if/test:** a minority partition cannot elect a leader or commit, trading availability for consistency. Randomized timeouts reduce split votes. Test with fault injection: kill the leader, partition the network, and verify no committed write is lost.
 **Signal:** explain terms, majority overlap and the up-to-date-log rule, not just "a leader is elected".
 
-### Q155 What is consistent hashing and why use virtual nodes
+#### Q155 What is consistent hashing and why use virtual nodes
 
 **Strong answer:** nodes and keys are hashed onto a ring; each key belongs to the first node clockwise. Adding or removing a node moves only the keys in the adjacent range, roughly `K/N` of them, whereas `hash(key) % N` remaps almost every key when `N` changes. **Virtual nodes** give each physical node many ring positions, which evens out load and lets stronger machines take more positions.
 
@@ -11414,7 +11395,7 @@ Before consensus and sharding, review [CAP](/senior-java-interview/part-11#cap),
 **What if/test:** hot keys stay hot regardless of the ring; they need caching, splitting or key salting. Test balance by measuring keys per node with realistic keys, and measure data moved when adding a node.
 **Signal:** quantify the remapping difference and name the virtual-node benefit.
 
-### Q156 What is MVCC and why do readers not block writers
+#### Q156 What is MVCC and why do readers not block writers
 
 **Source basis:** [PostgreSQL MVCC introduction](https://www.postgresql.org/docs/17/mvcc-intro.html) and [explicit locking](https://www.postgresql.org/docs/17/explicit-locking.html).
 
@@ -11425,7 +11406,7 @@ Before consensus and sharding, review [CAP](/senior-java-interview/part-11#cap),
 **What if/test:** long-running transactions prevent cleanup of old versions, causing table bloat and slower queries. Monitor oldest transaction age and dead tuples, and set statement and idle-in-transaction timeouts.
 **Signal:** connect MVCC to isolation levels and to the operational bloat risk.
 
-### Q157 When do you use SQL window functions
+#### Q157 When do you use SQL window functions
 
 **Source basis:** [PostgreSQL window function tutorial](https://www.postgresql.org/docs/current/tutorial-window.html).
 
@@ -11443,7 +11424,7 @@ SELECT * FROM (
 **What if/test:** an `ORDER BY` inside `OVER` without a frame uses a default frame that can surprise running totals. Check the plan with `EXPLAIN` and add an index matching the partition and order columns.
 **Signal:** write the top-N-per-group query from memory and explain tie handling.
 
-### Q158 What is a Bloom filter and where would you use one
+#### Q158 What is a Bloom filter and where would you use one
 
 **Source basis:** [Guava BloomFilter contract](https://guava.dev/releases/33.4.8-jre/api/docs/com/google/common/hash/BloomFilter.html).
 
@@ -11454,7 +11435,7 @@ SELECT * FROM (
 **What if/test:** if the filter fills beyond its design capacity, false positives climb; rebuild it periodically. Test by inserting the expected number of items and measuring the observed false-positive rate.
 **Signal:** state the one-sided error guarantee and a concrete use.
 
-### Q159 How do systems resolve concurrent writes to the same data
+#### Q159 How do systems resolve concurrent writes to the same data
 
 **Strong answer:** options, from simplest to most capable: avoid conflicts with a single writer per key; **last-write-wins** using timestamps (simple but silently discards writes and is vulnerable to clock skew); **vector clocks** that detect concurrent updates and keep siblings for the application to merge; **CRDTs** whose state-based merge is associative, commutative and idempotent, or whose operation-based design meets its delivery and commutativity requirements. They can provide convergence without coordinating each update, subject to their model assumptions; or application-specific merge rules.
 
@@ -11463,7 +11444,7 @@ SELECT * FROM (
 **What if/test:** clock skew makes last-write-wins lose newer data. Test by writing concurrently from two replicas during a partition and checking the converged result against the business rule.
 **Signal:** tie the resolution strategy to what the data means.
 
-### Q160 How do you choose a sharding strategy
+#### Q160 How do you choose a sharding strategy
 
 **Strong answer:** common strategies are **range** (supports range scans but suffers hotspots with monotonic keys such as timestamps), **hash** (balances load but loses range queries), **directory/lookup** (flexible but the directory is a dependency) and **geo** (data residency and latency). Pick the shard key from the dominant access pattern, with high cardinality and even distribution.
 
@@ -11472,11 +11453,11 @@ SELECT * FROM (
 **What if/test:** a celebrity tenant or hot key overloads one shard; handle it with key salting, dedicated shards or caching. Test with production-like skewed traffic, not uniform random keys.
 **Signal:** justify the shard key and name the cost of resharding.
 
-## Low-level concurrency and JVM performance
+### Low-level concurrency and JVM performance
 
 **Prerequisite:** first work through the [multithreading foundations](#multithreading-questions-foundations-to-senior-follow-ups), particularly shared-state invariants and atomic operations. The questions below assume those basics.
 
-### Q161 What is the ABA problem and how do you avoid it
+#### Q161 What is the ABA problem and how do you avoid it
 
 **Source basis:** [AtomicStampedReference](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/atomic/AtomicStampedReference.html).
 
@@ -11487,7 +11468,7 @@ SELECT * FROM (
 **What if/test:** State a stamp wraparound assumption. Test A→B→A while retaining the old stamp and assert the stamped CAS fails; restoring both a reference and mark bit can let a marked CAS succeed.
 **Signal:** explain why CAS equality is not state equality.
 
-### Q162 StampedLock optimistic reads versus ReentrantReadWriteLock
+#### Q162 StampedLock optimistic reads versus ReentrantReadWriteLock
 
 **Source basis:** [StampedLock](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/locks/StampedLock.html).
 
@@ -11498,7 +11479,7 @@ SELECT * FROM (
 **What if/test:** using unvalidated data or acting on it before validation can expose an inconsistent snapshot. A delay before validation does not bypass the validation check, but it increases retry likelihood and can waste work. Verify under a mixed reader/writer stress test and compare performance with JMH before choosing the complexity.
 **Signal:** describe the read-copy-validate pattern and its restrictions.
 
-### Q163 What is false sharing
+#### Q163 What is false sharing
 
 **Strong answer:** CPU caches move data in cache lines (commonly 64 bytes). If two threads write different variables that sit on the same line, each write invalidates the other core's copy, so performance collapses even though the threads never share data logically.
 
@@ -11507,7 +11488,7 @@ SELECT * FROM (
 **What if/test:** the effect is hardware and layout dependent, so prove it with a JMH benchmark that pads versus does not pad, rather than assuming.
 **Signal:** know the cache-line mechanism and insist on measurement.
 
-### Q164 Why is object allocation cheap on the JVM, and what is escape analysis
+#### Q164 Why is object allocation cheap on the JVM, and what is escape analysis
 
 **Strong answer:** allocation in the young generation is typically a pointer bump inside a thread-local allocation buffer (TLAB), so it needs no lock. Short-lived objects die young and are cheap to collect. The JIT's **escape analysis** can find objects that never leave a method and may eliminate the allocation (scalar replacement), keeping fields in registers.
 
@@ -11516,9 +11497,9 @@ SELECT * FROM (
 **What if/test:** microbenchmarks can mislead because the JIT removes allocations that real code retains; use JMH with a blackhole and check allocation rate in a realistic load test.
 **Signal:** avoid cargo-cult object pooling and ground claims in profiling.
 
-## Spring operations and engineering practice
+### Spring operations and engineering practice
 
-### Q165 Spring Retry or Resilience4j, and what is the ordering trap with transactions
+#### Q165 Spring Retry or Resilience4j, and what is the ordering trap with transactions
 
 **Strong answer:** both provide retry with backoff. Spring Retry offers `@Retryable`/`RetryTemplate` through proxies; Resilience4j offers composable decorators (retry, circuit breaker, bulkhead, rate limiter) with metrics. Newer Spring Framework releases also bring retry support into the core framework, so check what your version provides.
 
@@ -11527,7 +11508,7 @@ SELECT * FROM (
 **What if/test:** retries around a call that is not idempotent create duplicates (charges, emails). Test failure injection: first two attempts fail and the third succeeds; verify transaction identities, rollback-only behavior and the actual side-effect/idempotency contract.
 **Signal:** state the retry-outside-transaction rule and the idempotency requirement.
 
-### Q166 How do you run scheduled jobs safely across many instances
+#### Q166 How do you run scheduled jobs safely across many instances
 
 **Strong answer:** `@Scheduled` runs on every instance, so a job executes N times with N replicas. Options: a distributed lock (ShedLock with a database or Redis lock and an expiry), Quartz with a clustered JDBC job store, or moving scheduling out of the app to a Kubernetes `CronJob` or Cloud Scheduler that calls one endpoint.
 
@@ -11536,7 +11517,7 @@ SELECT * FROM (
 **What if/test:** if a job outlives its lock, a second instance starts concurrently. Test by running two instances and killing one mid-job.
 **Signal:** combine a locking choice with idempotent job design.
 
-### Q167 How do you reduce Spring Boot startup time and memory
+#### Q167 How do you reduce Spring Boot startup time and memory
 
 **Strong answer:** measure first: use the startup actuator endpoint with `BufferingApplicationStartup` to see which beans and phases are slow. Then trim: remove unused starters and auto-configurations, narrow component scanning, defer expensive initialization, and consider `spring.main.lazy-initialization=true`.
 
@@ -11545,7 +11526,7 @@ SELECT * FROM (
 **What if/test:** a faster start can hide slower peak throughput (native image) or first-request latency spikes (lazy beans). Compare cold start, memory and steady-state latency before and after.
 **Signal:** diagnose before optimizing and list the trade-off of each lever.
 
-### Q168 What are the risks of Lombok, and why use MapStruct
+#### Q168 What are the risks of Lombok, and why use MapStruct
 
 **Strong answer:** Lombok removes boilerplate, but `@Data` on JPA entities generates `equals`, `hashCode` and `toString` that can touch lazy collections, trigger extra queries or recurse through bidirectional associations. Builders and annotation-processor ordering can also confuse debugging and tooling. MapStruct generates mapping code at compile time (no reflection) between entities and DTOs.
 
@@ -11554,7 +11535,7 @@ SELECT * FROM (
 **What if/test:** test the mapper with a contract test, and verify `toString` never loads lazy associations.
 **Signal:** name the entity-specific Lombok hazards and the compile-time-mapping benefit.
 
-### Q169 How do you prevent SQL injection beyond "use prepared statements"
+#### Q169 How do you prevent SQL injection beyond "use prepared statements"
 
 **Source basis:** [OWASP SQL Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html).
 
@@ -11565,7 +11546,7 @@ SELECT * FROM (
 **What if/test:** include injection payloads and unusual sort parameters in automated tests, and run static analysis plus dynamic scanning in CI.
 **Signal:** handle the dynamic `ORDER BY` case with an allow-list.
 
-### Q170 What makes a test suite good beyond coverage, and what are mutation and property-based testing
+#### Q170 What makes a test suite good beyond coverage, and what are mutation and property-based testing
 
 **Strong answer:** coverage shows which lines ran, not whether tests would detect a bug. **Mutation testing** (for example PIT) changes the code in small ways and checks whether tests fail; surviving mutants reveal weak assertions. **Property-based testing** (for example jqwik) states a rule that must hold for all inputs, generates many cases and shrinks a failing case to a minimal example.
 
@@ -11574,7 +11555,7 @@ SELECT * FROM (
 **What if/test:** quarantine flaky tests with an owner and deadline. Track defect escape rate and test duration, not just percentage coverage.
 **Signal:** argue that assertion quality matters more than line coverage.
 
-### Q171 Trunk-based development versus GitFlow
+#### Q171 Trunk-based development versus GitFlow
 
 **Strong answer:** trunk-based development uses short-lived branches merged to the main branch at least daily, with **feature flags** hiding incomplete work and CI keeping main releasable. GitFlow uses long-lived `develop` and release branches, which suits scheduled, versioned releases but increases merge pain and delays integration.
 
@@ -11583,7 +11564,7 @@ SELECT * FROM (
 **What if/test:** a flag combination matrix can explode; remove flags after rollout and test both states of any flag that guards risky logic.
 **Signal:** connect branching strategy to delivery metrics (lead time, change failure rate).
 
-### Q172 What goes wrong with multi-region active-active
+#### Q172 What goes wrong with multi-region active-active
 
 **Strong answer:** you must handle write conflicts across regions, cross-region replication lag, globally unique IDs, split-brain during partitions, and the latency of any synchronous cross-region coordination. A common design assigns each user or tenant a **home region** for writes, with other regions serving reads or standby, and uses a global load balancer for failover.
 
@@ -11592,7 +11573,7 @@ SELECT * FROM (
 **What if/test:** failover drills reveal hidden dependencies (a single-region cache, DNS TTLs, shared secrets). Run regular game days that fail a whole region.
 **Signal:** start from RTO/RPO and prefer the simplest topology that meets them.
 
-### Q173 When do you add a search engine such as Elasticsearch, and how do you keep it in sync
+#### Q173 When do you add a search engine such as Elasticsearch, and how do you keep it in sync
 
 **Strong answer:** a search engine builds an **inverted index** (term to documents), applies analyzers (tokenizing, stemming) and ranks results (BM25 by default in Elasticsearch). It is built for full-text search, faceting and relevance, where an unindexed leading-wildcard `LIKE '%term%'` may require a scan. For simple needs, database full-text search or a PostgreSQL `pg_trgm` GIN/GiST index may be enough. A normal B-tree generally cannot accelerate a leading-wildcard `LIKE`, but trigram indexes support patterns such as `LIKE '%term%'` when useful trigrams can be extracted. Check the plan; patterns without extractable trigrams can still scan.
 
@@ -11603,15 +11584,16 @@ SELECT * FROM (
 
 ---
 
-# Part 13 Spring Boot Internals, Coding-Style and Leadership Questions (Q174–Q193)
+<a id="part-13"></a>
+## Part 13 - Spring Boot Internals, Coding-Style and Leadership Questions (Q174-Q193)
 
 Twenty more questions in the same layout as Parts 10 and 12. Q174–Q182 cover Spring Boot internals, Q183–Q187 are coding-style questions with solutions, and Q188–Q193 cover leadership. Version-specific points (Boot 3.x, Spring Framework 6.2 and later) should be checked against the versions your target company runs.
 
-## Spring Boot annotations: usage to internals to senior diagnosis
+### Spring Boot annotations: usage to internals to senior diagnosis
 
 Read this ladder before Q174–Q182. **Foundation:** explain the annotation's purpose and scope. **Mid-level:** name the processor and lifecycle phase. **Senior/SDE-3:** predict failures, demonstrate the boundary with a test and explain the operational trade-off. Seniority is depth of reasoning, not the number of annotation names memorized. This section targets Boot 3.5 / Framework 6.2; annotation packages, conditions and defaults must be checked when migrating versions.
 
-### S1 How does an annotation actually make something happen
+#### S1 How does an annotation actually make something happen
 
 **Foundation answer:** an annotation is metadata. Spring code must discover and interpret it; Java does not automatically implement dependency injection, transactions or HTTP routing because a class carries an annotation. A manually constructed object can carry `@Autowired` or `@Transactional` and still receive neither behavior.
 
@@ -11619,7 +11601,7 @@ Read this ladder before Q174–Q182. **Foundation:** explain the annotation's pu
 
 **Senior follow-up:** distinguish startup metadata processing from per-call interception. If a bean exists but advice never runs, check the actual object, proxy path and advisor rather than adding another component scan. Q176 compares the post-processor phases; Q179 explains repository proxies.
 
-### S2 What is inside @SpringBootApplication
+#### S2 What is inside @SpringBootApplication
 
 **Foundation answer:** it combines `@SpringBootConfiguration` (a specialized `@Configuration`), `@EnableAutoConfiguration` and `@ComponentScan`. Place the application class in a deliberate root package so default discovery covers intended application components.
 
@@ -11627,7 +11609,7 @@ Read this ladder before Q174–Q182. **Foundation:** explain the annotation's pu
 
 **Senior follow-up:** `scanBasePackages` customizes component scanning; do not assume it also relocates entity and Spring Data repository scanning. Use `@EntityScan` and `@EnableJpaRepositories` when needed, and wire persistence units explicitly for multiple databases. Demonstrate the distinction with a context containing a service, an entity and a repository in different packages. Continue with Q174 for the complete startup lifecycle.
 
-### S3 How do @Component, @Service, @Repository and injection work
+#### S3 How do @Component, @Service, @Repository and injection work
 
 **Foundation answer:** stereotypes mark component candidates; `@Service` communicates the service role. `@Repository` also marks persistence components eligible for configured exception translation. They do not automatically make every method transactional. Constructor injection expresses required dependencies; a single constructor normally needs no `@Autowired`.
 
@@ -11635,7 +11617,7 @@ Read this ladder before Q174–Q182. **Foundation:** explain the annotation's pu
 
 **Senior follow-up:** resolve multiple candidates explicitly, prefer constructor injection, and treat a constructor dependency cycle as a design signal. A singleton is shared within a container, not automatically thread-safe. `@Scope("prototype")` does not yield a new object on every call when one prototype is injected once into a singleton; use an appropriate provider or scoped proxy if that lifecycle is intended.
 
-### S4 How do @Configuration, @Bean and @Import build the graph
+#### S4 How do @Configuration, @Bean and @Import build the graph
 
 **Foundation answer:** `@Bean` describes a factory method whose product is managed by the container; `@Import` brings in configuration classes, selectors or registrars. `@Configuration` identifies a configuration source.
 
@@ -11643,7 +11625,7 @@ Read this ladder before Q174–Q182. **Foundation:** explain the annotation's pu
 
 **Senior follow-up:** explain which bean owns lifecycle/close operations and how a test proves identity. Do not interpret `@Order` as a universal dependency or initialization guarantee; express real construction dependencies through injection, and use `@DependsOn` only for an actual initialization dependency not otherwise represented.
 
-### S5 How do conditional and configuration annotations work internally
+#### S5 How do conditional and configuration annotations work internally
 
 **Foundation answer:** `@Profile` selects definitions by active profiles. `@ConditionalOnClass`, `@ConditionalOnMissingBean`, `@ConditionalOnBean`, `@ConditionalOnProperty` and `@ConditionalOnWebApplication` constrain auto-configuration using available types, beans, properties or application kind. `@ConfigurationProperties` binds grouped external properties; `@Value` injects an individual value/expression.
 
@@ -11651,7 +11633,7 @@ Read this ladder before Q174–Q182. **Foundation:** explain the annotation's pu
 
 **Senior follow-up:** use `ApplicationContextRunner` to test property absent/enabled/disabled, class absent/present and custom-bean override cases. A user bean should trigger the documented back-off behavior. Inspect the condition report before excluding infrastructure. Decide property defaults and fail-fast validation explicitly; avoid exposing secrets in diagnostics.
 
-### S6 How do @Transactional, @Async, @Cacheable and @Scheduled differ
+#### S6 How do @Transactional, @Async, @Cacheable and @Scheduled differ
 
 **Foundation answer:** these need their respective infrastructure, such as transaction management, async enablement, caching enablement or scheduling enablement. They do not all have the same execution model.
 
@@ -11664,7 +11646,7 @@ Read this ladder before Q174–Q182. **Foundation:** explain the annotation's pu
 
 **Senior answer:** proxy-based AOP uses JDK interface proxies or subclass proxies depending on configuration. Subclass proxies cannot advise final methods; private methods cannot be advised through an external proxy call. Self-invocation calls the target directly. Moving an operation to a separate injected bean or using a suitable programmatic API makes the boundary explicit. Do not assume advisor ordering gives a particular transaction/cache/async composition; inspect and test the actual invocation path.
 
-### S7 How do web annotations become request handling
+#### S7 How do web annotations become request handling
 
 **Foundation answer:** `@RestController` combines controller discovery with response-body semantics. `@RequestMapping` and HTTP-specific mappings define routes and request conditions. `@PathVariable`/`@RequestParam` resolve inputs; `@RequestBody` uses message conversion. `@Valid` requests configured validation; `@ExceptionHandler` and `@RestControllerAdvice` provide exception-to-response handling.
 
@@ -11672,7 +11654,7 @@ Read this ladder before Q174–Q182. **Foundation:** explain the annotation's pu
 
 **Senior follow-up:** test missing/invalid/null input, unexpected fields, 400/406/415 outcomes and safe exception responses. Avoid returning persistence entities that trigger lazy loads during serialization; use deliberate DTOs. Q178 covers negotiation and the managed Jackson configuration.
 
-### S8 Which persistence and test annotations are commonly confused
+#### S8 Which persistence and test annotations are commonly confused
 
 **Foundation answer:** `@Entity` and relationship annotations belong to JPA/Hibernate; `@PersistenceContext` requests an EntityManager through persistence integration. Spring Data `@Query` supplies a query and `@Modifying` marks modifying query execution; neither alone guarantees a complete service transaction. See Part 16 for mapping annotations and lifecycle follow-ups.
 
@@ -11680,7 +11662,7 @@ Read this ladder before Q174–Q182. **Foundation:** explain the annotation's pu
 
 **Senior follow-up:** `@SpringBootTest` loads broad application configuration; `@WebMvcTest` and `@DataJpaTest` constrain the test slice. A rollback-based persistence test can miss flush-time constraints or commit-only behavior. Flush where the assertion requires SQL, and use separate committed transactions where the contract concerns visibility or post-commit effects. Mocked repositories do not prove database behavior. Q182 explains context-cache cost.
 
-### S9 How should a senior candidate demonstrate the internals
+#### S9 How should a senior candidate demonstrate the internals
 
 Walk one request through controller mapping → injected service → transaction proxy → transaction manager → repository proxy → EntityManager/Session → JDBC/pool → database → flush/commit → DTO serialization. State which steps are startup registration and which run per request; where a connection is borrowed; and who closes owned resources.
 
@@ -11688,9 +11670,9 @@ Then challenge the path: a self-call, two databases, pool exhaustion, detached l
 
 **Primary references:** [Boot 3.5 SQL configuration](https://docs.spring.io/spring-boot/3.5/reference/data/sql.html), [Boot 3.5 auto-configuration development](https://docs.spring.io/spring-boot/3.5/reference/features/developing-auto-configuration.html), [Spring annotation processing](https://docs.spring.io/spring-framework/reference/6.2/core/beans/annotation-config.html), [Spring proxy mechanics](https://docs.spring.io/spring-framework/reference/6.2/core/aop/proxying.html), and [declarative transactions](https://docs.spring.io/spring-framework/reference/6.2/data-access/transaction/declarative/annotations.html). These are explanations and proposed integration checks; no live Spring/database verification is claimed.
 
-## Spring Boot internals
+### Spring Boot internals
 
-### Q174 What happens inside SpringApplication.run
+#### Q174 What happens inside SpringApplication.run
 
 **Strong answer:** Boot creates `SpringApplicationRunListeners`, prepares the `Environment` (property sources, profiles), creates the `ApplicationContext` type chosen from the deduced web application type, applies initializers, loads bean definitions, then calls `refresh()`. During refresh, configuration classes are processed (component scanning, auto-configuration imports), singleton beans are created, and for web applications the embedded server is created and started. After refresh, `ApplicationRunner` and `CommandLineRunner` beans execute, and `ApplicationReadyEvent` is published, at which point the readiness state becomes accepting traffic.
 
@@ -11699,7 +11681,7 @@ Then challenge the path: a self-call, two databases, pool exhaustion, detached l
 **What if/test:** a runner blocks readiness until it returns. Move optional work to a bounded background executor, but keep traffic refused until mandatory initialization is complete. Use a full SpringApplication startup test for runner/event/readiness order; a context runner or slice alone does not exercise that whole lifecycle.
 **Signal:** place each extension point correctly in the sequence.
 
-### Q175 How does Boot decide it is a web application and which server to start
+#### Q175 How does Boot decide it is a web application and which server to start
 
 **Strong answer:** `WebApplicationType` is deduced from the classpath: if Spring MVC's `DispatcherServlet` and servlet classes are present it is a servlet application; if only WebFlux's `DispatcherHandler` is present it is reactive; otherwise it is a plain application. When both MVC and WebFlux are present, MVC wins. The embedded server comes from the starter on the classpath: `spring-boot-starter-web` brings Tomcat, and you swap it by excluding Tomcat and adding the Jetty or Undertow starter.
 
@@ -11708,7 +11690,7 @@ Then challenge the path: a self-call, two databases, pool exhaustion, detached l
 **What if/test:** adding a reactive library to an MVC project can change behavior unexpectedly, so inspect the conditions report (`--debug`) when startup differs from expectation.
 **Signal:** explain that classpath contents drive both the app type and the server.
 
-### Q176 BeanFactoryPostProcessor versus BeanPostProcessor
+#### Q176 BeanFactoryPostProcessor versus BeanPostProcessor
 
 **Strong answer:** a `BeanFactoryPostProcessor` runs after bean *definitions* are loaded and before any ordinary bean is instantiated, so it can modify definitions (`ConfigurationClassPostProcessor` handles `@Configuration`, `@Bean` and `@ComponentScan` this way; `PropertySourcesPlaceholderConfigurer` resolves `${...}`). A `BeanPostProcessor` runs around the initialization of each bean *instance*, so it can wrap or replace it (autowiring annotations are processed this way, and AOP auto-proxy creation wraps beans in proxies).
 
@@ -11717,7 +11699,7 @@ Then challenge the path: a self-call, two databases, pool exhaustion, detached l
 **What if/test:** beans created before all post-processors are registered are not processed by them; Spring logs an "not eligible for getting processed by all BeanPostProcessors" message. Search the startup log for it when a proxy or annotation seems ignored.
 **Signal:** distinguish definition-time from instance-time hooks and cite one real example of each.
 
-### Q177 What does @Configuration(proxyBeanMethods = false) change
+#### Q177 What does @Configuration(proxyBeanMethods = false) change
 
 **Strong answer:** by default (`true`, "full" mode) Spring subclasses the configuration class with CGLIB so that calling one `@Bean` method from another returns the container's singleton instead of creating a new object. With `proxyBeanMethods = false` ("lite" mode) there is no subclass, startup is cheaper, and a direct call to another `@Bean` method is an ordinary Java call; it creates a fresh instance if that method constructs one, without container interception of the call.
 
@@ -11726,7 +11708,7 @@ Then challenge the path: a self-call, two databases, pool exhaustion, detached l
 **What if/test:** switching a legacy configuration to lite mode can silently duplicate singletons. Add a test asserting the same instance is injected in both places.
 **Signal:** state the trade-off between convenience and startup cost.
 
-### Q178 How do content negotiation and Jackson configuration work in Spring MVC
+#### Q178 How do content negotiation and Jackson configuration work in Spring MVC
 
 **Strong answer:** the `Accept` header, the controller's `produces` and `consumes` conditions, and the registered `HttpMessageConverter`s together decide the representation. An unsupported `Accept` gives `406 Not Acceptable`; an unsupported request `Content-Type` gives `415 Unsupported Media Type`. Boot auto-configures one shared `ObjectMapper` via `spring.jackson.*` properties and registers modules found on the classpath (for example Java time); by default Boot disables failing on unknown properties and writing dates as timestamps.
 
@@ -11735,7 +11717,7 @@ Then challenge the path: a self-call, two databases, pool exhaustion, detached l
 **What if/test:** a hand-built `ObjectMapper` used in tests may differ from production behavior; inject the bean or use `@JsonTest`. Test one request each for 406 and 415.
 **Signal:** know the two status codes and why you inject the managed mapper.
 
-### Q179 How does Spring Data JPA implement a repository interface you only declared
+#### Q179 How does Spring Data JPA implement a repository interface you only declared
 
 **Source basis:** [Spring Data repository initialization](https://docs.spring.io/spring-data/jpa/reference/repositories/create-instances.html).
 
@@ -11746,7 +11728,7 @@ Then challenge the path: a self-call, two databases, pool exhaustion, detached l
 **What if/test:** assuming two repository calls share a transaction without a service-level `@Transactional` is a common bug. Write a test that fails the second call and asserts whether the first persisted.
 **Signal:** explain proxy creation, startup validation and default transaction behavior.
 
-### Q180 How does the embedded Tomcat threading model affect tuning
+#### Q180 How does the embedded Tomcat threading model affect tuning
 
 **Strong answer:** the NIO connector accepts connections and hands request processing to a worker pool. Boot's defaults are roughly 200 maximum worker threads, 100 for the accept queue (`accept-count`) and 8192 maximum connections. With supported Boot 3.x and Java 21+, `spring.threads.virtual.enabled=true` can switch request execution to virtual threads. This removes the usual fixed platform-worker pool limit for that path, not the need for admission limits, connection limits or downstream capacity controls. Verify exact defaults against the chosen Boot/Tomcat version.
 
@@ -11755,7 +11737,7 @@ Then challenge the path: a self-call, two databases, pool exhaustion, detached l
 **What if/test:** raising `threads.max` without raising the connection pool just queues requests inside the app. Load test and watch pool wait time, active threads and p99 latency together.
 **Signal:** tune the whole path (threads, pool, downstream), not one number.
 
-### Q181 How do Actuator health groups, liveness and readiness work
+#### Q181 How do Actuator health groups, liveness and readiness work
 
 **Strong answer:** the health endpoint aggregates `HealthIndicator` beans. **Liveness** and **readiness** are availability states exposed as health groups and driven by `ApplicationAvailability` and `AvailabilityChangeEvent`; on Kubernetes the probe groups are enabled automatically. Readiness flips to refusing traffic during shutdown, which lets the platform drain the instance.
 
@@ -11764,7 +11746,7 @@ Then challenge the path: a self-call, two databases, pool exhaustion, detached l
 **What if/test:** a health check that calls a slow dependency can itself overload it under frequent probing; cache results or use a short timeout. Test by stopping the database and observing the probe states.
 **Signal:** explain why liveness must not depend on downstream services.
 
-### Q182 Why are Spring test suites slow, and what is context caching
+#### Q182 Why are Spring test suites slow, and what is context caching
 
 **Strong answer:** the test framework caches an application context and reuses it for tests with the **same configuration key** (configuration classes, properties, active profiles, mock-bean definitions and so on). Every distinct combination starts a new context, so scattering different `@MockBean`/`@MockitoBean` sets or `@DirtiesContext` across classes multiplies startup cost.
 
@@ -11773,9 +11755,9 @@ Then challenge the path: a self-call, two databases, pool exhaustion, detached l
 **What if/test:** measure by counting context startups in the test log. Reduce unique configurations, avoid `@DirtiesContext`, and reuse Testcontainers through a shared static container.
 **Signal:** connect suite speed to the number of distinct context configurations.
 
-## Coding-style questions
+### Coding-style questions
 
-### Q183 Implement a thread-safe TTL cache with a loader
+#### Q183 Implement a thread-safe TTL cache with a loader
 
 **Strong answer:** use a `ConcurrentHashMap` and `compute` to serialize lookup/expiry/load for a key. Waiting callers reuse a successfully loaded value while it remains unexpired; load failures or a very short TTL can cause another load. This is a limited teaching sketch, not a complete production cache.
 
@@ -11812,7 +11794,7 @@ class TtlCache<K, V> {
 **What if/test:** the loader runs while the map holds a bin lock, so it must be short and must not recursively update the same key. Test a slow loader, contention across an expiry boundary and concurrent callers. This teaching cache still evicts lazily, has no size bound, and may block other keys sharing a bin; use a mature cache for production.
 **Signal:** mention single-flight loading, monotonic time and the missing eviction.
 
-### Q184 Implement a minimal fixed thread pool
+#### Q184 Implement a minimal fixed thread pool
 
 **Explain before coding:** A fixed pool separates submission from execution: producers hand tasks to a bounded queue and workers repeatedly take them. The sketch below illustrates that mechanism but has an acknowledged submit-versus-close race and is not a fully correct shutdown implementation. In an interview, identify that missing atomic admission/shutdown boundary before claiming accepted work will finish.
 
@@ -11852,7 +11834,7 @@ class MiniPool implements AutoCloseable {
 **What if/test:** a task submitted while `close()` begins can slip through, and concurrent close/submit can leave work queued after workers exit. A production pool must serialize submission with shutdown, define rejection and interruption behavior, and ensure every accepted task is completed or explicitly cancelled. Test the race with latches; ordinary draining tests do not prove it safe.
 **Signal:** explain the worker loop and why the queue is bounded.
 
-### Q185 Write a Spring filter that adds a correlation ID to the logging context
+#### Q185 Write a Spring filter that adds a correlation ID to the logging context
 
 **Explain before coding:** The request thread first validates or generates an ID, stores it in the logging context, runs the downstream chain and removes it in finally. The cleanup must also run if downstream code throws. This sketch assumes it owns that MDC entry; nested context ownership may require restoring a previous value instead.
 
@@ -11879,7 +11861,7 @@ class CorrelationIdFilter extends OncePerRequestFilter {
 **What if/test:** MDC does not propagate to new threads automatically; wrap executors with a `TaskDecorator` that copies it. Test with `MockMvc` asserting the response header and that the MDC is empty afterwards.
 **Signal:** clear the context in `finally` and sanitize the header.
 
-### Q186 Merge K sorted linked lists
+#### Q186 Merge K sorted linked lists
 
 **Explain before coding:** For lists [1,4] and [2,3], put 1 and 2 in the heap, emit 1 and offer its successor 4, then emit 2 and offer 3. Only the smallest remaining head can be next. This version relinks existing nodes and assumes a non-null array of sorted, acyclic, disjoint lists; shared nodes require a different contract.
 
@@ -11902,7 +11884,7 @@ ListNode mergeKLists(ListNode[] lists) {
 **What if/test:** test empty input, all-empty lists, one list, and duplicate values across lists.
 **Signal:** give both complexities and explain why the heap stays size k.
 
-### Q187 Build a mini dependency-injection container
+#### Q187 Build a mini dependency-injection container
 
 **Explain before coding:** Resolve A by resolving its constructor parameters first. The creating set represents the active dependency path: seeing A again before it is complete detects a cycle. Cache only successful instances. The sketch assumes one constructor per concrete class and single-threaded access.
 
@@ -11939,9 +11921,9 @@ class MiniContainer {
 **What if/test:** the sketch is not thread-safe and handles only concrete classes. Test a chain A→B→C and a cycle A→B→A.
 **Signal:** relate each simplification to the matching Spring feature.
 
-## Leadership
+### Leadership
 
-### Q188 How do you run a design review and write an RFC or ADR
+#### Q188 How do you run a design review and write an RFC or ADR
 
 **Strong answer:** write a short document stating the problem, goals and non-goals, constraints, options considered with trade-offs, the recommendation, risks, a rollout and rollback plan, and open questions. Share it early with the people affected, set a review deadline, and record the decision with the reasoning (an Architecture Decision Record) and a date to revisit.
 
@@ -11950,7 +11932,7 @@ class MiniContainer {
 **What if:** the review becomes opinion battles; fix this by agreeing criteria first (latency, cost, delivery time, operability) and scoring options against them.
 **Signal:** show a written process, decision criteria and a record of the outcome.
 
-### Q189 How do you handle a team member who is underperforming
+#### Q189 How do you handle a team member who is underperforming
 
 **Strong answer:** start with a private, specific conversation about observed outcomes, not personality. Clarify expectations, ask about blockers (skills, context, workload, personal issues), agree on measurable goals and a short timeline, and check in frequently with support such as pairing, smaller tasks or a mentor. Involve your manager or HR early if the pattern continues.
 
@@ -11959,7 +11941,7 @@ class MiniContainer {
 **What if:** performance does not improve despite support; then follow the formal process promptly and respectfully, because delaying harms both the person and the team.
 **Signal:** be specific, empathetic and accountable, with a concrete example and outcome.
 
-### Q190 How do you prioritize technical debt against product features
+#### Q190 How do you prioritize technical debt against product features
 
 **Strong answer:** quantify debt in business terms: incident count, time lost per release, onboarding time, lead time, or risk exposure (a vulnerable library). Rank by impact and cost to fix, tie work to roadmap goals ("this refactor removes the migration blocker for feature X"), and agree on a standing allocation (for example 15–20% of capacity) plus targeted projects for large items.
 
@@ -11968,7 +11950,7 @@ class MiniContainer {
 **What if:** product refuses any time for debt; then propose the smallest high-impact fix, measure the improvement and use the result to justify more.
 **Signal:** use metrics and negotiate trade-offs instead of demanding rewrites.
 
-### Q191 How do you drive a change across teams when you have no authority
+#### Q191 How do you drive a change across teams when you have no authority
 
 **Strong answer:** build a case with evidence, find allies and early adopters, make adoption easy (templates, libraries, migration guides, automation), start with a pilot, publish the results, and ask leaders to remove blockers rather than mandate. Keep feedback loops open so the solution adapts to real needs.
 
@@ -11977,7 +11959,7 @@ class MiniContainer {
 **What if:** teams still resist; find out their constraints, adjust the approach, and escalate only for genuine risk (security, compliance) with clear data.
 **Signal:** describe influence through evidence, enablement and empathy, with a real adoption result.
 
-### Q192 How do you estimate work and communicate delays
+#### Q192 How do you estimate work and communicate delays
 
 **Strong answer:** estimate in ranges with stated assumptions, break work into small deliverables, separate known from unknown (add spikes for unknowns), and add buffer for integration and testing. Track progress against milestones. When a delay appears, tell stakeholders **early**, explain the cause and impact, and present options: reduce scope, move the date, or add resources, with your recommendation.
 
@@ -11986,7 +11968,7 @@ class MiniContainer {
 **What if:** pressure to commit to an unrealistic date; present the trade-off explicitly (scope, time, quality) rather than silently absorbing risk.
 **Signal:** early, transparent communication with options, not excuses.
 
-### Q193 How do you decide between building and buying a solution
+#### Q193 How do you decide between building and buying a solution
 
 **Strong answer:** compare **total cost of ownership** (licenses or usage fees versus engineering, operations and maintenance), time to value, fit to requirements, integration effort, security and compliance, vendor risk and lock-in, and whether the capability is a **differentiator** for the business. Build what differentiates the product; buy or adopt open source for commodity capabilities.
 
@@ -11997,15 +11979,16 @@ class MiniContainer {
 
 ---
 
-# Part 14 System Design, Data Internals, JVM and Coding Questions (Q194–Q213)
+<a id="part-14"></a>
+## Part 14 - System Design, Data Internals, JVM and Coding Questions (Q194-Q213)
 
 Twenty more questions in the same layout as Parts 10, 12 and 13. Q194–Q199 are condensed system designs, Q200–Q202 cover Kafka and database internals, Q203–Q206 cover Java I/O and JVM topics, and Q207–Q213 are coding problems with solutions. Where no source is linked, the basis is general engineering practice, so confirm specifics against the documentation for your version.
 
-## Condensed system designs
+### Condensed system designs
 
 Use the [requirements-first design sequence](#module-7-system-design-prompts-practice-45-min-each) before the examples: requirements → estimates → API/data → architecture → failure/scaling analysis → trade-offs. These prompts assume that interview process.
 
-### Q194 Design a distributed cache
+#### Q194 Design a distributed cache
 
 **Strong answer:** partition keys across nodes with consistent hashing or fixed hash slots, replicate each partition to a replica for failover, and bound memory with an eviction policy (LRU, LFU or TTL). Clients route requests directly or through a proxy. Use cache-aside with a TTL so the database stays the source of truth.
 
@@ -12014,7 +11997,7 @@ Use the [requirements-first design sequence](#module-7-system-design-prompts-pra
 **What if/test:** a node failure triggers a cold-cache load spike on the database, so rate-limit refills and test by killing a node under load. Track hit rate, evictions and p99 latency.
 **Signal:** cover partitioning, replication trade-offs, hot keys and stampedes, not just "use Redis".
 
-### Q195 Design a news feed or timeline
+#### Q195 Design a news feed or timeline
 
 **Strong answer:** there are two models. **Fan-out on write** pushes each new post ID into every follower's precomputed timeline (fast reads, expensive writes, bad for accounts with millions of followers). **Fan-out on read** merges followed accounts' posts at request time (cheap writes, slower reads). A hybrid pushes for ordinary accounts and pulls for high-follower accounts, merging at read time.
 
@@ -12023,7 +12006,7 @@ Use the [requirements-first design sequence](#module-7-system-design-prompts-pra
 **What if/test:** deleting or editing a post must propagate to timelines (lazy filtering on read is simplest). Test a celebrity posting during peak and measure write amplification.
 **Signal:** name the celebrity problem and the hybrid solution.
 
-### Q196 Design a webhook delivery system
+#### Q196 Design a webhook delivery system
 
 **Strong answer:** persist each event, then deliver it with worker processes that POST to the subscriber's URL. Sign the payload (HMAC with a per-endpoint secret plus a timestamp to prevent replay), include a unique event ID so receivers can deduplicate, use short timeouts, and retry with exponential backoff for a bounded period. Deliveries are at-least-once and unordered unless you build per-endpoint ordering.
 
@@ -12032,7 +12015,7 @@ Use the [requirements-first design sequence](#module-7-system-design-prompts-pra
 **What if/test:** a receiver that returns 200 before processing may lose events, so document that they should acknowledge only after durable receipt. Test with a flaky receiver and verify retry timing and deduplication.
 **Signal:** mention signatures, idempotency, isolation and SSRF.
 
-### Q197 Design a file upload and storage service
+#### Q197 Design a file upload and storage service
 
 **Strong answer:** prefer direct-to-object-storage uploads when the security and processing requirements allow them; controlled application streaming is an alternative when inline inspection or another constraint requires it. The client requests a signed upload URL, then uploads directly to object storage, using resumable or multipart upload for large files. Store metadata (owner, size, content hash, status) in a database with states such as PENDING → READY. An object-finalized event triggers asynchronous processing (virus scan, thumbnails, indexing). Keep the object quarantined and unavailable for download until required validation and scanning finish; only then transition metadata to READY. Serve READY downloads through signed URLs or a CDN.
 
@@ -12041,7 +12024,7 @@ Use the [requirements-first design sequence](#module-7-system-design-prompts-pra
 **What if/test:** a client may upload but never confirm, or confirm without uploading; validate against the object store before marking READY. Test interrupted and resumed uploads.
 **Signal:** keep large data off the app tier and handle the two-system consistency gap.
 
-### Q198 Design search autocomplete
+#### Q198 Design search autocomplete
 
 **Strong answer:** serve suggestions from a precomputed structure: a trie or prefix index where each prefix maps to its top-k completions, built offline or by streaming aggregation from query logs and refreshed periodically. Cache results in memory and at the edge, since latency must be very low.
 
@@ -12050,7 +12033,7 @@ Use the [requirements-first design sequence](#module-7-system-design-prompts-pra
 **What if/test:** trending queries need a fast update path beside the batch rebuild. Test p99 latency with realistic prefix distributions.
 **Signal:** precompute top-k per prefix and justify the memory trade-off.
 
-### Q199 Design a leaderboard
+#### Q199 Design a leaderboard
 
 **Strong answer:** use a Redis sorted set: `ZADD`/`ZINCRBY` update a member in O(log n); rank lookup is O(log n), while returning N members is O(log n + N). Modern Redis can use `ZRANGE ... REV`. Equal scores already tie-break lexicographically by member bytes. If packing a tie-breaker into scores, bound and prove the encoding preserves order and exactness: Redis scores are doubles, with exact integer representation only through ±2^53. Keep separate keys with TTLs for daily and weekly windows.
 
@@ -12059,9 +12042,9 @@ Use the [requirements-first design sequence](#module-7-system-design-prompts-pra
 **What if/test:** concurrent updates are atomic per command, but rank queries during bursts can reflect in-flight changes. Test with simulated score bursts and verify rebuild from events.
 **Signal:** name the data structure and the scale-out path.
 
-## Kafka and database internals
+### Kafka and database internals
 
-### Q200 Why is Kafka fast, and how do log segments, retention and compaction work
+#### Q200 Why is Kafka fast, and how do log segments, retention and compaction work
 
 **Source basis:** [Kafka design documentation](https://kafka.apache.org/documentation/#design).
 
@@ -12072,7 +12055,7 @@ Use the [requirements-first design sequence](#module-7-system-design-prompts-pra
 **What if/test:** compaction does not guarantee immediate removal of older values, and consumers can still see superseded records until cleaning runs. Test tombstone behavior and retention settings explicitly.
 **Signal:** explain performance through sequential IO and the page cache, not just "it's distributed".
 
-### Q201 What are ISR, acks and min.insync.replicas, and how can data be lost
+#### Q201 What are ISR, acks and min.insync.replicas, and how can data be lost
 
 **Strong answer:** the in-sync replica set (ISR) contains replicas caught up with the leader. With `acks=all` the leader waits for all current ISR members; `min.insync.replicas` makes the broker reject writes when the ISR is smaller than the threshold. A common setting is replication factor 3 with `min.insync.replicas=2`, tolerating one broker failure without losing acknowledged writes.
 
@@ -12081,7 +12064,7 @@ Use the [requirements-first design sequence](#module-7-system-design-prompts-pra
 **What if/test:** `acks=all` with `min.insync.replicas=1` gives weaker protection than people assume. Test by stopping brokers and checking producer errors and acknowledged-write survival.
 **Signal:** show how the three settings combine, not each in isolation.
 
-### Q202 Which PostgreSQL index types do you know and when do you use each
+#### Q202 Which PostgreSQL index types do you know and when do you use each
 
 **Source basis:** [PostgreSQL index types](https://www.postgresql.org/docs/current/indexes-types.html).
 
@@ -12092,9 +12075,9 @@ Use the [requirements-first design sequence](#module-7-system-design-prompts-pra
 **What if/test:** index-only scans depend on the visibility map, so a table that is not vacuumed enough falls back to heap reads. Confirm with `EXPLAIN (ANALYZE, BUFFERS)`.
 **Signal:** match the index type to the access pattern and mention the write cost.
 
-## Java I/O and JVM
+### Java I/O and JVM
 
-### Q203 How do you process a very large CSV file in Java
+#### Q203 How do you process a very large CSV file in Java
 
 **Strong answer:** stream it instead of loading it. Use a streaming CSV parser over a `Reader`; physical lines are not necessarily records because quoted fields may contain line breaks. Parse logical records, validate and process in **batches** (for example 1,000 rows per JDBC batch or a database bulk-load path), keeping memory bounded. Record progress so a failed run can resume.
 
@@ -12103,7 +12086,7 @@ Use the [requirements-first design sequence](#module-7-system-design-prompts-pra
 **What if/test:** a single bad row should not abort a run silently; route rejects to an error file. Test with a file larger than the heap, quoted delimiters and multiline fields, malformed rows, and restart points at logical-record boundaries.
 **Signal:** bounded memory, batching and restartability.
 
-### Q204 How do Java NIO and selectors differ from classic blocking I/O
+#### Q204 How do Java NIO and selectors differ from classic blocking I/O
 
 **Strong answer:** classic I/O uses one blocked thread per connection. NIO uses **channels**, **buffers** and a **selector** so a small number of threads can monitor many connections and handle only those that are ready. Netty and Tomcat's NIO connector build event loops on this model. `FileChannel.transferTo` can move file data to a socket without copying through user space (zero-copy).
 
@@ -12112,7 +12095,7 @@ Use the [requirements-first design sequence](#module-7-system-design-prompts-pra
 **What if/test:** blocking work inside an event-loop thread stalls many connections. Test by adding a slow call and observing latency across unrelated requests.
 **Signal:** explain readiness multiplexing and the event-loop pitfall.
 
-### Q205 What are G1 humongous allocations and how do you spot them
+#### Q205 What are G1 humongous allocations and how do you spot them
 
 **Strong answer:** in G1, an object at least half the size of a heap region is **humongous** and is allocated directly in contiguous old-generation regions, bypassing the young generation. Frequent humongous allocations can cause fragmentation, extra GC work and surprising full collections.
 
@@ -12121,7 +12104,7 @@ Use the [requirements-first design sequence](#module-7-system-design-prompts-pra
 **What if/test:** a service that reads large payloads fully into a `byte[]` is a typical cause. Reproduce under load, compare GC logs before and after chunking.
 **Signal:** connect a symptom in GC logs to a code-level cause.
 
-### Q206 List.of versus unmodifiableList versus List.copyOf versus Arrays.asList
+#### Q206 List.of versus unmodifiableList versus List.copyOf versus Arrays.asList
 
 **Strong answer:** `List.of` creates a structurally unmodifiable list and rejects nulls. `Collections.unmodifiableList` is a read-only **view**: changes to the underlying list remain visible through it. `List.copyOf` makes a shallow, structurally unmodifiable copy; callers must not rely on object identity. `Arrays.asList` is fixed-size and writes through to the backing array. `Stream.toList()` returns an unmodifiable list that allows nulls.
 
@@ -12130,9 +12113,9 @@ Use the [requirements-first design sequence](#module-7-system-design-prompts-pra
 **What if/test:** returning `unmodifiableList(internalList)` and later mutating `internalList` surprises callers who iterate concurrently. Test by mutating the source after creating each variant.
 **Signal:** distinguish a view from a copy.
 
-## Coding problems
+### Coding problems
 
-### Q207 Longest consecutive sequence in O(n)
+#### Q207 Longest consecutive sequence in O(n)
 
 **Explain before coding:** Build a set, then start counting only at values whose predecessor is absent. For [100,4,200,1,3,2], only 1 starts the run 1–4; starting again at 2, 3 or 4 would repeat work. Handle integer endpoints so predecessor/successor arithmetic cannot wrap into a false neighbor.
 
@@ -12158,7 +12141,7 @@ int longestConsecutive(int[] nums) {
 **What if/test:** test empty input, duplicates, negatives, one long run and both integer endpoints together.
 **Signal:** explain why starting only at sequence starts keeps it linear.
 
-### Q208 Product of array except self (no division)
+#### Q208 Product of array except self (no division)
 
 **Explain before coding:** At each index, multiply the product strictly to its left by the product strictly to its right. For [1,2,3,4], the result is [24,12,8,6]. Prefix work fills the output; a backward suffix pass completes it without division, so zeros need no special division case. State the numeric range assumption.
 
@@ -12180,7 +12163,7 @@ int[] productExceptSelf(int[] a) {
 **What if/test:** test zeros, negatives and overflow (ask whether to use `long`).
 **Signal:** prefix and suffix products, and the zero case.
 
-### Q209 Rotting oranges (multi-source BFS)
+#### Q209 Rotting oranges (multi-source BFS)
 
 **Explain before coding:** Enqueue every initially rotten orange at distance zero. All infections produced by one queue layer occur during the same minute; starting separate searches would repeat work and complicate the earliest-arrival calculation. Track remaining fresh cells to distinguish completion from unreachable cells.
 
@@ -12227,7 +12210,7 @@ int orangesRotting(int[][] g) {
 **What if/test:** test empty and zero-column grids, no fresh oranges (0), unreachable fresh orange (-1), one cell and malformed nonrectangular input.
 **Signal:** know why multi-source BFS gives the minimum time.
 
-### Q210 Trapping rain water (two pointers)
+#### Q210 Trapping rain water (two pointers)
 
 **Explain before coding:** Water above a bar needs boundaries on both sides and is limited by the smaller available boundary. Move the side whose boundary is currently limiting, accumulating its deficit and updating its maximum. For [2,0,2], the middle holds two units; monotonic heights hold none.
 
@@ -12252,7 +12235,7 @@ long trap(int[] h) {
 **What if/test:** test empty, monotonic and valley shapes, including a valley bounded by `Integer.MAX_VALUE` heights.
 **Signal:** justify why the smaller side can be processed safely.
 
-### Q211 Minimum window substring (sliding window)
+#### Q211 Minimum window substring (sliding window)
 
 **Explain before coding:** Track the missing character multiplicities. Expanding the right boundary eventually makes a window valid; then move the left boundary until removing a needed occurrence would invalidate it. For s=ADOBECODEBANC and t=ABC, the minimum is BANC. Repeated target characters need counts, not a set. This array-based sketch assumes ASCII input because its count array has 128 entries.
 
@@ -12278,7 +12261,7 @@ String minWindow(String s, String t) {
 **What if/test:** test repeated characters in `t`, no valid window, and `t` longer than `s`.
 **Signal:** explain the `missing` counter and the shrink condition.
 
-### Q212 Lowest common ancestor of a binary tree
+#### Q212 Lowest common ancestor of a binary tree
 
 **Explain before coding:** Each recursive call reports whether its subtree contains a target or an already found ancestor. If the left reports one target and the right the other, the current node is their split point. If one target is itself an ancestor, return it. State the assumption that both target objects occur in the tree.
 
@@ -12295,7 +12278,7 @@ TreeNode lca(TreeNode root, TreeNode p, TreeNode q) {
 **What if/test:** the solution assumes both nodes exist; confirm that or add a verification pass. Test when one node is an ancestor of the other.
 **Signal:** state the assumption and give the BST shortcut.
 
-### Q213 Time-based key-value store
+#### Q213 Time-based key-value store
 
 **Explain before coding:** For one key with values at times 3 and 8, a read at 6 returns the value at 3: the greatest stored timestamp no later than the request. A sorted map directly supports that floor operation. Per-map concurrent replacements alone do not define a cross-key snapshot contract.
 
@@ -12320,15 +12303,16 @@ class TimeMap {
 **What if/test:** this class is not thread-safe; for concurrency use `ConcurrentHashMap` with `ConcurrentSkipListMap`. Test a get before the first set, equal timestamps and overwriting.
 **Signal:** pick a floor lookup structure and discuss thread safety.
 
-# Part 15 Full System Design Walkthroughs and DP/Graph Problems (Q214–Q222)
+<a id="part-15"></a>
+## Part 15 - Full System Design Walkthroughs and DP/Graph Problems (Q214-Q222)
 
 Q214–Q216 are full walkthroughs you can follow in a 45-minute design round. Each uses the same flow: requirements, estimates, API, data model, architecture, deep dives, failure handling, trade-offs and a timing plan. The numbers are illustrative assumptions to show the method; in an interview, state your own assumptions and adjust. Q217–Q222 are dynamic programming and graph problems with solutions.
 
-## Full system design walkthroughs
+### Full system design walkthroughs
 
 Use the [requirements-first design sequence](#module-7-system-design-prompts-practice-45-min-each) before the examples: requirements → estimates → API/data → architecture → failure/scaling analysis → trade-offs. These prompts assume that interview process.
 
-### Q214 Design a flash-sale checkout that never oversells inventory
+#### Q214 Design a flash-sale checkout that never oversells inventory
 
 **Requirements.** Functional: browse a product, add to cart, reserve stock, pay, confirm the order. Non-functional: never sell more units than exist, tolerate a sudden traffic spike (assume 1M users, 100K requests/second on the product page, 10K order attempts/second, 5,000 units), stay available if payment is slow, and stay idempotent on retries.
 
@@ -12348,7 +12332,7 @@ Use the [requirements-first design sequence](#module-7-system-design-prompts-pra
 **Timing plan.** 5 min requirements and estimates, 5 min API and data, 10 min architecture, 15 min the oversell deep dive, 10 min failures and trade-offs.
 **Signal:** a precise oversell mechanism (conditional update, sub-counters, expiring reservations), a saga with compensation and a plan for the traffic spike.
 
-### Q215 Design a ride-hailing dispatch system
+#### Q215 Design a ride-hailing dispatch system
 
 **Requirements.** Functional: drivers send locations, riders request a ride, the system finds and offers the trip to a nearby driver, tracks the trip and shows ETA. Non-functional: matching in a few seconds, high-volume location updates (assume 1M online drivers sending a location every 4 seconds, about 250K updates/second), no driver offered two trips at once.
 
@@ -12368,7 +12352,7 @@ Drivers stream locations over a persistent connection (WebSocket or gRPC) or `PO
 **Timing plan.** 5 min requirements and scale, 10 min geo index and updates, 15 min matching and state machine, 10 min failures and scaling, 5 min trade-offs.
 **Signal:** separating ephemeral location data from durable trip data, and the atomic driver-state transition.
 
-### Q216 Design a real-time clickstream analytics pipeline on GCP
+#### Q216 Design a real-time clickstream analytics pipeline on GCP
 
 **Requirements.** Functional: collect events from web and mobile clients, make near-real-time aggregates available (page views per minute, funnel counts) and keep raw events for later analysis. Non-functional: handle bursts (assume 200K events/second peak), tolerate duplicates and late events, keep results correct within minutes, control cost.
 
@@ -12387,9 +12371,9 @@ Drivers stream locations over a persistent connection (WebSocket or gRPC) or `PO
 **Timing plan.** 5 min requirements and scale, 10 min ingestion path, 15 min windows/dedupe/late data, 10 min failures and cost, 5 min trade-offs.
 **Signal:** event time versus processing time, idempotent sinks and honest delivery guarantees.
 
-## Dynamic programming and graph problems
+### Dynamic programming and graph problems
 
-### Q217 Longest increasing subsequence in O(n log n)
+#### Q217 Longest increasing subsequence in O(n log n)
 
 **Explain before coding:** tails[i] is the smallest known ending value for an increasing subsequence of length i+1. For [3,1,2], replace tail 3 with 1, then extend with 2. A smaller tail leaves more future extension options; the tails array is a summary of possibilities, not necessarily one reconstructed subsequence.
 
@@ -12412,7 +12396,7 @@ int lengthOfLIS(int[] nums) {
 **What if/test:** the array `tails` is not itself a valid subsequence, only its length is meaningful. Test empty input, all equal values (answer 1) and strictly decreasing input.
 **Signal:** explain what `tails` means and why equal values replace instead of extend.
 
-### Q218 Partition equal subset sum (0/1 knapsack)
+#### Q218 Partition equal subset sum (0/1 knapsack)
 
 **Explain before coding:** An equal partition exists exactly when a subset reaches half the total. Start with sum zero reachable and add each non-negative number once. Update sums downward so the current number cannot contribute repeatedly during one iteration; upward updates would solve a different problem.
 
@@ -12439,7 +12423,7 @@ boolean canPartition(int[] nums) {
 **What if/test:** this array-backed method assumes non-negative integers and a feasible target size; reject negative values and use another representation if the target is too large for memory. Test an odd total, an empty input (two empty subsets are allowed), a single element, and a case that needs several elements.
 **Signal:** explain the reverse loop and the reduction.
 
-### Q219 Longest common subsequence
+#### Q219 Longest common subsequence
 
 **Explain before coding:** For two prefixes, matching last characters extend the best result for the two shorter prefixes. If they differ, discard the last character from either prefix and take the better result. For abc and ac, keeping a then c gives length two. Subsequence permits gaps; substring does not.
 
@@ -12460,7 +12444,7 @@ int longestCommonSubsequence(String a, String b) {
 **What if/test:** test empty strings, identical strings and no common characters.
 **Signal:** define the state precisely and mention the space optimization.
 
-### Q220 Word ladder (shortest transformation, BFS)
+#### Q220 Word ladder (shortest transformation, BFS)
 
 **Explain before coding:** Treat each valid word as a node and each one-letter transformation as an equal-cost edge. BFS explores all one-change candidates before two-change candidates. Mark a word visited on enqueue so repeated paths do not expand it again; the first target layer gives the shortest ladder.
 
@@ -12500,7 +12484,7 @@ int ladderLength(String begin, String end, List<String> words) {
 **What if/test:** assume non-null, equal-length lowercase words; clarify whether a zero-transformation ladder counts as one word, and whether the end must appear in the dictionary. This implementation returns 1 when begin equals end. Test an unreachable target and a target missing from the dictionary.
 **Signal:** model it as a graph, mark visited when enqueuing, and offer bidirectional BFS.
 
-### Q221 Cheapest flights within K stops (Bellman-Ford style)
+#### Q221 Cheapest flights within K stops (Bellman-Ford style)
 
 **Explain before coding:** Keep the cheapest cost using at most the previous round's number of edges. Read only that old array while writing the next one, so a single round adds at most one flight. With zero intermediate stops, at most one flight is allowed; reusing updated costs in the same round could accept a forbidden connection.
 
@@ -12526,7 +12510,7 @@ int findCheapestPrice(int n, int[][] flights, int src, int dst, int k) {
 **What if/test:** cloning the array each round prevents chaining multiple newly relaxed edges in that same round, preserving the edge-count bound. Test unreachable destinations, `k = 0` and a case where a cheaper path needs too many stops.
 **Signal:** explain why the stop limit rules out standard Dijkstra and why the clone matters.
 
-### Q222 Redundant connection (Union-Find)
+#### Q222 Redundant connection (Union-Find)
 
 **Explain before coding:** Before adding an edge, ask whether both endpoints already share a representative. In the triangle (1,2), (2,3), (1,3), the third edge closes the existing path into a cycle. Otherwise union the two components; path compression and rank keep representative searches cheap.
 
@@ -12556,19 +12540,20 @@ int find(int[] p, int x) {
 **What if/test:** under the tree-plus-one-edge premise, the first edge that closes a cycle is the last edge of that cycle in input order, matching the usual tie rule. This implementation is not a general solver for arbitrary graphs or sparse labels. Test a simple triangle and a longer cycle.
 **Signal:** know when union-find beats DFS and name path compression and union by rank.
 
-## Version and source notes
+### Version and source notes
 
 The system-design figures are illustrative estimates. Delivery guarantees and sink behavior are based on [Google Cloud Dataflow's exactly-once explanation](https://docs.cloud.google.com/dataflow/docs/concepts/exactly-once), [Pub/Sub to Dataflow behavior](https://docs.cloud.google.com/dataflow/docs/concepts/streaming-with-cloud-pubsub), and [Dataflow's BigQuery write modes](https://docs.cloud.google.com/dataflow/docs/guides/write-to-bigquery). These sources do not prove an arbitrary application's end-to-end exactly-once behavior.
 
-# Part 16 Hibernate and SQL Questions (Q223–Q244)
+<a id="part-16"></a>
+## Part 16 - Hibernate and SQL Questions (Q223-Q244)
 
 Hibernate/JPA and SQL practice. SQL examples use `employee(id, name, dept, salary, manager_id)` unless stated. The SQL examples below were checked against SQLite for the portable cases. JPA snippets are illustrative; check provider behavior and SQL with the Hibernate 6.6 and Spring Data JPA 3.5 references at the end. PostgreSQL-specific notes are identified explicitly.
 
-## Start here: database connections and session management
+### Start here: database connections and session management
 
 Study this chapter in order: connections → pools → sessions and factories → transaction boundaries → entity lifecycle → mapping annotations → advanced Hibernate → SQL. The existing Q223–Q244 identifiers stay stable for bookmarks; their reading order now follows the topic rather than the number. These explanations target Java 17/21, Spring Boot 3.5, Spring Framework 6.2 and Hibernate 6.6 with `jakarta.persistence` imports. Framework flows are conceptual walkthroughs, not runnable or integration-tested applications.
 
-### H1 How do we make a connection with a database in plain Java
+#### H1 How do we make a connection with a database in plain Java
 
 **Strong answer:** add the database's JDBC driver, supply its JDBC URL and credentials, then obtain a `java.sql.Connection` using `DriverManager.getConnection` or a configured `DataSource`. A JDBC 4 driver normally registers through service discovery; explicitly loading its class is usually unnecessary. Use a `PreparedStatement` with bound values, execute it, read the `ResultSet`, and close result sets, statements and owned connections with try-with-resources. The driver translates JDBC operations into the database protocol; Hibernate is not required.
 
@@ -12578,7 +12563,7 @@ Study this chapter in order: connections → pools → sessions and factories �
 
 **What if/test:** make the second write violate a constraint and check that the first write rolls back. Simulate an unavailable database and distinguish a connection failure from a slow query.
 
-### H2 How does Spring Boot establish a database connection
+#### H2 How does Spring Boot establish a database connection
 
 **Strong answer:** with `spring-boot-starter-jdbc` or `spring-boot-starter-data-jpa`, a compatible driver and external `spring.datasource.url`, `username` and `password`, Boot can configure a `DataSource`; the normal starter pool is HikariCP. Boot binds configuration and evaluates auto-configuration conditions. JDBC code can use `JdbcTemplate`/`JdbcClient`; JPA adds an `EntityManagerFactory`, a provider such as Hibernate, and transaction integration. A repository ultimately executes SQL through JDBC connections obtained from the DataSource.
 
@@ -12588,7 +12573,7 @@ Study this chapter in order: connections → pools → sessions and factories �
 
 **Senior follow-up — how do you diagnose it?** Inspect the condition evaluation report, effective configuration without revealing secrets, pool metrics and root driver exception. Keep schema migration ownership explicit. `ddl-auto=update` is not a production migration strategy.
 
-### H3 What is a connection pool, and is a Session a connection
+#### H3 What is a connection pool, and is a Session a connection
 
 **Strong answer:** a pool keeps reusable physical connections; borrowing typically returns a logical handle whose close returns it to the pool. A Hibernate Session instead tracks managed entities, identity and pending work. Increasing pool size cannot exceed the database's useful capacity and can worsen contention. Size against all application replicas and other database clients, then measure acquisition wait, transaction duration and database load.
 
@@ -12596,7 +12581,7 @@ Study this chapter in order: connections → pools → sessions and factories �
 
 **Senior follow-up — REQUIRES_NEW?** An inner transaction can need a second connection while the outer transaction retains its resources. Many callers doing this simultaneously can exhaust the pool. Review boundaries and worst-case nested demand rather than blindly doubling capacity.
 
-### H4 What are Session, SessionFactory, EntityManager and EntityManagerFactory
+#### H4 What are Session, SessionFactory, EntityManager and EntityManagerFactory
 
 **Strong answer:** `Session` is Hibernate's unit-of-work API; JPA's standard API is `EntityManager`. Both expose a persistence context that tracks managed entity identity and changes. `SessionFactory`/`EntityManagerFactory` hold expensive shared configuration and metadata and are normally created once per persistence unit. Factories are thread-safe; individual Sessions/EntityManagers are not. A persistence context is not a global cache or a database transaction.
 
@@ -12606,7 +12591,7 @@ Study this chapter in order: connections → pools → sessions and factories �
 
 **Senior follow-up — first-level versus second-level cache?** First-level identity belongs to one persistence context and disappears when it is cleared/closed. Optional second-level cache spans contexts and needs provider/invalidation decisions; continue with Q231 after the mapping section.
 
-### H5 Is sessionManager the same as EntityManager or a transaction manager
+#### H5 Is sessionManager the same as EntityManager or a transaction manager
 
 **Strong answer:** there is no standard Hibernate/JPA API named `SessionManager`. An application may define a helper with that name, but ask which type the interviewer means. `EntityManager` manages entity operations and context; `SessionFactory` creates Sessions; Spring's `PlatformTransactionManager` coordinates begin, commit, rollback and resource binding. `JpaTransactionManager` integrates a JPA EntityManagerFactory; older native Hibernate integrations may use `HibernateTransactionManager`. Spring 6.2’s `hibernate5` integration targets Hibernate 5.5/5.6; for this chapter’s Hibernate 6.6 stack, use JPA integration with `JpaTransactionManager` (or appropriate JTA coordination). Servlet `HttpSession` is a different concept.
 
@@ -12614,7 +12599,7 @@ Study this chapter in order: connections → pools → sessions and factories �
 
 **Senior follow-up — why did @Transactional do nothing?** Check whether the instance is Spring-managed, whether the call crossed the proxy, method visibility/proxy limitations, the selected manager and propagation. Self-invocation bypasses default proxy advice. By default unchecked exceptions and Errors trigger rollback; checked exceptions require an appropriate rollback rule. Catching an exception can hide it from the advice, while an already rollback-only transaction can still fail on outer completion.
 
-### H6 What happens to an entity from load to commit
+#### H6 What happens to an entity from load to commit
 
 **Strong answer:** an entity starts transient, becomes managed through persist/load, can become detached after clear/close, and can be marked removed. Within a context, repeated entity lookup by identity normally yields the same managed instance. Hibernate dirty checking detects changes and flush synchronizes pending work with SQL; commit finalizes the database transaction. Flush can happen before commit, including before relevant queries, and does not guarantee durability.
 
@@ -12624,9 +12609,9 @@ Study this chapter in order: connections → pools → sessions and factories �
 
 **What if/test:** compare instance identity inside and across contexts, update a detached object without merging, then flush and roll back: SQL execution must not be mistaken for committed data.
 
-## JPA and Hibernate annotations, then their follow-ups
+### JPA and Hibernate annotations, then their follow-ups
 
-### H7 Which annotations define the entity and its columns
+#### H7 Which annotations define the entity and its columns
 
 **Strong answer:** annotations are mapping metadata read by the persistence provider while building its model; they do not execute SQL on their own. An `@Entity` is not automatically a Spring component. Start with the purpose, explain the provider's interpretation, then describe the generated SQL and database invariant.
 
@@ -12642,7 +12627,7 @@ Study this chapter in order: connections → pools → sessions and factories �
 | `@MappedSuperclass`, `@Inheritance`, `@DiscriminatorColumn` | Shares mapped attributes or selects entity inheritance strategy. | Compare joins, nullable columns and polymorphic query cost; a mapped superclass is not independently queryable as an entity. |
 | `@PrePersist`, `@PreUpdate`, `@EntityListeners` | Invokes lifecycle callbacks during managed operations. | Bulk/native SQL and external writers do not necessarily invoke these callbacks. Continue with auditing in Q233. |
 
-### H8 How do relationship annotations change SQL and lifecycle
+#### H8 How do relationship annotations change SQL and lifecycle
 
 **Strong answer:** `@ManyToOne`, `@OneToMany`, `@OneToOne` and `@ManyToMany` describe cardinality. `@JoinColumn` or `@JoinTable` describes foreign-key/join-table storage; `mappedBy` identifies the inverse side using the owning Java property, not a database column. Change the owning side and keep both sides of a bidirectional relationship consistent.
 
@@ -12652,9 +12637,9 @@ Study this chapter in order: connections → pools → sessions and factories �
 
 **Follow-up — provider-specific annotations?** `@SoftDelete`, `@SQLRestriction`, `@Immutable` and cache annotations have Hibernate-specific behavior. Pin the provider version, inspect actual SQL and test native/bulk access and external writers. They do not replace constraints, authorization or a migration plan.
 
-## Advanced Hibernate: annotations, queries and operational follow-ups
+### Advanced Hibernate: annotations, queries and operational follow-ups
 
-### Q226 IDENTITY, SEQUENCE or UUID for primary keys
+#### Q226 IDENTITY, SEQUENCE or UUID for primary keys
 
 **Strong answer:** with Hibernate 6.6, `IDENTITY` prevents JDBC insert batching for those entities because the database must generate each identifier during insert. A database `SEQUENCE` can support batching; when using a pooled optimizer, align its allocation/increment configuration with the actual database sequence and verify schema validation. Random UUIDs can reduce B-tree locality and enlarge keys; time-ordered identifiers may improve locality, subject to storage byte order and database index behavior.
 
@@ -12663,7 +12648,7 @@ Study this chapter in order: connections → pools → sessions and factories �
 **What if/test:** insert 10,000 rows with each strategy and compare the statement count and time.
 **Signal:** connect id strategy to batching and index locality.
 
-### Q224 Why is a lazy @OneToOne hard, and what does @MapsId do
+#### Q224 Why is a lazy @OneToOne hard, and what does @MapsId do
 
 **Strong answer:** on the inverse `mappedBy` parent side, Hibernate may need a secondary query to learn whether a child exists, so `LAZY` alone may not defer loading. Lazy-state bytecode enhancement can help when a bidirectional association is required. On the owning side the foreign key is available to form a proxy. With `@MapsId`, the child's primary key also serves as its foreign key to the parent; this avoids a separate child identifier column, but it does not eliminate the need for a foreign-key constraint or guarantee no index.
 
@@ -12672,7 +12657,7 @@ Study this chapter in order: connections → pools → sessions and factories �
 **What if/test:** log SQL when loading the parent and count extra selects.
 **Signal:** explain why null-ability forces the extra query.
 
-### Q225 How should you map @ManyToMany
+#### Q225 How should you map @ManyToMany
 
 **Strong answer:** when links are unique and order is unimportant, use a `Set` with stable entity equality and helper methods that keep both sides of a bidirectional mapping in sync. Avoid cascading `REMOVE` to the other entity: it can be shared by other owners. An unordered bag-style `List` can trigger delete-and-reinsert work on the join table; verify the mapping's SQL instead of assuming all lists behave alike.
 
@@ -12681,7 +12666,7 @@ Study this chapter in order: connections → pools → sessions and factories �
 **What if/test:** remove one link and inspect the SQL for bulk deletes.
 **Signal:** prefer an explicit join entity once the relationship has attributes.
 
-### Q223 What goes wrong with @ElementCollection on a List
+#### Q223 What goes wrong with @ElementCollection on a List
 
 **Strong answer:** in Hibernate, an unordered `List` element collection can be mapped as a bag, whose duplicate values give rows no stable position or identity. Removing one value may delete all rows for the owner and re-insert the survivors. A `Set` or indexed `List` with `@OrderColumn` can permit more targeted SQL, but list index shifts may still update multiple rows. The exact plan depends on mapping and version; inspect generated SQL.
 
@@ -12690,7 +12675,7 @@ Study this chapter in order: connections → pools → sessions and factories �
 **What if/test:** turn on SQL logging, remove one element and count the statements.
 **Signal:** you know the delete-all-and-reinsert behavior and when to promote the collection to an entity.
 
-### Q229 Batch fetching versus subselect fetching
+#### Q229 Batch fetching versus subselect fetching
 
 **Strong answer:** batch fetching (`@BatchSize`, `default_batch_fetch_size`) groups lazy loads for several parents into bounded `IN` queries. `@Fetch(FetchMode.SUBSELECT)` uses a subselect tied to the parent load to initialize the matching collection roles for parents held in the persistence context; it can fetch far more children than the one collection you touched.
 
@@ -12699,7 +12684,7 @@ Study this chapter in order: connections → pools → sessions and factories �
 **What if/test:** load 100 parents and count statements under each setting.
 **Signal:** choose by result size and paging needs, not by habit.
 
-### Q228 What does @Transactional(readOnly = true) really do
+#### Q228 What does @Transactional(readOnly = true) really do
 
 **Strong answer:** Spring's `readOnly = true` is a transaction hint, not a write prohibition. With Hibernate integration, Spring Data JPA documents a manual flush mode, which avoids normal dirty checking/flush work. A JDBC read-only hint may also be propagated depending on transaction manager and driver. Replica routing requires an explicitly configured router; the annotation does not move reads to a replica by itself.
 
@@ -12708,7 +12693,7 @@ Study this chapter in order: connections → pools → sessions and factories �
 **What if/test:** modify an entity inside a read-only transaction and check whether anything persists on your stack.
 **Signal:** call it an optimization hint and verify behavior for your versions.
 
-### Q230 Which projection type should you use for read endpoints
+#### Q230 Which projection type should you use for read endpoints
 
 **Strong answer:** project to the fields the API returns. In Spring Data JPA, a closed interface projection exposes known top-level properties and can let the query select fewer columns. Open projections with expression-based accessors limit this optimization; nested properties can require joins and materialize more data. Explicit DTO constructor expressions and tuples can also select narrow columns when the query names them.
 
@@ -12717,7 +12702,7 @@ Study this chapter in order: connections → pools → sessions and factories �
 **What if/test:** compare the generated SQL and memory for an entity query versus a projection.
 **Signal:** separate read models from write models.
 
-### Q231 How do second-level cache concurrency strategies differ
+#### Q231 How do second-level cache concurrency strategies differ
 
 **Strong answer:** `READ_ONLY` suits immutable data. `NONSTRICT_READ_WRITE` can allow stale reads around updates. `READ_WRITE` coordinates updates to a single cached entity more strictly, but it does not provide serializable transaction isolation. `TRANSACTIONAL` requires a provider that supports its stronger transactional semantics. Verify cache-provider support and cross-node behavior.
 
@@ -12726,7 +12711,7 @@ Study this chapter in order: connections → pools → sessions and factories �
 **What if/test:** run two application instances, update through one, and read through the other.
 **Signal:** name the strategy and the staleness it allows.
 
-### Q232 How do you stop lost updates across HTTP requests
+#### Q232 How do you stop lost updates across HTTP requests
 
 **Strong answer:** return the entity version in a strong ETag, require `If-Match` on update, and enforce the precondition atomically with the write (for example using an `@Version` update or conditional SQL). For an HTTP `If-Match` failure, return `412 Precondition Failed`; an application-level version field may use `409 Conflict` by contract.
 
@@ -12735,7 +12720,7 @@ Study this chapter in order: connections → pools → sessions and factories �
 **What if/test:** two clients fetch the same resource, both update, and the second must fail.
 **Signal:** know that the version must round-trip through the API.
 
-### Q227 How do you implement soft delete safely
+#### Q227 How do you implement soft delete safely
 
 **Strong answer:** Hibernate 6.4+ provides `@SoftDelete` for entities and supported collection tables; prefer it when its semantics fit. On older versions, custom delete SQL plus a restriction/filter can implement soft delete, but verify entity loads, associations, bulk operations and caches. `@Where` was deprecated in favor of `@SQLRestriction` in newer Hibernate 6 releases; neither turns arbitrary native SQL into a filtered query.
 
@@ -12744,7 +12729,7 @@ Study this chapter in order: connections → pools → sessions and factories �
 **What if/test:** delete a row, then insert the same unique value again and query natively.
 **Signal:** mention the unique-constraint trap and the native-query gap.
 
-### Q233 How do you add auditing
+#### Q233 How do you add auditing
 
 **Strong answer:** Spring Data auditing (`@CreatedDate`, `@LastModifiedDate`, `@CreatedBy` with an `AuditorAware` bean) records who and when on the current row. Hibernate Envers stores revisions for audited entities when changes pass through it.
 
@@ -12753,7 +12738,7 @@ Study this chapter in order: connections → pools → sessions and factories �
 **What if/test:** update an entity twice and confirm both who and when, and the history rows.
 **Signal:** choose between column-level auditing and full history by need.
 
-### Q234 How do you manage schema migrations with Flyway or Liquibase
+#### Q234 How do you manage schema migrations with Flyway or Liquibase
 
 **Strong answer:** Flyway versioned migrations and Liquibase changesets record what ran and their checksums. Treat an applied migration as immutable; fix forward with a new migration rather than silently changing history. Flyway repeatable migrations suit replaceable views or procedures. Baseline an existing database deliberately, and keep Hibernate schema generation at `validate` or `none` in production when migrations own the schema.
 
@@ -12762,9 +12747,9 @@ Study this chapter in order: connections → pools → sessions and factories �
 **What if/test:** run the migration against a copy of production-sized data and time lock duration.
 **Signal:** immutable history plus backward-compatible changes.
 
-## SQL foundations before advanced scenarios
+### SQL foundations before advanced scenarios
 
-### D1 How does SQL from a Java application reach the database
+#### D1 How does SQL from a Java application reach the database
 
 **Strong answer:** JDBC sends a prepared statement and bound values through the driver. The database parses/plans and executes it against the transaction's visible data; JDBC exposes rows or an update count. JPA/HQL translates entity-oriented queries into SQL first; native SQL already names the database's tables/columns. A method named `save` does not promise one immediate INSERT: entity state, identifiers and flush timing matter.
 
@@ -12772,7 +12757,7 @@ Study this chapter in order: connections → pools → sessions and factories �
 
 **Senior follow-up — how do you investigate a slow query?** Capture the actual SQL and safe parameter shapes, inspect the execution plan on representative data, compare estimated/actual rows, and check indexes, statistics, lock waits and transaction length. `EXPLAIN ANALYZE` executes the statement on databases such as PostgreSQL; use caution with writes. An index trades read speed for write/storage cost and is not guaranteed to be chosen.
 
-### D2 What does a transaction guarantee, and which guarantees must you name
+#### D2 What does a transaction guarantee, and which guarantees must you name
 
 **Strong answer:** atomicity gives all-or-nothing commit, constraints protect declared invariants, isolation controls concurrent visibility, and durability describes committed persistence under the database's configured guarantees. Auto-commit makes individual statements transactions, not a multi-call service operation. Name the database and isolation level before claiming a specific anomaly is prevented.
 
@@ -12780,7 +12765,7 @@ Study this chapter in order: connections → pools → sessions and factories �
 
 **Progression:** first grouping (Q238), null-aware anti-joins (Q235), ranking (Q236), hierarchy traversal (Q237), then deadlocks and write skew (Q239–Q240), upserts (Q241), data distribution (Q242), paging (Q243) and duplicate cleanup (Q244).
 
-### Q238 WHERE versus HAVING, and conditional aggregation
+#### Q238 WHERE versus HAVING, and conditional aggregation
 
 ```sql
 SELECT dept,
@@ -12798,7 +12783,7 @@ HAVING COUNT(*) >= 2;
 **What if/test:** compare plans when a filter sits in `WHERE` versus `HAVING`.
 **Signal:** know the order of evaluation.
 
-### Q235 NOT IN versus NOT EXISTS
+#### Q235 NOT IN versus NOT EXISTS
 
 ```sql
 -- customers with no orders (orders.customer_id may contain NULL)
@@ -12812,7 +12797,7 @@ SELECT c.id FROM customer c WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.cus
 **What if/test:** insert an order with a null customer and compare both forms.
 **Signal:** explain three-valued logic.
 
-### Q236 Find the N-th highest salary
+#### Q236 Find the N-th highest salary
 
 ```sql
 SELECT DISTINCT salary FROM (
@@ -12828,7 +12813,7 @@ SELECT DISTINCT salary FROM (
 **What if/test:** include tied top salaries and a table with fewer than N distinct values.
 **Signal:** choose `DENSE_RANK` over `RANK` or `ROW_NUMBER` for this.
 
-### Q237 Walk an org hierarchy with a recursive CTE
+#### Q237 Walk an org hierarchy with a recursive CTE
 
 ```sql
 WITH RECURSIVE chain(id, name, depth, path) AS (
@@ -12848,7 +12833,7 @@ SELECT id, name, depth FROM chain ORDER BY depth, id;
 **What if/test:** add a cycle in the data and confirm your guard stops it.
 **Signal:** mention termination and cycle protection.
 
-### Q239 What causes database deadlocks and how do you handle them
+#### Q239 What causes database deadlocks and how do you handle them
 
 **Strong answer:** two transactions each hold a lock the other needs, typically by touching the same rows in opposite order. The database detects the cycle and aborts one transaction. Retry the whole transaction from a fresh read when the operation is safe to repeat; never retry only the failed SQL statement against stale assumptions.
 
@@ -12857,7 +12842,7 @@ SELECT id, name, depth FROM chain ORDER BY depth, id;
 **What if/test:** reproduce with two sessions updating two rows in opposite order.
 **Signal:** prevention plus an idempotent retry path.
 
-### Q240 What is write skew and how do you prevent it
+#### Q240 What is write skew and how do you prevent it
 
 **Strong answer:** two transactions read overlapping data, each updates a different row, and together they break an invariant (two doctors both go off call). PostgreSQL's `REPEATABLE READ` uses snapshot isolation and can allow this write skew because the writes do not conflict on one row.
 
@@ -12866,7 +12851,7 @@ SELECT id, name, depth FROM chain ORDER BY depth, id;
 **What if/test:** run both transactions concurrently under the default isolation level.
 **Signal:** explain the guarantee for the named database and isolation level rather than treating every vendor's `REPEATABLE READ` as identical.
 
-### Q241 How do you write an idempotent upsert
+#### Q241 How do you write an idempotent upsert
 
 ```sql
 INSERT INTO account(id, balance) VALUES (1, 100)
@@ -12880,7 +12865,7 @@ ON CONFLICT(id) DO UPDATE SET balance = excluded.balance;
 **What if/test:** run the statement twice and from two connections at once.
 **Signal:** rely on a unique constraint, not application checks.
 
-### Q242 Partitioning versus sharding
+#### Q242 Partitioning versus sharding
 
 **Strong answer:** partitioning splits a logical table into partitions in one database (range, list or hash). When the planner can use the partition key, partition pruning skips irrelevant partitions; time-range retention can become dropping a partition. Sharding distributes data across separate database instances or servers.
 
@@ -12889,7 +12874,7 @@ ON CONFLICT(id) DO UPDATE SET balance = excluded.balance;
 **What if/test:** check `EXPLAIN` shows partition pruning for your common query.
 **Signal:** keep the two terms distinct and start with partitioning.
 
-### Q243 Why can COUNT(*) and offset pagination be slow, and what is the alternative
+#### Q243 Why can COUNT(*) and offset pagination be slow, and what is the alternative
 
 **Strong answer:** an exact `COUNT(*)` over a filtered MVCC snapshot must establish which rows are visible; it is not generally a constant-time metadata lookup, though an index-only scan or selective plan can reduce cost. Deep offset pagination still processes or skips many earlier rows, so latency often grows with the offset.
 
@@ -12898,7 +12883,7 @@ ON CONFLICT(id) DO UPDATE SET balance = excluded.balance;
 **What if/test:** time page 1 versus page 10,000 under each approach.
 **Signal:** question whether the UI really needs a total.
 
-### Q244 Remove duplicate rows but keep one
+#### Q244 Remove duplicate rows but keep one
 
 ```sql
 DELETE FROM person WHERE id IN (
@@ -12916,6 +12901,2383 @@ DELETE FROM person WHERE id IN (
 **What if/test:** verify counts before and after, and that the constraint now rejects a duplicate.
 **Signal:** fix the data and add the constraint that prevents recurrence.
 
-## Version and source notes
+### Version and source notes
 
 Connection setup follows the [JDBC connection tutorial](https://docs.oracle.com/javase/tutorial/jdbc/basics/connecting.html) and [Boot 3.5 SQL configuration](https://docs.spring.io/spring-boot/3.5/reference/data/sql.html). JDBC tutorial examples predate Java 17/21, but the connection APIs described here remain applicable. Hibernate mapping, identifier, cache, association and soft-delete behavior above is calibrated to the [Hibernate ORM 6.6 user guide](https://docs.hibernate.org/orm/6.6/userguide/html_single/). The transaction and projection points use the [Spring Data JPA transaction reference](https://docs.spring.io/spring-data/jpa/reference/jpa/transactions.html) and [Spring Data JPA 3.5 projection reference](https://docs.spring.io/spring-data/data-jpa/reference/3.5/repositories/projections.html). PostgreSQL-specific isolation and partitioning details should be checked against the deployed version's [transaction-isolation](https://www.postgresql.org/docs/current/transaction-iso.html) and [partitioning](https://www.postgresql.org/docs/current/ddl-partitioning.html) documentation. SQL query syntax and plans remain database-specific.
+
+<a id="part-17"></a>
+## Part 17 - More Hibernate and SQL Questions (Q245-Q272)
+
+Baseline: Hibernate 6.x / Jakarta Persistence 3.1 and PostgreSQL where named. Framework and PostgreSQL examples require integration testing on the target stack.
+
+#### Q245 When does Hibernate flush, and what surprises people
+**Strong answer:**  with the default auto mode it flushes at commit and before queries that could be affected by pending changes, so a query can see unsaved changes made in the same transaction.
+
+**Reasoning and alternatives:**  native SQL behaves differently between the native Session API and the JPA EntityManager, so do not assume.
+
+**What if/test:**  persist an entity, run a native query that should see it, and check the result on your stack.
+
+**Signal:**  you can explain why a flush can fire mid-method and trigger constraint errors early.
+
+#### Q246 Enums and attribute converters
+**Strong answer:**  ORDINAL breaks when someone reorders the enum; STRING is safer and readable. An AttributeConverter maps a stable code, such as a one-letter status, to the enum.
+
+**Reasoning and alternatives:**  back it with a database check constraint so bad values cannot be stored by other writers.
+
+**What if/test:**  reorder the enum constants and confirm stored data still reads correctly.
+
+**Signal:**  persistence format is a contract, independent of code order.
+
+#### Q247 Large objects and BLOB columns
+**Strong answer:**  large binary fields load with the entity unless lazily fetched, which usually needs bytecode enhancement. Prefer storing files in object storage and keeping a reference and metadata in the row.
+
+**Reasoning and alternatives:**  if you must keep them in the database, put them in a separate table or entity so list queries never touch them.
+
+**What if/test:**  log SQL for a list query and check whether the blob column is selected.
+
+**Signal:**  keep wide, rarely used columns out of hot queries.
+
+#### Q248 What is @NaturalId for
+
+**Strong answer:** Hibernate @NaturalId identifies a business key and enables natural-ID lookup and optional caching in addition to a surrogate primary key. It is immutable by default, but `@NaturalId(mutable = true)` explicitly supports changes and requires synchronization of lookup state. ISBN may be a stable key; email often changes and should not be called inherently immutable.
+
+Enforce uniqueness in the database. Test lookup before and after an allowed change, and understand session/cache effects. The annotation does not replace the entity's primary-key identity or a database constraint.
+
+[Hibernate 6.6 natural IDs](https://docs.hibernate.org/orm/6.6/userguide/html_single/#naturalid)
+
+#### Q249 Why not return entities from REST controllers
+**Strong answer:**  bidirectional associations cause infinite recursion in JSON, lazy proxies break serialization, and exposing entities leaks fields and invites mass assignment on input.
+
+**Reasoning and alternatives:**  map to DTOs or records for each use case; this also stabilizes your API against schema changes.
+
+**What if/test:**  add a new column and verify the API response does not change.
+
+**Signal:**  separate the persistence model from the API contract.
+
+#### Q250 Composite keys: @EmbeddedId or @IdClass
+**Strong answer:**  both model multi-column keys. @EmbeddedId uses an embeddable key class, which needs equals, hashCode and serializability. @IdClass repeats the fields on the entity.
+
+**Reasoning and alternatives:**  composite keys complicate repositories, joins and foreign keys, so a surrogate key plus a unique constraint is often simpler.
+
+**What if/test:**  load the same row twice in one session and confirm identity behaves.
+
+**Signal:**  prefer surrogate keys unless the natural composite is truly the identity.
+
+#### Q251 Native queries with paging and sorting in Spring Data
+**Strong answer:**  Spring cannot always derive the count query for a native query, so supply countQuery when using Pageable. Sort fields from user input must be validated against an allow-list.
+
+**Reasoning and alternatives:**  map public sort names to known column names instead of passing them straight to the query.
+
+**What if/test:**  send a malicious sort parameter and confirm it is rejected.
+
+**Signal:**  treat sorting as an injection surface.
+
+#### Q252 equals and hashCode when proxies are involved
+**Strong answer:**  a lazy proxy is a subclass, so getClass() == other.getClass() can be false for the same entity. Compare by business key or id, use instanceof carefully, and access state through getters, not fields.
+
+**Reasoning and alternatives:**  if you must reach the real class, unproxy it explicitly.
+
+**What if/test:**  compare a loaded entity with a reference obtained by getReference for the same id.
+
+**Signal:**  you know proxies break naive class checks.
+
+#### Q253 Configuring multiple data sources with JPA
+
+**Strong answer:** for separate local JPA transactions, configure each DataSource, entity manager factory, entity package scan and transaction manager, and bind each repository group to the correct factory/manager. Select the manager explicitly where ambiguous. Auto-configuration back-off is conditional on the beans and release, so inspect the effective configuration.
+
+A local transaction manager does not make changes in two databases atomic. JTA/XA can coordinate supported resources when configured; alternatively use explicit distributed-workflow semantics such as an outbox/saga. Test failure after the first database write and state the actual guarantee.
+
+#### Q254 Routing reads to replicas
+**Strong answer:**  a routing data source can pick the primary or a replica by checking whether the current transaction is read-only. Wrap it in a lazy connection proxy so the choice happens after the transaction attributes are known.
+
+**Reasoning and alternatives:**  replication lag breaks read-your-writes, so send reads that must see recent writes to the primary.
+
+**What if/test:**  write then immediately read through a replica under artificial lag.
+
+**Signal:**  mention lag and the lazy proxy.
+
+#### Q255 What bites teams migrating to Hibernate 6
+**Strong answer:**  the move to the Jakarta namespace, stricter query parsing, changes to default sequence naming and allocation, replaced annotations (for example @Where and @Type), and different JSON and type mapping.
+
+**Reasoning and alternatives:**  upgrade stepwise, run the full test suite with SQL logging, and compare generated statements.
+
+**What if/test:**  diff the DDL and the SQL log before and after the upgrade.
+
+**Signal:**  a migration plan driven by evidence, not hope.
+
+#### Q256 Batch insert pattern
+**Strong answer:**  enable JDBC batching, persist in a loop, and every batch size call flush() then clear() so the persistence context does not grow. Use sequence-based ids, because IDENTITY blocks batching.
+
+**Reasoning and alternatives:**  chunk the work into several transactions so one failure does not roll back millions of rows.
+
+**What if/test:**  insert 100,000 rows and compare statement count and heap use with and without clear().
+
+**Signal:**  you control memory, statements and transaction size together.
+
+#### Q257 How do databases execute joins
+**Strong answer:**  nested loop (good when the outer side is small and the inner side is indexed), hash join (equi-joins on large unsorted inputs) and merge join (inputs already sorted on the join key). The optimizer chooses from statistics.
+
+**Reasoning and alternatives:**  a missing index or a bad estimate can flip the plan to a slow choice.
+
+**What if/test:**  read the join type in EXPLAIN and check estimated versus actual rows.
+
+**Signal:**  connect the join algorithm to the data shape.
+
+#### Q258 Why do query plans change or regress
+**Strong answer:**  the planner relies on statistics. Stale or skewed statistics, data growth, or correlated columns make row estimates wrong and produce a worse plan.
+
+**Reasoning and alternatives:**  refresh statistics, add extended statistics for correlated columns, and watch for parameter-dependent plans with prepared statements.
+
+**What if/test:**  compare estimated and actual rows after a large data load.
+
+**Signal:**  diagnose estimates before touching the query.
+
+#### Q259 Why did the optimizer ignore my index
+**Strong answer:**  common causes are a function on the indexed column, an implicit type conversion (a text column compared with a numeric parameter), a leading wildcard, low selectivity, an OR across columns, stale statistics, or a table small enough that a scan is cheaper.
+
+**Reasoning and alternatives:**  fix the predicate (match types, use an expression index) before forcing hints.
+
+**What if/test:**  compare plans with the correctly typed parameter.
+
+**Signal:**  list several causes, not just "functions on columns".
+
+#### Q260 Using the database as a work queue with SKIP LOCKED
+
+**Strong answer:** PostgreSQL `SELECT ... FOR UPDATE SKIP LOCKED` lets workers skip rows locked by peers. Locks belong to the transaction and disappear on commit or rollback. Holding the transaction through short database work can serialize claims; if you commit a claim before a long external task, persist claim state with a lease and define expiry/recovery.
+
+A worker crash or lost acknowledgement can repeat an external effect. Use idempotency and, where required, fencing; a database row lock alone does not protect work after its transaction ends. Test crash-before-commit, crash-after-effect and lease expiry. A broker may be preferable when queue volume or delivery features justify it.
+
+#### Q261 What are advisory locks for
+**Strong answer:**  PostgreSQL advisory locks are application-defined locks on a numeric key, useful for singleton jobs or migrations. Prefer the transaction-scoped form, because session-level locks can leak through pooled connections.
+
+**Reasoning and alternatives:**  a leader-election library or a lock table also works if you need portability.
+
+**What if/test:**  start two instances and confirm only one runs the job.
+
+**Signal:**  mention the pooling pitfall.
+
+#### Q262 Savepoints and aborted transactions
+
+**Strong answer:** a PostgreSQL statement error leaves the transaction unable to execute ordinary statements until rollback. A savepoint created before the failure allows rollback to that savepoint. Catching a Java exception alone does not repair database or persistence-context state.
+
+Spring NESTED propagation requires transaction-manager savepoint support. A JDBC manager can support it; JpaTransactionManager does not provide true nested JPA entity-state transactions, and its optional savepoints apply to JDBC work. JPA exceptions may mark the transaction rollback-only. Prefer a fresh appropriate transaction when retrying a failed JPA operation; test the actual manager and driver.
+
+[Spring JpaTransactionManager](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/orm/jpa/JpaTransactionManager.html)
+
+#### Q263 Storing money correctly
+**Strong answer:**  use NUMERIC/DECIMAL or integer minor units, never floating point. In Java use BigDecimal built from strings, with an explicit scale and rounding mode.
+
+**Reasoning and alternatives:**  store the currency with the amount, and allocate rounding remainders deliberately when splitting.
+
+**What if/test:**  sum 0.1 ten times in double versus decimal.
+
+**Signal:**  explain the representation error, not just "use BigDecimal".
+
+#### Q264 timestamp versus timestamptz and time zones
+**Strong answer:**  in PostgreSQL timestamptz represents an instant, normalized to UTC, while timestamp has no zone. Map to Instant or OffsetDateTime, store UTC, and keep the user's zone separately for scheduling.
+
+**Reasoning and alternatives:**  daylight saving makes recurring local times tricky, so store the zone ID and local time for those.
+
+**What if/test:**  run the app and database in different time zones and compare stored values.
+
+**Signal:**  separate instants from local calendar times.
+
+#### Q265 JSONB column or relational columns
+**Strong answer:**  JSONB suits flexible, sparse or evolving attributes and can be indexed with GIN. Core, frequently filtered and joined fields belong in real columns with constraints and statistics.
+
+**Reasoning and alternatives:**  a hybrid model is common: stable columns plus a JSONB column for extras.
+
+**What if/test:**  query on a JSONB field with and without the index and compare plans.
+
+**Signal:**  justify the schema flexibility against lost constraints.
+
+#### Q266 Views versus materialized views
+
+**Strong answer:** a view stores a query; a materialized view stores query results that become stale between refreshes. In PostgreSQL, REFRESH MATERIALIZED VIEW CONCURRENTLY requires an already-populated view and a qualifying UNIQUE index using plain column names, covering all rows (no partial predicate or expression-only index). A generic unique index is not sufficient.
+
+Measure refresh cost and the staleness budget. Summary tables maintained by jobs or events are alternatives with their own consistency and failure semantics.
+
+[PostgreSQL materialized-view refresh requirements](https://www.postgresql.org/docs/current/sql-refreshmaterializedview.html)
+
+#### Q267 Gaps and islands: longest login streak
+
+```sql
+-- Integer day numbers; duplicate activity on the same day counts once.
+WITH days AS (
+    SELECT DISTINCT user_id, day_no FROM logins
+    WHERE day_no IS NOT NULL
+), numbered AS (
+    SELECT user_id, day_no,
+           day_no - ROW_NUMBER() OVER (
+               PARTITION BY user_id ORDER BY day_no
+           ) AS grp
+    FROM days
+)
+SELECT user_id, MIN(day_no) AS start_day, MAX(day_no) AS end_day,
+       COUNT(*) AS days
+FROM numbered
+GROUP BY user_id, grp
+ORDER BY days DESC, user_id, start_day;
+```
+
+**Strong answer:** consecutive day numbers minus row numbers share a constant difference. Grouping that difference produces streaks. The query returns every streak longest first; use a per-user ranking if the requirement is exactly one longest streak per user. DISTINCT prevents duplicate days from splitting a streak. Test gaps, ties, duplicates, null dates and single-day runs.
+
+#### Q268 Why constraints belong in the database
+**Strong answer:**  primary keys, foreign keys, unique, check and not-null constraints enforce integrity for every writer and under concurrency, where application checks race. Deferrable foreign keys help with circular inserts.
+
+**Reasoning and alternatives:**  index foreign key columns yourself in PostgreSQL, since it does not do so automatically, to speed joins and deletes.
+
+**What if/test:**  try to insert an orphan and a duplicate from two sessions.
+
+**Signal:**  the database is the last line of defense.
+
+#### Q269 Row-level security for multi-tenancy in PostgreSQL
+
+**Strong answer:** enable PostgreSQL row-level security and define both visibility and permitted-write policies. For a UUID tenant column, an example predicate is `tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid`. Set a verified tenant with a transaction-local setting before any tenant data access. A missing value should deny access, and pooled connections must not retain the preceding request's tenant.
+
+Use an application role that neither owns the table nor has superuser/BYPASSRLS privileges. FORCE ROW LEVEL SECURITY subjects an owner to policies, but does not constrain superusers or BYPASSRLS roles. An application-set tenant variable assumes trusted application code; it is not protection from a database client able to change that variable. Test SELECT and writes, missing tenant context, connection reuse and privileged paths.
+
+[PostgreSQL row security](https://www.postgresql.org/docs/current/ddl-rowsecurity.html)
+
+#### Q270 How do you find what is blocking a query
+**Strong answer:**  in PostgreSQL inspect pg_stat_activity for state, wait events and transaction start time, use pg_blocking_pids, and look for sessions that are idle in transaction. Protect the system with lock_timeout, statement_timeout and an idle-in-transaction timeout.
+
+**Reasoning and alternatives:**  cancel the query first, and terminate the session only if needed.
+
+**What if/test:**  hold a lock in one session and watch the blocker in another.
+
+**Signal:**  diagnose, then add timeouts to prevent recurrence.
+
+#### Q271 NULL traps in SQL
+
+```sql
+SELECT COUNT(*) AS all_rows, COUNT(score) AS non_null_scores,
+       AVG(score) AS avg_score
+FROM exam;
+SELECT id FROM exam WHERE score = NULL; -- UNKNOWN, not TRUE: no matches
+SELECT id FROM exam WHERE score IS NULL;
+```
+
+**Strong answer:** SQL uses three-valued logic. Ordinary comparison with NULL evaluates to UNKNOWN, so WHERE rejects it. COUNT(*) counts rows; COUNT(column), AVG and SUM ignore null inputs, while an all-null SUM/AVG is NULL. Aggregates have individual contracts, so do not generalize this to every aggregate.
+
+Also test NOT IN with a null in its input; NOT EXISTS with the intended correlation is often the clearer anti-join. Unique-constraint treatment of nulls and default null ordering depend on the database and options.
+
+#### Q272 Backup and restore strategy
+**Strong answer:**  combine periodic physical base backups with continuous log archiving for point-in-time recovery, plus logical dumps for portability. Define RPO and RTO first, encrypt backups and store a copy in another region.
+
+**Reasoning and alternatives:**  replication is not a backup, since it replicates mistakes such as accidental deletes.
+
+**What if/test:**  restore to a new instance on a schedule and time it against the RTO.
+
+**Signal:**  an untested backup is not a backup.
+
+<a id="daily-practice"></a>
+## Daily SDE-3 Java interview practice sets
+
+Five ElevatePrep sets, 12 scenarios each, dated 7-9 October 2026. These add 60 scenarios to the numbered question bank. The source baseline and fragment limitations are stated within each set.
+
+<a id="daily-set-01"></a>
+### Daily practice set 1
+
+**Day 1 · 7 October 2026 — Foundations under production pressure**
+
+Twelve new questions, using your [Senior Java Interview Master Guide](/senior-java-interview) as the baseline. Assume **Java 21, without preview features**. Framework assumptions are stated where relevant. All scenarios are illustrative.
+
+Practise each spoken answer in 45–90 seconds, then use the follow-ups to test your understanding.
+
+---
+
+**1. A customer object is used as a `HashMap` key. After changing its region, lookup with that same object fails. Why?**
+
+**Say aloud:**  
+“A hash map uses a key’s hash code to locate a bucket, which is a group of candidate entries, and equality to identify the matching key. Equal keys must have equal hash codes. If region participates in those calculations, changing it after insertion breaks the lookup assumptions. The entry remains stored according to its original hash, while the next lookup uses the new hash.
+
+I would define the key using stable identity, such as an immutable customer ID, and keep changing attributes in the value. Synchronizing the map would not solve this identity problem. If mutation is unavoidable, remove the entry before changing the key and then reinsert it. Once mutation has already happened, rebuilding the map from its entries may be needed.”
+
+- **Example:** Insert a key representing `(customerId=42, region="east")`; change region to `"west"`; `get(key)` may return `null` even though iteration still shows the entry.
+- **Cost and guarantee:** Expected O(1) lookup with well-distributed hashes and constant-cost equality; occasional resizing costs O(n). Stable keys preserve the lookup contract.
+- **Trade-off and failure:** Immutable keys may require separate key objects. Accidentally including changing fields in generated equality recreates the bug.
+- **Follow-ups:**  
+  “Does `ConcurrentHashMap` fix it?” → No; concurrency protection does not repair mutable identity.  
+  “Can unequal objects share a hash?” → Yes; equality resolves collisions.
+
+---
+
+**2. Does `record DeliveryPlan(List<String> stops)` give you an immutable delivery plan?**
+
+**Say aloud:**  
+“A record is a concise Java data carrier with generated accessors and value-oriented methods. Its fields are final, meaning the references cannot be reassigned after construction. That does not freeze objects those references point to.
+
+If I store the caller’s mutable list directly, the caller can change the plan later. I would make a defensive copy in the constructor: a copy that prevents the caller’s subsequent structural changes from affecting my object. `List.copyOf` provides an unmodifiable list and rejects null elements.
+
+For strings, this is sufficient because strings themselves are immutable. For mutable stop objects, copying the list still shares those objects, so I would also need immutable stop values or appropriate element copies. Immutability has to cover the reachable state that matters to the contract.”
+
+```java
+record DeliveryPlan(List<String> stops) {
+    DeliveryPlan {
+        stops = List.copyOf(stops);
+    }
+}
+```
+
+- **Cost and guarantee:** Copying n references is O(n) time and space when a copy is needed. Existing suitable immutable lists may be reused.
+- **Trade-off and failure:** Copying costs memory; shallow copying fails when elements remain mutable.
+- **Follow-ups:** “Copy on every accessor call?” → Unnecessary here. “Allow null stops?” → Define another explicit representation or validation policy.
+
+Java’s exact list guarantees: [Java 21 `List` documentation](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/List.html).
+
+---
+
+**3. A background thread replaces routing configuration while request threads read it. When is `volatile` enough?**
+
+**Say aloud:**  
+“`volatile` gives a field visibility and ordering guarantees across threads. It exists because an ordinary shared field does not reliably communicate updates without synchronization. A write to a volatile field happens-before subsequent reads of that field: earlier writes become visible through that publication.
+
+For configuration, I would construct a complete immutable snapshot and assign it to a volatile reference. Each request would read that reference once into a local variable, then use that snapshot throughout its decision. This prevents mixing fields from different configuration versions.
+
+Volatile does not make compound operations atomic. Atomic means an operation acts as one indivisible step relative to competing operations. Two writers that both read, modify, and replace configuration can still overwrite one another’s changes. That requires additional coordination.”
+
+```java
+private volatile RoutingConfig current;
+
+// Reader: one snapshot per decision
+RoutingConfig snapshot = current;
+return routeUsing(snapshot);
+
+// Writer: build fully before publication
+current = validatedReplacement;
+```
+
+- **Guarantee:** Readers see a safely published snapshot; this does not freeze mutable objects inside it.
+- **Cost:** Reference access is constant work; constructing the snapshot depends on its size.
+- **Trade-off and failure:** Immutable snapshots simplify reads but allocate on updates. Reading `current` repeatedly can mix versions.
+- **Follow-ups:** “Two writers?” → Serialize updates with a lock or use an atomic conditional update. “Does volatile guarantee fairness?” → No.
+
+---
+
+**4. An executor has eight core threads and a maximum of 64, yet its queue grows while only eight threads work. What happened?**
+
+**Say aloud:**  
+“An executor manages worker threads and pending tasks. In `ThreadPoolExecutor`, the queue policy determines when the pool grows. Once the core workers exist, it normally tries to queue new tasks before creating additional workers. With an unbounded queue, queuing keeps succeeding, so the configured maximum does not normally help.
+
+I would first measure task duration and the downstream service’s capacity. Then I would choose bounded workers and a bounded queue, plus an explicit rejection policy. Backpressure means slowing or refusing incoming work when capacity is exhausted; it exists to stop overload becoming unlimited memory growth.
+
+A queue absorbs a short burst, but it cannot fix sustained excess demand. I would also enforce deadlines so requests do not wait until their results are already useless.”
+
+- **Example:** Eight workers, maximum 64, bounded queue of 100: growth beyond eight becomes possible when the queue fills.
+- **Guarantee/cost:** Pending queue occupancy is bounded; completion time is not. More workers consume resources and may overload dependencies.
+- **Failure/trade-off:** Running rejected work on the submitting thread slows submissions but can block a latency-sensitive caller.
+- **Follow-ups:** “Larger queue?” → More burst absorption, more waiting. “More threads?” → Only if dependencies can sustain them.
+
+Verified behavior: [Java 21 `ThreadPoolExecutor`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ThreadPoolExecutor.html).
+
+---
+
+**5. JVM heap usage keeps rising. How do you distinguish a memory leak from normal allocation?**
+
+**Say aloud:**  
+“The heap holds Java objects. Garbage collection reclaims objects that are no longer reachable from live application state. A memory leak in Java usually means objects remain reachable even though the application no longer needs them.
+
+I would compare memory behavior under equivalent workloads and examine the amount still retained after relevant collection cycles. A sawtooth pattern can be normal: allocation raises usage, collection lowers it. A rising retained baseline is stronger evidence of retention, but it can also reflect a growing legitimate workload.
+
+Next, I would identify which object types are accumulating and inspect their retaining paths—the references keeping them alive. For example, a static map storing every completed request is a concrete explanation. I would fix its ownership or retention policy before attempting garbage-collector tuning.”
+
+- **Example:** A completed-request map grows by 10,000 entries per hour because nothing removes entries.
+- **Cost/guarantee:** Retaining n request objects requires space proportional to their combined reachable size. Collection cannot reclaim strongly reachable entries.
+- **Trade-off and failure:** Bounded retention reduces memory but may remove useful history. Heap inspection can be expensive; reproduce with representative load where possible.
+- **Follow-ups:**  
+  “High allocation but stable retained heap?” → Investigate temporary-object creation and collection overhead.  
+  “Process memory grows while heap stays stable?” → Investigate non-heap memory and other process resources.
+
+---
+
+**6. In a Spring Boot service, `importAll()` calls its own `@Transactional importOne()`. A checked exception leaves partial data. Explain both risks.**
+
+**Say aloud:**  
+“A transaction groups database changes so they commit or roll back together. In Spring’s default proxy mode, a proxy is a wrapper around a managed service that applies transaction behavior when calls pass through it.
+
+A method calling another method on the same object bypasses that wrapper. Therefore, the inner annotation does not establish its requested transaction boundary. An existing outer transaction may still apply.
+
+The second issue is rollback policy. Under Spring’s traditional defaults, unchecked exceptions and errors trigger rollback, while checked exceptions do not automatically do so. Configuration can change that.
+
+I would put the intended database operation behind a managed service boundary, choose whether each item or the whole import is atomic, and configure rollback for the relevant checked exception explicitly.”
+
+- **Example:** Another service calls `importService.importOne(...)`, annotated with `@Transactional(rollbackFor = ImportException.class)`.
+- **Guarantee:** Atomicity covers participating transactional database changes, not an already-sent email.
+- **Trade-off/failure:** Whole-import transactions hold resources longer; per-item transactions permit partial completion.
+- **Follow-ups:** “Exception swallowed?” → Normal return may allow commit. “Spring 6.2+?” → Global all-exception rollback configuration is available; inspect actual settings.
+
+Source: [Spring transaction annotations](https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/annotations.html).
+
+---
+
+**7. A page of 50 orders executes 51 database queries when order lines are accessed. How would you fix it without breaking pagination?**
+
+**Say aloud:**  
+“This is the N-plus-one query problem: one query loads the parent records, then one additional query per parent loads related data. Lazy loading means delaying related-data retrieval until access; it can avoid unnecessary work, but here it creates many database round trips.
+
+I would verify the actual queries, then design retrieval around the response. One option is first paging ordered order IDs, then fetching those orders and their lines in a second query. I would restore the first query’s ordering explicitly.
+
+A fetch join retrieves an association alongside its parent. However, fetching a collection multiplies result rows, so combining that with pagination can produce costly in-memory limiting in Hibernate. I would avoid treating a collection fetch join as a universal one-query fix.”
+
+- **Example:** Fetch 50 IDs ordered by creation time and ID; fetch associated lines using those IDs.
+- **Cost:** Usually two data queries, plus a count query if requested; materialization still scales with returned orders and lines.
+- **Trade-off/failure:** Two reads can observe intervening changes; define required consistency.
+- **Follow-ups:** “Set everything eager?” → May still cause extra queries. “Huge line collections?” → Bound or separately page them.
+
+Reference: [Hibernate 7.0 query guide](https://docs.hibernate.org/orm/7.0/querylanguage/html_single/).
+
+---
+
+**8. A client times out while creating a booking and retries. How do you prevent a second booking?**
+
+**Say aloud:**  
+“A timeout means the client did not receive a result; it does not prove the server failed. Idempotency means repeating the same logical operation does not repeat its intended effect.
+
+I would accept a client-generated operation key, scoped to the authenticated customer and operation type. In the same database transaction, I would record that key, create the booking, and save the outcome. A uniqueness constraint—a database rule rejecting duplicate key values—arbitrates concurrent requests.
+
+I would also store a request fingerprint, a stable representation or digest of the meaningful request fields. Reusing a key with different input should fail rather than return an unrelated result. Once the original transaction commits, a retry can return the saved outcome. This design’s guarantee applies to the local transactional work; remote side effects need their own coordination.”
+
+- **Example:** Customer 17 sends key `book-8f2` twice with identical room and dates; both receive booking 901.
+- **Guarantee/cost:** One committed local effect per retained scoped key. Storage grows with retained operations; database lookup cost depends on the index.
+- **Trade-off and failure:** Expiring keys saves space but limits the retry window. A separate “check then insert” without database uniqueness races.
+- **Follow-ups:**  
+  “Two requests arrive together?” → Let the database arbitrate; return/retry according to the winning transaction’s outcome.  
+  “Response lost after commit?” → Return the stored result.
+
+---
+
+**9. A Kafka consumer updates a database and crashes before committing its offset. What happens, and what would you design?**
+
+**Say aloud:**  
+“A Kafka partition is an ordered portion of a topic, and an offset identifies a record’s position within it. A committed consumer offset records where that consumer group should resume.
+
+If the database commit succeeds but the offset commit does not, the record can be processed again. That is the duplicate-processing window associated with at-least-once handling.
+
+For a local database update, I would insert a unique processed-event ID and apply the business change in the same database transaction. A repeated event then produces no second business change. Only after successful database processing would I advance the Kafka offset.
+
+Kafka transactions can coordinate Kafka records and offsets, but do not automatically include an arbitrary external database. I would state the exact system boundary before claiming exactly-once behavior.”
+
+- **Example:** Event `inventory-adjustment-72` is recorded with its stock update; replay encounters the existing event ID.
+- **Guarantee:** Duplicate database effects are prevented within the retained-ID scope; handler execution may repeat.
+- **Trade-off/failure:** Deduplication costs storage. Committing offsets first risks skipping unfinished work.
+- **Follow-ups:** “Parallel processing?” → Advance only past completed earlier records. “Dedup insert fails?” → Roll back appropriately before handling the duplicate.
+
+Reference: [Kafka 4.0 delivery semantics](https://kafka.apache.org/40/design/design/).
+
+---
+
+**10. A service completes 200 requests per second with average response time of 150 ms. How many requests are in progress, and what does that tell you?**
+
+**Say aloud:**  
+“Little’s Law relates average work in a system to throughput multiplied by average time in that system. It helps connect observed traffic to concurrency rather than guessing from thread counts.
+
+Here, 200 requests per second multiplied by 0.15 seconds gives 30 requests in the system on average. The measurement boundary matters: if response time includes queue waiting, those 30 include queued requests.
+
+That does not mean 30 worker threads or 30 database connections is the correct configuration. Requests may wait without occupying those particular resources, and averages hide bursts. I would measure how long each scarce resource is actually held, test under representative load, and leave measured headroom. The relationship assumes a stable flow; it is not a promise that an overloaded system’s queue will stop growing.”
+
+- **Example:** If every request holds one database connection for 40 ms, average connection occupancy is approximately `200 × 0.04 = 8`.
+- **Guarantee:** An average relationship under consistent boundaries and stable conditions; no worst-case latency guarantee.
+- **Trade-off and failure:** Extra capacity costs money; excessive parallelism can slow the database. Underprovisioning causes queuing.
+- **Follow-ups:**  
+  “Latency doubles at the same throughput?” → Average in-progress work doubles.  
+  “Can this size the pool alone?” → No; validate variability and saturation experimentally.
+
+---
+
+**11. A user is logged in and has the `USER` role. Why is `GET /invoices/123` still potentially unsafe?**
+
+**Say aloud:**  
+“Authentication establishes who the caller is. Authorization decides what that caller may do. A role can grant access to an invoice endpoint without granting access to every invoice.
+
+I would enforce object-level authorization, meaning a permission decision about the specific requested invoice. In a system serving multiple customer organizations, called tenants, the query should be scoped using the authenticated caller’s permitted tenant and any required ownership rules.
+
+The server must verify that scope; a tenant ID supplied by the client is not proof of membership. For an unauthorized invoice, I would return a policy-consistent response that does not unnecessarily reveal whether it exists. I would test access between users and tenants. Unpredictable invoice IDs can reduce guessing, but they do not replace permission checks.”
+
+- **Example:** Look up invoice 123 within the caller’s verified tenant, then apply any finer permission rule.
+- **Guarantee/cost:** Enforces the chosen access policy when applied on every relevant path; query cost depends on indexing.
+- **Trade-off/failure:** Central rules improve consistency but must express domain exceptions. Unscoped caches can leak results despite correct queries.
+- **Follow-ups:** “Administrator?” → Explicit broader permission. “Update operation?” → Enforce scope in the mutation too.
+
+Reference: [OWASP authorization guidance](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html).
+
+---
+
+**12. Count contiguous subarrays whose sum equals `k`. Values may be negative. Explain and implement the solution.**
+
+**Say aloud:**  
+“A subarray is a contiguous section of an array. I would use prefix sums: running totals from the beginning. They let me calculate a section’s sum by subtracting the total before it from the total at its end.
+
+If the current total is `s`, I need to know how many earlier totals equal `s minus k`. Each occurrence identifies a different valid starting position, so I store frequencies rather than just remembering whether a total occurred.
+
+I seed total zero with frequency one to represent the position before the array starts. For each value, I update the total, count matching earlier totals, and only then record the current total. That ordering avoids counting an empty subarray when `k` is zero. Unlike a usual shrinking-window approach, this works with negative numbers.”
+
+```java
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
+static long countSubarrays(int[] values, int k) {
+    Objects.requireNonNull(values, "values");
+
+    Map<Long, Long> frequencies = new HashMap<>();
+    frequencies.put(0L, 1L);
+
+    long prefix = 0;
+    long count = 0;
+
+    for (int value : values) {
+        prefix += value;
+        count += frequencies.getOrDefault(prefix - k, 0L);
+        frequencies.merge(prefix, 1L, Long::sum);
+    }
+    return count;
+}
+```
+
+- **Example:** `[1, -1, 1]`, `k = 1` → **3**: the first element, the last element, and the entire array.
+- **Complexity:** Expected O(n) time with well-distributed hashing; O(n) additional space.
+- **Guarantee/failure:** Handles negatives, repeated totals, and an empty array. Using `int` for totals or the answer risks overflow; `long` handles the bounds of an `int[]`.
+- **Trade-off:** Extra memory buys a single-pass solution; enumerating all start/end pairs costs O(n²) time.
+- **Follow-ups:**  
+  “Why not a set?” → Repeated totals represent different valid starts.  
+  “All zeros, length n?” → `n × (n + 1) / 2` valid subarrays when `k = 0`.  
+  “Why not sliding window?” → Negative values destroy the monotonic relationship between expanding the window and increasing its sum.
+
+The code is illustrative and has not been executed in this run.
+
+---
+
+**Today’s coverage:** Core Java identity and immutability; concurrency visibility and executor overload; JVM retention; Spring transactions; JPA/Hibernate query design; microservice idempotency; Kafka replay; capacity estimation; authorization; prefix-sum coding.
+
+**Tomorrow’s progression:** Move from individual guarantees to interacting operations: multi-field concurrency, cancellation, concurrent database updates, pagination during writes, retry budgets, and event ordering, with more coding practice.
+
+<a id="daily-set-02"></a>
+### Daily practice set 2
+
+**Set 2 · 7 October 2026 — Coordinating concurrent work and failures**
+
+This is today’s second run: **12 new questions**, checked against the earlier set and cumulative ledger. Baseline: your [Senior Java Interview Master Guide](/senior-java-interview), using **Java 21 without preview features**.
+
+Practise the “Say aloud” paragraphs in 45–90 seconds, then tackle the follow-ups. All examples are illustrative.
+
+---
+
+**1. Writing a report throws an exception, and closing its output stream also throws. Which exception should the caller receive?**
+
+**Say aloud:**  
+“I would use try-with-resources, Java’s language construct for closing resources automatically. A resource is something such as a file or socket whose lifetime needs explicit management; garbage collection does not provide timely closure.
+
+If the body throws and closing also throws, try-with-resources preserves the body’s exception as the primary failure. The closing failure becomes a suppressed exception—additional diagnostic information attached to the primary exception. This prevents cleanup from hiding the original problem.
+
+Resources close in reverse declaration order. If acquiring a later resource fails, already acquired resources still close. I would also establish ownership: a method should normally close resources it creates and owns, while a borrowed stream may belong to its caller. Automatic cleanup is useful only when the lifetime boundary is correct.”
+
+```java
+try (var out = Files.newOutputStream(path)) {
+    writeReport(out); // Application-specific operation
+}
+```
+
+- **Example:** Writing throws `IOException("disk full")`; closing also fails. The write exception escapes, with the close exception available through `getSuppressed()`.
+- **Guarantee/cost:** Each successfully initialized, non-null resource gets a closing attempt during normal language-level exit. For r resources, there are r attempts; their duration depends on the resource.
+- **Trade-off/failure:** A manual `finally` that throws can replace the original failure. Closing a caller-owned stream can break subsequent work. Process termination can prevent cleanup entirely.
+- **Follow-ups:** “Only closing fails?” → That closing exception escapes. “Does closing guarantee durable storage?” → No; closure and durability are separate contracts.
+
+Reference: [Java 21 try-with-resources rules](https://docs.oracle.com/javase/specs/jls/se21/html/jls-14.html#jls-14.20.3).
+
+---
+
+**2. An in-memory seat allocator uses separate atomic counters for available and reserved seats. Can its totals still become inconsistent?**
+
+**Say aloud:**  
+“Yes. An atomic counter makes an individual operation indivisible, but it does not combine operations on different counters. Our invariant—the condition that must always remain true—is that available plus reserved equals capacity, with neither count negative.
+
+A reservation contains several steps: check availability, decrease available, and increase reserved. Two callers can both pass the check, or a reader can observe the state between updates.
+
+I would protect validation, both updates, and any combined read using the same lock. A lock allows one participating thread at a time into that protected operation. For a small in-memory allocator, this makes the business rule easy to verify. All access must follow that discipline. The guarantee stops at this Java process; multiple service instances need coordination around shared authoritative state.”
+
+```java
+synchronized boolean reserve(int seats) {
+    if (seats <= 0) throw new IllegalArgumentException("seats");
+    if (seats > available) return false;
+
+    available -= seats;
+    reserved += seats;
+    return true;
+}
+```
+
+- **Example:** Available is 1; two callers each request 1. The lock permits one success and one rejection.
+- **Guarantee/cost:** O(1) state work per request; lock waiting has no fixed upper bound. Combined snapshots must acquire the same lock.
+- **Trade-off/failure:** Serialization limits concurrency. Exposing either field through an unsynchronized reader breaks the observation guarantee.
+- **Follow-ups:** “Could one count be derived?” → Yes; storing capacity and reserved removes redundant state. “What about many independent shows?” → Separate locks by show can reduce contention, with careful lifecycle management.
+
+---
+
+**3. A `CompletableFuture` times out after 200 ms, but the remote operation continues for five seconds. Is that a Java bug?**
+
+**Say aloud:**  
+“No. A future represents a computation’s eventual result; it is not necessarily the owner of the running computation. `orTimeout` completes the future exceptionally if it has not completed in time. It does not automatically stop the underlying network request.
+
+I would distinguish the response deadline, which limits how long the caller waits, from cancellation, which asks the actual operation to stop. The network client needs appropriate time limits and, where supported, an operation-specific cancellation handle.
+
+Even cancellation cannot prove that a remote side effect did not happen. The server may have completed it before receiving the cancellation. Also, `orTimeout` changes the future it is called on. If several callers share that future, I would apply an individual caller’s timeout to a copy rather than unexpectedly timing out everyone.”
+
+```java
+CompletableFuture<Quote> callerView =
+        sharedWork.copy().orTimeout(200, TimeUnit.MILLISECONDS);
+```
+
+- **Example:** The caller receives a timeout while the original quote request continues. Cancelling it requires coordination with the client performing that request.
+- **Guarantee/cost:** Bounds the caller’s intended waiting policy, subject to scheduling delays; it does not guarantee termination or rollback. Algorithmic complexity is not the useful measure here.
+- **Trade-off/failure:** Continued work wastes resources; cancelling shared work may harm other callers.
+- **Follow-ups:** “Does `cancel(true)` interrupt `CompletableFuture` work?” → Its interrupt flag has no effect on processing. “Should capacity be released on timeout?” → Only when the underlying operation actually releases the resource.
+
+Reference: [Java 21 `CompletableFuture`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/CompletableFuture.html).
+
+---
+
+**4. A request occasionally runs under the previous customer’s tenant context. How could a thread pool cause this?**
+
+**Say aloud:**  
+“`ThreadLocal` stores a separate value for each thread. It can make request context available without passing it through every method, but its lifetime follows the thread, not the request.
+
+A thread pool reuses worker threads. If request A stores tenant A and fails before removing it, request B may run on that worker and observe tenant A. This can become an authorization defect, not just incorrect logging. The stored value can also retain objects for longer than intended.
+
+At the outer request boundary, I would set trusted context and remove it in a finally block. For nested temporary context, I would restore the previous value instead. Work submitted to another executor needs deliberate context transfer and cleanup; ordinary thread-local values do not automatically follow the task.”
+
+```java
+tenantContext.set(verifiedTenant);
+try {
+    handleRequest();
+} finally {
+    tenantContext.remove();
+}
+```
+
+- **Example:** A worker handles tenant A, then a request with no tenant context. Without cleanup, the second request may inherit A accidentally.
+- **Guarantee/cost:** Cleanup removes this thread’s stored association. Retained memory otherwise scales with live worker associations and their reachable objects.
+- **Trade-off/failure:** Thread-local access simplifies signatures but hides dependencies. Copying mutable context into asynchronous tasks creates additional sharing risks.
+- **Follow-ups:** “Why not inheritance between threads?” → Pool workers may predate the request; thread creation is not task submission. “Simpler alternative?” → Pass an immutable context explicitly.
+
+Reference: [Java 21 `ThreadLocal`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/ThreadLocal.html).
+
+---
+
+**5. Two buyers read stock quantity 1 and both attempt a purchase. How does a JPA version field help, and where does it stop helping?**
+
+**Say aloud:**  
+“Optimistic locking detects conflicting updates instead of reserving exclusive access when data is read. It exists to prevent one writer silently overwriting another writer’s changes.
+
+With a JPA version field, each buyer reads both quantity and version. A typical update succeeds only if the stored version still matches the version originally read, and then advances it. If both buyers read version seven, one update can win; the other encounters a conflict.
+
+The losing operation must roll back. If retry is appropriate, it needs a fresh transaction, fresh data, and a new availability check. It must not blindly repeat the old decision.
+
+This protects the versioned entity. It does not automatically enforce a business rule spread across independently updated rows, and direct bulk updates need explicit attention to version handling.”
+
+```sql
+-- Illustrative version-check mechanism:
+UPDATE stock
+SET remaining = 0, version = 8
+WHERE id = 42 AND version = 7;
+```
+
+- **Example:** Buyer A changes version 7 to 8. Buyer B’s version-7 update affects no row; a fresh read reveals no stock.
+- **Guarantee/cost:** Detects stale updates to participating versioned entities. Indexed row access is efficient, but contention may cause repeated failed attempts.
+- **Trade-off/failure:** Good when conflicts are uncommon; frequent conflicts waste work. Detection may occur when changes are sent to the database or when the transaction commits.
+- **Follow-ups:** “Can two different rows violate a shared limit?” → Yes; coordinate around the shared rule. “Does versioning replace quantity validation?” → No.
+
+Reference: [Jakarta Persistence 3.2 locking specification](https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2.html#locking).
+
+---
+
+**6. A Spring Boot service has 20 database connections. Twenty requests each start a transaction, then call an audit service using `REQUIRES_NEW`. Why might everything stall?**
+
+**Say aloud:**  
+“Transaction propagation defines how a called operation participates in an existing transaction. `REQUIRES_NEW` starts an independent transaction, suspending the outer one.
+
+With a typical local database transaction manager, the outer transaction keeps its connection while the inner transaction needs another. If all twenty requests already hold the twenty connections, none can acquire a connection for auditing. They wait until a timeout or some other intervention releases resources.
+
+I would first decide whether the audit must commit independently. If it should commit only with the business change, a shared transaction is a better fit. If independent persistence is required, I would bound concurrent outer work and provide capacity for the inner work. I would also inspect database lock dependencies: more connections cannot fix an inner operation waiting on a row locked by its suspended outer transaction.”
+
+- **Example:** Twenty outer connections remain occupied; twenty inner audit calls queue for a connection.
+- **Guarantee/cost:** Independent transactions can commit separately. With one inner level, a request can simultaneously hold two connections.
+- **Trade-off/failure:** An audit record may survive a business rollback. More pool capacity consumes database resources and does not remove lock conflicts.
+- **Follow-ups:** “Would one extra connection help?” → It can permit progress under simple assumptions, but is not a universal sizing rule. “Does the outer rollback undo the audit?” → No.
+
+Reference: [Spring Framework transaction propagation](https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/tx-propagation.html).
+
+---
+
+**7. A descending activity feed duplicates entries between pages when new rows arrive. How would you redesign pagination?**
+
+**Say aloud:**  
+“Offset pagination skips a number of rows before returning a page. Inserts near the beginning shift those positions, so the next offset can revisit rows already shown.
+
+I would use keyset pagination: continue after the last ordering key seen, rather than after a row count. A cursor carries that boundary. For descending creation time, I would also include a unique ID so rows with identical timestamps have a deterministic order.
+
+The next query requests rows older than the timestamp boundary, or rows with the same timestamp and a smaller ID. An index matching the filters and ordering helps it seek directly to that boundary.
+
+This improves traversal through changing data, but it does not create a frozen dataset. Updated ordering fields, deletions, and changing filters still require an explicit consistency policy.”
+
+```sql
+WHERE tenant_id = :tenant
+  AND (
+       created_at < :lastTime
+       OR (created_at = :lastTime AND id < :lastId)
+  )
+ORDER BY created_at DESC, id DESC
+LIMIT :pageSize;
+```
+
+- **Example:** After `(10:00, 105)`, request keys below that pair. A new `(10:01, 120)` does not shift the continuation boundary.
+- **Guarantee/cost:** With a suitable index and filters, approximately O(log N + page size) retrieval; verify the query plan. Stable ordering keys prevent position-shift duplicates.
+- **Trade-off/failure:** Efficient sequential navigation, but arbitrary “jump to page 500” becomes harder. Mutable ordering keys can still cause skips or repeats.
+- **Follow-ups:** “Need an exact export?” → Use a consistent database snapshot or materialized result. “Is an encoded cursor authorization?” → No; independently enforce tenant and filter scope.
+
+---
+
+**8. Three layers each allow three total attempts. How can one request produce 27 calls to the deepest dependency?**
+
+**Say aloud:**  
+“Retries multiply when each layer repeats the work of the layers below it. If three layers each allow three total attempts, one original request can produce three cubed, or twenty-seven, attempts at the deepest dependency.
+
+I would assign retry ownership to the layer that understands whether the operation can safely repeat. An end-to-end deadline limits the total time, including waiting and retries. A retry budget limits additional attempts across traffic, so a struggling dependency does not receive unlimited extra load.
+
+Between eligible attempts, backoff increases the delay, while jitter randomizes it so many clients do not retry together. Neither creates capacity; both only shape demand. I would stop when the deadline or budget is exhausted and avoid retrying permanent validation failures or side effects whose outcome cannot safely be repeated.”
+
+- **Example:** A 900 ms budget allows a 250 ms first attempt, 100 ms delay, and another attempt capped by the remaining time, with response overhead reserved.
+- **Guarantee/cost:** With a attempts at d independently retrying layers, worst-case downstream attempts can reach aᵈ. One owner with limit a avoids that multiplication for a single call chain.
+- **Trade-off/failure:** Retries can recover transient failures but increase load and latency. Random delay alone does not cap retries.
+- **Follow-ups:** “What does a 10% budget mean?” → At most one extra attempt per ten original requests over a defined window. “Retry a timeout?” → Only when repeating the operation is safe and time remains.
+
+---
+
+**9. Kafka events for an order use the same key. Event 12 goes to a retry topic, while event 13 succeeds. Why is the order still wrong?**
+
+**Say aloud:**  
+“A Kafka partition is an ordered log, but log order is not automatically the order in which business effects complete. Routing related events to one partition helps only if processing preserves that order.
+
+A retry topic is a separate log used to delay failed processing. Moving event twelve there and continuing with thirteen allows thirteen’s effect to happen first. Kafka has not reordered the original partition; the application has changed the processing path.
+
+For strict order, I would prevent later events for that order from taking effect until the failed event is resolved. I could also store the expected business sequence with the order and accept only the next sequence. A gap then triggers bounded waiting or recovery. That choice sacrifices availability for the affected order, so the business must decide whether strict sequencing is necessary.”
+
+- **Example:** `12 = approve order`, `13 = dispatch order`. Applying dispatch first violates the workflow.
+- **Guarantee/cost:** Sequential processing preserves effects only within its coordinated scope. Sequence validation can be constant application work plus a database operation; buffering gaps needs bounded storage.
+- **Trade-off/failure:** Pausing a whole partition also delays unrelated keys. Per-key coordination permits more concurrency but requires more state and recovery logic.
+- **Follow-ups:** “Skip old sequence numbers?” → Only when known to be already applied or safely obsolete. “Increase partition count?” → Key routing may change; plan migration if historical per-key order matters.
+
+Kafka’s log guarantees: [Kafka 4.0 design documentation](https://kafka.apache.org/40/design/design/). The retry scenario illustrates an application-level consequence.
+
+---
+
+**10. A refresh token is stolen. Why does issuing a replacement token on every refresh help, and what race does it introduce?**
+
+**Say aloud:**  
+“An access token authorizes API calls. A refresh token obtains replacement access tokens, allowing access tokens to expire quickly without requiring frequent sign-in.
+
+Refresh-token rotation replaces the refresh token after each successful use and invalidates its predecessor. The server retains the relationship between replacements, often called a token family. If an invalidated predecessor appears again, that reuse can reveal theft. The server can revoke the active replacement, forcing fresh authorization.
+
+The transition must be atomic so two simultaneous uses cannot independently create valid successor branches. However, legitimate requests can also race—for example, two browser tabs refreshing together, or a retry after a lost response. I would coordinate refreshes in the client and define recovery explicitly. A broad grace period reduces accidental sign-outs but gives a stolen token more opportunity for reuse.”
+
+- **Example:** `R1 → R2`; later reuse of R1 causes the active family to be revoked.
+- **Guarantee/cost:** Rotation detects reuse of an invalidated token; it does not prevent the thief’s first successful use. It requires server-side state and coordinated updates.
+- **Trade-off/failure:** Strong replay detection can force legitimate users to sign in again after races.
+- **Follow-ups:** “Are existing access tokens immediately invalid?” → Not necessarily; local validation may accept them until expiration. “Can rotation identify which caller is the attacker?” → No.
+
+Reference: [RFC 9700, refresh-token protection](https://www.rfc-editor.org/rfc/rfc9700.html#section-4.14).
+
+---
+
+**11. Merge overlapping maintenance intervals without changing the caller’s input. What invariant makes the algorithm correct?**
+
+**Say aloud:**  
+“I would first clarify the endpoint convention. For this problem, intervals are closed: both endpoints belong to the interval, so intervals touching at an endpoint overlap.
+
+I would copy the input and sort by start time. Then I maintain one current merged interval. Because starts are sorted, the next interval either overlaps the current interval or begins after it ends. On overlap, I extend the current end to the larger end. Otherwise, I emit the current interval and start another.
+
+The invariant is that everything already emitted is complete and cannot overlap any future interval. Future starts cannot move backward. This explains why comparing with the current interval is sufficient. Sorting dominates the runtime. Copying the list and using immutable interval values avoids changing the caller’s data.”
+
+```java
+// Uses java.util.ArrayList, Comparator, List, and Objects.
+record Interval(int start, int end) {
+    Interval {
+        if (start > end) {
+            throw new IllegalArgumentException("start > end");
+        }
+    }
+}
+
+static List<Interval> merge(List<Interval> input) {
+    Objects.requireNonNull(input, "input");
+    var sorted = new ArrayList<>(input);
+    sorted.forEach(x -> Objects.requireNonNull(x, "interval"));
+    sorted.sort(Comparator.comparingInt(Interval::start));
+
+    var result = new ArrayList<Interval>();
+    if (sorted.isEmpty()) return result;
+
+    Interval current = sorted.get(0);
+    for (int i = 1; i < sorted.size(); i++) {
+        Interval next = sorted.get(i);
+        if (next.start() <= current.end()) {
+            current = new Interval(
+                    current.start(),
+                    Math.max(current.end(), next.end()));
+        } else {
+            result.add(current);
+            current = next;
+        }
+    }
+    result.add(current);
+    return result;
+}
+```
+
+- **Example:** `[1,4], [4,7], [2,3], [10,12]` → `[1,7], [10,12]`.
+- **Complexity/guarantee:** O(n log n) time; O(n) additional space including copy and output. Handles empty input, nesting, duplicates, and negative endpoints.
+- **Trade-off/failure:** Sorting a caller-owned list saves a copy but mutates input. Comparing integers by subtraction can overflow; `comparingInt` avoids that.
+- **Follow-ups:** “Half-open intervals `[start,end)`?” → Touching endpoints do not overlap; use `<` if merging only overlaps, and define empty-interval handling. “Input already sorted?” → O(n) scan.
+
+---
+
+**12. Given build tasks and prerequisites, return a valid execution order or report a dependency cycle. How would you implement it?**
+
+**Say aloud:**  
+“I would model this as a directed graph: each task is a vertex, and an edge from prerequisite to dependent means the prerequisite must come first. A topological order is an ordering that respects every such edge.
+
+I would use Kahn’s algorithm. For each task, count its unmet prerequisites; that count is called its indegree. Initially, tasks with zero indegree can run. I put them in a queue, remove one, append it to the result, and reduce the counts of its dependents. A dependent enters the queue when its count reaches zero.
+
+If I process every task, the result is valid. Otherwise, some tasks remain blocked by a cycle. I must initialize every task, including isolated tasks, and be explicit about edge direction. Multiple valid orders are possible.”
+
+```java
+// Uses java.util.ArrayDeque, ArrayList, List, and Objects.
+// Each edge is [prerequisite, dependent]; task IDs are 0..n-1.
+static List<Integer> buildOrder(int n, int[][] edges) {
+    if (n < 0) throw new IllegalArgumentException("negative n");
+    Objects.requireNonNull(edges, "edges");
+
+    List<List<Integer>> dependents = new ArrayList<>(n);
+    for (int i = 0; i < n; i++) {
+        dependents.add(new ArrayList<>());
+    }
+    int[] remaining = new int[n];
+
+    for (int[] edge : edges) {
+        if (edge == null || edge.length != 2
+                || edge[0] < 0 || edge[0] >= n
+                || edge[1] < 0 || edge[1] >= n) {
+            throw new IllegalArgumentException("invalid edge");
+        }
+        dependents.get(edge[0]).add(edge[1]);
+        remaining[edge[1]]++;
+    }
+
+    var ready = new ArrayDeque<Integer>();
+    for (int task = 0; task < n; task++) {
+        if (remaining[task] == 0) ready.addLast(task);
+    }
+
+    var order = new ArrayList<Integer>(n);
+    while (!ready.isEmpty()) {
+        int task = ready.removeFirst();
+        order.add(task);
+        for (int next : dependents.get(task)) {
+            if (--remaining[next] == 0) ready.addLast(next);
+        }
+    }
+
+    if (order.size() != n) {
+        throw new IllegalArgumentException("dependency cycle");
+    }
+    return order;
+}
+```
+
+- **Example:** Tasks 0–3, edges `0→2`, `1→2`, `2→3` → valid order `[0,1,2,3]`. Adding `3→1` creates a cycle.
+- **Complexity/guarantee:** O(V + E) time and space, where V is tasks and E is dependency entries. Duplicate edges are counted and removed consistently.
+- **Trade-off/failure:** Detects a cycle but does not identify its exact path. Reversing the edge direction produces the wrong build semantics.
+- **Follow-ups:** “Always choose the smallest ready task?” → Use a minimum-priority queue, costing O(E + V log V). “Execute tasks concurrently?” → Release dependents only after prerequisites successfully finish, not when they are merely scheduled.
+
+The code examples are illustrative and were not executed in this run.
+
+---
+
+**Today’s coverage:** Resource ownership and exception preservation; multi-field concurrency; cancellation; thread-local lifecycle; JPA optimistic locking; Spring transaction resource use; pagination under writes; retry amplification; Kafka processing order; refresh-token security; interval merging; dependency ordering.
+
+**Next day’s progression:** Virtual-thread resource limits, JVM CPU diagnosis, cache invalidation races, reliable database-to-Kafka publication, schema evolution, Spring startup validation, and sliding-window/heap coding.
+
+The cumulative ledger now tracks **24 distinct questions across two sets**.
+
+<a id="daily-set-03"></a>
+### Daily practice set 3
+
+**Set 3 · 7 October 2026 · 12 new questions**
+
+Checked against the previous **24 questions**. Baseline: your [Senior Java Interview Master Guide](/senior-java-interview), using **Java 21 without preview features**, with explicit version differences below.
+
+Practise each **Say aloud** answer in 45–90 seconds, then attempt its follow-ups. All scenarios are illustrative.
+
+---
+
+**1. You switch to virtual threads, but 10,000 requests still overwhelm a database with 40 connections. Why?**
+
+**Say aloud:**  
+“A virtual thread is a lightweight Java thread scheduled by the JVM onto an operating-system thread. It makes waiting for supported blocking operations cheaper, which helps applications handle many concurrent requests.
+
+It does not create database capacity. With forty connections, thousands of requests can still wait while retaining request data and consuming memory.
+
+I would limit database concurrency and bound how much work the service admits. A semaphore—a counter of available permits—can limit entry to a scarce operation, but unlimited callers waiting for permits still create a backlog.
+
+I would also inspect the Java version. Pinning means a virtual thread cannot release its carrier, the operating-system thread executing it. Java 21 can pin during blocking work inside synchronized code. Java 25 has removed that particular limitation, although other pinning situations remain.”
+
+- **Example:** Permit at most 30 concurrent reporting queries, preserving capacity for other work; reject or time-limit excess demand.
+- **Guarantee/cost:** At most 30 participating operations hold permits. Waiting requests still consume memory; release permits in `finally`.
+- **Trade-off/failure:** Lower concurrency protects the database but may reject traffic. Virtual threads do not accelerate CPU-intensive computation.
+- **Follow-ups:** “Pool virtual threads?” → Generally create one per task; limit the scarce resource. “Replace every `synchronized`?” → No; inspect runtime version and measured blocking.
+
+References: [Java 21 virtual threads](https://docs.oracle.com/en/java/javase/21/core/virtual-threads.html), [Java 25 virtual threads](https://docs.oracle.com/en/java/javase/25/core/virtual-threads.html).
+
+---
+
+**2. Splitting 10.00 into three independently rounded shares produces 9.99. How should Java code preserve the total?**
+
+**Say aloud:**  
+“`BigDecimal` represents decimal values with configurable precision and rounding. I would construct amounts from decimal text, because constructing from a double can preserve an earlier binary approximation.
+
+Rounding means choosing a representable amount when the exact result needs more digits. It needs a business rule: how many decimal places are allowed, when rounding occurs, and who receives any remainder.
+
+For ten units divided three ways, independently rounding every share to 3.33 loses one cent. I would calculate the base shares, calculate the remainder against the original total, and distribute it deterministically.
+
+For this two-decimal example, the result could be 3.34, 3.33, and 3.33. The invariant is that allocated amounts sum exactly to the original. Currency and allocation rules belong in the contract; two decimal places are not universal.”
+
+```java
+BigDecimal total = new BigDecimal("10.00");
+BigDecimal base = total.divide(
+        BigDecimal.valueOf(3), 2, RoundingMode.DOWN);
+BigDecimal remainder =
+        total.subtract(base.multiply(BigDecimal.valueOf(3)));
+// base = 3.33; remainder = 0.01
+```
+
+- **Guarantee/cost:** O(n) allocation steps for n recipients; arithmetic cost also depends on digit count.
+- **Trade-off/failure:** Deterministic remainder allocation preserves totals but needs a fairness rule. Negative amounts need separately defined rounding behavior.
+- **Follow-ups:** “Exact division by three?” → Can throw without rounding. “Round each intermediate result?” → Only if required; repeated rounding changes totals.
+
+Reference: [Java 21 `BigDecimal`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/math/BigDecimal.html).
+
+---
+
+**3. After `entityManager.merge(detachedOrder)`, you modify `detachedOrder`. Why might the update disappear?**
+
+**Say aloud:**  
+“A persistence context is the set of entity objects a JPA entity manager currently tracks. A managed entity belongs to that context; a detached entity represents persisted data but is no longer tracked there.
+
+Merge copies state into a managed instance and returns that instance. It does not generally turn the detached argument into the managed object.
+
+If I modify the original afterward, those later changes are not automatically tracked. I should use the returned object within the transaction.
+
+For API updates, I often prefer loading the managed entity and applying an explicit command containing only allowed changes. Merging a partially populated object is dangerous because ordinary null fields may represent actual replacement state, rather than ‘the caller did not provide this field.’ That distinction belongs in the update contract.”
+
+```java
+Order managed = entityManager.merge(detachedOrder);
+managed.setDeliveryNote("Leave at reception");
+// Run within an appropriate transaction.
+```
+
+- **Guarantee/cost:** Dirty checking—detecting managed-object changes—can persist updates at flush or commit. Database work depends on mappings and loaded state.
+- **Trade-off/failure:** Merge supports detached workflows but can copy unintended state across a large object graph.
+- **Follow-ups:** “Does merge commit?” → No. “What about unfetched lazy fields?” → JPA requires ignoring those during merge; they differ from explicitly populated nulls.
+
+Reference: [Jakarta Persistence 3.2 merge semantics](https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2#merging-detached-entity-state).
+
+---
+
+**4. A Spring Boot service starts successfully with a negative timeout and an impossible retry configuration. Where should validation happen?**
+
+**Say aloud:**  
+“I would validate configuration during startup, before accepting requests. External configuration is deployment-supplied input, so parsing it successfully does not prove it is meaningful.
+
+Configuration binding converts properties into a typed object. In Spring Boot, I would register a configuration-properties class and enable validation using `@Validated`, with a compatible validation implementation available.
+
+Individual constraints handle required values and simple bounds. Cross-field validation checks relationships—for example, whether the intended attempt durations and waiting periods fit within the operation’s total budget.
+
+I would distinguish missing values from deliberate defaults. A required timeout should not silently become zero. I would also report the invalid property clearly without exposing credentials. Failing startup makes a bad deployment visible instead of allowing intermittent request failures.”
+
+- **Example:** `attemptTimeout=800 ms`, `attempts=3`, `totalBudget=1 s` conflicts with a policy promising three full attempts.
+- **Guarantee/cost:** Checks configuration at initialization; it does not prove a remote dependency is available. Cost scales with validated properties.
+- **Trade-off/failure:** Strict validation prevents unsafe operation but can block rollout. Refreshed configuration needs validation again.
+- **Follow-ups:** “Nested settings?” → Apply cascading validation with `@Valid`. “Validate a duration?” → Check required presence and positive/range semantics explicitly.
+
+Reference: [Spring Boot configuration validation](https://docs.spring.io/spring-boot/reference/features/external-config.html#features.external-config.typesafe-configuration-properties.validation).
+
+---
+
+**5. You invalidate a cache after every database update. How can an old value still reappear?**
+
+**Say aloud:**  
+“In cache-aside, the application checks the cache first, reads the database on a miss, and stores the result. It reduces database reads, but reading and filling the cache are separate operations.
+
+A reader can fetch the old database value, pause, and then resume after a writer commits a new value and invalidates the cache. That reader now installs the old value after invalidation.
+
+Expiration limits how long that installed value remains, but does not remove the race. For stronger protection, I could maintain a generation number, meaning a version of the cache’s validity. A reader records the generation before loading and installs its result only if that generation is still current.
+
+The comparison and installation must be atomic. The writer must advance the generation reliably, and the generation must survive deletion of the cached value.”
+
+- **Example:** Reader loads price 80 → writer commits 90 and invalidates → reader caches 80.
+- **Guarantee/cost:** Generation checks reject fills crossing a completed generation change. They do not make database commit and invalidation atomic.
+- **Trade-off/failure:** Expiration is simpler but permits stale reads. Stronger coordination adds metadata, operations, and recovery requirements.
+- **Follow-ups:** “Delete twice?” → Reduces some races but is not a proof. “Strict current price required?” → Validate against authoritative data at purchase time.
+
+---
+
+**6. An order commits to the database, but publishing its Kafka event fails. How do you avoid losing the event?**
+
+**Say aloud:**  
+“I would use a transactional outbox: a database table containing events that must be published. It exists to close the failure gap between changing database state and notifying another system.
+
+The order and its outbox event are inserted in the same database transaction. Either both commit or neither does. A separate relay reads committed events and publishes them to Kafka.
+
+The relay must tolerate retries. If publication succeeds and the relay crashes before recording completion, it may publish the same event again. Each event therefore needs a stable identifier, and consumers must handle duplicates.
+
+This guarantees a durable publication obligation alongside the order, not instantaneous delivery. I would monitor the oldest unpublished event and backlog size, and define recovery for events that repeatedly fail.”
+
+```text
+Database transaction: insert order + insert outbox event → commit
+Relay: read committed event → publish → record completion
+```
+
+- **Guarantee/cost:** One additional durable record per event. Eventual publication requires a recovering relay, available infrastructure, and retained events.
+- **Trade-off/failure:** Adds storage and operational work; duplicate delivery remains possible.
+- **Follow-ups:** “Publish first?” → Could publish an order that later rolls back. “Relay options?” → Poll the table or use change-data capture, which reads committed database changes.
+
+Reference: [Debezium outbox documentation](https://debezium.io/documentation/reference/stable/transformations/outbox-event-router.html).
+
+---
+
+**7. A Kafka event changes `amount_cents` into `amount_micros` while keeping the same Protobuf field number. Why is that dangerous?**
+
+**Say aloud:**  
+“A schema defines a message’s fields and meaning. Protocol Buffers encode fields using numeric identifiers, so keeping the same field number and integer type can allow old software to parse new bytes successfully.
+
+That is binary compatibility, but it is not semantic compatibility: the receiver may interpret the number using the wrong unit. A consumer expecting cents could calculate an amount ten thousand times too large.
+
+I would introduce a new field number, retain the old meaning, and deploy consumers that understand both representations before changing producers. During transition, precedence and consistency rules must be explicit.
+
+I would also test historical events, because Kafka consumers may replay data written before the deployment. Once a field is removed, its number should be reserved so it cannot later acquire a different meaning.”
+
+```proto
+int64 amount_cents = 1;          // Existing meaning retained
+optional int64 amount_micros = 2; // New representation
+```
+
+- **Guarantee/cost:** Additive binary evolution helps mixed versions parse messages; business compatibility still requires agreement.
+- **Trade-off/failure:** Dual representations increase payload and validation complexity. Conflicting values need a defined response.
+- **Follow-ups:** “Absent versus zero?” → Explicit presence distinguishes them. “Convert through JSON?” → Unknown-field preservation differs; test that path separately.
+
+Reference: [Official Protobuf evolution guidance](https://protobuf.dev/programming-guides/proto3/#updating).
+
+---
+
+**8. How would you rotate an outbound API credential across 100 service instances without an outage?**
+
+**Say aloud:**  
+“Credential rotation replaces a secret used to authenticate a service. It limits the lifetime of exposed credentials, but distributed instances do not all change at exactly the same moment.
+
+For routine rotation, I would create a second credential while the provider still accepts the first. I would distribute the new secret through controlled secret storage, update clients, and verify that every instance is using the new version.
+
+Some clients capture credentials when constructed, so updating a file or environment source may not update existing clients. Those clients need safe replacement, with old work allowed to finish where appropriate.
+
+After confirming adoption and accounting for in-flight requests, I would revoke the old credential. I would track credential version identifiers, never secret values. A confirmed compromise may require immediate revocation even if that causes temporary failures.”
+
+- **Example:** Provider accepts K1 and K2 → instances adopt K2 → old requests drain → revoke K1.
+- **Guarantee/cost:** Overlap supports a gradual transition only if the provider permits concurrent credentials. Work scales with clients and instances.
+- **Trade-off/failure:** Longer overlap improves availability but extends exposure. A forgotten instance fails after revocation.
+- **Follow-ups:** “Provider allows one key?” → Coordinate cutover or use a supported intermediary. “Rollback after compromise?” → Do not restore the compromised secret.
+
+Reference: [OWASP secrets lifecycle guidance](https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html).
+
+---
+
+**9. Transfers from account A to B and B to A occasionally freeze. CPU usage is low. How do you investigate and prevent this?**
+
+**Say aloud:**  
+“A deadlock occurs when operations form a waiting cycle with no path to progress. Here, one transfer may hold A’s lock while waiting for B, while another holds B’s lock while waiting for A.
+
+I would inspect thread stacks and lock ownership to confirm the cycle. Low CPU supports a waiting hypothesis, but is not enough to establish deadlock.
+
+To prevent this two-lock cycle, every transfer should acquire account locks in the same global order, such as ascending immutable account ID. The ordering must be total: distinct accounts cannot tie without another ordering rule. Lock objects must also be shared consistently.
+
+For Java 21, traditional management APIs detect certain platform-thread deadlocks but do not cover virtual threads. A negative detector result therefore cannot rule out every application waiting cycle.”
+
+```text
+A → B: lock smaller ID → lock larger ID → transfer
+B → A: lock smaller ID → lock larger ID → transfer
+```
+
+- **Guarantee/cost:** Consistent ordering prevents cycles among locks following that order. Waiting time remains unbounded.
+- **Trade-off/failure:** Ordering simplifies reasoning but requires discipline across all paths. Other locks can reintroduce cycles.
+- **Follow-ups:** “Same account?” → Treat as a defined no-op or validation error. “Does locking make transfer rollback automatic?” → No; validate before mutation and define failure handling.
+
+Reference: [Java 21 thread-management coverage](https://docs.oracle.com/en/java/javase/21/docs/api/java.management/java/lang/management/ThreadMXBean.html).
+
+---
+
+**10. An endpoint waits for 20 downstream calls. Each finishes within 200 ms 99% of the time. Will the endpoint meet that threshold 99% of the time?**
+
+**Say aloud:**  
+“No. Fan-out means one request launches several downstream operations. When every result is required, completion depends on the slowest operation, so slow-tail behavior becomes more visible.
+
+Assuming the calls are independent and start together, the probability that all twenty finish within two hundred milliseconds is 0.99 raised to the twentieth power, about 81.8 percent. Roughly 18.2 percent of requests would wait longer, even before local overhead.
+
+Independence is only a simplifying assumption. Shared infrastructure creates correlated delays, so I would measure the combined endpoint directly.
+
+I would question whether all twenty results are necessary, combine calls where possible, and define which results may be omitted or served from older data. A deadline bounds waiting policy, but returning partial data requires an explicit product contract.”
+
+- **Example:** A dashboard can omit optional recommendations; a financial total may require every component.
+- **Guarantee/cost:** Twenty calls create twenty units of downstream work. Parallelism reduces elapsed time relative to serial execution, not total work.
+- **Trade-off/failure:** Partial responses improve availability but may mislead users unless clearly represented.
+- **Follow-ups:** “Perfectly correlated calls?” → The independence calculation no longer applies. “Duplicate slow calls?” → May reduce latency but increases load and requires safe repeatability.
+
+---
+
+**11. Find the longest contiguous sequence containing at most `k` distinct integers. Explain why your solution is linear.**
+
+**Say aloud:**  
+“I would use a sliding window: a contiguous range whose left and right boundaries move through the array. A frequency map records how many times each value occurs inside that range.
+
+For each new right-hand element, I increment its frequency. If the number of distinct values exceeds k, I advance the left boundary, decrementing frequencies and removing values whose frequency reaches zero.
+
+Once the window is valid, I update the best length. Shrinking cannot introduce a new distinct value, so moving left eventually restores the constraint.
+
+Although the code contains a loop inside a loop, each element enters once and leaves at most once. The total number of boundary movements is linear. With expected constant-time map operations, total runtime is expected O(n). I would define zero, negative k, and empty-input behavior explicitly.”
+
+```java
+// Imports: java.util.HashMap, java.util.Objects
+static int longestAtMostKDistinct(int[] values, int k) {
+    Objects.requireNonNull(values, "values");
+    if (k < 0) throw new IllegalArgumentException("negative k");
+    if (k == 0) return 0;
+
+    var counts = new HashMap<Integer, Integer>();
+    int left = 0;
+    int best = 0;
+
+    for (int right = 0; right < values.length; right++) {
+        counts.merge(values[right], 1, Integer::sum);
+
+        while (counts.size() > k) {
+            int removed = values[left++];
+            int remaining = counts.get(removed) - 1;
+            if (remaining == 0) counts.remove(removed);
+            else counts.put(removed, remaining);
+        }
+
+        best = Math.max(best, right - left + 1);
+    }
+    return best;
+}
+```
+
+- **Example:** `[4, 4, 7, 9, 7, 7]`, `k=2` → **4**, from `[7, 9, 7, 7]`.
+- **Complexity/guarantee:** Expected O(n) time; O(min(n, k+1)) map entries, including temporary expansion.
+- **Trade-off/failure:** Frequencies require extra memory. A set alone cannot tell whether removing one occurrence eliminates a value.
+- **Follow-ups:** “Exactly k distinct?” → Update the answer only when the valid window contains k. “Return the range?” → Save its boundaries when improving the best length.
+
+---
+
+**12. You receive integer readings continuously. How can you maintain the kth-largest reading without storing everything?**
+
+**Say aloud:**  
+“I would maintain a minimum heap containing at most k readings. A heap is a data structure that keeps its smallest element readily accessible while supporting efficient insertion and removal.
+
+The invariant is that it contains the largest k readings seen so far, counting duplicates. Until it reaches size k, I insert everything. After that, a new reading replaces the smallest retained reading only if it is larger.
+
+The heap’s smallest value is then the kth-largest overall: exactly k retained readings are at least that large, and discarded readings cannot improve the retained group.
+
+This uses memory proportional to k rather than the stream length. Before k readings arrive, the answer is unavailable. I would also clarify whether duplicates count, because kth-largest distinct value is a different requirement.”
+
+```java
+// Imports: java.util.Objects, java.util.PriorityQueue
+// Batch wrapper around the same streaming update rule.
+static int kthLargest(int[] values, int k) {
+    Objects.requireNonNull(values, "values");
+    if (k < 1 || k > values.length) {
+        throw new IllegalArgumentException("invalid rank");
+    }
+
+    var largest = new PriorityQueue<Integer>();
+
+    for (int value : values) {
+        if (largest.size() < k) {
+            largest.offer(value);
+        } else if (value > largest.peek()) {
+            largest.poll();
+            largest.offer(value);
+        }
+    }
+    return largest.peek();
+}
+```
+
+- **Example:** `[8, 3, 8, 2, 10]`, `k=3` → **8**; duplicates occupy separate ranks.
+- **Complexity/guarantee:** O(n log(k+1)) total time, O(k) space, O(1) answer lookup after enough readings.
+- **Trade-off/failure:** Excellent for insertion-only streams. If old readings expire, discarded values may become relevant again.
+- **Follow-ups:** “Need all readings sorted?” → This heap does not retain enough information. “Increase k later?” → Cannot recover discarded readings without another data source.
+
+Java operation costs: [Java 21 `PriorityQueue`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/PriorityQueue.html).
+
+---
+
+**Today’s coverage:** Virtual-thread capacity; decimal allocation; JPA managed versus detached state; Spring configuration validation; stale cache fills; transactional outbox; Kafka message evolution; credential rotation; deadlock diagnosis; fan-out latency; sliding windows; heap-based selection.
+
+**Next day’s progression:** Generics variance, class-loader retention, business constraints spanning database rows, JPA relationship ownership, circuit-breaker recovery, Kafka ownership during rebalancing, server-side request forgery, and binary-search/deque coding.
+
+The ledger now records **36 distinct questions across three sets**. Code examples were reviewed but not executed.
+
+<a id="daily-set-04"></a>
+### Daily practice set 4
+
+**Set 4 · 8 October 2026 — Ownership, recovery, and invariants**
+
+Twelve new scenarios, following the 36 questions in Sets 1–3. Baseline: **Java 21, no preview features**. Framework references: Jakarta Persistence 3.2, Kafka Java client 4.0, Spring Boot 3.5, PostgreSQL 17, and Resilience4j 2.x circuit-breaker concepts. These are explicit assumptions, not latest-version claims. All scenarios are original illustrations, not personal experience.
+
+Practise each **Say aloud** answer in 45–90 seconds. Java method examples below are extracted and exercised by the repository tests with imports and a class wrapper supplied. Configuration and operational sequences are contextual examples, not complete deployed systems. Stable question IDs are **S04-Q01–S04-Q12**, in the order below.
+
+---
+
+**1. Your copy helper accepts `List<Number>`, but a caller has `List<Integer>`. How would you design its type signature safely?**
+
+**Say aloud:**  
+“Java generics are invariant: a list of integers is not a subtype of a list of numbers. Otherwise code receiving a number list could insert a decimal into an integer list. I would describe how the method uses each argument. The source produces values, so it can contain an unknown subtype of T. The destination consumes those values, so it can accept T or a superclass of T. That gives extends on the source and super on the destination.
+
+The compiler then checks the transfer without casts. This does not make the source immutable or the destination writable at runtime; an unmodifiable destination still rejects additions. I would also specify that the lists must be distinct and not overlapping views, because modifying the destination while iterating an aliased source can fail. Type safety and mutation policy are separate contracts.”
+
+```java
+static <T> void appendAll(List<? extends T> source, List<? super T> target) {
+    Objects.requireNonNull(source, "source");
+    Objects.requireNonNull(target, "target");
+    if (source == target) throw new IllegalArgumentException("same list");
+    // Contract: no overlapping backing storage; target supports add.
+    for (T value : source) target.add(value);
+}
+```
+
+- **Example:** Append integers `[2, 5]` to an empty `ArrayList<Number>`. Adding a `Double` through the source reference remains forbidden.
+- **Guarantee/cost:** Compile-time transfer safety; O(n) with constant-cost iteration and amortized constant-cost target additions. No atomic rollback on a failed addition.
+- **Trade-off/failure:** Flexible arguments, more complex signatures; raw types can defeat checks. Null elements follow the destination's policy.
+- **Follow-ups:** “Read from `? super T`?” → Only `Object` is guaranteed. “Is extends read-only?” → No; operations such as clear may still work.
+
+Reference: [Oracle wildcard guidance](https://docs.oracle.com/javase/tutorial/java/generics/wildcardGuidelines.html), whose Java 8 variance rules also apply to Java 21.
+
+---
+
+**2. A plugin host grows in metaspace after every plugin reload. Why might deleting the plugin reference not help?**
+
+**Say aloud:**  
+“A class loader is the object that defines classes, and metaspace is HotSpot's native-memory area for class metadata. Replacing a plugin field does not necessarily make its loader unreachable. A host-owned listener registry might still reference a plugin callback, which keeps plugin objects and their defining loader alive.
+
+I would compare repeated reloads under a controlled workload and inspect reference paths from long-lived roots to old loaders. I would also inspect plugin-created threads, context class loaders, and scheduled callbacks. The fix is an explicit unload lifecycle: stop new plugin work, wait for active work to finish, unregister callbacks, close owned resources, then release references.
+
+Increasing the metaspace limit only postpones failure if old generations remain reachable. Conversely, rising usage alone does not prove a leak; generated classes or legitimate new plugins can explain growth. I need evidence of obsolete generations retained.”
+
+- **Example:** `hostRegistry → oldPluginListener → oldPluginClass → oldLoader` remains after the current plugin field is replaced.
+- **Guarantee/cost:** Loader reclaimability is a prerequisite for class unloading; prompt unloading is not guaranteed. Investigative cost depends on dump size and retained graph, not a useful fixed Big-O for the incident.
+- **Trade-off/failure:** Waiting for active callbacks makes unload slower but avoids executing closed plugin state. A weak registry alone does not stop threads or close resources.
+- **Follow-ups:** “Call GC?” → It cannot collect reachable loaders and is no lifecycle contract. “Static fields always leak?” → An unreachable loader and its internal cycles can be collected.
+
+Reference: [Java 21 class unloading rules](https://docs.oracle.com/javase/specs/jls/se21/html/jls-12.html#jls-12.7).
+
+---
+
+**3. Two dispatchers each see two active couriers, then independently take one offline. Both rows have versions. Can the depot still end with no courier?**
+
+**Say aloud:**  
+“Yes. Write skew is when transactions read a shared condition but change different rows, allowing their combined result to break that condition. Each version check can succeed because neither transaction updates the other's courier row. Row-level optimistic locking does not automatically enforce a rule spanning several rows.
+
+For PostgreSQL 17, repeatable read can still allow this anomaly. One option is serializable isolation, which makes committed outcomes equivalent to some serial execution and may abort a conflicting transaction. The application must retry the entire transaction with fresh reads and a bounded policy. Another option is a shared depot guard row: under read committed, every operation changing membership locks that row before reading the active count and updating couriers.
+
+The guard works only if all writers participate. I would include administrative tools and bulk jobs in that contract, and avoid irreversible external work inside a transaction that may retry.”
+
+- **Example:** A reads `{A,B}` and disables A; B reads `{A,B}` and disables B. Their distinct row versions do not conflict.
+- **Guarantee/cost:** A serializable solution must include all relevant invariant-changing transactions. The guard serializes changes per depot, with contention proportional to that depot's traffic.
+- **Trade-off/failure:** Serializable transactions can abort; guard locking reduces throughput. Locking only the row being disabled leaves the anomaly.
+- **Follow-ups:** “Retry just UPDATE?” → No, repeat the decision and reads. “Empty depot?” → Define creation and deletion rules, and keep the guard stable.
+
+Reference: [PostgreSQL 17 transaction isolation](https://www.postgresql.org/docs/17/transaction-iso.html).
+
+---
+
+**4. A managed project's `tasks` list includes a new task, but the task's project foreign key is absent. What JPA relationship rule did the code miss?**
+
+**Say aloud:**  
+“In a bidirectional relationship, the owning side is the side whose reference controls the stored relationship. With a project collection mapped by the task's project field, the task's many-to-one field owns the foreign key. Adding only to the inverse project collection changes the Java view without establishing that owning reference.
+
+I would use a domain operation that sets task.project and adds the task to project.tasks, maintaining both directions. I would separately ensure the new task is persisted, either explicitly or through an intentional persist cascade. Cascade means propagating a persistence operation; it does not choose relationship ownership.
+
+I would flush to send pending changes to the database, clear the persistence context to discard the managed-object cache, and read again. The assertion then checks stored state rather than the in-memory list. Moving or removing tasks needs a deliberate contract, especially if orphan removal is configured to delete children.”
+
+- **Example:** Mapping: `Project.tasks @OneToMany(mappedBy="project")`; `Task.project @ManyToOne`. Inside a transaction, set both references and persist the new task if cascade does not do so.
+- **Guarantee/cost:** Correct owning references determine relationship persistence. SQL count depends on mapping, identifiers, batching, and flush behavior.
+- **Trade-off/failure:** A helper centralizes consistency but must define duplicate additions and reparenting. Nulling a mandatory foreign key can fail at flush.
+- **Follow-ups:** “Does `mappedBy` name a column?” → It names the owning Java attribute. “Cascade REMOVE everywhere?” → Dangerous for shared entities; model lifecycle ownership first.
+
+Reference: [Jakarta Persistence 3.2 relationship ownership and synchronization](https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2).
+
+---
+
+**5. A failed dependency recovers, but every replica sends a burst when its circuit breaker starts admitting traffic again. How would you control recovery?**
+
+**Say aloud:**  
+“A circuit breaker is a state machine that stops admitting calls after observed failures or slow calls. Its open state rejects calls; half-open permits a limited sample to test recovery. I would distinguish those probes from normal traffic and bound both their count and duration.
+
+A breaker usually belongs to one process, so three allowed probes across a hundred replicas can still mean three hundred simultaneous calls. I would combine staggered recovery with a bulkhead, meaning a concurrency limit protecting downstream capacity, and suitable transport deadlines. The breaker alone does not limit concurrency in its closed state.
+
+I would classify failures carefully: an invalid customer request should not necessarily imply a broken dependency. Recovery metrics should show admitted probes, failures, rejection rates, and downstream saturation. A successful probe is evidence for recovery, not proof the dependency can immediately sustain the previous peak.”
+
+- **Example:** 80 replicas × 2 simultaneous probes permits up to 160 probes; a per-process setting is not a fleet-wide quota.
+- **Guarantee/cost:** Constant-size admission decisions can be cheap, but state/window maintenance is implementation-specific. A breaker does not cancel already-running calls or guarantee availability.
+- **Trade-off/failure:** Slow reopening protects the dependency but delays service recovery. Fallback responses need an explicit freshness or incompleteness contract.
+- **Follow-ups:** “Window size equals concurrency?” → No. “Probe hangs?” → Bound call duration and half-open waiting; check library configuration.
+
+Reference: [Resilience4j circuit-breaker states and limits](https://resilience4j.readme.io/docs/circuitbreaker). Check exact property support in the deployed 2.x version.
+
+---
+
+**6. A Kafka partition is reassigned while an asynchronous worker still processes its old records. How do you prevent stale completion from advancing progress?**
+
+**Say aloud:**  
+“Rebalancing changes which consumer owns a partition. A worker dispatched earlier can finish after ownership changes, so I would attach an assignment generation to dispatched work. A generation is a local identifier for the current ownership period. The consumer thread accepts completion only if that identifier is still current.
+
+For each partition I track the highest contiguous completed position, not just the largest completed offset. If offset forty-two finishes before forty-one, committing forty-three would skip unfinished work after a crash. On revocation I stop dispatch for the affected partitions, bound any drain, and commit only safe progress while ownership permits. On lost partitions I assume ownership is already gone.
+
+The local generation prevents stale bookkeeping, not stale database writes. External effects still need deduplication or storage-enforced fencing, where the destination rejects writes from superseded owners. Consumer API calls stay on the consumer's owning thread.”
+
+- **Example:** Offset 41 pending, 42 complete: next safe offset remains 41. Completion tagged generation 8 is ignored after reassignment to generation 9.
+- **Guarantee/cost:** Tracking out-of-order completions takes O(w) space for w outstanding records. Bound w and paused-partition buffering; keep polling within client liveness requirements.
+- **Trade-off/failure:** Draining can delay rebalancing. A local generation must not be mistaken for a globally authoritative storage fence.
+- **Follow-ups:** “Lost versus revoked?” → Lost may mean another member already owns it; do not rely on a final commit. “Exactly once externally?” → Requires an external atomicity/idempotency design.
+
+Reference: [Kafka 4.0 rebalance callbacks](https://kafka.apache.org/40/javadoc/org/apache/kafka/clients/consumer/ConsumerRebalanceListener.html).
+
+---
+
+**7. A document-preview API downloads a user-provided URL. Is checking that the string starts with `https://` sufficient?**
+
+**Say aloud:**  
+“No. Server-side request forgery means an attacker makes the server access a destination the attacker should not reach directly. HTTPS protects a connection; it does not authorize its destination. An apparently valid URL could target an internal administration service or redirect there.
+
+I would prefer selecting known document providers instead of accepting arbitrary URLs. Where arbitrary fetches are required, I would isolate the fetcher, limit outbound network access, parse URLs with one consistent parser, and restrict schemes, ports, and destinations. DNS translates names to addresses; DNS rebinding changes those answers between validation and connection. The actual connected address must satisfy policy, including IPv4 and IPv6 handling, while preserving proper TLS hostname checks.
+
+I would disable redirects or revalidate every hop. I would also cap bytes and time, and avoid forwarding application credentials. Input checks and network restrictions should reinforce each other.”
+
+- **Example:** A public image endpoint returns a redirect to a link-local metadata address. The second destination must not inherit trust from the first.
+- **Guarantee/cost:** Policy applies to each connection and redirect, not merely the original text. DNS/network latency dominates; bytes and hop limits bound work.
+- **Trade-off/failure:** Strict allowlists reduce supported providers. A public address can still host hostile or oversized content; destination safety does not make a document safe to render.
+- **Follow-ups:** “Hostname suffix match?” → Parse and compare canonical domain boundaries, not substrings. “Resolve once, connect by hostname?” → A second resolution can defeat validation.
+
+Reference: [OWASP SSRF prevention guidance](https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html).
+
+---
+
+**8. `computeIfAbsent` performs a slow remote catalog lookup. Why can a thread-safe map still suffer stalls?**
+
+**Say aloud:**  
+“Thread safety protects the map's structural and operation contracts; it does not make a slow mapping function harmless. ConcurrentHashMap computes an absent mapping atomically, and some other updates can wait while that computation runs. A network lookup can therefore turn a small map operation into a long contention point.
+
+I would keep the atomic step short. If duplicate remote reads are acceptable, load outside the map and publish with putIfAbsent. If callers must share one load, I would atomically install a lightweight future placeholder, and only the winner would schedule the lookup on a bounded executor outside the map operation. That is single-flight loading: concurrent callers share one in-progress operation.
+
+I would complete the placeholder on every terminal path, including scheduling rejection, and remove failed entries conditionally using the same placeholder identity. Otherwise an old failure can remove a newer successful entry. Capacity, expiration, and load deadlines remain separate policies.”
+
+- **Example:** `putIfAbsent(key, mine)` chooses one owner; on failure `remove(key, mine)` avoids deleting a replacement. This is a design sequence, not a complete cache implementation.
+- **Guarantee/cost:** Expected constant-time map lookup under suitable hashing; remote latency and contention dominate loading. Null results and exceptions do not establish a `computeIfAbsent` value.
+- **Trade-off/failure:** Shared loads reduce duplicate work but couple callers. Do not let one caller's cancellation cancel everyone's load; bound retained placeholders.
+- **Follow-ups:** “Exactly once forever?” → No; removal/failure permits another load. “Does the map protect mutable values?” → No, values need their own state contract.
+
+Reference: [Java 21 ConcurrentHashMap atomic computations](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ConcurrentHashMap.html).
+
+---
+
+**9. During a rolling release, requests are cut off even though Spring Boot graceful shutdown is configured. What would you investigate?**
+
+**Say aloud:**  
+“Graceful shutdown means stopping admission and giving active work a bounded opportunity to finish. It depends on the entire termination sequence, not just one application property. I would confirm that the process receives a normal termination signal, that traffic routing stops selecting the instance, and that the platform waits long enough before force-killing it.
+
+For Spring Boot 3.5, I would explicitly configure graceful server shutdown and inspect the lifecycle timeout per phase. That timeout is not necessarily the total process shutdown budget. I would measure routing propagation, request drain time, and other lifecycle phases when choosing the platform allowance.
+
+I would also distinguish HTTP requests from detached background tasks: a request returning does not prove its asynchronous side effect finished. Those tasks need their own shutdown ownership and durable recovery. I would test termination under representative long requests and persistent connections, since embedded server behavior and upstream routing affect what new traffic observes.”
+
+```properties
+# Spring Boot 3.5 contextual configuration; size budgets from measurements.
+server.shutdown=graceful
+spring.lifecycle.timeout-per-shutdown-phase=25s
+```
+
+- **Example:** A platform force-kills after 20 seconds while an admitted request needs 23 seconds. A 25-second application phase budget cannot override that kill.
+- **Guarantee/cost:** Bounded draining is best effort, not guaranteed completion after crashes. Extra deployment time and temporarily overlapping replicas cost capacity.
+- **Trade-off/failure:** Longer grace periods slow releases; unbounded jobs cannot be drained safely forever. Readiness routing and active connection handling are distinct.
+- **Follow-ups:** “SIGKILL?” → No cleanup opportunity. “Client saw a timeout?” → The effect may still have committed; use the operation's recovery contract.
+
+Reference: [Spring Boot 3.5 graceful shutdown](https://docs.spring.io/spring-boot/3.5/reference/web/graceful-shutdown.html).
+
+---
+
+**10. A worker's lease expires during a long pause; a replacement starts, then the old worker resumes. Why is a lease check before writing unsafe?**
+
+**Say aloud:**  
+“A lease is permission valid for a limited period. Checking it and then writing leaves a race: the worker can pause between those actions, and the lease can expire before its write arrives. A fencing token is an increasing ownership number that the protected destination uses to reject obsolete owners.
+
+I would require lease acquisition to issue a higher token and the destination to atomically compare the token with its highest accepted ownership number while applying a write. Once token eleven has been accepted, a delayed write carrying ten must fail. Merely including the number in a log does nothing.
+
+This guarantee has a boundary: a lower token can still be accepted before the destination has learned a higher one. If the requirement is immediate rejection at lease expiry, the destination must enforce authoritative lease validity too. Repeated requests from the current owner separately need operation IDs or sequencing; fencing is not deduplication.”
+
+- **Example:** Destination accepts owner 11 and records its token atomically; owner 10's late update is rejected. Equal-token retries need their own rules.
+- **Guarantee/cost:** Protects a destination that enforces a monotonic fence; requires atomic comparison plus mutation. Cross-resource enforcement is a separate distributed consistency problem.
+- **Trade-off/failure:** Requires storage cooperation and durable token state. Local clock checks or a random owner UUID alone do not provide ordering.
+- **Follow-ups:** “Counter resets?” → Can resurrect stale ownership; preserve monotonicity across recovery. “Object store cannot compare tokens?” → Use a supported conditional-write/version mechanism or redesign ownership.
+
+This is a conceptual protocol, not a claim about a particular lock provider. It extends Q6's external-effect boundary without treating Kafka assignment generations as global fencing tokens.
+
+---
+
+**11. Given ordered nonnegative parcel weights and at most `days` shipments, find the minimum daily capacity without reordering or splitting parcels.**
+
+**Say aloud:**  
+“I would binary-search the answer rather than a position in the input. A capacity is feasible if a greedy scan can ship all parcels within the allowed number of days. The predicate is monotonic: if a capacity works, a larger capacity also works, because the same grouping remains valid.
+
+The lower bound is the heaviest parcel, and the upper bound is the sum, which ships everything in one day. For each midpoint, I keep adding parcels to the current day until the next would exceed capacity, then start another day. Greedily taking the longest legal prefix cannot require more days than cutting that prefix earlier.
+
+A feasible midpoint moves the upper bound down; an infeasible one raises the lower bound. I use long for sums and capacity, reject negative weights and nonpositive days, and define empty input as requiring zero capacity. The array remains unchanged.”
+
+```java
+static long minimumCapacity(int[] weights, int days) {
+    Objects.requireNonNull(weights, "weights");
+    if (days < 1) throw new IllegalArgumentException("days must be positive");
+    long low = 0, high = 0;
+    for (int weight : weights) {
+        if (weight < 0) throw new IllegalArgumentException("negative weight");
+        low = Math.max(low, weight);
+        high += weight;
+    }
+    while (low < high) {
+        long mid = low + (high - low) / 2;
+        int used = 1;
+        long load = 0;
+        for (int weight : weights) {
+            if (load + weight > mid) {
+                used++;
+                load = 0;
+            }
+            load += weight;
+        }
+        if (used <= days) high = mid;
+        else low = mid + 1;
+    }
+    return low;
+}
+```
+
+- **Example:** `[4, 2, 5, 3]`, two days → **8**, using `[4,2]` and `[5,3]`. Capacity 7 needs three days.
+- **Guarantee/cost:** O(n log(S−M+2)) time, O(1) auxiliary space, with sum S and maximum M (both zero for empty input). Nonnegative int-array sums fit long.
+- **Trade-off/failure:** Multiple scans exchange runtime for constant space. Negative weights invalidate the greedy reasoning; arbitrary reordering changes the problem.
+- **Follow-ups:** “Exactly days?” → Clarify empty shipments and parcel count. “Return grouping?” → Run a final greedy pass at the computed capacity.
+
+---
+
+**12. Produce the maximum in every width-`k` window of an integer array in linear time, including duplicates and negative values.**
+
+**Say aloud:**  
+“I would use a monotonic deque, a queue accessible at both ends whose stored candidate values stay in decreasing order. It stores indices so I can expire entries that have left the window. Before adding a new index, I remove older candidates from the back whose values are no larger than the new value.
+
+Those removed candidates can never win again: the new value is at least as large and expires later. The front is therefore the largest remaining value in the current window. Equal values can discard the older index safely because the newer one lasts longer.
+
+Each index is appended once and removed at most once, either by expiration or domination, so all nested-loop work totals linear time. I would validate that k is between one and the input length, avoid mutating the array, and distinguish auxiliary deque space from the returned output.”
+
+```java
+static int[] windowMaxima(int[] values, int k) {
+    Objects.requireNonNull(values, "values");
+    if (k < 1 || k > values.length) throw new IllegalArgumentException("invalid window");
+    var candidates = new ArrayDeque<Integer>();
+    int[] result = new int[values.length - k + 1];
+    for (int right = 0; right < values.length; right++) {
+        while (!candidates.isEmpty() && candidates.peekFirst() <= right - k) {
+            candidates.removeFirst();
+        }
+        while (!candidates.isEmpty() && values[candidates.peekLast()] <= values[right]) {
+            candidates.removeLast();
+        }
+        candidates.addLast(right);
+        if (right >= k - 1) result[right - k + 1] = values[candidates.peekFirst()];
+    }
+    return result;
+}
+```
+
+- **Example:** `[5,5,-2,4,1]`, `k=3` → `[5,5,4]`. At the last window both fives have expired.
+- **Guarantee/cost:** O(n) amortized total time; O(k) auxiliary storage and O(n−k+1) output. Individual insertions can remove several entries.
+- **Trade-off/failure:** The deque deliberately discards values, so it cannot answer arbitrary later range queries. Storing only values makes expiry with duplicates harder to get right.
+- **Follow-ups:** “k=1?” → Every element is its own maximum. “Window minimum?” → Reverse the domination comparison. “Empty input?” → No valid positive k under this contract.
+
+---
+
+**Today's coverage:** S04-Q01 generics variance; Q02 class-loader lifecycle; Q03 cross-row write skew; Q04 JPA relationship ownership; Q05 circuit-breaker recovery; Q06 Kafka assignment ownership; Q07 SSRF prevention; Q08 atomic map loading; Q09 graceful shutdown; Q10 destination-enforced fencing; Q11 binary search on capacity; Q12 monotonic deque maxima.
+
+**Next set will build on:** safe schema migrations during mixed-version deployments, read replicas and read-your-writes behavior, Spring transaction event boundaries, concurrent queue publication, JVM native memory outside metaspace, Kafka tombstones and compaction, secure file processing, and graph shortest paths. Continue with Set 5 even if another run happens on 8 October; do not repeat the existing 48 scenarios.
+
+<a id="daily-set-05"></a>
+### Daily practice set 5
+
+**Set 5 · 9 October 2026 — Safe transitions and shortest paths**
+
+Twelve new scenarios following the 48 questions in Sets 1–4. Baseline: **Java 21 without preview features**, HotSpot 21, Spring Framework 6.2 (as used with Spring Boot 3.5), Jakarta Persistence 3.2, PostgreSQL 17, and Kafka 4.0. These are reference versions, not claims about the latest releases. Examples are original illustrations, not personal experience.
+
+Practise each **Say aloud** answer in 45–90 seconds. Stable IDs: **S05-Q01–S05-Q12**, in order. The two Java coding examples are methods and nested records compiled with a supplied `java.util.*` import and class wrapper. Other snippets describe protocols or deliberately faulty examples; they are not complete services.
+
+---
+
+**1. A producer puts a mutable job into a blocking queue, then changes its payload. What can the consumer safely assume?**
+
+**Say aloud:**
+“A happens-before relationship is a memory-ordering guarantee: earlier writes become visible to the receiving thread through a specified synchronization action. A BlockingQueue provides that guarantee for actions before the object is placed in the queue and actions after another thread accesses or removes that element. So building the payload before enqueueing safely publishes those earlier writes.
+
+It does not freeze the object. If the producer changes the payload after enqueueing while the consumer reads it, the queue does not order that later mutation. I would transfer ownership and prohibit further producer mutation, or enqueue an immutable snapshot, including copies of mutable nested values. The choice depends on copying cost and whether ownership is enforceable.
+
+I would also define bounded admission and interruption handling. Thread-safe transport solves publication; payload ownership and overload remain application responsibilities.”
+
+- **Example:** `job.amount = 7; queue.put(job); job.amount = 9;` gives no queue-based guarantee that the consumer observes the later value. Prefer a completed immutable job before `put`.
+- **Guarantee/cost:** Publication covers pre-enqueue actions. A snapshot of n payload elements costs O(n); queue operation cost depends on implementation and contention.
+- **Trade-off/failure:** Ownership transfer avoids copies but requires every alias to cooperate. A shallow copy leaves nested mutable state shared.
+- **Follow-ups:** “Does put close the queue?” → No built-in shutdown protocol. “What if interrupted?” → Propagate or restore interruption according to the caller contract; do not silently lose the job.
+
+Reference: [Java 21 BlockingQueue contract](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/BlockingQueue.html).
+
+---
+
+**2. A container is killed for memory use while the Java heap stays below its limit. What would you investigate beyond heap leaks?**
+
+**Say aloud:**
+“The heap is only part of a Java process's memory. Native memory is allocated outside that heap, including thread stacks, class metadata, compiled code and native library allocations. Direct buffers also use memory outside the ordinary object heap. A container limit applies more broadly than the maximum heap setting, so a healthy heap does not rule out memory exhaustion.
+
+I would first confirm the container's termination reason and compare its memory accounting with process resident memory, thread count and direct-buffer metrics. On HotSpot I would use Native Memory Tracking, enabled at startup, and compare a baseline with later summaries. It tracks JVM categories but does not explain every third-party native allocation.
+
+The fix follows the growing category: bound threads, release owned native resources or reduce retained buffers. I would budget native headroom before changing the heap ceiling.”
+
+- **Example:** A 2 GiB container with a 1.5 GiB heap budget can still exceed its limit through stacks, buffers and other accounted memory; the remaining 0.5 GiB is not automatically adequate.
+- **Guarantee/cost:** NMT adds overhead and is diagnostic evidence, not a complete process accounting ledger. Reserved virtual address space is different from committed or resident memory.
+- **Trade-off/failure:** A larger heap can reduce available native headroom. Stable NMT with rising resident memory calls for OS/native investigation, not an automatic heap-leak diagnosis.
+- **Follow-ups:** “Enable NMT after the incident?” → Plan startup enablement; it cannot be started dynamically if disabled. “Heap dump sufficient?” → It may expose owners, but not every native allocation.
+
+Reference: [HotSpot 21 diagnostic tools and NMT](https://docs.oracle.com/en/java/javase/21/troubleshoot/diagnostic-tools.html).
+
+---
+
+**3. You must replace `customer_name` with `display_name` while old and new service replicas overlap. Why is a direct column rename risky?**
+
+**Say aloud:**
+“A rolling deployment runs several application versions at once. Renaming a column immediately breaks old SQL, even if the new application works perfectly. I would use expand and contract: first add a compatible representation, migrate readers and writers, and remove the obsolete representation only after its users are gone.
+
+During overlap I would choose one authoritative value and a synchronization rule covering every writer. For example, keep the old column authoritative while a database trigger copies its value to the new column. Backfill historical rows in bounded batches with concurrency-safe conditions, verify convergence, then switch readers. Only after old writers are retired can a later release change write authority.
+
+Rollback compatibility, jobs and reporting queries belong in the plan. Backfill completion alone does not prove safety when old replicas can still change data.”
+
+- **Example:** Add nullable `display_name`; synchronize old-column writes; backfill; compare values; roll out new readers; retire all old clients; later switch writes and remove the old column.
+- **Guarantee/cost:** An application protocol, not an automatic ALTER TABLE guarantee. Backfill is O(rows) data work and generates WAL, PostgreSQL's write-ahead log; DDL can acquire disruptive locks.
+- **Trade-off/failure:** Extra schema and synchronization cost buy rollback time. Naive dual writes in only new replicas miss updates from old replicas; a stale backfill can overwrite newer data.
+- **Follow-ups:** “Add NOT NULL immediately?” → Only after existing rows and every active writer satisfy it; plan validation/locking. “When drop the column?” → After observed non-use and the agreed rollback window.
+
+Reference: [PostgreSQL 17 ALTER TABLE behavior](https://www.postgresql.org/docs/17/sql-altertable.html); the rollout protocol above is a design proposal.
+
+---
+
+**4. A successful profile update is followed by an old value on refresh. How would you provide read-your-writes with database replicas?**
+
+**Say aloud:**
+“Read-your-writes means a client sees its own completed changes on subsequent reads. An asynchronous replica may not have replayed a successful primary commit yet, so load-balancing the next read can violate that expectation without losing the write.
+
+The simplest targeted solution is to route the dependent read to the current primary, using a fresh transaction snapshot. If we need replica reads, a more involved protocol returns a replication progress marker that is at least as new as the commit. The chosen replica must replay through that marker before a fresh read, with a bounded wait and primary fallback.
+
+A fixed delay is a latency guess, not a guarantee. Failover, cached responses and old transaction snapshots also matter. I would scope the guarantee explicitly rather than promise that all readers instantly see all writes.”
+
+- **Example:** Update returns version 42; the next profile read goes to the primary. A replica-only alternative waits for verified replay progress, not merely receipt of WAL.
+- **Guarantee/cost:** Primary reads trade replica capacity for simpler session consistency. PostgreSQL synchronous replication with `remote_apply` waits for replay on the configured synchronous standby set, not every arbitrary replica.
+- **Trade-off/failure:** Marker routing needs topology/failover handling and deadlines. Old snapshots or stale caches can defeat a correct routing decision.
+- **Follow-ups:** “Stick to primary for five seconds?” → Useful heuristic unless lag is strictly bounded. “Primary fails?” → State whether acknowledged writes survive the configured replication policy.
+
+Reference: [PostgreSQL 17 standby and synchronous replication](https://www.postgresql.org/docs/17/warm-standby.html).
+
+---
+
+**5. An AFTER_COMMIT Spring event listener changes an entity, but the change does not persist. Why, and is the event durable?**
+
+**Say aloud:**
+“An AFTER_COMMIT listener runs after the publishing transaction has committed. Spring may still expose the old transaction's resources, which makes data access appear possible, but there is no further commit of that transaction to save new changes. I would put required business updates inside the original transaction, or invoke a separate proxied service with REQUIRES_NEW when a genuinely independent post-commit database write is appropriate.
+
+That new transaction can fail after the original work succeeds. Also, an in-process event is not a durable task: a process crash after commit can prevent the listener from completing. If eventual execution is required, persist the work in the original transaction and process it with recovery.
+
+I would distinguish timing from reliability. AFTER_COMMIT describes when a callback runs; it does not promise delivery, retries or atomicity with later effects.”
+
+- **Example:** An order commits; its listener assigns an audit entity field. Use an explicit independent transaction for optional audit persistence, or persist mandatory audit/work alongside the order.
+- **Guarantee/cost:** Default phase is AFTER_COMMIT; without a transaction the listener is skipped unless fallback execution is enabled. Independent work adds another commit and connection usage.
+- **Trade-off/failure:** Separate commits allow partial success. Retried callbacks need duplicate protection; enabling fallback changes the no-transaction case rather than creating a transaction.
+- **Follow-ups:** “Listener throws?” → Original commit cannot be rolled back. “Async listener?” → Does not inherit a thread-bound transaction; define its own boundary and failure handling.
+
+Reference: [Spring Framework 6.2 TransactionalEventListener contract](https://docs.spring.io/spring-framework/docs/6.2.x/javadoc-api/org/springframework/transaction/event/TransactionalEventListener.html).
+
+---
+
+**6. A JPQL bulk update changes thousands of rows, but managed objects still show old values. What contract did you bypass?**
+
+**Say aloud:**
+“The persistence context is JPA's collection of managed entity instances and their tracked state. JPQL is the Jakarta Persistence query language. A bulk JPQL update operates directly on database rows rather than changing each managed object. JPA does not automatically synchronize those existing instances with the bulk result, and bulk operations bypass ordinary optimistic version checks.
+
+I would isolate the bulk operation in a deliberate transaction boundary. If managed changes must be retained, flush them—synchronize pending changes to the database—before the bulk statement, then clear the context and reload what is needed. Clearing detaches all managed entities, so doing it casually can discard unflushed work and invalidate caller assumptions.
+
+If the operation needs per-entity lifecycle behavior or conflict detection, I would use entity updates or explicitly design predicates and version changes. Bulk throughput is valuable only if the domain semantics remain correct.”
+
+- **Example:** Load account A as ACTIVE; bulk-set matching accounts to SUSPENDED; A remains stale in memory until refreshed or detached and reloaded.
+- **Guarantee/cost:** One bulk statement avoids per-entity materialization, but database work still depends on matched rows and indexes. Persistence-context synchronization must be handled explicitly.
+- **Trade-off/failure:** Flush/clear affects more than the target rows. A later stale write can undermine the bulk result if version handling is absent.
+- **Follow-ups:** “Version increment alone enough?” → It can invalidate older versions, but the bulk decision still needs explicit conflict semantics. “Test approach?” → Load, bulk-update, inspect stale state, clear, then reload in a real provider/database test.
+
+Reference: [Jakarta Persistence 3.2 bulk update and delete semantics](https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2.html#bulk-update-and-delete-operations).
+
+---
+
+**7. A Kafka consumer restores an old snapshot after a long outage and resurrects a deleted key. How can compaction cause this?**
+
+**Say aloud:**
+“Compaction keeps the latest known record for a key while eventually removing older records. A tombstone is a record with a key and a null value, used to mark deletion. Tombstones themselves can eventually be removed, so a compacted topic is not an unlimited history of every delete.
+
+If a consumer restores an old local snapshot containing a deleted key and resumes after the tombstone has disappeared, it may never learn to remove that key. I would pair snapshots with offsets and a recovery policy that guarantees required deletes remain available, or discard the old state and rebuild from an authoritative source when that window is exceeded.
+
+I would monitor consumer recovery time against deletion retention. Compaction is asynchronous and preserves ordering of retained records, but it does not turn an arbitrary stale snapshot into a safe recovery point.”
+
+- **Example:** Snapshot contains `K=active`; log later receives `(K,null)`; an outage exceeds the available delete history. Reusing that snapshot without reconciliation can retain K forever.
+- **Guarantee/cost:** Offsets do not get renumbered after compaction; gaps are normal. A complete rebuild costs the retained log scan plus state storage. Tombstone retention bounds safe scan/recovery assumptions.
+- **Trade-off/failure:** Longer retention uses more storage; short retention narrows recovery time. An empty string value is not a null tombstone.
+- **Follow-ups:** “Immediate erasure?” → No, cleaning is asynchronous; backups and downstream copies need separate policies. “Replay all events?” → A compacted topic is unsuitable for complete event-history auditing.
+
+Reference: [Kafka 4.0 log compaction](https://kafka.apache.org/40/design/design/#log-compaction).
+
+---
+
+**8. A ZIP upload is small, but extraction exhausts disk and writes outside its target folder. What controls belong in the processing boundary?**
+
+**Say aloud:**
+“An archive can expand into much more data than its compressed size, and entry names can attempt path traversal, meaning escape from the intended directory. I would treat extraction as untrusted computation with both path and resource controls.
+
+Use a private, newly created workspace and server-generated storage names. Resolve and normalize each entry under its extraction root, reject absolute or escaping paths, and disallow links and unsupported entry types. Normalization alone is insufficient if an attacker can alter filesystem links while extraction runs, so workspace ownership and safe file creation matter.
+
+Enforce limits while streaming actual decompressed bytes: total bytes, per-entry bytes, file count, nesting, time and concurrent jobs. Do not trust archive metadata. Publish only fully validated output; on failure, clean up the owned workspace and keep partial files inaccessible.”
+
+- **Example:** Reject `../../config.yml` and stop an archive whose actual expansion exceeds 100 MiB even if its claimed size is 1 MiB. The numbers are illustrative policy values.
+- **Guarantee/cost:** Work is bounded by enforced output and processing budgets; decompression can consume CPU before reaching byte limits. Isolation and deadlines complement counters.
+- **Trade-off/failure:** Strict policies reject some legitimate archives. Extension/MIME checks and malware scanning are layers, not substitutes for safe extraction and private storage.
+- **Follow-ups:** “Nested archives?” → Reject or apply one shared recursive budget. “Duplicate names?” → Reject or define collision handling; do not silently overwrite trusted output.
+
+Reference: [OWASP file upload guidance](https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html); extraction policy above is an illustrative design.
+
+---
+
+**9. A stream uses `peek` to write audit records and then calls `count`. Why can auditing disappear?**
+
+**Say aloud:**
+“A stream describes a computation rather than promising that every intermediate callback will run. Peek is an intermediate operation, and Java permits optimizations that skip traversal when the terminal result can be derived directly. For a sized source with no size-changing operations, count may already know the answer, so an audit side effect in peek can be skipped.
+
+I would separate required side effects from incidental observation. An explicit loop or a suitable terminal operation makes intended traversal clear, but it still does not make several external writes atomic or retry-safe. If auditing is mandatory business state, it belongs in a transaction or another durable protocol.
+
+I would keep mapping and filtering functions free of externally required side effects. That makes sequential and parallel execution easier to reason about and prevents correctness from depending on an optimizer's chosen traversal.”
+
+- **Example:** `List.of(3, 8).stream().peek(audit::write).count()` must not be relied on to produce two audit writes. It is a deliberately faulty contextual fragment.
+- **Guarantee/cost:** Stream result semantics can hold without callback traversal. An explicit n-element loop does O(n) visits plus the cost of each effect.
+- **Trade-off/failure:** `forEach` does not provide rollback; parallel `forEach` does not preserve encounter order. Failure may leave only part of the effects completed.
+- **Follow-ups:** “Use forEachOrdered?” → Preserves encounter order where defined, not transactional atomicity. “No terminal operation?” → A lazy pipeline does not execute just because it was constructed.
+
+Reference: [Java 21 Stream, count and peek contracts](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/stream/Stream.html).
+
+---
+
+**10. A team replaces a request counter with LongAdder, then uses its sum to enforce a hard admission limit. Is that safe?**
+
+**Say aloud:**
+“LongAdder spreads contended updates across internal variables to improve statistical counting throughput. Its sum is not an atomic snapshot while updates are happening. More fundamentally, reading a count, checking a limit and incrementing are separate actions: several callers can all pass the same check.
+
+For admission I would use a semaphore, a counter of available permits, with an atomic try-acquire operation, releasing exactly once when the admitted work finishes. For a custom state rule, a compare-and-set loop can atomically validate and replace one state value. Compare-and-set means update only if the value still equals the one observed.
+
+I would keep LongAdder for telemetry, where concurrent observations need not define permission. A process-local limiter still does not enforce a fleet-wide quota; that needs a separate shared authority or explicitly allocated per-instance budgets.”
+
+- **Example:** With count 9 and limit 10, two callers can both read 9 and increment. A one-permit semaphore admits at most one of them before a release.
+- **Guarantee/cost:** LongAdder favors throughput at a space cost. Atomic admission has contention; no universal constant latency is promised. A quiescent sum, with no concurrent updates, is accurate.
+- **Trade-off/failure:** Incorrect release ownership can inflate permits. Replacing LongAdder with AtomicLong while keeping separate get/check/increment still leaves the race.
+- **Follow-ups:** “sumThenReset for exact intervals?” → Concurrent updates do not yield an exact interval boundary. “Request times out?” → Release on actual owned-work completion, according to the resource being limited.
+
+Reference: [Java 21 LongAdder contract](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/atomic/LongAdder.html).
+
+---
+
+**11. Several depots are starting points in an unweighted directed road graph. Find each vertex's fewest hops from any depot.**
+
+**Say aloud:**
+“I would use multi-source breadth-first search. Breadth-first search processes vertices in increasing hop distance with a first-in, first-out queue. Instead of running it separately from every depot, seed every distinct depot at distance zero, then expand all of them together.
+
+When I first discover an unvisited neighbor, assign the current distance plus one and enqueue it immediately. Marking on enqueue ensures a vertex enters the queue once, including when several depots reach it. Because every edge costs one hop and the queue visits layers in order, first discovery gives the minimum over all sources.
+
+I would return minus one for unreachable vertices, accept an empty source set, and validate every endpoint before traversal. This computes directed reachability; for undirected roads the caller must include both directions. It does not solve unequal travel-time weights.”
+
+```java
+static int[] nearestDepot(int[][] edges, int[] depots) {
+    Objects.requireNonNull(edges, "edges");
+    Objects.requireNonNull(depots, "depots");
+    int n = edges.length;
+    for (int[] row : edges) {
+        Objects.requireNonNull(row, "row");
+        for (int v : row) if (v < 0 || v >= n)
+            throw new IllegalArgumentException("endpoint");
+    }
+    for (int s : depots) if (s < 0 || s >= n)
+        throw new IllegalArgumentException("depot");
+    int[] distance = new int[n];
+    Arrays.fill(distance, -1);
+    ArrayDeque<Integer> queue = new ArrayDeque<>();
+    for (int s : depots) if (distance[s] == -1) {
+        distance[s] = 0;
+        queue.addLast(s);
+    }
+    while (!queue.isEmpty()) {
+        int u = queue.removeFirst();
+        for (int v : edges[u]) if (distance[v] == -1) {
+            distance[v] = distance[u] + 1;
+            queue.addLast(v);
+        }
+    }
+    return distance;
+}
+```
+
+- **Example:** Edges `0→1→2`, `3→2`, isolated 4; depots `[0,3,3]` produce `[0,1,1,0,-1]`.
+- **Guarantee/cost:** With V vertices, E edges and S source entries, O(V+E+S) time including validation, O(V) auxiliary/output space; inputs remain unchanged and must not be mutated concurrently.
+- **Trade-off/failure:** Distances omit actual paths and depot identity. Weighted edges invalidate first-discovery optimality; duplicate edges and self-loops are harmless.
+- **Follow-ups:** “Return paths?” → Store a predecessor when first discovered. “Tied depots?” → Define a tie rule; current queue/source order only determines implicit discovery preference.
+
+---
+
+**12. Now roads have nonnegative travel costs. How do you find the cheapest route when a vertex first discovered may later become cheaper?**
+
+**Say aloud:**
+“I would use Dijkstra's algorithm: repeatedly process the currently smallest tentative distance. Relaxation means trying an edge to see whether it improves the destination's best known cost. With nonnegative weights, a current minimum entry cannot later be beaten through a longer unfinished route.
+
+Java's priority queue does not provide an efficient decrease-key operation, so I insert a new entry for each strict improvement. When removing an entry, I skip it if its distance no longer matches the best known value. This handles stale entries without scanning the queue to delete them.
+
+I would reject negative weights, use long for accumulated distance, and preserve an explicit unreachable sentinel. Zero-cost edges, cycles and parallel edges are valid. If negative costs are part of the domain, I would choose another algorithm and consider negative cycles.”
+
+```java
+record Road(int to, int cost) {}
+record Visit(int vertex, long distance) {}
+
+static long[] cheapestRoutes(Road[][] roads, int source) {
+    Objects.requireNonNull(roads, "roads");
+    int n = roads.length;
+    if (source < 0 || source >= n) throw new IllegalArgumentException("source");
+    for (Road[] row : roads) {
+        Objects.requireNonNull(row, "row");
+        for (Road road : row) {
+            Objects.requireNonNull(road, "road");
+            if (road.to() < 0 || road.to() >= n || road.cost() < 0)
+                throw new IllegalArgumentException("road");
+        }
+    }
+    long[] best = new long[n];
+    Arrays.fill(best, Long.MAX_VALUE);
+    best[source] = 0;
+    PriorityQueue<Visit> queue = new PriorityQueue<>(
+        Comparator.comparingLong(Visit::distance));
+    queue.add(new Visit(source, 0));
+    while (!queue.isEmpty()) {
+        Visit visit = queue.remove();
+        int u = visit.vertex();
+        if (visit.distance() != best[u]) continue;
+        for (Road road : roads[u]) {
+            long candidate = visit.distance() + road.cost();
+            if (candidate < best[road.to()]) {
+                best[road.to()] = candidate;
+                queue.add(new Visit(road.to(), candidate));
+            }
+        }
+    }
+    return best;
+}
+```
+
+- **Example:** `0→1:10`, `0→2:1`, `2→1:2`, isolated 3 gives `[0,3,1,MAX]`. The queued distance 10 becomes stale and is ignored.
+- **Guarantee/cost:** With V vertices and E edges, O(V+E log(E+2)) time and O(V+E) auxiliary/output space for this duplicate-entry heap implementation, including full validation. E counts parallel edges. With int vertex counts and nonnegative int costs, shortest simple paths plus one examined edge fit in long; arbitrary long edge costs would require overflow handling.
+- **Trade-off/failure:** Extra heap entries simplify code but cost memory. `Long.MAX_VALUE` means unreachable. No caller mutation; no concurrent graph mutation permitted.
+- **Follow-ups:** “Early exit at discovery?” → Unsafe; exit when the target is removed with its current minimum. “Negative weights?” → Bellman–Ford is an option, O(VE), with reachable negative-cycle detection. “All weights one?” → Use breadth-first search.
+
+---
+
+**Topic coverage:** S05-Q01 queue publication and ownership; Q02 native memory; Q03 mixed-version database migration; Q04 replica consistency; Q05 transaction events; Q06 JPA bulk state; Q07 Kafka deletion recovery; Q08 secure archive processing; Q09 stream side effects; Q10 telemetry versus admission; Q11 multi-source BFS; Q12 weighted shortest paths.
+
+**Next set builds on:** database index selectivity and query plans, HTTP conditional updates, Unicode string contracts, interruptible task shutdown, Kafka transaction visibility, certificate rotation, and union-find or dynamic-programming coding. Set 6 should introduce new decisions and failure cases rather than repeat these scenarios.
+
+<a id="part-18"></a>
+## Part 18 - SDE-3 Interview Simulation Lab
+
+ This section converts the guide from a reference book into an interviewer-led drill. The simulations are derived from topics and question areas already covered in this guide. They are intentionally structured as interviewer escalation, not as memorization cards. How to run a simulation For each scenario: 1 Answer Stage 1 aloud in 60-90 seconds. 2 Continue only when the answer is internally consistent. 3 Treat each Stage 2-5 question as a real interviewer interruption. 4 Give a concrete decision, not a list of technologies. 5 If you do not have production evidence, say so and explain how you would verify the decision. 6 Score yourself after the simulation using the rubric below. Simulation scoring 1  -  Mechanism Technical correctness Explain the mechanism clearly 2  -  Why Design reasoning Explain why the design exists and alternatives 3  -  Failure Failure-mode thinking Explain what breaks and how it appears 4  -  Trade-off Senior judgment State what you gain, what you sacrifice, and when you would change the choice 5  -  Production Operational maturity Name evidence, metrics/logs/traces/tests, rollback or recovery where relevant Target: 4/5 or better consistently. A 5/5 answer is not the longest answer; it is the answer that makes a defensible engineering decision and explains how you would prove it. 
+
+#### Simulation 1  -  HashMap internals and the red-black tree follow-up
+
+ Source areas: HashMap internals, red-black tree deep dive, hashCode()/equals(), collision behavior, treeification. Interviewer: “Explain how HashMap works internally.” 
+
+**Stage 1  -  Mechanism:** Explain hash spreading, bucket/bin selection, linked-list bins, tree bins, lookup, and resize at the level appropriate to the JDK version being discussed. 
+
+**Stage 2  -  Why:** 1 Why is capacity kept as a power of two? 1 Why is the load factor around 0.75 in the common implementation? 1 Why does a collision-heavy bin eventually use a red-black tree rather than an AVL tree? 
+
+**Stage 3  -  Failure:** 1 Two different keys have the same hash. What happens? 1 What if hashCode() is poor but equals() is correct? 1 Why can a treeified bin still have lookup behavior that is not simply “always O(log n)”? 
+
+**Stage 4  -  Trade-off:** 1 What do you gain from treeification and what complexity does it add? 1 Why not treeify every bucket immediately? 
+
+**Stage 5  -  Production:** 1 If a service suddenly shows CPU growth and slower map-heavy code, what evidence would distinguish ordinary load from pathological hashing or oversized maps? 1 What would you inspect before changing the code? 
+
+**SDE-3 target:** Do not stop at “HashMap is O(1).” Explain average behavior, collision handling, resize cost, equality semantics, and implementation/version boundaries. Red flag: Claiming that the whole HashMap becomes a tree, or that every lookup in a treeified bin is guaranteed O(log n) regardless of key comparison behavior. 
+
+#### Simulation 2  -  Thread pools, queues and back-pressure
+
+ Source areas: thread pool, queue and back-pressure; concurrency/JVM sections. Interviewer: “A Spring service is receiving more work than downstream systems can process. How would you design the executor?” 
+
+**Stage 1  -  Mechanism:** Explain worker threads, queueing, task submission, execution, and rejection. 
+
+**Stage 2  -  Why:** 1 Why not simply create more threads? 1 Why does queue size matter? 1 How does the workload type change your sizing decision? 
+
+**Stage 3  -  Failure:** 1 What happens when downstream latency increases while request rate stays constant? 1 How can an unbounded queue hide an overload problem? 1 What happens when the executor saturates? 
+
+**Stage 4  -  Trade-off:** 1 Bounded queue vs unbounded queue? 1 Caller-runs/rejection vs dropping work? 1 More concurrency vs protecting the dependency? 
+
+**Stage 5  -  Production:** 1 Which metrics would you watch: active threads, queue depth, task wait time, execution time, rejection count, dependency latency, request latency? 1 What evidence would tell you the bottleneck is downstream rather than the executor itself? 
+
+**SDE-3 target:** Treat the executor as part of the service's capacity-control system, not merely a place to configure poolSize. 
+
+#### Simulation 3  -  ConcurrentHashMap and shared mutable state
+
+ Source areas: ConcurrentHashMap and concurrency questions. Interviewer: “Is putting an ArrayList inside a ConcurrentHashMap enough to make the data thread-safe?” 
+
+**Stage 1  -  Mechanism:** Separate thread safety of the map from thread safety of the object stored as its value. 
+
+**Stage 2  -  Why:** Explain why concurrent access to the container does not automatically serialize mutations inside a mutable value. 
+
+**Stage 3  -  Failure:** Give a concrete race involving read-modify-write on the contained list. 
+
+**Stage 4  -  Trade-off:** Compare synchronized access, concurrent collections, immutable replacement, and redesigning the state ownership. 
+
+**Stage 5  -  Production:** Explain how you would reproduce or detect the race with concurrency tests, invariants, logging/metrics, or a focused stress test. 
+
+**SDE-3 target:** Identify the actual shared mutable state and synchronization boundary rather than naming a “thread-safe collection” and stopping. 
+
+#### Simulation 4  -  Spring @Transactional and ordering traps
+
+ Source areas: Spring Retry/Resilience, transactions, Spring internals. Interviewer: “You have a transactional service method that calls a retryable operation. What can go wrong?” 
+
+**Stage 1  -  Mechanism:** Explain that Spring behavior such as transactions/retry is commonly applied through proxies/interceptors and that ordering affects the effective behavior. 
+
+**Stage 2  -  Why:** Why does the transaction boundary matter when retries occur? 
+
+**Stage 3  -  Failure:** 1 What if the operation partially changes state before failing? 1 What if the retry happens inside one transaction versus across transaction boundaries? 1 What if the call bypasses the proxy? 
+
+**Stage 4  -  Trade-off:** Compare retrying the whole transaction with isolating the retryable operation. Discuss idempotency and side effects. 
+
+**Stage 5  -  Production:** What logs/traces/transaction metrics would prove how many attempts occurred and which transaction boundaries were actually used? 
+
+**SDE-3 target:** Talk about proxy boundaries, transaction scope, idempotency, and failure semantics - not just annotations. 
+
+#### Simulation 5  -  Spring Boot startup and dependency wiring
+
+ Source areas: SpringApplication.run, dependency injection, repository implementation, startup performance. Interviewer: “The service startup time doubled after a release. How do you investigate?” 
+
+**Stage 1  -  Mechanism:** Describe the broad startup phases: environment/configuration, application context creation, bean discovery/creation, auto-configuration and embedded server startup. 
+
+**Stage 2  -  Why:** Why can adding a dependency or auto-configuration materially affect startup? 
+
+**Stage 3  -  Failure:** Distinguish slow classpath scanning, bean initialization, external calls during startup, database initialization, and configuration problems. 
+
+**Stage 4  -  Trade-off:** Lazy initialization can improve startup but move work to first request. Explain when that is useful and what it risks. 
+
+**Stage 5  -  Production:** Explain how you would use startup timing, application metrics/logs, profiling or framework-supported diagnostics to identify the slow phase before changing configuration. 
+
+**SDE-3 target:** Diagnose the startup phase before applying blanket lazy initialization or removing auto-configuration. 
+
+#### Simulation 6  -  Hibernate N+1 and fetch strategy
+
+ Source areas: Hibernate/JPA, N+1, fetching, SQL visibility. Interviewer: “An endpoint returns 100 orders and suddenly executes hundreds of SQL statements. Explain.” 
+
+**Stage 1  -  Mechanism:** Explain how loading a parent collection and then lazily accessing associated entities can produce repeated SQL. 
+
+**Stage 2  -  Why:** Why does lazy loading exist, and why can it be useful despite the N+1 risk? 
+
+**Stage 3  -  Failure:** Explain how the problem appears in production: query count, DB latency, connection pressure, endpoint latency. 
+
+**Stage 4  -  Trade-off:** Compare fetch join, entity graphs, batch fetching, DTO projections, and changing the default fetch strategy. Explain why “make everything eager” is not a universal fix. 
+
+**Stage 5  -  Production:** How would you prove the fix? Query count, SQL logs/profiling, DB metrics, endpoint latency, and representative data volume. 
+
+**SDE-3 target:** Optimize the access pattern rather than changing every association to eager loading. 
+
+#### Simulation 7  -  @Transactional(readOnly = true)
+
+ Source areas: Q228 and transaction-related Hibernate/JPA material. Interviewer: “What does @Transactional(readOnly = true) really do?” 
+
+**Stage 1  -  Mechanism:** Explain that it communicates a read-only transaction intent to the transaction/data-access stack; exact behavior depends on the framework, transaction manager, database and ORM configuration. 
+
+**Stage 2  -  Why:** Why can the hint help, and why is it not a magic “make this query faster” switch? 
+
+**Stage 3  -  Failure:** What assumptions become dangerous if a developer believes it prevents all writes under every configuration? 
+
+**Stage 4  -  Trade-off:** Discuss consistency, transaction scope, flush behavior, connection usage, and the difference between application intent and database-enforced read-only semantics. 
+
+**Stage 5  -  Production:** How would you verify the actual behavior in your deployed stack rather than relying on a generic claim? 
+
+**SDE-3 target:** State the version/configuration boundary explicitly and verify actual SQL/transaction behavior. 
+
+#### Simulation 8  -  Hibernate flush surprises
+
+ Source areas: Q245 and Hibernate flush behavior. Interviewer: “Why did an apparently read-only query cause an INSERT/UPDATE to be flushed first?” 
+
+**Stage 1  -  Mechanism:** Explain the relationship between the persistence context, pending changes and flush timing. 
+
+**Stage 2  -  Why:** Why does an ORM sometimes flush before query execution? 
+
+**Stage 3  -  Failure:** How can unexpected flushes affect latency, constraint errors, locks, or transaction behavior? 
+
+**Stage 4  -  Trade-off:** Discuss explicit flush boundaries versus allowing ORM-managed flush behavior. 
+
+**Stage 5  -  Production:** Prove the sequence with SQL logging/profiling and transaction traces; do not infer it solely from Java source order. 
+
+**SDE-3 target:** Think in terms of persistence-context state and actual SQL order. 
+
+#### Simulation 9  -  Kafka consumer lag and scaling
+
+ Source areas: Kafka terminology, Kafka internals, messaging and distributed systems. Interviewer: “Consumer lag keeps increasing. Add more consumers?” 
+
+**Stage 1  -  Mechanism:** Explain partitions, consumer groups and the relationship between partition parallelism and consumers. 
+
+**Stage 2  -  Why:** Why can adding consumers stop helping once partition parallelism is exhausted? 
+
+**Stage 3  -  Failure:** Distinguish slow processing, downstream latency, insufficient partitions, rebalances, errors/retries and producer-side bursts. 
+
+**Stage 4  -  Trade-off:** More partitions can increase parallelism but affect ordering/operational characteristics. Explain the decision rather than treating partition count as free. 
+
+**Stage 5  -  Production:** Which evidence would you inspect: lag by partition, processing latency, consumer assignment/rebalance behavior, downstream latency, error rate and throughput? 
+
+**SDE-3 target:** Diagnose why lag exists before scaling consumers blindly. 
+
+#### Simulation 10  -  Kafka delivery semantics and idempotency
+
+ Source areas: Kafka/messaging, idempotent consumers. Interviewer: “How do you make an event consumer safe when the same event can be delivered more than once?” 
+
+**Stage 1  -  Mechanism:** Explain idempotent processing and the difference between delivery semantics and business-effect semantics. 
+
+**Stage 2  -  Why:** Why is consumer-side idempotency often necessary even when the messaging system offers stronger delivery features? 
+
+**Stage 3  -  Failure:** Describe a crash between applying the business change and recording the processing result. 
+
+**Stage 4  -  Trade-off:** Compare idempotency keys, unique constraints, transactional state changes and deduplication stores. 
+
+**Stage 5  -  Production:** Explain how you would verify duplicate delivery behavior and recovery after consumer crashes. 
+
+**SDE-3 target:** Design around the business side effect, not only the broker's delivery guarantee. 
+
+#### Simulation 11  -  Circuit breaker and retry interaction
+
+ Source areas: circuit breaker, retry, resilience and microservices. Interviewer: “A downstream service is failing. We already have retries and a circuit breaker. Why is the system still melting down?” 
+
+**Stage 1  -  Mechanism:** Explain retries, failure counting, open/closed/half-open behavior at a conceptual level. 
+
+**Stage 2  -  Why:** Why can retries amplify load during a dependency failure? 
+
+**Stage 3  -  Failure:** Explain retry storms, increased latency, thread/connection exhaustion and cascading failure. 
+
+**Stage 4  -  Trade-off:** Discuss retry count, backoff, jitter, timeout, circuit-breaker threshold, fallback and which failures should not be retried. 
+
+**Stage 5  -  Production:** Identify the evidence needed: dependency latency/error rate, retry count, circuit state, request concurrency, queue depth and saturation signals. 
+
+**SDE-3 target:** Treat timeout + retry + circuit breaker + concurrency as one control system. 
+
+#### Simulation 12  -  API idempotency
+
+ Source areas: REST/API design, microservices and idempotent operations. Interviewer: “A client times out after creating an order. It retries. How do you prevent duplicate orders?” 
+
+**Stage 1  -  Mechanism:** Explain an idempotency key and durable association between the key and the resulting operation. 
+
+**Stage 2  -  Why:** Why does a client timeout create ambiguity even when the server may have completed the operation? 
+
+**Stage 3  -  Failure:** Consider concurrent duplicate requests, partial failure and key reuse. 
+
+**Stage 4  -  Trade-off:** Discuss key retention, storage, conflict handling, response replay and scope of uniqueness. 
+
+**Stage 5  -  Production:** Explain how you would measure duplicate attempts, idempotency conflicts and recovery behavior. 
+
+**SDE-3 target:** Recognize the fundamental “unknown outcome after timeout” problem. 
+
+#### Simulation 13  -  Database indexing and query diagnosis
+
+ Source areas: SQL, PostgreSQL indexes, query performance. Interviewer: “This query is slow. Add an index.” 
+
+**Stage 1  -  Mechanism:** Explain what an index changes and why it can reduce data access for suitable predicates. 
+
+**Stage 2  -  Why:** Why is an index not automatically beneficial for every column or query? 
+
+**Stage 3  -  Failure:** Discuss write overhead, storage, poor selectivity and a query plan that still chooses a scan. 
+
+**Stage 4  -  Trade-off:** Explain composite-index column order and matching the access pattern rather than creating indexes indiscriminately. 
+
+**Stage 5  -  Production:** Use the execution plan plus representative production-like data and query latency to validate the change. 
+
+**SDE-3 target:** Start with the query and execution plan, not the index definition. 
+
+#### Simulation 14  -  SQL NULL semantics
+
+ Source areas: Q271 and SQL material. Interviewer: “Why did WHERE column != 'X' fail to return rows where column is NULL?” 
+
+**Stage 1  -  Mechanism:** Explain SQL three-valued logic and that NULL represents an unknown/missing value rather than an ordinary comparable value. 
+
+**Stage 2  -  Why:** Why do ordinary equality/inequality predicates not behave like Java null comparisons? 
+
+**Stage 3  -  Failure:** Identify filters, joins, aggregates and uniqueness assumptions that can be affected. 
+
+**Stage 4  -  Trade-off:** Explain explicit IS NULL/IS NOT NULL logic and the business meaning of missing data. 
+
+**Stage 5  -  Production:** Validate with targeted test cases containing NULL and non-NULL values before shipping the query change. 
+
+**SDE-3 target:** Connect SQL semantics to the business meaning of missing data. 
+
+#### Simulation 15  -  JVM allocation and escape analysis
+
+ Source areas: JVM performance and allocation questions. Interviewer: “Object allocation is cheap on the JVM. Then why is this service generating GC pressure?” 
+
+**Stage 1  -  Mechanism:** Explain allocation paths at a high level and the role of garbage collection. 
+
+**Stage 2  -  Why:** Why can short-lived allocations still matter at very high allocation rates? 
+
+**Stage 3  -  Failure:** Explain allocation rate, object lifetime, retained objects and GC overhead as different possible causes. 
+
+**Stage 4  -  Trade-off:** Discuss whether reducing allocations is worth code complexity; avoid optimizing without evidence. 
+
+**Stage 5  -  Production:** Use allocation profiling, GC logs/metrics, heap information and latency evidence to identify the dominant source. 
+
+**SDE-3 target:** Do not equate “allocation is cheap” with “allocation is free.” 
+
+#### Simulation 16  -  Kubernetes probes and graceful shutdown
+
+ Source areas: Kubernetes deployment, probes and graceful shutdown. Interviewer: “Pods are healthy, but deployments occasionally drop requests. Where do you look?” 
+
+**Stage 1  -  Mechanism:** Explain readiness, liveness and shutdown behavior separately. 
+
+**Stage 2  -  Why:** Why should readiness and liveness represent different questions? 
+
+**Stage 3  -  Failure:** Consider terminating pods still receiving traffic, probes that are too aggressive, slow startup, and application shutdown that does not drain work. 
+
+**Stage 4  -  Trade-off:** Probe frequency/timeouts versus false positives and slow detection. 
+
+**Stage 5  -  Production:** Correlate deployment events, pod lifecycle, readiness transitions, request errors, termination timing and application shutdown logs. 
+
+**SDE-3 target:** Think about the entire pod lifecycle, not only the probe endpoint. 
+
+#### Simulation 17  -  Spring MVC content negotiation and Jackson
+
+ Source areas: Spring MVC, content negotiation and Jackson configuration. Interviewer: “The same controller returns different representations depending on the request. Explain.” 
+
+**Stage 1  -  Mechanism:** Explain content negotiation and serialization/deserialization at a framework level. 
+
+**Stage 2  -  Why:** Why is the Accept/content-type contract important? 
+
+**Stage 3  -  Failure:** Discuss incompatible media types, serialization configuration, unexpected field exposure and client/server contract mismatch. 
+
+**Stage 4  -  Trade-off:** Global Jackson configuration versus endpoint-specific behavior. 
+
+**Stage 5  -  Production:** Verify request headers, negotiated media type, serialized payload, server configuration and contract tests. 
+
+**SDE-3 target:** Trace the request from HTTP headers through handler selection to serialization. 
+
+#### Simulation 18  -  Spring Data JPA repository abstraction
+
+ Source areas: Spring Data repository implementation. Interviewer: “I only declared an interface. Where does the implementation come from?” 
+
+**Stage 1  -  Mechanism:** Explain runtime proxy/repository infrastructure at a conceptual level. 
+
+**Stage 2  -  Why:** What does the abstraction buy the team, and what does it hide? 
+
+**Stage 3  -  Failure:** What happens when the generated query does not match the actual access pattern or causes excessive SQL? 
+
+**Stage 4  -  Trade-off:** Repository abstraction versus explicit queries/DTOs/native SQL for complex workloads. 
+
+**Stage 5  -  Production:** Validate generated SQL, query count, execution plans and transaction boundaries. 
+
+**SDE-3 target:** Know when abstraction improves productivity and when the hidden behavior needs to become explicit. 
+
+#### Simulation 19  -  Designing a real-time clickstream pipeline
+
+ Source areas: full system-design walkthroughs, GCP clickstream analytics pipeline. Interviewer: “Design a real-time clickstream analytics pipeline.” 
+
+**Stage 1  -  Mechanism:** Define producers, ingestion, durable messaging/storage, stream processing, serving/analytics and consumers. 
+
+**Stage 2  -  Why:** Explain why each boundary exists and where buffering/decoupling is useful. 
+
+**Stage 3  -  Failure:** Walk through duplicate events, consumer lag, malformed events, processor failure and downstream unavailability. 
+
+**Stage 4  -  Trade-off:** Discuss latency versus cost, delivery semantics, retention, partitioning and replayability. 
+
+**Stage 5  -  Production:** Define SLOs and evidence: ingestion rate, processing lag, end-to-end latency, error/dead-letter rate and data-quality signals. 
+
+**SDE-3 target:** Start with requirements and guarantees before drawing boxes. 
+
+#### Simulation 20  -  Multi-tenant data isolation
+
+ Source areas: PostgreSQL row-level security and database/system-design material. Interviewer: “How do you guarantee tenant A cannot read tenant B data?” 
+
+**Stage 1  -  Mechanism:** Define the tenant boundary and where enforcement occurs. 
+
+**Stage 2  -  Why:** Why is application-only filtering potentially weaker than defense in depth? 
+
+**Stage 3  -  Failure:** Consider missing predicates, incorrect tenant context, privileged paths, background jobs and SQL written outside the normal repository path. 
+
+**Stage 4  -  Trade-off:** Compare application filtering, row-level security, separate schemas/databases and operational complexity. 
+
+**Stage 5  -  Production:** Explain authorization tests, negative cross-tenant tests, audit evidence and monitoring for tenant-boundary violations. 
+
+**SDE-3 target:** Treat tenant isolation as a security invariant that should be enforced and tested at multiple layers where appropriate. 
+
+#### Simulation 21  -  System-design interviewer changes the scale
+
+ Interviewer: “Your design works for 10,000 requests per second. Now make it work for 100,000.” 
+
+**Stage 1  -  Mechanism:** Identify which components scale horizontally and which have hard limits. 
+
+**Stage 2  -  Why:** Explain the bottleneck rather than multiplying every component by ten. 
+
+**Stage 3  -  Failure:** Find the first saturation point: database, partition count, connection pool, queue, downstream dependency, hot key or single coordinator. 
+
+**Stage 4  -  Trade-off:** Explain caching, partitioning, batching, asynchronous processing, replication or data-model changes and the consistency/cost consequences. 
+
+**Stage 5  -  Production:** Define the capacity metric and load-test evidence needed to validate the new design. 
+
+**SDE-3 target:** Scaling is a bottleneck-identification exercise, not a shopping list of infrastructure. 
+
+#### Simulation 22  -  Production incident: latency spike
+
+ Interviewer: “p99 latency went from 300 ms to 3 seconds after a release. What do you do?” 
+
+**Stage 1  -  Mechanism:** Establish the request path and distinguish application, dependency and queueing latency. 
+
+**Stage 2  -  Why:** Explain why p99 can move dramatically even when average latency looks acceptable. 
+
+**Stage 3  -  Failure:** Consider downstream latency, thread/connection pool saturation, GC, lock contention, DB query regression and retries. 
+
+**Stage 4  -  Trade-off:** Decide between rollback, mitigation, capacity increase or code/configuration change based on evidence. 
+
+**Stage 5  -  Production:** Use traces, latency percentiles, saturation metrics, error/retry rates and deployment correlation. State what you would check first and why. 
+
+**SDE-3 target:** Show a hypothesis-driven incident loop: observe → narrow → mitigate → verify → prevent recurrence. 
+
+#### Simulation 23  -  Coding escalation: from correct to production-quality
+
+ Interviewer: “Implement the coding problem.” 
+
+**Stage 1  -  Mechanism:** Produce a correct solution and state time/space complexity. 
+
+**Stage 2  -  Why:** Explain the data structure/algorithm choice and the invariant that makes it correct. 
+
+**Stage 3  -  Failure:** Identify edge cases, invalid inputs if relevant, integer overflow risks, duplicate values, empty inputs and boundary conditions. 
+
+**Stage 4  -  Trade-off:** Compare the chosen solution with a simpler/brute-force solution and explain when the simpler one could be acceptable. 
+
+**Stage 5  -  Production:** Discuss readability, test strategy, observability if this were production code, and how you would benchmark or load-test it when performance matters. 
+
+**SDE-3 target:** The interviewer should hear the reasoning before the code becomes a typing exercise. 
+
+#### Simulation 24  -  Final architecture challenge: defend your decision
+
+ Interviewer: “You proposed solution A. I think B is better. Convince me.” 
+
+**Stage 1  -  Mechanism:** Restate the requirement and the mechanism of A. 
+
+**Stage 2  -  Why:** State the assumptions under which A is preferable. 
+
+**Stage 3  -  Failure:** Acknowledge where B is stronger and where A fails. 
+
+**Stage 4  -  Trade-off:** Compare latency, consistency, availability, complexity, cost, operational burden and migration risk as relevant to the design. 
+
+**Stage 5  -  Production:** Define the measurement that would make you reverse the decision. 
+
+**SDE-3 target:** Do not defend a technology emotionally. Defend a decision with requirements, assumptions, trade-offs and measurable evidence. 
+
+<a id="part-19"></a>
+## Part 19 - 30-Minute SDE-3 Mock Interview Protocol
+
+Use this for a daily timed drill. Keep expected answers hidden until the candidate has reasoned through the problem.
+
+| Minutes | Exercise |
+|---|---|
+| 0-3 | Warm-up: answer one core Java question. Allow interruption after 30-60 seconds. |
+| 3-10 | Technical escalation: choose Simulation 1-18 and work through all five stages. |
+| 10-20 | System design: choose Simulation 19-21; clarify requirements before proposing an architecture. |
+| 20-26 | Incident/debugging: use Simulation 22; prioritize hypotheses and the evidence needed to reject each. |
+| 26-30 | Coding explanation: use Simulation 23; state the invariant, complexity and boundaries before coding. |
+
+Score technical correctness, reasoning, failure-mode thinking, trade-offs, production verification and communication from 1 to 5 each. A practice target is 24/30, with focused revision where a dimension repeatedly scores below 4. This is a study rubric, not a hiring guarantee.
+
+The spoken pattern is: how it works, why it exists, what breaks, the trade-off and how to verify the behavior.
+
+<a id="part-20"></a>
+## Part 20 - Interviewer Follow-Up Rules
+
+1. Let the candidate reason before revealing the expected answer.
+2. Challenge assumptions and ask why; do not only test vocabulary.
+3. Change one constraint at a time: traffic, failure, ordering, latency or dependencies.
+4. Ask for evidence: how would the candidate verify the claim?
+5. Ask about a credible alternative and when it would be better.
+6. Reward explicit uncertainty about version/configuration-dependent behavior.
+7. Stop when the candidate reaches a defensible decision; judgment matters more than endless trivia.
+
+### What interview-ready should sound like
+
+Start with a concise mechanism and design reason, then deepen the answer when challenged. A strong answer can explain failure modes, trade-offs and production evidence without inventing personal experience.
+
+<a id="appendix-a"></a>
+## Appendix A Complete producer-consumer implementation
+
+One producer sends a separate end marker after all data. The owner observes task completion and cancels both tasks when either fails or the owner is interrupted. The data value 20 is no longer overloaded as a termination signal. Executor shutdown waits for cooperative tasks; a callback that ignores interruption can still prevent termination. This in-memory example provides no durability.
+
+```java
+import java.util.Objects;
+import java.util.concurrent.*;
+import java.util.function.IntConsumer;
+
+/** One producer and one consumer; callbacks must cooperate with interruption. */
+public final class ProducerConsumerDemo {
+    private record Item(int value, boolean end) {}
+    private static final Item END = new Item(0, true);
+
+    public static void run(int count, IntConsumer consume)
+            throws InterruptedException, ExecutionException {
+        if (count < 0) throw new IllegalArgumentException("negative count");
+        Objects.requireNonNull(consume, "consume");
+        BlockingQueue<Item> queue = new ArrayBlockingQueue<>(10);
+        try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+            CompletionService<Void> completion = new ExecutorCompletionService<>(executor);
+            Future<Void> producer = completion.submit(() -> {
+                for (int i = 0; i < count; i++) queue.put(new Item(i + 1, false));
+                queue.put(END);
+                return null;
+            });
+            Future<Void> consumer = completion.submit(() -> {
+                while (true) {
+                    Item item = queue.take();
+                    if (item.end()) return null;
+                    consume.accept(item.value());
+                }
+            });
+            try {
+                // Observe whichever task completes first, including early failure.
+                completion.take().get();
+                completion.take().get();
+            } finally {
+                // A failed or interrupted side must not strand its peer.
+                producer.cancel(true);
+                consumer.cancel(true);
+            }
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        run(20, value -> System.out.println("Consumed: " + value));
+    }
+}
+```
+
+[Java 21 BlockingQueue](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/BlockingQueue.html) and [ExecutorService lifecycle](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ExecutorService.html).
+
+<a id="validation"></a>
+## Appendix B Alignment and validation notes
+
+Edition v24, 9 October 2026. The Markdown is the editable source for the PDF.
+
+**Alignment:** Parts 01-16 and five daily sets are copied from the current local ElevatePrep authored sources. Heading levels and navigation are adapted for one document; the answers and code retain their website wording. The two algorithm companions remain available through the website's guide. Q245-Q272, the simulation lab, mock protocol and interviewer follow-up rules are retained from the supplied v23 document as supplemental material. They are not represented as newly reviewed website content.
+
+**Preserved repair:** ElevatePrep's Q184 deliberately presents a shutdown race as an exercise. Appendix C retains v23's corrected bounded pool as a worked alternative. Appendix A retains the complete producer-consumer implementation. Neither example is a production executor implementation.
+
+**Validation for this edition:** See the adjacent validation report for actual structural, SQL, Java, PDF and repository checks. Earlier edition check totals are historical and have not been carried forward as v24 results. Framework mappings, PostgreSQL-specific execution, cloud deployments, Kubernetes and external services were not exercised end to end. Published reference versions are baselines rather than claims about the newest release. Compilation of wrapped fragments does not make them complete applications. No zero-defect guarantee is made.
+
+<a id="appendix-c"></a>
+## Appendix C Repaired bounded thread pool
+
+Worked alternative to the intentionally incomplete Q184 exercise in the ElevatePrep-aligned question bank. This preserves the supplied reviewed edition's atomic submission/shutdown boundary, Future-visible failures and explicit rejection.
+
+### Worked solution: minimal fixed thread pool
+
+```java
+class MiniPool implements AutoCloseable {
+    private final Object lock = new Object();
+    private final java.util.ArrayDeque<java.util.concurrent.FutureTask<?>> queue =
+            new java.util.ArrayDeque<>();
+    private final java.util.List<Thread> workers = new java.util.ArrayList<>();
+    private final int capacity;
+    private boolean stopped; // guarded by lock
+
+    MiniPool(int threads) { this(threads, 100); }
+    MiniPool(int threads, int capacity) {
+        if (threads < 1 || capacity < 1)
+            throw new IllegalArgumentException("positive threads and capacity required");
+        this.capacity = capacity;
+        for (int i = 0; i < threads; i++) {
+            Thread worker = new Thread(this::loop, "mini-" + i);
+            workers.add(worker);
+            worker.start();
+        }
+    }
+
+    java.util.concurrent.Future<?> submit(Runnable task) {
+        var future = new java.util.concurrent.FutureTask<Void>(
+                java.util.Objects.requireNonNull(task), null);
+        synchronized (lock) {
+            if (stopped || queue.size() == capacity)
+                throw new java.util.concurrent.RejectedExecutionException("closed or full");
+            queue.addLast(future);
+            lock.notifyAll();
+        }
+        return future;
+    }
+
+    private void loop() {
+        while (true) {
+            java.util.concurrent.FutureTask<?> task;
+            synchronized (lock) {
+                while (queue.isEmpty() && !stopped) {
+                    try { lock.wait(); }
+                    catch (InterruptedException ignored) {
+                        // Workers are private; graceful shutdown is signalled by stopped.
+                    }
+                }
+                if (queue.isEmpty()) return;
+                task = queue.removeFirst();
+            }
+            task.run(); // FutureTask captures task failure for Future.get().
+            Thread.interrupted(); // do not leak a task's interrupt status to the next task
+        }
+    }
+
+    @Override public void close() throws InterruptedException {
+        if (workers.contains(Thread.currentThread()))
+            throw new IllegalStateException("close must be called by an external owner");
+        synchronized (lock) {
+            stopped = true; // atomic with the submission decision
+            lock.notifyAll();
+        }
+        // Accepted tasks drain. If this wait is interrupted, shutdown remains in effect.
+        for (Thread worker : workers) worker.join();
+    }
+}
+```
+
+**Reasoning and alternatives:** it shows the core of `ThreadPoolExecutor`: worker threads draining a bounded queue, explicit rejection, Future results and graceful shutdown. The exercise omits dynamic sizing and configurable thread factories.
+
+**What if/test:** submission and shutdown share a lock, so an accepted task is queued before shutdown can finish. A full queue rejects immediately; this is an explicit overload policy, not blocking backpressure. Task failures are visible through the returned Future. Call close from an external owner; it drains accepted tasks and can wait indefinitely for a task that never finishes. Interruption of the owner stops its wait but leaves graceful shutdown in progress. For production use ThreadPoolExecutor; the exercise omits forced cancellation, worker replacement and robust thread-start failure handling. Test rejection, task failure and concurrent submit/close with latches.
+**Signal:** explain the worker loop and why the queue is bounded.
+

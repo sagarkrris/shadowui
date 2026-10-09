@@ -28,7 +28,7 @@ export function techBlogGateCommands(output) {
     ['practice-java', 'npm', ['run', 'test:build-challenges']],
     ['lint', 'npm', ['run', 'lint']],
     ['build', 'npm', ['run', 'build']],
-    ['readers-and-diagrams', 'npx', ['playwright', 'test', 'e2e/tech-blog-release.spec.js', 'e2e/networking-blog.spec.js', 'e2e/visual-integrity.spec.js', 'e2e/build-challenges.spec.js', '--project=chromium', '--workers=2', '--retries=0', '--forbid-only', '--reporter=line,json', `--output=${join(output, 'browser')}`]],
+    ['readers-and-diagrams', 'npx', ['playwright', 'test', 'e2e/tech-blog-release.spec.js', 'e2e/networking-blog.spec.js', 'e2e/visual-integrity.spec.js', 'e2e/build-challenges.spec.js', 'e2e/senior-java-guide.spec.js', '--project=chromium', '--workers=2', '--retries=0', '--forbid-only', '--reporter=line,json', `--output=${join(output, 'browser')}`]],
     ['diff-whitespace', 'git', ['diff', '--check']],
   ];
 }

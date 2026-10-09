@@ -1,0 +1,1099 @@
+<h2 id="part-21-production-resilience-delivery-and-jvm-operations-q273-q292">Part 21 - Production Resilience, Delivery and JVM Operations (Q273-Q292)</h2>
+
+<p>Twenty additional questions on topics the guide covers only briefly or not at all: cache stampedes, distributed transactions, change data capture, clocks, backpressure, Kafka failure handling, API evolution, safe deployments, connection pooling, garbage-collector choice, leak diagnosis, native images, class loading, alerting and secrets.</p>
+
+<p>Every question uses the same four-tier ladder, so you can stop at the tier that matches the interview or your current level:</p>
+
+<table><thead>
+<tr>
+<th>Tier</th>
+<th>Purpose</th>
+<th>Use it to</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>1. Foundation</td>
+<td>Plain-language definition, key terms and a small example</td>
+<td>Learn the topic, or check you can explain it to a non-specialist</td>
+</tr>
+<tr>
+<td>2. Core answer</td>
+<td>The 30-second version</td>
+<td>Open your spoken answer</td>
+</tr>
+<tr>
+<td>3. Follow-ups</td>
+<td>Three escalating probes (warm-up, applied, senior), each with expected reasoning</td>
+<td>Practise answering before reading the reasoning</td>
+</tr>
+<tr>
+<td>4. Deep dive</td>
+<td>Internals, a realistic failure, the trade-off and how to verify</td>
+<td>Reach a defensible decision with evidence</td>
+</tr>
+</tbody></table>
+
+<p>Baseline: Java 21 without preview features, Spring Boot 3.x, PostgreSQL, Kafka and Kubernetes. Q289 is explicitly a Java 21 preview comparison. The two Java fragments are compiled and exercised with supplied application types in the repository&#39;s Part 21 fixture; they are sketches, not complete applications. Framework, database, cloud and Kubernetes scenarios require testing on your stack. Defaults and flags change between versions, so confirm them against the documentation for yours. Metrics, numbers and incidents are illustrative. Where no source is linked, the basis is general engineering practice.</p>
+
+<p><strong>Reviewed 9 October 2026:</strong> provider-specific cache synchronization, transaction ordering, ETag validity, retry counts, DNS caching, diagnostic impact, cooperative cancellation and scoped-value bindings are qualified below.</p>
+
+<table><thead>
+<tr>
+<th>Group</th>
+<th>Questions</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>Distributed systems and data</td>
+<td>Q273-Q278</td>
+</tr>
+<tr>
+<td>APIs and delivery</td>
+<td>Q279-Q285</td>
+</tr>
+<tr>
+<td>JVM and Java</td>
+<td>Q286-Q290</td>
+</tr>
+<tr>
+<td>Operations</td>
+<td>Q291-Q292</td>
+</tr>
+</tbody></table>
+
+<p>Q283 deliberately avoids graceful shutdown, which Q19 already covers.</p>
+<h3 id="distributed-systems-and-data">Distributed systems and data</h3>
+<h4 id="q273-what-is-a-cache-stampede-and-how-do-you-handle-hot-keys">Q273 What is a cache stampede and how do you handle hot keys</h4>
+
+<p><strong>Tier 1 - Foundation</strong></p>
+
+<p><strong>In plain language:</strong> a cache keeps a ready copy of something expensive to compute. A <strong>stampede</strong> happens when a very popular copy disappears and many requests all rebuild it at the same moment. A <strong>hot key</strong> is a different problem: one entry is requested so often that a single cache node cannot serve it.</p>
+
+<p><strong>Key terms:</strong></p>
+
+<ul>
+<li><strong>Cache hit / miss:</strong> the value was / was not found in the cache.</li>
+<li><strong>TTL (time to live):</strong> how long an entry may be served before it expires.</li>
+<li><strong>Eviction:</strong> the cache removing an entry to make room.</li>
+<li><strong>Request coalescing (single flight):</strong> letting one caller rebuild a value while the others wait for its result.</li>
+<li><strong>Near-cache:</strong> a small in-process copy in front of a shared cache.</li>
+</ul>
+
+<p><strong>Small example:</strong> a product page is cached for 60 seconds and receives 5,000 requests per second. When the entry expires, rebuilding takes 200 ms, so roughly 1,000 requests miss during that gap and all query the database for the same row.</p>
+
+<p><strong>Tier 2 - Core answer (30-second version)</strong></p>
+
+<blockquote>
+<p>A stampede is many simultaneous misses on one expired key, which hit the database exactly when the cache was meant to protect it. Reduce it with request coalescing, TTL jitter, serving stale data while one caller refreshes, and pre-warming. A hot key is a separate issue, where one key exceeds one node&#39;s capacity, and it needs a near-cache, key replication or splitting the value. I would verify by expiring a hot key under load and counting database queries.</p>
+</blockquote>
+
+<p><strong>Tier 3 - Follow-ups</strong></p>
+
+<p><strong>Probe 1 (warm-up): Why does adding random jitter to TTLs help?</strong></p>
+
+<p><em>Expected reasoning:</em> keys written together, for example after a deploy or a bulk warm-up, expire together, which produces a synchronized wave of misses. Jitter spreads expiry over time. It does not help a single popular key expiring on its own, which needs coalescing or early refresh.</p>
+
+<p><strong>Probe 2 (applied): You use <code>@Cacheable(sync = true)</code> on 50 instances. Is the stampede solved?</strong></p>
+
+<p><em>Expected reasoning:</em> Spring delegates synchronized loading to the cache provider; the annotation alone does not promise a cluster-wide lock. With an instance-local provider such as Caffeine, 50 instances can still perform up to 50 simultaneous loads. A distributed provider can have different locking guarantees, so check its documentation before adding another lock. If the actual load count is unacceptable, serve stale values while one instance refreshes or use a short-lease distributed lock. The loader must still be safe to run twice, because a lock can expire mid-load. See <a href="https://docs.spring.io/spring-framework/reference/integration/cache/annotations.html#cache-annotations-sync">Spring synchronized caching</a>.</p>
+
+<p><strong>Probe 3 (senior): Traffic to one key doubles during a sale and one cache node saturates. What do you do?</strong></p>
+
+<p><em>Expected reasoning:</em> this is a hot key, not a stampede, and hashing does not spread one key. Options are a small near-cache with a short TTL in each application instance, replicating the value under several suffixed keys and reading a random one, or splitting the value. Accept the staleness window these introduce and set it deliberately.</p>
+
+<p><strong>Tier 4 - Deep dive</strong></p>
+
+<p><strong>Internals:</strong> single flight in one JVM is a map of in-flight loads.</p>
+
+<pre><code class="java">// Coalesces concurrent loads for one key inside ONE JVM only.
+private final ConcurrentHashMap&lt;String, CompletableFuture&lt;Product&gt;&gt; inFlight =
+        new ConcurrentHashMap&lt;&gt;();
+
+CompletableFuture&lt;Product&gt; load(String id) {
+    var mine = new CompletableFuture&lt;Product&gt;();
+    var existing = inFlight.putIfAbsent(id, mine);
+    if (existing != null) return existing.copy();     // isolate each caller&#39;s completion
+    try {
+        mine.complete(fetchAndPopulateCache(id));     // the winning caller does the work
+    } catch (Throwable t) {
+        mine.completeExceptionally(t);
+        if (t instanceof InterruptedException) Thread.currentThread().interrupt();
+        if (t instanceof Error error) throw error;
+    } finally {
+        inFlight.remove(id, mine);
+    }
+    return mine.copy();
+}
+</code></pre>
+
+<p>The winning caller performs the fetch synchronously; returning a future does not move that work to an executor. Each caller receives a <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/CompletableFuture.html#copy()">defensive copy of the future</a>, so its cancellation, timeout or explicit completion cannot change the shared result. Cancelling a copy does not stop the fetch.</p>
+
+<p>Probabilistic early refresh lets each request, with a probability that rises as expiry approaches, refresh the value before it expires, so expiry rarely arrives with a crowd waiting. Stale-while-revalidate keeps the old value for a short grace period while one caller fetches a new one.</p>
+
+<p><strong>Realistic failure:</strong> after a deploy every instance starts with a cold cache at once. Misses saturate the database connection pool, queries time out, and timeouts are not cached, so the cache never warms and the system stays down until traffic is shed. Fixes are staged traffic, pre-warming the hot keys, caching short-lived negative results and a limit on concurrent loads.</p>
+
+<p><strong>Trade-off:</strong> coalescing and stale serving trade freshness for load protection. Distributed locks add a component that can fail. Near-caches add an inconsistency window between instances.</p>
+
+<p><strong>How to verify:</strong> expire one hot key under load and count database queries for it. The target is about one per instance or fewer, not hundreds. Flush the cache in staging while load-testing and watch database connections and latency.</p>
+<h4 id="q274-two-phase-commit-saga-or-outbox-how-do-you-keep-two-systems-consistent">Q274 Two-phase commit, saga or outbox: how do you keep two systems consistent</h4>
+
+<p><strong>Source basis:</strong> <a href="https://www.postgresql.org/docs/current/sql-prepare-transaction.html">PostgreSQL PREPARE TRANSACTION</a>.</p>
+
+<p><strong>Tier 1 - Foundation</strong></p>
+
+<p><strong>In plain language:</strong> one business action sometimes has to change two separate systems, such as two services or a database and a message broker. There is no automatic guarantee that both changes happen or neither does. Three techniques address this, and they solve different problems.</p>
+
+<p><strong>Key terms:</strong></p>
+
+<ul>
+<li><strong>Atomicity:</strong> all of a change happens, or none of it does.</li>
+<li><strong>Coordinator and participants:</strong> in two-phase commit (2PC), the coordinator asks each participant to prepare, then to commit or roll back.</li>
+<li><strong>Compensation:</strong> an action that undoes the business effect of an earlier step, such as refunding a payment.</li>
+<li><strong>Saga:</strong> a sequence of local transactions where failure triggers compensations for the steps already done.</li>
+<li><strong>Outbox:</strong> an event stored in the same local transaction as the business data, then published separately.</li>
+<li><strong>Idempotent:</strong> safe to run more than once with the same effect.</li>
+</ul>
+
+<p><strong>Small example:</strong> placing an order reserves stock in the inventory service and then charges payment in the payment service. If payment fails after stock is reserved, the reservation must be released.</p>
+
+<p><strong>Tier 2 - Core answer (30-second version)</strong></p>
+
+<blockquote>
+<p>Two-phase commit gives atomic commit across resources, but participants hold locks until the coordinator decides, so a coordinator failure blocks them. Across independent services I prefer a saga, which runs local transactions and compensates on failure, so intermediate states are visible and compensation must be retried. The outbox pattern is narrower: it makes &quot;update my database and publish an event&quot; atomic by recording the event in the same transaction. Delivery is at least once, so consumers must be idempotent.</p>
+</blockquote>
+
+<p><strong>Tier 3 - Follow-ups</strong></p>
+
+<p><strong>Probe 1 (warm-up): Why can two-phase commit block?</strong></p>
+
+<p><em>Expected reasoning:</em> after a participant votes yes in the prepare phase it must be able to commit, so it keeps its locks until it learns the decision. If the coordinator crashes after prepare and before announcing the decision, participants wait. Recovery needs the coordinator&#39;s log, or an operator.</p>
+
+<p><strong>Probe 2 (applied): A saga&#39;s payment step fails after stock was reserved. What happens, and who drives it?</strong></p>
+
+<p><em>Expected reasoning:</em> the saga runs the compensation, which releases the reservation. An orchestrator can drive this centrally, while in choreography services react to each other&#39;s events. The compensation must be idempotent and retried until it succeeds, and a saga that cannot finish needs a timeout, an alert and a manual path.</p>
+
+<p><strong>Probe 3 (senior): Someone says &quot;we use an outbox, so we have exactly-once across services.&quot; Respond.</strong></p>
+
+<p><em>Expected reasoning:</em> the outbox makes recording intent atomic with the local write. Publishing is a separate step that can repeat after a crash, so delivery is at least once. Consumers need deduplication, for example by event id, to get effectively-once processing. It does not give atomicity across two services&#39; databases.</p>
+
+<p><strong>Tier 4 - Deep dive</strong></p>
+
+<p><strong>Internals:</strong> in 2PC the coordinator sends <em>prepare</em>, each participant durably records that it can commit and votes, and the coordinator logs the decision and sends <em>commit</em> or <em>rollback</em>. In Java this is usually JTA with XA resources. In PostgreSQL, <code>PREPARE TRANSACTION</code> persists a transaction for a later <code>COMMIT PREPARED</code> or <code>ROLLBACK PREPARED</code>, which needs <code>max_prepared_transactions</code> above its default of 0.</p>
+
+<p><strong>Realistic failure:</strong> a coordinator crashes after prepare and nobody resolves the prepared transactions. Their locks stay, other transactions queue behind them and an abandoned prepared transaction can hold back vacuum, so table bloat grows. Query <code>pg_prepared_xacts</code> and make resolving them an operational procedure. For sagas, the common failure is a compensation that itself fails or cannot undo the effect (an email already sent), so design a <strong>pivot step</strong> and treat the effects after it as retryable forward steps.</p>
+
+<p><strong>Trade-off:</strong> 2PC coordinates atomic commit at the cost of availability and coupling to XA-capable resources. Isolation is a separate property of the participants and their concurrency-control protocol; 2PC alone does not guarantee globally serializable execution. Sagas keep services autonomous but expose intermediate states and push consistency logic into the application.</p>
+
+<p><strong>How to verify:</strong> crash the coordinator, or a service, between every pair of steps. Confirm the system completes or compensates, that each step is safe to repeat, and that a stuck saga appears on a dashboard.</p>
+<h4 id="q275-change-data-capture-or-a-polling-outbox-publisher">Q275 Change data capture or a polling outbox publisher</h4>
+
+<p><strong>Source basis:</strong> <a href="https://debezium.io/documentation/">Debezium documentation</a>.</p>
+
+<p><strong>Tier 1 - Foundation</strong></p>
+
+<p><strong>In plain language:</strong> with the outbox pattern, events wait in a database table. Something must move them to Kafka. A <strong>polling publisher</strong> is application code that repeatedly queries the table. <strong>Change data capture (CDC)</strong> instead reads the database&#39;s own change log and emits each committed change.</p>
+
+<p><strong>Key terms:</strong></p>
+
+<ul>
+<li><strong>WAL (write-ahead log):</strong> PostgreSQL&#39;s durable log of every change.</li>
+<li><strong>Logical decoding / replication slot:</strong> PostgreSQL&#39;s mechanism to stream committed changes, with a slot remembering how far a consumer has read.</li>
+<li><strong>Connector:</strong> a CDC component such as Debezium running in Kafka Connect.</li>
+<li><strong>At-least-once:</strong> every event arrives, possibly more than once.</li>
+<li><strong>Event id:</strong> a unique id that lets a consumer recognize a repeat.</li>
+</ul>
+
+<p><strong>Small example:</strong> after an order row and its outbox row commit, a job runs <code>SELECT ... FROM outbox WHERE published = false</code>, sends the rows and marks them sent. A CDC connector would instead see the outbox insert in the log and emit it.</p>
+
+<p><strong>Tier 2 - Core answer (30-second version)</strong></p>
+
+<blockquote>
+<p>Both deliver outbox rows to Kafka. Polling is simple but adds query load and latency, and needs care for ordering and duplicate publishers. CDC reads the transaction log, so it has low latency and commit order, but you operate another component, and a stalled PostgreSQL replication slot makes the database retain WAL and can fill the disk. Both are at least once, so consumers deduplicate.</p>
+</blockquote>
+
+<p><strong>Tier 3 - Follow-ups</strong></p>
+
+<p><strong>Probe 1 (warm-up): Why must consumers deduplicate with either approach?</strong></p>
+
+<p><em>Expected reasoning:</em> a publisher can send an event and crash before recording that it did, and a connector can restart from an earlier position. The event is then delivered again. A stable event id and a processed-ids check, or an idempotent operation, makes this harmless.</p>
+
+<p><strong>Probe 2 (applied): How do you keep events for one order in order?</strong></p>
+
+<p><em>Expected reasoning:</em> use the aggregate id as the Kafka message key so the events share a partition. With CDC, changes are read in commit order. With polling, several publishers running in parallel can send events from the same aggregate out of order, so partition the work by aggregate or use one publisher.</p>
+
+<p><strong>Probe 3 (senior): The CDC connector has been down for a day. What is the risk?</strong></p>
+
+<p><em>Expected reasoning:</em> the replication slot keeps the WAL the connector has not yet consumed, so retained WAL grows and can exhaust disk. Monitor slot lag, alert on it, drop slots nobody uses, and consider <code>max_slot_wal_keep_size</code> to cap retention, knowing an invalidated slot means the connector needs a fresh snapshot.</p>
+
+<p><strong>Tier 4 - Deep dive</strong></p>
+
+<p><strong>Internals:</strong> Debezium uses PostgreSQL logical decoding through an output plugin (commonly <code>pgoutput</code>) and a publication. Its outbox event router transformation can turn outbox rows into Kafka messages keyed by aggregate id. A common design inserts the outbox row and lets CDC pick it up from the log, so the table need not be retained for long.</p>
+
+<p><strong>Realistic failure:</strong> a polling publisher that reads <code>WHERE id &gt; :last</code> can skip events. Transaction A takes id 100 and commits late, transaction B takes id 101 and commits first, the poller advances past 101 and never sees 100. Use a published flag, or read with a visibility-safe approach, rather than trusting id order. For CDC, the failure is the slot growth described above.</p>
+
+<p><strong>Trade-off:</strong> polling is easy to understand and operate but costs queries and delay. CDC gives timeliness and ordering but adds infrastructure, connector upgrades, schema-change handling and snapshot procedures.</p>
+
+<p><strong>How to verify:</strong> kill the publisher or connector after sending and before acknowledging, and confirm the event is delivered again but processed once. Stop the connector for an hour in a test environment and watch slot lag and disk usage.</p>
+<h4 id="q276-why-can-t-you-order-events-by-wall-clock-time-across-machines">Q276 Why can&#39;t you order events by wall-clock time across machines</h4>
+
+<p><strong>Source basis:</strong> <a href="https://martin.kleppmann.com/2016/02/08/how-to-do-distributed-locking.html">How to do distributed locking (fencing tokens)</a>.</p>
+
+<p><strong>Tier 1 - Foundation</strong></p>
+
+<p><strong>In plain language:</strong> every computer has its own clock, and they are never perfectly in step. If you rely on &quot;which timestamp is later&quot; to decide which event happened later on different machines, you can get the wrong answer.</p>
+
+<p><strong>Key terms:</strong></p>
+
+<ul>
+<li><strong>Wall-clock time:</strong> the calendar time of a machine, such as <code>System.currentTimeMillis()</code>.</li>
+<li><strong>Monotonic clock:</strong> a clock that only moves forward, suited to measuring durations, such as <code>System.nanoTime()</code>.</li>
+<li><strong>NTP:</strong> the protocol that adjusts machine clocks, sometimes by stepping them.</li>
+<li><strong>Clock skew:</strong> the difference between two machines&#39; clocks.</li>
+<li><strong>Logical clock:</strong> a counter that orders events without using real time.</li>
+<li><strong>Fencing token:</strong> an increasing number issued with each lock or lease, checked by the resource being protected.</li>
+</ul>
+
+<p><strong>Small example:</strong> two servers update a user profile. Server B&#39;s clock is two seconds behind. Its later update gets an earlier timestamp, so &quot;last write wins&quot; discards it.</p>
+
+<p><strong>Tier 2 - Core answer (30-second version)</strong></p>
+
+<blockquote>
+<p>Machine clocks drift and get corrected, so timestamps from different machines cannot reliably order events, and last-write-wins by timestamp can silently lose a newer write. Use <code>nanoTime</code> for durations within a process and a logical mechanism for ordering, such as a serialized per-aggregate version, Lamport clocks, version vectors or hybrid logical clocks. A database sequence orders number allocation, not transaction commits; use a commit-log position or serialize the relevant writes when commit order matters. For leases and locks, add a fencing token so a stale holder cannot write.</p>
+</blockquote>
+
+<p><strong>Tier 3 - Follow-ups</strong></p>
+
+<p><strong>Probe 1 (warm-up): When do you use <code>nanoTime</code> and when <code>currentTimeMillis</code>?</strong></p>
+
+<p><em>Expected reasoning:</em> <code>nanoTime</code> for elapsed time, timeouts and measurements, because it is monotonic and unaffected by clock adjustments. <code>currentTimeMillis</code> when you need a calendar time to show or store, knowing it can jump.</p>
+
+<p><strong>Probe 2 (applied): What can a Lamport clock tell you, and what can it not?</strong></p>
+
+<p><em>Expected reasoning:</em> it gives an order consistent with causality: if event A caused event B, A&#39;s number is smaller. It cannot tell whether two events with different numbers were causally related or concurrent. Version vectors can detect concurrent writes, at the cost of metadata that grows with the number of writers.</p>
+
+<p><strong>Probe 3 (senior): A client holds a lock lease, pauses for a long garbage collection, and the lease expires. What goes wrong and how do you prevent it?</strong></p>
+
+<p><em>Expected reasoning:</em> after the pause the client still believes it holds the lock and writes while a new holder is active. A fencing token solves this. The lock service issues an increasing token, the client sends it with each write, and the resource rejects any token lower than one it has already seen.</p>
+
+<p><strong>Tier 4 - Deep dive</strong></p>
+
+<p><strong>Internals:</strong> NTP can slew a clock gradually or step it, and a step can move wall time backwards. Hybrid logical clocks keep a physical component close to real time plus a counter, so timestamps stay ordered and readable. Systems such as ZooKeeper (transaction ids) and etcd (revisions) provide monotonically increasing numbers that can serve as fencing tokens. Google Spanner exposes bounded clock uncertainty with TrueTime and waits out the uncertainty when committing, which needs hardware most teams do not have.</p>
+
+<p><strong>Realistic failure:</strong> a Redis-based lock with an expiry protects a nightly job. A pause makes two workers run it at once, and both update the same rows. The lock was correct as a mutual-exclusion hint but not safe as the only protection, because nothing at the data layer checked who held it.</p>
+
+<p><strong>Trade-off:</strong> logical clocks, aggregate versions and commit-log positions provide different ordering guarantees and need coordination or extra metadata. A sequence alone is not commit order: transaction A can allocate 100 and commit after transaction B allocates 101. PostgreSQL sequence allocation is not rolled back with the transaction; see <a href="https://www.postgresql.org/docs/current/functions-sequence.html">sequence semantics</a>. Wall-clock timestamps are cheap and human-readable but unreliable for ordering. Consensus-based services give strong guarantees at the price of latency and availability constraints.</p>
+
+<p><strong>How to verify:</strong> inject a <code>Clock</code> and move it backwards in tests, and confirm ordering and expiry logic do not break. Pause a lock holder past its lease in an integration test and verify the resource rejects its late write.</p>
+<h4 id="q277-what-is-backpressure-and-what-happens-without-it">Q277 What is backpressure and what happens without it</h4>
+
+<p><strong>Tier 1 - Foundation</strong></p>
+
+<p><strong>In plain language:</strong> backpressure is a way for a slow part of a system to tell a fast part to slow down, so the amount of work waiting stays bounded. Without it, work piles up until the system becomes slow or runs out of memory.</p>
+
+<p><strong>Key terms:</strong></p>
+
+<ul>
+<li><strong>Producer / consumer:</strong> the side that creates work and the side that processes it.</li>
+<li><strong>Bounded / unbounded queue:</strong> a queue with a maximum size, or none.</li>
+<li><strong>Load shedding:</strong> rejecting some work on purpose to protect the rest.</li>
+<li><strong>Rejection policy:</strong> what an executor does when it cannot accept more work.</li>
+<li><strong>Little&#39;s law:</strong> items in a system = arrival rate x average time each spends in it.</li>
+</ul>
+
+<p><strong>Small example:</strong> an API accepts uploads and hands each to an executor backed by an unbounded queue. The downstream storage service slows down, the queue grows, memory rises, and every request waits longer until the service fails.</p>
+
+<p><strong>Tier 2 - Core answer (30-second version)</strong></p>
+
+<blockquote>
+<p>Backpressure keeps work in flight bounded by letting the consumer slow the producer. Use bounded queues and decide what happens when they fill: block, reject, run on the caller, or drop low-value work. Apply it at each boundary: reactive streams use <code>request(n)</code>, HTTP services return 429 or 503 with Retry-After, and Kafka consumers limit and pause polling. I would test it by driving the service at twice its capacity.</p>
+</blockquote>
+
+<p><strong>Tier 3 - Follow-ups</strong></p>
+
+<p><strong>Probe 1 (warm-up): Why is <code>Executors.newFixedThreadPool</code> risky?</strong></p>
+
+<p><em>Expected reasoning:</em> it uses an unbounded <code>LinkedBlockingQueue</code>. When producers outpace the threads, the queue grows without limit, so memory and waiting time grow and nothing pushes back on the caller. Use a <code>ThreadPoolExecutor</code> with a bounded queue and an explicit rejection policy.</p>
+
+<p><strong>Probe 2 (applied): How does <code>CallerRunsPolicy</code> create backpressure, and what is its risk?</strong></p>
+
+<p><em>Expected reasoning:</em> when the queue is full, the submitting thread runs the task itself, so it cannot submit more until it finishes, which naturally slows the producer. The risk is that the submitting thread may be a request thread or an event-loop thread, and running slow work there can block unrelated requests.</p>
+
+<p><strong>Probe 3 (senior): How would a Kafka consumer apply backpressure?</strong></p>
+
+<p><em>Expected reasoning:</em> bound the records per poll with <code>max.poll.records</code>, and when downstream is saturated, pause assigned partitions and keep calling <code>poll()</code> so the consumer stays in the group. Stopping polling for longer than <code>max.poll.interval.ms</code> makes the broker consider the consumer failed and triggers a rebalance.</p>
+
+<p><strong>Tier 4 - Deep dive</strong></p>
+
+<p><strong>Internals:</strong> a <code>ThreadPoolExecutor</code> adds threads beyond the core size only when its queue is full, so with an unbounded queue the maximum pool size is never reached (see Q148). Little&#39;s law makes queues measurable: at 100 requests per second and 0.5 seconds of processing, about 50 requests are in flight, and a queue holding 10,000 requests means a new arrival waits roughly 100 seconds. Reactive Streams makes demand explicit: a subscriber calls <code>request(n)</code> and the publisher must not send more than requested.</p>
+
+<p><strong>Realistic failure:</strong> a service sheds load with 503s and clients retry immediately, so the retry traffic keeps the service overloaded. Return <code>Retry-After</code>, use exponential backoff with jitter on clients, and cap retries (see Q281).</p>
+
+<p><strong>Trade-off:</strong> blocking the producer preserves work but can stall upstream threads, rejecting is fast but visible to clients, dropping loses data, and large buffers hide the problem until they fail. Choose per flow: payments should not be dropped, telemetry may be.</p>
+
+<p><strong>How to verify:</strong> drive the service at twice capacity. A healthy design shows stable latency for accepted requests and quick rejections for the rest. An unhealthy one shows growing latency and memory, then failure.</p>
+<h4 id="q278-design-retries-and-a-dead-letter-topic-for-a-kafka-consumer">Q278 Design retries and a dead-letter topic for a Kafka consumer</h4>
+
+<p><strong>Source basis:</strong> <a href="https://docs.spring.io/spring-kafka/reference/retrytopic.html">Spring for Apache Kafka: non-blocking retries</a>.</p>
+
+<p><strong>Tier 1 - Foundation</strong></p>
+
+<p><strong>In plain language:</strong> a Kafka consumer reads messages from a partition in order. Sometimes processing a message fails. You need a plan that retries when it might help, stops when it will not, and keeps failed messages somewhere you can inspect them.</p>
+
+<p><strong>Key terms:</strong></p>
+
+<ul>
+<li><strong>Transient failure:</strong> one that may succeed later, such as a dependency being briefly down.</li>
+<li><strong>Permanent failure:</strong> one that will never succeed, such as a malformed message.</li>
+<li><strong>Poison pill:</strong> a message that fails every time and blocks progress if handled badly.</li>
+<li><strong>Offset commit:</strong> recording how far the consumer has read.</li>
+<li><strong>Backoff:</strong> a growing delay between attempts.</li>
+<li><strong>Dead-letter topic (DLT):</strong> a topic holding messages that exhausted their retries.</li>
+<li><strong>Idempotent consumer:</strong> processing the same message twice has the same effect as once.</li>
+</ul>
+
+<p><strong>Small example:</strong> an order event arrives with invalid JSON. Retrying a thousand times will not fix it, and if the consumer keeps retrying it, every later message on that partition waits.</p>
+
+<p><strong>Tier 2 - Core answer (30-second version)</strong></p>
+
+<blockquote>
+<p>Separate transient from permanent failures. Retry transient ones with backoff, and send permanent ones straight to a dead-letter topic with the error and original coordinates. Blocking retry keeps order while retrying but stalls the partition; moving a failed record to a DLT and replaying it later can still reorder effects. Non-blocking retry topics keep the partition moving but give up ordering for a key. Wrap deserializers so bad bytes do not become a poison pill, alert on dead-letter depth, and make consumers idempotent because retries and replays redeliver.</p>
+</blockquote>
+
+<p><strong>Tier 3 - Follow-ups</strong></p>
+
+<p><strong>Probe 1 (warm-up): Why is &quot;retry forever&quot; a bad policy?</strong></p>
+
+<p><em>Expected reasoning:</em> a permanent failure never succeeds, and with blocking retry it holds up the whole partition, so lag grows for healthy messages. Bound the attempts, then divert the message to a DLT.</p>
+
+<p><strong>Probe 2 (applied): What do you give up with non-blocking retry topics?</strong></p>
+
+<p><em>Expected reasoning:</em> a failed message is republished to a retry topic and the main partition continues, so a later message for the same key can be processed before the earlier one finishes retrying. If strict order per key matters, block or quarantine that key until the failure is resolved; bounded blocking retries followed by DLT diversion do not preserve order on later replay.</p>
+
+<p><strong>Probe 3 (senior): The message cannot even be deserialized. Why does the normal error handler not help, and what do you do?</strong></p>
+
+<p><em>Expected reasoning:</em> deserialization fails inside the consumer before your listener or its error handler runs, so the same record is fetched again each time. Wrap the deserializer with <code>ErrorHandlingDeserializer</code>, so the failure becomes a recoverable error that the handler can route to the DLT.</p>
+
+<p><strong>Tier 4 - Deep dive</strong></p>
+
+<p><strong>Internals:</strong> Spring Kafka&#39;s <code>DefaultErrorHandler</code> with a back-off retries on the consumer thread, and a <code>DeadLetterPublishingRecoverer</code> publishes the exhausted record to a DLT with headers describing the exception and the original topic, partition and offset. <code>@RetryableTopic</code> creates retry topics (for example <code>orders-retry-0</code>) with delays, plus a DLT. Offset advancement depends on the container acknowledgement mode and recovery settings. Configure the recoverer to propagate DLT send failures (for example, <code>setFailIfSendResultIsError(true)</code>) and verify that unsuccessful recovery does not advance past the record. A successful asynchronous send submission alone is not proof of durable publication. See <a href="https://docs.spring.io/spring-kafka/reference/kafka/annotation-error-handling.html">Spring Kafka recovery and offset handling</a>.</p>
+
+<p><strong>Realistic failure:</strong> the DLT fills for weeks because nobody owns it. A replay after the fix then pushes thousands of old messages through at once and overloads a dependency. Give the DLT an owner, an alert on depth and age, a documented replay tool with rate limiting, and a rule for discarding records.</p>
+
+<p><strong>Trade-off:</strong> blocking retry protects order until a record is skipped or diverted, and delays everything behind it. Non-blocking retry maximizes throughput and loses per-key order. Sending to a DLT early protects the stream but moves the problem into an operational queue.</p>
+
+<p><strong>How to verify:</strong> publish a malformed record, a record that fails twice and then succeeds, and a record that always fails. Confirm each ends up where intended, nothing is lost, and DLT depth triggers an alert. Fail the DLT send and check that the source record remains recoverable; replay an earlier record after a later one and verify the ordering policy.</p>
+<h3 id="apis-and-delivery">APIs and delivery</h3>
+<h4 id="q279-how-do-you-version-and-evolve-an-api-without-breaking-clients">Q279 How do you version and evolve an API without breaking clients</h4>
+
+<p><strong>Source basis:</strong> <a href="https://www.rfc-editor.org/rfc/rfc8594">RFC 8594: The Sunset HTTP header</a>.</p>
+
+<p><strong>Tier 1 - Foundation</strong></p>
+
+<p><strong>In plain language:</strong> an API is a promise to its callers about requests, responses and behavior. Changing it can break callers you do not control. Evolving an API well means making most changes in a way that existing clients keep working, and having a plan for the rare change that cannot.</p>
+
+<p><strong>Key terms:</strong></p>
+
+<ul>
+<li><strong>Breaking change:</strong> a change that makes a correctly written existing client fail.</li>
+<li><strong>Tolerant reader:</strong> a client that ignores fields and values it does not recognize.</li>
+<li><strong>Deprecation:</strong> announcing that something will be removed.</li>
+<li><strong>Sunset:</strong> the date after which it stops working, which RFC 8594 lets a server signal in a header.</li>
+<li><strong>Contract test:</strong> a test that checks the API still satisfies what its consumers rely on.</li>
+</ul>
+
+<p><strong>Small example:</strong> renaming the response field <code>phone</code> to <code>phoneNumber</code> breaks every client that reads <code>phone</code>. Adding a new optional field <code>phoneVerified</code> does not.</p>
+
+<p><strong>Tier 2 - Core answer (30-second version)</strong></p>
+
+<blockquote>
+<p>Prefer compatible evolution: adding optional fields and endpoints is safe for tolerant readers, while removing, renaming or changing meaning is breaking. When a break is unavoidable, version explicitly in the URI, a header or the media type, run both versions for a published period, and signal retirement with Deprecation and Sunset headers. Measure who still calls the old version, and use consumer-driven contract tests to catch breaks before release.</p>
+</blockquote>
+
+<p><strong>Tier 3 - Follow-ups</strong></p>
+
+<p><strong>Probe 1 (warm-up): Is adding a value to a response enum a non-breaking change?</strong></p>
+
+<p><em>Expected reasoning:</em> not automatically. A client with a strict switch may fail on an unknown value. It is only safe if the contract says clients must tolerate unknown values, so state that rule from the first version.</p>
+
+<p><strong>Probe 2 (applied): Compare URI versioning with header versioning.</strong></p>
+
+<p><em>Expected reasoning:</em> URI versions are visible, easy to route, cache and test from a browser. Header or media-type versions keep resource URIs stable and match the idea that the URI identifies the resource, but are harder to see, test and cache correctly. Choose one convention for the whole organization.</p>
+
+<p><strong>Probe 3 (senior): How do you retire <code>v1</code> safely?</strong></p>
+
+<p><em>Expected reasoning:</em> announce a date, send deprecation and sunset signals, identify remaining callers from request metadata such as a client id header, contact them, reduce traffic gradually and then remove it. Do not remove on schedule if important consumers remain, unless the policy says so and that was communicated.</p>
+
+<p><strong>Tier 4 - Deep dive</strong></p>
+
+<p><strong>Internals:</strong> a common structure keeps one domain model and maps it to separate request and response models per API version, so version differences stay at the edge. Versioning the whole API gives clients one number to track, while versioning single resources limits churn but is harder to reason about. Recent Spring versions add built-in API versioning support, so check whether yours does rather than assuming. Event schemas need the same discipline, and a schema registry can enforce backward, forward or full compatibility modes between producer and consumer versions.</p>
+
+<p><strong>Realistic failure:</strong> a team changes <code>amount</code> from cents to dollars without changing the name. No schema checks fail, no client crashes, and totals are silently wrong. Changes in meaning are the most dangerous breaks because tooling does not see them. Add a new field with a new name, deprecate the old one, and document units in the contract.</p>
+
+<p><strong>Trade-off:</strong> every supported version is more code, tests and operational burden, but removing versions too quickly damages trust and forces clients to upgrade in lockstep with you.</p>
+
+<p><strong>How to verify:</strong> run the previous release&#39;s client test suite or contract tests against the new server in CI. Add a field and confirm old clients keep working. Track per-version call counts before retirement.</p>
+<h4 id="q280-what-are-etags-and-conditional-requests-used-for">Q280 What are ETags and conditional requests used for</h4>
+
+<p><strong>Source basis:</strong> <a href="https://www.rfc-editor.org/rfc/rfc9110">RFC 9110: Conditional requests</a>.</p>
+
+<p><strong>Tier 1 - Foundation</strong></p>
+
+<p><strong>In plain language:</strong> an ETag is a label the server attaches to a specific version of a resource, such as a fingerprint. The client can send it back to ask, &quot;has it changed?&quot; or to say, &quot;only update it if it has not changed.&quot; That makes caching cheaper and prevents one user from silently overwriting another&#39;s edit.</p>
+
+<p><strong>Key terms:</strong></p>
+
+<ul>
+<li><strong>ETag:</strong> an opaque validator for a representation of a resource.</li>
+<li><strong><code>If-None-Match</code>:</strong> the client&#39;s &quot;send it only if it differs from this ETag.&quot;</li>
+<li><strong><code>If-Match</code>:</strong> the client&#39;s &quot;apply this change only if the resource still has this ETag.&quot;</li>
+<li><strong><code>304 Not Modified</code>:</strong> the response when the cached copy is still current.</li>
+<li><strong><code>412 Precondition Failed</code>:</strong> the response when an <code>If-Match</code> condition is false.</li>
+<li><strong><code>428 Precondition Required</code>:</strong> the response when a conditional header is required and missing.</li>
+<li><strong>Lost update:</strong> two writers read the same version and the later write erases the earlier one.</li>
+</ul>
+
+<p><strong>Small example:</strong> two admins open the same customer record. The first saves a new address. The second then saves a change to the phone number, based on the old copy. With <code>If-Match</code>, the second save fails with <code>412</code> instead of overwriting the address.</p>
+
+<p><strong>Tier 2 - Core answer (30-second version)</strong></p>
+
+<blockquote>
+<p>An ETag identifies a specific version of a resource. For reads, <code>If-None-Match</code> returns 304 with no body when nothing changed. For writes, <code>If-Match</code> makes the update conditional, and the server returns 412 if the resource changed since the client read it, which prevents lost updates. I would derive a strong ETag from JPA <code>@Version</code> only if every change to the selected representation advances that version, including any related data it contains, and distinguish representation variants. Otherwise I need a representation-wide revision or hash as well as the database concurrency check.</p>
+</blockquote>
+
+<p><strong>Tier 3 - Follow-ups</strong></p>
+
+<p><strong>Probe 1 (warm-up): What is the difference between how <code>304</code> and <code>412</code> are used?</strong></p>
+
+<p><em>Expected reasoning:</em> <code>304</code> answers a conditional read: the cached copy is still valid, so no body is sent. <code>412</code> answers a conditional write: the precondition failed, so the change was not applied.</p>
+
+<p><strong>Probe 2 (applied): How do you map this to JPA?</strong></p>
+
+<p><em>Expected reasoning:</em> expose <code>@Version</code> as a strong ETag only when it changes for every observable change to the representation. If the response includes related entities, an independent child update may leave the root version unchanged; use an aggregate revision or representation hash and ensure the write transaction validates all relevant revisions atomically. Include a variant identifier when negotiated representations differ. For a single versioned entity, compare the client&#39;s <code>If-Match</code> with the current version and let the persistence layer enforce the version in <code>UPDATE ... WHERE version = ?</code>. An application-only comparison followed by an unguarded save leaves a race. Map a stale conditional update to <code>412</code>; <code>409</code> can describe a conflict outside an HTTP precondition. See <a href="https://www.rfc-editor.org/rfc/rfc9110.html#section-8.8.1">RFC 9110 strong validators</a>.</p>
+
+<p><strong>Probe 3 (senior): What does Spring&#39;s <code>ShallowEtagHeaderFilter</code> do, and what does it not do?</strong></p>
+
+<p><em>Expected reasoning:</em> it computes an ETag from the response body and answers <code>304</code> when it matches <code>If-None-Match</code>, which saves bandwidth. The server still builds the full response, so it saves no processing, and it is not a concurrency control for writes.</p>
+
+<p><strong>Tier 4 - Deep dive</strong></p>
+
+<p><strong>Internals:</strong> ETag values are quoted strings, and a weak validator is prefixed <code>W/</code>. RFC 9110 says <code>If-Match</code> uses strong comparison, while <code>If-None-Match</code> uses weak comparison. <code>If-None-Match: *</code> on a <code>PUT</code> can mean &quot;create only if it does not exist.&quot; A server can require conditional headers on updates and answer <code>428</code> when they are missing.</p>
+
+<p><strong>Realistic failure:</strong> an ETag computed from a content hash that leaves out one field means changes to that field never alter the ETag, so clients are told their copy is current when it is not. Another failure is differing ETags across instances behind a load balancer because of per-node compression or ordering, which defeats caching and breaks <code>If-Match</code>.</p>
+
+<p><strong>Trade-off:</strong> conditional writes force clients to read before writing and handle conflicts. That is the right cost when overwrites matter, and unnecessary friction for data where last-write-wins is acceptable.</p>
+
+<p><strong>How to verify:</strong> read a resource in two clients, update it from the first, then update from the second with the old ETag. Expect <code>412</code> and an intact first update. Change a related field included in the representation without updating the root entity, and confirm the ETag still changes. Check distinct negotiated representations use valid validators. Request with a current <code>If-None-Match</code> and confirm <code>304</code> and no body.</p>
+<h4 id="q281-how-do-you-set-timeouts-and-retries-so-one-slow-dependency-does-not-take-everything-down">Q281 How do you set timeouts and retries so one slow dependency does not take everything down</h4>
+
+<p><strong>Tier 1 - Foundation</strong></p>
+
+<p><strong>In plain language:</strong> a call to another service can be slow or never return. If callers wait forever, threads and connections fill up and the failure spreads. Timeouts limit how long you wait, and retries try again when a failure may be temporary, but careless retries make an outage worse.</p>
+
+<p><strong>Key terms:</strong></p>
+
+<ul>
+<li><strong>Connect timeout / read timeout:</strong> limits for establishing a connection and for waiting for data.</li>
+<li><strong>Deadline:</strong> the total time allowed for the whole user request.</li>
+<li><strong>Backoff and jitter:</strong> growing, randomized delays between retries.</li>
+<li><strong>Idempotent:</strong> repeating the operation has the same effect as doing it once.</li>
+<li><strong>Retry budget:</strong> a cap on how much traffic may be retried.</li>
+<li><strong>Circuit breaker:</strong> a switch that stops calls to a failing dependency for a while.</li>
+</ul>
+
+<p><strong>Small example:</strong> service A calls B, which calls C, and both call layers allow three retries after the initial attempt. That is four attempts per layer, so one failing request can become 4 x 4 = 16 attempts against C, which is already struggling. With three call layers allowing three total attempts each, the multiplier would be 3 x 3 x 3 = 27. Always distinguish retries from total attempts.</p>
+
+<p><strong>Tier 2 - Core answer (30-second version)</strong></p>
+
+<blockquote>
+<p>Every remote call needs a timeout, and timeouts should shrink down the call chain inside one overall deadline. Retry only safe, idempotent operations on retryable errors, with exponential backoff and jitter, at one layer, and cap retries with a budget, because retries multiply across layers. Add a circuit breaker so a clearly failing dependency fails fast, and a bulkhead so it cannot use every thread.</p>
+</blockquote>
+
+<p><strong>Tier 3 - Follow-ups</strong></p>
+
+<p><strong>Probe 1 (warm-up): Which operations are safe to retry?</strong></p>
+
+<p><em>Expected reasoning:</em> reads and operations that are idempotent by design, or made idempotent with an idempotency key. A non-idempotent <code>POST</code> such as &quot;charge the card&quot; can duplicate its effect if the first attempt actually succeeded but the response was lost.</p>
+
+<p><strong>Probe 2 (applied): Why add jitter to backoff?</strong></p>
+
+<p><em>Expected reasoning:</em> without randomization, many clients that failed together retry together, producing synchronized load spikes. Jitter spreads retries over time.</p>
+
+<p><strong>Probe 3 (senior): Where do you put retries, and how do deadlines help?</strong></p>
+
+<p><em>Expected reasoning:</em> retry at one layer, usually the closest to the caller that can judge whether retrying is appropriate, and avoid retries in every layer. Pass the remaining deadline downstream, as gRPC does, so a downstream call is never given more time than the caller has left and abandoned work stops.</p>
+
+<p><strong>Tier 4 - Deep dive</strong></p>
+
+<p><strong>Internals:</strong> timeouts bound thread occupancy. With 200 worker threads and a dependency that hangs for 30 seconds, even a modest request rate exhausts the pool within seconds, and unrelated endpoints stop responding. A circuit breaker moves between closed, open and half-open states using failure rate or slow-call thresholds. A retry budget limits retries to a small fraction of normal traffic, so a widespread failure cannot be multiplied. Resilience4j&#39;s aspect order matters, as discussed in Q165.</p>
+
+<p><strong>Realistic failure:</strong> a dependency slows from 50 ms to 5 s. Clients retry, the dependency receives three times the load, and recovery is impossible until traffic is shed. The fix is shorter timeouts, one retry layer, a budget, a breaker, and a fallback that serves cached or reduced data.</p>
+
+<p><strong>Trade-off:</strong> a short timeout fails requests that would have succeeded slowly, and a long one ties up resources. Retries improve success under transient failure and worsen overload. Set timeouts from the dependency&#39;s measured latency, for example a high percentile with headroom, then revisit them.</p>
+
+<p><strong>How to verify:</strong> inject latency and errors into a dependency in staging. Confirm callers time out within budget, total attempts stay bounded, and unrelated endpoints remain healthy.</p>
+<h4 id="q282-blue-green-canary-and-rolling-deployments-how-do-you-choose-and-what-about-the-database">Q282 Blue-green, canary and rolling deployments: how do you choose, and what about the database</h4>
+
+<p><strong>Tier 1 - Foundation</strong></p>
+
+<p><strong>In plain language:</strong> releasing a new version without downtime means old and new code run side by side for a while. Different strategies control how traffic moves, and the database and message formats must work with both versions at once.</p>
+
+<p><strong>Key terms:</strong></p>
+
+<ul>
+<li><strong>Rolling update:</strong> replace instances a few at a time.</li>
+<li><strong>Blue-green:</strong> run a full second environment and switch traffic to it.</li>
+<li><strong>Canary:</strong> send a small share of real traffic to the new version first.</li>
+<li><strong><code>maxSurge</code> / <code>maxUnavailable</code>:</strong> Kubernetes settings for how many extra or missing pods are allowed during a rolling update.</li>
+<li><strong>Expand/contract:</strong> change the schema in compatible steps, adding first and removing later.</li>
+</ul>
+
+<p><strong>Small example:</strong> you add a column. During the rollout, old pods that do not know the column and new pods that need it both talk to the same database.</p>
+
+<p><strong>Tier 2 - Core answer (30-second version)</strong></p>
+
+<blockquote>
+<p>Rolling updates replace instances gradually and are the Kubernetes default. Blue-green switches between two full environments and makes rollback a switch back, at the cost of double capacity. A canary exposes a small share of real traffic first and widens it only if error rate and latency stay healthy, and it needs traffic splitting. In every case old and new versions overlap, so database changes and message formats must be backward compatible, using expand/contract.</p>
+</blockquote>
+
+<p><strong>Tier 3 - Follow-ups</strong></p>
+
+<p><strong>Probe 1 (warm-up): Why must a database change be backward compatible during a rolling update?</strong></p>
+
+<p><em>Expected reasoning:</em> for part of the rollout, old pods still run against the new schema. A change that removes or renames something the old version uses makes it fail mid-deployment.</p>
+
+<p><strong>Probe 2 (applied): What do you watch during a canary, and how do you decide?</strong></p>
+
+<p><em>Expected reasoning:</em> error rate, latency percentiles, saturation and a key business metric, compared against the baseline version over enough traffic to be meaningful. Define automatic abort thresholds beforehand. One percent of a low-traffic endpoint may be too few requests to show a problem.</p>
+
+<p><strong>Probe 3 (senior): The new version is bad and the migration already ran. How do you roll back?</strong></p>
+
+<p><em>Expected reasoning:</em> roll back the code, not the schema. Because the migration was an expansion that the old code tolerates, the old version works against it. Destructive &quot;contract&quot; steps happen only in a later release, after the new version is stable.</p>
+
+<p><strong>Tier 4 - Deep dive</strong></p>
+
+<p><strong>Internals:</strong> a Kubernetes Deployment creates a new ReplicaSet and shifts replicas while readiness probes gate traffic, constrained by <code>maxSurge</code> and <code>maxUnavailable</code>, both of which default to 25%. Canary and blue-green traffic shifting needs an ingress controller, service mesh or a rollout controller such as Argo Rollouts or Flagger. Expand/contract in practice:</p>
+
+<ol>
+<li>Expand: add the new column or table, nullable or with a default, without breaking the old version.</li>
+<li>Deploy code that writes both forms atomically while continuing to read the old form. Wait until every old-only writer, including jobs, has stopped.</li>
+<li>Backfill in bounded batches using row locking or version checks so a stale backfill cannot overwrite a concurrent update. Validate completeness and agreement.</li>
+<li>Switch reads to the new form while maintaining both writes for the rollback window. A non-null new value is not proof of freshness while old-only writers remain.</li>
+<li>After the rollback window, stop using the old form and remove it in a later contract release. See <a href="https://docs.gitlab.com/development/database/avoiding_downtime_in_migrations/">GitLab&#39;s migration guidance</a> for staged changes and synchronization approaches.</li>
+</ol>
+
+<p>The same applies to message formats, since old and new consumers or producers may overlap.</p>
+
+<p><strong>Realistic failure:</strong> a migration renames a column in the same release that uses the new name. Requests handled by old pods fail as soon as they access the renamed column, even if new pods become ready. Readiness alone cannot make an incompatible schema safe.</p>
+
+<p><strong>Trade-off:</strong> blue-green gives fast switching and simple rollback but needs double capacity and complicates stateful data. Canary gives the safest real-traffic validation and needs routing and observability. Rolling is simplest but exposes users to the new version gradually, with slower rollback.</p>
+
+<p><strong>How to verify:</strong> deploy a deliberately bad version to a small slice and confirm the metric gate stops it. Run old and new versions against the migrated schema in CI before releasing. Interleave an old-only write, a dual write and a backfill; verify that reads stay correct and rollback works throughout its supported window.</p>
+<h4 id="q283-why-do-pooled-http-connections-fail-intermittently-after-idle-periods">Q283 Why do pooled HTTP connections fail intermittently after idle periods</h4>
+
+<p><strong>Tier 1 - Foundation</strong></p>
+
+<p><strong>In plain language:</strong> opening a network connection is expensive, so HTTP clients keep connections open and reuse them. Something in the path, such as the server, a load balancer or a firewall, may close a connection that has been idle too long. The client does not notice until it tries to use it, and that request fails.</p>
+
+<p><strong>Key terms:</strong></p>
+
+<ul>
+<li><strong>Keep-alive:</strong> keeping a connection open for further requests.</li>
+<li><strong>Connection pool:</strong> a set of reusable open connections.</li>
+<li><strong>Idle timeout:</strong> how long an unused connection may stay open before something closes it.</li>
+<li><strong>Stale connection:</strong> one the other side has already closed.</li>
+<li><strong>Connection reset:</strong> an error shown when you use a connection the peer has dropped.</li>
+<li><strong>Max connections per route:</strong> the pool limit for one destination.</li>
+</ul>
+
+<p><strong>Small example:</strong> a service calls a partner API every few minutes. The first call after a quiet period often fails with &quot;connection reset,&quot; and the next call works.</p>
+
+<p><strong>Tier 2 - Core answer (30-second version)</strong></p>
+
+<blockquote>
+<p>Pooled connections that sit idle can be closed by the server, load balancer or NAT, and the client discovers it only when it reuses the connection, so the first request after a quiet period fails. Make the client&#39;s idle timeout shorter than the shortest idle timeout in the path, evict or validate idle connections before reuse, and retry idempotent requests once. Size request capacity from request rate times latency, accounting for HTTP/2 multiplexing, and coordinate connection lifetime with DNS cache expiry so reconnects can notice address changes.</p>
+</blockquote>
+
+<p><strong>Tier 3 - Follow-ups</strong></p>
+
+<p><strong>Probe 1 (warm-up): Why does only the first request after idle fail?</strong></p>
+
+<p><em>Expected reasoning:</em> the idle connection was closed by the other side. The failure on reuse removes it from the pool, and the next request opens a fresh connection, which works.</p>
+
+<p><strong>Probe 2 (applied): How do you fix it?</strong></p>
+
+<p><em>Expected reasoning:</em> set the client&#39;s maximum idle time below the lowest idle timeout in the path (server, load balancer, firewall), evict idle connections in the background or validate a connection that has been idle before reuse, and retry once for idempotent requests. The settings and names differ between clients such as Apache HttpClient, Reactor Netty and the JDK client, so check the documentation.</p>
+
+<p><strong>Probe 3 (senior): How do you size the pool, and what do exhaustion symptoms look like?</strong></p>
+
+<p><em>Expected reasoning:</em> by Little&#39;s law, in-flight requests are roughly request rate times average latency, per destination, plus headroom. With HTTP/1.1 without pipelining, that approximates occupied connections. HTTP/2 multiplexes streams on a connection, so size stream capacity and connections using client/server limits and measurements; see <a href="https://www.rfc-editor.org/rfc/rfc9113.html#section-5">RFC 9113 streams</a>. Too small a pool shows as requests waiting to lease a connection and &quot;connection request timeout&quot; errors, even though the dependency is healthy. Too large a pool can overload the dependency.</p>
+
+<p><strong>Tier 4 - Deep dive</strong></p>
+
+<p><strong>Internals:</strong> when a peer closes a TCP connection the client may not learn of it until it writes, and then receives a reset. A race remains even with validation, because the peer can close the connection between the client&#39;s check and its write; a bounded retry can recover when the operation is safe to repeat. An existing pooled connection keeps its original peer address. A maximum connection lifetime forces eventual replacement, but a new connection can still use a cached DNS address. For clients using the JVM resolver, <code>networkaddress.cache.ttl</code> controls positive caching and <code>-1</code> means cache forever; some clients have their own resolvers and cache settings. Coordinate connection replacement with the actual resolver&#39;s finite TTL and failover behavior. See <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/InetAddress.html">Java 21 DNS caching</a>.</p>
+
+<p><strong>Realistic failure:</strong> a load balancer closes idle connections after 60 seconds, while the client keeps them for five minutes. Roughly one request per quiet period fails, in a pattern that looks random and appears only in production. The check is to compare the idle timeouts of every hop with the client&#39;s setting.</p>
+
+<p><strong>Trade-off:</strong> aggressive eviction and short lifetimes cost more handshakes, including TLS, and add latency and CPU. Long-lived idle connections save that cost and risk stale reuse. Retries cover the gap only for idempotent calls.</p>
+
+<p><strong>How to verify:</strong> reproduce by waiting past the idle timeout and sending one request, then confirm the fix removes the failure. In a separate failover test, change the resolved address and verify new connections use it within the combined DNS-cache and connection-lifetime policy. Expose pool metrics such as leased, available and pending connections, through Micrometer where the client supports it, and alert on pending requests.</p>
+<h4 id="q284-what-does-a-poddisruptionbudget-protect-against-and-what-can-it-not-do">Q284 What does a PodDisruptionBudget protect against, and what can it not do</h4>
+
+<p><strong>Source basis:</strong> <a href="https://kubernetes.io/docs/tasks/run-application/configure-pdb/">Kubernetes: Specifying a Disruption Budget</a>.</p>
+
+<p><strong>Tier 1 - Foundation</strong></p>
+
+<p><strong>In plain language:</strong> Kubernetes sometimes removes pods on purpose, for example when a node is drained for an upgrade. A PodDisruptionBudget (PDB) says how many pods of an application may be unavailable at once during such planned removals, so maintenance does not take the whole service down.</p>
+
+<p><strong>Key terms:</strong></p>
+
+<ul>
+<li><strong>Voluntary disruption:</strong> a planned removal such as a node drain or an eviction.</li>
+<li><strong>Involuntary disruption:</strong> an unplanned loss such as a node crash or an out-of-memory kill.</li>
+<li><strong>Eviction:</strong> the API request to remove a pod gracefully.</li>
+<li><strong><code>minAvailable</code> / <code>maxUnavailable</code>:</strong> the budget expressed as pods that must stay, or may go.</li>
+<li><strong>Topology spread:</strong> a scheduling rule that places replicas across nodes or zones.</li>
+</ul>
+
+<p><strong>Small example:</strong> an app has three replicas and a PDB with <code>minAvailable: 2</code>. Draining a node can evict one pod at a time, and the drain waits if another is already unavailable.</p>
+
+<p><strong>Tier 2 - Core answer (30-second version)</strong></p>
+
+<blockquote>
+<p>A PodDisruptionBudget limits how many pods can be down during voluntary disruptions like node drains, by making the eviction API refuse an eviction that would break the budget. It does not protect against involuntary failures such as a node crash or an out-of-memory kill, and it does not add capacity. Use it with enough replicas spread across nodes and zones, and avoid budgets that cannot be satisfied, because they block maintenance.</p>
+</blockquote>
+
+<p><strong>Tier 3 - Follow-ups</strong></p>
+
+<p><strong>Probe 1 (warm-up): Does a PDB stop an out-of-memory kill?</strong></p>
+
+<p><em>Expected reasoning:</em> no. A PDB governs voluntary evictions. A crash, an OOM kill or a node failure is involuntary, so it still happens regardless of the budget.</p>
+
+<p><strong>Probe 2 (applied): One replica and <code>minAvailable: 1</code>. What happens during a node drain?</strong></p>
+
+<p><em>Expected reasoning:</em> the eviction would take availability below the budget, so it is refused and the drain stalls. The same occurs when <code>minAvailable</code> equals the replica count. Either run more replicas, or use <code>maxUnavailable</code> and accept a short outage deliberately.</p>
+
+<p><strong>Probe 3 (senior): How do you make sure replicas survive a single node or zone loss?</strong></p>
+
+<p><em>Expected reasoning:</em> a PDB is not enough, because it does not decide placement. Use topology spread constraints or pod anti-affinity to place replicas on different nodes and zones, run enough replicas, and combine with readiness probes and graceful shutdown.</p>
+
+<p><strong>Tier 4 - Deep dive</strong></p>
+
+<p><strong>Internals:</strong> when an eviction would violate a budget the API server rejects it with a <code>429</code> response, and tools such as <code>kubectl drain</code> retry. A direct <code>kubectl delete pod</code> is not an eviction and bypasses the budget. Cluster autoscaler scale-down and managed-platform node upgrades generally respect PDBs, though managed upgrades may stop honoring a budget after a time limit, so check your provider&#39;s documentation.</p>
+
+<p><strong>Realistic failure:</strong> a team sets <code>minAvailable: 100%</code> on every service. A cluster upgrade then stalls for hours because no pod can ever be evicted, and an engineer force-deletes pods to finish, losing the protection the budget was meant to give.</p>
+
+<p><strong>Trade-off:</strong> a strict budget protects availability and slows or blocks maintenance. A loose one speeds upgrades and risks more simultaneous loss. Pick the budget from the service&#39;s real tolerance and replica count.</p>
+
+<p><strong>How to verify:</strong> run <code>kubectl get pdb</code> and read the allowed-disruptions value. Drain a node in a test cluster and confirm evictions wait rather than dropping below the budget. Create an unsatisfiable PDB and observe the stuck drain, so the symptom is recognizable.</p>
+<h4 id="q285-service-mesh-or-library-based-resilience">Q285 Service mesh or library-based resilience</h4>
+
+<p><strong>Tier 1 - Foundation</strong></p>
+
+<p><strong>In plain language:</strong> a service mesh puts a small proxy next to each service so the platform handles network concerns such as encryption, retries and traffic routing. A resilience library does similar work inside the application code. The choice is about where the logic lives and who controls it.</p>
+
+<p><strong>Key terms:</strong></p>
+
+<ul>
+<li><strong>Sidecar:</strong> a proxy container deployed alongside each application container.</li>
+<li><strong>Data plane / control plane:</strong> the proxies that carry traffic, and the component that configures them.</li>
+<li><strong>mTLS:</strong> mutual TLS, where both sides authenticate with certificates.</li>
+<li><strong>Traffic splitting:</strong> sending a percentage of requests to different versions.</li>
+<li><strong>Fallback:</strong> an alternative response when a call fails.</li>
+</ul>
+
+<p><strong>Small example:</strong> a mesh retries a failed call to a backend automatically, with no code change. A library lets the code, on failure, return the last cached price instead.</p>
+
+<p><strong>Tier 2 - Core answer (30-second version)</strong></p>
+
+<blockquote>
+<p>A mesh moves cross-cutting network behavior, such as mTLS, retries, timeouts, traffic splitting and telemetry, into the platform and works across languages. A library runs in the process, so it can use business context, such as returning cached data or failing one operation without affecting another. A mesh adds latency, resources and operational complexity, and the biggest trap is stacked retries from the mesh, the client and the application. Choose one owner for each behavior.</p>
+</blockquote>
+
+<p><strong>Tier 3 - Follow-ups</strong></p>
+
+<p><strong>Probe 1 (warm-up): What can a mesh give you that a library cannot?</strong></p>
+
+<p><em>Expected reasoning:</em> uniform behavior across languages without code changes, automatic mTLS between services with certificate rotation, consistent telemetry, and platform-controlled traffic management such as canary routing.</p>
+
+<p><strong>Probe 2 (applied): What can a library do that a mesh cannot?</strong></p>
+
+<p><em>Expected reasoning:</em> decisions that depend on application meaning. A mesh sees requests and responses, not business context, so it cannot choose a sensible fallback value or treat two operations in the same service differently based on domain rules.</p>
+
+<p><strong>Probe 3 (senior): How do you prevent retry amplification?</strong></p>
+
+<p><em>Expected reasoning:</em> list every layer that can retry, including mesh, client library and application, and compute the worst case by multiplying. Assign retries to one layer, restrict retry conditions to idempotent requests and specific failures, and add a retry budget.</p>
+
+<p><strong>Tier 4 - Deep dive</strong></p>
+
+<p><strong>Internals:</strong> proxies, commonly based on Envoy, intercept traffic and are configured by the control plane. Certificates are issued and rotated automatically for mTLS. Each hop adds some latency and resource use, which you should measure for your workload. Some meshes offer modes without a per-pod sidecar, and their maturity and limits vary by version, so check yours.</p>
+
+<p><strong>Realistic failure:</strong> a mesh policy retries on any 5xx, including for a non-idempotent <code>POST</code>. A timeout on a payment endpoint then triggers a retry, and the customer is charged twice. Restrict retry rules to idempotent methods or require idempotency keys. Debugging also gets harder: a <code>503</code> may come from the proxy, not the application, so learn the proxy&#39;s response flags and read its logs.</p>
+
+<p><strong>Trade-off:</strong> a mesh gives consistent policy and security at scale in return for platform complexity and a team to run it. Library resilience is simple for a few services in one language and drifts across teams in a larger fleet.</p>
+
+<p><strong>How to verify:</strong> inject failures and watch whether traffic to the failing service multiplies. Check which layer made each retry. Test that mTLS is enforced by attempting a plaintext call.</p>
+<h3 id="jvm-and-java">JVM and Java</h3>
+<h4 id="q286-how-do-you-choose-a-garbage-collector">Q286 How do you choose a garbage collector</h4>
+
+<p><strong>Source basis:</strong> <a href="https://openjdk.org/jeps/439">JEP 439: Generational ZGC</a>.</p>
+
+<p><strong>Tier 1 - Foundation</strong></p>
+
+<p><strong>In plain language:</strong> the JVM automatically frees objects that nothing can reach any more. Different collectors make different trade-offs between how long the application pauses, how much work it completes, and how much memory the collector itself needs.</p>
+
+<p><strong>Key terms:</strong></p>
+
+<ul>
+<li><strong>Heap:</strong> the memory where Java objects live.</li>
+<li><strong>Young / old generation:</strong> new objects versus long-lived ones, collected at different frequencies.</li>
+<li><strong>Stop-the-world pause:</strong> a moment when application threads are halted for collection work.</li>
+<li><strong>Throughput:</strong> the share of time spent running the application rather than collecting.</li>
+<li><strong>Allocation rate:</strong> how fast the application creates objects.</li>
+</ul>
+
+<p><strong>Small example:</strong> a payment API has an acceptable average latency but its 99th-percentile latency spikes every few minutes, and the spikes line up with garbage collection pauses.</p>
+
+<p><strong>Tier 2 - Core answer (30-second version)</strong></p>
+
+<blockquote>
+<p>Start from the goal. G1 is the default on modern JDKs and a good general choice, with a pause-time target it tries to meet. ZGC targets very low pauses that do not grow with heap size, at some cost in throughput and memory. Parallel GC maximizes throughput for batch work, and Serial suits tiny heaps. Confirm which collector is actually running, tune from GC logs and load tests, and often fix allocation behavior before changing collectors.</p>
+</blockquote>
+
+<p><strong>Tier 3 - Follow-ups</strong></p>
+
+<p><strong>Probe 1 (warm-up): What does <code>-XX:MaxGCPauseMillis</code> do?</strong></p>
+
+<p><em>Expected reasoning:</em> it sets a pause-time goal for G1, 200 ms by default. G1 adjusts its work to try to meet it, but it is a target, not a guarantee, and a very low target can reduce throughput.</p>
+
+<p><strong>Probe 2 (applied): Your container runs a different collector than you expected. Why?</strong></p>
+
+<p><em>Expected reasoning:</em> the JVM selects a collector from the resources it detects. In a container with very few CPUs or little memory it can choose Serial instead of G1. Check with <code>-Xlog:gc</code> or <code>-XX:+PrintFlagsFinal</code>, and set the collector explicitly if it matters.</p>
+
+<p><strong>Probe 3 (senior): When would you move from G1 to ZGC?</strong></p>
+
+<p><em>Expected reasoning:</em> when measured pauses violate a latency objective, especially with large heaps, and the throughput and memory cost is acceptable. In JDK 21 generational mode is enabled with <code>-XX:+UseZGC -XX:+ZGenerational</code>, and later releases changed the defaults, so check your JDK. Compare both under realistic load before committing.</p>
+
+<p><strong>Tier 4 - Deep dive</strong></p>
+
+<p><strong>Internals:</strong> G1 splits the heap into regions and collects the ones with most garbage first, using young and mixed collections. Very large objects (humongous allocations, see Q205) are handled specially and can cause trouble. If evacuation cannot find space it falls back to a long full collection. ZGC does most work concurrently using load barriers and concurrent relocation, so pause times stay short regardless of heap size, with extra memory and CPU overhead.</p>
+
+<p><strong>Realistic failure:</strong> a team raises the heap to stop long pauses, and the container is killed by the kubelet for exceeding its memory limit, because the heap is only part of the JVM&#39;s total memory (it also uses metaspace, thread stacks and native memory). The real cause was a high allocation rate from a hot loop.</p>
+
+<p><strong>Trade-off:</strong> lower pauses generally cost throughput and memory, higher throughput generally costs longer pauses. Tuning flags rarely beats reducing allocation or sizing the heap and container correctly.</p>
+
+<p><strong>How to verify:</strong> enable <code>-Xlog:gc*</code> and examine pause distribution, allocation rate and old-generation behavior. Run the same load with G1 and ZGC and compare p99 latency, throughput and memory.</p>
+<h4 id="q287-how-do-you-find-a-memory-leak-in-a-production-jvm">Q287 How do you find a memory leak in a production JVM</h4>
+
+<p><strong>Source basis:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/specs/man/jcmd.html">JDK 21 jcmd diagnostic impact</a>.</p>
+
+<p><strong>Tier 1 - Foundation</strong></p>
+
+<p><strong>In plain language:</strong> in Java a leak is not lost memory. It is objects that are still reachable, so the collector cannot free them, but the program no longer needs them. Memory use keeps growing until the process fails.</p>
+
+<p><strong>Key terms:</strong></p>
+
+<ul>
+<li><strong>GC root:</strong> a starting reference the collector trusts, such as a static field or a thread stack.</li>
+<li><strong>Reachable:</strong> an object connected to a GC root through references.</li>
+<li><strong>Heap dump:</strong> a snapshot of all objects in the heap.</li>
+<li><strong>Retained size:</strong> the memory that would be freed if an object were removed.</li>
+<li><strong>Dominator tree:</strong> a view showing which objects keep the most memory alive.</li>
+<li><strong>Native Memory Tracking (NMT):</strong> JVM tooling to see non-heap memory use.</li>
+</ul>
+
+<p><strong>Small example:</strong> code stores each session in a static <code>Map</code> keyed by session id and never removes finished sessions, so the map grows with every user.</p>
+
+<p><strong>Tier 2 - Core answer (30-second version)</strong></p>
+
+<blockquote>
+<p>First establish which memory is growing: Java heap, metaspace, native memory, or the container limit being hit. A heap leak shows old-generation usage that keeps rising after full collections. Start with existing metrics and JFR evidence; take a histogram or heap dump only after assessing its impact, then use a tool like Eclipse MAT to find the dominator and follow the path to the GC root. Typical causes are static collections, unbounded caches, forgotten listeners, ThreadLocals in pooled threads and class-loader leaks.</p>
+</blockquote>
+
+<p><strong>Tier 3 - Follow-ups</strong></p>
+
+<p><strong>Probe 1 (warm-up): How do you tell a leak from a heap that is simply too small?</strong></p>
+
+<p><em>Expected reasoning:</em> look at memory after full collections over time. A leak shows a rising floor that never comes back down. An undersized heap shows a stable floor that is close to the limit, with frequent collections.</p>
+
+<p><strong>Probe 2 (applied): The pod restarts with no Java exception. Is it a heap leak?</strong></p>
+
+<p><em>Expected reasoning:</em> not necessarily. If Kubernetes reports <code>OOMKilled</code>, the container exceeded its memory limit, and the cause may be native memory, direct buffers, thread stacks or metaspace, not the Java heap. Check NMT and the container&#39;s memory metrics, not only heap usage.</p>
+
+<p><strong>Probe 3 (senior): What are the risks of taking a heap dump from production?</strong></p>
+
+<p><em>Expected reasoning:</em> it can pause the application, needs disk space comparable to the heap, and contains data such as personal information and secrets. Take it from one instance that has been removed from rotation if possible, store and delete it under the data policy, and start with metrics or JFR sampling where they can answer the question. A histogram produces less output than a dump but is also documented as high impact; do not treat it as a cheap, pause-free first step.</p>
+
+<p><strong>Tier 4 - Deep dive</strong></p>
+
+<p><strong>Internals:</strong> useful commands:</p>
+
+<pre><code class="bash">jcmd &lt;pid&gt; GC.class_histogram | head -30      # HIGH impact; head only trims output
+jcmd &lt;pid&gt; GC.heap_dump /tmp/heap.hprof       # pauses the app; check disk space
+jcmd &lt;pid&gt; JFR.start settings=profile duration=5m filename=/tmp/rec.jfr
+# Native memory needs the JVM started with -XX:NativeMemoryTracking=summary:
+jcmd &lt;pid&gt; VM.native_memory summary
+</code></pre>
+
+<p>Taking two histograms some time apart shows which classes grow, but each scan can impose a substantial pause or trigger collection depending on options and collector. The JDK classifies both <code>GC.class_histogram</code> and <code>GC.heap_dump</code> as high impact. Limit production use to an assessed diagnostic window; truncating output with <code>head</code> does not reduce heap-inspection work. In MAT, the dominator tree and retained size point at the structure holding the memory, and the path to GC roots shows who holds the reference. JFR&#39;s old-object sampling can show where leaking objects were allocated with less overhead than a dump. Starting the JVM with <code>-XX:+HeapDumpOnOutOfMemoryError</code> captures evidence at failure.</p>
+
+<p><strong>Realistic failure:</strong> a pooled thread stores a request context in a <code>ThreadLocal</code> and never clears it. Because the pool reuses threads, each holds its last context forever, and a large object graph stays reachable. The fix is to clear the value in a <code>finally</code> block or avoid the ThreadLocal.</p>
+
+<p><strong>Trade-off:</strong> diagnostic data costs pause time, disk and privacy risk, while waiting for a crash costs availability. Gather the cheapest evidence that can answer the question first.</p>
+
+<p><strong>How to verify:</strong> reproduce growth in a soak test, apply the fix and confirm that the post-collection floor levels off.</p>
+<h4 id="q288-what-are-the-trade-offs-of-graalvm-native-images-for-spring-boot">Q288 What are the trade-offs of GraalVM native images for Spring Boot</h4>
+
+<p><strong>Source basis:</strong> <a href="https://docs.spring.io/spring-boot/reference/packaging/native-image/index.html">Spring Boot native images</a>.</p>
+
+<p><strong>Tier 1 - Foundation</strong></p>
+
+<p><strong>In plain language:</strong> a normal Java application starts a virtual machine, loads classes and compiles hot code while running. A native image is compiled ahead of time into a standalone executable, so it starts faster and needs less memory, in exchange for restrictions on dynamic features.</p>
+
+<p><strong>Key terms:</strong></p>
+
+<ul>
+<li><strong>AOT (ahead-of-time) compilation:</strong> compiling before the program runs.</li>
+<li><strong>JIT (just-in-time) compilation:</strong> compiling hot code while the program runs.</li>
+<li><strong>Closed-world assumption:</strong> the build must know every class that can be reached.</li>
+<li><strong>Reflection hints:</strong> build-time metadata telling the compiler which classes are used reflectively.</li>
+<li><strong>Warm-up:</strong> the time a JVM needs to reach full speed.</li>
+</ul>
+
+<p><strong>Small example:</strong> a function that must scale from zero starts in milliseconds as a native image, instead of seconds as a JVM application.</p>
+
+<p><strong>Tier 2 - Core answer (30-second version)</strong></p>
+
+<blockquote>
+<p>A native image gives much faster startup and lower idle memory, which suits serverless, scale-to-zero and dense deployments. The cost is the closed-world assumption: reflection, proxies and resources must be known at build time, and Spring Boot&#39;s AOT processing generates many of the hints but libraries can need more. Builds are slower and heavier, tooling differs, and peak throughput after warm-up can be lower than a tuned JVM. I would choose it only when startup time or footprint is a real constraint, and test the native build itself.</p>
+</blockquote>
+
+<p><strong>Tier 3 - Follow-ups</strong></p>
+
+<p><strong>Probe 1 (warm-up): Why does reflection cause problems?</strong></p>
+
+<p><em>Expected reasoning:</em> the build analyzes reachable code and removes the rest, and reflection finds classes by name at run time, which the analysis cannot see unless told. Missing hints produce runtime failures that never occurred on the JVM.</p>
+
+<p><strong>Probe 2 (applied): It works on the JVM and fails in the native image. How do you find the cause?</strong></p>
+
+<p><em>Expected reasoning:</em> look for missing reflection, proxy, resource or serialization hints. Run the tests against the native build, use the GraalVM tracing agent to find what the application uses dynamically, and add hints through Spring&#39;s runtime hints API or registration annotations.</p>
+
+<p><strong>Probe 3 (senior): When is the JVM the better choice?</strong></p>
+
+<p><em>Expected reasoning:</em> for long-running services with stable load, where warm-up is amortized and peak throughput, mature tooling and simple builds matter more than startup. Compare measured startup, memory and steady-state latency, and consider alternatives that keep the JVM, such as lazy initialization, trimmed auto-configuration and class-data sharing.</p>
+
+<p><strong>Tier 4 - Deep dive</strong></p>
+
+<p><strong>Internals:</strong> the native-image builder performs a static analysis from the entry points, includes only reachable code, initializes some classes at build time and produces an executable with its own runtime and garbage collector. Spring Boot&#39;s AOT step generates bean definitions and hints ahead of time, so the application does less discovery at startup. Features that rely on runtime class generation or loading behave differently, and some JVM tooling such as standard JFR and heap dump workflows differs or is unavailable, so check what your GraalVM distribution supports.</p>
+
+<p><strong>Realistic failure:</strong> a DTO serialized by Jackson works in all JVM tests. In the native build the JSON comes back empty or fails because no hint registered its members for reflection. It reaches production because only JVM tests ran. Run the integration tests in native mode in CI.</p>
+
+<p><strong>Trade-off:</strong> startup and memory gains come with longer builds, a build that can need several gigabytes of memory, less flexibility with dynamic libraries and possibly lower peak throughput. The operational question is whether the gain changes your cost or scaling behavior.</p>
+
+<p><strong>How to verify:</strong> build both forms, run the same test suite against each, and measure startup time, resident memory and steady-state latency under realistic load.</p>
+<h4 id="q289-what-are-structured-concurrency-and-scoped-values-a-later-version-comparison">Q289 What are structured concurrency and scoped values (a later-version comparison)</h4>
+
+<p><strong>Source basis:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/StructuredTaskScope.html">Java 21 StructuredTaskScope API</a> and <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/ScopedValue.html">Java 21 ScopedValue API</a>.</p>
+
+<p><strong>Label:</strong> in Java 21 both are <strong>preview</strong> APIs requiring <code>--enable-preview</code>, and their status and API shape have changed in later releases. This question is a comparison with the guide&#39;s Java 21 baseline. Check the final status in your JDK before relying on either.</p>
+
+<p><strong>Tier 1 - Foundation</strong></p>
+
+<p><strong>In plain language:</strong> structured concurrency treats several related tasks as one unit of work that starts together and finishes together, like a block of code. Scoped values let code share a read-only binding with everything called inside a bounded region, as a safer alternative to thread-local variables. The bound object itself can still be mutable.</p>
+
+<p><strong>Key terms:</strong></p>
+
+<ul>
+<li><strong>Structured concurrency:</strong> subtasks cannot outlive the scope that started them.</li>
+<li><strong><code>StructuredTaskScope</code>:</strong> the Java 21 preview class that groups subtasks.</li>
+<li><strong>Fork / join:</strong> start a subtask, then wait for the group.</li>
+<li><strong>Scoped value:</strong> a read-only binding for the duration of a scope; it does not freeze the bound object.</li>
+<li><strong><code>ThreadLocal</code>:</strong> a mutable per-thread variable, with a lifetime tied to the thread.</li>
+</ul>
+
+<p><strong>Small example:</strong> loading a page needs a user and their orders. Both are fetched concurrently, and if one fails the other should be cancelled and the failure reported.</p>
+
+<p><strong>Tier 2 - Core answer (30-second version)</strong></p>
+
+<blockquote>
+<p>Structured concurrency groups related tasks so they cannot outlive the scope, errors propagate and a failure can cancel the siblings, which avoids leaked threads and orphaned futures. Scoped values share read-only bindings, preferably to immutable data such as a request id, with code called within a bounded scope, and are meant as a safer alternative to ThreadLocal, especially with many virtual threads. In Java 21 both are preview, so I would not ship them to production without a deliberate decision.</p>
+</blockquote>
+
+<p><strong>Tier 3 - Follow-ups</strong></p>
+
+<p><strong>Probe 1 (warm-up): What problem does structured concurrency solve compared with hand-built futures?</strong></p>
+
+<p><em>Expected reasoning:</em> with ad hoc futures, a failed task may leave others running, an exception can be lost, and no code block owns the lifetime. A scope gives the tasks a clear owner and a defined end.</p>
+
+<p><strong>Probe 2 (applied): How does <code>ShutdownOnFailure</code> behave when one subtask throws?</strong></p>
+
+<p><em>Expected reasoning:</em> the first failing subtask shuts down the scope and interrupts unfinished siblings. <code>join()</code> waits for all subtasks to finish or the scope to shut down, so it can return before an interrupted sibling stops. <code>throwIfFailed()</code> reports the first failure. The implicit <code>close()</code> at the end of the try-with-resources block waits for remaining threads to terminate; a sibling that ignores interruption can block closure indefinitely. Cancellation is cooperative: use interruptible work and bounded dependency calls, and do not treat <code>joinUntil()</code> as a hard bound on scope closure.</p>
+
+<p><strong>Probe 3 (senior): Why prefer a scoped value to a <code>ThreadLocal</code> here?</strong></p>
+
+<p><em>Expected reasoning:</em> a <code>ThreadLocal</code> is mutable, lives as long as its thread, and with pooled threads can leak data between requests. Copying many thread-locals into many virtual threads also costs memory. A scoped-value binding is read-only within its scope, can be rebound in a nested scope, and is inherited by subtasks forked in a structured scope. The referred-to object is not automatically immutable; use immutable objects or synchronize shared mutation.</p>
+
+<p><strong>Tier 4 - Deep dive</strong></p>
+
+<p><strong>Internals:</strong></p>
+
+<pre><code class="java">// Java 21 only with --enable-preview; the API may differ in later releases.
+try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+    var user   = scope.fork(() -&gt; loadUser(id));
+    var orders = scope.fork(() -&gt; loadOrders(id));
+    scope.join().throwIfFailed();               // failure triggers sibling interruption
+    return new Page(user.get(), orders.get());
+} // close waits for unfinished subtasks to terminate
+</code></pre>
+
+<p>By default each fork runs in a new virtual thread. <code>ShutdownOnSuccess</code> is the counterpart for &quot;first result wins.&quot; A scoped value is bound with <code>ScopedValue.where(...)</code> and read within that call tree. Neither mechanism replaces a transaction or a dependency timeout. <code>joinUntil()</code> bounds that join, but <code>close()</code> still waits for unfinished subtasks; their work must respond to interruption or have its own timeout.</p>
+
+<p><strong>Realistic failure:</strong> a team uses a preview API in a library, upgrades the JDK, and the API changes shape or the preview flag is no longer accepted, so the build breaks. Preview features are for evaluation, and production use needs an owner who tracks the JEPs.</p>
+
+<p><strong>Trade-off:</strong> the structured form is easier to reason about and clean up. In return it requires newer APIs and, in Java 21, preview flags. <code>CompletableFuture</code> works everywhere and is flexible, and cancellation and lifetime handling are manual.</p>
+
+<p><strong>How to verify:</strong> make one subtask throw and confirm the sibling receives interruption. Hold that sibling behind a test latch and verify <code>join()</code> can return while it is unfinished; release it and verify <code>close()</code> waits for its termination. Confirm the scoped binding disappears outside its scope, a nested rebind restores the outer binding, and a bound mutable object remains mutable. Use immutable objects or synchronization before sharing it with subtasks.</p>
+<h4 id="q290-classnotfoundexception-versus-noclassdeffounderror-and-how-class-loading-causes-dependency-bugs">Q290 ClassNotFoundException versus NoClassDefFoundError, and how class loading causes dependency bugs</h4>
+
+<p><strong>Tier 1 - Foundation</strong></p>
+
+<p><strong>In plain language:</strong> Java loads classes on demand from the classpath. If a class is missing, or two versions of a library are present, the program fails at run time rather than at compile time. The two error names look similar but describe different situations.</p>
+
+<p><strong>Key terms:</strong></p>
+
+<ul>
+<li><strong>Classpath:</strong> where the JVM looks for classes.</li>
+<li><strong>Class loader:</strong> the component that finds and loads a class.</li>
+<li><strong>Parent delegation:</strong> a loader asks its parent before looking itself.</li>
+<li><strong>Transitive dependency:</strong> a library your dependency depends on.</li>
+<li><strong><code>ServiceLoader</code>:</strong> the Java mechanism for discovering implementations of an interface.</li>
+</ul>
+
+<p><strong>Small example:</strong> your code compiles against library version 2, but another dependency pulls in version 1, so at run time a method that exists in 2 is missing.</p>
+
+<p><strong>Tier 2 - Core answer (30-second version)</strong></p>
+
+<blockquote>
+<p><code>ClassNotFoundException</code> happens when code asks to load a class by name and it is not found. <code>NoClassDefFoundError</code> means a class that was there at compile time is missing at run time, or failed to initialize. Most real incidents in a Maven project come from version conflicts between transitive dependencies, which show up as <code>NoSuchMethodError</code> or <code>LinkageError</code>. Diagnose with <code>mvn dependency:tree</code>, then pin or exclude versions, and use the Enforcer plugin to catch conflicts at build time.</p>
+</blockquote>
+
+<p><strong>Tier 3 - Follow-ups</strong></p>
+
+<p><strong>Probe 1 (warm-up): What is the difference between the two errors?</strong></p>
+
+<p><em>Expected reasoning:</em> <code>ClassNotFoundException</code> is a checked exception from an explicit load such as <code>Class.forName</code> or reflection. <code>NoClassDefFoundError</code> is an error raised when the JVM, while linking or running code that was compiled against a class, cannot find or initialize it.</p>
+
+<p><strong>Probe 2 (applied): A <code>NoClassDefFoundError</code> appears for a class that is on the classpath. Why?</strong></p>
+
+<p><em>Expected reasoning:</em> its static initializer probably failed earlier. The first failure throws <code>ExceptionInInitializerError</code>, and every later use of the class throws <code>NoClassDefFoundError</code>. Find the first error in the logs, not the repeated one.</p>
+
+<p><strong>Probe 3 (senior): You get <code>NoSuchMethodError</code> after upgrading one dependency. How do you diagnose and prevent it?</strong></p>
+
+<p><em>Expected reasoning:</em> the compiled code called a method that the version loaded at run time does not have. Run <code>mvn dependency:tree</code> to find the competing versions, pin one in <code>dependencyManagement</code> or exclude the other, and add the Enforcer plugin&#39;s dependency convergence rule so it fails the build next time.</p>
+
+<p><strong>Tier 4 - Deep dive</strong></p>
+
+<p><strong>Internals:</strong> loaders delegate to their parent first, so the first copy found along the delegation path wins. Servlet containers and plugin systems often change that order, which can load a different version than you expect. <code>ServiceLoader</code> finds providers through <code>META-INF/services</code> files, or <code>provides</code> in <code>module-info.java</code>. Building a shaded jar can silently drop providers, because several jars contribute a file with the same path, so merge them, for example with Maven Shade&#39;s <code>ServicesResourceTransformer</code>.</p>
+
+<p><strong>Realistic failure:</strong> two JSON libraries each register a provider, and the shaded jar keeps only one service file. The application starts, but the missing provider never loads, and behavior differs from the unshaded build. It appears only in the packaged artifact.</p>
+
+<p><strong>Trade-off:</strong> pinning versions gives reproducibility and takes ongoing maintenance, and excluding a transitive dependency risks removing something a library needs. Shading avoids conflicts, at the cost of larger artifacts and merge details.</p>
+
+<p><strong>How to verify:</strong> print the actual source of a class with <code>SomeClass.class.getProtectionDomain().getCodeSource()</code> to see which jar was loaded. Run the Enforcer convergence rule in CI. Test the packaged artifact, not only the build directory.</p>
+<h3 id="operations">Operations</h3>
+<h4 id="q291-how-do-you-design-alerts-that-wake-people-for-the-right-reasons">Q291 How do you design alerts that wake people for the right reasons</h4>
+
+<p><strong>Source basis:</strong> <a href="https://sre.google/workbook/alerting-on-slos/">Google SRE Workbook: Alerting on SLOs</a>.</p>
+
+<p><strong>Tier 1 - Foundation</strong></p>
+
+<p><strong>In plain language:</strong> an alert should tell a person that users are being hurt and that action is needed. Alerts that fire for harmless internal fluctuations teach people to ignore them, so the real ones get missed.</p>
+
+<p><strong>Key terms:</strong></p>
+
+<ul>
+<li><strong>SLI (service level indicator):</strong> a measurement of user experience, such as the fraction of successful requests.</li>
+<li><strong>SLO (service level objective):</strong> the target for an SLI, such as 99.9% over 30 days.</li>
+<li><strong>Error budget:</strong> the allowed failure, which is 100% minus the SLO.</li>
+<li><strong>Burn rate:</strong> how fast the error budget is being consumed relative to plan.</li>
+<li><strong>Symptom / cause:</strong> what users feel versus the internal reason.</li>
+<li><strong>Runbook:</strong> written steps for responding to an alert.</li>
+</ul>
+
+<p><strong>Small example:</strong> an alert that fires whenever CPU exceeds 80% wakes someone every night and rarely indicates a user problem. An alert that fires when the success rate drops below the SLO at a damaging pace does.</p>
+
+<p><strong>Tier 2 - Core answer (30-second version)</strong></p>
+
+<blockquote>
+<p>Alert on symptoms users feel, such as errors and latency, not on every internal cause. Define an SLI and SLO and treat the remainder as an error budget, then page on burn rate, using a long and a short window together to cut noise and reset quickly. Every page should be actionable, link a runbook and have an owner. Keep cause-level metrics on dashboards for diagnosis, and remove alerts that fire without needing action.</p>
+</blockquote>
+
+<p><strong>Tier 3 - Follow-ups</strong></p>
+
+<p><strong>Probe 1 (warm-up): Why alert on symptoms rather than causes?</strong></p>
+
+<p><em>Expected reasoning:</em> many causes never reach users, and some user-facing problems have causes you did not anticipate. A symptom alert catches both. Cause metrics help the responder after the page.</p>
+
+<p><strong>Probe 2 (applied): What does a burn rate of 14.4 mean for a 30-day SLO?</strong></p>
+
+<p><em>Expected reasoning:</em> the error budget is being consumed 14.4 times faster than the rate that would use it all in exactly 30 days. Sustained for one hour, that consumes about 2% of the budget (14.4 / 720 hours), which justifies a page.</p>
+
+<p><strong>Probe 3 (senior): How do you alert on a low-traffic service?</strong></p>
+
+<p><em>Expected reasoning:</em> with few requests, one failure can swing the ratio and cause noise. Use longer windows, synthetic probes that generate steady traffic, or alert on absolute error counts alongside ratios.</p>
+
+<p><strong>Tier 4 - Deep dive</strong></p>
+
+<p><strong>Internals:</strong> for a 99.9% SLO the budget is 0.1%. A burn rate of 1 means errors at 0.1%, using the budget exactly over the window. The workbook&#39;s illustrative thresholds for a 30-day window are a burn rate of about 14.4 over one hour (about 2% of the budget) as a page, about 6 over six hours (about 5%) as a page, and about 1 over three days (about 10%) as a ticket. Each pairs a long window with a short one, commonly one-twelfth the length, so the alert stops soon after the problem does.</p>
+
+<p><strong>Realistic failure:</strong> a team pages on pod restarts and CPU. Most pages are self-healing, engineers start muting the channel, and a real regression in checkout success goes unnoticed for an hour because nobody trusts the pager.</p>
+
+<p><strong>Trade-off:</strong> fast detection means more false alarms, and conservative thresholds miss short incidents. Burn-rate alerts balance detection speed against noise but depend on a good SLI. A poor SLI, such as one that excludes failing paths, makes the alert useless.</p>
+
+<p><strong>How to verify:</strong> replay a past incident against the alert rules and check that it would have paged at the right time. Inject errors in staging and confirm the burn-rate alert fires and clears. Review each page in a regular session and fix or remove noisy ones.</p>
+<h4 id="q292-how-do-you-manage-secrets-for-services-on-gke">Q292 How do you manage secrets for services on GKE</h4>
+
+<p><strong>Tier 1 - Foundation</strong></p>
+
+<p><strong>In plain language:</strong> secrets such as database passwords and API keys must reach the application without being stored in code, images or plain config files. A service should prove who it is to a secrets store, receive only what it needs, and have credentials that can be replaced without a rebuild.</p>
+
+<p><strong>Key terms:</strong></p>
+
+<ul>
+<li><strong>Secret store:</strong> a managed service such as Google Secret Manager.</li>
+<li><strong>Workload identity:</strong> a platform identity for a pod, so it needs no stored key file.</li>
+<li><strong>Least privilege:</strong> granting only the access that is needed.</li>
+<li><strong>Rotation:</strong> replacing a credential with a new one on a schedule or after exposure.</li>
+<li><strong>Kubernetes <code>Secret</code>:</strong> an object holding sensitive data, base64-encoded.</li>
+</ul>
+
+<p><strong>Small example:</strong> a service needs a database password. Instead of a key file in the image, its pod authenticates through workload identity and reads the password from the secret store.</p>
+
+<p><strong>Tier 2 - Core answer (30-second version)</strong></p>
+
+<blockquote>
+<p>Keep secrets out of Git, images and plain config. Store them in a managed secret store, give each workload its own identity with Workload Identity so it needs no long-lived key file, and grant only the secrets it needs. Kubernetes Secrets are base64, not encryption, so rely on access control and encryption at rest. Plan rotation from the start with secret versions and clients that can pick up new values, and have a tested process for a leaked credential.</p>
+</blockquote>
+
+<p><strong>Tier 3 - Follow-ups</strong></p>
+
+<p><strong>Probe 1 (warm-up): Is a Kubernetes <code>Secret</code> encrypted?</strong></p>
+
+<p><em>Expected reasoning:</em> base64 is an encoding, not protection. Secrets are protected by who can read them (RBAC) and by encryption at rest on the cluster, so restrict access and confirm how your cluster stores them.</p>
+
+<p><strong>Probe 2 (applied): Why avoid service-account key files?</strong></p>
+
+<p><em>Expected reasoning:</em> a key file is a long-lived credential that can be copied, committed or leaked, and must be rotated manually. Workload Identity exchanges the pod&#39;s identity for short-lived tokens, so there is nothing static to steal.</p>
+
+<p><strong>Probe 3 (senior): A credential leaks. What do you do?</strong></p>
+
+<p><em>Expected reasoning:</em> revoke or disable it first, issue a new one and roll it out, then investigate where it was used with audit logs. Rotation that was never exercised before is a common reason this takes hours.</p>
+
+<p><strong>Tier 4 - Deep dive</strong></p>
+
+<p><strong>Internals:</strong> Workload Identity Federation for GKE maps a Kubernetes service account to an IAM identity, and the workload obtains short-lived credentials through the platform. Secrets can be mounted as files with the Secret Manager CSI driver, or read through a client library or framework integration such as Spring Cloud GCP, whose current options you should check in its documentation. Secret versions allow staged rotation: create a new version, update consumers, then disable the old one. For databases, a smooth rotation often means two valid credentials for a window.</p>
+
+<p><strong>Realistic failure:</strong> a key file is committed to a repository and found by a scanner. Deleting the file does not help, because history keeps it, so the key must be revoked and replaced. If rotation has never been rehearsed, the service goes down when the credential is revoked.</p>
+
+<p><strong>Trade-off:</strong> environment variables are easy but can leak through crash dumps, debug output and child processes, while mounted files with tight permissions reduce that exposure. Spring Boot 3 masks values in the <code>env</code> and <code>configprops</code> actuator endpoints by default, but verify your configuration and keep those endpoints restricted.</p>
+
+<p><strong>How to verify:</strong> rotate a database password in a non-production environment and confirm the service recovers without manual steps. Try to read a secret from a workload that should not have access and confirm it is denied. Review audit logs to confirm access is recorded.</p>

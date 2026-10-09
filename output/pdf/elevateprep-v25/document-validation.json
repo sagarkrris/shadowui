@@ -1,0 +1,27 @@
+{
+  "pages": 365,
+  "questions": 292,
+  "dailySets": 5,
+  "dailyScenarios": 60,
+  "canonicalCodeBlocksUnchanged": 143,
+  "htmlBlocksMatchedInPdf": 5843,
+  "internalPdfLinksResolved": 114,
+  "externalPdfLinks": 214,
+  "status": "passed",
+  "standalonePages": 29,
+  "standaloneHtmlBlocksMatchedInPdf": 551,
+  "part21Questions": 20,
+  "part21SourceAligned": true,
+  "limitations": [
+    "Frameworks and live infrastructure were not exercised end to end.",
+    "The prior v24 content is preserved; its historic validation is not new v25 evidence."
+  ],
+  "repositoryGate": {
+    "status": "passed",
+    "unitTests": 704,
+    "browserTests": 179,
+    "evidence": "/private/var/folders/28/mv34cj954cs07yfssf_pj30c0000gq/T/tech-blog-release-7iO26Q/report.json",
+    "finishedAt": "2026-10-09T07:52:20.188Z"
+  },
+  "visualReview": "All 29 standalone pages and master pages 333-364 inspected; single-flight code checked at high resolution."
+}

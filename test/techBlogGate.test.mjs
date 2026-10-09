@@ -36,7 +36,7 @@ test('gate always includes unit, Java practice, lint, build and unfiltered produ
   const steps = techBlogGateCommands('/tmp/evidence');
   assert.deepEqual(steps.map(s => s[0]), ['unit', 'practice-java', 'lint', 'build', 'readers-and-diagrams', 'diff-whitespace']);
   const browser = steps.find(s => s[0] === 'readers-and-diagrams')[2];
-  for (const arg of ['e2e/tech-blog-release.spec.js', 'e2e/visual-integrity.spec.js', 'e2e/build-challenges.spec.js', '--retries=0', '--forbid-only']) assert.ok(browser.includes(arg));
+  for (const arg of ['e2e/tech-blog-release.spec.js', 'e2e/visual-integrity.spec.js', 'e2e/build-challenges.spec.js', 'e2e/senior-java-guide.spec.js', '--retries=0', '--forbid-only']) assert.ok(browser.includes(arg));
   assert.ok(!browser.includes('--grep'));
 });
 

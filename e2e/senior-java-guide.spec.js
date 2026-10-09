@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test("the senior Java guide links through all new question parts", async ({ page }) => {
   await page.goto("/senior-java-interview");
-  for (const part of [12, 13, 14, 15, 16]) {
+  for (const part of [12, 13, 14, 15, 16, 21]) {
     await expect(page.locator(`a[href="/senior-java-interview/part-${part}"]`).first()).toBeVisible();
   }
 
@@ -18,11 +18,43 @@ test("the senior Java guide links through all new question parts", async ({ page
   await page.getByRole("navigation", { name: "Guide pages, bottom" }).getByRole("link", { name: /Hibernate and SQL/ }).click();
   await expect(page.locator("article h4").first()).toContainText("H1 How do we make a connection");
   await expect(page.locator("article h4").last()).toContainText("Q244");
+  await page.getByRole("navigation", { name: "Guide pages, bottom" }).getByRole("link", { name: /Production resilience, delivery and JVM operations/ }).click();
+  await expect(page.locator("article h4").first()).toContainText("Q273");
+  await expect(page.locator("article h4").last()).toContainText("Q292");
   await expect(page.getByRole("link", { name: /InterviewAlgorithms\.java/ }).last()).toHaveAttribute("href", "/senior-java-interview/interview-algorithms");
 });
 
 
 for (const width of [390, 1280]) {
+  test(`Part 21 learning ladders and corrected operations guidance are readable at ${width}px`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/senior-java-interview/part-21");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Production resilience, delivery and JVM operations");
+    const titles = await page.locator("article h4").allTextContents();
+    expect(titles.map(title => Number(title.match(/^Q(\d+)/)?.[1]))).toEqual(Array.from({ length: 20 }, (_, i) => i + 273));
+    await expect(page.locator("article strong").filter({ hasText: /^Tier [1-4] -/ })).toHaveCount(80);
+    await expect(page.locator("article strong").filter({ hasText: /^Probe [1-3] / })).toHaveCount(60);
+    await page.locator("article table").first().scrollIntoViewIfNeeded();
+    await expect(page.locator("article table").first()).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath(`part21-ladder-${width}.png`) });
+    await page.goto("/senior-java-interview/part-21#q287-how-do-you-find-a-memory-leak-in-a-production-jvm");
+    await expect(page.locator("#q287-how-do-you-find-a-memory-leak-in-a-production-jvm")).toBeInViewport();
+    await expect(page.locator("article pre").filter({ hasText: "GC.class_histogram" })).toContainText("HIGH impact");
+    await page.goto("/senior-java-interview/part-21#q289-what-are-structured-concurrency-and-scoped-values-a-later-version-comparison");
+    await expect(page.locator("#q289-what-are-structured-concurrency-and-scoped-values-a-later-version-comparison")).toBeInViewport();
+    await expect(page.locator("article p").filter({ hasText: "a sibling that ignores interruption can block closure indefinitely" })).toBeAttached();
+    const code = page.locator("article pre").filter({ hasText: "StructuredTaskScope.ShutdownOnFailure" });
+    await code.scrollIntoViewIfNeeded();
+    await expect(code).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath(`part21-preview-${width}.png`) });
+    await expect(page.getByRole("navigation", { name: "Guide pages, bottom" }).getByRole("link", { name: /Hibernate and SQL/ })).toHaveAttribute("href", "/senior-java-interview/part-16");
+    const sitemap = await page.request.get("/sitemap.xml");
+    expect(sitemap.ok()).toBe(true);
+    expect(await sitemap.text()).toContain("/senior-java-interview/part-21");
+  });
+
   test(`learning explanations, follow-ups and coding reasoning are readable at ${width}px`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/senior-java-interview/part-2");

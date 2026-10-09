@@ -1,0 +1,195 @@
+{
+  "status": "passed",
+  "startedAt": "2026-10-09T07:47:08.922Z",
+  "steps": [
+    {
+      "name": "unit",
+      "status": "passed",
+      "startedAt": "2026-10-09T07:47:27.727Z",
+      "evidence": {
+        "tests": 704,
+        "pass": 704,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "practice-java",
+      "status": "passed",
+      "startedAt": "2026-10-09T07:48:02.889Z",
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "lint",
+      "status": "passed",
+      "startedAt": "2026-10-09T07:50:01.066Z",
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "build",
+      "status": "passed",
+      "startedAt": "2026-10-09T07:50:20.332Z",
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "readers-and-diagrams",
+      "status": "passed",
+      "startedAt": "2026-10-09T07:50:26.295Z",
+      "evidence": {
+        "startTime": "2026-10-09T07:50:27.860Z",
+        "duration": 111821.719,
+        "expected": 179,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "name": "diff-whitespace",
+      "status": "passed",
+      "startedAt": "2026-10-09T07:52:19.729Z",
+      "exitCode": 0,
+      "signal": null
+    }
+  ],
+  "limitations": [
+    "Decision-model fixtures do not verify live infrastructure.",
+    "Practice browser tests use offline/mocked adapters, not a live sandbox.",
+    "Semantic review of claims and diagram meaning remains required; this is not a zero-bug guarantee."
+  ],
+  "sourceFingerprint": "663d00633477a091752a5e64a6d1aa4e2e4e2862146faa2a1ce6b46986e5fbc6",
+  "courses": [
+    "request-timed-out-did-payment-happen",
+    "connection-pool-full-is-database-slow",
+    "database-committed-what-survives-crash",
+    "api-gateway-production-patterns",
+    "load-balancing-algorithms",
+    "java-background-jobs",
+    "java-connection-pools",
+    "java-rate-limiting",
+    "java-service-networking",
+    "kubernetes-java-production",
+    "postgres-zero-downtime-migrations",
+    "opentelemetry-collector-production",
+    "java-container-supply-chain-security",
+    "production-llm-evals-guardrails",
+    "java-multithreading-production",
+    "java-file-uploads-production",
+    "java-feature-flags-production",
+    "java-money-production",
+    "java-time-production",
+    "java-webhooks-production",
+    "real-time-communication-patterns",
+    "java-8-to-26-evolution",
+    "design-patterns-in-18-minutes",
+    "java-design-patterns-with-diagrams",
+    "learn-low-level-design-from-zero",
+    "microservices-design-patterns",
+    "leetcode-patterns",
+    "distributed-transactions-data-consistency",
+    "caching-patterns-java",
+    "spring-boot-security",
+    "resilience-engineering",
+    "microservices-migration-patterns",
+    "system-design-concepts",
+    "system-design-handbook",
+    "production-java-reliability",
+    "api-reliability-playbook",
+    "technical-interview-communication",
+    "java-concurrency-interviews",
+    "sql-performance-interviews",
+    "distributed-systems-interviews",
+    "behavioral-star-interviews",
+    "system-design-fundamentals-roadmap",
+    "java-observability-opentelemetry",
+    "spring-transactions-data-access",
+    "java-performance-clinic",
+    "event-driven-java-reliability",
+    "production-java-testing",
+    "java-memory-management-evolution",
+    "java-api-evolution-contracts",
+    "spring-boot-configuration"
+  ],
+  "javaEvidence": [
+    {
+      "courseId": "java-background-jobs",
+      "javaRelease": 17,
+      "publishedExamples": 6,
+      "fixture": "BackgroundJobsChecks",
+      "output": "Background job checks passed: six Java 17 examples, admission, drain, identity, fencing, reconciliation, lateness"
+    },
+    {
+      "courseId": "java-connection-pools",
+      "javaRelease": 17,
+      "publishedExamples": 6,
+      "fixture": "ConnectionPoolExampleChecks",
+      "output": "Connection pool checks passed"
+    },
+    {
+      "courseId": "java-rate-limiting",
+      "javaRelease": 17,
+      "publishedExamples": 6,
+      "fixture": "RateLimitingExampleChecks",
+      "output": "Rate limiting checks passed"
+    },
+    {
+      "courseId": "java-service-networking",
+      "javaRelease": 17,
+      "publishedExamples": 6,
+      "fixture": "NetworkingExampleChecks",
+      "output": "Networking checks passed"
+    },
+    {
+      "courseId": "java-multithreading-production",
+      "javaRelease": 17,
+      "publishedExamples": 7,
+      "fixture": "MultithreadingExampleChecks",
+      "output": "Multithreading checks passed"
+    },
+    {
+      "courseId": "java-file-uploads-production",
+      "javaRelease": 17,
+      "publishedExamples": 6,
+      "fixture": "FileUploadsExampleChecks",
+      "output": "File upload checks passed"
+    },
+    {
+      "courseId": "java-feature-flags-production",
+      "javaRelease": 17,
+      "publishedExamples": 6,
+      "fixture": "FeatureFlagsExampleChecks",
+      "output": "Feature flag checks passed"
+    },
+    {
+      "courseId": "java-money-production",
+      "javaRelease": 17,
+      "publishedExamples": 6,
+      "fixture": "MoneyExampleChecks",
+      "output": "Money checks passed"
+    },
+    {
+      "courseId": "java-time-production",
+      "javaRelease": 17,
+      "publishedExamples": 6,
+      "fixture": "JavaTimeExampleChecks",
+      "output": "Java time checks passed"
+    },
+    {
+      "courseId": "java-webhooks-production",
+      "javaRelease": 17,
+      "publishedExamples": 6,
+      "fixture": "WebhookExampleChecks",
+      "output": "Webhook checks passed"
+    }
+  ],
+  "finishedAt": "2026-10-09T07:52:20.188Z"
+}
