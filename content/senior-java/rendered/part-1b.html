@@ -1,4 +1,11 @@
 <h3 id="module-5-maven">Module 5: Maven</h3>
+<h4 id="b1-how-does-maven-build-a-java-application">B1 How does Maven build a Java application</h4>
+
+<p><strong>Strong answer:</strong> a POM declares the project, dependencies and build configuration. Maven runs ordered lifecycle phases; plugins provide goals bound to those phases. Running package normally runs preceding default phases such as compilation and tests before producing the artifact. Clean is a separate lifecycle. A dependency supplies classes/libraries; a plugin performs build work; dependencyManagement supplies defaults without itself adding a dependency.</p>
+
+<p><strong>Follow-up:</strong> dependency scopes affect classpaths and transitivity. A successful compile does not prove a dependency will be available in the deployed runtime, and skipped tests do not become executed tests because packaging succeeded.</p>
+
+<p><strong>Senior follow-up:</strong> inspect the effective POM, resolved graph and final artifact before changing versions. Define the target JDK/release and reproducibility requirements. Continue with mediation, BOMs, test plugins and release behavior below. <a href="https://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html">Maven lifecycle reference</a>.</p>
 
 <p><em>More in Q43–Q46.</em></p>
 
@@ -17,14 +24,7 @@ a goal directly with <code>mvn dependency:tree</code>, or a phase with
 <code>mvn verify</code>.</p>
 <h4 id="how-to-understand-it">How to understand it</h4>
 
-<p>First understand the core concept, then explain why it exists, how it
-behaves in production, and what trade-off you would make.</p>
-
-<p><strong>Plain-English starting point:</strong> Maven has three built-in lifecycles:
-<code>clean</code>, <code>default</code> (build) and <code>site</code>. The default lifecycle runs
-ordered <strong>phases</strong>:
-<code>validate → compile → test → package → verify → install → deploy</code>;
-running a phase runs every earlier phase.</p>
+<p><strong>Worked explanation:</strong> Running verify reaches compile, unit tests, packaging and configured integration verification in lifecycle order. A plugin goal does the actual work at a phase; the phase name alone does not install a test runner.</p>
 <h4 id="key-terms-you-should-know">Key terms you should know</h4>
 
 <ul>
@@ -37,16 +37,7 @@ as compilation, testing or packaging.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Why avoid invoking integration-test alone? Later verification and cleanup phases may be needed to finish the integration-test lifecycle correctly.</p>
 <h4 id="30-second-version">30-second version</h4>
 
 <blockquote>
@@ -77,10 +68,7 @@ parent. An <strong>aggregator</strong> lists <code>&lt;modules&gt;</code> for a 
 may be both parent and aggregator; these roles are distinct.</p>
 <h4 id="how-to-understand-it-1">How to understand it</h4>
 
-<p>If the application declares A and A depends on B, managing B&#39;s
-version in the application&#39;s effective POM can select B&#39;s version even
-without a direct dependency declaration for B. By contrast, managing C
-does not include C when no dependency path brings C into the project.</p>
+<p><strong>Worked explanation:</strong> A BOM can choose version 2 of a library, but an application still needs a dependency path that brings the library in. A parent supplies inherited configuration; an aggregator decides which modules participate in the reactor.</p>
 <h4 id="key-terms-you-should-know-1">Key terms you should know</h4>
 
 <ul>
@@ -90,11 +78,7 @@ does not include C when no dependency path brings C into the project.</p>
 </ul>
 <h4 id="sde-3-interview-checkpoints-1">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li>Explain management versus adding a dependency with an A → B example.</li>
-<li>Inspect <code>mvn help:effective-pom</code> and <code>mvn dependency:tree</code>.</li>
-<li>Distinguish project dependency versions from plugin dependency versions.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Must parent and aggregator be the same POM? No; inheritance and multi-module build membership solve different problems.</p>
 <h4 id="30-second-version-1">30-second version</h4>
 
 <blockquote>
@@ -123,12 +107,7 @@ in by consumers. Common production bug: a library accidentally on the
 dependencies.</p>
 <h4 id="how-to-understand-it-2">How to understand it</h4>
 
-<p>First understand the core concept, then explain why it exists, how it
-behaves in production, and what trade-off you would make.</p>
-
-<p><strong>Plain-English starting point:</strong> <code>compile</code> (default: all classpaths,
-transitive), <code>provided</code> (needed to compile, supplied by the container,
-not packaged, e.g. servlet API), <code>runtime</code> (not needed to compile, e.g.</p>
+<p><strong>Worked explanation:</strong> A JDBC driver may be needed only at runtime, while JUnit belongs on the test classpath. Scope controls where a dependency is available and how it reaches consumers; it is not just documentation.</p>
 <h4 id="key-terms-you-should-know-2">Key terms you should know</h4>
 
 <ul>
@@ -137,16 +116,7 @@ centralizes compatible library versions.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-2">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Does optional mean unused? No; it tells downstream consumers they must opt in if they need that dependency&#39;s functionality.</p>
 <h4 id="30-second-version-2">30-second version</h4>
 
 <blockquote>
@@ -169,17 +139,7 @@ Dependency-Check or Dependabot/Renovate in CI, fail the build on high
 CVEs, and generate an SBOM (CycloneDX).</p>
 <h4 id="how-to-understand-it-3">How to understand it</h4>
 
-<p>Treat this as a decision/problem-solving question: explain the mechanism
-or approach first, then the failure modes, trade-offs, and how you would
-verify the result.</p>
-
-<p><strong>Plain-English starting point:</strong> Maven picks the <em>nearest</em> version in
-the tree (first declared on ties), which can silently downgrade a
-library. Diagnose with <code>mvn dependency:tree -Dverbose</code>, fix by pinning
-in <code>dependencyManagement</code>, importing the right BOM, or excluding the
-transitive artifact, and enforce with <code>maven-enforcer-plugin</code>
-(<code>dependencyConvergence</code>, <code>requireUpperBoundDeps</code>,
-<code>banDuplicatePomDependencyVersions</code>).</p>
+<p><strong>Worked explanation:</strong> Two libraries request incompatible versions of the same artifact. Inspect the resolved graph first, then choose a compatible aligned version; removing the losing dependency without checking its caller can produce linkage failures.</p>
 <h4 id="key-terms-you-should-know-3">Key terms you should know</h4>
 
 <ul>
@@ -192,16 +152,7 @@ as compilation, testing or packaging.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-3">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Does a clean vulnerability scan prove compatibility? No; run the relevant integration behavior against the resolved runtime graph.</p>
 <h4 id="30-second-version-3">30-second version</h4>
 
 <blockquote>
@@ -227,15 +178,7 @@ static analysis, and Testcontainers for real dependencies. Keep fast
 tests on every commit and slower suites on the pipeline.</p>
 <h4 id="how-to-understand-it-4">How to understand it</h4>
 
-<p>Compare the options by correctness, operational behavior, performance,
-failure modes, and when you would choose each one—not just by
-definitions.</p>
-
-<p><strong>Plain-English starting point:</strong> Surefire runs unit tests (<code>*Test</code>) in
-the <code>test</code> phase; failing tests stop the build immediately. Failsafe
-runs integration tests (<code>*IT</code>) across <code>integration-test</code> and <code>verify</code>,
-so the build can still run <code>post-integration-test</code> (e.g., shut down
-containers) before failing at <code>verify</code>.</p>
+<p><strong>Worked explanation:</strong> Start a database before integration-test, run integration tests, stop it in post-integration-test and report failures in verify. Delaying the failure verdict allows lifecycle cleanup to run.</p>
 <h4 id="key-terms-you-should-know-4">Key terms you should know</h4>
 
 <ul>
@@ -244,16 +187,7 @@ or verify.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-4">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Are naming conventions sufficient? Only when the matching plugins and executions are configured; confirm which tests actually ran.</p>
 <h4 id="30-second-version-4">30-second version</h4>
 
 <blockquote>
@@ -267,29 +201,10 @@ across <code>integration-test</code> and <code>verify</code>, so the build can s
 <p><strong>M5.6 How do you release and publish artifacts?</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is-5">A good SDE-3 interview answer is:</h4>
 
-<p><code>-SNAPSHOT</code> versions are mutable and resolved to the latest build;
-releases are immutable and must never be overwritten. Use CI-friendly
-versions (<code>${revision}</code> with <code>flatten-maven-plugin</code>) or the release
-plugin, tag the commit, and deploy to a repository manager (Artifact
-Registry, Nexus, Artifactory) configured through
-<code>distributionManagement</code> and credentials in <code>settings.xml</code> (<code>&lt;servers&gt;</code>,
-<code>&lt;mirrors&gt;</code>) injected from CI secrets, never committed. For services,
-the deliverable is a container image tagged with the commit SHA, not
-just the jar.</p>
+<p>Publish traceable release artifacts from validated commits into an authorized repository. Releases should be immutable; snapshots are changing development coordinates whose refresh depends on repository update policy, not an unconditional latest-build lookup. Configure publication through distributionManagement and matching server credentials supplied securely to CI. Pin the release version and toolchain, record the commit, and promote the tested artifact or container digest rather than rebuilding it differently for each environment.</p>
 <h4 id="how-to-understand-it-5">How to understand it</h4>
 
-<p>Treat this as a decision/problem-solving question: explain the mechanism
-or approach first, then the failure modes, trade-offs, and how you would
-verify the result.</p>
-
-<p><strong>Plain-English starting point:</strong> <code>-SNAPSHOT</code> versions are mutable and
-resolved to the latest build; releases are immutable and must never be
-overwritten. Use CI-friendly versions (<code>${revision}</code> with
-<code>flatten-maven-plugin</code>) or the release plugin, tag the commit, and
-deploy to a repository manager (Artifact Registry, Nexus, Artifactory)
-configured through <code>distributionManagement</code> and credentials in
-<code>settings.xml</code> (<code>&lt;servers&gt;</code>, <code>&lt;mirrors&gt;</code>) injected from CI secrets,
-never committed.</p>
+<p><strong>Worked explanation:</strong> A release should be traceable from an immutable artifact to its source commit and validation. A snapshot is a development coordinate whose resolved contents can change according to repository update policy.</p>
 <h4 id="key-terms-you-should-know-5">Key terms you should know</h4>
 
 <ul>
@@ -298,26 +213,11 @@ as compilation, testing or packaging.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-5">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Why promote an existing image? Rebuilding separately for production can produce different bytes from the artifact tested in staging.</p>
 <h4 id="30-second-version-5">30-second version</h4>
 
 <blockquote>
-<p><code>-SNAPSHOT</code> versions are mutable and resolved to the latest build;
-releases are immutable and must never be overwritten. Use CI-friendly
-versions (<code>${revision}</code> with <code>flatten-maven-plugin</code>) or the release
-plugin, tag the commit, and deploy to a repository manager (Artifact
-Registry, Nexus, Artifactory) configured through
-<code>distributionManagement</code> and credentials in <code>settings.xml</code>
-(<code>&lt;servers&gt;</code>, <code>&lt;mirrors&gt;</code>) injected from CI secrets, never committed.</p>
+<p>A release needs immutable bytes, source/validation provenance and controlled repository credentials. Snapshots can change according to update policy. Promote the artifact that was tested instead of assuming a rebuild is identical.</p>
 </blockquote>
 
 <p><strong>M5.7 How do you speed up and harden a Maven build?</strong></p>
@@ -332,17 +232,7 @@ images without a Docker daemon. For reproducibility set
 trusted mirrors and checksum verification.</p>
 <h4 id="how-to-understand-it-6">How to understand it</h4>
 
-<p>Treat this as a decision/problem-solving question: explain the mechanism
-or approach first, then the failure modes, trade-offs, and how you would
-verify the result.</p>
-
-<p><strong>Plain-English starting point:</strong> Use the wrapper (<code>mvnw</code>) and pinned
-plugin versions, parallel builds (<code>-T 1C</code>), incremental module builds
-(<code>-pl :svc -am</code>), CI caching of <code>.m2</code>, avoid <code>clean</code> when not needed,
-remote build cache (Develocity/Maven build cache extension), and
-Jib/Buildpacks to build images without a Docker daemon. For
-reproducibility set <code>project.build.outputTimestamp</code>; for security use
-signed artifacts, trusted mirrors and checksum verification.</p>
+<p><strong>Worked explanation:</strong> Caching dependencies saves downloads; selecting modules saves build work; parallelism runs independent reactor work concurrently. Each optimization affects a different bottleneck and must preserve required checks.</p>
 <h4 id="key-terms-you-should-know-6">Key terms you should know</h4>
 
 <ul>
@@ -351,16 +241,7 @@ as compilation, testing or packaging.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-6">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Can parallel builds always be enabled? Verify plugin thread safety and resource contention, and compare clean reproducibility separately from cache speed.</p>
 <h4 id="30-second-version-6">30-second version</h4>
 
 <blockquote>
@@ -375,6 +256,13 @@ trusted mirrors and checksum verification.</p>
 
 <hr>
 <h3 id="module-6-google-cloud-platform">Module 6: Google Cloud Platform</h3>
+<h4 id="g1-what-must-you-understand-before-choosing-a-cloud-runtime">G1 What must you understand before choosing a cloud runtime</h4>
+
+<p><strong>Strong answer:</strong> identify the application process, compute runtime, network boundaries, workload identity, state/storage and deployment lifecycle. A managed runtime changes which operations the provider handles; it does not remove application ownership of timeouts, authorization, data correctness or cost. Choose after establishing traffic shape, statefulness, latency needs and operational capacity.</p>
+
+<p><strong>Follow-up:</strong> distinguish scaling application instances from increasing database/downstream capacity. Replicas multiply connections and scheduled work unless you deliberately coordinate them.</p>
+
+<p><strong>Senior follow-up:</strong> draw one authenticated request from ingress through application to storage, then trace failure and rollout. Compare runtime choices in M6.1 using that concrete workload rather than a product-name checklist.</p>
 
 <p><em>More in Q47–Q54.</em></p>
 
@@ -393,14 +281,7 @@ cost, portability and team expertise. <a href="https://docs.cloud.google.com/run
 types</a>.</p>
 <h4 id="how-to-understand-it-7">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Choose from workload requirements and
-operational cost. Cloud Run services fit request-serving applications;
-Cloud Run also has jobs and worker pools, so a background worker does
-not automatically require Kubernetes.</p>
+<p><strong>Worked explanation:</strong> Start with whether the workload serves requests, runs to completion or processes continuously. Then compare runtime constraints, scaling behavior, networking and ownership costs for that concrete workload.</p>
 <h4 id="key-terms-you-should-know-7">Key terms you should know</h4>
 
 <ul>
@@ -411,16 +292,7 @@ service.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-7">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Why choose GKE over Cloud Run? Name the Kubernetes control you require and the operational cost you accept, rather than using scale alone as the reason.</p>
 <h4 id="30-second-version-7">30-second version</h4>
 
 <blockquote>
@@ -433,30 +305,10 @@ Kubernetes.</p>
 <p><strong>M6.2 How do you manage identity and access securely?</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is-8">A good SDE-3 interview answer is:</h4>
 
-<p>IAM binds <strong>principals</strong> to <strong>roles</strong> at an org/folder/project/resource
-scope, with inheritance downwards. Each workload gets its own <strong>service
-account</strong> with least-privilege roles (avoid <code>Editor</code>/<code>Owner</code>), and no
-downloaded JSON keys: Cloud Run attaches a runtime service account and
-GKE uses <strong>Workload Identity Federation</strong> to map a Kubernetes service
-account to a Google service account, so the client libraries use
-Application Default Credentials automatically. Secrets live in <strong>Secret
-Manager</strong> (versioned, IAM-controlled, mounted or fetched at startup),
-and Cloud Audit Logs record access. Add organisation policies and VPC
-Service Controls for guardrails.</p>
+<p>IAM binds permissions through roles to principals at the relevant resource scope. Give each workload least-privilege identity and avoid exported service-account keys. Cloud Run can use a runtime service account. Workload Identity Federation for GKE supports direct access by a federated Kubernetes workload principal, or IAM service-account impersonation where needed. Client libraries can obtain short-lived credentials through ADC. Secrets, IAM bindings, audit access and organizational controls still require explicit configuration. <a href="https://docs.cloud.google.com/kubernetes-engine/docs/concepts/workload-identity">GKE workload identity</a>.</p>
 <h4 id="how-to-understand-it-8">How to understand it</h4>
 
-<p>Treat this as a decision/problem-solving question: explain the mechanism
-or approach first, then the failure modes, trade-offs, and how you would
-verify the result.</p>
-
-<p><strong>Plain-English starting point:</strong> IAM binds <strong>principals</strong> to <strong>roles</strong>
-at an org/folder/project/resource scope, with inheritance downwards.
-Each workload gets its own <strong>service account</strong> with least-privilege
-roles (avoid <code>Editor</code>/<code>Owner</code>), and no downloaded JSON keys: Cloud Run
-attaches a runtime service account and GKE uses <strong>Workload Identity
-Federation</strong> to map a Kubernetes service account to a Google service
-account, so the client libraries use Application Default Credentials
-automatically.</p>
+<p><strong>Worked explanation:</strong> The workload authenticates as an identity; IAM decides what that identity may do to a resource. Short-lived credentials remove a stored key, but overly broad roles still grant overly broad access.</p>
 <h4 id="key-terms-you-should-know-8">Key terms you should know</h4>
 
 <ul>
@@ -473,27 +325,11 @@ identities without embedding long-lived service-account keys.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-8">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Does federation grant permissions automatically? No; the relevant principal or impersonated service account still needs deliberate IAM bindings.</p>
 <h4 id="30-second-version-8">30-second version</h4>
 
 <blockquote>
-<p>IAM binds <strong>principals</strong> to <strong>roles</strong> at an
-org/folder/project/resource scope, with inheritance downwards. Each
-workload gets its own <strong>service account</strong> with least-privilege roles
-(avoid <code>Editor</code>/<code>Owner</code>), and no downloaded JSON keys: Cloud Run
-attaches a runtime service account and GKE uses <strong>Workload Identity
-Federation</strong> to map a Kubernetes service account to a Google service
-account, so the client libraries use Application Default Credentials
-automatically.</p>
+<p>Separate identity from permissions. Use least-privilege workload identities and short-lived credentials; GKE federation can grant direct resource access or use service-account impersonation without distributing private keys.</p>
 </blockquote>
 
 <p><strong>M6.3 Design a Spring Boot microservice on GCP end to end.</strong></p>
@@ -511,17 +347,7 @@ delivery uses Cloud Build + Cloud Deploy with canary rollouts and
 automated rollback.</p>
 <h4 id="how-to-understand-it-9">How to understand it</h4>
 
-<p>Treat this as a decision/problem-solving question: explain the mechanism
-or approach first, then the failure modes, trade-offs, and how you would
-verify the result.</p>
-
-<p><strong>Plain-English starting point:</strong> Build with Maven and Jib → image to
-<strong>Artifact Registry</strong> (vulnerability scan) → deploy to Cloud Run/GKE
-across multiple zones behind a global HTTPS load balancer with <strong>Cloud
-Armor</strong> and managed TLS. The service reads config from env/Secret
-Manager, talks to <strong>Cloud SQL</strong> over private IP using the Cloud SQL
-connector, publishes domain events through the outbox to <strong>Pub/Sub</strong>,
-and caches in Memorystore (Redis).</p>
+<p><strong>Worked explanation:</strong> Follow an order from the load balancer to the service, database commit, outbox relay and subscriber. Explain the identity, timeout and retry boundary at each hop before listing cloud products.</p>
 <h4 id="key-terms-you-should-know-9">Key terms you should know</h4>
 
 <ul>
@@ -543,16 +369,7 @@ such as 99.9% successful requests.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-9">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Where can partial failure occur? Database commit can succeed before publication; the durable outbox and idempotent consumer handle that gap.</p>
 <h4 id="30-second-version-9">30-second version</h4>
 
 <blockquote>
@@ -578,14 +395,7 @@ oldest unacked message age and DLQ size. Never ack before the work is
 durably done.</p>
 <h4 id="how-to-understand-it-10">How to understand it</h4>
 
-<p>Treat this as a decision/problem-solving question: explain the mechanism
-or approach first, then the failure modes, trade-offs, and how you would
-verify the result.</p>
-
-<p><strong>Plain-English starting point:</strong> Use Spring Cloud GCP
-(<code>PubSubTemplate</code>, <code>@ServiceActivator</code>/inbound adapter with manual ack).
-Delivery is at-least-once, so handlers must be idempotent (dedupe by
-message ID or business key).</p>
+<p><strong>Worked explanation:</strong> The handler receives a message, commits its business effect and only then acknowledges it. Losing that acknowledgement can still cause redelivery, so successful work must be recognizable on a second attempt.</p>
 <h4 id="key-terms-you-should-know-10">Key terms you should know</h4>
 
 <ul>
@@ -594,16 +404,7 @@ from overwhelming a downstream consumer.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-10">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Why bound outstanding messages? It limits memory and downstream demand while slow processing or acknowledgements accumulate.</p>
 <h4 id="30-second-version-10">30-second version</h4>
 
 <blockquote>
@@ -626,32 +427,10 @@ query patterns, scale and cost; don&#39;t pick Spanner &quot;because it&#39;s
 powerful&quot;.</p>
 <h4 id="how-to-understand-it-11">How to understand it</h4>
 
-<p>Treat this as a decision/problem-solving question: explain the mechanism
-or approach first, then the failure modes, trade-offs, and how you would
-verify the result.</p>
-
-<p><strong>Plain-English starting point:</strong> Cloud SQL (PostgreSQL/MySQL) for
-regional relational OLTP with HA and read replicas; AlloyDB for higher
-PostgreSQL performance and analytics; <strong>Spanner</strong> for globally
-consistent, horizontally scalable relational data; Firestore for
-document data with real-time sync; Bigtable for very high-throughput
-wide-column/time-series; <strong>BigQuery</strong> for serverless analytics
-(columnar, partitioned and clustered, never as an OLTP store);
-Memorystore for caching; Cloud Storage for objects. Match consistency,
-query patterns, scale and cost; don&#39;t pick Spanner &quot;because it&#39;s
-powerful&quot;.</p>
+<p><strong>Worked explanation:</strong> List required queries and invariants first: a financial transaction, a document lookup and an analytical scan need different access patterns. Compare specific products&#39; guarantees and costs against those requirements.</p>
 <h4 id="sde-3-interview-checkpoints-11">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Can one product serve everything? Sometimes, but demonstrate the workload fit; another datastore adds synchronization, recovery and operational work.</p>
 <h4 id="30-second-version-11">30-second version</h4>
 
 <blockquote>
@@ -679,19 +458,7 @@ game-days, keep infrastructure as code so a region can be rebuilt, and
 make deployments backward compatible so rollbacks are safe.</p>
 <h4 id="how-to-understand-it-12">How to understand it</h4>
 
-<p>Treat this as a decision/problem-solving question: explain the mechanism
-or approach first, then the failure modes, trade-offs, and how you would
-verify the result.</p>
-
-<p><strong>Plain-English starting point:</strong> Define <strong>RTO</strong> (time to recover) and
-<strong>RPO</strong> (data you can lose) with the business, then pick the pattern:
-multi-zone within a region (default HA: regional GKE, regional Cloud SQL
-with failover, regional load balancer), cross-region for DR (read
-replicas or Spanner multi-region, multi-region storage, traffic failover
-with a global load balancer). Automate backups with point-in-time
-recovery, test restores and failover game-days, keep infrastructure as
-code so a region can be rebuilt, and make deployments backward
-compatible so rollbacks are safe.</p>
+<p><strong>Worked explanation:</strong> A zone failure and a region failure are different recovery events. Replicas can improve availability, while backups recover deleted or corrupted data; one does not replace the other.</p>
 <h4 id="key-terms-you-should-know-11">Key terms you should know</h4>
 
 <ul>
@@ -703,16 +470,7 @@ compatible so rollbacks are safe.</p>
 </ul>
 <h4 id="sde-3-interview-checkpoints-12">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> How do you validate RPO and RTO? Restore and fail over with measured data loss and elapsed recovery time, including application dependencies.</p>
 <h4 id="30-second-version-12">30-second version</h4>
 
 <blockquote>

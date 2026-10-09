@@ -6,6 +6,8 @@ Leadership · Mock Interview Script</strong> (Q99–Q122)</p>
 <hr>
 <h2 id="v-kubernetes-in-depth">V. Kubernetes in Depth</h2>
 
+<p>First explain <a href="/senior-java-interview/part-3#d1-how-do-an-image-container-pod-and-deployment-differ">images, containers, Pods and Deployments</a>; then use Q99–Q105 to discuss reconciliation, traffic, resources and rollout diagnosis.</p>
+
 <p><strong>Q99. What happens when you run <code>kubectl apply -f deployment.yaml</code>?</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is">A good SDE-3 interview answer is:</h4>
 
@@ -22,15 +24,7 @@ vs actual state</em>, so the answer shows you understand controllers, not
 just commands.</p>
 <h4 id="how-to-understand-it">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> <code>kubectl</code> sends the manifest to the
-<strong>API server</strong>, which authenticates, authorises (RBAC), runs admission
-controllers and persists desired state in <strong>etcd</strong>. The <strong>Deployment
-controller</strong> (in controller-manager) creates a ReplicaSet, which creates
-Pod objects.</p>
+<p><strong>Worked explanation:</strong> The API stores desired state; controllers repeatedly compare it with observed state and take corrective action. The successful apply response therefore precedes actual Pod readiness.</p>
 <h4 id="key-terms-you-should-know">Key terms you should know</h4>
 
 <ul>
@@ -45,16 +39,7 @@ a group of Pods behind a stable endpoint.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Does apply success prove rollout success? No; inspect deployment conditions, scheduling, image startup and readiness separately.</p>
 <h4 id="30-second-version">30-second version</h4>
 
 <blockquote>
@@ -67,24 +52,10 @@ controller-manager) creates a ReplicaSet, which creates Pod objects.</p>
 <p><strong>Q100. How do requests, limits and QoS classes affect a Java service?</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is-1">A good SDE-3 interview answer is:</h4>
 
-<p><em>Requests</em> are what the scheduler reserves; <em>limits</em> are the ceiling.
-Memory over the limit → <strong>OOMKilled</strong>; CPU over the limit →
-<strong>throttling</strong> (latency spikes, slower GC/JIT). QoS: <em>Guaranteed</em>
-(requests = limits), <em>Burstable</em>, <em>BestEffort</em> (evicted first). For
-Java: set memory request = limit, <code>-XX:MaxRAMPercentage</code> around 70%, and
-size CPU requests from load tests; consider omitting CPU limits to avoid
-throttling while keeping requests accurate. Account for startup CPU
-(JIT) with a <code>startupProbe</code> or CPU boost.</p>
+<p>Requests inform scheduling and resource allocation; limits constrain runtime usage. CPU limits normally throttle, while memory-limit breaches can trigger OOM termination. Under container-level QoS rules, Guaranteed requires matching nonzero CPU and memory requests/limits for every container; equal memory settings alone are insufficient. Measure Java heap and native headroom plus startup/steady-state CPU before selecting values. Omitting CPU limits is a platform-policy trade-off, not a universal recommendation. <a href="https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/">Kubernetes QoS</a>.</p>
 <h4 id="how-to-understand-it-1">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> <em>Requests</em> are what the scheduler
-reserves; <em>limits</em> are the ceiling. Memory over the limit →
-<strong>OOMKilled</strong>; CPU over the limit → <strong>throttling</strong> (latency spikes,
-slower GC/JIT).</p>
+<p><strong>Worked explanation:</strong> Scheduling uses requests to decide placement; limits constrain runtime use. CPU throttling slows work, whereas memory pressure can kill a container, so their failure symptoms differ.</p>
 <h4 id="key-terms-you-should-know-1">Key terms you should know</h4>
 
 <ul>
@@ -98,22 +69,11 @@ limit.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-1">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Does equal memory request/limit guarantee Guaranteed QoS? No; the required CPU and memory settings must match for every relevant container under the QoS rules.</p>
 <h4 id="30-second-version-1">30-second version</h4>
 
 <blockquote>
-<p><em>Requests</em> are what the scheduler reserves; <em>limits</em> are the ceiling.
-Memory over the limit → <strong>OOMKilled</strong>; CPU over the limit →
-<strong>throttling</strong> (latency spikes, slower GC/JIT).</p>
+<p>Requests, limits and QoS have different roles. Distinguish throttling from memory kills, account for every container, and choose Java resource settings from measured demand rather than a copied percentage.</p>
 </blockquote>
 
 <p><strong>Q101. HPA vs VPA vs Cluster Autoscaler: how do you scale?</strong></p>
@@ -131,14 +91,7 @@ constrains voluntary evictions through the Eviction API, such as node drains;
 it does not block a Deployment or HPA from reducing desired replicas.</p>
 <h4 id="how-to-understand-it-2">How to understand it</h4>
 
-<p>Compare the options by correctness, operational behavior, performance,
-failure modes, and when you would choose each one—not just by
-definitions.</p>
-
-<p><strong>Plain-English starting point:</strong> <strong>HPA</strong> adds/removes Pod replicas from
-CPU, memory or custom metrics (requests per second, Kafka lag via KEDA).
-<strong>VPA</strong> adjusts requests per Pod (restarts them; good for right-sizing,
-don&#39;t combine with HPA on the same metric).</p>
+<p><strong>Worked explanation:</strong> HPA changes replica count, VPA changes per-Pod resource requests, and a node autoscaler changes available cluster capacity. A new replica remains Pending if no suitable node can host it.</p>
 <h4 id="key-terms-you-should-know-2">Key terms you should know</h4>
 
 <ul>
@@ -149,16 +102,7 @@ containers that share networking and storage context.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-2">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Will a PDB block HPA scale-down? No; it constrains supported voluntary evictions, not every change to desired replicas.</p>
 <h4 id="30-second-version-2">30-second version</h4>
 
 <blockquote>
@@ -182,15 +126,7 @@ default-allow until you add rules; adopt default-deny plus explicit
 allows. Mention DNS caching and <code>ndots</code> as a classic source of latency.</p>
 <h4 id="how-to-understand-it-3">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Every Pod gets its own IP (flat
-network via the CNI plugin). A <strong>Service</strong> gives a stable virtual IP/DNS
-name (<code>svc.namespace.svc.cluster.local</code>) load-balancing across ready
-Pods: <code>ClusterIP</code> (internal), <code>NodePort</code>, <code>LoadBalancer</code> (cloud LB),
-<code>Headless</code> (direct Pod IPs for StatefulSets).</p>
+<p><strong>Worked explanation:</strong> A Service gives clients a stable discovery/routing boundary while Pod addresses change. Network policy controls permitted flows when supported by the network implementation; DNS and routing still need to work.</p>
 <h4 id="key-terms-you-should-know-3">Key terms you should know</h4>
 
 <ul>
@@ -203,16 +139,7 @@ a group of Pods behind a stable endpoint.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-3">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Does one policy isolate every Pod? No; isolation depends on selected Pods, direction and applicable policies. Test required ingress and egress explicitly.</p>
 <h4 id="30-second-version-3">30-second version</h4>
 
 <blockquote>
@@ -235,15 +162,7 @@ disk). Prefer managed databases (Cloud SQL) over running them in-cluster
 unless there is a strong reason.</p>
 <h4 id="how-to-understand-it-4">How to understand it</h4>
 
-<p>Compare the options by correctness, operational behavior, performance,
-failure modes, and when you would choose each one—not just by
-definitions.</p>
-
-<p><strong>Plain-English starting point:</strong> Deployments suit stateless,
-interchangeable Pods. <strong>StatefulSets</strong> give stable identities (<code>app-0</code>),
-ordered rollout, stable network names via a headless Service and a
-per-replica <strong>PersistentVolumeClaim</strong>, which databases, Kafka and
-Zookeeper need.</p>
+<p><strong>Worked explanation:</strong> A StatefulSet preserves per-replica identity and storage association across replacement. That helps a database recognize its member, but database replication and consistency still belong to the database.</p>
 <h4 id="key-terms-you-should-know-4">Key terms you should know</h4>
 
 <ul>
@@ -252,16 +171,7 @@ a group of Pods behind a stable endpoint.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-4">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Does a persistent volume replace backup? No; persistent storage can retain corruption or deletion and needs an independent recovery strategy.</p>
 <h4 id="30-second-version-4">30-second version</h4>
 
 <blockquote>
@@ -284,18 +194,7 @@ Rollouts, Cloud Deploy) with automated rollback on SLO breach. Rollback
 with <code>kubectl rollout undo</code>.</p>
 <h4 id="how-to-understand-it-5">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Rolling update with
-<code>maxUnavailable: 0, maxSurge: 25%</code>, accurate readiness probes, <code>preStop</code>
-sleep plus graceful shutdown, <strong>PodDisruptionBudget</strong> (e.g.,
-<code>minAvailable: 2</code>) so drains don&#39;t evict too many Pods,
-anti-affinity/topology spread constraints to distribute replicas across
-zones, and canary or progressive delivery (Argo Rollouts, Cloud Deploy)
-with automated rollback on SLO breach. Rollback with
-<code>kubectl rollout undo</code>.</p>
+<p><strong>Worked explanation:</strong> During a drain, keep enough ready capacity elsewhere, allow in-flight work to finish and prevent replacement replicas from receiving traffic too early. Availability requires both placement and lifecycle behavior.</p>
 <h4 id="key-terms-you-should-know-5">Key terms you should know</h4>
 
 <ul>
@@ -304,16 +203,7 @@ such as 99.9% successful requests.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-5">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Can rollout undo reverse external effects? No; schema and business side effects require their own compatibility and recovery plan.</p>
 <h4 id="30-second-version-5">30-second version</h4>
 
 <blockquote>
@@ -339,14 +229,7 @@ Use GitOps (Argo CD/Config Sync) so Git is the source of truth and drift
 is reverted.</p>
 <h4 id="how-to-understand-it-6">How to understand it</h4>
 
-<p>Compare the options by correctness, operational behavior, performance,
-failure modes, and when you would choose each one—not just by
-definitions.</p>
-
-<p><strong>Plain-English starting point:</strong> Helm templates charts with values and
-versioned releases (good for packaging and third-party apps; templating
-can get unreadable). Kustomize overlays plain YAML per environment with
-patches (no templating, built into <code>kubectl</code>).</p>
+<p><strong>Worked explanation:</strong> Helm renders parameterized manifests; Kustomize applies overlays to manifests. In either case, inspect the final resources and how secret values reach the runtime.</p>
 <h4 id="key-terms-you-should-know-6">Key terms you should know</h4>
 
 <ul>
@@ -356,16 +239,7 @@ patches (no templating, built into <code>kubectl</code>).</p>
 </ul>
 <h4 id="sde-3-interview-checkpoints-6">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Are base64 Kubernetes Secrets encrypted by that encoding? No; access control, storage encryption and secret lifecycle remain necessary.</p>
 <h4 id="30-second-version-6">30-second version</h4>
 
 <blockquote>
@@ -377,6 +251,17 @@ templating, built into <code>kubectl</code>).</p>
 
 <hr>
 <h2 id="w-terraform-infrastructure-as-code">W. Terraform / Infrastructure as Code</h2>
+<h3 id="terraform-questions-before-state-internals">Terraform questions before state internals</h3>
+<h4 id="tf1-how-does-terraform-turn-configuration-into-infrastructure">TF1 How does Terraform turn configuration into infrastructure</h4>
+
+<p><strong>Foundation:</strong> Configuration describes desired resources; providers communicate with platform APIs. A resource represents a managed object, a data source reads information, and a module groups configuration.</p>
+
+<p><strong>Mid-level follow-up:</strong> Explain init → validate → plan → review → apply. A plan proposes changes using configuration, state and refreshed observations; apply performs the selected changes. Check replacement/destruction before approving a plan.</p>
+<h4 id="tf2-why-does-infrastructure-as-code-still-need-state-and-recovery">TF2 Why does infrastructure as code still need state and recovery</h4>
+
+<p><strong>Senior follow-up:</strong> State associates configuration addresses with remote objects. A failed apply can leave some changes completed; inspect reality and state before planning recovery. Concurrent applies, manual drift, provider changes and secrets require backend-specific locking, access controls and reviewed plans. Continue with Q106–Q108 for state, modules and CI workflows.</p>
+
+<p><strong>Reference:</strong> <a href="https://developer.hashicorp.com/terraform/intro/core-workflow">Terraform core workflow</a>. These are workflow questions; no cloud provisioning is performed.</p>
 
 <p><strong>Q106. How does Terraform state work and why is the backend
 important?</strong></p>
@@ -390,15 +275,7 @@ access (state may contain secrets), and never edit by hand (use
 environment/component to reduce blast radius.</p>
 <h4 id="how-to-understand-it-7">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Terraform maps your configuration to
-real resources through a <strong>state file</strong>. Keep it in a <strong>remote backend</strong>
-(GCS bucket with versioning) with <strong>state locking</strong> so concurrent
-applies don&#39;t corrupt it, restrict access (state may contain secrets),
-and never edit by hand (use <code>terraform state mv/rm</code>, <code>import</code>).</p>
+<p><strong>Worked explanation:</strong> State connects a configuration address to an existing remote object, allowing Terraform to update rather than recreate it. Losing or sharing the wrong state can change which resources an apply believes it owns.</p>
 <h4 id="key-terms-you-should-know-7">Key terms you should know</h4>
 
 <ul>
@@ -409,16 +286,7 @@ the mapping between configuration and real infrastructure.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-7">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Does every remote backend lock state? No; verify that backend&#39;s locking and recovery semantics instead of assuming remote storage implies coordination.</p>
 <h4 id="30-second-version-7">30-second version</h4>
 
 <blockquote>
@@ -432,24 +300,10 @@ restrict access (state may contain secrets), and never edit by hand
 <p><strong>Q107. Explain plan/apply, drift, modules and workspaces.</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is-8">A good SDE-3 interview answer is:</h4>
 
-<p><code>terraform plan</code> diffs desired config vs state vs reality, <code>apply</code>
-executes it; review plans in PRs. <strong>Drift</strong> (manual console changes)
-shows up in the plan; fix by reverting or importing. <strong>Modules</strong> package
-reusable, parameterised infrastructure (a &quot;cloud-run-service&quot; module)
-with versioned sources. Workspaces help with similar environments, but
-many teams prefer separate directories/state per environment for clearer
-isolation. Use <code>prevent_destroy</code> on critical resources and
-<code>lifecycle.ignore_changes</code> sparingly.</p>
+<p>A plan compares desired configuration with state and refreshed remote observations; apply performs planned changes. Drift is an out-of-band difference: decide whether to restore the declaration or deliberately adopt the change. Import associates an existing unmanaged object with a configuration address; it is not a generic fix for drift in already managed resources. Modules package configuration; separate state boundaries constrain impact. Lifecycle protections such as prevent<em>destroy and ignore</em>changes have configuration-dependent limits and need review.</p>
 <h4 id="how-to-understand-it-8">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> <code>terraform plan</code> diffs desired config
-vs state vs reality, <code>apply</code> executes it; review plans in PRs. <strong>Drift</strong>
-(manual console changes) shows up in the plan; fix by reverting or
-importing.</p>
+<p><strong>Worked explanation:</strong> Drift means real infrastructure diverged from the declared or recorded model. Decide whether to restore configuration or intentionally adopt the change; import associates an unmanaged object rather than automatically fixing all drift.</p>
 <h4 id="key-terms-you-should-know-8">Key terms you should know</h4>
 
 <ul>
@@ -460,22 +314,11 @@ defined interface; a Kubernetes Service is a specific networking resource.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-8">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Can prevent_destroy guarantee permanent protection? No; it has configuration-dependent limits and must be complemented by permissions, review and recovery controls.</p>
 <h4 id="30-second-version-8">30-second version</h4>
 
 <blockquote>
-<p><code>terraform plan</code> diffs desired config vs state vs reality, <code>apply</code>
-executes it; review plans in PRs. <strong>Drift</strong> (manual console changes)
-shows up in the plan; fix by reverting or importing.</p>
+<p>Explain configuration, state and reality separately. Resolve drift deliberately; import is for ownership association. Review lifecycle exceptions and state boundaries before applying changes.</p>
 </blockquote>
 
 <p><strong>Q108. How do you run IaC in CI/CD safely?</strong></p>
@@ -489,17 +332,7 @@ Secret Manager (not variables files), tag/label resources for cost, and
 protect the main branch.</p>
 <h4 id="how-to-understand-it-9">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> PR → <code>fmt</code>/<code>validate</code>/<code>tflint</code>/policy
-checks (OPA/Sentinel, Checkov) → <code>plan</code> posted to the PR → human
-approval → <code>apply</code> from a pipeline using a least-privilege service
-account with Workload Identity Federation (no long-lived keys). Pin
-provider and module versions, keep secrets in Secret Manager (not
-variables files), tag/label resources for cost, and protect the main
-branch.</p>
+<p><strong>Worked explanation:</strong> A reviewed plan describes intended mutations at a point in time. Protect its artifact and apply the approved changes under controlled credentials; changed inputs or intervening state require renewed planning.</p>
 <h4 id="key-terms-you-should-know-9">Key terms you should know</h4>
 
 <ul>
@@ -509,16 +342,7 @@ branch.</p>
 </ul>
 <h4 id="sde-3-interview-checkpoints-9">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Can marking a variable sensitive keep it out of state? It mainly redacts display; protect state and plan data according to actual provider behavior.</p>
 <h4 id="30-second-version-9">30-second version</h4>
 
 <blockquote>
@@ -532,6 +356,17 @@ resources for cost, and protect the main branch.</p>
 
 <hr>
 <h2 id="x-grpc-graphql-api-styles">X. gRPC, GraphQL &amp; API Styles</h2>
+<h3 id="api-questions-before-protocol-choices">API questions before protocol choices</h3>
+<h4 id="api1-how-does-a-client-request-become-a-server-response">API1 How does a client request become a server response</h4>
+
+<p><strong>Foundation:</strong> Identify the endpoint, request method, headers/body, authentication and response status/body. Define the contract before selecting REST, RPC or GraphQL. Distinguish transport success from business success and include validation/error behavior.</p>
+
+<p><strong>Mid-level follow-up:</strong> Trace the request through routing, authorization, application logic and its data/dependency calls. Set timeouts and cancellation boundaries; explain versioning, pagination and compatibility.</p>
+<h4 id="api2-what-happens-if-the-response-is-lost-after-the-server-commits">API2 What happens if the response is lost after the server commits</h4>
+
+<p><strong>Senior follow-up:</strong> A timeout can leave an ambiguous outcome. Retrying a write needs a safe method contract or an application-level idempotency strategy. HTTP idempotency concerns the intended server effect, not identical responses. Establish retry and ordering guarantees before Q109–Q112 compare gRPC, GraphQL and streaming styles.</p>
+
+<p><strong>Reference:</strong> <a href="https://www.rfc-editor.org/rfc/rfc9110.html">HTTP semantics, RFC 9110</a>. This is a request-contract walkthrough, not a deployed API.</p>
 
 <p><strong>Q109. When and how do you use gRPC?</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is-10">A good SDE-3 interview answer is:</h4>
@@ -548,15 +383,7 @@ auth, tracing and metrics. Weaknesses: poor browser support (needs
 gRPC-Web), harder debugging.</p>
 <h4 id="how-to-understand-it-10">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> gRPC uses HTTP/2 and Protobuf (compact
-binary, schema-first, generated clients) and supports four call types:
-unary, server streaming, client streaming and bidirectional streaming.
-Strengths: low latency, strict contracts, multiplexing, built-in
-deadlines/cancellation.</p>
+<p><strong>Worked explanation:</strong> A client stub serializes a typed request, performs an RPC and receives a result or status. A deadline bounds the caller&#39;s wait; the server must also observe cancellation and stop unnecessary work.</p>
 <h4 id="key-terms-you-should-know-10">Key terms you should know</h4>
 
 <ul>
@@ -565,16 +392,7 @@ Protocol Buffers for service-to-service communication.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-10">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Why can L4 balancing be uneven? Many RPCs share a long-lived connection, so balancing connections does not necessarily balance individual requests.</p>
 <h4 id="30-second-version-10">30-second version</h4>
 
 <blockquote>
@@ -606,10 +424,7 @@ In Spring for GraphQL, know <code>@QueryMapping</code> and <code>@BatchMapping</
 server&#39;s enabled transports.</p>
 <h4 id="how-to-understand-it-11">How to understand it</h4>
 
-<p>One GraphQL endpoint does not imply one HTTP method or one cache
-entry. A public product query and a user-specific account query need
-different caching policies. Selecting fewer response fields also does
-not guarantee fewer database queries without resolver design.</p>
+<p><strong>Worked explanation:</strong> A small GraphQL query can trigger many resolver/database calls. Batch related loads and authorize each relevant object or field, while measuring total backend work rather than only HTTP request count.</p>
 <h4 id="key-terms-you-should-know-11">Key terms you should know</h4>
 
 <ul>
@@ -619,11 +434,7 @@ not guarantee fewer database queries without resolver design.</p>
 </ul>
 <h4 id="sde-3-interview-checkpoints-11">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li>Test query GET support and reject mutations over GET.</li>
-<li>Verify resolver query counts and authorization-aware caching.</li>
-<li>Distinguish request/validation failures from field execution errors.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Can all query results share one cache key? No; variables and authorization context can change both data and visibility.</p>
 <h4 id="30-second-version-11">30-second version</h4>
 
 <blockquote>
@@ -646,13 +457,7 @@ server-to-server callbacks; require signature verification, retries,
 idempotency and replay protection.</p>
 <h4 id="how-to-understand-it-12">How to understand it</h4>
 
-<p>Compare the options by correctness, operational behavior, performance,
-failure modes, and when you would choose each one—not just by
-definitions.</p>
-
-<p><strong>Plain-English starting point:</strong> Long polling: simple fallback, high
-overhead. <strong>SSE</strong>: one-way server → client over HTTP, auto-reconnect,
-great for notifications/feeds.</p>
+<p><strong>Worked explanation:</strong> SSE delivers server events over an HTTP response; WebSocket allows both ends to send messages. A webhook instead calls another server, whose acknowledgement and retries form a delivery protocol.</p>
 <h4 id="key-terms-you-should-know-12">Key terms you should know</h4>
 
 <ul>
@@ -664,16 +469,7 @@ publishing messages to topics and delivering them to subscriptions.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-12">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Does reconnect restore lost messages? Only if the application defines replay, cursors or resynchronization; transport reconnection alone is insufficient.</p>
 <h4 id="30-second-version-12">30-second version</h4>
 
 <blockquote>
@@ -684,24 +480,10 @@ metric, log, trace, profiler, or operational signal when applicable.</li>
 <p><strong>Q112. What is contract-first API design?</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is-13">A good SDE-3 interview answer is:</h4>
 
-<p>Write the <strong>OpenAPI</strong> (or Protobuf) spec first, review it with
-consumers, then generate server stubs/clients and validate
-requests/responses against it, so docs never drift. Add linting
-(Spectral), mock servers for parallel front-end work, and
-consumer-driven contract tests (Pact/Spring Cloud Contract) in CI to
-catch breaking changes before release.</p>
+<p>Agree the API schema and behavioral contract with consumers first, then generate suitable stubs/clients and validate implementations in CI. Include errors, compatibility, authorization and retry semantics, not only fields. Linting, schema checks and consumer contracts reduce drift but cannot make it impossible; custom code and semantic changes still need tests and review.</p>
 <h4 id="how-to-understand-it-13">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Write the <strong>OpenAPI</strong> (or Protobuf)
-spec first, review it with consumers, then generate server stubs/clients
-and validate requests/responses against it, so docs never drift. Add
-linting (Spectral), mock servers for parallel front-end work, and
-consumer-driven contract tests (Pact/Spring Cloud Contract) in CI to
-catch breaking changes before release.</p>
+<p><strong>Worked explanation:</strong> Review the request, response and failure contract with consumers before generating code. Generation reduces mechanical mismatch, while compatibility tests check whether implementations still honor the agreed behavior.</p>
 <h4 id="key-terms-you-should-know-13">Key terms you should know</h4>
 
 <ul>
@@ -711,29 +493,17 @@ catch breaking changes before release.</p>
 </ul>
 <h4 id="sde-3-interview-checkpoints-13">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Do generated clients prevent all drift? No; validation and tests must detect custom implementation changes and semantic differences.</p>
 <h4 id="30-second-version-13">30-second version</h4>
 
 <blockquote>
-<p>Write the <strong>OpenAPI</strong> (or Protobuf) spec first, review it with
-consumers, then generate server stubs/clients and validate
-requests/responses against it, so docs never drift. Add linting
-(Spectral), mock servers for parallel front-end work, and
-consumer-driven contract tests (Pact/Spring Cloud Contract) in CI to
-catch breaking changes before release.</p>
+<p>Contract-first aligns producers and consumers before implementation. Generated code helps, while validation and behavioral compatibility tests catch the drift generation alone cannot prevent.</p>
 </blockquote>
 
 <hr>
 <h2 id="y-architecture-leadership">Y. Architecture &amp; Leadership</h2>
+
+<p>First explain <a href="/senior-java-interview/part-1a#f1-what-is-a-microservice-and-how-does-one-request-cross-services">service boundaries</a>, then follow the <a href="/senior-java-interview/part-1b#module-7-system-design-prompts-practice-45-min-each">design interview sequence</a>. For distributed-event questions, review <a href="/senior-java-interview/part-11#saga">saga</a>, <a href="/senior-java-interview/part-11#outbox-pattern">outbox</a> and <a href="/senior-java-interview/part-11#idempotency">idempotency</a> before choosing an architecture.</p>
 
 <p><strong>Q113. What are the pitfalls of event-driven architecture?</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is-14">A good SDE-3 interview answer is:</h4>
@@ -747,30 +517,10 @@ idempotent consumers, DLQs with replay tooling, correlation IDs, and
 choosing events for facts (&quot;OrderPlaced&quot;) rather than commands.</p>
 <h4 id="how-to-understand-it-14">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Hard-to-follow flows (no single place
-shows the process: need tracing and an event catalogue), eventual
-consistency surprises, duplicate/out-of-order events, schema evolution,
-poison messages, accidental coupling through event contents, and
-debugging complexity. Mitigate with clear event ownership, versioned
-schemas in a registry, idempotent consumers, DLQs with replay tooling,
-correlation IDs, and choosing events for facts (&quot;OrderPlaced&quot;) rather
-than commands.</p>
+<p><strong>Worked explanation:</strong> An event describes a fact another service may react to later. That delay creates visible intermediate states, and duplicate delivery means the same fact may be handled again.</p>
 <h4 id="sde-3-interview-checkpoints-14">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> When is a command appropriate? When requesting an action from a responsible handler; name the intent explicitly instead of disguising it as a past-tense fact.</p>
 <h4 id="30-second-version-14">30-second version</h4>
 
 <blockquote>
@@ -795,15 +545,7 @@ without polling load. Consumers must be idempotent either way; clean the
 outbox periodically.</p>
 <h4 id="how-to-understand-it-15">How to understand it</h4>
 
-<p>Compare the options by correctness, operational behavior, performance,
-failure modes, and when you would choose each one—not just by
-definitions.</p>
-
-<p><strong>Plain-English starting point:</strong> <strong>Dual write</strong> (save to DB then
-publish) can lose or duplicate events if one fails: avoid.
-<strong>Transactional outbox</strong>: write the event to an <code>outbox</code> table in the
-same transaction as the business data; a poller/relay publishes and
-marks it sent (at-least-once).</p>
+<p><strong>Worked explanation:</strong> Committing business data and an outbox row together closes the database/publication gap. The relay can still publish twice if it crashes before recording success, so consumers remain duplicate-safe.</p>
 <h4 id="key-terms-you-should-know-14">Key terms you should know</h4>
 
 <ul>
@@ -820,16 +562,7 @@ operation with defined commit/rollback behavior.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-15">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Is CDC an alternative to the outbox invariant? It can relay outbox rows; raw table changes still need deliberate business-event semantics.</p>
 <h4 id="30-second-version-15">30-second version</h4>
 
 <blockquote>
@@ -842,26 +575,10 @@ poller/relay publishes and marks it sent (at-least-once).</p>
 <p><strong>Q115. Explain DDD essentials you actually apply.</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is-16">A good SDE-3 interview answer is:</h4>
 
-<p><strong>Ubiquitous language</strong> shared with the business, <strong>bounded contexts</strong>
-(each model valid in its own boundary, which become service boundaries),
-<strong>aggregates</strong> (consistency boundary with a root that enforces
-invariants; one transaction per aggregate; reference other aggregates by
-ID), entities vs value objects, domain events, and an anti-corruption
-layer when integrating with legacy models. Warn against anemic models
-and over-engineering simple CRUD.</p>
+<p>DDD starts with a shared business language and bounded contexts in which each model has a clear meaning. Aggregates group state whose invariants a root controls; entities have identity, while value objects are defined by value. Bounded contexts can inform service boundaries but do not require one service each. Keeping transactions within an aggregate is a useful design guideline, not a universal prohibition on broader atomic work. Apply domain events and anti-corruption layers where they clarify real complexity.</p>
 <h4 id="how-to-understand-it-16">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> <strong>Ubiquitous language</strong> shared with
-the business, <strong>bounded contexts</strong> (each model valid in its own
-boundary, which become service boundaries), <strong>aggregates</strong> (consistency
-boundary with a root that enforces invariants; one transaction per
-aggregate; reference other aggregates by ID), entities vs value objects,
-domain events, and an anti-corruption layer when integrating with legacy
-models. Warn against anemic models and over-engineering simple CRUD.</p>
+<p><strong>Worked explanation:</strong> An Order aggregate protects rules such as valid status transitions; its root controls changes to owned parts. A bounded context defines the meaning of that model, rather than dictating one deployment per concept.</p>
 <h4 id="key-terms-you-should-know-15">Key terms you should know</h4>
 
 <ul>
@@ -872,26 +589,11 @@ operation with defined commit/rollback behavior.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-16">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Must each aggregate be a microservice? No; model boundaries and deployment boundaries are distinct decisions.</p>
 <h4 id="30-second-version-16">30-second version</h4>
 
 <blockquote>
-<p><strong>Ubiquitous language</strong> shared with the business, <strong>bounded contexts</strong>
-(each model valid in its own boundary, which become service
-boundaries), <strong>aggregates</strong> (consistency boundary with a root that
-enforces invariants; one transaction per aggregate; reference other
-aggregates by ID), entities vs value objects, domain events, and an
-anti-corruption layer when integrating with legacy models. Warn
-against anemic models and over-engineering simple CRUD.</p>
+<p>Explain one business invariant and its model boundary. Aggregates control consistent state changes; bounded contexts define meaning. Deployment choices and transaction scope still require judgment.</p>
 </blockquote>
 
 <p><strong>Q116. What is hexagonal (ports &amp; adapters) architecture?</strong></p>
@@ -906,27 +608,10 @@ of Spring annotations where practical, with adapters in
 <code>infrastructure</code>.</p>
 <h4 id="how-to-understand-it-17">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> The domain core depends on nothing; it
-exposes <strong>ports</strong> (interfaces) and the outside world connects via
-<strong>adapters</strong> (REST controller, JPA repository, Kafka publisher).
-Dependencies point inward, so you can test business logic without
-frameworks, swap infrastructure, and enforce rules with ArchUnit.</p>
+<p><strong>Worked explanation:</strong> An application use case asks a payment port to charge; an adapter translates that request into a provider API. The use case can be tested with a controlled implementation of the port.</p>
 <h4 id="sde-3-interview-checkpoints-17">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Who owns the interface? The boundary should express application needs rather than expose every detail of the external SDK.</p>
 <h4 id="30-second-version-17">30-second version</h4>
 
 <blockquote>
@@ -948,29 +633,10 @@ joins and transactions become hard) → precompute. State the trade-off at
 each step and measure before moving up.</p>
 <h4 id="how-to-understand-it-18">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> In order of cost: optimise queries and
-indexes → add caching layers (CDN, application cache, Redis) → read
-replicas (account for replication lag; route read-your-writes to the
-primary) → CQRS read models → partition/shard data (choose a key that
-avoids hotspots; cross-shard joins and transactions become hard) →
-precompute. State the trade-off at each step and measure before moving
-up.</p>
+<p><strong>Worked explanation:</strong> Measure which reads dominate and whether they tolerate staleness. An index reduces database work; a cache reuses results; a replica shifts reads but may lag behind writes.</p>
 <h4 id="sde-3-interview-checkpoints-18">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> How do you preserve read-your-writes? Route the relevant reads appropriately or use a verified consistency mechanism instead of assuming replicas are current.</p>
 <h4 id="30-second-version-18">30-second version</h4>
 
 <blockquote>
@@ -992,25 +658,10 @@ round numbers, state assumptions, and derive node counts from per-node
 throughput. Interviewers want structured reasoning, not exact figures.</p>
 <h4 id="how-to-understand-it-19">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Example: 10M DAU × 20 requests/day =
-200M/day ≈ 2.3k req/s average, ×3–5 for peak ≈ 10k req/s. Storage: 1
-KB/record × 100M/day ≈ 100 GB/day ≈ 36 TB/year before replication.</p>
+<p><strong>Worked explanation:</strong> Convert daily volume to average rate, state a peak multiplier, then estimate bytes and concurrent work. Each estimate should expose an assumption that can be revised.</p>
 <h4 id="sde-3-interview-checkpoints-19">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> How do you estimate concurrency? Arrival rate multiplied by average time in the system gives average in-flight work under the model&#39;s stable conditions.</p>
 <h4 id="30-second-version-19">30-second version</h4>
 
 <blockquote>
@@ -1032,13 +683,7 @@ follows customer impact, not a single infrastructure metric. <a href="https://sr
 workbook</a>.</p>
 <h4 id="how-to-understand-it-20">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Define the denominator first. A
-request-based 99.9% SLO permits 0.1% bad eligible requests; at ten
-million requests that is 10,000 bad requests.</p>
+<p><strong>Worked explanation:</strong> An SLO defines which outcomes count as good and what fraction must meet that rule over a window. The remaining allowance is the error budget, which can be consumed quickly during an incident.</p>
 <h4 id="key-terms-you-should-know-16">Key terms you should know</h4>
 
 <ul>
@@ -1047,16 +692,7 @@ such as 99.9% successful requests.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-20">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Are request-based and time-based budgets interchangeable? No; traffic variation changes their meaning and the associated response policy.</p>
 <h4 id="30-second-version-20">30-second version</h4>
 
 <blockquote>
@@ -1076,28 +712,10 @@ team outcomes (lead time, change failure rate, onboarding time) rather
 than personal output. Have a concrete mentoring example with a result.</p>
 <h4 id="how-to-understand-it-21">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Set direction through design
-docs/ADRs, review for learning not gatekeeping, pair on hard problems,
-delegate with clear context and ownership, grow others by giving stretch
-tasks and feedback, and raise the bar through shared standards and
-automation. Measure impact through team outcomes (lead time, change
-failure rate, onboarding time) rather than personal output.</p>
+<p><strong>Worked explanation:</strong> Describe a person or team capability that improved because of your coaching or design work. Explain what you delegated, what support you supplied and how ownership increased.</p>
 <h4 id="sde-3-interview-checkpoints-21">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> What is the senior evidence? A concrete team outcome and what you learned, not a list of mentoring practices.</p>
 <h4 id="30-second-version-21">30-second version</h4>
 
 <blockquote>
@@ -1120,28 +738,10 @@ spike). Seniors are valued for learning speed and honesty, not
 perfection.</p>
 <h4 id="how-to-understand-it-22">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Pick a real, moderately significant
-mistake: what you decided and why it seemed right, the signal that
-showed it was wrong (metric/incident), how you owned it, how you
-corrected course (rollback, migration plan), and the <strong>process change</strong>
-afterward (ADR with revisit date, load test, spike). Seniors are valued
-for learning speed and honesty, not perfection.</p>
+<p><strong>Worked explanation:</strong> Reconstruct the decision using what was known then, identify the later evidence that invalidated an assumption, and explain your correction. Owning the mistake includes changing the decision process.</p>
 <h4 id="sde-3-interview-checkpoints-22">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Should you choose a harmless fake weakness? No; use a real example you can discuss honestly without disclosing confidential details.</p>
 <h4 id="30-second-version-22">30-second version</h4>
 
 <blockquote>
@@ -1162,14 +762,7 @@ architecture), tied to something specific about the new company you
 researched. Never criticise your employer.</p>
 <h4 id="how-to-understand-it-23">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Be positive and forward-looking: what
-you have achieved there and what you want next (larger scale, domain,
-ownership, cloud-native architecture), tied to something specific about
-the new company you researched. Never criticise your employer.</p>
+<p><strong>Worked explanation:</strong> Connect the role&#39;s actual responsibilities to the work you want to do and experience you can contribute. Explain motivation specifically enough that it would not fit every employer.</p>
 <h4 id="key-terms-you-should-know-17">Key terms you should know</h4>
 
 <ul>
@@ -1178,16 +771,7 @@ the new company you researched. Never criticise your employer.</p>
 </ul>
 <h4 id="sde-3-interview-checkpoints-23">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> How do you substantiate the fit? Refer to verified role/team information and your own relevant experience, avoiding invented company claims.</p>
 <h4 id="30-second-version-23">30-second version</h4>
 
 <blockquote>

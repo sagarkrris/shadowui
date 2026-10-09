@@ -1,0 +1,30 @@
+{
+  "canonical": {
+    "path": "/Users/sagkrish/shadowui/content/senior-java/Senior-Java-Interview-Master-Guide-Corrected.md",
+    "sha256": "3c35b0b846c166c5b371652406e94c9c819754f5bd3e51e452577aa3fe573260"
+  },
+  "dailySets": [
+    {
+      "set": 1,
+      "sha256": "7d45ff2bd526d52e14d94b68515283f5d1c0fd491406bb7eb722b21b6a6738cf"
+    },
+    {
+      "set": 2,
+      "sha256": "b67f3ff5924ef1e0ef42b52921ab892d6932dcd3c1f2350fa1e2adcfdab27703"
+    },
+    {
+      "set": 3,
+      "sha256": "2578c6cdda55a145ab0dbc74bf359577fecd0ce0c6f5bd582ab3c717208a81e5"
+    },
+    {
+      "set": 4,
+      "sha256": "54e37bdf4d7ab744ff152e95edcd03cfd78df42373ae3f6b26320188157615b2"
+    },
+    {
+      "set": 5,
+      "sha256": "2756f94e07eeb349f9b5bdccc1ac59046c4e3a88e9d202c969815b355c66879a"
+    }
+  ],
+  "output": "/Users/sagkrish/shadowui/output/pdf/elevateprep-v24/senior-java-interview-sde3-master-v24-elevateprep.md",
+  "retainedSupplement": "Q245-Q272, Parts 18-20, producer-consumer and repaired MiniPool from supplied v23"
+}

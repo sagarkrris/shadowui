@@ -26,15 +26,15 @@ for (const viewport of [{ width: 1366, height: 768 }, { width: 390, height: 844 
       else await expect(nav.getByText("Latest set")).toBeVisible();
       const ids = await page.locator("article [id]").evaluateAll(elements => elements.map(element => element.id));
       expect(new Set(ids).size).toBe(ids.length);
-      if (set.number === 4) {
-        await expect(page.locator("article")).toContainText("S04-Q01–S04-Q12");
+      if (set.number === 5) {
+        await expect(page.locator("article")).toContainText("S05-Q01–S05-Q12");
         const skip = page.getByRole("link", { name: "Skip to reading" });
         await skip.focus();
         await page.keyboard.press("Enter");
         await expect(page.locator("#reader-main")).toBeFocused();
-        await page.screenshot({ path: `/private/tmp/java-daily-set04-${viewport.width}-top.png` });
+        await page.screenshot({ path: `/private/tmp/java-daily-set05-${viewport.width}-top.png` });
         await page.locator("article pre").last().scrollIntoViewIfNeeded();
-        await page.screenshot({ path: `/private/tmp/java-daily-set04-${viewport.width}-coding.png` });
+        await page.screenshot({ path: `/private/tmp/java-daily-set05-${viewport.width}-coding.png` });
       }
     }
   });

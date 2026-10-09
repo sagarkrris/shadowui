@@ -48,9 +48,114 @@ framework chapters as a lookup reference unless the role explicitly
 emphasizes them.</p>
 
 <hr>
+<h3 id="topic-learning-order-start-with-the-foundations">Topic learning order: start with the foundations</h3>
+
+<p>For each topic, begin with its starting question, explain the mechanism, then handle failures and trade-offs. Follow the linked foundation before the advanced question bank; the existing Q/M identifiers remain revision references rather than a required numerical reading order.</p>
+
+<p><strong>For learning:</strong> read the direct answer, work through the example, then answer the follow-up before looking at its expected reasoning. If a term is unfamiliar, use the foundation link or the <a href="/senior-java-interview/part-11#sde-3-terminology-and-follow-up-audit">terminology explanations</a>. For code, explain the invariant and trace a small input before reading the implementation.</p>
+
+<p><strong>For the interviewer:</strong> begin with a concise definition and purpose, explain the mechanism, give one concrete example, and state the important limit or trade-off. Use the 30-second version as an opening, then expand when asked. Separate documented guarantees from implementation details and state the runtime/database version where it matters. Use your own experience for incident and leadership answers; illustrative examples are not personal evidence.</p>
+
+<p><strong>Self-check:</strong> could you explain why it works, predict one failure case and describe how to verify the result? Repeating an API name or memorizing a checklist does not establish those three abilities.</p>
+
+<table><thead>
+<tr>
+<th>Topic</th>
+<th>Starting question</th>
+<th>Progression and entry point</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>Core Java and collections</td>
+<td>What is an object, how do references work, and how do we choose a collection?</td>
+<td><a href="#c1-what-should-you-explain-before-collection-internals">Java foundations</a> → identity/immutability → List/Set/Map → hashing/ordering → generics → internals and boundary cases.</td>
+</tr>
+<tr>
+<td>Multithreading</td>
+<td>Why use threads, and how do we create, start and finish one?</td>
+<td><a href="#multithreading-questions-foundations-to-senior-follow-ups">Multithreading Questions</a> → lifecycle → shared state → locks/coordination → executors/results → cancellation → production diagnosis.</td>
+</tr>
+<tr>
+<td>JVM</td>
+<td>Where does code run and where does data live?</td>
+<td><a href="#j1-what-do-the-jdk-jvm-heap-and-thread-stacks-do">JVM foundations</a> → allocation/reachability → collection → latency/retention → profiling and version-specific tuning.</td>
+</tr>
+<tr>
+<td>Spring Boot</td>
+<td>How does a Java object become a managed bean?</td>
+<td><a href="/senior-java-interview/part-13#spring-boot-annotations-usage-to-internals-to-senior-diagnosis">Annotation ladder</a> → registration/injection → configuration/conditions → proxies → MVC/persistence → failures and testing.</td>
+</tr>
+<tr>
+<td>Hibernate and SQL</td>
+<td>How does Java or Boot connect to the database?</td>
+<td><a href="/senior-java-interview/part-16#start-here-database-connections-and-session-management">Connection and session foundations</a> → pools/sessions/factories → transactions → annotations → queries → concurrency and data design.</td>
+</tr>
+<tr>
+<td>Microservices</td>
+<td>What is a service boundary and how do services communicate?</td>
+<td><a href="#f1-what-is-a-microservice-and-how-does-one-request-cross-services">Service foundations</a> → ownership/API → timeouts/failures → consistency/idempotency → migration → scale.</td>
+</tr>
+<tr>
+<td>Messaging</td>
+<td>How does a producer&#39;s event reach a consumer?</td>
+<td><a href="/senior-java-interview/part-3#k1-how-do-producers-brokers-and-consumers-fit-together">Messaging foundations</a> → topics/partitions/offsets → groups → acknowledgements → retries/ordering → delivery guarantees.</td>
+</tr>
+<tr>
+<td>Security</td>
+<td>Who is calling, and what may they do?</td>
+<td><a href="/senior-java-interview/part-3#a1-how-do-authentication-and-authorization-fit-into-a-request">Security foundations</a> → credentials/tokens → verification → authorization → browser threats → operational controls.</td>
+</tr>
+<tr>
+<td>Maven</td>
+<td>How do sources and dependencies become a tested artifact?</td>
+<td><a href="/senior-java-interview/part-1b#b1-how-does-maven-build-a-java-application">Build foundations</a> → lifecycle/dependencies → plugins/scopes → modules → reproducibility → release.</td>
+</tr>
+<tr>
+<td>Cloud and containers</td>
+<td>Where does the process run, and who owns its resources?</td>
+<td><a href="/senior-java-interview/part-1b#g1-what-must-you-understand-before-choosing-a-cloud-runtime">Cloud foundations</a> and <a href="/senior-java-interview/part-3#d1-how-do-an-image-container-pod-and-deployment-differ">container foundations</a> → runtime → identity/network/data → health/scaling → deployment → diagnosis.</td>
+</tr>
+<tr>
+<td>Streams</td>
+<td>How does a lambda become a stream pipeline?</td>
+<td><a href="/senior-java-interview/part-5#stream-questions-before-pitfalls">Stream foundations</a> → source/operations → evaluation → collectors → parallelism and pitfalls.</td>
+</tr>
+<tr>
+<td>Caching</td>
+<td>What happens on a cache hit, miss or update?</td>
+<td><a href="/senior-java-interview/part-5#cache-questions-before-redis-patterns">Cache foundations</a> → cache-aside → TTL/invalidation → concurrent fills → overload and consistency.</td>
+</tr>
+<tr>
+<td>Testing and observability</td>
+<td>What behavior are we proving, and how do we diagnose failure?</td>
+<td><a href="/senior-java-interview/part-5#quality-questions-before-performance-and-flakiness">Quality foundations</a> → assertions/test boundaries → logs/metrics/traces → performance → flaky-test diagnosis.</td>
+</tr>
+<tr>
+<td>Infrastructure as code</td>
+<td>How does configuration become real infrastructure?</td>
+<td><a href="/senior-java-interview/part-7#terraform-questions-before-state-internals">Terraform foundations</a> → provider/resource → plan/apply → state → locking/drift and recovery.</td>
+</tr>
+<tr>
+<td>APIs and reactive programming</td>
+<td>How does a request complete, and how does a subscriber receive data?</td>
+<td><a href="/senior-java-interview/part-7#api-questions-before-protocol-choices">API foundations</a> → contracts/retries → protocol choice; <a href="/senior-java-interview/part-8#ac-reactive-programming-spring-webflux">reactive foundations</a> → subscription/demand → operators → WebFlux failures and testing.</td>
+</tr>
+<tr>
+<td>System design</td>
+<td>Which requirements and guarantees should we establish first?</td>
+<td><a href="/senior-java-interview/part-1b#module-7-system-design-prompts-practice-45-min-each">Design interview sequence</a> → estimates → API/data → architecture → failures/scale → trade-offs and full walkthroughs.</td>
+</tr>
+</tbody></table>
 <h3 id="module-1-core-java-concurrency-jvm">Module 1: Core Java, Concurrency, JVM</h3>
 
 <p><em>Detailed answers. More in Vols. 1–3 (Q1–Q74).</em></p>
+<h4 id="c1-what-should-you-explain-before-collection-internals">C1 What should you explain before collection internals</h4>
+
+<p><strong>Strong answer:</strong> distinguish primitive values from references to objects. Java passes argument values, including reference values, by value; assigning a parameter does not replace the caller&#39;s reference, while mutating a shared object can be visible through both references. Explain object identity versus logical equality, and define whether your value is mutable before using it as a collection key.</p>
+
+<p><strong>Follow-up:</strong> List models an ordered sequence with duplicates, Set membership, and Map key-to-value association. Choose using lookup/iteration/order requirements, null policy and mutation patterns. Equality and hashing must agree; comparator-based collections use their ordering relation for key/membership decisions. Learn these contracts before bucket trees or iterator internals.</p>
+
+<p><strong>Senior follow-up:</strong> challenge null/empty input, duplicate keys, mutable keys, comparator consistency and concurrent mutation. A collection&#39;s safety does not imply deep immutability of its elements. Continue with M1.1 and the identity/collection questions in Part 2.</p>
 
 <p><strong>M1.1 How does HashMap work internally?</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is">A good SDE-3 interview answer is:</h4>
@@ -575,6 +680,126 @@ resizing may happen first, and red-black vs AVL.</p>
 
 <p><strong>Only if drilled further:</strong> individual insertion/deletion cases, exact
 OpenJDK <code>TreeNode</code> implementation details, and tie-breaking logic.</p>
+<h3 id="multithreading-questions-foundations-to-senior-follow-ups">Multithreading Questions: foundations to senior follow-ups</h3>
+
+<p>Start here before M1.2–M1.6: why threads → creation → lifecycle → shared state → synchronization → coordination → executors → results → cancellation → collections/context → virtual threads → diagnosis. <strong>Foundation:</strong> explain the API and a small example. <strong>Mid-level:</strong> explain the mechanism and ownership. <strong>Senior/SDE-3:</strong> identify the invariant, capacity limit, failure path and a test that proves the required behavior. Explanations target Java 17/21; virtual-thread APIs require Java 21. These are conceptual walkthroughs and proposed exercises, not new executable examples or benchmarks.</p>
+<h4 id="t1-why-do-we-use-multiple-threads-and-is-concurrency-the-same-as-parallelism">T1 Why do we use multiple threads, and is concurrency the same as parallelism</h4>
+
+<p><strong>Strong answer:</strong> a thread is an execution path within a process. Threads share process resources and can access the same heap objects, while each executes its own call stack. Concurrency means tasks can make progress over overlapping lifetimes; parallelism means work executes at the same time on multiple execution resources. One CPU core can support concurrency without parallel execution. Threads help overlap waiting and can divide CPU work, but scheduling, coordination and shared-state costs can outweigh the benefit.</p>
+
+<p><strong>Follow-up:</strong> an independent request is often a task; the task is not the worker thread. Reusing workers does not make request state safe to share. Creating more workers does not add cores or database connections.</p>
+
+<p><strong>Senior follow-up:</strong> first classify CPU work, blocking I/O and downstream capacity. Measure throughput, p99 latency and queueing against the sequential baseline. Do not promise a speedup merely because execution is concurrent.</p>
+<h4 id="t2-how-do-you-create-and-start-a-thread-in-java">T2 How do you create and start a thread in Java</h4>
+
+<p><strong>Strong answer:</strong> describe work with <code>Runnable</code>, construct a <code>Thread</code> with that task and call <code>start()</code>. In Java 21, <code>Thread.ofPlatform()</code> and <code>Thread.ofVirtual()</code> provide builders. Calling <code>run()</code> directly on a platform Thread is an ordinary method call on the current thread; it does not schedule a new execution path. Directly calling run on a virtual Thread does not execute its task. A Thread can be started only once; starting it again throws <code>IllegalThreadStateException</code>, even after it has terminated. Executors usually separate task submission from thread creation in application code.</p>
+
+<p><strong>Follow-up:</strong> extending Thread couples work to the execution mechanism; implementing Runnable keeps work reusable. <code>Callable&lt;T&gt;</code> can return a result and throw checked exceptions, and is normally submitted to an executor rather than passed directly to a Thread constructor.</p>
+
+<p><strong>Senior follow-up:</strong> decide who owns completion, uncaught exceptions and cleanup. A daemon thread does not keep the JVM alive; it is not a reliable place for work that must finish. Do not rely on thread names or priorities to provide ordering or fairness.</p>
+<h4 id="t3-what-are-the-thread-states-and-how-do-sleep-wait-and-join-differ">T3 What are the thread states, and how do sleep, wait and join differ</h4>
+
+<p><strong>Strong answer:</strong> Java exposes NEW, RUNNABLE, BLOCKED, WAITING, TIMED<em>WAITING and TERMINATED. RUNNABLE includes execution and readiness for execution; it does not prove a thread is consuming CPU. BLOCKED specifically concerns entering a monitor. Other waits, including explicit locks, can appear as WAITING or TIMED</em>WAITING. State is a diagnostic snapshot, not a synchronization protocol.</p>
+
+<p><strong>Follow-up:</strong> <code>sleep</code> pauses the current thread and does not release monitors. <code>Object.wait</code> requires ownership of that object&#39;s monitor, releases that monitor while waiting and reacquires it before returning; it does not release other held locks. <code>join</code> waits for another thread to terminate. A timed join can return before termination, so check completion.</p>
+
+<p><strong>Senior follow-up:</strong> sleep and yield create no shared-memory visibility guarantee. A successful termination observation through join provides an ordering/visibility boundary. Avoid sleeps as a way to “ensure the other thread has finished.”</p>
+<h4 id="t4-what-is-a-race-condition-and-how-do-visibility-and-atomicity-differ">T4 What is a race condition, and how do visibility and atomicity differ</h4>
+
+<p><strong>Strong answer:</strong> a race condition occurs when correctness depends on an uncontrolled interleaving. A data race specifically involves conflicting accesses without the required happens-before relationship. Visibility concerns observing another thread&#39;s writes; atomicity concerns an operation being indivisible relative to other operations; ordering concerns which effects can be observed. <code>count++</code> reads, adds and writes, so two threads can overwrite each other&#39;s increments even if the field is volatile.</p>
+
+<p><strong>Follow-up:</strong> putting each method behind a lock is insufficient if the invariant spans two separately locked calls. “Check stock, then reserve” needs one coherent state transition or an atomic conditional operation.</p>
+
+<p><strong>Senior follow-up:</strong> identify the shared state and the exact invariant before choosing a primitive. Prefer immutable data or single ownership when possible. Continue with M1.3 for publication and the Java Memory Model; a test that happened to pass does not prove a data race absent.</p>
+<h4 id="t5-how-does-synchronized-work-and-when-would-you-use-reentrantlock">T5 How does synchronized work, and when would you use ReentrantLock</h4>
+
+<p><strong>Strong answer:</strong> synchronized acquires the specified object&#39;s monitor and releases it on normal or exceptional exit. An instance synchronized method locks that instance; a static synchronized method locks the class object. Different instances do not share an instance lock. Unlocking and subsequent locking of the same monitor establish visibility as well as mutual exclusion. Reentrant means the owner can reacquire the lock without blocking itself.</p>
+
+<p><strong>Follow-up:</strong> <code>ReentrantLock</code> provides explicit acquisition, including interruptible/timed forms, and Conditions. Release only a lock you acquired, in a finally block. A timed failed acquisition must not call unlock. Fairness can trade throughput for reduced acquisition variance and is not a universal scheduling guarantee.</p>
+
+<p><strong>Senior follow-up:</strong> keep blocking I/O and untrusted callbacks outside critical sections when the invariant permits it. Replacing a lock with a concurrent collection does not automatically preserve a multi-object invariant. M1.2 compares locks, atomics and volatile in more detail.</p>
+<h4 id="t6-how-do-threads-coordinate-work-without-polling">T6 How do threads coordinate work without polling</h4>
+
+<p><strong>Strong answer:</strong> for a monitor protocol, check a condition in a while loop while holding the same monitor that protects the state. <code>wait</code> can return spuriously; notification means recheck, not that the condition is certainly true. The notifier changes protected state before notifying and does not release the monitor merely by calling notify. Higher-level <code>BlockingQueue</code> operations often express producer/consumer coordination more safely.</p>
+
+<p><strong>Follow-up:</strong> <code>notify</code> selects one waiter without guaranteeing it is the right condition&#39;s waiter; <code>notifyAll</code> wakes all waiters to compete and recheck. Multiple Conditions can separate wait sets. A bounded queue provides a capacity policy; timed offer/poll lets the operation respect a deadline.</p>
+
+<p><strong>Senior follow-up:</strong> distinguish an empty queue from completed production. Design explicit completion, failure and cancellation signals. A poison pill must account for all consumers and must not get permanently stuck behind a full queue during shutdown. Continue with the odd/even exercise in Part 4 after learning the guarded-condition protocol.</p>
+<h4 id="t7-when-do-volatile-atomic-classes-and-longadder-fit">T7 When do volatile, atomic classes and LongAdder fit</h4>
+
+<p><strong>Strong answer:</strong> volatile supports visibility/order for that variable, but not an arbitrary compound state transition. Atomic classes provide operations such as compare-and-set, increment and update on their represented state. CAS checks the expected value and conditionally changes it atomically; retry logic may execute its computation more than once, so keep such functions free from non-repeatable side effects. LongAdder reduces contention for accumulating counters, but <code>sum()</code> is not an atomic snapshot under concurrent updates.</p>
+
+<p><strong>Follow-up:</strong> use a volatile stop flag only when work will check it and can make progress; it cannot wake every blocked operation. Use an atomic counter for an exact conditional counter protocol and a lock or immutable aggregate for invariants spanning fields. LongAdder is useful for statistics, not an exact admission check.</p>
+
+<p><strong>Senior follow-up:</strong> ask whether A→B→A matters, whether retry can starve, and whether the algorithm is actually simpler than a lock. Q161 covers stamped references and ABA; Q163 discusses false sharing. Do not equate lock-free with wait-free or with guaranteed better performance.</p>
+<h4 id="t8-what-are-executor-executorservice-and-a-thread-pool">T8 What are Executor, ExecutorService and a thread pool</h4>
+
+<p><strong>Strong answer:</strong> Executor accepts Runnable work and abstracts execution; it need not create a new thread or execute asynchronously. ExecutorService adds submission/results and lifecycle. ThreadPoolExecutor manages workers, a work queue and rejection behavior. For its usual configuration, a new task creates a worker below the core size, then is queued, then may create a worker up to the maximum when queueing fails; otherwise it is rejected. An unbounded queue can prevent normal growth toward the maximum.</p>
+
+<p><strong>Follow-up:</strong> fixed thread pools bound workers but ordinarily use an unbounded queue; cached pools can create many threads. Configure capacity deliberately. CallerRunsPolicy can slow the submitter when saturated, but runs work on the submitting thread and discards rejected work after shutdown; it is not universally safe backpressure. AbortPolicy makes rejection visible to the caller.</p>
+
+<p><strong>Senior follow-up:</strong> waiting tasks retain memory and consume deadline budget. Separate workloads where justified, bound admission and instrument queue age, active workers, rejections and downstream saturation. M1.5 covers sizing; Q148 explains a maximum-size trap. Never block a worker waiting for child work queued behind it in the same saturated pool.</p>
+<h4 id="t9-how-do-runnable-callable-execute-submit-and-future-fit-together">T9 How do Runnable, Callable, execute, submit and Future fit together</h4>
+
+<p><strong>Strong answer:</strong> Runnable has no returned result; Callable returns a value and may throw checked exceptions. <code>execute</code> accepts a Runnable without returning a Future. <code>submit</code> wraps work and returns a Future: get waits for completion and exposes execution failure through ExecutionException. With ordinary ThreadPoolExecutor submission, the wrapper captures task exceptions, so an uncaught-exception handler alone will not report every submitted failure. Observe the Future or another deliberate error channel.</p>
+
+<p><strong>Follow-up:</strong> timed get bounds how long the caller waits; a timeout does not automatically stop the task. Future cancellation is a request governed by the implementation and task cooperation. An already completed task cannot be retroactively cancelled.</p>
+
+<p><strong>Senior follow-up:</strong> define who owns every submitted result, how abandoned work is cancelled and how failures are aggregated. Submission establishes publication to the task, and successful Future.get establishes result visibility. Avoid fire-and-forget operations that can silently lose failures or outlive their owner.</p>
+<h4 id="t10-how-does-completablefuture-compose-work-and-which-thread-runs-a-stage">T10 How does CompletableFuture compose work, and which thread runs a stage</h4>
+
+<p><strong>Strong answer:</strong> CompletableFuture represents a completion and supports dependent stages. <code>thenApply</code> transforms a value; <code>thenCompose</code> flattens a function returning another stage; <code>thenCombine</code> combines independently obtained results. Non-async callbacks may run on a completing thread or another caller of completion methods. Async variants use their supplied executor or the documented default facility, commonly the common pool. Do not assume every stage has its own thread.</p>
+
+<p><strong>Follow-up:</strong> <code>allOf</code> completes after all supplied futures complete but does not collect typed results or automatically cancel siblings on failure. <code>handle</code> can transform success or failure; <code>exceptionally</code> recovers from failure; <code>whenComplete</code> observes completion, but a throwing observer can itself affect the dependent result.</p>
+
+<p><strong>Senior follow-up:</strong> distinguish a future&#39;s timeout/cancellation from cancellation of the actual HTTP/JDBC operation. <code>CompletableFuture.cancel(true)</code> does not use the flag to interrupt its computation. Configure underlying I/O deadlines and explicit cancellation support. Use a deliberately owned executor for blocking operations; Q147 explores flattening and M1.6 compares composition with virtual threads.</p>
+<h4 id="t11-how-do-interruption-cancellation-and-shutdown-work">T11 How do interruption, cancellation and shutdown work</h4>
+
+<p><strong>Strong answer:</strong> interrupt is a cooperative signal, not a forced stop. Interruptible waits such as sleep/wait/join throw InterruptedException and clear the interrupt status. Either propagate it or, when handling it at a boundary, restore the status and exit or hand control to an owner that will handle it. <code>Thread.interrupted()</code> tests and clears the current thread&#39;s status; <code>isInterrupted()</code> does not clear it. Do not use deprecated stop/suspend/resume APIs for lifecycle control.</p>
+
+<p><strong>Follow-up:</strong> shutdown rejects new executor tasks but lets accepted work finish. shutdownNow attempts interruption, returns queued tasks that never started, and does not guarantee termination. Await termination with a bounded budget and report any survivors. Account for returned submitted-task wrappers: their Futures may still need explicit cancellation/completion handling.</p>
+
+<p><strong>Senior follow-up:</strong> Java 21 ExecutorService.close waits for termination; try-with-resources is not a bounded shutdown policy for a stuck task. Cancellation of a caller&#39;s Future is not proof that a side effect did not happen. Stop admitting work, propagate remaining deadlines, release resources only when ownership ends, and reconcile ambiguous external outcomes.</p>
+<h4 id="t12-which-concurrent-collections-and-coordination-tools-should-you-know">T12 Which concurrent collections and coordination tools should you know</h4>
+
+<p><strong>Strong answer:</strong> ConcurrentHashMap provides documented atomic map operations, not thread safety for an arbitrary mutable value inside it. BlockingQueue coordinates handoff with optional bounded capacity. CopyOnWriteArrayList favors frequent traversal and rare writes, with snapshot iterators. CountDownLatch is one-shot completion/starting coordination; CyclicBarrier coordinates a fixed group repeatedly; Phaser supports phased coordination with changing parties; Semaphore bounds permits to a resource.</p>
+
+<p><strong>Follow-up:</strong> release a semaphore permit only after successful acquisition, exactly once, when the represented resource is no longer owned. A timeout before acquisition is not a reason to release. A timeout at the caller can occur while the underlying work still uses capacity.</p>
+
+<p><strong>Senior follow-up:</strong> choose collection and primitive from the invariant, not their “concurrent” name. Q145 covers mutable map values and Q146 covers slow computeIfAbsent callbacks. Barrier failure, missing countdown and broken ownership can prevent progress; include failure paths in the protocol.</p>
+<h4 id="t13-why-does-threadlocal-need-cleanup-and-deliberate-propagation">T13 Why does ThreadLocal need cleanup and deliberate propagation</h4>
+
+<p><strong>Strong answer:</strong> ThreadLocal stores per-thread state. Pooled workers can outlive requests, so values can leak into the next task or retain request objects unless removed in finally at the owning boundary. InheritableThreadLocal copies context at thread creation, not at each submission to an already existing worker. Neither automatically propagates the right request context into every asynchronous stage.</p>
+
+<p><strong>Follow-up:</strong> explicitly capture and install required logging/tenant/security context, then restore or clear the prior worker state on exit. Do not carry a mutable EntityManager or assume a Spring transaction moves with a ThreadLocal copy.</p>
+
+<p><strong>Senior follow-up:</strong> test two unrelated requests on the same worker, exceptions and nested context installation. Virtual threads still need context ownership, and storing an expensive object per virtual thread can consume large aggregate memory. Q8 in Part 2 develops the cleanup discussion.</p>
+<h4 id="t14-when-do-virtual-threads-and-structured-concurrency-help">T14 When do virtual threads and structured concurrency help</h4>
+
+<p><strong>Strong answer:</strong> Java 21 virtual threads make many blocking tasks economical; they do not make CPU work faster or increase a database&#39;s capacity. Use a virtual thread per task and limit admission/scarce resources separately. Do not build a worker pool to reuse virtual threads. Their daemon status means essential work needs an explicit lifetime owner.</p>
+
+<p><strong>Follow-up:</strong> Java 21–23 monitor-related blocking can pin a carrier; JDK 24 removes that monitor pinning. Native/foreign calls still deserve analysis. Check the deployed JDK before mechanically replacing synchronized. Structured concurrency groups child work under a lifetime owner, but the Java 21 API is preview and requires matching build/runtime preview configuration; its shape changes across releases.</p>
+
+<p><strong>Senior follow-up:</strong> define child failure, cancellation, deadlines and partial-result policy before choosing an API. Avoid copying a preview example across JDK versions. M1.6 discusses the virtual-thread/composition choice; Part 11 explains version-sensitive pinning.</p>
+<h4 id="t15-how-do-you-distinguish-deadlock-livelock-starvation-and-overload">T15 How do you distinguish deadlock, livelock, starvation and overload</h4>
+
+<p><strong>Strong answer:</strong> deadlock is a dependency cycle with no progress path; livelock repeatedly reacts without useful progress; starvation denies a task needed resources; overload admits work faster than useful capacity can finish it. A waiting thread alone does not identify which problem exists. Follow locks, queued child tasks, permits, connections and remote dependencies to the actual cycle or bottleneck.</p>
+
+<p><strong>Follow-up:</strong> keep acquisition order consistent and shorten critical sections. Timed acquisition needs a bounded retry policy and a recovery path; adding retries can otherwise create livelock. Thread dumps, JFR, CPU profiles, queue metrics and dependency latency should tell one coherent story.</p>
+
+<p><strong>Senior follow-up:</strong> Java 21 ThreadMXBean does not monitor virtual threads; a null deadlock result cannot rule out their deadlock. Use tools that cover the actual threads and trace application resource dependencies. Continue with M1.4 and Q162–Q163 only after this distinction is clear.</p>
+<h4 id="t16-how-should-you-test-a-concurrency-contract">T16 How should you test a concurrency contract</h4>
+
+<p><strong>Strong answer:</strong> assert an invariant after a controlled interleaving. Use latches/barriers or deterministic fakes to hold tasks at the critical boundary, release them deliberately and await completion with a bounded deadline. Do not assert one scheduler-dependent ordering or rely on sleep. A bounded test timeout is a failure guard, not proof that work was cancelled.</p>
+
+<p><strong>Follow-up:</strong> cover success, no work, duplicate completion, failure before acquisition, cancellation after acquisition, queue rejection, stale ownership and shutdown while work is in flight. Ensure the test releases its own gates and terminates its executors even after an assertion fails.</p>
+
+<p><strong>Senior follow-up:</strong> separate correctness tests from throughput/latency benchmarks and load tests. Repetition can reveal a race but does not prove its absence. Use appropriate stress tools for memory-model claims, representative load for capacity, and JMH for microbenchmarks. Interview answer: state the invariant → name its owner → explain the happens-before edge → define failure/cancellation → show the test and production signal.</p>
+
+<p><strong>Primary references:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Thread.html">Java 21 Thread</a>, <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html">Object wait/notify</a>, <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/package-summary.html">concurrent package contracts</a>, <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ExecutorService.html">ExecutorService</a>, <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ThreadPoolExecutor.html">ThreadPoolExecutor</a>, <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/CompletableFuture.html">CompletableFuture</a>, <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/locks/ReentrantLock.html">ReentrantLock</a>, and <a href="https://docs.oracle.com/en/java/javase/24/core/virtual-threads.html">JDK 24 virtual-thread behavior</a>.</p>
+<h3 id="multithreading-deep-dives-after-the-foundations">Multithreading deep dives after the foundations</h3>
+
+<p>The retained M1.2–M1.6 answers below deepen synchronization, memory ordering, deadlocks, pool sizing and async/virtual-thread choices. Then try Q145–Q148 in Part 10, Q161–Q163 in Part 12 and Q183–Q184 in Part 13. Keep the existing question identifiers for revision; use the ladder above as the learning order.</p>
 
 <p><strong>M1.2 <code>volatile</code> vs <code>synchronized</code> vs atomics vs <code>ReentrantLock</code>?</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is-2">A good SDE-3 interview answer is:</h4>
@@ -813,11 +1038,7 @@ traditional dumps and are not an automatic virtual-thread deadlock detector.
 Trace the actual wait/resource dependency cycle.</p>
 <h4 id="how-to-understand-it">How to understand it</h4>
 
-<p>A deadlock is a dependency cycle with no progress path. A livelock
-keeps doing work without useful progress; starvation repeatedly denies
-one task the resources it needs. Select diagnostic tools that cover the
-thread types and resources involved before treating a clean result as
-evidence of safety.</p>
+<p><strong>Worked explanation:</strong> Imagine transfer A locks account 1 then waits for account 2, while transfer B holds 2 and waits for 1. Neither can release its first lock because each waits inside the operation. Sorting account IDs before acquiring both locks removes that cycle.</p>
 <h4 id="key-terms-you-should-know">Key terms you should know</h4>
 
 <ul>
@@ -827,11 +1048,7 @@ evidence of safety.</p>
 </ul>
 <h4 id="sde-3-interview-checkpoints">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li>Draw the lock/resource acquisition order and identify cycles.</li>
-<li>Identify whether the affected tasks use platform or virtual threads.</li>
-<li>Distinguish blocked tasks from CPU saturation, livelock and starvation.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Does a timeout fix correctness? Only if the operation releases owned resources and leaves a valid state; blind retries can recreate the cycle.</p>
 <h4 id="30-second-version-3">30-second version</h4>
 
 <blockquote>
@@ -846,26 +1063,10 @@ wait dependencies; ThreadMXBean cannot rule out a deadlock.</p>
 <p><strong>M1.5 How do you size and configure a thread pool?</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is-5">A good SDE-3 interview answer is:</h4>
 
-<p>Execution order: new tasks use core threads, then fill the queue, then
-spawn threads up to max, then hit the rejection policy. Sizing:
-CPU-bound ≈ cores + 1; IO-bound ≈ cores × (1 + wait/compute), measured
-under load. Always use a <strong>bounded queue</strong> and a deliberate rejection
-policy (<code>CallerRunsPolicy</code> gives back-pressure);
-<code>Executors.newFixedThreadPool</code> has an unbounded queue and
-<code>newCachedThreadPool</code> an unbounded thread count, and both can take down
-production. Give threads meaningful names, isolate pools per dependency
-(bulkhead), expose queue size and active count as metrics, and shut down
-gracefully (<code>shutdown</code> → <code>awaitTermination</code> → <code>shutdownNow</code>).</p>
+<p>For ThreadPoolExecutor, submissions normally create workers up to core size, then enter the queue; if queueing fails, workers may grow to maximum size, then rejection applies. Size CPU work around effective available CPU and waiting-heavy work from measured wait/compute time and downstream limits. Use bounded admission and an explicit rejection contract. CallerRunsPolicy can slow producers but blocks the submitting thread and discards rejected tasks after shutdown. Monitor queue delay, active work and rejection; shut down with a deadline and define treatment of unfinished tasks. <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ThreadPoolExecutor.html">Java 21 executor contract</a>.</p>
 <h4 id="how-to-understand-it-1">How to understand it</h4>
 
-<p>Treat this as a decision/problem-solving question: explain the mechanism
-or approach first, then the failure modes, trade-offs, and how you would
-verify the result.</p>
-
-<p><strong>Plain-English starting point:</strong> Execution order: new tasks use core
-threads, then fill the queue, then spawn threads up to max, then hit the
-rejection policy. Sizing: CPU-bound ≈ cores + 1; IO-bound ≈ cores × (1 +
-wait/compute), measured under load.</p>
+<p><strong>Worked explanation:</strong> If tasks arrive faster than workers finish them, the queue stores delay and memory. With an unbounded queue, a ThreadPoolExecutor normally queues after reaching its core size, so raising maximumPoolSize may do nothing.</p>
 <h4 id="key-terms-you-should-know-1">Key terms you should know</h4>
 
 <ul>
@@ -877,23 +1078,11 @@ the whole service.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-1">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> What should happen when full? Choose explicit rejection, shedding or bounded caller participation; CallerRunsPolicy can block a request thread and discards tasks after shutdown.</p>
 <h4 id="30-second-version-4">30-second version</h4>
 
 <blockquote>
-<p>Execution order: new tasks use core threads, then fill the queue, then
-spawn threads up to max, then hit the rejection policy. Sizing:
-CPU-bound ≈ cores + 1; IO-bound ≈ cores × (1 + wait/compute), measured
-under load.</p>
+<p>A pool controls workers, queueing and rejection together. An unbounded queue can prevent growth beyond core size. Bound admission, measure queue delay and downstream capacity, and define shutdown and rejection behavior.</p>
 </blockquote>
 
 <p><strong>M1.6 CompletableFuture vs virtual threads: when do you use which?</strong></p>
@@ -911,13 +1100,7 @@ and cancellation as well as future timeouts. <a href="https://docs.oracle.com/en
 24</a>.</p>
 <h4 id="how-to-understand-it-2">How to understand it</h4>
 
-<p>Compare the options by correctness, operational behavior, performance,
-failure modes, and when you would choose each one—not just by
-definitions.</p>
-
-<p><strong>Plain-English starting point:</strong> Virtual threads are final in Java 21
-and fit workloads that spend much of their time waiting. They do not
-accelerate CPU-bound work or enlarge a database connection pool.</p>
+<p><strong>Worked explanation:</strong> For three independent remote reads, futures can describe the result-combination graph; virtual threads let each read use ordinary blocking code cheaply. Both still wait for the same remote services and share their limits.</p>
 <h4 id="key-terms-you-should-know-2">Key terms you should know</h4>
 
 <ul>
@@ -928,16 +1111,7 @@ designed to make high-concurrency blocking I/O easier to scale.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-2">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Does a future timeout stop the remote call? Not necessarily; configure the client&#39;s deadline and the cancellation path as well.</p>
 <h4 id="30-second-version-5">30-second version</h4>
 
 <blockquote>
@@ -945,32 +1119,22 @@ metric, log, trace, profiler, or operational signal when applicable.</li>
 of their time waiting. They do not accelerate CPU-bound work or
 enlarge a database connection pool.</p>
 </blockquote>
+<h3 id="jvm-foundations-before-garbage-collector-choices">JVM foundations before garbage-collector choices</h3>
+<h4 id="j1-what-do-the-jdk-jvm-heap-and-thread-stacks-do">J1 What do the JDK, JVM, heap and thread stacks do</h4>
+
+<p><strong>Strong answer:</strong> the JDK provides development tools and a runtime; the JVM executes bytecode through interpretation and compilation while managing memory and other runtime services. Heap objects can be shared by threads; thread stacks hold frames, local values and references for their execution paths. A stack-held reference can keep a heap object reachable. Garbage collection reclaims unreachable heap objects, not objects that an application merely “finished using.”</p>
+
+<p><strong>Follow-up:</strong> a growing cache, listener registration or ThreadLocal can retain reachable objects. Closing a socket/database resource is a lifecycle responsibility rather than a promise of prompt garbage collection. Stack exhaustion and heap exhaustion have different causes; increasing one limit does not fix both.</p>
+
+<p><strong>Senior follow-up:</strong> establish allocation rate, live retained data and pause/CPU cost before choosing GC flags. Use logs/JFR and retention evidence rather than calling every increase in heap occupancy a leak. Continue with M1.7 and Part 11&#39;s JVM walkthroughs.</p>
 
 <p><strong>M1.7 Explain garbage collection and how you tune it.</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is-7">A good SDE-3 interview answer is:</h4>
 
-<p>Generational heap: young (eden + survivors) collected frequently, old
-collected rarely; objects that survive enough cycles are promoted. G1
-(default) is region-based and works to a pause target
-(<code>-XX:MaxGCPauseMillis</code>); ZGC and Shenandoah target low pauses using
-concurrent work; actual latency depends on the collector, JDK and
-workload; Parallel maximises throughput for batch. Tuning approach:
-define a goal (latency or throughput), enable GC logs (<code>-Xlog:gc*</code>),
-look at pause time, allocation rate, promotion rate and heap after full
-GC; fix allocation hot spots first and only then change flags. Premature
-flag-tweaking is a red flag; reducing garbage is usually the best
-optimisation.</p>
+<p>GC reclaims unreachable objects; the layout and collection process depend on the collector and JDK. G1 uses regions and generational collection; young collections and mixed collections do different work. ZGC and Shenandoah use concurrent techniques to reduce pauses, while Parallel GC targets throughput. Define latency, throughput and memory objectives, then inspect GC logs, allocation rate and live-set retention before tuning. A pause target is a goal rather than a hard deadline, and reducing allocation helps only if it is a measured bottleneck.</p>
 <h4 id="how-to-understand-it-3">How to understand it</h4>
 
-<p>First understand the core concept, then explain why it exists, how it
-behaves in production, and what trade-off you would make.</p>
-
-<p><strong>Plain-English starting point:</strong> Generational heap: young (eden +
-survivors) collected frequently, old collected rarely; objects that
-survive enough cycles are promoted. G1 (default) is region-based and
-works to a pause target (<code>-XX:MaxGCPauseMillis</code>); ZGC and Shenandoah
-target low pauses using concurrent work; actual latency depends on the
-collector, JDK and workload; Parallel maximises throughput for batch.</p>
+<p><strong>Worked explanation:</strong> Allocation creates objects; reachability determines which can be reclaimed. A growing heap before GC can be normal, whereas an increasing live set after collections suggests retention. Compare these before changing collector settings.</p>
 <h4 id="key-terms-you-should-know-3">Key terms you should know</h4>
 
 <ul>
@@ -981,31 +1145,19 @@ collector, JDK and workload; Parallel maximises throughput for batch.</p>
 </ul>
 <h4 id="sde-3-interview-checkpoints-3">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Will a larger heap fix a leak? It can delay failure while retaining the same unwanted objects; inspect retaining paths and measured pauses.</p>
 <h4 id="30-second-version-6">30-second version</h4>
 
 <blockquote>
-<p>Generational heap: young (eden + survivors) collected frequently, old
-collected rarely; objects that survive enough cycles are promoted. G1
-(default) is region-based and works to a pause target
-(<code>-XX:MaxGCPauseMillis</code>); ZGC and Shenandoah target low pauses using
-concurrent work; actual latency depends on the collector, JDK and
-workload; Parallel maximises throughput for batch.</p>
+<p>Start from reachability and the chosen collector. Measure allocation, retained live data and pauses, then fix the dominant cause. Avoid treating every collector as the same young/old layout or a pause target as a guarantee.</p>
 </blockquote>
 
 <hr>
 <h3 id="module-2-spring-spring-boot">Module 2: Spring &amp; Spring Boot</h3>
 
 <p><em>More in Q11–Q19, Q37–Q42.</em></p>
+
+<p><strong>Start here:</strong> <a href="/senior-java-interview/part-13#spring-boot-annotations-usage-to-internals-to-senior-diagnosis">Spring annotation foundations and senior follow-ups</a>. Learn bean registration → injection/lifecycle → configuration → proxies → web/data integration before the auto-configuration and transaction questions below.</p>
 
 <p><strong>M2.1 How does Spring Boot auto-configuration work?</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is-8">A good SDE-3 interview answer is:</h4>
@@ -1023,17 +1175,7 @@ your own starter: an autoconfigure module plus a thin starter POM and
 <code>@ConfigurationProperties</code> for settings.</p>
 <h4 id="how-to-understand-it-4">How to understand it</h4>
 
-<p>Treat this as a decision/problem-solving question: explain the mechanism
-or approach first, then the failure modes, trade-offs, and how you would
-verify the result.</p>
-
-<p><strong>Plain-English starting point:</strong> <code>@SpringBootApplication</code> combines
-<code>@Configuration</code>, <code>@ComponentScan</code> and <code>@EnableAutoConfiguration</code>. The
-latter loads candidate classes listed in
-<code>META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports</code>
-from every jar on the classpath, and each is guarded by conditions
-(<code>@ConditionalOnClass</code>, <code>@ConditionalOnMissingBean</code>,
-<code>@ConditionalOnProperty</code>).</p>
+<p><strong>Worked explanation:</strong> Adding a JDBC driver and connection settings can make Boot register database infrastructure when its conditions match. Providing a matching custom bean can make that particular default back off. Component scanning and conditional auto-configuration are separate discovery paths.</p>
 <h4 id="key-terms-you-should-know-4">Key terms you should know</h4>
 
 <ul>
@@ -1041,16 +1183,7 @@ from every jar on the classpath, and each is guarded by conditions
 </ul>
 <h4 id="sde-3-interview-checkpoints-4">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Why is a bean missing? Read the condition report for the unmet class, property or bean condition before adding exclusions.</p>
 <h4 id="30-second-version-7">30-second version</h4>
 
 <blockquote>
@@ -1066,28 +1199,10 @@ from every jar on the classpath, and each is guarded by conditions
 <p><strong>M2.2 Describe the bean lifecycle and scopes.</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is-9">A good SDE-3 interview answer is:</h4>
 
-<p>Instantiate (constructor) → inject dependencies → <code>Aware</code> callbacks →
-<code>BeanPostProcessor.postProcessBeforeInitialization</code> → <code>@PostConstruct</code> /
-<code>InitializingBean</code> / <code>init-method</code> → <code>postProcessAfterInitialization</code>
-(where AOP proxies and <code>@Transactional</code> wrappers are created) → in use →
-<code>@PreDestroy</code> on shutdown. Scopes: singleton (default, one per
-container, so it must be stateless or thread-safe), prototype, and web
-scopes (request, session). A singleton holding a prototype gets only one
-instance, so use <code>ObjectProvider</code> or a scoped proxy.</p>
+<p>Spring creates a bean, populates dependencies, invokes applicable awareness and initialization callbacks, and exposes the processed instance, often a proxy. Annotation processors invoke @PostConstruct during before-initialization processing; InitializingBean and custom init callbacks then participate in the configured lifecycle. Managed singleton destruction can invoke @PreDestroy; prototype cleanup is the caller&#39;s responsibility. Singleton means one instance per bean definition per container, not automatic thread safety. Injecting a prototype once into a singleton gives that injection one instance; use a provider for repeated retrieval. <a href="https://docs.spring.io/spring-framework/reference/6.2/core/beans/factory-nature.html">Spring lifecycle</a>, <a href="https://docs.spring.io/spring-framework/reference/6.2/core/beans/factory-scopes.html">scopes</a>.</p>
 <h4 id="how-to-understand-it-5">How to understand it</h4>
 
-<p>Treat this as a decision/problem-solving question: explain the mechanism
-or approach first, then the failure modes, trade-offs, and how you would
-verify the result.</p>
-
-<p><strong>Plain-English starting point:</strong> Instantiate (constructor) → inject
-dependencies → <code>Aware</code> callbacks →
-<code>BeanPostProcessor.postProcessBeforeInitialization</code> → <code>@PostConstruct</code> /
-<code>InitializingBean</code> / <code>init-method</code> → <code>postProcessAfterInitialization</code>
-(where AOP proxies and <code>@Transactional</code> wrappers are created) → in use →
-<code>@PreDestroy</code> on shutdown. Scopes: singleton (default, one per
-container, so it must be stateless or thread-safe), prototype, and web
-scopes (request, session).</p>
+<p><strong>Worked explanation:</strong> The container creates an object, supplies dependencies, initializes it and exposes the resulting bean, potentially through a proxy. A singleton consumer receives a prototype once during injection; the prototype scope does not turn that field into a factory.</p>
 <h4 id="key-terms-you-should-know-5">Key terms you should know</h4>
 
 <ul>
@@ -1098,27 +1213,11 @@ calls, commonly used by Spring for transactions, security and AOP.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-5">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> How do you obtain a fresh prototype per operation? Ask an ObjectProvider; also define cleanup because Spring does not automatically destroy prototype instances.</p>
 <h4 id="30-second-version-8">30-second version</h4>
 
 <blockquote>
-<p>Instantiate (constructor) → inject dependencies → <code>Aware</code> callbacks →
-<code>BeanPostProcessor.postProcessBeforeInitialization</code> → <code>@PostConstruct</code>
-/ <code>InitializingBean</code> / <code>init-method</code> →
-<code>postProcessAfterInitialization</code> (where AOP proxies and
-<code>@Transactional</code> wrappers are created) → in use → <code>@PreDestroy</code> on
-shutdown. Scopes: singleton (default, one per container, so it must be
-stateless or thread-safe), prototype, and web scopes (request,
-session).</p>
+<p>Explain construction, dependency population, initialization, post-processing and managed destruction. Singleton scope is container-local and does not imply thread safety. Prototype retrieval and cleanup need deliberate ownership.</p>
 </blockquote>
 
 <p><strong>M2.3 Why prefer constructor injection?</strong></p>
@@ -1131,26 +1230,10 @@ injection hides dependencies, needs reflection in tests, and encourages
 cycles. Use setter injection only for genuinely optional dependencies.</p>
 <h4 id="how-to-understand-it-6">How to understand it</h4>
 
-<p>First understand the core concept, then explain why it exists, how it
-behaves in production, and what trade-off you would make.</p>
-
-<p><strong>Plain-English starting point:</strong> Dependencies are explicit and <code>final</code>,
-the object is never half-built, it can be unit-tested with <code>new</code> and
-mocks, and an excess of constructor parameters exposes a class doing too
-much (Single Responsibility). Field injection hides dependencies, needs
-reflection in tests, and encourages cycles.</p>
+<p><strong>Worked explanation:</strong> An OrderService constructed with a PaymentGateway makes the dependency visible at its creation point. A test can supply a fake gateway directly. Missing dependencies become construction failures instead of surprising null fields later.</p>
 <h4 id="sde-3-interview-checkpoints-6">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Does final make the dependency thread-safe? No; it prevents reassignment of the reference, not mutation inside the referenced gateway.</p>
 <h4 id="30-second-version-9">30-second version</h4>
 
 <blockquote>
@@ -1176,20 +1259,13 @@ state. <code>REQUIRES_NEW</code> needs independent resources; <code>NESTED</code
 savepoint support. An async task does not inherit its caller&#39;s
 transaction, but can start its own by calling a transactional service
 through its proxy. Keep transaction scope short; <code>readOnly=true</code> is not
-portable write prevention. <a href="https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/annotations.html">Spring transaction
+portable write prevention. <a href="https://docs.spring.io/spring-framework/reference/6.2/data-access/transaction/declarative/annotations.html">Spring transaction
 annotations</a>,
 <a href="https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/tx-decl-explained.html">transaction
 implementation</a>.</p>
 <h4 id="how-to-understand-it-7">How to understand it</h4>
 
-<p>Treat this as a decision/problem-solving question: explain the mechanism
-or approach first, then the failure modes, trade-offs, and how you would
-verify the result.</p>
-
-<p><strong>Plain-English starting point:</strong> A call through a Spring transaction
-proxy is intercepted by the configured transaction manager. With
-ordinary JDBC/JPA, work usually participates in a thread-bound
-transaction.</p>
+<p><strong>Worked explanation:</strong> Trace an external call through the proxy: begin or join a transaction, invoke the target, then commit or roll back. A target calling its own method skips that proxy boundary, so a different annotation on the inner method may have no effect.</p>
 <h4 id="key-terms-you-should-know-6">Key terms you should know</h4>
 
 <ul>
@@ -1202,16 +1278,7 @@ operation with defined commit/rollback behavior.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-7">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> What if an inner call marks rollback-only and the caller catches its exception? The transaction may still fail at commit; catching does not repair it.</p>
 <h4 id="30-second-version-10">30-second version</h4>
 
 <blockquote>
@@ -1240,10 +1307,7 @@ tokens. Return 401 for invalid/missing authentication and 403 for denied
 authorization.</p>
 <h4 id="how-to-understand-it-8">How to understand it</h4>
 
-<p>A valid signature proves that a trusted key signed the token. It does
-not by itself prove that the token has the expected issuer or was issued
-for this API. This distinction matters when multiple issuers or
-applications share signing infrastructure. Test each claim independently.</p>
+<p><strong>Worked explanation:</strong> For an orders request, first verify the token&#39;s signature and trusted claims, then map its authorities, then check access to the requested order. A valid token proves neither ownership of every order nor permission for every action.</p>
 <h4 id="key-terms-you-should-know-7">Key terms you should know</h4>
 
 <ul>
@@ -1253,11 +1317,7 @@ applications share signing infrastructure. Test each claim independently.</p>
 </ul>
 <h4 id="sde-3-interview-checkpoints-8">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li>Reject a validly signed token with the wrong issuer or audience.</li>
-<li>Test expired/not-yet-valid tokens and signing-key rotation.</li>
-<li>Verify both endpoint authorization and object ownership.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Why check audience? A token valid for a different API must not automatically authorize this API.</p>
 <h4 id="30-second-version-11">30-second version</h4>
 
 <blockquote>
@@ -1281,18 +1341,7 @@ migrations, <code>ddl-auto=validate</code>), security (HTTPS, headers, dependenc
 scanning), plus tests, CI/CD and runbooks with SLOs and alerts.</p>
 <h4 id="how-to-understand-it-9">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Observability (Actuator
-health/readiness/liveness, Micrometer metrics to Prometheus/Cloud
-Monitoring, structured logs with trace IDs, OpenTelemetry), resilience
-(timeouts, circuit breakers, bounded pools, graceful shutdown),
-configuration (externalised, validated <code>@ConfigurationProperties</code>,
-secrets from a vault), data safety (Flyway migrations,
-<code>ddl-auto=validate</code>), security (HTTPS, headers, dependency scanning),
-plus tests, CI/CD and runbooks with SLOs and alerts.</p>
+<p><strong>Worked explanation:</strong> Take one payment request and ask how you detect failure, limit its duration, protect its data and recover its outcome. Each production control should answer one of those operational questions rather than merely add a library.</p>
 <h4 id="key-terms-you-should-know-8">Key terms you should know</h4>
 
 <ul>
@@ -1303,16 +1352,7 @@ services.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-9">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> What proves readiness? A tested deployment and recovery path with observable user outcomes, not simply an Actuator endpoint returning UP.</p>
 <h4 id="30-second-version-12">30-second version</h4>
 
 <blockquote>
@@ -1329,6 +1369,8 @@ scanning), plus tests, CI/CD and runbooks with SLOs and alerts.</p>
 <h3 id="module-3-hibernate-jpa">Module 3: Hibernate / JPA</h3>
 
 <p><em>More in Q20–Q25.</em></p>
+
+<p><strong>Start here:</strong> <a href="/senior-java-interview/part-16#start-here-database-connections-and-session-management">database connections and session management</a>. Learn JDBC/Boot connection setup → pool → Session/EntityManager and factories → transaction manager → entity lifecycle → mappings before N+1 or inheritance strategies.</p>
 
 <p><strong>M3.1 What is the N+1 problem and how do you fix it?</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is-14">A good SDE-3 interview answer is:</h4>
@@ -1347,14 +1389,7 @@ applied in memory, so paginate parent IDs first and fetch children
 second.</p>
 <h4 id="how-to-understand-it-10">How to understand it</h4>
 
-<p>First understand the core concept, then explain why it exists, how it
-behaves in production, and what trade-off you would make.</p>
-
-<p><strong>Plain-English starting point:</strong> One query loads N parents and then
-lazily triggers one query per parent for a child association, giving N+1
-round-trips that look fine in dev and collapse under production data.
-Detect it with SQL logging, Hibernate statistics, or tests asserting a
-query count (datasource-proxy).</p>
+<p><strong>Worked explanation:</strong> Loading 50 orders in one query and then touching each customer&#39;s proxy can cause 50 additional selects. A use-case fetch plan loads the required relationship deliberately, reducing round trips without making every association globally eager.</p>
 <h4 id="key-terms-you-should-know-9">Key terms you should know</h4>
 
 <ul>
@@ -1366,16 +1401,7 @@ calls, commonly used by Spring for transactions, security and AOP.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-10">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Why not fetch every collection? Joined rows multiply, and collection pagination may require a separate parent-ID page.</p>
 <h4 id="30-second-version-13">30-second version</h4>
 
 <blockquote>
@@ -1389,26 +1415,10 @@ Hibernate statistics, or tests asserting a query count
 <p><strong>M3.2 Explain entity states and the persistence context.</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is-15">A good SDE-3 interview answer is:</h4>
 
-<p>An entity is <em>transient</em> (new), <em>managed</em> (tracked by the session),
-<em>detached</em> (session closed) or <em>removed</em>. The persistence context is a
-first-level cache and unit of work: reading the same ID twice returns
-the same instance, and at flush Hibernate compares loaded snapshots to
-current state (<strong>dirty checking</strong>) and issues UPDATEs automatically, so
-calling <code>save()</code> on a managed entity is unnecessary. Flush happens
-before queries (auto mode) and at commit. Long-lived contexts or bulk
-loads grow memory, so use <code>clear()</code> or batching.</p>
+<p>An entity can be new/transient, managed, detached or removed. A persistence context tracks entity identity and changes; modifying a managed entity can produce SQL at flush without another save call. Detachment can follow close, clear or explicit detach. Flush synchronizes changes without committing; AUTO flushing depends on transaction and query semantics and does not mean every query always flushes. Bound context size during bulk work and flush deliberately before clearing pending changes.</p>
 <h4 id="how-to-understand-it-11">How to understand it</h4>
 
-<p>First understand the core concept, then explain why it exists, how it
-behaves in production, and what trade-off you would make.</p>
-
-<p><strong>Plain-English starting point:</strong> An entity is <em>transient</em> (new),
-<em>managed</em> (tracked by the session), <em>detached</em> (session closed) or
-<em>removed</em>. The persistence context is a first-level cache and unit of
-work: reading the same ID twice returns the same instance, and at flush
-Hibernate compares loaded snapshots to current state (<strong>dirty
-checking</strong>) and issues UPDATEs automatically, so calling <code>save()</code> on a
-managed entity is unnecessary.</p>
+<p><strong>Worked explanation:</strong> Load an order inside a persistence context, change its status and flush: Hibernate tracks the managed instance and synchronizes the change. Closing the context detaches it; changing that detached object alone no longer schedules an update.</p>
 <h4 id="key-terms-you-should-know-10">Key terms you should know</h4>
 
 <ul>
@@ -1420,25 +1430,11 @@ database.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-11">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Is flush a commit? No; SQL can run and still be rolled back by the surrounding transaction.</p>
 <h4 id="30-second-version-14">30-second version</h4>
 
 <blockquote>
-<p>An entity is <em>transient</em> (new), <em>managed</em> (tracked by the session),
-<em>detached</em> (session closed) or <em>removed</em>. The persistence context is a
-first-level cache and unit of work: reading the same ID twice returns
-the same instance, and at flush Hibernate compares loaded snapshots to
-current state (<strong>dirty checking</strong>) and issues UPDATEs automatically,
-so calling <code>save()</code> on a managed entity is unnecessary.</p>
+<p>The persistence context supplies identity and change tracking. Managed changes reach SQL at flush, while detached changes do not automatically persist. Flush and commit differ, and clearing can discard unflushed work.</p>
 </blockquote>
 
 <p><strong>M3.3 Lazy vs eager, and <code>LazyInitializationException</code>?</strong></p>
@@ -1455,14 +1451,7 @@ boundaries. The right fixes: fetch what you need in the service layer
 (<code>EntityGraph</code>/join fetch) or return DTOs.</p>
 <h4 id="how-to-understand-it-12">How to understand it</h4>
 
-<p>Compare the options by correctness, operational behavior, performance,
-failure modes, and when you would choose each one—not just by
-definitions.</p>
-
-<p><strong>Plain-English starting point:</strong> Make associations LAZY by default;
-JPA&#39;s defaults for <code>@ManyToOne</code>/<code>@OneToOne</code> are EAGER, so set
-<code>fetch = LAZY</code> explicitly. The exception occurs when a proxy is touched
-after the session closed.</p>
+<p><strong>Worked explanation:</strong> A service returns an order whose lines were never loaded. Serialization later touches the lines after the context closed and fails. Build the required DTO while the deliberate fetch boundary is still active.</p>
 <h4 id="key-terms-you-should-know-11">Key terms you should know</h4>
 
 <ul>
@@ -1476,16 +1465,7 @@ it may be a Spring-managed bean and is not a Kubernetes Service.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-12">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Does EAGER guarantee one query? No; it specifies fetching semantics, and providers can issue additional selects.</p>
 <h4 id="30-second-version-15">30-second version</h4>
 
 <blockquote>
@@ -1508,13 +1488,7 @@ and keep transactions short to avoid deadlocks (and use <code>SKIP LOCKED</code>
 for queue-like tables).</p>
 <h4 id="how-to-understand-it-13">How to understand it</h4>
 
-<p>Compare the options by correctness, operational behavior, performance,
-failure modes, and when you would choose each one—not just by
-definitions.</p>
-
-<p><strong>Plain-English starting point:</strong> Optimistic uses a <code>@Version</code> column:
-<code>UPDATE … WHERE id=? AND version=?</code>; zero rows updated throws
-<code>OptimisticLockException</code>, which you retry or surface as 409.</p>
+<p><strong>Worked explanation:</strong> Two transactions read version 4. The first updates with version=4 and advances it; the second update matches no row and detects stale state. A pessimistic strategy instead acquires a database lock before the conflicting work.</p>
 <h4 id="key-terms-you-should-know-12">Key terms you should know</h4>
 
 <ul>
@@ -1523,16 +1497,7 @@ operation with defined commit/rollback behavior.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-13">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> What should be retried? Re-read and re-evaluate the business operation in a new transaction; never blindly replay an external charge.</p>
 <h4 id="30-second-version-16">30-second version</h4>
 
 <blockquote>
@@ -1554,18 +1519,7 @@ keep transactions short; and use Flyway to manage schema and index
 changes.</p>
 <h4 id="how-to-understand-it-14">How to understand it</h4>
 
-<p>Treat this as a decision/problem-solving question: explain the mechanism
-or approach first, then the failure modes, trade-offs, and how you would
-verify the result.</p>
-
-<p><strong>Plain-English starting point:</strong> Measure first (slow-query log,
-<code>pg_stat_statements</code>, p6spy). Then: fix N+1; project to DTOs for read
-paths; add proper indexes (check <code>EXPLAIN</code>); enable JDBC batching
-(<code>hibernate.jdbc.batch_size</code>, <code>order_inserts/updates</code>); use SEQUENCE
-generators with pooled optimisers because IDENTITY disables insert
-batching; use second-level/query caches only for read-mostly data;
-paginate with keyset; avoid huge <code>IN</code> lists; keep transactions short;
-and use Flyway to manage schema and index changes.</p>
+<p><strong>Worked explanation:</strong> Separate time spent waiting for a connection, executing SQL, transferring rows and materializing objects. An ORM setting cannot repair a missing index or a transaction holding connections during a slow HTTP call.</p>
 <h4 id="key-terms-you-should-know-13">Key terms you should know</h4>
 
 <ul>
@@ -1575,16 +1529,7 @@ round trips.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-14">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> How do you prove improvement? Compare query count, plans and latency on representative data with the same result contract.</p>
 <h4 id="30-second-version-17">30-second version</h4>
 
 <blockquote>
@@ -1602,6 +1547,13 @@ to manage schema and index changes.</p>
 <h3 id="module-4-microservices">Module 4: Microservices</h3>
 
 <p><em>More in Q26–Q30, Q59–Q74.</em></p>
+<h4 id="f1-what-is-a-microservice-and-how-does-one-request-cross-services">F1 What is a microservice and how does one request cross services</h4>
+
+<p><strong>Strong answer:</strong> a microservice is an independently deployable service around a coherent business capability with explicit API and data ownership. A client/request enters an API, invokes local business logic and may call another service synchronously or publish an event. Crossing a service boundary introduces network delay, partial failure and separate deployment/lifecycle ownership. A modular monolith may satisfy the need with less operational cost.</p>
+
+<p><strong>Follow-up:</strong> HTTP/gRPC offers a request/result interaction; messaging separates sending from later processing. Neither makes a multi-service operation automatically atomic. Define contracts, deadlines and who owns retry/idempotency before selecting a transport.</p>
+
+<p><strong>Senior follow-up:</strong> start with one concrete user operation and trace what happens when a downstream call times out after accepting the request. Avoid retries that duplicate side effects. Then study boundaries, consistency and migration in M4.1 onward.</p>
 
 <p><strong>M4.1 How do you split a monolith into microservices?</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is-19">A good SDE-3 interview answer is:</h4>
@@ -1616,17 +1568,7 @@ deploy together. Ensure CI/CD, observability and team ownership exist
 <em>before</em> splitting.</p>
 <h4 id="how-to-understand-it-15">How to understand it</h4>
 
-<p>Treat this as a decision/problem-solving question: explain the mechanism
-or approach first, then the failure modes, trade-offs, and how you would
-verify the result.</p>
-
-<p><strong>Plain-English starting point:</strong> Use the <strong>strangler fig</strong> pattern: put
-a routing layer (gateway) in front, carve out one bounded context at a
-time (often the highest-change or most independently scalable, not the
-shared core), and migrate its data so each service owns its database,
-with an anti-corruption layer where models differ. Identify boundaries
-with DDD (event storming), not technical layers, and avoid a
-<em>distributed monolith</em> where services must deploy together.</p>
+<p><strong>Worked explanation:</strong> Extracting inventory means giving it ownership of reservation rules and data, not merely moving its controller into another process. The old application calls that boundary while migration proceeds incrementally.</p>
 <h4 id="key-terms-you-should-know-14">Key terms you should know</h4>
 
 <ul>
@@ -1639,16 +1581,7 @@ defined interface; a Kubernetes Service is a specific networking resource.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-15">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> When should extraction stop? If independent deployment and ownership are not achievable, the added network boundary may only create a distributed monolith.</p>
 <h4 id="30-second-version-18">30-second version</h4>
 
 <blockquote>
@@ -1675,15 +1608,7 @@ relay or CDC. Design compensations carefully (a refund is not an undo),
 and make every step idempotent.</p>
 <h4 id="how-to-understand-it-16">How to understand it</h4>
 
-<p>Treat this as a decision/problem-solving question: explain the mechanism
-or approach first, then the failure modes, trade-offs, and how you would
-verify the result.</p>
-
-<p><strong>Plain-English starting point:</strong> Two-phase commit coordinates atomic
-commit but can block under failures and couples availability. When that
-trade-off is unsuitable, consider a <strong>Saga</strong>: a sequence of local
-transactions, each followed by an event, with compensating actions on
-failure.</p>
+<p><strong>Worked explanation:</strong> An order flow reserves stock, charges payment and confirms delivery in separate local transactions. If payment fails, release the reservation through a compensating step; persist progress so recovery knows what already happened.</p>
 <h4 id="key-terms-you-should-know-15">Key terms you should know</h4>
 
 <ul>
@@ -1700,16 +1625,7 @@ global database transaction.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-16">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Is compensation rollback? No; it is another business action that can fail and require retry or manual reconciliation.</p>
 <h4 id="30-second-version-19">30-second version</h4>
 
 <blockquote>
@@ -1730,15 +1646,7 @@ out-of-order delivery with versions or timestamps, and poison messages
 through retries and dead-letter queues.</p>
 <h4 id="how-to-understand-it-17">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Brokers provide at-most-once,
-at-least-once (most common) or exactly-once within narrow scopes. Real
-systems use at-least-once plus <strong>idempotent consumers</strong> (dedupe on event
-ID in the same transaction as the business change) so duplicates are
-harmless.</p>
+<p><strong>Worked explanation:</strong> A consumer commits an order update and crashes before acknowledging the event. Redelivery is expected. Saving the event ID atomically with that update lets the next attempt recognize completed work.</p>
 <h4 id="key-terms-you-should-know-16">Key terms you should know</h4>
 
 <ul>
@@ -1747,16 +1655,7 @@ operation with defined commit/rollback behavior.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-17">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Can a separate deduplication cache guarantee this? Not if it can disagree with the business transaction; define an atomic boundary or reconciliation protocol.</p>
 <h4 id="30-second-version-20">30-second version</h4>
 
 <blockquote>
@@ -1779,18 +1678,7 @@ Verify with chaos or fault-injection tests. Naive retries amplify
 outages (retry storms).</p>
 <h4 id="how-to-understand-it-18">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Timeouts on every remote call (shorter
-than the caller&#39;s budget), retries only for idempotent and transient
-failures with exponential backoff + jitter and a retry budget, <strong>circuit
-breaker</strong> (closed → open → half-open) to fail fast and give the
-dependency time to recover, <strong>bulkhead</strong> (separate pools per
-dependency), rate limiting and load shedding, fallbacks/caches for
-degraded mode, and health-based routing. Verify with chaos or
-fault-injection tests.</p>
+<p><strong>Worked explanation:</strong> A slow dependency retains caller threads and connections; retries increase its load. Deadlines limit waiting, a bulkhead limits the affected capacity, and a breaker temporarily stops calls likely to fail.</p>
 <h4 id="key-terms-you-should-know-17">Key terms you should know</h4>
 
 <ul>
@@ -1800,16 +1688,7 @@ the whole service.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-18">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Is a fallback always safe? Only when its result preserves the business contract; a stale price or invented payment success is not harmless degradation.</p>
 <h4 id="30-second-version-21">30-second version</h4>
 
 <blockquote>
@@ -1825,63 +1704,30 @@ health-based routing. Verify with chaos or fault-injection tests.</p>
 <p><strong>M4.5 Explain CAP and how it influences design.</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is-23">A good SDE-3 interview answer is:</h4>
 
-<p>During a network partition you must choose consistency (reject or block
-requests to stay correct) or availability (answer with possibly stale
-data). Banking ledgers lean CP; product catalogues and feeds lean AP
-with eventual consistency. Mention PACELC (even without partitions there
-is a latency-vs-consistency trade-off), and techniques such as quorum
-reads/writes, read-your-writes, and conflict resolution.</p>
+<p>CAP says that during a network partition, a system cannot guarantee both linearizable behavior and successful responses to every request at a non-failing node. Preserving the single up-to-date history can require refusing some operations; serving both sides needs a defined consistency/conflict contract. Choose by operation and business invariant, not broad labels such as banking versus catalogue. PACELC additionally asks about latency and consistency when no partition exists.</p>
 <h4 id="how-to-understand-it-19">How to understand it</h4>
 
-<p>First understand the core concept, then explain why it exists, how it
-behaves in production, and what trade-off you would make.</p>
-
-<p><strong>Plain-English starting point:</strong> During a network partition you must
-choose consistency (reject or block requests to stay correct) or
-availability (answer with possibly stale data). Banking ledgers lean CP;
-product catalogues and feeds lean AP with eventual consistency.</p>
+<p><strong>Worked explanation:</strong> During a partition, two replicas cannot always coordinate before answering. Requiring one up-to-date order forces some requests to wait or fail; accepting operations on both sides requires a conflict strategy.</p>
 <h4 id="sde-3-interview-checkpoints-19">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> What does consistency mean here? CAP uses linearizability, not simply valid business data or the C in ACID.</p>
 <h4 id="30-second-version-22">30-second version</h4>
 
 <blockquote>
-<p>During a network partition you must choose consistency (reject or
-block requests to stay correct) or availability (answer with possibly
-stale data). Banking ledgers lean CP; product catalogues and feeds
-lean AP with eventual consistency.</p>
+<p>Define consistency as linearizability and describe one operation during a partition. Explain which requests may fail or become stale and why the business accepts that trade-off; CAP is not a blanket pick-two product label.</p>
 </blockquote>
 
 <p><strong>M4.6 How do you observe a distributed system?</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is-24">A good SDE-3 interview answer is:</h4>
 
 <p>Logs (structured JSON, correlation/trace IDs propagated across HTTP and
-messaging), metrics (RED for services, USE for resources, plus business
-KPIs), and traces (OpenTelemetry, sampling, spans for DB and remote
-calls). Define SLIs/SLOs, alert on symptoms (error-budget burn rate)
+messaging), metrics (RED: rate, errors, duration for services; USE: utilization, saturation, errors for resources; plus business indicators), and traces (OpenTelemetry, sampling, spans for DB and remote
+calls). Define service-level indicators (SLIs) and their objectives (SLOs), alert on symptoms (error-budget burn rate)
 rather than causes, and maintain dashboards and runbooks. Tracing is
 what turns &quot;it&#39;s slow somewhere&quot; into a specific span.</p>
 <h4 id="how-to-understand-it-20">How to understand it</h4>
 
-<p>Treat this as a decision/problem-solving question: explain the mechanism
-or approach first, then the failure modes, trade-offs, and how you would
-verify the result.</p>
-
-<p><strong>Plain-English starting point:</strong> Logs (structured JSON,
-correlation/trace IDs propagated across HTTP and messaging), metrics
-(RED for services, USE for resources, plus business KPIs), and traces
-(OpenTelemetry, sampling, spans for DB and remote calls). Define
-SLIs/SLOs, alert on symptoms (error-budget burn rate) rather than
-causes, and maintain dashboards and runbooks.</p>
+<p><strong>Worked explanation:</strong> When checkout is slow, a latency metric identifies the widespread symptom, a trace locates the long payment span, and correlated logs explain the failure at that point. Each signal answers a different question.</p>
 <h4 id="key-terms-you-should-know-18">Key terms you should know</h4>
 
 <ul>
@@ -1892,23 +1738,14 @@ services.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-20">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> What is an SLO? A target for a measured user-facing indicator over a stated window, with a defined denominator.</p>
 <h4 id="30-second-version-23">30-second version</h4>
 
 <blockquote>
 <p>Logs (structured JSON, correlation/trace IDs propagated across HTTP
 and messaging), metrics (RED for services, USE for resources, plus
 business KPIs), and traces (OpenTelemetry, sampling, spans for DB and
-remote calls). Define SLIs/SLOs, alert on symptoms (error-budget burn
+remote calls). Define service-level indicators (SLIs) and their objectives (SLOs), alert on symptoms (error-budget burn
 rate) rather than causes, and maintain dashboards and runbooks.</p>
 </blockquote>
 

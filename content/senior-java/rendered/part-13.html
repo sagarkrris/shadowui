@@ -1,6 +1,99 @@
 <h2 id="part-13-spring-boot-internals-coding-style-and-leadership-questions-q174-q193">Part 13 Spring Boot Internals, Coding-Style and Leadership Questions (Q174–Q193)</h2>
 
 <p>Twenty more questions in the same layout as Parts 10 and 12. Q174–Q182 cover Spring Boot internals, Q183–Q187 are coding-style questions with solutions, and Q188–Q193 cover leadership. Version-specific points (Boot 3.x, Spring Framework 6.2 and later) should be checked against the versions your target company runs.</p>
+<h3 id="spring-boot-annotations-usage-to-internals-to-senior-diagnosis">Spring Boot annotations: usage to internals to senior diagnosis</h3>
+
+<p>Read this ladder before Q174–Q182. <strong>Foundation:</strong> explain the annotation&#39;s purpose and scope. <strong>Mid-level:</strong> name the processor and lifecycle phase. <strong>Senior/SDE-3:</strong> predict failures, demonstrate the boundary with a test and explain the operational trade-off. Seniority is depth of reasoning, not the number of annotation names memorized. This section targets Boot 3.5 / Framework 6.2; annotation packages, conditions and defaults must be checked when migrating versions.</p>
+<h4 id="s1-how-does-an-annotation-actually-make-something-happen">S1 How does an annotation actually make something happen</h4>
+
+<p><strong>Foundation answer:</strong> an annotation is metadata. Spring code must discover and interpret it; Java does not automatically implement dependency injection, transactions or HTTP routing because a class carries an annotation. A manually constructed object can carry <code>@Autowired</code> or <code>@Transactional</code> and still receive neither behavior.</p>
+
+<p><strong>Internal answer:</strong> configuration parsers and import selectors register bean definitions; bean-factory post-processors can change definitions before instantiation; bean post-processors handle injection/lifecycle and may wrap beans in proxies. MVC handler mappings register endpoints. Hibernate separately reads JPA mappings. Ask “which subsystem reads this annotation, when, and what object or metadata does it create?”</p>
+
+<p><strong>Senior follow-up:</strong> distinguish startup metadata processing from per-call interception. If a bean exists but advice never runs, check the actual object, proxy path and advisor rather than adding another component scan. Q176 compares the post-processor phases; Q179 explains repository proxies.</p>
+<h4 id="s2-what-is-inside-springbootapplication">S2 What is inside @SpringBootApplication</h4>
+
+<p><strong>Foundation answer:</strong> it combines <code>@SpringBootConfiguration</code> (a specialized <code>@Configuration</code>), <code>@EnableAutoConfiguration</code> and <code>@ComponentScan</code>. Place the application class in a deliberate root package so default discovery covers intended application components.</p>
+
+<p><strong>Internal answer:</strong> component scanning discovers application bean candidates; auto-configuration imports supply conditional infrastructure definitions. Boot 3.x discovers auto-configuration candidates through <code>META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports</code>, then evaluates conditions and ordering. This is distinct from scanning every dependency package. Auto-configuration ordering influences definition processing, not a blanket bean instantiation order.</p>
+
+<p><strong>Senior follow-up:</strong> <code>scanBasePackages</code> customizes component scanning; do not assume it also relocates entity and Spring Data repository scanning. Use <code>@EntityScan</code> and <code>@EnableJpaRepositories</code> when needed, and wire persistence units explicitly for multiple databases. Demonstrate the distinction with a context containing a service, an entity and a repository in different packages. Continue with Q174 for the complete startup lifecycle.</p>
+<h4 id="s3-how-do-component-service-repository-and-injection-work">S3 How do @Component, @Service, @Repository and injection work</h4>
+
+<p><strong>Foundation answer:</strong> stereotypes mark component candidates; <code>@Service</code> communicates the service role. <code>@Repository</code> also marks persistence components eligible for configured exception translation. They do not automatically make every method transactional. Constructor injection expresses required dependencies; a single constructor normally needs no <code>@Autowired</code>.</p>
+
+<p><strong>Internal answer:</strong> scanning registers definitions; the container resolves constructor dependencies when creating beans. <code>AutowiredAnnotationBeanPostProcessor</code> processes annotated fields/methods. <code>@Qualifier</code> narrows candidates and <code>@Primary</code> favors a candidate for single-valued injection; it does not remove other beans from a collection. <code>@Resource</code> has different name/type resolution semantics from <code>@Autowired</code>.</p>
+
+<p><strong>Senior follow-up:</strong> resolve multiple candidates explicitly, prefer constructor injection, and treat a constructor dependency cycle as a design signal. A singleton is shared within a container, not automatically thread-safe. <code>@Scope(&quot;prototype&quot;)</code> does not yield a new object on every call when one prototype is injected once into a singleton; use an appropriate provider or scoped proxy if that lifecycle is intended.</p>
+<h4 id="s4-how-do-configuration-bean-and-import-build-the-graph">S4 How do @Configuration, @Bean and @Import build the graph</h4>
+
+<p><strong>Foundation answer:</strong> <code>@Bean</code> describes a factory method whose product is managed by the container; <code>@Import</code> brings in configuration classes, selectors or registrars. <code>@Configuration</code> identifies a configuration source.</p>
+
+<p><strong>Internal answer:</strong> <code>ConfigurationClassPostProcessor</code> parses configuration, imports and bean methods. Full configuration can intercept inter-bean method calls to preserve container semantics; <code>proxyBeanMethods=false</code> skips that enhancement. In lite mode a direct Java call to another bean method follows ordinary Java behavior, which can create an extra object when the method constructs one. Inject dependencies as bean-method parameters. See Q177.</p>
+
+<p><strong>Senior follow-up:</strong> explain which bean owns lifecycle/close operations and how a test proves identity. Do not interpret <code>@Order</code> as a universal dependency or initialization guarantee; express real construction dependencies through injection, and use <code>@DependsOn</code> only for an actual initialization dependency not otherwise represented.</p>
+<h4 id="s5-how-do-conditional-and-configuration-annotations-work-internally">S5 How do conditional and configuration annotations work internally</h4>
+
+<p><strong>Foundation answer:</strong> <code>@Profile</code> selects definitions by active profiles. <code>@ConditionalOnClass</code>, <code>@ConditionalOnMissingBean</code>, <code>@ConditionalOnBean</code>, <code>@ConditionalOnProperty</code> and <code>@ConditionalOnWebApplication</code> constrain auto-configuration using available types, beans, properties or application kind. <code>@ConfigurationProperties</code> binds grouped external properties; <code>@Value</code> injects an individual value/expression.</p>
+
+<p><strong>Internal answer:</strong> conditions are evaluated during configuration processing, some using the definitions available so far. Missing-bean conditions are intended for carefully ordered auto-configuration; arbitrary user configuration ordering can produce surprises. Properties are bound through Boot&#39;s binder, with relaxed naming and conversion. Register a configuration-properties type through scanning or an enable annotation; putting the annotation on an arbitrary unregistered class is insufficient. <code>@Validated</code> enables configured validation of bound properties with a validation implementation present.</p>
+
+<p><strong>Senior follow-up:</strong> use <code>ApplicationContextRunner</code> to test property absent/enabled/disabled, class absent/present and custom-bean override cases. A user bean should trigger the documented back-off behavior. Inspect the condition report before excluding infrastructure. Decide property defaults and fail-fast validation explicitly; avoid exposing secrets in diagnostics.</p>
+<h4 id="s6-how-do-transactional-async-cacheable-and-scheduled-differ">S6 How do @Transactional, @Async, @Cacheable and @Scheduled differ</h4>
+
+<p><strong>Foundation answer:</strong> these need their respective infrastructure, such as transaction management, async enablement, caching enablement or scheduling enablement. They do not all have the same execution model.</p>
+
+<table><thead>
+<tr>
+<th>Annotation family</th>
+<th>Internal mechanism</th>
+<th>Senior follow-up and failure case</th>
+</tr>
+</thead><tbody>
+<tr>
+<td><code>@Transactional</code></td>
+<td>Transaction advisor/interceptor and a selected transaction manager, normally through a proxy.</td>
+<td>Self-invocation bypasses default proxy advice; checked exceptions do not roll back by default. Trace REQUIRED versus REQUIRES_NEW, rollback-only state and pool demand (H3/H5 in Part 16).</td>
+</tr>
+<tr>
+<td><code>@Async</code></td>
+<td>Async advisor dispatches an intercepted call to an executor.</td>
+<td>A transaction/thread-local does not automatically cross threads. Bound queues, define rejection handling and observe failures, including void-returning methods.</td>
+</tr>
+<tr>
+<td><code>@Cacheable</code>, <code>@CachePut</code>, <code>@CacheEvict</code></td>
+<td>Cache advice computes a key and interacts with the configured cache manager.</td>
+<td>Define tenant-aware keys and invalidation. Cache and transaction advisor order matters; an ordinary cache mutation is not automatically atomic with database commit.</td>
+</tr>
+<tr>
+<td><code>@Scheduled</code></td>
+<td><code>ScheduledAnnotationBeanPostProcessor</code> discovers methods and registers tasks with scheduling infrastructure.</td>
+<td>Each application instance can register the task. A scheduled method may still use other advice, but scheduling alone supplies no cluster-wide ownership or exactly-once guarantee. Test overlap, shutdown and retry behavior.</td>
+</tr>
+</tbody></table>
+
+<p><strong>Senior answer:</strong> proxy-based AOP uses JDK interface proxies or subclass proxies depending on configuration. Subclass proxies cannot advise final methods; private methods cannot be advised through an external proxy call. Self-invocation calls the target directly. Moving an operation to a separate injected bean or using a suitable programmatic API makes the boundary explicit. Do not assume advisor ordering gives a particular transaction/cache/async composition; inspect and test the actual invocation path.</p>
+<h4 id="s7-how-do-web-annotations-become-request-handling">S7 How do web annotations become request handling</h4>
+
+<p><strong>Foundation answer:</strong> <code>@RestController</code> combines controller discovery with response-body semantics. <code>@RequestMapping</code> and HTTP-specific mappings define routes and request conditions. <code>@PathVariable</code>/<code>@RequestParam</code> resolve inputs; <code>@RequestBody</code> uses message conversion. <code>@Valid</code> requests configured validation; <code>@ExceptionHandler</code> and <code>@RestControllerAdvice</code> provide exception-to-response handling.</p>
+
+<p><strong>Internal answer:</strong> <code>RequestMappingHandlerMapping</code> registers mappings; DispatcherServlet selects a handler; handler adapters resolve arguments, invoke the method and process the result through converters. These annotations are not all implemented by AOP proxies. <code>@Valid</code> is not an authorization rule, and MVC argument validation is distinct from service method validation through <code>@Validated</code> and its configured interceptor.</p>
+
+<p><strong>Senior follow-up:</strong> test missing/invalid/null input, unexpected fields, 400/406/415 outcomes and safe exception responses. Avoid returning persistence entities that trigger lazy loads during serialization; use deliberate DTOs. Q178 covers negotiation and the managed Jackson configuration.</p>
+<h4 id="s8-which-persistence-and-test-annotations-are-commonly-confused">S8 Which persistence and test annotations are commonly confused</h4>
+
+<p><strong>Foundation answer:</strong> <code>@Entity</code> and relationship annotations belong to JPA/Hibernate; <code>@PersistenceContext</code> requests an EntityManager through persistence integration. Spring Data <code>@Query</code> supplies a query and <code>@Modifying</code> marks modifying query execution; neither alone guarantees a complete service transaction. See Part 16 for mapping annotations and lifecycle follow-ups.</p>
+
+<p><strong>Internal answer:</strong> Spring Data creates repository proxies rather than implementation classes from component scanning alone. Entity mapping, repository registration and transaction advice are separate stages. Inherited CRUD methods have defaults different from user-declared query methods (Q179).</p>
+
+<p><strong>Senior follow-up:</strong> <code>@SpringBootTest</code> loads broad application configuration; <code>@WebMvcTest</code> and <code>@DataJpaTest</code> constrain the test slice. A rollback-based persistence test can miss flush-time constraints or commit-only behavior. Flush where the assertion requires SQL, and use separate committed transactions where the contract concerns visibility or post-commit effects. Mocked repositories do not prove database behavior. Q182 explains context-cache cost.</p>
+<h4 id="s9-how-should-a-senior-candidate-demonstrate-the-internals">S9 How should a senior candidate demonstrate the internals</h4>
+
+<p>Walk one request through controller mapping → injected service → transaction proxy → transaction manager → repository proxy → EntityManager/Session → JDBC/pool → database → flush/commit → DTO serialization. State which steps are startup registration and which run per request; where a connection is borrowed; and who closes owned resources.</p>
+
+<p>Then challenge the path: a self-call, two databases, pool exhaustion, detached lazy state, duplicate concurrent writers, an async hop, and a failure near commit. For each, identify the boundary, predict the observable result and propose a targeted integration test. Naming internals without explaining their consequences is incomplete.</p>
+
+<p><strong>Primary references:</strong> <a href="https://docs.spring.io/spring-boot/3.5/reference/data/sql.html">Boot 3.5 SQL configuration</a>, <a href="https://docs.spring.io/spring-boot/3.5/reference/features/developing-auto-configuration.html">Boot 3.5 auto-configuration development</a>, <a href="https://docs.spring.io/spring-framework/reference/6.2/core/beans/annotation-config.html">Spring annotation processing</a>, <a href="https://docs.spring.io/spring-framework/reference/6.2/core/aop/proxying.html">Spring proxy mechanics</a>, and <a href="https://docs.spring.io/spring-framework/reference/6.2/data-access/transaction/declarative/annotations.html">declarative transactions</a>. These are explanations and proposed integration checks; no live Spring/database verification is claimed.</p>
 <h3 id="spring-boot-internals">Spring Boot internals</h3>
 <h4 id="q174-what-happens-inside-springapplication-run">Q174 What happens inside SpringApplication.run</h4>
 
@@ -8,7 +101,7 @@
 
 <p><strong>Reasoning and alternatives:</strong> knowing the order tells you where to hook in: <code>EnvironmentPostProcessor</code> for property changes before the context exists, <code>ApplicationContextInitializer</code> for early context customization, <code>@PostConstruct</code> for per-bean setup, runners for post-start work, and <code>ApplicationReadyEvent</code> for &quot;now safe to serve&quot;.</p>
 
-<p><strong>What if/test:</strong> a slow <code>CommandLineRunner</code> delays readiness only if it blocks startup, so long tasks belong in background executors. Test hooks with <code>ApplicationContextRunner</code> or a slice test.
+<p><strong>What if/test:</strong> a runner blocks readiness until it returns. Move optional work to a bounded background executor, but keep traffic refused until mandatory initialization is complete. Use a full SpringApplication startup test for runner/event/readiness order; a context runner or slice alone does not exercise that whole lifecycle.
 <strong>Signal:</strong> place each extension point correctly in the sequence.</p>
 <h4 id="q175-how-does-boot-decide-it-is-a-web-application-and-which-server-to-start">Q175 How does Boot decide it is a web application and which server to start</h4>
 
@@ -28,7 +121,7 @@
 <strong>Signal:</strong> distinguish definition-time from instance-time hooks and cite one real example of each.</p>
 <h4 id="q177-what-does-configuration-proxybeanmethods-false-change">Q177 What does @Configuration(proxyBeanMethods = false) change</h4>
 
-<p><strong>Strong answer:</strong> by default (<code>true</code>, &quot;full&quot; mode) Spring subclasses the configuration class with CGLIB so that calling one <code>@Bean</code> method from another returns the container&#39;s singleton instead of creating a new object. With <code>proxyBeanMethods = false</code> (&quot;lite&quot; mode) there is no subclass, startup is cheaper, and a direct call to another <code>@Bean</code> method is an ordinary Java call that creates a fresh instance.</p>
+<p><strong>Strong answer:</strong> by default (<code>true</code>, &quot;full&quot; mode) Spring subclasses the configuration class with CGLIB so that calling one <code>@Bean</code> method from another returns the container&#39;s singleton instead of creating a new object. With <code>proxyBeanMethods = false</code> (&quot;lite&quot; mode) there is no subclass, startup is cheaper, and a direct call to another <code>@Bean</code> method is an ordinary Java call; it creates a fresh instance if that method constructs one, without container interception of the call.</p>
 
 <p><strong>Reasoning and alternatives:</strong> Boot&#39;s own auto-configurations use lite mode for speed and native-image friendliness. In lite mode, inject dependencies as method parameters instead of calling other <code>@Bean</code> methods. Keep full mode only if you rely on inter-bean method calls.</p>
 
@@ -44,7 +137,9 @@
 <strong>Signal:</strong> know the two status codes and why you inject the managed mapper.</p>
 <h4 id="q179-how-does-spring-data-jpa-implement-a-repository-interface-you-only-declared">Q179 How does Spring Data JPA implement a repository interface you only declared</h4>
 
-<p><strong>Strong answer:</strong> at startup, repository scanning registers a factory bean for each interface. The factory creates a <strong>JDK dynamic proxy</strong> that delegates CRUD methods to <code>SimpleJpaRepository</code> and routes query methods to query lookups: an <code>@Query</code>, a named query, or a query <strong>derived from the method name</strong> by parsing it into parts. Because derivation happens at startup, a misspelled property name fails the application context early.</p>
+<p><strong>Source basis:</strong> <a href="https://docs.spring.io/spring-data/jpa/reference/repositories/create-instances.html">Spring Data repository initialization</a>.</p>
+
+<p><strong>Strong answer:</strong> at startup, repository scanning registers a factory bean for each interface. The factory creates a <strong>JDK dynamic proxy</strong> that delegates CRUD methods to <code>SimpleJpaRepository</code> and routes query methods to query lookups: an <code>@Query</code>, a named query, or a query <strong>derived from the method name</strong> by parsing it into parts. Query derivation is validated when the repository initializes: normally during startup, but lazy/deferred bootstrap modes change the timing. A misspelled property can therefore fail startup or later initialization.</p>
 
 <p><strong>Reasoning and alternatives:</strong> Inherited CRUD methods implemented by <code>SimpleJpaRepository</code> have transaction defaults (read-only at class level with write methods transactional). User-declared query methods, including default methods, have no transaction configuration by default. Without a service transaction, separate inherited CRUD calls normally run in separate transactions; do not assume a custom query participates or that a multi-call unit is atomic. Annotate declared query methods or, commonly, the service operation. Custom behavior can go in a repository fragment interface plus implementation class.</p>
 
@@ -52,7 +147,7 @@
 <strong>Signal:</strong> explain proxy creation, startup validation and default transaction behavior.</p>
 <h4 id="q180-how-does-the-embedded-tomcat-threading-model-affect-tuning">Q180 How does the embedded Tomcat threading model affect tuning</h4>
 
-<p><strong>Strong answer:</strong> the NIO connector accepts connections and hands request processing to a worker pool. Boot&#39;s defaults are roughly 200 maximum worker threads, 100 for the accept queue (<code>accept-count</code>) and 8192 maximum connections. With Java 21 you can set <code>spring.threads.virtual.enabled=true</code> so request handling uses virtual threads, removing the thread count as the concurrency limit.</p>
+<p><strong>Strong answer:</strong> the NIO connector accepts connections and hands request processing to a worker pool. Boot&#39;s defaults are roughly 200 maximum worker threads, 100 for the accept queue (<code>accept-count</code>) and 8192 maximum connections. With supported Boot 3.x and Java 21+, <code>spring.threads.virtual.enabled=true</code> can switch request execution to virtual threads. This removes the usual fixed platform-worker pool limit for that path, not the need for admission limits, connection limits or downstream capacity controls. Verify exact defaults against the chosen Boot/Tomcat version.</p>
 
 <p><strong>Reasoning and alternatives:</strong> more threads do not fix slow downstream calls; they move the bottleneck to the database pool or the dependency. Size worker threads and connection pools together, set timeouts, and use bulkheads or a <code>Semaphore</code> to bound calls to scarce resources, especially with virtual threads.</p>
 
@@ -77,7 +172,9 @@
 <h3 id="coding-style-questions">Coding-style questions</h3>
 <h4 id="q183-implement-a-thread-safe-ttl-cache-with-a-loader">Q183 Implement a thread-safe TTL cache with a loader</h4>
 
-<p><strong>Strong answer:</strong> use a <code>ConcurrentHashMap</code> and <code>compute</code>, which runs atomically per key, so concurrent callers for the same key trigger one load.</p>
+<p><strong>Strong answer:</strong> use a <code>ConcurrentHashMap</code> and <code>compute</code> to serialize lookup/expiry/load for a key. Waiting callers reuse a successfully loaded value while it remains unexpired; load failures or a very short TTL can cause another load. This is a limited teaching sketch, not a complete production cache.</p>
+
+<p><strong>Explain before coding:</strong> Trace a miss: hold the per-key compute boundary, load the value, then start its TTL after loading. A later lookup checks expiry before reusing it. Explain the cost: a slow loader holds map synchronization, and untouched expired entries remain retained.</p>
 
 <pre><code class="java">class TtlCache&lt;K, V&gt; {
     private record Entry&lt;V&gt;(V value, long expiresAt) {}
@@ -104,11 +201,13 @@
 }
 </code></pre>
 
-<p><strong>Reasoning and alternatives:</strong> <code>System.nanoTime()</code> is monotonic, and the subtraction form is overflow-safe. This version evicts lazily and never removes entries that are not read again, so for production use Caffeine (size and time bounds, async loading, statistics).</p>
+<p><strong>Reasoning and alternatives:</strong> Use <code>System.nanoTime()</code> for elapsed time. Subtraction tolerates wraparound only within the supported signed-difference interval (less than 2^63 nanoseconds); expiry comparisons require that bound for the interval being compared. See the <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/System.html#nanoTime()">Java 21 elapsed-time contract</a>. This version evicts lazily and never removes entries that are not read again, so for production use Caffeine (size and time bounds, async loading, statistics).</p>
 
 <p><strong>What if/test:</strong> the loader runs while the map holds a bin lock, so it must be short and must not recursively update the same key. Test a slow loader, contention across an expiry boundary and concurrent callers. This teaching cache still evicts lazily, has no size bound, and may block other keys sharing a bin; use a mature cache for production.
 <strong>Signal:</strong> mention single-flight loading, monotonic time and the missing eviction.</p>
 <h4 id="q184-implement-a-minimal-fixed-thread-pool">Q184 Implement a minimal fixed thread pool</h4>
+
+<p><strong>Explain before coding:</strong> A fixed pool separates submission from execution: producers hand tasks to a bounded queue and workers repeatedly take them. The sketch below illustrates that mechanism but has an acknowledged submit-versus-close race and is not a fully correct shutdown implementation. In an interview, identify that missing atomic admission/shutdown boundary before claiming accepted work will finish.</p>
 
 <pre><code class="java">class MiniPool implements AutoCloseable {
     private final BlockingQueue&lt;Runnable&gt; queue = new LinkedBlockingQueue&lt;&gt;(100);
@@ -146,6 +245,8 @@
 <strong>Signal:</strong> explain the worker loop and why the queue is bounded.</p>
 <h4 id="q185-write-a-spring-filter-that-adds-a-correlation-id-to-the-logging-context">Q185 Write a Spring filter that adds a correlation ID to the logging context</h4>
 
+<p><strong>Explain before coding:</strong> The request thread first validates or generates an ID, stores it in the logging context, runs the downstream chain and removes it in finally. The cleanup must also run if downstream code throws. This sketch assumes it owns that MDC entry; nested context ownership may require restoring a previous value instead.</p>
+
 <pre><code class="java">@Component
 class CorrelationIdFilter extends OncePerRequestFilter {
     private static final Pattern SAFE = Pattern.compile(&quot;[A-Za-z0-9._-]{1,64}&quot;);
@@ -169,6 +270,8 @@ class CorrelationIdFilter extends OncePerRequestFilter {
 <strong>Signal:</strong> clear the context in <code>finally</code> and sanitize the header.</p>
 <h4 id="q186-merge-k-sorted-linked-lists">Q186 Merge K sorted linked lists</h4>
 
+<p><strong>Explain before coding:</strong> For lists [1,4] and [2,3], put 1 and 2 in the heap, emit 1 and offer its successor 4, then emit 2 and offer 3. Only the smallest remaining head can be next. This version relinks existing nodes and assumes a non-null array of sorted, acyclic, disjoint lists; shared nodes require a different contract.</p>
+
 <pre><code class="java">ListNode mergeKLists(ListNode[] lists) {
     PriorityQueue&lt;ListNode&gt; pq = new PriorityQueue&lt;&gt;(Comparator.comparingInt(n -&gt; n.val));
     for (ListNode head : lists) if (head != null) pq.add(head);
@@ -187,6 +290,8 @@ class CorrelationIdFilter extends OncePerRequestFilter {
 <p><strong>What if/test:</strong> test empty input, all-empty lists, one list, and duplicate values across lists.
 <strong>Signal:</strong> give both complexities and explain why the heap stays size k.</p>
 <h4 id="q187-build-a-mini-dependency-injection-container">Q187 Build a mini dependency-injection container</h4>
+
+<p><strong>Explain before coding:</strong> Resolve A by resolving its constructor parameters first. The creating set represents the active dependency path: seeing A again before it is complete detects a cycle. Cache only successful instances. The sketch assumes one constructor per concrete class and single-threaded access.</p>
 
 <pre><code class="java">class MiniContainer {
     private final Map&lt;Class&lt;?&gt;, Object&gt; singletons = new HashMap&lt;&gt;();

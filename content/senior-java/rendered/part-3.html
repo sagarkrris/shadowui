@@ -6,6 +6,13 @@ experience.</strong></p>
 
 <hr>
 <h2 id="e-kafka-messaging">E. Kafka &amp; Messaging</h2>
+<h4 id="k1-how-do-producers-brokers-and-consumers-fit-together">K1 How do producers, brokers and consumers fit together</h4>
+
+<p><strong>Strong answer:</strong> a producer sends a record/event to a broker; a consumer reads or receives it and processes it. In Kafka, a topic is split into partitions that hold ordered logs, and an offset identifies a position within one partition. A consumer group tracks its processing position; record ordering within a partition is distinct from business completion order across parallel workers.</p>
+
+<p><strong>Follow-up:</strong> committing an offset and committing a database side effect are separate actions unless a deliberate protocol couples them. A retry after failure can repeat processing, so identify the durable deduplication/idempotency boundary. A broker acknowledgement is not proof that the consumer&#39;s business operation completed.</p>
+
+<p><strong>Senior follow-up:</strong> trace a crash after the side effect but before the position is recorded, then the reverse ordering. Define replay, poison-event handling and per-key ordering before discussing delivery guarantees in Q31–Q36. <a href="https://kafka.apache.org/40/getting-started/introduction/">Kafka introduction</a>.</p>
 
 <p><strong>Q31. Explain Kafka&#39;s architecture and how consumer groups scale.</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is">A good SDE-3 interview answer is:</h4>
@@ -20,16 +27,7 @@ later. Different groups read independently, which enables pub/sub with
 replay. Offsets live in <code>__consumer_offsets</code>.</p>
 <h4 id="how-to-understand-it">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> A topic is split into partitions, each
-an append-only, ordered log replicated across brokers (one leader, N-1
-followers). Producers write to a partition chosen by key hash; consumers
-in a <strong>group</strong> divide partitions so each partition is read by exactly
-one member of the group, which gives parallelism up to the partition
-count.</p>
+<p><strong>Worked explanation:</strong> In an ordinary consumer group, each assigned partition has one active consumer; another group can read the same partition independently. More group members than partitions do not add partition-processing parallelism.</p>
 <h4 id="key-terms-you-should-know">Key terms you should know</h4>
 
 <ul>
@@ -38,16 +36,7 @@ publishing messages to topics and delivering them to subscriptions.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Can you process records asynchronously within a partition? Yes, but you must preserve required ordering and commit only a safely completed prefix.</p>
 <h4 id="30-second-version">30-second version</h4>
 
 <blockquote>
@@ -74,15 +63,7 @@ unique-constrained table, or the transactional outbox. Default design
 target: at-least-once + idempotency.</p>
 <h4 id="how-to-understand-it-1">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Say honestly: end-to-end exactly-once
-needs cooperation. Producer idempotence prevents duplicate log entries
-from supported retries; <code>acks=all</code> and the topic/broker
-<code>min.insync.replicas</code> setting define acknowledgement and availability
-trade-offs.</p>
+<p><strong>Worked explanation:</strong> A Kafka transaction can commit produced records and consumed offsets together. Charging a card through HTTP is outside that transaction, so a replay can still repeat the external effect.</p>
 <h4 id="key-terms-you-should-know-1">Key terms you should know</h4>
 
 <ul>
@@ -95,16 +76,7 @@ afterward.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-1">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> What closes that gap? Provider idempotency, durable operation state and reconciliation, rather than calling the entire workflow exactly-once.</p>
 <h4 id="30-second-version-1">30-second version</h4>
 
 <blockquote>
@@ -118,43 +90,17 @@ acknowledgement and availability trade-offs.</p>
 impact?</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is-2">A good SDE-3 interview answer is:</h4>
 
-<p>Triggers: member joins/leaves, crash, missed heartbeat
-(<code>session.timeout.ms</code>), or processing longer than
-<code>max.poll.interval.ms</code>, which is the usual culprit. Effects:
-stop-the-world pauses and duplicate processing. Mitigation: smaller
-<code>max.poll.records</code>, move slow work off the poll thread carefully,
-cooperative sticky assignor (incremental rebalance), static membership
-(<code>group.instance.id</code>) for rolling deploys, and graceful shutdown that
-commits offsets.</p>
+<p>Membership changes, failures and poll/heartbeat violations can move partition assignments. Disruption depends on the configured group protocol and assignment strategy: classic eager rebalances revoke broadly, while cooperative or newer incremental protocols can reduce movement. Keep processing within the applicable poll contract, coordinate in-flight completion and offset commits with revocation, and use static membership or batching when suitable. Moving work off the poll thread requires an explicit completion/ordering protocol.</p>
 <h4 id="how-to-understand-it-2">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Triggers: member joins/leaves, crash,
-missed heartbeat (<code>session.timeout.ms</code>), or processing longer than
-<code>max.poll.interval.ms</code>, which is the usual culprit. Effects:
-stop-the-world pauses and duplicate processing.</p>
+<p><strong>Worked explanation:</strong> When partition ownership changes, in-flight work can finish after the old owner lost the assignment. Coordinate revocation, completion and commits to prevent stale ownership from advancing progress.</p>
 <h4 id="sde-3-interview-checkpoints-2">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Are all rebalances stop-the-world? No; cooperative and newer protocols reduce disruption. Explain the deployed client/protocol behavior.</p>
 <h4 id="30-second-version-2">30-second version</h4>
 
 <blockquote>
-<p>Triggers: member joins/leaves, crash, missed heartbeat
-(<code>session.timeout.ms</code>), or processing longer than
-<code>max.poll.interval.ms</code>, which is the usual culprit. Effects:
-stop-the-world pauses and duplicate processing.</p>
+<p>A rebalance changes partition ownership. Explain your protocol&#39;s disruption, why polling or membership changed, and how unfinished work and commits are handled. Not every rebalance stops every consumer.</p>
 </blockquote>
 
 <p><strong>Q34. Auto-commit vs manual commit?</strong></p>
@@ -167,15 +113,7 @@ transaction succeeds, and make handlers idempotent. Commit after
 processing = at-least-once; commit before = at-most-once.</p>
 <h4 id="how-to-understand-it-3">How to understand it</h4>
 
-<p>Compare the options by correctness, operational behavior, performance,
-failure modes, and when you would choose each one—not just by
-definitions.</p>
-
-<p><strong>Plain-English starting point:</strong> Auto-commit can acknowledge records
-before they are processed (loss on crash) or reprocess after a crash
-(duplicates). With Spring Kafka I use
-<code>AckMode.RECORD</code>/<code>MANUAL_IMMEDIATE</code>, commit only after the DB
-transaction succeeds, and make handlers idempotent.</p>
+<p><strong>Worked explanation:</strong> An offset commit is a progress claim for a partition, not an individual database commit. Advancing past unfinished earlier records can skip their effects after a restart.</p>
 <h4 id="key-terms-you-should-know-2">Key terms you should know</h4>
 
 <ul>
@@ -184,16 +122,7 @@ operation with defined commit/rollback behavior.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-3">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> What must asynchronous handlers track? The contiguous completed offset frontier, including failures and revoked assignments.</p>
 <h4 id="30-second-version-3">30-second version</h4>
 
 <blockquote>
@@ -216,27 +145,10 @@ block a partition. Alert on DLT depth and provide a replay tool. Use
 <code>ErrorHandlingDeserializer</code> so bad bytes don&#39;t crash-loop the consumer.</p>
 <h4 id="how-to-understand-it-4">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Distinguish transient (retry) from
-permanent (deserialisation, validation) failures. Spring Kafka
-<code>DefaultErrorHandler</code> with <code>ExponentialBackOff</code>, non-retryable exception
-classification, and <code>DeadLetterPublishingRecoverer</code> to a DLT carrying
-headers (original topic, exception, offset).</p>
+<p><strong>Worked explanation:</strong> A malformed payload will not become valid after ten retries. Classify permanent errors and preserve the failed record with enough context for diagnosis and controlled replay.</p>
 <h4 id="sde-3-interview-checkpoints-4">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> What if publishing to the dead-letter topic fails? Do not silently treat the original record as recovered; define and verify the recovery/offset policy.</p>
 <h4 id="30-second-version-4">30-second version</h4>
 
 <blockquote>
@@ -260,26 +172,10 @@ order. Schema evolution via Avro/Protobuf + Schema Registry with
 backward-compatible rules.</p>
 <h4 id="how-to-understand-it-5">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Kafka orders only <strong>within a
-partition</strong>, so choose a key whose events must be ordered (e.g.,
-<code>orderId</code>, <code>accountId</code>). A single hot key remains on one partition after
-adding partitions.</p>
+<p><strong>Worked explanation:</strong> Keying events by order ID groups each order&#39;s history into a partition. One extremely hot order stays a bottleneck; salting that key spreads load only by changing the ordering problem.</p>
 <h4 id="sde-3-interview-checkpoints-5">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Can adding partitions reorder a key&#39;s history? A new mapping may put later events elsewhere, so plan migration and consumption explicitly.</p>
 <h4 id="30-second-version-5">30-second version</h4>
 
 <blockquote>
@@ -290,6 +186,13 @@ remains on one partition after adding partitions.</p>
 
 <hr>
 <h2 id="f-spring-security-oauth2">F. Spring Security &amp; OAuth2</h2>
+<h4 id="a1-how-do-authentication-and-authorization-fit-into-a-request">A1 How do authentication and authorization fit into a request</h4>
+
+<p><strong>Strong answer:</strong> authentication establishes the caller&#39;s identity; authorization decides what that identity may do to the requested resource. A request passes through configured security processing, establishes or resolves the security context, and is checked against access rules. Possessing a token does not by itself grant access to every object named in a request.</p>
+
+<p><strong>Follow-up:</strong> decoding a token is different from validating its authenticity, issuer, audience and validity for this application. Enforce tenant/resource ownership as well as operation-level roles, and make error responses safe.</p>
+
+<p><strong>Senior follow-up:</strong> trace an anonymous call, expired/invalid credential, authenticated caller without permission and cross-tenant object access. Then study the filter chain, OAuth2/OIDC and browser threats in Q37–Q42; keep version-specific configuration grounded in the deployed framework. <a href="https://docs.spring.io/spring-security/reference/servlet/architecture.html">Spring Security servlet architecture</a>.</p>
 
 <p><strong>Q37. Walk through the Spring Security filter chain.</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is-6">A good SDE-3 interview answer is:</h4>
@@ -306,28 +209,10 @@ deliberately). Configure with one or more <code>SecurityFilterChain</code> beans
 using lambda DSL.</p>
 <h4 id="how-to-understand-it-6">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> <code>DelegatingFilterProxy</code> →
-<code>FilterChainProxy</code> → a <code>SecurityFilterChain</code> matched by request. Key
-filters: <code>SecurityContextHolderFilter</code>, <code>CorsFilter</code>, <code>CsrfFilter</code>,
-authentication filters (<code>UsernamePasswordAuthenticationFilter</code>,
-<code>BearerTokenAuthenticationFilter</code>), <code>ExceptionTranslationFilter</code>, and
-<code>AuthorizationFilter</code> last.</p>
+<p><strong>Worked explanation:</strong> The servlet delegates to Spring Security&#39;s selected chain. Authentication establishes an identity; authorization evaluates the requested action. Enabled filters and their order depend on the chain&#39;s configuration.</p>
 <h4 id="sde-3-interview-checkpoints-6">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> What if multiple chains match? The first matching security chain is selected; test ordering and uncovered routes.</p>
 <h4 id="30-second-version-6">30-second version</h4>
 
 <blockquote>
@@ -352,13 +237,7 @@ tokens) and BFF/web apps are <strong>clients</strong>; the IdP (Keycloak, Okta,
 Google Identity Platform) is the authorisation server.</p>
 <h4 id="how-to-understand-it-7">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> <strong>Authorization Code + PKCE</strong> for user
-login (web, SPA, mobile); the PKCE verifier protects the code from
-interception. <strong>Client Credentials</strong> for service-to-service.</p>
+<p><strong>Worked explanation:</strong> A browser exchanges a code using its verifier, receives tokens and calls an API with an access token. The ID token describes authentication for the client; it is not a generic API credential.</p>
 <h4 id="key-terms-you-should-know-3">Key terms you should know</h4>
 
 <ul>
@@ -367,16 +246,7 @@ defined interface; a Kubernetes Service is a specific networking resource.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-7">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Does PKCE replace client authentication? No; confidential clients still use their required authentication, and tokens must target the intended recipient.</p>
 <h4 id="30-second-version-7">30-second version</h4>
 
 <blockquote>
@@ -388,44 +258,17 @@ Credentials</strong> for service-to-service.</p>
 <p><strong>Q39. JWT vs opaque tokens: how do you revoke a JWT?</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is-8">A good SDE-3 interview answer is:</h4>
 
-<p>JWTs are self-contained and validated locally via the JWKS public key
-(fast, no lookup) but can&#39;t be revoked before expiry. Mitigations: short
-TTL (5–15 min) + refresh rotation, a denylist keyed by <code>jti</code> in Redis,
-key rotation, or opaque tokens with introspection (central control,
-extra network hop; cache results). Always validate <code>iss</code>, <code>aud</code>, <code>exp</code>,
-signature and algorithm (reject <code>alg=none</code>); never put sensitive data in
-the payload (it is only base64-encoded).</p>
+<p>A locally validated signed JWT does not by itself tell the API whether that particular token has been revoked. Short lifetimes, refresh-token policy, a denylist or another online policy check can limit exposure; opaque-token introspection centralizes the decision at network and caching cost. Key rotation generally affects more than one token. Verify signature, allowed algorithms, issuer, audience and time claims. A signed JWT payload is readable unless encryption is separately used.</p>
 <h4 id="how-to-understand-it-8">How to understand it</h4>
 
-<p>Compare the options by correctness, operational behavior, performance,
-failure modes, and when you would choose each one—not just by
-definitions.</p>
-
-<p><strong>Plain-English starting point:</strong> JWTs are self-contained and validated
-locally via the JWKS public key (fast, no lookup) but can&#39;t be revoked
-before expiry. Mitigations: short TTL (5–15 min) + refresh rotation, a
-denylist keyed by <code>jti</code> in Redis, key rotation, or opaque tokens with
-introspection (central control, extra network hop; cache results).</p>
+<p><strong>Worked explanation:</strong> A signed token can be verified without asking its issuer whether it was revoked. That independence saves a lookup but means revocation requires extra state, a policy check or waiting for expiry.</p>
 <h4 id="sde-3-interview-checkpoints-8">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Does key rotation revoke one user? Usually it affects all tokens signed by that key; choose the appropriate revocation granularity.</p>
 <h4 id="30-second-version-8">30-second version</h4>
 
 <blockquote>
-<p>JWTs are self-contained and validated locally via the JWKS public key
-(fast, no lookup) but can&#39;t be revoked before expiry. Mitigations:
-short TTL (5–15 min) + refresh rotation, a denylist keyed by <code>jti</code> in
-Redis, key rotation, or opaque tokens with introspection (central
-control, extra network hop; cache results).</p>
+<p>JWT validation can be local, but immediate selective revocation needs extra state or policy. Compare short expiry, denylisting and introspection, and distinguish signing from encrypting token contents.</p>
 </blockquote>
 
 <p><strong>Q40. CORS vs CSRF: what are they and how do you configure them?</strong></p>
@@ -447,11 +290,7 @@ authentication mechanism and endpoint; a JWT stored in a cookie still
 needs a CSRF strategy.</p>
 <h4 id="how-to-understand-it-9">How to understand it</h4>
 
-<p>Ask whether another site can cause the browser to attach credentials
-without your application&#39;s JavaScript choosing to do so. The presence of
-an Authorization header does not answer that question: bearer tokens
-attached by application code and browser-managed Basic credentials behave
-differently.</p>
+<p><strong>Worked explanation:</strong> A browser can automatically send a session cookie on a forged request. Blocking JavaScript from reading a cross-origin response does not necessarily prevent that request from changing server state.</p>
 <h4 id="key-terms-you-should-know-4">Key terms you should know</h4>
 
 <ul>
@@ -461,11 +300,7 @@ differently.</p>
 </ul>
 <h4 id="sde-3-interview-checkpoints-9">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li>Inventory cookies, Basic authentication and bearer-token handling.</li>
-<li>Test cross-site state-changing requests and CSRF-token rejection.</li>
-<li>Review mixed browser/API endpoints before disabling protection.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Does storing a JWT in a cookie remove CSRF? No; the browser&#39;s automatic credential behavior is the relevant property.</p>
 <h4 id="30-second-version-9">30-second version</h4>
 
 <blockquote>
@@ -488,15 +323,7 @@ least privilege, rotate secrets, scan dependencies (OWASP
 Dependency-Check/Dependabot), and validate input to prevent injection.</p>
 <h4 id="how-to-understand-it-10">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Use adaptive, salted hashes:
-<code>DelegatingPasswordEncoder</code> with BCrypt/Argon2 (work factor tuned to
-~250 ms), never SHA/MD5 alone. Service-to-service: mTLS (mesh) or OAuth2
-client credentials; on GCP use service-account identity tokens (OIDC)
-verified by the receiver.</p>
+<p><strong>Worked explanation:</strong> Password verification deliberately performs expensive hashing using the stored salt and parameters. Service authentication instead proves a workload&#39;s identity; authorization still decides which operation it may perform.</p>
 <h4 id="key-terms-you-should-know-5">Key terms you should know</h4>
 
 <ul>
@@ -507,16 +334,7 @@ defined interface; a Kubernetes Service is a specific networking resource.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-10">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Should hash cost be a fixed copied number? No; calibrate against hardware, expected traffic and abuse resistance.</p>
 <h4 id="30-second-version-10">30-second version</h4>
 
 <blockquote>
@@ -538,30 +356,10 @@ depth); method security relies on proxies, so self-invocation bypasses
 it.</p>
 <h4 id="how-to-understand-it-11">How to understand it</h4>
 
-<p>Compare the options by correctness, operational behavior, performance,
-failure modes, and when you would choose each one—not just by
-definitions.</p>
-
-<p><strong>Plain-English starting point:</strong> URL rules
-(<code>requestMatchers(&quot;/admin/**&quot;).hasRole(...)</code>) give coarse perimeter
-control; method security (<code>@EnableMethodSecurity</code>,
-<code>@PreAuthorize(&quot;hasAuthority(&#39;ORDER_READ&#39;) and #userId == authentication.name&quot;)</code>)
-enforces fine-grained, domain-aware rules close to the business logic
-and works for non-HTTP entry points (messaging). Use both (defence in
-depth); method security relies on proxies, so self-invocation bypasses
-it.</p>
+<p><strong>Worked explanation:</strong> An /orders route rule can require login, while a service method checks that the caller may read this particular order. The method boundary also covers callers that do not arrive through HTTP.</p>
 <h4 id="sde-3-interview-checkpoints-11">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Can a self-call skip method advice? Yes with ordinary proxies; test the actual invocation path and object ownership checks.</p>
 <h4 id="30-second-version-11">30-second version</h4>
 
 <blockquote>
@@ -577,6 +375,8 @@ it.</p>
 <hr>
 <h2 id="g-maven-build">G. Maven &amp; Build</h2>
 
+<p>Start with the <a href="/senior-java-interview/part-1b#b1-how-does-maven-build-a-java-application">Maven lifecycle and artifact foundation</a>, then dependency mediation, scopes and reproducible builds in Q43–Q46.</p>
+
 <p><strong>Q43. How does Maven resolve conflicting dependency versions?</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is-12">A good SDE-3 interview answer is:</h4>
 
@@ -589,13 +389,7 @@ and the <code>maven-enforcer-plugin</code> (<code>dependencyConvergence</code>,
 <code>mvn dependency:tree -Dverbose -Dincludes=group:artifact</code>.</p>
 <h4 id="how-to-understand-it-12">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> &quot;Nearest definition wins&quot; (shallowest
-in the tree), ties broken by first declaration. This can silently select
-an old, vulnerable version.</p>
+<p><strong>Worked explanation:</strong> If the same artifact appears along two paths, Maven mediates versions unless management or an explicit declaration determines the result. The winning dependency can satisfy compilation yet break a transitive caller at runtime.</p>
 <h4 id="key-terms-you-should-know-6">Key terms you should know</h4>
 
 <ul>
@@ -606,16 +400,7 @@ as compilation, testing or packaging.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-12">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> What do you inspect? The effective POM, resolved dependency tree and actual packaged artifact, followed by relevant compatibility tests.</p>
 <h4 id="30-second-version-12">30-second version</h4>
 
 <blockquote>
@@ -636,15 +421,7 @@ versions. Build selectively with <code>-pl :service -am</code>, in parallel with
 (share contracts, not code).</p>
 <h4 id="how-to-understand-it-13">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> A parent POM (packaging <code>pom</code>) holds
-<code>dependencyManagement</code>, <code>pluginManagement</code> and properties; <code>&lt;modules&gt;</code>
-aggregates children (e.g., <code>api</code>, <code>domain</code>, <code>service</code>, <code>app</code>). Keep
-module dependencies acyclic and one-directional; use a &quot;bom&quot; or
-&quot;platform&quot; module for shared versions.</p>
+<p><strong>Worked explanation:</strong> A domain module should not depend back on the web application that uses it. Directed module dependencies make ownership and build order visible; common version configuration belongs in deliberate management.</p>
 <h4 id="key-terms-you-should-know-7">Key terms you should know</h4>
 
 <ul>
@@ -655,16 +432,7 @@ defined interface; a Kubernetes Service is a specific networking resource.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-13">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Does listing a module make it inherit the parent? No; reactor aggregation and the child&#39;s parent declaration are separate.</p>
 <h4 id="30-second-version-13">30-second version</h4>
 
 <blockquote>
@@ -687,17 +455,7 @@ via <code>&lt;executions&gt;</code>; know <code>compiler</code>, <code>surefire<
 and <code>enforcer</code>.</p>
 <h4 id="how-to-understand-it-14">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Profiles activate per
-environment/OS/property (<code>-Pci</code>) to vary plugins or dependencies, but
-avoid using them for runtime configuration (that belongs to Spring
-profiles/env vars), because they create non-reproducible builds. Plugin
-execution is bound to lifecycle phases via <code>&lt;executions&gt;</code>; know
-<code>compiler</code>, <code>surefire</code>, <code>failsafe</code>, <code>jacoco</code>, <code>spring-boot-maven-plugin</code>
-(repackage/build-image), <code>jib</code>, <code>versions</code>, and <code>enforcer</code>.</p>
+<p><strong>Worked explanation:</strong> A Maven profile changes the build model; a Spring profile changes application configuration. Mixing them can create separately built artifacts whose differences are hard to verify during promotion.</p>
 <h4 id="key-terms-you-should-know-8">Key terms you should know</h4>
 
 <ul>
@@ -706,16 +464,7 @@ as compilation, testing or packaging.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-14">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Where should plugin defaults live? pluginManagement centralizes defaults; the build must still activate the relevant plugin execution.</p>
 <h4 id="30-second-version-14">30-second version</h4>
 
 <blockquote>
@@ -740,17 +489,7 @@ from CI secrets; sign and scan artifacts, generate an SBOM (CycloneDX),
 and fail on critical CVEs.</p>
 <h4 id="how-to-understand-it-15">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Use the Maven wrapper (<code>mvnw</code>), pin
-plugin and dependency versions, set <code>project.build.outputTimestamp</code> for
-reproducible jars, cache <code>~/.m2</code> in CI, build with <code>-T</code>, skip nothing in
-CI (no <code>-DskipTests</code>). Pull artifacts through an internal repository
-manager (Artifact Registry/Nexus) configured in <code>settings.xml</code> mirrors
-with credentials from CI secrets; sign and scan artifacts, generate an
-SBOM (CycloneDX), and fail on critical CVEs.</p>
+<p><strong>Worked explanation:</strong> Reproducibility means identical intended inputs yield identical artifact bytes. Pinning versions helps, but toolchains, generated timestamps and environment-sensitive tasks also affect the result.</p>
 <h4 id="key-terms-you-should-know-9">Key terms you should know</h4>
 
 <ul>
@@ -759,16 +498,7 @@ as compilation, testing or packaging.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-15">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> How do you verify it? Compare independent clean-build outputs and keep that check separate from performance benefits of caching.</p>
 <h4 id="30-second-version-15">30-second version</h4>
 
 <blockquote>
@@ -784,6 +514,8 @@ from CI secrets; sign and scan artifacts, generate an SBOM
 <hr>
 <h2 id="h-google-cloud-platform">H. Google Cloud Platform</h2>
 
+<p>Start with the <a href="/senior-java-interview/part-1b#g1-what-must-you-understand-before-choosing-a-cloud-runtime">cloud runtime foundation</a>, then compare services and operational guarantees in Q47–Q52.</p>
+
 <p><strong>Q47. Cloud Run vs GKE vs App Engine vs Compute Engine: how do you
 decide?</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is-16">A good SDE-3 interview answer is:</h4>
@@ -798,15 +530,7 @@ application. Avoid deciding solely from labels such as “stateless” or
 overview</a>.</p>
 <h4 id="how-to-understand-it-16">How to understand it</h4>
 
-<p>Compare the options by correctness, operational behavior, performance,
-failure modes, and when you would choose each one—not just by
-definitions.</p>
-
-<p><strong>Plain-English starting point:</strong> Cloud Run offers several execution
-models, including services, jobs and worker pools; choose the
-appropriate model before comparing it with GKE. Prefer GKE when
-Kubernetes-level control or an existing platform justifies its
-operational cost.</p>
+<p><strong>Worked explanation:</strong> Compare a stateless HTTP service, a batch import and a runtime needing privileged host control. Each imposes different lifecycle and control requirements, so one product ranking cannot answer all three.</p>
 <h4 id="key-terms-you-should-know-10">Key terms you should know</h4>
 
 <ul>
@@ -817,16 +541,7 @@ service.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-16">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> What is the senior trade-off? State the required platform capability and who will operate it when failures occur.</p>
 <h4 id="30-second-version-16">30-second version</h4>
 
 <blockquote>
@@ -849,26 +564,10 @@ subscriptions in a region but you still need idempotent side effects.
 Use Spring Cloud GCP&#39;s <code>PubSubTemplate</code>/message channel adapters.</p>
 <h4 id="how-to-understand-it-17">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Publishers send to a topic;
-subscriptions (pull, push or streaming-pull) get <strong>at-least-once</strong>
-delivery. If not acked within the ack deadline (extendable), the message
-is redelivered, so handlers must be idempotent.</p>
+<p><strong>Worked explanation:</strong> An acknowledgement tells the subscription the message is complete. If a subscriber commits work but its acknowledgement is lost, redelivery can happen; ordering keys do not make business side effects atomic.</p>
 <h4 id="sde-3-interview-checkpoints-17">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Does exactly-once delivery remove every duplicate business event? No; separately published duplicates and effects outside the delivery protocol still need handling.</p>
 <h4 id="30-second-version-17">30-second version</h4>
 
 <blockquote>
@@ -890,17 +589,7 @@ DB/proxy timeouts, and use PgBouncer/connection pooling for Cloud Run
 bursts.</p>
 <h4 id="how-to-understand-it-18">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Enable <strong>HA</strong> (regional, automatic
-failover), automated backups + PITR, read replicas for read scaling
-(route read-only transactions explicitly), private IP via VPC, and
-connect through the <strong>Cloud SQL Java Connector</strong> or Auth Proxy (IAM
-auth, TLS). Size HikariCP carefully (<code>pool × instances</code> ≤ DB
-<code>max_connections</code>), set <code>maxLifetime</code> below DB/proxy timeouts, and use
-PgBouncer/connection pooling for Cloud Run bursts.</p>
+<p><strong>Worked explanation:</strong> Ten instances with 20 pooled connections can ask for 200 database sessions before administrative or other application demand. Autoscaling must respect the database&#39;s total capacity.</p>
 <h4 id="key-terms-you-should-know-11">Key terms you should know</h4>
 
 <ul>
@@ -913,16 +602,7 @@ calls, commonly used by Spring for transactions, security and AOP.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-18">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Does a connector provide network reachability? No; configure the required private/public network path as well as authentication and encryption.</p>
 <h4 id="30-second-version-18">30-second version</h4>
 
 <blockquote>
@@ -938,69 +618,26 @@ pooling for Cloud Run bursts.</p>
 <p><strong>Q50. When would you choose Spanner or Bigtable over Cloud SQL?</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is-19">A good SDE-3 interview answer is:</h4>
 
-<p>Spanner: relational, strongly consistent (TrueTime), horizontally
-scalable, multi-region with 99.999% SLA, for global OLTP at scale; costs
-more and needs schema/key design to avoid hotspots (no monotonically
-increasing PKs; use UUIDv4/bit-reversed). Bigtable: wide-column NoSQL
-for huge write-heavy time-series/IoT with single-row transactions only.
-Cloud SQL suffices for most regional workloads below a few TB and
-moderate QPS.</p>
+<p>Choose Spanner when distributed relational transactions and horizontal scale justify its cost and design constraints; choose Bigtable for suitable high-volume keyed/wide-column access patterns. Cloud SQL remains a strong fit for many relational workloads. There is no universal few-TB cutoff. Benchmark the actual query mix, consistency needs, key distribution and operational cost. Availability commitments depend on the selected service configuration and SLA conditions. <a href="https://docs.cloud.google.com/spanner/docs/instance-configurations">Spanner configuration guarantees</a>.</p>
 <h4 id="how-to-understand-it-19">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Spanner: relational, strongly
-consistent (TrueTime), horizontally scalable, multi-region with 99.999%
-SLA, for global OLTP at scale; costs more and needs schema/key design to
-avoid hotspots (no monotonically increasing PKs; use
-UUIDv4/bit-reversed). Bigtable: wide-column NoSQL for huge write-heavy
-time-series/IoT with single-row transactions only.</p>
+<p><strong>Worked explanation:</strong> A relational transaction spanning business records, a high-volume keyed time-series lookup and an analytical scan imply different storage requirements. Test the hardest query and invariant before choosing a product.</p>
 <h4 id="sde-3-interview-checkpoints-19">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Is there a universal data-size cutoff? No; throughput, indexes, consistency, configuration and cost determine suitability, not one TB threshold.</p>
 <h4 id="30-second-version-19">30-second version</h4>
 
 <blockquote>
-<p>Spanner: relational, strongly consistent (TrueTime), horizontally
-scalable, multi-region with 99.999% SLA, for global OLTP at scale;
-costs more and needs schema/key design to avoid hotspots (no
-monotonically increasing PKs; use UUIDv4/bit-reversed). Bigtable:
-wide-column NoSQL for huge write-heavy time-series/IoT with single-row
-transactions only.</p>
+<p>Start from queries, invariants and measured scale. Spanner, Bigtable and Cloud SQL solve different workload problems; neither a headline SLA nor a fixed data-size threshold is enough to choose.</p>
 </blockquote>
 
 <p><strong>Q51. Explain IAM, service accounts and Workload Identity.</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is-20">A good SDE-3 interview answer is:</h4>
 
-<p>IAM grants <strong>roles</strong> (collections of permissions) to <strong>principals</strong> at
-org/folder/project/resource scope with inheritance. Workloads run as
-service accounts; avoid exported JSON keys; on GKE, <strong>Workload Identity
-Federation</strong> maps a Kubernetes SA to a Google SA, and on Cloud Run
-attach a dedicated runtime SA per service. Apply least privilege with
-predefined/custom roles, deny policies and org-policy constraints, audit
-through Cloud Audit Logs.</p>
+<p>IAM roles collect permissions granted to principals at resource scopes. Use a dedicated least-privilege workload identity and avoid downloaded service-account keys. GKE federation can authorize the Kubernetes workload principal directly for supported resources or use IAM service-account impersonation. Cloud Run can attach a runtime service account. Test permissions and audit access; identity federation alone does not grant permission. <a href="https://docs.cloud.google.com/kubernetes-engine/docs/concepts/workload-identity">GKE identity model</a>.</p>
 <h4 id="how-to-understand-it-20">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> IAM grants <strong>roles</strong> (collections of
-permissions) to <strong>principals</strong> at org/folder/project/resource scope with
-inheritance. Workloads run as service accounts; avoid exported JSON
-keys; on GKE, <strong>Workload Identity Federation</strong> maps a Kubernetes SA to a
-Google SA, and on Cloud Run attach a dedicated runtime SA per service.</p>
+<p><strong>Worked explanation:</strong> Authentication establishes the workload identity; an IAM policy binds permissions to that identity at a resource boundary. Federation avoids distributing a long-lived private key, but does not replace authorization.</p>
 <h4 id="key-terms-you-should-know-12">Key terms you should know</h4>
 
 <ul>
@@ -1017,24 +654,11 @@ identities without embedding long-lived service-account keys.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-20">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Must GKE always impersonate a Google service account? No; supported resources can grant access directly to the federated workload principal.</p>
 <h4 id="30-second-version-20">30-second version</h4>
 
 <blockquote>
-<p>IAM grants <strong>roles</strong> (collections of permissions) to <strong>principals</strong> at
-org/folder/project/resource scope with inheritance. Workloads run as
-service accounts; avoid exported JSON keys; on GKE, <strong>Workload
-Identity Federation</strong> maps a Kubernetes SA to a Google SA, and on
-Cloud Run attach a dedicated runtime SA per service.</p>
+<p>Federation supplies an identity and short-lived credentials; IAM grants access. Direct workload-principal bindings and service-account impersonation are distinct supported approaches.</p>
 </blockquote>
 
 <p><strong>Q52. Describe a secure GCP network and edge design.</strong></p>
@@ -1049,17 +673,7 @@ Service Controls for data-exfiltration perimeters; IAP for internal
 tools.</p>
 <h4 id="how-to-understand-it-21">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Global external Application Load
-Balancer + <strong>Cloud Armor</strong> (WAF, DDoS, rate limits) + managed
-certificates → services in a VPC with <strong>private IPs</strong>; Private Google
-Access / Private Service Connect for managed services; Serverless VPC
-Access or Direct VPC egress for Cloud Run; Cloud NAT for outbound;
-firewall rules by tags/service accounts; VPC Service Controls for
-data-exfiltration perimeters; IAP for internal tools.</p>
+<p><strong>Worked explanation:</strong> Trace inbound traffic through TLS termination and routing, then trace the service&#39;s outbound path to data and external APIs. Ingress controls, egress controls and IAM protect different boundaries.</p>
 <h4 id="key-terms-you-should-know-13">Key terms you should know</h4>
 
 <ul>
@@ -1070,16 +684,7 @@ to supported managed services using service perimeters.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-21">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Does a private IP prove authorization? No; a reachable workload must still authenticate and receive only permitted access.</p>
 <h4 id="30-second-version-21">30-second version</h4>
 
 <blockquote>
@@ -1104,18 +709,7 @@ Infrastructure via Terraform with remote state; GitOps (Config Sync/Argo
 CD) is an alternative.</p>
 <h4 id="how-to-understand-it-22">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Commit → <strong>Cloud Build</strong> trigger:
-<code>mvn verify</code> (unit + Testcontainers integration), static analysis/SCA,
-build image with Jib/Buildpacks, push to <strong>Artifact Registry</strong> with
-vulnerability scanning, attestations via <strong>Binary Authorization</strong> →
-<strong>Cloud Deploy</strong> promotes dev → staging → prod with approvals and
-canary, automated rollback on failed SLO checks. Infrastructure via
-Terraform with remote state; GitOps (Config Sync/Argo CD) is an
-alternative.</p>
+<p><strong>Worked explanation:</strong> Build and validate an artifact once, then promote its immutable digest across environments. A release controller changes deployment state; rollback and verification require explicit policy and signals.</p>
 <h4 id="key-terms-you-should-know-14">Key terms you should know</h4>
 
 <ul>
@@ -1124,16 +718,7 @@ such as 99.9% successful requests.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-22">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Does the product name guarantee automated rollback? No; explain the configured checks, failure trigger and actual rollback mechanism.</p>
 <h4 id="30-second-version-22">30-second version</h4>
 
 <blockquote>
@@ -1158,18 +743,7 @@ policies, BigQuery partitioning/clustering, budgets + alerts, and labels
 for cost attribution.</p>
 <h4 id="how-to-understand-it-23">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Structured JSON logs with <code>trace</code>
-fields (Cloud Logging correlates to Cloud Trace), Micrometer → Managed
-Service for Prometheus/Cloud Monitoring, OpenTelemetry tracing, <strong>SLO
-monitoring</strong> with burn-rate alerts, error reporting. Cost: right-size
-requests/limits, committed-use discounts, Spot VMs for batch,
-autoscaling, log exclusion/retention policies, BigQuery
-partitioning/clustering, budgets + alerts, and labels for cost
-attribution.</p>
+<p><strong>Worked explanation:</strong> Measure cost per useful outcome alongside total spend. A logging change can reduce storage costs but remove diagnostic evidence; right-sizing can save money but create saturation.</p>
 <h4 id="key-terms-you-should-know-15">Key terms you should know</h4>
 
 <ul>
@@ -1182,16 +756,7 @@ services.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-23">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Does a budget alert cap expenditure? An alert alone reports a threshold; stopping or limiting spend requires a separate control.</p>
 <h4 id="30-second-version-23">30-second version</h4>
 
 <blockquote>
@@ -1206,6 +771,13 @@ budgets + alerts, and labels for cost attribution.</p>
 
 <hr>
 <h2 id="i-docker-kubernetes-for-java">I. Docker &amp; Kubernetes for Java</h2>
+<h4 id="d1-how-do-an-image-container-pod-and-deployment-differ">D1 How do an image, container, Pod and Deployment differ</h4>
+
+<p><strong>Strong answer:</strong> an image packages an application and its runtime filesystem; a container is an executing instance with configured isolation/resources. A Kubernetes Pod groups containers with a shared network/lifecycle context; a Deployment manages a desired set of replaceable Pods and rollout behavior. Local files and process memory are not automatically durable or shared across replicas.</p>
+
+<p><strong>Follow-up:</strong> a Service provides a stable access abstraction to selected workloads; it does not make unhealthy application logic correct. Distinguish starting a process, accepting traffic and remaining healthy. Set resource/deadline/shutdown behavior deliberately.</p>
+
+<p><strong>Senior follow-up:</strong> trace a Pod restart and a rolling update while requests and database work are in flight. Establish which state is durable and which work can be repeated before tuning probes, autoscaling or rollout parameters in Q55 onward. <a href="https://kubernetes.io/docs/concepts/workloads/pods/">Kubernetes Pod model</a>.</p>
 
 <p><strong>Q55. How do you build a production Docker image for Spring Boot?</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is-24">A good SDE-3 interview answer is:</h4>
@@ -1218,29 +790,10 @@ layers, <code>.dockerignore</code>, vulnerability scanning, and exec-form
 <code>ENTRYPOINT</code> so the JVM receives SIGTERM for graceful shutdown.</p>
 <h4 id="how-to-understand-it-24">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Multi-stage or Jib/Buildpacks;
-<strong>layered jars</strong> (<code>java -Djarmode=tools extract --layers</code>) so
-dependencies cache separately from app code; minimal/distroless JRE
-base, pinned tags/digests, <strong>non-root user</strong>, read-only filesystem, no
-secrets in layers, <code>.dockerignore</code>, vulnerability scanning, and
-exec-form <code>ENTRYPOINT</code> so the JVM receives SIGTERM for graceful
-shutdown.</p>
+<p><strong>Worked explanation:</strong> Image layers separate stable dependencies from frequently changing application files, improving reuse. Running without root and removing unnecessary tools reduces privileges and image contents; it does not replace patching.</p>
 <h4 id="sde-3-interview-checkpoints-24">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Why use exec-form startup? It allows the intended JVM process to receive lifecycle signals directly.</p>
 <h4 id="30-second-version-24">30-second version</h4>
 
 <blockquote>
@@ -1256,24 +809,10 @@ layers, <code>.dockerignore</code>, vulnerability scanning, and exec-form
 JVM?</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is-25">A good SDE-3 interview answer is:</h4>
 
-<p>The JVM heap is only part of memory: metaspace, thread stacks, direct
-buffers, code cache, and GC structures also count toward the container
-limit. Setting <code>-Xmx</code> equal to the limit guarantees a kill. Use
-container-aware settings: <code>-XX:MaxRAMPercentage=65–75</code>, leave headroom,
-cap threads/direct memory, set <code>-XX:+ExitOnOutOfMemoryError</code> and heap
-dump to a volume, and watch for CPU throttling from low CPU limits
-(affects GC/JIT, so consider not setting CPU limits but always setting
-requests).</p>
+<p>Container memory includes heap, metaspace, stacks, direct buffers, code cache, GC structures and other native allocations. Setting Xmx equal to the container limit leaves no headroom when the heap grows; a kill is a risk, not a guaranteed immediate outcome. Measure native and heap demand before choosing MaxRAMPercentage or Xmx. Bound threads and buffers, inspect termination reasons, and distinguish a Java OutOfMemoryError from an external cgroup OOM kill, which may produce no heap dump. CPU throttling can also worsen latency and GC progress.</p>
 <h4 id="how-to-understand-it-25">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> The JVM heap is only part of memory:
-metaspace, thread stacks, direct buffers, code cache, and GC structures
-also count toward the container limit. Setting <code>-Xmx</code> equal to the limit
-guarantees a kill.</p>
+<p><strong>Worked explanation:</strong> A container accounts for heap plus native allocations, stacks and other process memory. A heap below its maximum does not prove the process is below its cgroup limit.</p>
 <h4 id="key-terms-you-should-know-16">Key terms you should know</h4>
 
 <ul>
@@ -1288,22 +827,11 @@ executed bytecode into optimized native machine code.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-25">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Will every container kill produce a Java heap dump? No; an external OOM kill can terminate the process before Java handles any exception.</p>
 <h4 id="30-second-version-25">30-second version</h4>
 
 <blockquote>
-<p>The JVM heap is only part of memory: metaspace, thread stacks, direct
-buffers, code cache, and GC structures also count toward the container
-limit. Setting <code>-Xmx</code> equal to the limit guarantees a kill.</p>
+<p>The heap is only part of process memory. Leave measured headroom, inspect native usage and distinguish JVM allocation failure from a container kill. A fixed heap percentage is a starting hypothesis, not a universal safe setting.</p>
 </blockquote>
 
 <p><strong>Q57. Core Kubernetes objects and probes you must explain.</strong></p>
@@ -1319,18 +847,7 @@ unrecoverable state; never include downstream dependencies or you cause
 restart storms).</p>
 <h4 id="how-to-understand-it-26">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> <strong>Pod</strong> (smallest unit) →
-<strong>Deployment/ReplicaSet</strong> (rolling updates) → <strong>Service</strong> (stable
-virtual IP, load balancing) → <strong>Ingress/Gateway</strong> (L7 routing);
-<strong>ConfigMap/Secret</strong>, <strong>HPA</strong> (CPU/custom metrics), <strong>PDB</strong>,
-<strong>StatefulSet</strong>, <strong>Job/CronJob</strong>. Probes: <strong>startup</strong> (slow JVM boot),
-<strong>readiness</strong> (take out of rotation; Boot <code>/actuator/health/readiness</code>),
-<strong>liveness</strong> (restart only on unrecoverable state; never include
-downstream dependencies or you cause restart storms).</p>
+<p><strong>Worked explanation:</strong> A Deployment maintains desired replicas, a Service selects endpoints, and readiness determines whether an endpoint should receive traffic. A liveness failure asks for restart, which is a different action.</p>
 <h4 id="key-terms-you-should-know-17">Key terms you should know</h4>
 
 <ul>
@@ -1343,16 +860,7 @@ a group of Pods behind a stable endpoint.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-26">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Why separate startup and liveness? Slow healthy initialization should not repeatedly trigger restarts before the application can become ready.</p>
 <h4 id="30-second-version-26">30-second version</h4>
 
 <blockquote>
@@ -1377,17 +885,7 @@ image pull and tag, resource limits, failing liveness/startup probes
 debug container. Fix root cause and add alerting on restart count.</p>
 <h4 id="how-to-understand-it-27">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> <code>kubectl describe pod</code> (events, exit
-code, OOMKilled, probe failures), <code>kubectl logs --previous</code>, check
-config/secret mounts and env vars, image pull and tag, resource limits,
-failing liveness/startup probes (JVM too slow to start → raise
-<code>startupProbe</code>), dependency connectivity (DNS, network policy, DB
-credentials), then <code>kubectl exec</code>/ephemeral debug container. Fix root
-cause and add alerting on restart count.</p>
+<p><strong>Worked explanation:</strong> CrashLoopBackOff describes delayed restart attempts after repeated exits. Read the previous container&#39;s logs and termination reason to distinguish application failure, a killed process and a probe-driven restart.</p>
 <h4 id="key-terms-you-should-know-18">Key terms you should know</h4>
 
 <ul>
@@ -1399,16 +897,7 @@ containers that share networking and storage context.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-27">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Will increasing the restart delay fix it? No; repair the cause and verify the workload reaches and remains ready.</p>
 <h4 id="30-second-version-27">30-second version</h4>
 
 <blockquote>

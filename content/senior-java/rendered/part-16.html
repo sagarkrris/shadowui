@@ -1,15 +1,135 @@
 <h2 id="part-16-hibernate-and-sql-questions-q223-q244">Part 16 Hibernate and SQL Questions (Q223–Q244)</h2>
 
 <p>Hibernate/JPA and SQL practice. SQL examples use <code>employee(id, name, dept, salary, manager_id)</code> unless stated. The SQL examples below were checked against SQLite for the portable cases. JPA snippets are illustrative; check provider behavior and SQL with the Hibernate 6.6 and Spring Data JPA 3.5 references at the end. PostgreSQL-specific notes are identified explicitly.</p>
-<h3 id="hibernate-and-jpa">Hibernate and JPA</h3>
-<h4 id="q223-what-goes-wrong-with-elementcollection-on-a-list">Q223 What goes wrong with @ElementCollection on a List</h4>
+<h3 id="start-here-database-connections-and-session-management">Start here: database connections and session management</h3>
 
-<p><strong>Strong answer:</strong> in Hibernate, an unordered <code>List</code> element collection can be mapped as a bag, whose duplicate values give rows no stable position or identity. Removing one value may delete all rows for the owner and re-insert the survivors. A <code>Set</code> or indexed <code>List</code> with <code>@OrderColumn</code> can permit more targeted SQL, but list index shifts may still update multiple rows. The exact plan depends on mapping and version; inspect generated SQL.</p>
+<p>Study this chapter in order: connections → pools → sessions and factories → transaction boundaries → entity lifecycle → mapping annotations → advanced Hibernate → SQL. The existing Q223–Q244 identifiers stay stable for bookmarks; their reading order now follows the topic rather than the number. These explanations target Java 17/21, Spring Boot 3.5, Spring Framework 6.2 and Hibernate 6.6 with <code>jakarta.persistence</code> imports. Framework flows are conceptual walkthroughs, not runnable or integration-tested applications.</p>
+<h4 id="h1-how-do-we-make-a-connection-with-a-database-in-plain-java">H1 How do we make a connection with a database in plain Java</h4>
 
-<p><strong>Reasoning and alternatives:</strong> for anything that grows, has its own lifecycle or needs queries, model a real entity with <code>@OneToMany</code> instead.</p>
+<p><strong>Strong answer:</strong> add the database&#39;s JDBC driver, supply its JDBC URL and credentials, then obtain a <code>java.sql.Connection</code> using <code>DriverManager.getConnection</code> or a configured <code>DataSource</code>. A JDBC 4 driver normally registers through service discovery; explicitly loading its class is usually unnecessary. Use a <code>PreparedStatement</code> with bound values, execute it, read the <code>ResultSet</code>, and close result sets, statements and owned connections with try-with-resources. The driver translates JDBC operations into the database protocol; Hibernate is not required.</p>
 
-<p><strong>What if/test:</strong> turn on SQL logging, remove one element and count the statements.
-<strong>Signal:</strong> you know the delete-all-and-reinsert behavior and when to promote the collection to an entity.</p>
+<p><strong>Follow-up — what makes two writes atomic?</strong> JDBC connections default to auto-commit. For an owned connection, disable auto-commit, execute both writes on that connection, commit on success and roll back on failure. Closing a resource is not a substitute for an explicit transaction outcome. Do not manually commit or close a Spring-managed transactional connection.</p>
+
+<p><strong>Senior follow-up — what fails in production?</strong> Separate driver/URL mistakes, DNS or TLS failures, rejected credentials, database limits, and pool acquisition timeouts. Bound connection acquisition and query execution separately, keep secrets outside source control, and never concatenate user input into SQL. A bound parameter represents a value, not a table name or sort direction; allowlist those structural choices.</p>
+
+<p><strong>What if/test:</strong> make the second write violate a constraint and check that the first write rolls back. Simulate an unavailable database and distinguish a connection failure from a slow query.</p>
+<h4 id="h2-how-does-spring-boot-establish-a-database-connection">H2 How does Spring Boot establish a database connection</h4>
+
+<p><strong>Strong answer:</strong> with <code>spring-boot-starter-jdbc</code> or <code>spring-boot-starter-data-jpa</code>, a compatible driver and external <code>spring.datasource.url</code>, <code>username</code> and <code>password</code>, Boot can configure a <code>DataSource</code>; the normal starter pool is HikariCP. Boot binds configuration and evaluates auto-configuration conditions. JDBC code can use <code>JdbcTemplate</code>/<code>JdbcClient</code>; JPA adds an <code>EntityManagerFactory</code>, a provider such as Hibernate, and transaction integration. A repository ultimately executes SQL through JDBC connections obtained from the DataSource.</p>
+
+<p><strong>Internal flow:</strong> configuration → DataSource/pool → EntityManagerFactory/SessionFactory → transaction-bound EntityManager/Session → JDBC connection → database. This is a responsibility diagram: a Session need not hold a physical connection for its whole lifetime; acquisition/release depend on transaction and provider settings.</p>
+
+<p><strong>Follow-up — can Boot connect without a URL?</strong> It can select a supported embedded database on the classpath. A production database needs deliberate configuration. A custom DataSource can make the default configuration back off; multiple DataSources require explicit factory, repository and transaction-manager wiring. <code>@Primary</code> alone does not define every repository&#39;s database.</p>
+
+<p><strong>Senior follow-up — how do you diagnose it?</strong> Inspect the condition evaluation report, effective configuration without revealing secrets, pool metrics and root driver exception. Keep schema migration ownership explicit. <code>ddl-auto=update</code> is not a production migration strategy.</p>
+<h4 id="h3-what-is-a-connection-pool-and-is-a-session-a-connection">H3 What is a connection pool, and is a Session a connection</h4>
+
+<p><strong>Strong answer:</strong> a pool keeps reusable physical connections; borrowing typically returns a logical handle whose close returns it to the pool. A Hibernate Session instead tracks managed entities, identity and pending work. Increasing pool size cannot exceed the database&#39;s useful capacity and can worsen contention. Size against all application replicas and other database clients, then measure acquisition wait, transaction duration and database load.</p>
+
+<p><strong>Follow-up — what causes exhaustion?</strong> Leaked handles, long transactions, lock waits or slow queries can keep connections occupied. A remote HTTP call inside a database transaction can retain scarce resources while doing no SQL. Virtual threads do not create database capacity.</p>
+
+<p><strong>Senior follow-up — REQUIRES_NEW?</strong> An inner transaction can need a second connection while the outer transaction retains its resources. Many callers doing this simultaneously can exhaust the pool. Review boundaries and worst-case nested demand rather than blindly doubling capacity.</p>
+<h4 id="h4-what-are-session-sessionfactory-entitymanager-and-entitymanagerfactory">H4 What are Session, SessionFactory, EntityManager and EntityManagerFactory</h4>
+
+<p><strong>Strong answer:</strong> <code>Session</code> is Hibernate&#39;s unit-of-work API; JPA&#39;s standard API is <code>EntityManager</code>. Both expose a persistence context that tracks managed entity identity and changes. <code>SessionFactory</code>/<code>EntityManagerFactory</code> hold expensive shared configuration and metadata and are normally created once per persistence unit. Factories are thread-safe; individual Sessions/EntityManagers are not. A persistence context is not a global cache or a database transaction.</p>
+
+<p><strong>Follow-up — why can an EntityManager be injected into a singleton service?</strong> Spring usually injects a shared proxy that resolves the appropriate transaction-bound EntityManager. The underlying mutable context is not made thread-safe. Do not pass it or managed entities to another thread and expect the transaction to follow.</p>
+
+<p><strong>Follow-up — openSession versus getCurrentSession?</strong> <code>openSession</code> creates a Session whose lifecycle you own. <code>getCurrentSession</code> resolves one through the configured current-session context; it is not automatically available in every environment. With Spring Data JPA, normally let Spring own the EntityManager and transaction lifecycle.</p>
+
+<p><strong>Senior follow-up — first-level versus second-level cache?</strong> First-level identity belongs to one persistence context and disappears when it is cleared/closed. Optional second-level cache spans contexts and needs provider/invalidation decisions; continue with Q231 after the mapping section.</p>
+<h4 id="h5-is-sessionmanager-the-same-as-entitymanager-or-a-transaction-manager">H5 Is sessionManager the same as EntityManager or a transaction manager</h4>
+
+<p><strong>Strong answer:</strong> there is no standard Hibernate/JPA API named <code>SessionManager</code>. An application may define a helper with that name, but ask which type the interviewer means. <code>EntityManager</code> manages entity operations and context; <code>SessionFactory</code> creates Sessions; Spring&#39;s <code>PlatformTransactionManager</code> coordinates begin, commit, rollback and resource binding. <code>JpaTransactionManager</code> integrates a JPA EntityManagerFactory; older native Hibernate integrations may use <code>HibernateTransactionManager</code>. Spring 6.2’s <code>hibernate5</code> integration targets Hibernate 5.5/5.6; for this chapter’s Hibernate 6.6 stack, use JPA integration with <code>JpaTransactionManager</code> (or appropriate JTA coordination). Servlet <code>HttpSession</code> is a different concept.</p>
+
+<p><strong>Follow-up — what happens on a service call?</strong> With proxy-based transaction management enabled, an external call through the Spring proxy invokes transaction advice. The manager starts or joins a transaction, associates persistence resources with the current thread, calls the method, then commits or rolls back and cleans up resources it owns. Joining an outer transaction does not commit that transaction when the inner method returns.</p>
+
+<p><strong>Senior follow-up — why did @Transactional do nothing?</strong> Check whether the instance is Spring-managed, whether the call crossed the proxy, method visibility/proxy limitations, the selected manager and propagation. Self-invocation bypasses default proxy advice. By default unchecked exceptions and Errors trigger rollback; checked exceptions require an appropriate rollback rule. Catching an exception can hide it from the advice, while an already rollback-only transaction can still fail on outer completion.</p>
+<h4 id="h6-what-happens-to-an-entity-from-load-to-commit">H6 What happens to an entity from load to commit</h4>
+
+<p><strong>Strong answer:</strong> an entity starts transient, becomes managed through persist/load, can become detached after clear/close, and can be marked removed. Within a context, repeated entity lookup by identity normally yields the same managed instance. Hibernate dirty checking detects changes and flush synchronizes pending work with SQL; commit finalizes the database transaction. Flush can happen before commit, including before relevant queries, and does not guarantee durability.</p>
+
+<p><strong>Follow-up — persist versus merge?</strong> <code>persist</code> makes a new instance managed. <code>merge</code> copies state into a managed instance and returns that instance; the supplied detached object does not itself become managed. Work with the return value. Detached changes are not automatically tracked.</p>
+
+<p><strong>Senior follow-up — why does lazy loading fail?</strong> Accessing an uninitialized association after its Session is closed can produce <code>LazyInitializationException</code>. Fetch the needed data or project a DTO inside a bounded service transaction. Open Session in View can defer work into rendering, but can conceal extra SQL and reads outside the service transaction. Bulk JPQL/native writes can leave already managed objects stale; plan flush/clear/refresh boundaries. See Q232 for concurrent writers.</p>
+
+<p><strong>What if/test:</strong> compare instance identity inside and across contexts, update a detached object without merging, then flush and roll back: SQL execution must not be mistaken for committed data.</p>
+<h3 id="jpa-and-hibernate-annotations-then-their-follow-ups">JPA and Hibernate annotations, then their follow-ups</h3>
+<h4 id="h7-which-annotations-define-the-entity-and-its-columns">H7 Which annotations define the entity and its columns</h4>
+
+<p><strong>Strong answer:</strong> annotations are mapping metadata read by the persistence provider while building its model; they do not execute SQL on their own. An <code>@Entity</code> is not automatically a Spring component. Start with the purpose, explain the provider&#39;s interpretation, then describe the generated SQL and database invariant.</p>
+
+<table><thead>
+<tr>
+<th>Annotation family</th>
+<th>What the provider does</th>
+<th>Follow-up and senior boundary</th>
+</tr>
+</thead><tbody>
+<tr>
+<td><code>@Entity</code>, <code>@Table</code></td>
+<td>Registers an entity and its table mapping; entity name and table name serve different query layers.</td>
+<td>Does JPQL name the Java entity or the physical table? How does the naming strategy affect existing schemas?</td>
+</tr>
+<tr>
+<td><code>@Id</code>, <code>@GeneratedValue</code>, <code>@SequenceGenerator</code></td>
+<td>Defines identity and identifier generation.</td>
+<td>When is an ID available, and how does it affect batching? Continue with Q226.</td>
+</tr>
+<tr>
+<td><code>@Column</code>, <code>@Basic</code>, <code>@Transient</code>, <code>@Access</code></td>
+<td>Maps basic state, excludes fields, or controls field/property access.</td>
+<td><code>nullable=false</code> is mapping/schema metadata, not request validation. A migrated database must actually enforce NOT NULL. Avoid accidentally mixing field and property access.</td>
+</tr>
+<tr>
+<td><code>@Enumerated</code>, <code>@Convert</code>, <code>@Converter</code>, <code>@Lob</code></td>
+<td>Chooses enum, custom-value or large-object mapping.</td>
+<td>Ordinals break if constants reorder; strings also need a plan when names change. A LOB or lazy basic field is not automatically cheap.</td>
+</tr>
+<tr>
+<td><code>@Embeddable</code>, <code>@Embedded</code>, <code>@AttributeOverride</code></td>
+<td>Maps a value object into the owning entity&#39;s columns.</td>
+<td>Does the value need independent identity/lifecycle? If yes, an entity may fit better.</td>
+</tr>
+<tr>
+<td><code>@EmbeddedId</code>, <code>@IdClass</code>, <code>@MapsId</code></td>
+<td>Represents composite or derived identity.</td>
+<td>Define stable key equality and check foreign-key ownership; continue with Q224.</td>
+</tr>
+<tr>
+<td><code>@Version</code></td>
+<td>Adds an optimistic concurrency predicate and checks affected rows.</td>
+<td>Two concurrent writers must not both silently succeed; carry the client&#39;s version through the API (Q232).</td>
+</tr>
+<tr>
+<td><code>@MappedSuperclass</code>, <code>@Inheritance</code>, <code>@DiscriminatorColumn</code></td>
+<td>Shares mapped attributes or selects entity inheritance strategy.</td>
+<td>Compare joins, nullable columns and polymorphic query cost; a mapped superclass is not independently queryable as an entity.</td>
+</tr>
+<tr>
+<td><code>@PrePersist</code>, <code>@PreUpdate</code>, <code>@EntityListeners</code></td>
+<td>Invokes lifecycle callbacks during managed operations.</td>
+<td>Bulk/native SQL and external writers do not necessarily invoke these callbacks. Continue with auditing in Q233.</td>
+</tr>
+</tbody></table>
+<h4 id="h8-how-do-relationship-annotations-change-sql-and-lifecycle">H8 How do relationship annotations change SQL and lifecycle</h4>
+
+<p><strong>Strong answer:</strong> <code>@ManyToOne</code>, <code>@OneToMany</code>, <code>@OneToOne</code> and <code>@ManyToMany</code> describe cardinality. <code>@JoinColumn</code> or <code>@JoinTable</code> describes foreign-key/join-table storage; <code>mappedBy</code> identifies the inverse side using the owning Java property, not a database column. Change the owning side and keep both sides of a bidirectional relationship consistent.</p>
+
+<p><strong>Follow-up — fetch, cascade and orphan removal?</strong> Fetch determines loading; cascade propagates selected entity operations; orphan removal deletes a dependent child removed from an owning relationship. They are independent. JPA defaults to EAGER for to-one relationships and LAZY for to-many; LAZY is a hint, not a guarantee of one specific SQL plan. Cascade REMOVE on shared entities is dangerous. Database ON DELETE CASCADE is a separate mechanism.</p>
+
+<p><strong>Senior follow-up — which annotation fixes N+1?</strong> None universally. <code>@EntityGraph</code> selects an endpoint-specific fetch plan; Hibernate <code>@BatchSize</code> and <code>@Fetch</code> change loading strategies; query fetch joins are another option. Measure statement count, rows and memory, especially for collections with pagination. <code>@OrderBy</code> sorts by mapped attributes; <code>@OrderColumn</code> persists list positions and can cause index-shift updates. <code>@ElementCollection</code> stores values without independent entity identity. Continue with Q224, Q225, Q223 and Q229 below.</p>
+
+<p><strong>Follow-up — provider-specific annotations?</strong> <code>@SoftDelete</code>, <code>@SQLRestriction</code>, <code>@Immutable</code> and cache annotations have Hibernate-specific behavior. Pin the provider version, inspect actual SQL and test native/bulk access and external writers. They do not replace constraints, authorization or a migration plan.</p>
+<h3 id="advanced-hibernate-annotations-queries-and-operational-follow-ups">Advanced Hibernate: annotations, queries and operational follow-ups</h3>
+<h4 id="q226-identity-sequence-or-uuid-for-primary-keys">Q226 IDENTITY, SEQUENCE or UUID for primary keys</h4>
+
+<p><strong>Strong answer:</strong> with Hibernate 6.6, <code>IDENTITY</code> prevents JDBC insert batching for those entities because the database must generate each identifier during insert. A database <code>SEQUENCE</code> can support batching; when using a pooled optimizer, align its allocation/increment configuration with the actual database sequence and verify schema validation. Random UUIDs can reduce B-tree locality and enlarge keys; time-ordered identifiers may improve locality, subject to storage byte order and database index behavior.</p>
+
+<p><strong>Reasoning and alternatives:</strong> use UUIDs when ids must be generated client-side or across systems, accepting larger keys and the index cost.</p>
+
+<p><strong>What if/test:</strong> insert 10,000 rows with each strategy and compare the statement count and time.
+<strong>Signal:</strong> connect id strategy to batching and index locality.</p>
 <h4 id="q224-why-is-a-lazy-onetoone-hard-and-what-does-mapsid-do">Q224 Why is a lazy @OneToOne hard, and what does @MapsId do</h4>
 
 <p><strong>Strong answer:</strong> on the inverse <code>mappedBy</code> parent side, Hibernate may need a secondary query to learn whether a child exists, so <code>LAZY</code> alone may not defer loading. Lazy-state bytecode enhancement can help when a bidirectional association is required. On the owning side the foreign key is available to form a proxy. With <code>@MapsId</code>, the child&#39;s primary key also serves as its foreign key to the parent; this avoids a separate child identifier column, but it does not eliminate the need for a foreign-key constraint or guarantee no index.</p>
@@ -26,30 +146,14 @@
 
 <p><strong>What if/test:</strong> remove one link and inspect the SQL for bulk deletes.
 <strong>Signal:</strong> prefer an explicit join entity once the relationship has attributes.</p>
-<h4 id="q226-identity-sequence-or-uuid-for-primary-keys">Q226 IDENTITY, SEQUENCE or UUID for primary keys</h4>
+<h4 id="q223-what-goes-wrong-with-elementcollection-on-a-list">Q223 What goes wrong with @ElementCollection on a List</h4>
 
-<p><strong>Strong answer:</strong> with Hibernate 6.6, <code>IDENTITY</code> prevents JDBC insert batching for those entities because the database must generate each identifier during insert. A database <code>SEQUENCE</code> can support batching; when using a pooled optimizer, align its allocation/increment configuration with the actual database sequence and verify schema validation. Random UUIDs can reduce B-tree locality and enlarge keys; time-ordered identifiers may improve locality, subject to storage byte order and database index behavior.</p>
+<p><strong>Strong answer:</strong> in Hibernate, an unordered <code>List</code> element collection can be mapped as a bag, whose duplicate values give rows no stable position or identity. Removing one value may delete all rows for the owner and re-insert the survivors. A <code>Set</code> or indexed <code>List</code> with <code>@OrderColumn</code> can permit more targeted SQL, but list index shifts may still update multiple rows. The exact plan depends on mapping and version; inspect generated SQL.</p>
 
-<p><strong>Reasoning and alternatives:</strong> use UUIDs when ids must be generated client-side or across systems, accepting larger keys and the index cost.</p>
+<p><strong>Reasoning and alternatives:</strong> for anything that grows, has its own lifecycle or needs queries, model a real entity with <code>@OneToMany</code> instead.</p>
 
-<p><strong>What if/test:</strong> insert 10,000 rows with each strategy and compare the statement count and time.
-<strong>Signal:</strong> connect id strategy to batching and index locality.</p>
-<h4 id="q227-how-do-you-implement-soft-delete-safely">Q227 How do you implement soft delete safely</h4>
-
-<p><strong>Strong answer:</strong> Hibernate 6.4+ provides <code>@SoftDelete</code> for entities and supported collection tables; prefer it when its semantics fit. On older versions, custom delete SQL plus a restriction/filter can implement soft delete, but verify entity loads, associations, bulk operations and caches. <code>@Where</code> was deprecated in favor of <code>@SQLRestriction</code> in newer Hibernate 6 releases; neither turns arbitrary native SQL into a filtered query.</p>
-
-<p><strong>Reasoning and alternatives:</strong> unique constraints still see deleted rows, so use a partial unique index covering only live rows. Native queries and bulk updates bypass the filter, and cascades need thought. If you need history rather than hiding, use an audit table.</p>
-
-<p><strong>What if/test:</strong> delete a row, then insert the same unique value again and query natively.
-<strong>Signal:</strong> mention the unique-constraint trap and the native-query gap.</p>
-<h4 id="q228-what-does-transactional-readonly-true-really-do">Q228 What does @Transactional(readOnly = true) really do</h4>
-
-<p><strong>Strong answer:</strong> Spring&#39;s <code>readOnly = true</code> is a transaction hint, not a write prohibition. With Hibernate integration, Spring Data JPA documents a manual flush mode, which avoids normal dirty checking/flush work. A JDBC read-only hint may also be propagated depending on transaction manager and driver. Replica routing requires an explicitly configured router; the annotation does not move reads to a replica by itself.</p>
-
-<p><strong>Reasoning and alternatives:</strong> it is a hint, not a security boundary. Keep the same transaction rules and do not rely on it to block writes.</p>
-
-<p><strong>What if/test:</strong> modify an entity inside a read-only transaction and check whether anything persists on your stack.
-<strong>Signal:</strong> call it an optimization hint and verify behavior for your versions.</p>
+<p><strong>What if/test:</strong> turn on SQL logging, remove one element and count the statements.
+<strong>Signal:</strong> you know the delete-all-and-reinsert behavior and when to promote the collection to an entity.</p>
 <h4 id="q229-batch-fetching-versus-subselect-fetching">Q229 Batch fetching versus subselect fetching</h4>
 
 <p><strong>Strong answer:</strong> batch fetching (<code>@BatchSize</code>, <code>default_batch_fetch_size</code>) groups lazy loads for several parents into bounded <code>IN</code> queries. <code>@Fetch(FetchMode.SUBSELECT)</code> uses a subselect tied to the parent load to initialize the matching collection roles for parents held in the persistence context; it can fetch far more children than the one collection you touched.</p>
@@ -58,6 +162,14 @@
 
 <p><strong>What if/test:</strong> load 100 parents and count statements under each setting.
 <strong>Signal:</strong> choose by result size and paging needs, not by habit.</p>
+<h4 id="q228-what-does-transactional-readonly-true-really-do">Q228 What does @Transactional(readOnly = true) really do</h4>
+
+<p><strong>Strong answer:</strong> Spring&#39;s <code>readOnly = true</code> is a transaction hint, not a write prohibition. With Hibernate integration, Spring Data JPA documents a manual flush mode, which avoids normal dirty checking/flush work. A JDBC read-only hint may also be propagated depending on transaction manager and driver. Replica routing requires an explicitly configured router; the annotation does not move reads to a replica by itself.</p>
+
+<p><strong>Reasoning and alternatives:</strong> it is a hint, not a security boundary. Keep the same transaction rules and do not rely on it to block writes.</p>
+
+<p><strong>What if/test:</strong> modify an entity inside a read-only transaction and check whether anything persists on your stack.
+<strong>Signal:</strong> call it an optimization hint and verify behavior for your versions.</p>
 <h4 id="q230-which-projection-type-should-you-use-for-read-endpoints">Q230 Which projection type should you use for read endpoints</h4>
 
 <p><strong>Strong answer:</strong> project to the fields the API returns. In Spring Data JPA, a closed interface projection exposes known top-level properties and can let the query select fewer columns. Open projections with expression-based accessors limit this optimization; nested properties can require joins and materialize more data. Explicit DTO constructor expressions and tuples can also select narrow columns when the query names them.</p>
@@ -82,6 +194,14 @@
 
 <p><strong>What if/test:</strong> two clients fetch the same resource, both update, and the second must fail.
 <strong>Signal:</strong> know that the version must round-trip through the API.</p>
+<h4 id="q227-how-do-you-implement-soft-delete-safely">Q227 How do you implement soft delete safely</h4>
+
+<p><strong>Strong answer:</strong> Hibernate 6.4+ provides <code>@SoftDelete</code> for entities and supported collection tables; prefer it when its semantics fit. On older versions, custom delete SQL plus a restriction/filter can implement soft delete, but verify entity loads, associations, bulk operations and caches. <code>@Where</code> was deprecated in favor of <code>@SQLRestriction</code> in newer Hibernate 6 releases; neither turns arbitrary native SQL into a filtered query.</p>
+
+<p><strong>Reasoning and alternatives:</strong> unique constraints still see deleted rows, so use a partial unique index covering only live rows. Native queries and bulk updates bypass the filter, and cascades need thought. If you need history rather than hiding, use an audit table.</p>
+
+<p><strong>What if/test:</strong> delete a row, then insert the same unique value again and query natively.
+<strong>Signal:</strong> mention the unique-constraint trap and the native-query gap.</p>
 <h4 id="q233-how-do-you-add-auditing">Q233 How do you add auditing</h4>
 
 <p><strong>Strong answer:</strong> Spring Data auditing (<code>@CreatedDate</code>, <code>@LastModifiedDate</code>, <code>@CreatedBy</code> with an <code>AuditorAware</code> bean) records who and when on the current row. Hibernate Envers stores revisions for audited entities when changes pass through it.</p>
@@ -98,7 +218,37 @@
 
 <p><strong>What if/test:</strong> run the migration against a copy of production-sized data and time lock duration.
 <strong>Signal:</strong> immutable history plus backward-compatible changes.</p>
-<h3 id="sql">SQL</h3>
+<h3 id="sql-foundations-before-advanced-scenarios">SQL foundations before advanced scenarios</h3>
+<h4 id="d1-how-does-sql-from-a-java-application-reach-the-database">D1 How does SQL from a Java application reach the database</h4>
+
+<p><strong>Strong answer:</strong> JDBC sends a prepared statement and bound values through the driver. The database parses/plans and executes it against the transaction&#39;s visible data; JDBC exposes rows or an update count. JPA/HQL translates entity-oriented queries into SQL first; native SQL already names the database&#39;s tables/columns. A method named <code>save</code> does not promise one immediate INSERT: entity state, identifiers and flush timing matter.</p>
+
+<p><strong>Follow-up — which SQL concepts come first?</strong> Explain primary/foreign/unique keys, NOT NULL and CHECK constraints, SELECT/INSERT/UPDATE/DELETE, then INNER/LEFT joins, WHERE, GROUP BY, HAVING, ORDER BY and pagination. A join can multiply rows; <code>COUNT(*)</code> counts rows while <code>COUNT(column)</code> excludes nulls. SQL has no guaranteed result order without ORDER BY; use a unique tie-breaker for stable paging.</p>
+
+<p><strong>Senior follow-up — how do you investigate a slow query?</strong> Capture the actual SQL and safe parameter shapes, inspect the execution plan on representative data, compare estimated/actual rows, and check indexes, statistics, lock waits and transaction length. <code>EXPLAIN ANALYZE</code> executes the statement on databases such as PostgreSQL; use caution with writes. An index trades read speed for write/storage cost and is not guaranteed to be chosen.</p>
+<h4 id="d2-what-does-a-transaction-guarantee-and-which-guarantees-must-you-name">D2 What does a transaction guarantee, and which guarantees must you name</h4>
+
+<p><strong>Strong answer:</strong> atomicity gives all-or-nothing commit, constraints protect declared invariants, isolation controls concurrent visibility, and durability describes committed persistence under the database&#39;s configured guarantees. Auto-commit makes individual statements transactions, not a multi-call service operation. Name the database and isolation level before claiming a specific anomaly is prevented.</p>
+
+<p><strong>Follow-up — two writers?</strong> Use atomic conditional SQL, constraints or an appropriate lock/version strategy; an application read followed by an unconditional write races. Roll back a failed transaction and retry the whole safe operation with fresh state when appropriate. A connection-loss timeout near commit can leave the outcome unknown; use a durable idempotency key or reconcile rather than assuming rollback.</p>
+
+<p><strong>Progression:</strong> first grouping (Q238), null-aware anti-joins (Q235), ranking (Q236), hierarchy traversal (Q237), then deadlocks and write skew (Q239–Q240), upserts (Q241), data distribution (Q242), paging (Q243) and duplicate cleanup (Q244).</p>
+<h4 id="q238-where-versus-having-and-conditional-aggregation">Q238 WHERE versus HAVING, and conditional aggregation</h4>
+
+<pre><code class="sql">SELECT dept,
+       COUNT(*) AS headcount,
+       SUM(CASE WHEN salary &gt; 100 THEN 1 ELSE 0 END) AS high_earners
+FROM employee
+GROUP BY dept
+HAVING COUNT(*) &gt;= 2;
+</code></pre>
+
+<p><strong>Strong answer:</strong> <code>WHERE</code> filters rows before grouping; <code>HAVING</code> filters groups after aggregation. <code>CASE</code> inside an aggregate counts or sums by condition portably (PostgreSQL also has <code>FILTER</code>).</p>
+
+<p><strong>Reasoning and alternatives:</strong> push filters into <code>WHERE</code> when possible so fewer rows are grouped.</p>
+
+<p><strong>What if/test:</strong> compare plans when a filter sits in <code>WHERE</code> versus <code>HAVING</code>.
+<strong>Signal:</strong> know the order of evaluation.</p>
 <h4 id="q235-not-in-versus-not-exists">Q235 NOT IN versus NOT EXISTS</h4>
 
 <pre><code class="sql">-- customers with no orders (orders.customer_id may contain NULL)
@@ -143,22 +293,6 @@ SELECT id, name, depth FROM chain ORDER BY depth, id;
 
 <p><strong>What if/test:</strong> add a cycle in the data and confirm your guard stops it.
 <strong>Signal:</strong> mention termination and cycle protection.</p>
-<h4 id="q238-where-versus-having-and-conditional-aggregation">Q238 WHERE versus HAVING, and conditional aggregation</h4>
-
-<pre><code class="sql">SELECT dept,
-       COUNT(*) AS headcount,
-       SUM(CASE WHEN salary &gt; 100 THEN 1 ELSE 0 END) AS high_earners
-FROM employee
-GROUP BY dept
-HAVING COUNT(*) &gt;= 2;
-</code></pre>
-
-<p><strong>Strong answer:</strong> <code>WHERE</code> filters rows before grouping; <code>HAVING</code> filters groups after aggregation. <code>CASE</code> inside an aggregate counts or sums by condition portably (PostgreSQL also has <code>FILTER</code>).</p>
-
-<p><strong>Reasoning and alternatives:</strong> push filters into <code>WHERE</code> when possible so fewer rows are grouped.</p>
-
-<p><strong>What if/test:</strong> compare plans when a filter sits in <code>WHERE</code> versus <code>HAVING</code>.
-<strong>Signal:</strong> know the order of evaluation.</p>
 <h4 id="q239-what-causes-database-deadlocks-and-how-do-you-handle-them">Q239 What causes database deadlocks and how do you handle them</h4>
 
 <p><strong>Strong answer:</strong> two transactions each hold a lock the other needs, typically by touching the same rows in opposite order. The database detects the cycle and aborts one transaction. Retry the whole transaction from a fresh read when the operation is safe to repeat; never retry only the failed SQL statement against stale assumptions.</p>
@@ -221,4 +355,4 @@ ON CONFLICT(id) DO UPDATE SET balance = excluded.balance;
 <strong>Signal:</strong> fix the data and add the constraint that prevents recurrence.</p>
 <h3 id="version-and-source-notes">Version and source notes</h3>
 
-<p>Hibernate mapping, identifier, cache, association and soft-delete behavior above is calibrated to the <a href="https://docs.hibernate.org/orm/6.6/userguide/html_single/">Hibernate ORM 6.6 user guide</a>. The transaction and projection points use the <a href="https://docs.spring.io/spring-data/jpa/reference/jpa/transactions.html">Spring Data JPA transaction reference</a> and <a href="https://docs.spring.io/spring-data/data-jpa/reference/3.5/repositories/projections.html">Spring Data JPA 3.5 projection reference</a>. PostgreSQL-specific isolation and partitioning details should be checked against the deployed version&#39;s <a href="https://www.postgresql.org/docs/current/transaction-iso.html">transaction-isolation</a> and <a href="https://www.postgresql.org/docs/current/ddl-partitioning.html">partitioning</a> documentation. SQL query syntax and plans remain database-specific.</p>
+<p>Connection setup follows the <a href="https://docs.oracle.com/javase/tutorial/jdbc/basics/connecting.html">JDBC connection tutorial</a> and <a href="https://docs.spring.io/spring-boot/3.5/reference/data/sql.html">Boot 3.5 SQL configuration</a>. JDBC tutorial examples predate Java 17/21, but the connection APIs described here remain applicable. Hibernate mapping, identifier, cache, association and soft-delete behavior above is calibrated to the <a href="https://docs.hibernate.org/orm/6.6/userguide/html_single/">Hibernate ORM 6.6 user guide</a>. The transaction and projection points use the <a href="https://docs.spring.io/spring-data/jpa/reference/jpa/transactions.html">Spring Data JPA transaction reference</a> and <a href="https://docs.spring.io/spring-data/data-jpa/reference/3.5/repositories/projections.html">Spring Data JPA 3.5 projection reference</a>. PostgreSQL-specific isolation and partitioning details should be checked against the deployed version&#39;s <a href="https://www.postgresql.org/docs/current/transaction-iso.html">transaction-isolation</a> and <a href="https://www.postgresql.org/docs/current/ddl-partitioning.html">partitioning</a> documentation. SQL query syntax and plans remain database-specific.</p>

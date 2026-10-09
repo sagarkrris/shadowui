@@ -2,6 +2,8 @@
 
 <p>Q214–Q216 are full walkthroughs you can follow in a 45-minute design round. Each uses the same flow: requirements, estimates, API, data model, architecture, deep dives, failure handling, trade-offs and a timing plan. The numbers are illustrative assumptions to show the method; in an interview, state your own assumptions and adjust. Q217–Q222 are dynamic programming and graph problems with solutions.</p>
 <h3 id="full-system-design-walkthroughs">Full system design walkthroughs</h3>
+
+<p>Use the <a href="/senior-java-interview/part-1b#module-7-system-design-prompts-practice-45-min-each">requirements-first design sequence</a> before the examples: requirements → estimates → API/data → architecture → failure/scaling analysis → trade-offs. These prompts assume that interview process.</p>
 <h4 id="q214-design-a-flash-sale-checkout-that-never-oversells-inventory">Q214 Design a flash-sale checkout that never oversells inventory</h4>
 
 <p><strong>Requirements.</strong> Functional: browse a product, add to cart, reserve stock, pay, confirm the order. Non-functional: never sell more units than exist, tolerate a sudden traffic spike (assume 1M users, 100K requests/second on the product page, 10K order attempts/second, 5,000 units), stay available if payment is slow, and stay idempotent on retries.</p>
@@ -61,6 +63,8 @@ Drivers stream locations over a persistent connection (WebSocket or gRPC) or <co
 <h3 id="dynamic-programming-and-graph-problems">Dynamic programming and graph problems</h3>
 <h4 id="q217-longest-increasing-subsequence-in-o-n-log-n">Q217 Longest increasing subsequence in O(n log n)</h4>
 
+<p><strong>Explain before coding:</strong> tails[i] is the smallest known ending value for an increasing subsequence of length i+1. For [3,1,2], replace tail 3 with 1, then extend with 2. A smaller tail leaves more future extension options; the tails array is a summary of possibilities, not necessarily one reconstructed subsequence.</p>
+
 <pre><code class="java">int lengthOfLIS(int[] nums) {
     int[] tails = new int[nums.length];          // tails[i] = smallest tail of an increasing subsequence of length i+1
     int size = 0;
@@ -79,6 +83,8 @@ Drivers stream locations over a persistent connection (WebSocket or gRPC) or <co
 <p><strong>What if/test:</strong> the array <code>tails</code> is not itself a valid subsequence, only its length is meaningful. Test empty input, all equal values (answer 1) and strictly decreasing input.
 <strong>Signal:</strong> explain what <code>tails</code> means and why equal values replace instead of extend.</p>
 <h4 id="q218-partition-equal-subset-sum-0-1-knapsack">Q218 Partition equal subset sum (0/1 knapsack)</h4>
+
+<p><strong>Explain before coding:</strong> An equal partition exists exactly when a subset reaches half the total. Start with sum zero reachable and add each non-negative number once. Update sums downward so the current number cannot contribute repeatedly during one iteration; upward updates would solve a different problem.</p>
 
 <pre><code class="java">boolean canPartition(int[] nums) {
     long sum = 0;
@@ -103,6 +109,8 @@ Drivers stream locations over a persistent connection (WebSocket or gRPC) or <co
 <strong>Signal:</strong> explain the reverse loop and the reduction.</p>
 <h4 id="q219-longest-common-subsequence">Q219 Longest common subsequence</h4>
 
+<p><strong>Explain before coding:</strong> For two prefixes, matching last characters extend the best result for the two shorter prefixes. If they differ, discard the last character from either prefix and take the better result. For abc and ac, keeping a then c gives length two. Subsequence permits gaps; substring does not.</p>
+
 <pre><code class="java">int longestCommonSubsequence(String a, String b) {
     int[][] dp = new int[a.length() + 1][b.length() + 1];
     for (int i = 1; i &lt;= a.length(); i++)
@@ -119,6 +127,8 @@ Drivers stream locations over a persistent connection (WebSocket or gRPC) or <co
 <p><strong>What if/test:</strong> test empty strings, identical strings and no common characters.
 <strong>Signal:</strong> define the state precisely and mention the space optimization.</p>
 <h4 id="q220-word-ladder-shortest-transformation-bfs">Q220 Word ladder (shortest transformation, BFS)</h4>
+
+<p><strong>Explain before coding:</strong> Treat each valid word as a node and each one-letter transformation as an equal-cost edge. BFS explores all one-change candidates before two-change candidates. Mark a word visited on enqueue so repeated paths do not expand it again; the first target layer gives the shortest ladder.</p>
 
 <pre><code class="java">int ladderLength(String begin, String end, List&lt;String&gt; words) {
     if (begin.equals(end)) return 1; // if a zero-transformation ladder is allowed
@@ -156,6 +166,8 @@ Drivers stream locations over a persistent connection (WebSocket or gRPC) or <co
 <strong>Signal:</strong> model it as a graph, mark visited when enqueuing, and offer bidirectional BFS.</p>
 <h4 id="q221-cheapest-flights-within-k-stops-bellman-ford-style">Q221 Cheapest flights within K stops (Bellman-Ford style)</h4>
 
+<p><strong>Explain before coding:</strong> Keep the cheapest cost using at most the previous round&#39;s number of edges. Read only that old array while writing the next one, so a single round adds at most one flight. With zero intermediate stops, at most one flight is allowed; reusing updated costs in the same round could accept a forbidden connection.</p>
+
 <pre><code class="java">int findCheapestPrice(int n, int[][] flights, int src, int dst, int k) {
     long INF = Long.MAX_VALUE / 4;
     long[] dist = new long[n];
@@ -174,9 +186,11 @@ Drivers stream locations over a persistent connection (WebSocket or gRPC) or <co
 
 <p><strong>Reasoning and alternatives:</strong> each round allows one more edge, so after <code>k + 1</code> rounds the array holds the cheapest cost using at most <code>k</code> intermediate stops. O((k + 1) × (E + V)) time and O(V) space, including each clone. Assume non-negative fares and a final answer in the <code>int</code> range; <code>long</code> distances avoid ordinary intermediate overflow. Plain Dijkstra using only one best cost per city can discard a path with fewer edges that is needed under the stop limit; a correct priority-queue variant tracks stops in its state.</p>
 
-<p><strong>What if/test:</strong> cloning the array each round prevents using an edge twice in one round. Test unreachable destinations, <code>k = 0</code> and a case where a cheaper path needs too many stops.
+<p><strong>What if/test:</strong> cloning the array each round prevents chaining multiple newly relaxed edges in that same round, preserving the edge-count bound. Test unreachable destinations, <code>k = 0</code> and a case where a cheaper path needs too many stops.
 <strong>Signal:</strong> explain why the stop limit rules out standard Dijkstra and why the clone matters.</p>
 <h4 id="q222-redundant-connection-union-find">Q222 Redundant connection (Union-Find)</h4>
+
+<p><strong>Explain before coding:</strong> Before adding an edge, ask whether both endpoints already share a representative. In the triangle (1,2), (2,3), (1,3), the third edge closes the existing path into a cycle. Otherwise union the two components; path compression and rank keep representative searches cheap.</p>
 
 <pre><code class="java">int[] findRedundantConnection(int[][] edges) {
     int[] parent = new int[edges.length + 1];

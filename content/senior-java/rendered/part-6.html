@@ -6,6 +6,8 @@ one breath, then expand if the interviewer probes.</p>
 
 <hr>
 <h2 id="r-rapid-fire-one-breath-answers">R. Rapid-Fire (one-breath answers)</h2>
+
+<p>Use these as recall prompts after the detailed answers. For an interview follow-up, expand the mechanism and example from the <a href="/senior-java-interview/part-1a#topic-learning-order-start-with-the-foundations">topic learning paths</a>; a one-line comparison is not a full explanation.</p>
 <h3 id="java">Java</h3>
 
 <ol>
@@ -14,20 +16,22 @@ one null key; fully synchronized legacy; per-bin CAS/locks, no
 nulls.</li>
 <li> <strong>ArrayList vs LinkedList?</strong> Array-backed O(1) index and
 cache-friendly vs O(n) index; ArrayList wins almost always.</li>
-<li> <strong><code>final</code>, <code>finally</code>, <code>finalize</code>?</strong> Constant/no-override;
-always-runs block; deprecated GC hook (use
-<code>Cleaner</code>/try-with-resources).</li>
+<li> <strong><code>final</code>, <code>finally</code>, <code>finalize</code>?</strong> Assignment/extension restrictions,
+not deep immutability; cleanup on normal or abrupt control flow,
+but not guaranteed after process termination; finalization is deprecated
+for removal. Prefer explicit resource ownership and try-with-resources.</li>
 <li> <strong>Abstract class vs interface?</strong> State and constructors vs multiple
 inheritance of type; interfaces have <code>default</code>/<code>static</code> methods
 since 8.</li>
 <li> <strong><code>==</code> vs <code>equals</code>?</strong> Reference identity vs logical equality.</li>
 <li> <strong>Stack vs heap?</strong> Per-thread frames and primitives/references vs
 shared objects managed by GC.</li>
-<li> <strong>Strong, soft, weak, phantom references?</strong> Never collected while
-reachable; cleared under memory pressure (caches); cleared at next
-GC (<code>WeakHashMap</code>); post-mortem cleanup.</li>
-<li> <strong><code>wait()</code> vs <code>sleep()</code>?</strong> <code>wait</code> releases the monitor and needs the
-lock; <code>sleep</code> keeps locks.</li>
+<li> <strong>Strong, soft, weak, phantom references?</strong> Strong reachability keeps
+an object alive; softer reference types permit different GC processing
+and notification. Weak references do not guarantee a cleanup deadline;
+phantom references support post-reachability cleanup coordination.</li>
+<li> <strong><code>wait()</code> vs <code>sleep()</code>?</strong> <code>wait</code> requires ownership and releases that
+object&#39;s monitor while waiting, then reacquires it; <code>sleep</code> releases no monitors.</li>
 <li> <strong>Callable vs Runnable?</strong> Returns a value and may throw checked
 exceptions.</li>
 <li><strong>Serialization risks?</strong> Version mismatch, security (gadget chains);
@@ -44,24 +48,26 @@ countdown; reusable rendezvous; permit-based throttling.</li>
 <h3 id="spring-hibernate">Spring / Hibernate</h3>
 
 <ol>
-<li><strong><code>@Component</code> vs <code>@Bean</code>?</strong> Class-level scanned stereotype vs
-method-level explicit factory for third-party classes.</li>
+<li><strong><code>@Component</code> vs <code>@Bean</code>?</strong> Class-level discovery candidate vs
+method-level factory registration, useful for third-party or application classes.</li>
 <li><strong><code>@Controller</code> vs <code>@RestController</code>?</strong> View resolution vs
 <code>@Controller</code> + <code>@ResponseBody</code>.</li>
-<li><strong><code>@Qualifier</code> vs <code>@Primary</code>?</strong> Pick a specific bean by name vs
-default among candidates.</li>
+<li><strong><code>@Qualifier</code> vs <code>@Primary</code>?</strong> Narrow eligible candidates by qualifier
+metadata versus prefer one candidate for single-valued injection.</li>
 <li><strong><code>@Value</code> vs <code>@ConfigurationProperties</code>?</strong> Single property vs
 typed, validated, grouped binding.</li>
-<li><strong><code>@RequestParam</code> vs <code>@PathVariable</code> vs <code>@RequestBody</code>?</strong> Query
-string, URI segment, and JSON body.</li>
+<li><strong><code>@RequestParam</code> vs <code>@PathVariable</code> vs <code>@RequestBody</code>?</strong> Request
+parameters, URI-template variables, and a body decoded by a message converter;
+the body need not be JSON.</li>
 <li><strong>Filter vs Interceptor?</strong> Servlet-level, before <code>DispatcherServlet</code>
 vs Spring MVC handler-level with access to the handler.</li>
 <li><strong>Entity lookup vs reference?</strong> <code>find</code>/legacy <code>get</code> returns an
 entity or null and may use the persistence context/cache;
 <code>getReference</code> can defer loading and absence detection. Legacy
 <code>load</code> behavior and availability depend on Hibernate version.</li>
-<li><strong><code>@OneToMany</code> owning side?</strong> The <code>@ManyToOne</code> side with
-<code>@JoinColumn</code>; use <code>mappedBy</code> on the other.</li>
+<li><strong><code>@OneToMany</code> owning side?</strong> For the usual bidirectional pair,
+<code>@ManyToOne</code> owns the foreign key and <code>mappedBy</code> identifies the inverse side.
+Unidirectional and join-table mappings need their own ownership explanation.</li>
 <li><strong><code>Page</code> vs <code>Slice</code> vs <code>List</code>?</strong> Page reports total information and
 may need a count query; Slice reports whether more results exist. A
 List can still be bounded by a Pageable/limit. Pageable is a request
@@ -77,8 +83,9 @@ event-driven reactions.</li>
 <li><strong>Idempotency?</strong> Repeating an operation has the same effect as doing
 it once.</li>
 <li><strong>Circuit breaker states?</strong> Closed → open → half-open.</li>
-<li><strong>Sticky sessions: good?</strong> No; keep services stateless and
-externalise sessions (Redis/JWT).</li>
+<li><strong>Sticky sessions: good?</strong> Affinity can serve specific needs, but
+complicates balancing and failover; avoid making durable session correctness
+depend on one disposable instance.</li>
 <li><strong>Blue-green vs canary?</strong> Full parallel switch vs gradual percentage
 rollout.</li>
 <li><strong>SLI vs SLO vs SLA?</strong> The measurement, the internal target, the
@@ -87,19 +94,22 @@ contractual promise.</li>
 if no new updates occur.</li>
 <li><strong>Pub/Sub vs queue?</strong> Fan-out to many subscribers vs competing
 consumers on one queue.</li>
-<li><strong>Cloud Run vs GKE one-liner?</strong> Simple stateless containers with
-scale-to-zero vs full Kubernetes control.</li>
+<li><strong>Cloud Run vs GKE one-liner?</strong> Managed service/job/worker execution
+models versus Kubernetes platform control; compare the selected resource&#39;s
+capabilities and operating cost.</li>
 <li><strong>Liveness vs readiness?</strong> Restart me if broken vs stop sending me
 traffic until ready.</li>
 <li><strong>Docker image vs container?</strong> Immutable template vs running
 instance.</li>
 <li><strong>Maven <code>install</code> vs <code>deploy</code>?</strong> Local repo vs remote repository.</li>
-<li><strong><code>mvn clean install</code> vs <code>verify</code>?</strong> <code>verify</code> runs through
-integration tests without copying to <code>~/.m2</code>.</li>
+<li><strong><code>mvn clean install</code> vs <code>verify</code>?</strong> <code>verify</code> reaches configured
+verification without local installation. <code>clean install</code> also cleans first
+and installs the artifact; integration tests require their plugin configuration.</li>
 <li><strong>IaC benefit?</strong> Reproducible, reviewable, versioned infrastructure
 (Terraform).</li>
-<li><strong>PUT vs PATCH vs POST?</strong> Idempotent full replace; partial update;
-create or non-idempotent action.</li>
+<li><strong>PUT vs PATCH vs POST?</strong> Create/replace the target representation
+idempotently; partial modification with operation-dependent idempotency;
+resource-specific processing that is not inherently idempotent.</li>
 <li><strong>401 vs 403?</strong> Not authenticated vs authenticated but not allowed.</li>
 </ol>
 
@@ -114,7 +124,7 @@ implementations may cache more values. Use <code>equals</code> for value equalit
 <code>try { return 1; } finally { return 2; }</code> → returns <strong>2</strong>; a <code>return</code> in
 <code>finally</code> overrides and swallows exceptions. Never do it. <strong>4.</strong>
 <code>Arrays.asList(1,2).add(3)</code> and <code>List.of(1).add(2)</code> →
-<code>UnsupportedOperationException</code> (fixed-size / immutable). <strong>5.</strong>
+<code>UnsupportedOperationException</code> (fixed-size / structurally unmodifiable). <strong>5.</strong>
 Mutating equality/hash-relevant state after insertion can make a
 <code>HashSet</code> lookup fail; the exact output is not guaranteed for every
 mutation. The key must remain stable while stored. <strong>6.</strong> Removing
@@ -131,6 +141,8 @@ the subclass constructor body.</p>
 
 <hr>
 <h2 id="t-more-system-designs-condensed">T. More System Designs (condensed)</h2>
+
+<p>Use the <a href="/senior-java-interview/part-1b#module-7-system-design-prompts-practice-45-min-each">requirements-first design sequence</a> before the examples: requirements → estimates → API/data → architecture → failure/scaling analysis → trade-offs. These prompts assume that interview process.</p>
 
 <p><strong>Design 4: Distributed Rate Limiter.</strong> Requirements: per-user/API-key
 limits, &lt;5 ms overhead, works across many instances. Algorithms: <em>fixed

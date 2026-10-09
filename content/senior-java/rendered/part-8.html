@@ -7,6 +7,8 @@ Coding · Google-Style Design · Amazon Leadership Principles</strong>
 <hr>
 <h2 id="ab-kafka-streams">AB. Kafka Streams</h2>
 
+<p>Begin with <a href="/senior-java-interview/part-3#k1-how-do-producers-brokers-and-consumers-fit-together">producers, brokers and consumers</a>. Then Q123–Q125 introduce stream/table views before state management and windows.</p>
+
 <p><strong>Q123. KStream vs KTable vs GlobalKTable?</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is">A good SDE-3 interview answer is:</h4>
 
@@ -20,27 +22,10 @@ reference data). The stream-table duality is the key idea: a table is a
 stream of updates, and a stream can be aggregated into a table.</p>
 <h4 id="how-to-understand-it">How to understand it</h4>
 
-<p>Compare the options by correctness, operational behavior, performance,
-failure modes, and when you would choose each one—not just by
-definitions.</p>
-
-<p><strong>Plain-English starting point:</strong> A <strong>KStream</strong> is an unbounded sequence
-of independent events (every record matters: clicks, payments). A
-<strong>KTable</strong> is a changelog view where each key holds its <em>latest</em> value
-(updates replace, a null tombstone deletes), such as the current
-customer profile.</p>
+<p><strong>Worked explanation:</strong> A stream records each customer-address change; a table keeps the latest address per customer. Joining orders to that table answers a different question from preserving every address-change event.</p>
 <h4 id="sde-3-interview-checkpoints">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Why not always use GlobalKTable? Each instance bears the full replicated reference-state cost, so size and update rate matter.</p>
 <h4 id="30-second-version">30-second version</h4>
 
 <blockquote>
@@ -54,46 +39,17 @@ tombstone deletes), such as the current customer profile.</p>
 tolerance?</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is-1">A good SDE-3 interview answer is:</h4>
 
-<p>Stateful operations (aggregations, joins, windows) use local <strong>state
-stores</strong> (RocksDB) backed by compacted <strong>changelog topics</strong>, so a
-restarted or moved task restores its state. Parallelism equals the
-number of input partitions (tasks), and instances in the same
-<code>application.id</code> share them like a consumer group. Joins require
-<strong>co-partitioned</strong> topics (same key and partition count); a key change marks the stream for possible repartitioning; a topic is created when a later key-dependent DSL operation requires records with the new key to be colocated. Processor API paths may need explicit <code>repartition()</code>. Use
-<code>processing.guarantee=exactly_once_v2</code> for transactional
-read-process-write inside Kafka, standby replicas for fast failover, and
-monitor restore time and lag.</p>
+<p>Kafka Streams assigns partition-based tasks to instances sharing an application.id. Stateful operations can use local stores with changelogs for restoration and optional standby replicas. Parallelism depends on the topology and its partitioning. Keyed joins commonly need compatible partitioning; GlobalKTable joins differ. Changing a key can cause a later key-dependent DSL operation to repartition, while Processor API paths may need explicit handling. Exactly-once processing covers supported Kafka transactional work, not arbitrary external effects. Measure lag and state restore time.</p>
 <h4 id="how-to-understand-it-1">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Stateful operations (aggregations,
-joins, windows) use local <strong>state stores</strong> (RocksDB) backed by compacted
-<strong>changelog topics</strong>, so a restarted or moved task restores its state.
-Parallelism equals the number of input partitions (tasks), and instances
-in the same <code>application.id</code> share them like a consumer group.</p>
+<p><strong>Worked explanation:</strong> A stateful task updates local state while its changelog supports restoration elsewhere. Partitioning determines which task owns a key and whether related records meet for a join.</p>
 <h4 id="sde-3-interview-checkpoints-1">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Must every join repartition? No; existing co-partitioning and join type matter, and GlobalKTable joins have different requirements.</p>
 <h4 id="30-second-version-1">30-second version</h4>
 
 <blockquote>
-<p>Stateful operations (aggregations, joins, windows) use local <strong>state
-stores</strong> (RocksDB) backed by compacted <strong>changelog topics</strong>, so a
-restarted or moved task restores its state. Parallelism equals the
-number of input partitions (tasks), and instances in the same
-<code>application.id</code> share them like a consumer group.</p>
+<p>Explain key ownership, local state and changelog restoration. Scaling and repartitioning depend on the topology; join requirements and transactional guarantees must be stated for the operation being used.</p>
 </blockquote>
 
 <p><strong>Q125. Windowing and late data?</strong></p>
@@ -102,20 +58,10 @@ number of input partitions (tasks), and instances in the same
 <p>Window types: <em>tumbling</em> (fixed, non-overlapping), <em>hopping</em> (fixed,
 overlapping), <em>sliding</em>, and <em>session</em> (gaps of inactivity). Processing
 uses <strong>event time</strong>; records that arrive after the window end are
-handled by the <strong>grace period</strong>, after which they are dropped for window-close semantics. Use <code>Suppressed.untilWindowCloses(...)</code> with a strict buffer for final window results; <code>untilTimeLimit</code> has different behavior. Closure follows stream-time progress, so an idle input may not emit just because wall-clock time passes. Explain the trade-off: a
-a longer grace allows more late events but delays final output and increases state/buffer needs. Test idle streams as well as late events.</p>
+handled by the <strong>grace period</strong>, after which they are dropped for window-close semantics. Use <code>Suppressed.untilWindowCloses(...)</code> with a strict buffer for final window results; <code>untilTimeLimit</code> has different behavior. Closure follows stream-time progress, so an idle input may not emit just because wall-clock time passes. Explain the trade-off: a longer grace allows more late events but delays final output and increases state/buffer needs. Test idle streams as well as late events.</p>
 <h4 id="how-to-understand-it-2">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Window types: <em>tumbling</em> (fixed,
-non-overlapping), <em>hopping</em> (fixed, overlapping), <em>sliding</em>, and
-<em>session</em> (gaps of inactivity). Processing uses <strong>event time</strong>; records
-that arrive after the window end are handled by the <strong>grace period</strong>,
-after which they are dropped, and <code>suppress()</code> emits only the final
-result.</p>
+<p><strong>Worked explanation:</strong> A window groups events by their timestamps; stream-time progress determines when it is too late to update the window. Wall-clock waiting alone may not close it during idle input.</p>
 <h4 id="key-terms-you-should-know">Key terms you should know</h4>
 
 <ul>
@@ -125,16 +71,7 @@ result.</p>
 </ul>
 <h4 id="sde-3-interview-checkpoints-2">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Why increase grace? It accepts more late data at the cost of later final results and more retained state.</p>
 <h4 id="30-second-version-2">30-second version</h4>
 
 <blockquote>
@@ -147,6 +84,8 @@ and <code>suppress()</code> emits only the final result.</p>
 
 <hr>
 <h2 id="ac-reactive-programming-spring-webflux">AC. Reactive Programming &amp; Spring WebFlux</h2>
+
+<p>First establish the <a href="/senior-java-interview/part-1a#multithreading-questions-foundations-to-senior-follow-ups">thread lifecycle and executor foundation</a> and <a href="/senior-java-interview/part-7#api-questions-before-protocol-choices">request contract</a>. Q126 already supplies the reactive foundation: publisher/subscriber → subscription/demand → Mono/Flux → operators. Continue with Q127–Q129 for blocking mistakes, runtime choices and testing.</p>
 
 <p><strong>Q126. Explain Mono, Flux and back-pressure.</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is-3">A good SDE-3 interview answer is:</h4>
@@ -169,10 +108,7 @@ inner publishers and interleave output; <code>concatMap</code> processes them
 sequentially while preserving order.</p>
 <h4 id="how-to-understand-it-3">How to understand it</h4>
 
-<p>Distinguish assembly, subscription, production and delivery. Java
-evaluates method arguments before the method call, so putting eager work
-inside <code>just</code> cannot make it lazy. A hot source and a cold deferred source
-also have different behavior for late or repeated subscribers.</p>
+<p><strong>Worked explanation:</strong> The subscriber requests capacity, the publisher emits permitted values, and completion or error terminates the sequence. A Mono may complete empty; a Flux may emit many values. Source and scheduling semantics determine when work starts.</p>
 <h4 id="key-terms-you-should-know-1">Key terms you should know</h4>
 
 <ul>
@@ -182,11 +118,7 @@ also have different behavior for late or repeated subscribers.</p>
 </ul>
 <h4 id="sde-3-interview-checkpoints-3">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li>Compare eager <code>just(call())</code> with deferred <code>fromCallable</code>.</li>
-<li>Test late subscribers, repeat subscriptions, cancellation and overflow.</li>
-<li>Bound concurrency and keep blocking dependencies off the event loop.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Does back-pressure eliminate memory limits? No; buffers and push-source overflow policies still need explicit bounds.</p>
 <h4 id="30-second-version-3">30-second version</h4>
 
 <blockquote>
@@ -213,15 +145,7 @@ blocking-call
 guidance</a>.</p>
 <h4 id="how-to-understand-it-4">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Blocking the event loop stalls
-unrelated requests. Wrap a synchronous dependency as
-<code>Mono.fromCallable(() -&gt; blockingCall()).subscribeOn(Schedulers.boundedElastic())</code>;
-<code>publishOn</code> changes downstream execution and is not a general fix for
-blocking source work.</p>
+<p><strong>Worked explanation:</strong> One blocking database call on an event loop can delay many unrelated connections. Deferring that call and assigning it to an appropriate bounded scheduler separates it from the event loop.</p>
 <h4 id="key-terms-you-should-know-2">Key terms you should know</h4>
 
 <ul>
@@ -229,16 +153,7 @@ blocking source work.</p>
 </ul>
 <h4 id="sde-3-interview-checkpoints-4">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Does publishOn fix work already evaluated in Mono.just? No; that expression ran before the reactive pipeline could schedule it.</p>
 <h4 id="30-second-version-4">30-second version</h4>
 
 <blockquote>
@@ -252,25 +167,10 @@ blocking source work.</p>
 <p><strong>Q128. WebFlux or Spring MVC with virtual threads?</strong></p>
 <h4 id="a-good-sde-3-interview-answer-is-5">A good SDE-3 interview answer is:</h4>
 
-<p>Choose WebFlux for end-to-end non-blocking stacks (R2DBC, reactive
-Mongo/Redis/Kafka, WebClient), streaming (SSE/WebSocket), or
-gateway-style fan-out with heavy back-pressure needs. Choose <strong>MVC +
-virtual threads</strong> when you use blocking libraries such as JDBC/JPA: you
-get high concurrency with simple, debuggable code. A reactive controller
-over a blocking JPA repository gives the complexity of reactive with
-none of the benefits.</p>
+<p>Choose from the entire workload and library stack. MVC with virtual threads can suit blocking JDBC/JPA workflows while retaining straightforward control flow. WebFlux can suit non-blocking composition, streaming and demand control. A mixed stack is possible with deliberate offloading, bounded concurrency and context handling, but keeps the blocking dependency&#39;s limits and adds integration cost. Neither model removes database capacity limits or automatically improves throughput.</p>
 <h4 id="how-to-understand-it-5">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Choose WebFlux for end-to-end
-non-blocking stacks (R2DBC, reactive Mongo/Redis/Kafka, WebClient),
-streaming (SSE/WebSocket), or gateway-style fan-out with heavy
-back-pressure needs. Choose <strong>MVC + virtual threads</strong> when you use
-blocking libraries such as JDBC/JPA: you get high concurrency with
-simple, debuggable code.</p>
+<p><strong>Worked explanation:</strong> Choose based on the whole dependency path. A blocking JDBC workload fits ordinary blocking code well; an end-to-end reactive path can compose streaming and demand control.</p>
 <h4 id="key-terms-you-should-know-3">Key terms you should know</h4>
 
 <ul>
@@ -281,24 +181,11 @@ and non-blocking processing with explicit demand/back-pressure.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-5">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Can a mixed stack work? Yes with deliberate offloading and limits, but it retains blocking resource costs and added integration complexity.</p>
 <h4 id="30-second-version-5">30-second version</h4>
 
 <blockquote>
-<p>Choose WebFlux for end-to-end non-blocking stacks (R2DBC, reactive
-Mongo/Redis/Kafka, WebClient), streaming (SSE/WebSocket), or
-gateway-style fan-out with heavy back-pressure needs. Choose <strong>MVC +
-virtual threads</strong> when you use blocking libraries such as JDBC/JPA:
-you get high concurrency with simple, debuggable code.</p>
+<p>Compare the complete dependency path and required streaming/concurrency behavior. Virtual threads simplify many blocking workloads; reactive composition can help suitable non-blocking flows. Mixed stacks need explicit scheduling and limits.</p>
 </blockquote>
 
 <p><strong>Q129. How do you test reactive code?</strong></p>
@@ -310,27 +197,10 @@ Testcontainers provide real brokers/DBs. Verify cancellation and error
 paths, not only the happy path.</p>
 <h4 id="how-to-understand-it-6">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> <code>StepVerifier</code> asserts emitted items,
-errors and completion, with <code>withVirtualTime</code> for delays/timeouts;
-<code>WebTestClient</code> tests endpoints; Testcontainers provide real
-brokers/DBs. Verify cancellation and error paths, not only the happy
-path.</p>
+<p><strong>Worked explanation:</strong> Describe the expected signals in order: values, terminal success or error, and cancellation behavior. Virtual time lets time-based operators be exercised without real delays when publishers are created appropriately.</p>
 <h4 id="sde-3-interview-checkpoints-6">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Can a passing value assertion miss a resource leak? Yes; verify termination, cancellation and cleanup as well as emitted data.</p>
 <h4 id="30-second-version-6">30-second version</h4>
 
 <blockquote>
@@ -356,18 +226,7 @@ possible; scan repos for leaked secrets (gitleaks) and revoke
 immediately if exposed.</p>
 <h4 id="how-to-understand-it-7">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Never in Git, images, env files
-committed to repos or logs. Use a secret manager (GCP Secret Manager,
-Vault) with IAM-scoped access, versioning and audit logs; load at
-startup or mount as a volume (prefer files over env vars, which leak in
-dumps and <code>ps</code>); <strong>rotate</strong> automatically and design the app to reload
-or restart on rotation; use short-lived credentials (Workload Identity,
-IAM database authentication) wherever possible; scan repos for leaked
-secrets (gitleaks) and revoke immediately if exposed.</p>
+<p><strong>Worked explanation:</strong> A secret has an owner, permitted readers, expiry/rotation policy and response to exposure. Updating the stored value is only half of rotation; running clients must begin using it safely.</p>
 <h4 id="key-terms-you-should-know-4">Key terms you should know</h4>
 
 <ul>
@@ -378,16 +237,7 @@ identities without embedding long-lived service-account keys.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-7">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> What happens during overlap? Plan how old and new credentials coexist, refresh, fail and are revoked without exposing values in logs.</p>
 <h4 id="30-second-version-7">30-second version</h4>
 
 <blockquote>
@@ -414,17 +264,7 @@ network policies, least-privilege IAM, and audit logging. The gateway is
 one control, not the whole perimeter.</p>
 <h4 id="how-to-understand-it-8">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> &quot;Never trust, always verify&quot;: no
-implicit trust from network location. Implementation: <strong>mTLS</strong> between
-services (mesh-issued short-lived certificates), service identities
-(SPIFFE or cloud service accounts), per-call authorisation (propagate
-the user&#39;s JWT plus service-level scopes, enforce in each service, not
-only at the gateway), default-deny network policies, least-privilege
-IAM, and audit logging.</p>
+<p><strong>Worked explanation:</strong> Authenticating a service&#39;s certificate proves its workload identity, not its right to read every user&#39;s data. Each hop must enforce the intended authorization context and trusted token audience.</p>
 <h4 id="key-terms-you-should-know-5">Key terms you should know</h4>
 
 <ul>
@@ -435,16 +275,7 @@ defined interface; a Kubernetes Service is a specific networking resource.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-8">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Should the same user token be forwarded everywhere? Only when intended for that recipient and permitted by the delegation model; otherwise use appropriate exchange or service credentials.</p>
 <h4 id="30-second-version-8">30-second version</h4>
 
 <blockquote>
@@ -469,18 +300,7 @@ explicit namespaces. Know the Log4Shell lesson: have an inventory so you
 can answer &quot;where do we use library X?&quot; within minutes.</p>
 <h4 id="how-to-understand-it-9">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Pin and verify dependencies, scan with
-SCA (Dependabot/OWASP/Snyk), generate an <strong>SBOM</strong>, sign artifacts/images
-(cosign) and enforce signature and vulnerability policy at deploy time
-(Binary Authorization), use minimal/distroless base images, build in
-isolated CI with ephemeral credentials, require code review and branch
-protection, and prevent dependency-confusion by using a private
-repository with explicit namespaces. Know the Log4Shell lesson: have an
-inventory so you can answer &quot;where do we use library X?&quot; within minutes.</p>
+<p><strong>Worked explanation:</strong> Trace a deployed image back to source, dependencies and a trusted build. Signatures verify who signed particular bytes; policy and provenance decide whether those bytes should run.</p>
 <h4 id="key-terms-you-should-know-6">Key terms you should know</h4>
 
 <ul>
@@ -489,16 +309,7 @@ application-security guidance, including the OWASP Top 10.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-9">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Does signing make a vulnerable image safe? No; inventory, review, vulnerability response and deployment enforcement remain distinct controls.</p>
 <h4 id="30-second-version-9">30-second version</h4>
 
 <blockquote>
@@ -526,18 +337,7 @@ container, keep dependencies patched, and log security events (auth
 failures, access denials) without sensitive data.</p>
 <h4 id="how-to-understand-it-10">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Expose only needed Actuator endpoints
-(and secure them), disable stack traces in responses, set security
-headers (HSTS, CSP, <code>X-Content-Type-Options</code>), enforce HTTPS and TLS
-1.2+, validate and size-limit input (request body size, upload types),
-rate-limit and add timeouts, parameterised queries only, strict CORS,
-disable default accounts and verbose error pages, run as non-root in a
-read-only container, keep dependencies patched, and log security events
-(auth failures, access denials) without sensitive data.</p>
+<p><strong>Worked explanation:</strong> For each attack surface, name a control and an observable failure test: unauthorized object access, oversized payloads, unsafe outbound destinations or exposed management endpoints.</p>
 <h4 id="key-terms-you-should-know-7">Key terms you should know</h4>
 
 <ul>
@@ -548,16 +348,7 @@ read-only container, keep dependencies patched, and log security events
 </ul>
 <h4 id="sde-3-interview-checkpoints-10">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Does a checklist prove security? No; test the real configuration and request paths, including alternate entry points and failure responses.</p>
 <h4 id="30-second-version-10">30-second version</h4>
 
 <blockquote>
@@ -733,6 +524,8 @@ before processing children.</p>
 
 <hr>
 <h2 id="af-google-style-system-design-condensed">AF. Google-Style System Design (condensed)</h2>
+
+<p>Use the <a href="/senior-java-interview/part-1b#module-7-system-design-prompts-practice-45-min-each">requirements-first design sequence</a> before the examples: requirements → estimates → API/data → architecture → failure/scaling analysis → trade-offs. These prompts assume that interview process.</p>
 
 <p><strong>Design 7: Distributed Job Scheduler.</strong> <em>Clarify:</em> one-off and
 recurring (cron) jobs, millions per day, at-least-once execution with

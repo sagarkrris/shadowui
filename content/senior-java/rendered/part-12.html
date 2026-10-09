@@ -2,6 +2,8 @@
 
 <p>Twenty additional questions on topics the guide did not yet cover: consensus and data distribution, database internals, low-level concurrency, JVM performance, Spring operations, and engineering practice. Each follows the same layout as Part 10: <strong>Source basis</strong>, <strong>Strong answer</strong>, <strong>Reasoning and alternatives</strong>, <strong>What if/test</strong>, and <strong>Signal</strong>. Where no specific source is cited, the basis is general engineering practice, so check details against the documentation for your version before quoting numbers.</p>
 <h3 id="distributed-systems-and-data">Distributed systems and data</h3>
+
+<p>Before consensus and sharding, review <a href="/senior-java-interview/part-11#cap">CAP</a>, <a href="/senior-java-interview/part-11#quorum">quorums</a> and <a href="/senior-java-interview/part-11#eventual-consistency">consistency terminology</a>, plus <a href="/senior-java-interview/part-16#sql-foundations-before-advanced-scenarios">SQL transactions</a>. Then use Q154–Q160 for the deeper mechanisms.</p>
 <h4 id="q154-how-does-raft-elect-a-leader-and-why-do-systems-use-consensus">Q154 How does Raft elect a leader and why do systems use consensus</h4>
 
 <p><strong>Source basis:</strong> <a href="https://raft.github.io/raft.pdf">Raft paper</a>.</p>
@@ -22,9 +24,9 @@
 <strong>Signal:</strong> quantify the remapping difference and name the virtual-node benefit.</p>
 <h4 id="q156-what-is-mvcc-and-why-do-readers-not-block-writers">Q156 What is MVCC and why do readers not block writers</h4>
 
-<p><strong>Source basis:</strong> <a href="https://www.postgresql.org/docs/current/mvcc-intro.html">PostgreSQL MVCC introduction</a>.</p>
+<p><strong>Source basis:</strong> <a href="https://www.postgresql.org/docs/17/mvcc-intro.html">PostgreSQL MVCC introduction</a> and <a href="https://www.postgresql.org/docs/17/explicit-locking.html">explicit locking</a>.</p>
 
-<p><strong>Strong answer:</strong> multi-version concurrency control keeps several versions of a row and gives each transaction a snapshot, so a reader sees the data as of its snapshot while writers create new versions. Readers do not take locks that block writers, and writers do not block readers; write-write conflicts on the same row still wait or fail.</p>
+<p><strong>Strong answer:</strong> multi-version concurrency control keeps several versions of a row and gives each transaction a snapshot, so a reader sees the data as of its snapshot while writers create new versions. Ordinary snapshot reads generally avoid waiting for row updates by reading an eligible older version. Explicit locking reads and conflicting table/DDL locks can still block; write-write conflicts can wait or fail. MVCC does not mean the database uses no locks.</p>
 
 <p><strong>Reasoning and alternatives:</strong> PostgreSQL stores old row versions in the table and relies on <code>VACUUM</code> to reclaim them; InnoDB keeps old versions in undo logs. The visible-version rules depend on the isolation level (READ COMMITTED takes a fresh snapshot per statement, REPEATABLE READ one per transaction).</p>
 
@@ -48,7 +50,9 @@
 <strong>Signal:</strong> write the top-N-per-group query from memory and explain tie handling.</p>
 <h4 id="q158-what-is-a-bloom-filter-and-where-would-you-use-one">Q158 What is a Bloom filter and where would you use one</h4>
 
-<p><strong>Strong answer:</strong> a Bloom filter is a bit array plus <em>k</em> hash functions that answers &quot;possibly present&quot; or &quot;definitely absent&quot;. It has <strong>no false negatives</strong> but can produce false positives, and standard versions cannot delete entries (counting variants can).</p>
+<p><strong>Source basis:</strong> <a href="https://guava.dev/releases/33.4.8-jre/api/docs/com/google/common/hash/BloomFilter.html">Guava BloomFilter contract</a>.</p>
+
+<p><strong>Strong answer:</strong> a Bloom filter is a bit array plus <em>k</em> hash functions that answers &quot;possibly present&quot; or &quot;definitely absent&quot;. For entries successfully inserted into the filter under its supported update contract, it has <strong>no false negatives</strong>, but can produce false positives. A filter that has not yet received a database update can still reject a newly created database key. Standard Bloom filters cannot delete entries; counting variants can.</p>
 
 <p><strong>Reasoning and alternatives:</strong> use it to skip expensive lookups for keys that do not exist, for example blocking cache-penetration queries before they hit the database, or checking SSTables in LSM-tree stores. The false-positive rate depends on bit-array size and the number of items; size it from the expected count and target rate. Guava provides <code>BloomFilter</code>. Alternatives: a cache of negative results, or a cuckoo filter if deletion matters.</p>
 
@@ -58,7 +62,7 @@
 
 <p><strong>Strong answer:</strong> options, from simplest to most capable: avoid conflicts with a single writer per key; <strong>last-write-wins</strong> using timestamps (simple but silently discards writes and is vulnerable to clock skew); <strong>vector clocks</strong> that detect concurrent updates and keep siblings for the application to merge; <strong>CRDTs</strong> whose state-based merge is associative, commutative and idempotent, or whose operation-based design meets its delivery and commutativity requirements. They can provide convergence without coordinating each update, subject to their model assumptions; or application-specific merge rules.</p>
 
-<p><strong>Reasoning and alternatives:</strong> pick based on the business meaning: a shopping cart can merge by union, a bank balance cannot be last-write-wins. A linearizable store orders individual operations but does not make a multi-step read-modify-write atomic. Use an atomic update, compare-and-swap/version check or transaction for business invariants; coordination can add latency.</p>
+<p><strong>Reasoning and alternatives:</strong> pick based on the business meaning: an add-only set can merge by union, but a real shopping cart must also define removals and quantities; a bank balance cannot safely be last-write-wins. A linearizable store orders individual operations but does not make a multi-step read-modify-write atomic. Use an atomic update, compare-and-swap/version check or transaction for business invariants; coordination can add latency.</p>
 
 <p><strong>What if/test:</strong> clock skew makes last-write-wins lose newer data. Test by writing concurrently from two replicas during a partition and checking the converged result against the business rule.
 <strong>Signal:</strong> tie the resolution strategy to what the data means.</p>
@@ -71,6 +75,8 @@
 <p><strong>What if/test:</strong> a celebrity tenant or hot key overloads one shard; handle it with key salting, dedicated shards or caching. Test with production-like skewed traffic, not uniform random keys.
 <strong>Signal:</strong> justify the shard key and name the cost of resharding.</p>
 <h3 id="low-level-concurrency-and-jvm-performance">Low-level concurrency and JVM performance</h3>
+
+<p><strong>Prerequisite:</strong> first work through the <a href="/senior-java-interview/part-1a#multithreading-questions-foundations-to-senior-follow-ups">multithreading foundations</a>, particularly shared-state invariants and atomic operations. The questions below assume those basics.</p>
 <h4 id="q161-what-is-the-aba-problem-and-how-do-you-avoid-it">Q161 What is the ABA problem and how do you avoid it</h4>
 
 <p><strong>Source basis:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/atomic/AtomicStampedReference.html">AtomicStampedReference</a>.</p>

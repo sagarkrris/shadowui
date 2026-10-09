@@ -1,0 +1,35 @@
+{
+  "pages": 319,
+  "questions": 272,
+  "dailySets": 5,
+  "dailyScenarios": 60,
+  "canonicalCodeBlocksUnchanged": 140,
+  "htmlBlocksMatchedInPdf": 5290,
+  "internalPdfLinksResolved": 113,
+  "externalPdfLinks": 190,
+  "status": "passed",
+  "focusedGuideDailyTests": {
+    "passed": 9,
+    "failed": 0,
+    "skipped": 0
+  },
+  "portableSql": {
+    "passed": 17,
+    "sqlite": "3.53.1",
+    "postgresqlSpecificExecution": false
+  },
+  "repositoryGate": {
+    "status": "passed",
+    "unitTests": 702,
+    "browserTests": 168,
+    "courses": 50,
+    "evidence": "/private/var/folders/28/mv34cj954cs07yfssf_pj30c0000gq/T/tech-blog-release-2d8Sr0/report.json",
+    "scope": "Final Markdown and PDF were unchanged during the passing complete gate; this JSON records the evidence afterward."
+  },
+  "visualReview": "All 319 pages rendered and reviewed at contact-sheet scale; representative cover, tables, code, daily practice and appendices checked at high resolution.",
+  "limitations": [
+    "Alignment verified against local authored ElevatePrep sources, not deployed site.",
+    "Supplemental Q245-Q272 and simulations preserved from supplied v23, not newly reviewed website content.",
+    "Framework and live infrastructure behavior not executed end to end."
+  ]
+}

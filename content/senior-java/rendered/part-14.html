@@ -2,6 +2,8 @@
 
 <p>Twenty more questions in the same layout as Parts 10, 12 and 13. Q194–Q199 are condensed system designs, Q200–Q202 cover Kafka and database internals, Q203–Q206 cover Java I/O and JVM topics, and Q207–Q213 are coding problems with solutions. Where no source is linked, the basis is general engineering practice, so confirm specifics against the documentation for your version.</p>
 <h3 id="condensed-system-designs">Condensed system designs</h3>
+
+<p>Use the <a href="/senior-java-interview/part-1b#module-7-system-design-prompts-practice-45-min-each">requirements-first design sequence</a> before the examples: requirements → estimates → API/data → architecture → failure/scaling analysis → trade-offs. These prompts assume that interview process.</p>
 <h4 id="q194-design-a-distributed-cache">Q194 Design a distributed cache</h4>
 
 <p><strong>Strong answer:</strong> partition keys across nodes with consistent hashing or fixed hash slots, replicate each partition to a replica for failover, and bound memory with an eviction policy (LRU, LFU or TTL). Clients route requests directly or through a proxy. Use cache-aside with a TTL so the database stays the source of truth.</p>
@@ -28,7 +30,7 @@
 <strong>Signal:</strong> mention signatures, idempotency, isolation and SSRF.</p>
 <h4 id="q197-design-a-file-upload-and-storage-service">Q197 Design a file upload and storage service</h4>
 
-<p><strong>Strong answer:</strong> do not proxy file bytes through application servers. The client requests a signed upload URL, then uploads directly to object storage, using resumable or multipart upload for large files. Store metadata (owner, size, content hash, status) in a database with states such as PENDING → READY. An object-finalized event triggers asynchronous processing (virus scan, thumbnails, indexing). Keep the object quarantined and unavailable for download until required validation and scanning finish; only then transition metadata to READY. Serve READY downloads through signed URLs or a CDN.</p>
+<p><strong>Strong answer:</strong> prefer direct-to-object-storage uploads when the security and processing requirements allow them; controlled application streaming is an alternative when inline inspection or another constraint requires it. The client requests a signed upload URL, then uploads directly to object storage, using resumable or multipart upload for large files. Store metadata (owner, size, content hash, status) in a database with states such as PENDING → READY. An object-finalized event triggers asynchronous processing (virus scan, thumbnails, indexing). Keep the object quarantined and unavailable for download until required validation and scanning finish; only then transition metadata to READY. Serve READY downloads through signed URLs or a CDN.</p>
 
 <p><strong>Reasoning and alternatives:</strong> deduplicate by content hash if storage cost matters, and apply lifecycle policies for expiry and tiering. Keep the object store and the metadata consistent with a reaper job that cleans abandoned uploads.</p>
 
@@ -108,12 +110,14 @@
 
 <p><strong>Strong answer:</strong> <code>List.of</code> creates a structurally unmodifiable list and rejects nulls. <code>Collections.unmodifiableList</code> is a read-only <strong>view</strong>: changes to the underlying list remain visible through it. <code>List.copyOf</code> makes a shallow, structurally unmodifiable copy; callers must not rely on object identity. <code>Arrays.asList</code> is fixed-size and writes through to the backing array. <code>Stream.toList()</code> returns an unmodifiable list that allows nulls.</p>
 
-<p><strong>Reasoning and alternatives:</strong> for safe publication of collection structure, return an unmodifiable snapshot or defensive copy. If the object graph must also be immutable, its elements must be immutable or deep-copied. Mutating methods on all of these except the <code>Arrays.asList</code> <code>set</code> throw <code>UnsupportedOperationException</code>.</p>
+<p><strong>Reasoning and alternatives:</strong> for safe publication of collection structure, return an unmodifiable snapshot or defensive copy. If the object graph must also be immutable, its elements must be immutable or deep-copied. The unmodifiable variants reject structural/content replacement. Arrays.asList permits set and replacement/reordering operations that fit its fixed size, but cannot grow or shrink. Do not equate fixed-size with unmodifiable.</p>
 
 <p><strong>What if/test:</strong> returning <code>unmodifiableList(internalList)</code> and later mutating <code>internalList</code> surprises callers who iterate concurrently. Test by mutating the source after creating each variant.
 <strong>Signal:</strong> distinguish a view from a copy.</p>
 <h3 id="coding-problems">Coding problems</h3>
 <h4 id="q207-longest-consecutive-sequence-in-o-n">Q207 Longest consecutive sequence in O(n)</h4>
+
+<p><strong>Explain before coding:</strong> Build a set, then start counting only at values whose predecessor is absent. For [100,4,200,1,3,2], only 1 starts the run 1–4; starting again at 2, 3 or 4 would repeat work. Handle integer endpoints so predecessor/successor arithmetic cannot wrap into a false neighbor.</p>
 
 <pre><code class="java">int longestConsecutive(int[] nums) {
     Set&lt;Integer&gt; set = new HashSet&lt;&gt;();
@@ -137,6 +141,8 @@
 <strong>Signal:</strong> explain why starting only at sequence starts keeps it linear.</p>
 <h4 id="q208-product-of-array-except-self-no-division">Q208 Product of array except self (no division)</h4>
 
+<p><strong>Explain before coding:</strong> At each index, multiply the product strictly to its left by the product strictly to its right. For [1,2,3,4], the result is [24,12,8,6]. Prefix work fills the output; a backward suffix pass completes it without division, so zeros need no special division case. State the numeric range assumption.</p>
+
 <pre><code class="java">int[] productExceptSelf(int[] a) {
     int n = a.length;
     int[] out = new int[n];
@@ -154,6 +160,8 @@
 <p><strong>What if/test:</strong> test zeros, negatives and overflow (ask whether to use <code>long</code>).
 <strong>Signal:</strong> prefix and suffix products, and the zero case.</p>
 <h4 id="q209-rotting-oranges-multi-source-bfs">Q209 Rotting oranges (multi-source BFS)</h4>
+
+<p><strong>Explain before coding:</strong> Enqueue every initially rotten orange at distance zero. All infections produced by one queue layer occur during the same minute; starting separate searches would repeat work and complicate the earliest-arrival calculation. Track remaining fresh cells to distinguish completion from unreachable cells.</p>
 
 <pre><code class="java">int orangesRotting(int[][] g) {
     Objects.requireNonNull(g, &quot;grid&quot;);
@@ -198,6 +206,8 @@
 <strong>Signal:</strong> know why multi-source BFS gives the minimum time.</p>
 <h4 id="q210-trapping-rain-water-two-pointers">Q210 Trapping rain water (two pointers)</h4>
 
+<p><strong>Explain before coding:</strong> Water above a bar needs boundaries on both sides and is limited by the smaller available boundary. Move the side whose boundary is currently limiting, accumulating its deficit and updating its maximum. For [2,0,2], the middle holds two units; monotonic heights hold none.</p>
+
 <pre><code class="java">long trap(int[] h) {
     Objects.requireNonNull(h, &quot;heights&quot;);
     for (int height : h) {
@@ -218,6 +228,8 @@
 <p><strong>What if/test:</strong> test empty, monotonic and valley shapes, including a valley bounded by <code>Integer.MAX_VALUE</code> heights.
 <strong>Signal:</strong> justify why the smaller side can be processed safely.</p>
 <h4 id="q211-minimum-window-substring-sliding-window">Q211 Minimum window substring (sliding window)</h4>
+
+<p><strong>Explain before coding:</strong> Track the missing character multiplicities. Expanding the right boundary eventually makes a window valid; then move the left boundary until removing a needed occurrence would invalidate it. For s=ADOBECODEBANC and t=ABC, the minimum is BANC. Repeated target characters need counts, not a set. This array-based sketch assumes ASCII input because its count array has 128 entries.</p>
 
 <pre><code class="java">String minWindow(String s, String t) {
     if (t.isEmpty() || s.length() &lt; t.length()) return &quot;&quot;;
@@ -241,6 +253,8 @@
 <strong>Signal:</strong> explain the <code>missing</code> counter and the shrink condition.</p>
 <h4 id="q212-lowest-common-ancestor-of-a-binary-tree">Q212 Lowest common ancestor of a binary tree</h4>
 
+<p><strong>Explain before coding:</strong> Each recursive call reports whether its subtree contains a target or an already found ancestor. If the left reports one target and the right the other, the current node is their split point. If one target is itself an ancestor, return it. State the assumption that both target objects occur in the tree.</p>
+
 <pre><code class="java">TreeNode lca(TreeNode root, TreeNode p, TreeNode q) {
     if (root == null || root == p || root == q) return root;
     TreeNode left = lca(root.left, p, q), right = lca(root.right, p, q);
@@ -253,6 +267,8 @@
 <p><strong>What if/test:</strong> the solution assumes both nodes exist; confirm that or add a verification pass. Test when one node is an ancestor of the other.
 <strong>Signal:</strong> state the assumption and give the BST shortcut.</p>
 <h4 id="q213-time-based-key-value-store">Q213 Time-based key-value store</h4>
+
+<p><strong>Explain before coding:</strong> For one key with values at times 3 and 8, a read at 6 returns the value at 3: the greatest stored timestamp no later than the request. A sorted map directly supports that floor operation. Per-map concurrent replacements alone do not define a cross-key snapshot contract.</p>
 
 <pre><code class="java">class TimeMap {
     private final Map&lt;String, TreeMap&lt;Integer, String&gt;&gt; store = new HashMap&lt;&gt;();

@@ -19,15 +19,7 @@ serialization hot spots, N+1 queries, or a busy-spinning consumer. Fix,
 add a load test and CPU alert.</p>
 <h4 id="how-to-understand-it">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> First mitigate (scale out, or roll
-back the latest deploy if correlated). Then find the hot threads:
-<code>top -H -p &lt;pid&gt;</code>, convert the thread ID to hex, match it in
-<code>jstack</code>/<code>jcmd Thread.print</code>; or use async-profiler/JFR for a flame
-graph.</p>
+<p><strong>Worked explanation:</strong> High CPU is a symptom; a profile identifies where execution time goes. Compare application work with GC, retries and busy loops, then choose mitigation that does not overload downstream services.</p>
 <h4 id="key-terms-you-should-know">Key terms you should know</h4>
 
 <ul>
@@ -39,16 +31,7 @@ round trips.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Why capture several samples? A single stack can miss intermittent hot paths and cannot establish their share of CPU time.</p>
 <h4 id="30-second-version">30-second version</h4>
 
 <blockquote>
@@ -72,14 +55,7 @@ sets. For native growth use NMT (<code>-XX:NativeMemoryTracking</code>). Fix wit
 bounded caches (Caffeine max size/TTL) and pagination/streaming.</p>
 <h4 id="how-to-understand-it-1">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Confirm the type: heap (Java
-<code>OutOfMemoryError</code>) vs container kill (native memory/limit). Capture a
-heap dump (<code>-XX:+HeapDumpOnOutOfMemoryError</code>, <code>jcmd GC.heap_dump</code>), open
-it in Eclipse MAT, and read the leak suspects/dominator tree.</p>
+<p><strong>Worked explanation:</strong> Track the live set after collections and follow retaining paths from GC roots. A large temporary allocation and an object retained forever require different fixes.</p>
 <h4 id="key-terms-you-should-know-1">Key terms you should know</h4>
 
 <ul>
@@ -89,16 +65,7 @@ of heap memory that is no longer reachable.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-1">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> What if the heap is stable but memory rises? Investigate native/direct memory, threads and container accounting instead of assuming a heap leak.</p>
 <h4 id="30-second-version-1">30-second version</h4>
 
 <blockquote>
@@ -121,13 +88,7 @@ dominant span, not guesses; then add a latency SLO alert and a
 regression performance test.</p>
 <h4 id="how-to-understand-it-2">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Start from the symptom: is it all
-requests or specific ones, and since when (deploy, traffic, data
-growth)? Use distributed traces to find the slow span.</p>
+<p><strong>Worked explanation:</strong> A percentile describes the slow tail of a distribution. Break latency into queueing, connection acquisition, dependency calls and local processing, then compare the changed component with earlier behavior.</p>
 <h4 id="key-terms-you-should-know-2">Key terms you should know</h4>
 
 <ul>
@@ -140,16 +101,7 @@ HTTP call or database query.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-2">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Can averages prove the fix? No; validate the relevant percentiles, errors and load distribution under comparable traffic.</p>
 <h4 id="30-second-version-2">30-second version</h4>
 
 <blockquote>
@@ -172,15 +124,7 @@ transaction scope, add timeouts, and tune pool sizing (small pools are
 usually faster).</p>
 <h4 id="how-to-understand-it-3">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Hikari pool is exhausted: either too
-few connections for the load, or connections are held too long. Look for
-transactions spanning remote calls, <code>@Transactional</code> on large methods,
-leaked connections (<code>leakDetectionThreshold</code>), long queries or lock
-waits, and Open-Session-In-View.</p>
+<p><strong>Worked explanation:</strong> Borrowing a connection waits when no usable session is available. Slow SQL, long transactions, leaked ownership or failed connection creation can all produce this symptom.</p>
 <h4 id="key-terms-you-should-know-3">Key terms you should know</h4>
 
 <ul>
@@ -189,16 +133,7 @@ operation with defined commit/rollback behavior.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-3">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Why not immediately enlarge the pool? More concurrent SQL can saturate the same database and worsen latency across every instance.</p>
 <h4 id="30-second-version-3">30-second version</h4>
 
 <blockquote>
@@ -221,16 +156,7 @@ reconciliation job comparing PSP records with ours. Then add detection
 alerts for duplicates.</p>
 <h4 id="how-to-understand-it-4">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Causes: client retries, gateway
-timeouts, at-least-once messaging. Defence: an <code>Idempotency-Key</code> on the
-request stored with a unique constraint and the stored response; state
-machine for payment (CREATED → AUTHORISED → CAPTURED) with optimistic
-locking; idempotent consumers keyed by event ID; call the PSP with its
-own idempotency key; reconciliation job comparing PSP records with ours.</p>
+<p><strong>Worked explanation:</strong> The provider may charge successfully while the caller times out before saving the response. A repeated request must refer to the same durable operation and provider idempotency key.</p>
 <h4 id="key-terms-you-should-know-4">Key terms you should know</h4>
 
 <ul>
@@ -243,16 +169,7 @@ database lock throughout the transaction.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-4">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> What if the same key has different payment details? Reject the mismatch rather than returning or executing a result for another request.</p>
 <h4 id="30-second-version-4">30-second version</h4>
 
 <blockquote>
@@ -276,27 +193,10 @@ test on production-sized data. Never couple a destructive migration with
 the same release.</p>
 <h4 id="how-to-understand-it-5">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Expand → migrate → contract. Deploy a
-backward-compatible schema first (add nullable column/new table),
-release code that writes to both (or reads either), backfill in batches,
-switch reads, and only later drop the old column once no running version
-depends on it.</p>
+<p><strong>Worked explanation:</strong> During rollout, old code still uses the old schema while new code introduces the replacement. Expand support first, backfill with verification, then retire old readers/writers before contraction.</p>
 <h4 id="sde-3-interview-checkpoints-5">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Does application rollback restore dropped data? No; preserve a compatible rollback window and test migration failure/restart behavior.</p>
 <h4 id="30-second-version-5">30-second version</h4>
 
 <blockquote>
@@ -318,26 +218,10 @@ implications), or shed non-critical work. Alert on lag <em>growth rate</em> and
 time-to-drain.</p>
 <h4 id="how-to-understand-it-6">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Check whether it is a producer spike
-(temporary) or a slow consumer (persistent). Look at per-partition lag,
-processing time per record, rebalances, DB/downstream latency, and
-errors/retries.</p>
+<p><strong>Worked explanation:</strong> Lag grows when arrival rate exceeds completion rate. A single slow partition can dominate even while other consumers are idle, so inspect partition-level work rather than only group averages.</p>
 <h4 id="sde-3-interview-checkpoints-6">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> How do you estimate recovery? Compare backlog with sustainable processing capacity above the continuing arrival rate.</p>
 <h4 id="30-second-version-6">30-second version</h4>
 
 <blockquote>
@@ -358,15 +242,7 @@ practice: REST at the edge, gRPC for hot internal paths, events for
 cross-domain state changes.</p>
 <h4 id="how-to-understand-it-7">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> REST (JSON) for public/external APIs
-and simple CRUD: ubiquitous, cacheable, human-debuggable. gRPC for
-internal, latency-sensitive, strongly typed contracts with streaming and
-code generation (HTTP/2, Protobuf), but harder through
-browsers/gateways.</p>
+<p><strong>Worked explanation:</strong> A synchronous call couples the caller&#39;s completion to the callee&#39;s availability. A message decouples completion in time but adds delivery, freshness and workflow-state questions.</p>
 <h4 id="key-terms-you-should-know-5">Key terms you should know</h4>
 
 <ul>
@@ -375,16 +251,7 @@ Protocol Buffers for service-to-service communication.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-7">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Is messaging automatically more reliable? Only with durable publication, bounded retries, idempotent processing and an operational recovery path.</p>
 <h4 id="30-second-version-7">30-second version</h4>
 
 <blockquote>
@@ -406,29 +273,10 @@ five-whys, action items (alerts, canary, load test) and what you
 personally changed afterwards.</p>
 <h4 id="how-to-understand-it-8">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Use STAR with numbers: <em>Situation</em>
-(checkout error rate 18%, revenue impact), <em>Task</em> (incident commander),
-<em>Action</em> (declared severity, assigned roles, rolled back, communicated
-every 15 min, preserved evidence), <em>Result</em> (restored in 22 min), then
-<strong>blameless post-mortem</strong>: root cause (connection leak after a library
-upgrade), five-whys, action items (alerts, canary, load test) and what
-you personally changed afterwards.</p>
+<p><strong>Worked explanation:</strong> Describe your actual responsibility and decisions in the incident, separate from the team&#39;s work. Explain what evidence supported mitigation, what restored customer service and how recurrence was reduced.</p>
 <h4 id="sde-3-interview-checkpoints-8">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> What if you lack exact numbers? Use honest ranges or qualitative evidence; never adopt the guide&#39;s illustrative incident as your own.</p>
 <h4 id="30-second-version-8">30-second version</h4>
 
 <blockquote>
@@ -457,25 +305,10 @@ Boot 3. <a href="https://docs.spring.io/spring-boot/4.0/system-requirements.html
 requirements</a>.</p>
 <h4 id="how-to-understand-it-9">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Separate the JDK, framework,
-dependency and behavioral changes. For a legacy Boot 2 application, Boot
-2.7 may be an intermediate migration step, not the final support target.</p>
+<p><strong>Worked explanation:</strong> A JDK upgrade can change runtime behavior while a Boot upgrade changes framework contracts and managed dependencies. Separate these dimensions so a failing test points to a manageable cause.</p>
 <h4 id="sde-3-interview-checkpoints-9">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Why not globally rename javax? Java SE packages such as javax.sql remain; only the relevant Jakarta EE APIs migrated.</p>
 <h4 id="30-second-version-9">30-second version</h4>
 
 <blockquote>
@@ -496,29 +329,10 @@ claim in a filter, propagate in context (MDC, <code>TenantContext</code> cleaned
 cross-tenant leakage.</p>
 <h4 id="how-to-understand-it-10">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Choose isolation by risk and cost:
-shared schema with <code>tenant_id</code> (cheapest; enforce via Hibernate
-filters/row-level security), schema-per-tenant (balanced), or
-database-per-tenant (strong isolation, noisy-neighbour control, higher
-cost). Resolve the tenant from the JWT claim in a filter, propagate in
-context (MDC, <code>TenantContext</code> cleaned in <code>finally</code>), key caches by
-tenant, rate-limit per tenant, and test for cross-tenant leakage.</p>
+<p><strong>Worked explanation:</strong> Tenant identity must constrain database access, cache keys and background work. A correctly filtered query is insufficient if a later cache lookup ignores the tenant.</p>
 <h4 id="sde-3-interview-checkpoints-10">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Does a Hibernate filter cover every access path? No; audit native SQL and other bypasses, and test authorization across tenant boundaries.</p>
 <h4 id="30-second-version-10">30-second version</h4>
 
 <blockquote>
@@ -542,14 +356,7 @@ composition is acceptable for small, low-volume cases but couples
 availability.</p>
 <h4 id="how-to-understand-it-11">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Avoid cross-service joins at query
-time. Publish domain events to build a <strong>read model</strong> (a reporting
-store, BigQuery or Elasticsearch) via a streaming pipeline (Dataflow,
-Kafka Connect/CDC).</p>
+<p><strong>Worked explanation:</strong> A report assembled synchronously from five services inherits five latency and availability dependencies. A projection makes reads simpler by accepting a defined delay between source changes and reporting visibility.</p>
 <h4 id="key-terms-you-should-know-6">Key terms you should know</h4>
 
 <ul>
@@ -560,16 +367,7 @@ defined interface; a Kubernetes Service is a specific networking resource.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-11">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> How do you recover a bad projection? Retain a rebuildable source and reconcile missing, duplicate and out-of-order updates.</p>
 <h4 id="30-second-version-11">30-second version</h4>
 
 <blockquote>
@@ -589,28 +387,10 @@ evidence if it fails. Never go around people or argue opinions without
 data.</p>
 <h4 id="how-to-understand-it-12">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Show collaborative maturity:
-understand their constraints, write down the options with trade-offs and
-data (a quick prototype or benchmark), propose a decision record (ADR)
-and a reversible experiment, then <strong>disagree and commit</strong> once a
-decision is made, and revisit with evidence if it fails. Never go around
-people or argue opinions without data.</p>
+<p><strong>Worked explanation:</strong> Turn disagreement into a decision about explicit constraints. Compare two feasible designs against the same criteria and document what evidence would justify revisiting the choice.</p>
 <h4 id="sde-3-interview-checkpoints-12">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> What makes the answer credible? A real example of listening, changing or defending your view, and supporting the resulting decision.</p>
 <h4 id="30-second-version-12">30-second version</h4>
 
 <blockquote>
@@ -632,16 +412,7 @@ pairing, ADRs, a testing pyramid, runbooks, and tech-debt budget (e.g.,
 15–20% per sprint). Mentor through review comments that explain <em>why</em>.</p>
 <h4 id="how-to-understand-it-13">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Automate first: formatter,
-Checkstyle/SpotBugs/Sonar quality gates, coverage on new code,
-dependency scanning, in CI. Then human practices: small PRs, review
-checklist (design, tests, security, observability), pairing, ADRs, a
-testing pyramid, runbooks, and tech-debt budget (e.g., 15–20% per
-sprint).</p>
+<p><strong>Worked explanation:</strong> Choose one recurring defect class, add a useful automated check, and coach reviewers on the underlying reasoning. Measure fewer escapes or faster reviews rather than the number of rules added.</p>
 <h4 id="key-terms-you-should-know-7">Key terms you should know</h4>
 
 <ul>
@@ -650,16 +421,7 @@ from telemetry such as logs, metrics and traces.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-13">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Can a quality gate replace review? No; it detects encoded conditions and still needs judgment about behavior and design.</p>
 <h4 id="30-second-version-13">30-second version</h4>
 
 <blockquote>
@@ -680,16 +442,7 @@ on critical paths, and record deliberate shortcuts as tracked debt.
 Communicate proactively rather than surprise stakeholders.</p>
 <h4 id="how-to-understand-it-14">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Clarify the business goal, slice into
-a thin end-to-end MVP, rank by value/risk, surface risks and options
-early (scope, date, resources: pick two), use feature flags to ship
-incrementally, avoid skipping tests on critical paths, and record
-deliberate shortcuts as tracked debt. Communicate proactively rather
-than surprise stakeholders.</p>
+<p><strong>Worked explanation:</strong> Identify the smallest complete user outcome and make excluded scope visible. Reducing scope can preserve validation of that outcome; secretly omitting critical checks changes delivery risk.</p>
 <h4 id="key-terms-you-should-know-8">Key terms you should know</h4>
 
 <ul>
@@ -698,16 +451,7 @@ prioritize scope and evaluate delivery trade-offs.</li>
 </ul>
 <h4 id="sde-3-interview-checkpoints-14">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> Do more people always recover the date? No; onboarding and coordination can increase the critical path, so explain realistic options.</p>
 <h4 id="30-second-version-14">30-second version</h4>
 
 <blockquote>
@@ -730,17 +474,7 @@ well-structured monolith with enforced module boundaries (ArchUnit,
 Spring Modulith) can be split later when pressure is proven.</p>
 <h4 id="how-to-understand-it-15">How to understand it</h4>
 
-<p>Start with the core idea in plain English, then go deeper into
-implementation details, trade-offs, failure modes, and production
-considerations.</p>
-
-<p><strong>Plain-English starting point:</strong> Start with a <strong>modular monolith</strong>
-unless there are clear reasons: independent scaling, separate team
-ownership, different tech/availability needs, regulatory isolation.
-Microservices add network failures, distributed data, deployment and
-observability overhead; a well-structured monolith with enforced module
-boundaries (ArchUnit, Spring Modulith) can be split later when pressure
-is proven.</p>
+<p><strong>Worked explanation:</strong> A modular monolith can keep inventory and billing boundaries explicit within one deployment. Splitting later is easier if ownership and APIs are already clear.</p>
 <h4 id="key-terms-you-should-know-9">Key terms you should know</h4>
 
 <ul>
@@ -750,16 +484,7 @@ is proven.</p>
 </ul>
 <h4 id="sde-3-interview-checkpoints-15">SDE-3 interview checkpoints</h4>
 
-<ul>
-<li><strong>What is the core mechanism?</strong> Be able to explain it without
-unexplained implementation jargon.</li>
-<li><strong>Why does the design exist?</strong> State the problem it solves.</li>
-<li><strong>What can go wrong?</strong> Mention at least one realistic failure mode or
-edge case.</li>
-<li><strong>What is the trade-off?</strong> Explain what you gain and what you give up.</li>
-<li><strong>How would you verify it in production?</strong> Mention the relevant test,
-metric, log, trace, profiler, or operational signal when applicable.</li>
-</ul>
+<p><strong>Follow-up with expected reasoning:</strong> What evidence justifies a service split? A concrete need for independent change, scaling or isolation that outweighs distributed-operation costs.</p>
 <h4 id="30-second-version-15">30-second version</h4>
 
 <blockquote>
@@ -774,6 +499,8 @@ proven.</p>
 
 <hr>
 <h2 id="k-system-design-walkthroughs-condensed">K. System Design Walkthroughs (condensed)</h2>
+
+<p>Use the <a href="/senior-java-interview/part-1b#module-7-system-design-prompts-practice-45-min-each">requirements-first design sequence</a> before the examples: requirements → estimates → API/data → architecture → failure/scaling analysis → trade-offs. These prompts assume that interview process.</p>
 
 <p><strong>Design 1: URL Shortener.</strong> Requirements: 100M new URLs/month, 10:1
 read:write, low-latency redirect. API: <code>POST /urls</code>, <code>GET /{code}</code> →
