@@ -79,5 +79,5 @@ for(const width of [390,1440]) test(`hub, roadmaps, and labs fit and pass access
     await page.addScriptTag({path:'node_modules/axe-core/axe.min.js'});
     expect(await page.evaluate(async()=> (await window.axe.run('main',{runOnly:['wcag2a','wcag2aa','wcag21aa']})).violations),path).toEqual([]);
   }
-  await page.goto('/learn'); await page.screenshot({path:`/private/tmp/learning-hub-${width}.png`});
+  await page.goto('/learn'); await page.screenshot({path:test.info().outputPath(`learning-hub-${width}.png`)});
 });

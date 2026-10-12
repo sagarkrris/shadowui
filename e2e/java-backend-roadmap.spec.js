@@ -36,7 +36,7 @@ test('roadmap links resolve and fit mobile and desktop readers', async ({ page, 
     expect(await page.locator('[data-reader-scroll]').evaluate(el => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
     await page.addScriptTag({ path: 'node_modules/axe-core/axe.min.js' });
     expect(await page.evaluate(async () => (await window.axe.run('main', { runOnly: ['wcag2a', 'wcag2aa', 'wcag21aa'] })).violations)).toEqual([]);
-    await page.screenshot({ path: `/private/tmp/java-backend-roadmap-${width}.png` });
+    await page.screenshot({ path: test.info().outputPath(`java-backend-roadmap-${width}.png`) });
   }
 });
 test('home and reading paths expose the guided roadmap', async ({ page }) => {
