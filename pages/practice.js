@@ -1,3 +1,4 @@
+import { SITE_URL } from "../lib/siteUrl.mjs";
 import LearningSearch from "../components/practice/LearningSearch";
 import ExecutableDsa from "../components/practice/ExecutableDsa";
 import DesignWorkbench from "../components/practice/DesignWorkbench";
@@ -1712,6 +1713,8 @@ export default function Home() {
     <>
       <Head>
         <title>InterviewIQ</title>
+        <link rel="canonical" href={`${SITE_URL}/practice`} key="canonical" />
+        <meta name="robots" content="noindex, follow" />
         <meta name="description" content="AI-powered interview intelligence for modern software engineers" />
         <meta name="theme-color" content={techTheme.surface} />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
@@ -1999,7 +2002,7 @@ export default function Home() {
           <div ref={chatRef} className="chat-scroll" role={techBuddyOpen ? "region" : "log"} aria-live={techBuddyOpen ? "off" : "polite"} aria-relevant="additions text" aria-busy={loading || !sessionReady} aria-label="Conversation messages" style={{ flex:1, minHeight:0, minWidth:0, overflowX:"hidden", overflowY:"auto", padding: isMobile?"12px 10px":"20px 16px", display:"flex", flexDirection:"column" }}>
             {!sessionReady ? <div className="dashboard-skeleton" role="status" aria-label="Loading InterviewIQ workspace"><span /><span /><span /><span /></div> : null}
             {sessionReady ? <>
-            {activeTab === "chat" && candidateProfile && !editingProfile && !techBuddyOpen && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}><button type="button" className="glass-button" disabled={loading} style={{ padding: '10px 14px' }} onClick={() => openTechBuddy()}>Open Tech Buddy</button><button type="button" className="glass-button" disabled={loading} onClick={() => openTechBuddy({ mode: 'warmup' })}>Five-question interview warm-up</button><Link href="/tech-buddy-demo">Try offline demo</Link></div>}
+            {activeTab === "chat" && candidateProfile && !editingProfile && !techBuddyOpen && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}><button type="button" className="glass-button" disabled={loading} style={{ padding: '10px 14px' }} onClick={() => openTechBuddy()}>Open Tech Buddy</button><button type="button" className="glass-button" disabled={loading} onClick={() => openTechBuddy({ mode: 'warmup' })}>Five-question interview warm-up</button><Link href="/tech-buddy-demo">Try offline demo</Link><Link href="/learn">Learning hub</Link><Link href="/labs">Interactive labs</Link></div>}
             {loading ? <div className="ai-progress-status" role="status" aria-live="polite"><span className="dot" />InterviewIQ is preparing your response…</div> : null}
             {activeTab === "course" ? (
               <AgenticUICourse theme={techTheme} variant="full" />

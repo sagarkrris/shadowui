@@ -1,4 +1,4 @@
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://interviewiq.app";
+import { SITE_URL } from "../lib/siteUrl.mjs";
 
 export default function Robots() { return null; }
 

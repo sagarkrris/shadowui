@@ -1,3 +1,4 @@
+import { SITE_URL } from "../lib/siteUrl.mjs";
 import { DETECTIVE_CASES, DETECTIVE_REVIEWED_AT } from "../lib/productionDetective.mjs";
 import { WEEKLY_CHALLENGES } from "../lib/weeklyChallenges.mjs";
 import { BACKEND_FIELD_NOTES } from "../lib/backendFieldNotes.mjs";
@@ -5,7 +6,6 @@ import { PUBLIC_ARTICLES } from "../lib/publicContent.mjs";
 import { ADVICE_FAILS_ARTICLES, ADVICE_FAILS_REVIEWED_AT } from "../lib/adviceFails.mjs";
 import { EXPLAIN_LOGS, EXPLAIN_LOG_REVIEWED_AT } from "../lib/explainThisLog.mjs";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://interviewiq.app";
 
 export default function Rss() { return null; }
 

@@ -1,9 +1,10 @@
+import { SITE_URL } from "../../lib/siteUrl.mjs";
 import Head from "next/head";
 import Link from "next/link";
 import styles from "../../styles/ProductionDetective.module.css";
 
 export default function DetectiveLayout({ title, description, path = "/detective", children }) {
-  const canonical = `${(process.env.NEXT_PUBLIC_SITE_URL || "https://interviewiq.app").replace(/\/$/, "")}${path}`;
+  const canonical = `${(SITE_URL).replace(/\/$/, "")}${path}`;
   return <div className={styles.shell} data-detective-scroll tabIndex={-1}>
     <Head><title>{`${title} · Production Detective`}</title><meta name="description" content={description} /><link rel="canonical" href={canonical} /><meta property="og:title" content={`${title} · Production Detective`} /><meta property="og:description" content={description} /><meta property="og:url" content={canonical} /><meta property="og:type" content="website" /><meta name="twitter:card" content="summary" /></Head>
     <a className={styles.skip} href="#detective-main">Skip to case content</a>

@@ -1,8 +1,8 @@
+import { SITE_URL } from "../../lib/siteUrl.mjs";
 import Head from "next/head";
 import Link from "next/link";
 import { ADVICE_FAILS_ARTICLES, ADVICE_FAILS_REVIEWED_AT, adviceFailsArticle } from "../../lib/adviceFails.mjs";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://interviewiq.app";
 
 export default function AdviceFailsArticle({ article, next }) {
   const url = `/advice-fails/${article.slug}`;

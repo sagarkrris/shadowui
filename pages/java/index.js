@@ -1,3 +1,4 @@
+import { SITE_URL } from "../../lib/siteUrl.mjs";
 import Head from "next/head";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -36,10 +37,10 @@ export default function JavaGuidesIndex() {
       <meta name="description" content="Original, practical Java, Spring, JVM, Kafka, Redis, SQL, and production debugging interview guides." />
       <meta property="og:title" content="Java Backend Interview Guides | InterviewIQ" />
       <meta property="og:description" content="Original, practical backend interview guides with production scenarios and STAR answers." />
-      <link rel="canonical" href="https://interviewiq.app/java" />
+      <link rel="canonical" href={`${SITE_URL}/java`} />
       <link rel="alternate" type="application/rss+xml" title="InterviewIQ Java Guides" href="/rss.xml" />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({ "@context": "https://schema.org", "@type": "ItemList", itemListElement: PUBLIC_ARTICLES.map((article, index) => ({ "@type": "ListItem", position: index + 1, name: article.title, url: `https://interviewiq.app/java/${article.slug}` })) }) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({ "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "InterviewIQ", item: "https://interviewiq.app/" }, { "@type": "ListItem", position: 2, name: "Java Backend Interview Guides", item: "https://interviewiq.app/java" }] }) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({ "@context": "https://schema.org", "@type": "ItemList", itemListElement: PUBLIC_ARTICLES.map((article, index) => ({ "@type": "ListItem", position: index + 1, name: article.title, url: `${SITE_URL}/java/${article.slug}` })) }) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({ "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "InterviewIQ", item: `${SITE_URL}/` }, { "@type": "ListItem", position: 2, name: "Java Backend Interview Guides", item: `${SITE_URL}/java` }] }) }} />
     </Head>
     <main style={{ background: "#08111f", color: "#e5edf8", minHeight: "100vh", padding: "40px 18px" }}>
       <section style={{ margin: "0 auto", maxWidth: 1060 }}>

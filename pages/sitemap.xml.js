@@ -1,3 +1,6 @@
+import { HUB_LABS } from "../lib/hubLabs.mjs";
+import { LEARNING_PATHS } from "../lib/learningHub.mjs";
+import { SITE_URL } from "../lib/siteUrl.mjs";
 import { WEEKLY_CHALLENGES } from "../lib/weeklyChallenges.mjs";
 import { TINY_SYSTEMS } from "../lib/tinySystems.mjs";
 import { BUILD_CHALLENGES } from "../lib/buildChallenges.mjs";
@@ -15,12 +18,12 @@ import { EXPLAIN_LOGS } from "../lib/explainThisLog.mjs";
 import { SENIOR_JAVA_GUIDE_ITEMS } from "../lib/seniorJavaGuide.mjs";
 import { SENIOR_JAVA_DAILY_SETS } from "../lib/seniorJavaDaily.mjs";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://interviewiq.app";
 
 export default function Sitemap() { return null; }
 
 export function getServerSideProps({ res }) {
   const urls = [
+    ...["/learn", "/learn/ai-engineering", "/labs", ...HUB_LABS.map(lab => `/labs/${lab.id}`), ...LEARNING_PATHS.filter(path => path.id !== "java-backend").map(path => `/learn/roadmaps/${path.id}`)].map(path => ({ loc: `${SITE_URL}${path}`, changefreq: "monthly", priority: "0.8" })),
     { loc: `${SITE_URL}/system-design/visual-guide`, changefreq: "monthly", priority: "0.8" },
     ...BUILD_CHALLENGES.map(c => ({ loc: `${SITE_URL}/build/practice/${c.id}`, changefreq: 'monthly', priority: '0.8' })),
     { loc: `${SITE_URL}/tech-blogs`, changefreq: "weekly", priority: "0.8" },

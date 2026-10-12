@@ -1,3 +1,4 @@
+import { SITE_URL } from "../../lib/siteUrl.mjs";
 import ChapterGuidance from "./ChapterGuidance";
 import Head from "next/head";
 import { useRouter } from "next/router";
@@ -1261,7 +1262,7 @@ export default function JavaDigest({ theme = {}, onAction, onJavaProgressChange,
           <Head>
             <title>{selectedArticle ? `${selectedArticle.title} | ShadowUI Java Digest` : "Java Interview Articles | ShadowUI"}</title>
             <meta name="description" content={selectedArticle?.summary || "Original Java, Spring, JVM, concurrency, SQL, and system design interview lessons."} />
-            {selectedArticle && <link rel="canonical" href={`${typeof window !== "undefined" ? window.location.origin : ""}${router.pathname}?article=${selectedArticle.id}`} />}
+            {selectedArticle && <link rel="canonical" href={`${SITE_URL}/practice`} key="canonical" />}
           </Head>
           <section style={{ ...wrap, border: "1px solid var(--jd-border)", borderRadius: 8, display: "grid", gap: 8, padding: 10 }}>
             <span style={{ color: "var(--jd-text-muted)", fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Article Filters</span>

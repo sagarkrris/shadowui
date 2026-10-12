@@ -1,8 +1,8 @@
+import { SITE_URL } from "../../lib/siteUrl.mjs";
 import Head from "next/head";
 import Link from "next/link";
 import { getPublicResource, getPublicArticleUrl, PUBLIC_RESOURCES } from "../../lib/publicContent.mjs";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://interviewiq.app";
 
 export default function ResourcePage({ resource }) {
   const url = `${SITE_URL}/resources/${resource.slug}`;

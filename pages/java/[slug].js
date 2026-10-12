@@ -1,8 +1,8 @@
+import { SITE_URL } from "../../lib/siteUrl.mjs";
 import Head from "next/head";
 import Link from "next/link";
 import { getPublicArticle, getPublicArticleUrl, PUBLIC_ARTICLES } from "../../lib/publicContent.mjs";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://interviewiq.app";
 
 export default function PublicJavaArticle({ article, related }) {
   const url = `${SITE_URL}${getPublicArticleUrl(article.slug)}`;

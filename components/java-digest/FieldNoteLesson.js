@@ -1,3 +1,4 @@
+import LessonPractice from "../learning/LessonPractice";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -22,7 +23,7 @@ export default function FieldNoteLesson({ blog, learningProgress, onToggleChapte
       return <article key={chapter.order} style={card}>
         <h3>{chapter.title}</h3><p>{chapter.lesson}</p>
         <pre aria-label={`Example for ${chapter.title}`} style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", margin: "12px 0", color: "var(--jd-code-text)" }}>{chapter.example}</pre>
-        <p><strong>Exercise:</strong> {chapter.exercise}</p>
+        <p><strong>Exercise:</strong> {chapter.exercise}</p><LessonPractice id={`${blog.id}-chapter-${chapter.order}`} title={chapter.title} question={chapter.quiz} exercise={chapter.exercise} />
         <button type="button" className="glass-button" onClick={() => onToggleChapter(chapterId)}>{completed ? "Chapter completed" : "Mark chapter complete"}</button>
       </article>;
     })}

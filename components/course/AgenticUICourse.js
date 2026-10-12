@@ -1,3 +1,4 @@
+import LessonPractice from "../learning/LessonPractice";
 import styles from './Course.module.css';
 import LessonVisual, { CourseOrientation } from './LessonVisual';
 import BeginnerCourse from "./BeginnerCourse";
@@ -138,6 +139,7 @@ export default function AgenticUICourse({ theme, variant = "full", onOpenCourse 
                       <span style={{ color: "#9ca3af", fontSize: 11.5, lineHeight: 1.45 }}>{lesson.plainMeaning}</span>
                     </div>
                   </div>
+                  <LessonPractice id={`ai-lesson-${lesson.id}`} title={lesson.title} question={module.outcome} exercise={module.practice} />
                   <ClassroomSession session={session} theme={theme} />
                   <ul style={{ color: "#6b7280", fontSize: 11.5, lineHeight: 1.5 }}>
                     {lesson.takeaways.map((takeaway) => <li key={takeaway}>{takeaway}</li>)}

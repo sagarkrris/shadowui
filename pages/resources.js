@@ -1,3 +1,4 @@
+import { SITE_URL } from "../lib/siteUrl.mjs";
 import Head from "next/head";
 import Link from "next/link";
 import { PUBLIC_RESOURCES } from "../lib/publicContent.mjs";
@@ -12,7 +13,7 @@ export default function Resources() {
     URL.revokeObjectURL(link.href);
   };
   return <>
-    <Head><title>Free Java Interview Checklists and Study Resources | InterviewIQ</title><meta name="description" content="Download free original Java, JVM, Kafka, Spring Boot, SQL, DSA, and STAR interview preparation checklists." /><link rel="canonical" href="https://interviewiq.app/resources" /></Head>
+    <Head><title>Free Java Interview Checklists and Study Resources | InterviewIQ</title><meta name="description" content="Download free original Java, JVM, Kafka, Spring Boot, SQL, DSA, and STAR interview preparation checklists." /><link rel="canonical" href={`${SITE_URL}/resources`} /></Head>
     <main style={{ background: "#08111f", color: "#e5edf8", minHeight: "100vh", padding: "40px 18px" }}><section style={{ margin: "0 auto", maxWidth: 1060 }}>
       <nav aria-label="Breadcrumb" style={{ color: "#8bd3ff", fontSize: 12, marginBottom: 22 }}><Link href="/">InterviewIQ</Link> / Free resources</nav>
       <header style={{ maxWidth: 800 }}><div style={{ color: "#8bd3ff", fontSize: 12, fontWeight: 800, letterSpacing: ".08em" }}>FREE, ORIGINAL, SHAREABLE</div><h1 style={{ fontSize: "clamp(30px, 6vw, 54px)", lineHeight: 1.06, margin: "10px 0" }}>Interview resources you can print, share, and use today</h1><p style={{ color: "#a9bad1", fontSize: 18, lineHeight: 1.55 }}>Short checklists for the moments that matter: explaining Java internals, debugging production, solving DSA problems, and telling your story.</p></header>
