@@ -8,6 +8,7 @@ for (const viewport of [{ width: 1366, height: 768 }, { width: 390, height: 844 
     await page.getByRole("link", { name: "Daily SDE-3 practice sets" }).click();
     await expect(page.getByRole("heading", { name: "Daily SDE-3 Java interview practice" })).toBeVisible();
     for (const [index, set] of SENIOR_JAVA_DAILY_SETS.entries()) {
+      const count = set.questionCount ?? 12;
       await page.goto("/senior-java-interview/daily");
       const link = page.locator(`a[href="/senior-java-interview/daily/${set.slug}"]`);
       await expect(link).toHaveCount(1);
@@ -15,9 +16,16 @@ for (const viewport of [{ width: 1366, height: 768 }, { width: 390, height: 844 
       await page.keyboard.press("Enter");
       await expect(page).toHaveURL(new RegExp(`${set.slug}$`));
       await expect(page.locator("h1")).toHaveText(set.title);
-      await expect(page.locator("article h3")).toHaveCount(12);
-      await expect(page.locator("article").getByText("Say aloud:")).toHaveCount(12);
-      await expect(page.locator("article").getByText("Follow-ups:", { exact: true })).toHaveCount(12);
+      await expect(page.locator("article h3")).toHaveCount(count);
+      await expect(page.locator("article").getByText("Say aloud:")).toHaveCount(count);
+      await expect(page.locator("article").getByText("Follow-ups:", { exact: true })).toHaveCount(count);
+      await expect(page.getByText(`${count} QUESTIONS`, { exact: false })).toBeVisible();
+      if (set.number === 9) {
+        for (const label of ["Root cause:", "Evidence:", "Fix:", "Trade-offs:"]) {
+          await expect(page.locator("article").getByText(label, { exact: true })).toHaveCount(count);
+        }
+        await expect(page.locator("article")).toContainText("Atomic state + notification outbox");
+      }
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
       expect(await page.locator("[data-reader-scroll]").evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
       const nav = page.getByRole("navigation", { name: "Practice sets", exact: true });
@@ -26,15 +34,16 @@ for (const viewport of [{ width: 1366, height: 768 }, { width: 390, height: 844 
       else await expect(nav.getByText("Latest set")).toBeVisible();
       const ids = await page.locator("article [id]").evaluateAll(elements => elements.map(element => element.id));
       expect(new Set(ids).size).toBe(ids.length);
-      if (set.number === 6) {
-        await expect(page.locator("article")).toContainText("S06-Q01–S06-Q12");
+      if (set.number >= 7) {
+        const code = String(set.number).padStart(2, "0");
+        await expect(page.locator("article")).toContainText(`S${code}-Q01–S${code}-Q${String(count).padStart(2, "0")}`);
         const skip = page.getByRole("link", { name: "Skip to reading" });
         await skip.focus();
         await page.keyboard.press("Enter");
         await expect(page.locator("#reader-main")).toBeFocused();
-        await page.screenshot({ path: `/private/tmp/java-daily-set06-${viewport.width}-top.png` });
+        await page.screenshot({ path: `/private/tmp/java-daily-set${code}-${viewport.width}-top.png` });
         await page.locator("article pre").last().scrollIntoViewIfNeeded();
-        await page.screenshot({ path: `/private/tmp/java-daily-set06-${viewport.width}-coding.png` });
+        await page.screenshot({ path: `/private/tmp/java-daily-set${code}-${viewport.width}-coding.png` });
       }
     }
   });

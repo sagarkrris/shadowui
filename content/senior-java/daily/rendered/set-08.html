@@ -1,0 +1,280 @@
+<p><strong>Set 8 · 14 October 2026 — Observing failures and preserving identity</strong></p>
+
+<p>Twelve new scenarios following the 84 questions in Sets 1–7. Reference targets: <strong>Java 21 without preview features</strong>, Spring Framework 6.2 in a Spring Boot 3.5 application, Hibernate ORM 6.6, PostgreSQL 17, and Kafka 4.0. Kubernetes probe behavior follows the linked upstream documentation; validate cluster-specific settings. These are reference assumptions, not latest-version claims. Examples are original illustrations, not personal experience.</p>
+
+<p>Practise each <strong>Say aloud</strong> answer in 45–90 seconds. Stable IDs: <strong>S08-Q01–S08-Q12</strong>, in order. The two Java blocks are executable methods with <code>java.util.*</code> and a class wrapper. Other examples are contextual fragments or design sketches, not runnable services.</p>
+
+<hr>
+<h3 id="1-a-task-submitted-to-an-executor-fails-but-the-thread-s-uncaught-exception-handler-records-nothing-where-did-the-failure-go">1. A task submitted to an executor fails, but the thread&#39;s uncaught-exception handler records nothing. Where did the failure go?</h3>
+
+<p><strong>Say aloud:</strong>
+“A Future is a handle to an asynchronous result. With the usual ThreadPoolExecutor submit path, the task is wrapped in a FutureTask. That wrapper records a thrown failure rather than letting it escape from the worker. Ignoring the returned Future can therefore hide the failure from the application&#39;s normal reporting path.</p>
+
+<p>I would assign an owner to observe completion. Future.get reports task failure through ExecutionException; cancellation and interruption need separate handling. A completion service can collect finished tasks without waiting in submission order. For background work, reporting must include the operation identity and a safe failure category.</p>
+
+<p>A submitted task is not a successful task. Metrics should distinguish admission, completion and failure, and the caller must know whether an asynchronous operation is merely accepted or actually finished.”</p>
+
+<ul>
+<li><strong>Example:</strong> <code>Future&lt;?&gt; f = pool.submit(() -&gt; { throw new IllegalStateException(&quot;invalid job&quot;); });</code> requires completion observation.</li>
+<li><strong>Guarantee/cost:</strong> <code>get()</code> can wait; use an owned deadline. Task failure is distinct from submission rejection.</li>
+<li><strong>Trade-off/failure:</strong> Unobserved futures lose operational evidence; logging alone does not recover work.</li>
+<li><strong>Follow-ups:</strong> “execute?” → An escaping exception can reach the worker&#39;s uncaught handler. “afterExecute?” → Inspect a completed Future as well as the throwable.</li>
+<li><strong>Primary references:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ExecutorService.html">Java 21 ExecutorService</a>, <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ThreadPoolExecutor.html#afterExecute(java.lang.Runnable,java.lang.Throwable)">ThreadPoolExecutor failure observation</a>.</li>
+</ul>
+
+<hr>
+<h3 id="2-a-unique-constraint-on-tenant-id-external-ref-still-permits-several-rows-with-a-missing-reference-is-uniqueness-broken">2. A unique constraint on (<code>tenant_id</code>, <code>external_ref</code>) still permits several rows with a missing reference. Is uniqueness broken?</h3>
+
+<p><strong>Say aloud:</strong>
+“SQL NULL represents missing or unknown information. PostgreSQL 17 unique constraints normally treat null values as distinct, so repeated tenant IDs with null external references can coexist. The constraint is enforcing its declared semantics; the business rule may be different.</p>
+
+<p>I would first decide whether an absent reference means independent unlinked records or one shared slot per tenant. If the reference is mandatory, enforce NOT NULL as well as uniqueness. If absence itself must be unique, PostgreSQL offers UNIQUE NULLS NOT DISTINCT. Tenant identity should also be mandatory.</p>
+
+<p>Before adding the constraint, inspect and reconcile existing conflicts. Keep the invariant in the database, since two application prechecks can both pass concurrently. Translate a constraint conflict into a defined domain outcome, and verify null behavior when moving to a different database.”</p>
+
+<ul>
+<li><strong>Example:</strong> <code>UNIQUE NULLS NOT DISTINCT (tenant_id, external_ref)</code> permits one null reference per non-null tenant.</li>
+<li><strong>Guarantee/cost:</strong> Database enforcement covers concurrent writers; index maintenance adds write work.</li>
+<li><strong>Trade-off/failure:</strong> Conflating “unassigned” with one shared identity can reject valid records.</li>
+<li><strong>Follow-ups:</strong> “Empty string?” → A concrete value, not null. “Portability?” → Check the target database&#39;s semantics.</li>
+<li><strong>Primary reference:</strong> <a href="https://www.postgresql.org/docs/17/ddl-constraints.html#DDL-CONSTRAINTS-UNIQUE-CONSTRAINTS">PostgreSQL 17 unique and not-null constraints</a>.</li>
+</ul>
+
+<hr>
+<h3 id="3-a-cached-product-lookup-uses-only-productid-while-tenant-identity-comes-from-request-context-how-can-valid-database-queries-still-leak-data">3. A cached product lookup uses only productId, while tenant identity comes from request context. How can valid database queries still leak data?</h3>
+
+<p><strong>Say aloud:</strong>
+“A cache key is the identity used to reuse a previous result. Spring&#39;s default key generator derives that identity from method arguments. It does not automatically include tenant context or every other input that influences the method.</p>
+
+<p>If two tenants use product 42, the second request can hit the first tenant&#39;s entry and skip the correctly scoped database query entirely. I would make trusted tenant identity an explicit input and include it in the key. Other representation inputs, such as locale or price tier, also belong there when they change the result.</p>
+
+<p>The key and the query must use the same validated scope. I would test requests from different tenants with overlapping IDs and warm caches. Authorization still needs enforcement before returning cached data; cache partitioning alone does not establish access rights.”</p>
+
+<ul>
+<li><strong>Example:</strong> <code>loadProduct(trustedTenantId, productId)</code> uses both arguments; ensure eviction targets the same compound identity.</li>
+<li><strong>Guarantee/cost:</strong> Correct keys isolate reuse; more dimensions increase cardinality and memory use.</li>
+<li><strong>Trade-off/failure:</strong> A tenant supplied without membership validation remains unsafe.</li>
+<li><strong>Follow-ups:</strong> “Shared cache name?” → Avoid unrelated methods producing colliding keys. “Permission changes?” → Revalidate access under the required freshness contract.</li>
+<li><strong>Primary reference:</strong> <a href="https://docs.spring.io/spring-framework/reference/6.2/integration/cache/annotations.html#cache-annotations-cacheable-default-key">Spring Framework 6.2 cache key generation</a>.</li>
+</ul>
+
+<hr>
+<h3 id="4-kafka-reports-a-producer-delivery-timeout-can-the-application-safely-conclude-that-the-record-was-never-appended">4. Kafka reports a producer delivery timeout. Can the application safely conclude that the record was never appended?</h3>
+
+<p><strong>Say aloud:</strong>
+“An acknowledgment is evidence returned by the broker. If that evidence is delayed or lost, the producer can fail to observe success even when a write occurred. A timeout is therefore an uncertain outcome, not a universal proof that the record is absent.</p>
+
+<p>Kafka&#39;s delivery timeout bounds reporting after send returns, including batching and retriable delivery work. It differs from the blocking limit for metadata or buffer availability during send. I would align those budgets with the caller&#39;s contract and inspect the actual callback or Future result.</p>
+
+<p>Producer idempotence protects against duplicate appends from supported producer retries. It does not make a new application submission of the same business event globally unique. Keep a stable event identity, reconcile uncertain delivery, and make downstream business effects tolerate duplicates when the application may resubmit.”</p>
+
+<ul>
+<li><strong>Example:</strong> Event <code>dispatch-731</code> times out; resubmitting creates a new send even if the original arrived.</li>
+<li><strong>Guarantee/cost:</strong> <code>delivery.timeout.ms &gt;= request.timeout.ms + linger.ms</code>; deadlines trade waiting against uncertainty.</li>
+<li><strong>Trade-off/failure:</strong> Blind resend can duplicate business effects; blind discard can lose them.</li>
+<li><strong>Follow-ups:</strong> “acks=all?” → Stronger acknowledgment condition, still subject to uncertainty. “Transactions?” → Separate Kafka commit outcomes from external database effects.</li>
+<li><strong>Primary reference:</strong> <a href="https://kafka.apache.org/40/configuration/producer-configs/">Kafka 4.0 producer configuration</a>.</li>
+</ul>
+
+<hr>
+<h3 id="5-login-sets-an-authenticated-flag-on-the-existing-anonymous-session-why-can-that-enable-session-fixation">5. Login sets an authenticated flag on the existing anonymous session. Why can that enable session fixation?</h3>
+
+<p><strong>Say aloud:</strong>
+“Session fixation means an attacker arranges for a victim to use a session identifier the attacker already knows. If authentication upgrades that same identifier into a privileged session, the attacker may reuse it without knowing the victim&#39;s password.</p>
+
+<p>I would renew the identifier at authentication and other privilege increases, and ensure the old identifier cannot access the authenticated session. Use the framework&#39;s supported session mechanism and preserve only approved anonymous state, such as a validated shopping cart. Do not carry attacker-controlled security attributes across the transition.</p>
+
+<p>Secure and HttpOnly cookies protect transport and script access, but they do not replace identifier renewal. Tests should retain the old cookie, perform login, then confirm that the old identifier lacks authenticated access. Also cover concurrent requests, logout invalidation and privilege elevation.”</p>
+
+<ul>
+<li><strong>Example:</strong> Anonymous ID A becomes authenticated ID B; requests with A cannot read B&#39;s account.</li>
+<li><strong>Guarantee/cost:</strong> Renewal breaks reuse of the fixed ID; session-store transitions must work across replicas.</li>
+<li><strong>Trade-off/failure:</strong> Copying all anonymous attributes can preserve malicious state.</li>
+<li><strong>Follow-ups:</strong> “SameSite?” → Helps constrain cross-site cookie sending; not a complete fixation defense. “Logout?” → Invalidate server-side state.</li>
+<li><strong>Primary reference:</strong> <a href="https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html#renew-the-session-id-after-any-privilege-level-change">OWASP session renewal and fixation prevention</a>.</li>
+</ul>
+
+<hr>
+<h3 id="6-an-aggregation-endpoint-receives-50-000-item-ids-and-submits-one-task-per-item-how-would-you-keep-partial-results-bounded-and-meaningful">6. An aggregation endpoint receives 50,000 item IDs and submits one task per item. How would you keep partial results bounded and meaningful?</h3>
+
+<p><strong>Say aloud:</strong>
+“Fan-out means one request creates several downstream operations. A bounded worker pool limits running threads, but submitting every item can still retain an enormous queue and result set. I would cap request size and maintain a small window of outstanding operations, submitting another only as one finishes.</p>
+
+<p>A completion service supplies finished futures, so a slow early item need not block collection of later results. I would attach the original item identity and represent success, failure and timeout explicitly. If response order matters, place results into their original positions after collection.</p>
+
+<p>Use one overall deadline, with shorter transport budgets where necessary. On expiry, stop admission and request cancellation of owned work. Partial results need a documented product contract; silently converting failed prices into zero would be a correctness bug.”</p>
+
+<ul>
+<li><strong>Example:</strong> At most 16 items outstanding; each result is <code>{itemId, status, value}</code> rather than an unlabeled number.</li>
+<li><strong>Guarantee/cost:</strong> O(window) outstanding state; storing all accepted results remains O(n). Streaming can bound retention further.</li>
+<li><strong>Trade-off/failure:</strong> Cancellation is cooperative; reserve downstream capacity and avoid assuming side effects were undone.</li>
+<li><strong>Follow-ups:</strong> “Bound completion queue?” → Failed queue adds can lose retrievable completions. “Rejected submission?” → Mark it explicitly and clean up owned work.</li>
+<li><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ExecutorCompletionService.html">Java 21 ExecutorCompletionService</a>.</li>
+</ul>
+
+<hr>
+<h3 id="7-json-serialization-accesses-a-lazy-hibernate-association-after-the-service-transaction-ends-should-every-association-become-eager">7. JSON serialization accesses a lazy Hibernate association after the service transaction ends. Should every association become eager?</h3>
+
+<p><strong>Say aloud:</strong>
+“A lazy association delays loading related data until it is accessed. Hibernate needs an available persistence context, the session that manages entity state, to initialize data that has not been fetched. After that context closes, serialization may throw LazyInitializationException.</p>
+
+<p>I would define the response shape and fetch only its required data while the service still owns the transaction. Map it into a response DTO, a separate data transfer object, before leaving that boundary. A projection or deliberate fetch plan can make the query cost visible.</p>
+
+<p>Making every relationship eager replaces a lifecycle problem with uncontrolled loading. Keeping a session open through serialization can hide database access in presentation code. I would test with that convenience disabled and verify both the returned fields and the actual queries under realistic data volumes.”</p>
+
+<ul>
+<li><strong>Example:</strong> Build <code>OrderSummary(id, customerName)</code> inside the service; the serializer receives no lazy entity proxy.</li>
+<li><strong>Guarantee/cost:</strong> Materialized DTO fields need no later session access; fetching still costs queries and memory.</li>
+<li><strong>Trade-off/failure:</strong> Large collection fetches can multiply rows; bound the response and choose its fetch plan.</li>
+<li><strong>Follow-ups:</strong> “readOnly transaction?” → Not a promise to initialize every association. “Entity graph?” → A use-case fetch plan, not an authorization policy.</li>
+<li><strong>Primary reference:</strong> <a href="https://docs.hibernate.org/orm/6.6/userguide/html_single/#best-practices-fetching">Hibernate 6.6 fetching guidance</a>.</li>
+</ul>
+
+<hr>
+<h3 id="8-a-scheduleatfixedrate-heartbeat-runs-once-throws-and-never-runs-again-why-did-a-healthy-executor-stop-that-schedule">8. A scheduleAtFixedRate heartbeat runs once, throws, and never runs again. Why did a healthy executor stop that schedule?</h3>
+
+<p><strong>Say aloud:</strong>
+“A periodic schedule represents a series of executions. For Java&#39;s ScheduledExecutorService, an execution that throws terminates that series and suppresses later executions. The executor itself may remain healthy and run other jobs.</p>
+
+<p>I would inspect the returned ScheduledFuture and record the last successful heartbeat time. Expected transient failures can be handled inside the task with a defined continuation policy. Unexpected invariant failures should remain visible and may justify terminating the schedule; catching every Throwable and pretending success would conceal a broken job.</p>
+
+<p>Fixed rate targets a cadence based on the initial schedule. Fixed delay waits after an execution finishes. Neither guarantees precise timing under load. For one fixed-rate task, a slow execution makes later executions late rather than concurrently running that same periodic task.”</p>
+
+<ul>
+<li><strong>Example:</strong> If a one-second task takes three seconds, its own executions do not overlap; separate schedules may overlap.</li>
+<li><strong>Guarantee/cost:</strong> A failed series becomes done exceptionally; successful periodic <code>get()</code> never returns normally.</li>
+<li><strong>Trade-off/failure:</strong> Automatic continuation can repeatedly overload a failing dependency.</li>
+<li><strong>Follow-ups:</strong> “Fixed delay on failure?” → Also suppresses later executions. “Fleet singleton?” → Local scheduling does not establish distributed ownership.</li>
+<li><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ScheduledExecutorService.html">Java 21 ScheduledExecutorService</a>.</li>
+</ul>
+
+<hr>
+<h3 id="9-a-database-outage-makes-every-service-fail-liveness-checks-and-restart-continuously-what-did-the-health-contract-get-wrong">9. A database outage makes every service fail liveness checks and restart continuously. What did the health contract get wrong?</h3>
+
+<p><strong>Say aloud:</strong>
+“Liveness asks whether restarting this container can repair its local condition. Readiness asks whether it should currently receive service traffic. Startup probes allow initialization to finish before the other probes act. These signals answer different operational questions.</p>
+
+<p>A shared database outage usually cannot be repaired by restarting every client. Putting that dependency into liveness can create a restart storm, lose useful state and add connection pressure when the database recovers. I would reserve liveness for recoverable local failure and define readiness from the service&#39;s actual ability to serve its promised contract.</p>
+
+<p>If useful degraded responses remain possible, making every replica unready may worsen availability. Decide that behavior explicitly, use bounded probe work, and test dependency loss and recovery under load rather than only checking an idle happy path.”</p>
+
+<ul>
+<li><strong>Example:</strong> Database unavailable: process remains live; readiness depends on whether its promised endpoints can still function.</li>
+<li><strong>Guarantee/cost:</strong> Failed readiness removes normal Service routing eligibility; it does not itself restart the container or instantly drain existing connections.</li>
+<li><strong>Trade-off/failure:</strong> Shared dependency probes can remove the entire fleet from service.</li>
+<li><strong>Follow-ups:</strong> “Slow startup?” → Startup probe budget. “Probe connection load?” → Bound time, frequency and resource use.</li>
+<li><strong>Primary reference:</strong> <a href="https://kubernetes.io/docs/concepts/workloads/pods/probes/">Kubernetes liveness, readiness and startup probes</a>.</li>
+</ul>
+
+<hr>
+<h3 id="10-a-treeset-ordered-only-by-priority-drops-different-jobs-with-equal-priority-which-identity-rule-controls-membership">10. A TreeSet ordered only by priority drops different jobs with equal priority. Which identity rule controls membership?</h3>
+
+<p><strong>Say aloud:</strong>
+“A comparator defines ordering and returns zero when it considers two values equivalent. TreeSet uses that comparison to decide membership. If two different jobs have the same priority and the comparator examines nothing else, the set treats them as one element even if equals says they differ.</p>
+
+<p>I would choose the intended identity first. For immutable job values, a comparator covering priority and every remaining equality field can preserve distinct values and the Set contract. If job ID alone defines identity while priority changes, a map keyed by ID plus a separately maintained ordering structure may fit better.</p>
+
+<p>Comparison must be transitive and safe at numeric boundaries. Subtracting priorities can overflow; Integer.compare avoids that. Do not mutate fields that determine ordering while an element remains in the tree, because its stored position will no longer match comparisons.”</p>
+
+<ul>
+<li><strong>Example:</strong> For <code>record Job(int priority, long id)</code>, compare priority, then ID; equality and comparison now agree.</li>
+<li><strong>Guarantee/cost:</strong> TreeSet add, remove and contains are O(log n); comparison cost also matters.</li>
+<li><strong>Trade-off/failure:</strong> Adding only an ID tie-breaker is insufficient if equals includes other fields.</li>
+<li><strong>Follow-ups:</strong> “PriorityQueue?” → Can hold ties; iteration is not sorted. “Mutable priority?” → Remove before change, then reinsert under owned synchronization.</li>
+<li><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/TreeSet.html">Java 21 TreeSet contract</a>.</li>
+</ul>
+
+<hr>
+<h3 id="11-return-one-longest-strictly-increasing-subsequence-as-input-indices-why-is-the-array-of-smallest-tails-not-itself-the-answer">11. Return one longest strictly increasing subsequence as input indices. Why is the array of smallest tails not itself the answer?</h3>
+
+<p><strong>Say aloud:</strong>
+“A subsequence preserves input order but may skip elements. For each possible length, I track the smallest ending value achieved so far and the index that supplied it. A smaller tail leaves at least as much room for future extensions.</p>
+
+<p>For each value, binary search finds the first tail greater than or equal to it. Replacing that tail preserves the best extension opportunity; using greater than or equal prevents equal values from extending a strictly increasing sequence. The tails can come from incompatible histories, so returning those values directly is unsafe.</p>
+
+<p>I also record a predecessor index when processing each element. Following predecessors from the last tail reconstructs one valid optimal sequence in reverse. Multiple optimal answers are acceptable. The method leaves the caller&#39;s array untouched, returns empty indices for empty input, and rejects null.”</p>
+
+<ul>
+<li><strong>Example:</strong> For <code>[3, 4, 1, 2, 5]</code>, indices <code>[2, 3, 4]</code> select <code>[1, 2, 5]</code>; <code>[0, 1, 4]</code> is also optimal.</li>
+</ul>
+
+<pre><code class="java">static int[] increasingIndices(int[] values) {
+    Objects.requireNonNull(values, &quot;values&quot;);
+    int n = values.length, length = 0;
+    int[] tails = new int[n], previous = new int[n];
+    Arrays.fill(previous, -1);
+    for (int i = 0; i &lt; n; i++) {
+        int lo = 0, hi = length;
+        while (lo &lt; hi) {
+            int mid = lo + (hi - lo) / 2;
+            if (values[tails[mid]] &lt; values[i]) lo = mid + 1;
+            else hi = mid;
+        }
+        if (lo &gt; 0) previous[i] = tails[lo - 1];
+        tails[lo] = i;
+        if (lo == length) length++;
+    }
+    int[] result = new int[length];
+    int at = length == 0 ? -1 : tails[length - 1];
+    for (int pos = length - 1; pos &gt;= 0; pos--) {
+        result[pos] = at;
+        at = previous[at];
+    }
+    return result;
+}
+</code></pre>
+
+<ul>
+<li><strong>Guarantee/complexity:</strong> O(n log(n+1)) time, O(n) auxiliary space and up to O(n) output. Input must remain unchanged during the call; caller must budget array memory.</li>
+<li><strong>Trade-off/failure:</strong> No lexicographically smallest answer guarantee. Nondecreasing sequences require a different binary-search boundary.</li>
+<li><strong>Follow-ups:</strong> “Count optimal sequences?” → Length/tail state alone discards counts. “Only length?” → Predecessor/output storage is unnecessary.</li>
+<li><strong>Reasoning:</strong> The minimal-tail invariant and predecessor construction are algorithmic arguments; the published method is checked against exhaustive subsequence enumeration.</li>
+</ul>
+
+<hr>
+<h3 id="12-search-a-rotated-nondecreasing-array-with-duplicate-values-why-can-binary-search-degrade-to-linear-time">12. Search a rotated nondecreasing array with duplicate values. Why can binary search degrade to linear time?</h3>
+
+<p><strong>Say aloud:</strong>
+“A rotated sorted array takes a nondecreasing sequence and moves a prefix to the end. With distinct values, one side of a binary-search interval can be identified as sorted, allowing us to discard about half the candidates.</p>
+
+<p>Duplicates weaken that evidence. When the left, middle and right values are equal and the middle is not the target, those endpoint values cannot identify which side contains the rotation. We can safely discard both endpoints because neither equals the target, but that may remove only two positions.</p>
+
+<p>Otherwise, determine which half is sorted and test whether the target lies inside that half&#39;s value bounds. Maintain an interval that still contains any remaining possible match. Return any matching index, not necessarily the first. Validate the rotation contract outside the search when accepting arbitrary untrusted arrays; checking it costs linear time.”</p>
+
+<ul>
+<li><strong>Example:</strong> <code>[1, 1, 1, 0, 1]</code> contains 0 at index 3; equal endpoints require cautious narrowing.</li>
+</ul>
+
+<pre><code class="java">static int rotatedIndex(int[] values, int target) {
+    Objects.requireNonNull(values, &quot;values&quot;);
+    int lo = 0, hi = values.length - 1;
+    while (lo &lt;= hi) {
+        int mid = lo + (hi - lo) / 2;
+        if (values[mid] == target) return mid;
+        if (values[lo] == values[mid] &amp;&amp; values[mid] == values[hi]) {
+            lo++;
+            hi--;
+        } else if (values[lo] &lt;= values[mid]) {
+            if (values[lo] &lt;= target &amp;&amp; target &lt; values[mid]) hi = mid - 1;
+            else lo = mid + 1;
+        } else {
+            if (values[mid] &lt; target &amp;&amp; target &lt;= values[hi]) lo = mid + 1;
+            else hi = mid - 1;
+        }
+    }
+    return -1;
+}
+</code></pre>
+
+<ul>
+<li><strong>Guarantee/complexity:</strong> Empty input returns -1; null is rejected. O(log n) with distinct values, O(n) worst case with duplicates, O(1) auxiliary space. No mutation; input must stay stable during the call.</li>
+<li><strong>Trade-off/failure:</strong> Arbitrary unsorted input is outside the contract; the method does not validate or sort it.</li>
+<li><strong>Follow-ups:</strong> “First index?” → This method has no first-occurrence guarantee. “All equal, absent target?” → Repeated endpoint removal gives linear work.</li>
+<li><strong>Reasoning:</strong> Interval preservation proves safe elimination; exhaustive sorted arrays, rotations and linear membership scans check the implementation independently.</li>
+</ul>
+
+<hr>
+
+<p><strong>Topic coverage:</strong> S08-Q01 executor failure observation; Q02 nullable uniqueness; Q03 tenant cache identity; Q04 producer acknowledgment uncertainty; Q05 session fixation; Q06 bounded fan-out and labeled partial results; Q07 persistence/serialization boundaries; Q08 periodic task termination; Q09 health-probe contracts; Q10 comparator membership; Q11 increasing-subsequence reconstruction; Q12 duplicate-aware rotated search. Cumulative coverage: <strong>96 scenarios across eight sets</strong>.</p>
+
+<p><strong>Next set:</strong> Build on explicit outcomes and identity with stream collector conflicts, JVM class initialization failure, query timeout versus transaction recovery, Kafka partition expansion, secure password migration, and directed graph structure. Continue sequential numbering as Set 9 even if another run occurs today; do not repeat these scenarios by changing nouns.</p>

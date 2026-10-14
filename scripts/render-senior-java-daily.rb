@@ -23,7 +23,7 @@ end
 Dir.glob(File.join(source_dir, "set-*.md")).sort.each do |file|
   markdown = File.read(file)
   questions = markdown.scan(/^\*\*(\d+)\. (.+?)\*\*$/)
-  abort "Expected 12 numbered questions in #{file}" unless questions.map { |number, _| number.to_i } == (1..12).to_a
+  abort "Expected sequential numbered questions in #{file}" if questions.empty? || questions.map { |number, _| number.to_i } != (1..questions.length).to_a
   markdown = markdown.gsub(/^\*\*(\d+)\. (.+?)\*\*$/, '## \1. \2')
   renderer = DailyPracticeRenderer.new(filter_html: true, safe_links_only: true, no_images: true)
   html = Redcarpet::Markdown.new(renderer, fenced_code_blocks: true, tables: true, autolink: true).render(markdown)

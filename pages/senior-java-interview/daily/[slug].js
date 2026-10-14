@@ -8,7 +8,7 @@ import styles from "../../../styles/Reader.module.css";
 export default function SeniorJavaDailySet({ set, content, previous, next }) {
   return <ReaderLayout title={`Set ${set.number}: ${set.title} · Senior Java practice`} description={set.description}>
     <nav aria-label="Guide breadcrumb" className={styles.guideBreadcrumb}><Link href="/senior-java-interview">Senior Java interview guide</Link> / <Link href="/senior-java-interview/daily">Daily practice</Link> / Set {set.number}</nav>
-    <p className={styles.eyebrow}>SET {set.number} · {set.date} · 12 QUESTIONS</p>
+    <p className={styles.eyebrow}>SET {set.number} · {set.date} · {set.questionCount ?? 12} QUESTIONS</p>
     <h1>{set.title}</h1>
     <p className={styles.lead}>{set.description}</p>
     <nav aria-label="Practice sets" className={styles.guideChapterNav}>{previous ? <Link href={`/senior-java-interview/daily/${previous.slug}`}>← Set {previous.number}</Link> : <span>First set</span>}<Link href="/senior-java-interview/daily">All sets</Link>{next ? <Link href={`/senior-java-interview/daily/${next.slug}`}>Set {next.number} →</Link> : <span>Latest set</span>}</nav>
