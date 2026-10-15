@@ -31,7 +31,7 @@ test.describe("DSA Visual Lab", () => {
 
     await page.getByRole("button", { name: "Interview Challenges" }).click();
     await expect(page.getByRole("heading", { name: "Fresh Mock Array Trap" })).toBeVisible();
-    await expect(page.getByText("Generated")).toBeVisible();
+    await expect(page.getByText("Generated", { exact: true })).toBeVisible();
 
     await page.getByRole("button", { name: "Refresh Questions" }).click();
     await expect(page.getByRole('button', { name: 'Refresh Questions', exact: true })).toBeEnabled();

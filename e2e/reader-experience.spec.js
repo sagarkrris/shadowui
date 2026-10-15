@@ -11,18 +11,18 @@ test("homepage stays usable without the icon CDN and is statically generated", a
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   await page.getByRole("searchbox", { name: "Search articles" }).fill("slow sql");
-  await expect(page.getByRole("status")).toHaveText("1 articles");
+  await expect(page.getByRole("status").filter({ hasText: /^1 articles$/ })).toHaveText("1 articles");
   expect(await page.evaluate(() => JSON.parse(document.getElementById("__NEXT_DATA__").textContent).gsp)).toBe(true);
   await page.goto("/?workspace=java-digest&topic=transactions");
   await expect(page).toHaveURL(/\/practice\?workspace=java-digest&topic=transactions/);
 });
 test("public homepage lets a new reader discover articles and paths without onboarding", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Understand Java and backend failures through working examples.");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Prepare for your next engineering role.");
   await expect(page.getByLabel("Name", { exact: true })).toHaveCount(0);
   await page.screenshot({ path: "/private/tmp/reader-home-desktop.png", fullPage: true });
   await page.getByRole("searchbox", { name: "Search articles" }).fill("slow sql");
-  await expect(page.getByRole("status")).toHaveText("1 articles");
+  await expect(page.getByRole("status").filter({ hasText: /^1 articles$/ })).toHaveText("1 articles");
   await page.getByRole("link", { name: "How to Investigate a Slow SQL Query", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("How to Investigate a Slow SQL Query");
   await expect(page.getByText("Runtime verification not yet recorded for this article.", { exact: false })).toBeVisible();
@@ -103,7 +103,8 @@ for (const width of [390, 768, 1440]) {
       await page.goto(route);
       if (route !== "/") await expect(page.getByRole("searchbox", { name: "Search within this article" })).toBeVisible();
       const scroll = page.locator(route === "/" ? "[data-reader-scroll]" : ".reader-article-scroll");
-      await page.mouse.move(width / 2, 500); await page.mouse.wheel(0, 600);
+      await expect.poll(() => scroll.evaluate(el => el.scrollHeight - el.clientHeight)).toBeGreaterThan(100);
+      await scroll.hover(); await page.mouse.wheel(0, 600);
       await expect.poll(() => scroll.evaluate(el => el.scrollTop)).toBeGreaterThan(20);
       expect(await scroll.evaluate(el => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
     }
@@ -150,5 +151,76 @@ test("successful sign-in returns to the separate practice route", async ({ page 
   await page.getByLabel("Password", { exact: true }).fill("ExamplePassword42!");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).toHaveURL(/\/practice$/);
+  await page.getByLabel("Workspace options", { exact: true }).click();
   await expect(page.locator(".header-account-actions").getByRole("button", { name: /Account/ })).toBeVisible();
+});
+
+for (const width of [390, 1280]) {
+  test(`JDK tutorial copies code, saves sections and renders one diagram at ${width}px`, async ({ page }, testInfo) => {
+    const errors = [];
+    page.on("pageerror", error => errors.push(error.message));
+    await page.setViewportSize({ width, height: 900 });
+    await page.addInitScript(() => Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async text => { window.__copied = text; } } }));
+    const path = "/java/tutorial/jdk-vs-jre-vs-jvm";
+    await page.goto(path);
+    await page.getByRole("button", { name: "Copy code example 1", exact: true }).click();
+    const code = await page.locator("#example pre").textContent();
+    expect(await page.evaluate(() => window.__copied)).toBe(code);
+    expect(code).toContain('System.out.println("Hello from the JVM")');
+    await expect(page.locator("#expected-result")).toContainText("Hello from the JVM");
+    await expect(page.locator("#diagram pre")).toHaveCount(1);
+    await expect(page.locator("#diagram .reader-copy-code")).toHaveCount(1);
+    await expect(page.locator("pre pre")).toHaveCount(0);
+    await expect(page.locator("#diagram")).toContainText("Greeting.class bytecode");
+    await page.getByRole("button", { name: "Bookmark Expected result", exact: true }).click();
+    await page.reload();
+    await expect(page.getByRole("button", { name: "Bookmark Expected result", exact: true })).toHaveAttribute("aria-pressed", "true");
+    await page.getByRole("button", { name: "Share Expected result", exact: true }).click();
+    const link = await page.evaluate(() => window.__copied);
+    expect(link).toContain(`${path}#read-expected-result`);
+    await page.goto(link);
+    await expect(page.getByRole("heading", { name: "Expected result", exact: true })).toBeInViewport();
+    await page.getByRole("button", { name: "Copy code example 2", exact: true }).click();
+    expect(await page.evaluate(() => window.__copied)).toContain("JVM executes bytecode");
+    await expect(page.getByRole("status").filter({ hasText: "Code example 2 copied." })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    expect(await page.locator("main").evaluate(el => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
+    await page.screenshot({ path: testInfo.outputPath("verified-jdk-tutorial.png") });
+    expect(errors).toEqual([]);
+  });
+}
+
+for (const kind of ["code", "section link"]) {
+  test(`${kind} button confirms successful copy and restores its label`, async ({ page }, testInfo) => {
+    await page.addInitScript(() => Object.defineProperty(navigator, "clipboard", { configurable: true, value: {
+      writeText: text => new Promise(resolve => { window.__copied = text; window.__finishCopy = resolve; }),
+    } }));
+    await page.goto("/java/tutorial/jdk-vs-jre-vs-jvm");
+    const button = kind === "code" ? page.locator("#example .reader-copy-code") : page.locator("#expected-result .reader-section-actions button").nth(1);
+    const label = kind === "code" ? "Copy code example 1" : "Copy section link";
+    await expect(button).toHaveText(label);
+    await button.click();
+    await expect(button).toHaveText("Copying…");
+    await expect(button).toBeDisabled();
+    await expect(button).toHaveAttribute("aria-busy", "true");
+    await page.evaluate(() => window.__finishCopy());
+    await expect(button).toHaveText("Copied!");
+    await expect(button).toBeEnabled();
+    await expect(button).toHaveAttribute("aria-busy", "false");
+    await page.screenshot({ path: testInfo.outputPath("copied-feedback.png") });
+    await expect(button).toHaveText(label, { timeout: 4000 });
+  });
+}
+
+test("failed copy keeps the original button label and offers manual copying", async ({ page }) => {
+  await page.addInitScript(() => Object.defineProperty(navigator, "clipboard", { configurable: true, value: {
+    writeText: async () => { throw new Error("Clipboard permission denied"); },
+  } }));
+  await page.goto("/java/tutorial/jdk-vs-jre-vs-jvm");
+  const button = page.locator("#example .reader-copy-code");
+  await button.click();
+  await expect(button).toHaveText("Copy code example 1");
+  await expect(button).toBeEnabled();
+  await expect(page.getByRole("status").filter({ hasText: "Copy was unavailable." })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Text to copy", exact: true })).toHaveValue(await page.locator("#example pre").textContent());
 });

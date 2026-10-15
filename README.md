@@ -51,6 +51,12 @@ AI-powered interview intelligence for modern software engineers. It supports per
 - Voice input with helpful iOS/Safari fallback guidance.
 - Responsive layout verified across phone, tablet, iPad, and desktop viewport sizes.
 
+## Public learning UI
+
+The public homepage and learning pages use grouped Learn, Practice, Interview, and Resources navigation. Search opens from the header or Cmd/Ctrl+K and filters public courses, chapters, articles, labs, and Java challenges. `/api/discovery` serves only public metadata; saved notebook notes are added in the browser and are not transmitted to that endpoint. If the index fails to load, navigation shortcuts and local notes remain available with a retry action.
+
+The homepage includes a fixed-sequence LRU teaching preview, catalogue-derived counts, four learning paths, and links into the existing practice workspace. The learning hub supports course-category filters; the notebook searches saved evidence and filters activity status without rewriting stored records. Existing onboarding, AI endpoints, and runner configuration are unchanged.
+
 ## Run Locally
 
 ```bash
@@ -84,11 +90,9 @@ REQUIRE_AUTH=1
 # RESEND_API_KEY=re_your_resend_api_key
 # RESEND_FROM_EMAIL=InterviewIQ <onboarding@resend.dev>
 # APP_BASE_URL=https://elevateprep.vercel.app
-# Optional social sign-in (register callbacks at /api/auth?action=oauth-callback&provider=google|github)
+# Optional Google sign-in (register callback at /api/auth?action=oauth-callback&provider=google)
 # GOOGLE_CLIENT_ID=your_google_oauth_client_id
 # GOOGLE_CLIENT_SECRET=your_google_oauth_client_secret
-# GITHUB_CLIENT_ID=your_github_oauth_client_id
-# GITHUB_CLIENT_SECRET=your_github_oauth_client_secret
 # Optional error tracking and AI cost estimates
 # ERROR_TRACKING_WEBHOOK_URL=https://your-monitoring.example/api/events
 # ERROR_TRACKING_TOKEN=your_monitoring_token

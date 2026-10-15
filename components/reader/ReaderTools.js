@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createPortal } from "react-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { editorialCredit, normalizeBookmarks, READER_BOOKMARK_KEY, sectionId } from "../../lib/readerEditorial.mjs";
 
 export default function ReaderTools({ path }) {
@@ -9,7 +9,16 @@ export default function ReaderTools({ path }) {
   const [bookmarks, setBookmarks] = useState([]);
   const [message, setMessage] = useState("");
   const [fallback, setFallback] = useState("");
+  const [copyState, setCopyState] = useState(null);
+  const copyRequest = useRef(0);
+  const copyTimer = useRef(null);
   const credit = editorialCredit(path);
+  useEffect(() => () => {
+    copyRequest.current += 1;
+    clearTimeout(copyTimer.current);
+  }, []);
+  const copyLabel = (key, label) => copyState?.key === key ? (copyState.status === "copied" ? "Copied!" : "Copying…") : label;
+  const copyAriaLabel = (key, label) => copyState?.key === key ? `${copyLabel(key, label)} ${label}` : label;
   useEffect(() => {
     const main = document.querySelector("main");
     if (!main) return;
@@ -54,9 +63,23 @@ export default function ReaderTools({ path }) {
     try { localStorage.setItem(READER_BOOKMARK_KEY, JSON.stringify(next)); setBookmarks(next); setMessage(next.some(item => item.href === href) ? "Section bookmarked in this browser." : "Bookmark removed."); }
     catch { setMessage("Bookmark could not be saved. Your browser storage may be unavailable."); }
   }
-  async function copy(text, success) {
-    try { await navigator.clipboard.writeText(text); setMessage(success); setFallback(""); }
-    catch { setMessage("Copy was unavailable. Select and copy the text below."); setFallback(text); }
+  async function copy(text, success, key) {
+    const request = ++copyRequest.current;
+    clearTimeout(copyTimer.current);
+    setCopyState({ key, status: "copying" });
+    try {
+      await navigator.clipboard.writeText(text);
+      if (request !== copyRequest.current) return;
+      setMessage(success);
+      setFallback("");
+      setCopyState({ key, status: "copied" });
+      copyTimer.current = setTimeout(() => setCopyState(null), 2000);
+    } catch {
+      if (request !== copyRequest.current) return;
+      setCopyState(null);
+      setMessage("Copy was unavailable. Select and copy the text below.");
+      setFallback(text);
+    }
   }
   if (!targets) return null;
   const matches = query.trim() ? targets.sections.filter(section => {
@@ -66,7 +89,7 @@ export default function ReaderTools({ path }) {
   }).slice(0, 30) : [];
   return <>
     {createPortal(<aside className="reader-tools" aria-label="Article tools and editorial details"><p><strong>By {credit.author}</strong> · {credit.reviewer}</p><p>{credit.updated ? `Updated ${credit.updated}.` : "Update date not yet recorded."} {credit.runtime}</p><p><Link href="/editorial">Editorial standards</Link> · <Link href={`/corrections?article=${encodeURIComponent(path)}`}>Corrections and report a mistake</Link> · <Link href="/series">Reading paths</Link> · <Link href="/notebook">My notebook</Link>{path === "/java/spring-transactional-not-working" && <> · <Link href="/learn/spring-transactions">Continue the Spring journey</Link></>}</p><label>Search within this article<input type="search" value={query} onChange={e => setQuery(e.target.value)} /></label>{query && <div><p role="status">{matches.length} matching sections{matches.length === 30 ? " (first 30)" : ""}</p><ul>{matches.map(section => <li key={section.id}><button onClick={() => jump(section)}>{section.title}</button></li>)}</ul></div>}<details><summary>Bookmarked sections ({bookmarks.length})</summary><p>Saved only in this browser. Use a section’s bookmark button to add or remove it.</p><ul>{bookmarks.map(item => <li key={item.href}><a href={item.href}>{item.title}</a></li>)}</ul></details><p role="status">{message}</p>{fallback && <label>Text to copy<textarea readOnly value={fallback} onFocus={e => e.target.select()} /></label>}</aside>, targets.toolbar)}
-    {targets.sections.map(section => createPortal(<div className="reader-section-actions"><button onClick={() => bookmark(section)} aria-pressed={bookmarks.some(item => item.href === `${path}#${section.id}`)} aria-label={`Bookmark ${section.title}`}>{bookmarks.some(item => item.href === `${path}#${section.id}`) ? "Bookmarked ✓" : "Bookmark section"}</button><button onClick={() => copy(`${window.location.origin}${path}#${section.id}`, "Section link copied.")} aria-label={`Share ${section.title}`}>Copy section link</button></div>, section.host, section.id))}
-    {targets.snippets.map(snippet => createPortal(<button className="reader-copy-code" onClick={() => copy(snippet.text, `Code example ${snippet.number} copied.`)} aria-label={`Copy code example ${snippet.number}`}>Copy code example {snippet.number}</button>, snippet.host, `code-${snippet.number}`))}
+    {targets.sections.map(section => createPortal(<div className="reader-section-actions"><button onClick={() => bookmark(section)} aria-pressed={bookmarks.some(item => item.href === `${path}#${section.id}`)} aria-label={`Bookmark ${section.title}`}>{bookmarks.some(item => item.href === `${path}#${section.id}`) ? "Bookmarked ✓" : "Bookmark section"}</button><button onClick={() => copy(`${window.location.origin}${path}#${section.id}`, "Section link copied.", `section-${section.id}`)} disabled={copyState?.status === "copying"} aria-busy={copyState?.key === `section-${section.id}` && copyState.status === "copying"} aria-label={copyAriaLabel(`section-${section.id}`, `Share ${section.title}`)}>{copyLabel(`section-${section.id}`, "Copy section link")}</button></div>, section.host, section.id))}
+    {targets.snippets.map(snippet => createPortal(<button className="reader-copy-code" onClick={() => copy(snippet.text, `Code example ${snippet.number} copied.`, `code-${snippet.number}`)} disabled={copyState?.status === "copying"} aria-busy={copyState?.key === `code-${snippet.number}` && copyState.status === "copying"} aria-label={copyAriaLabel(`code-${snippet.number}`, `Copy code example ${snippet.number}`)}>{copyLabel(`code-${snippet.number}`, `Copy code example ${snippet.number}`)}</button>, snippet.host, `code-${snippet.number}`))}
   </>;
 }

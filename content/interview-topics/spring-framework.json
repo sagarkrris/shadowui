@@ -1,0 +1,874 @@
+{
+  "groups": [
+    {
+      "title": "Inversion of control",
+      "mechanism": "The container manages bean creation and dependency resolution from definitions. Application code should express collaborators while retaining responsibility for domain invariants.",
+      "tradeOff": "Container integration improves composition but should not make business logic require a running context.",
+      "verify": "Construct the domain service directly in one test and exercise its container wiring in another.",
+      "questions": [
+        {
+          "question": "What is inversion of control in Spring?",
+          "answer": "The container controls construction and wiring of configured objects, rather than application components manually locating and assembling all collaborators."
+        },
+        {
+          "question": "How does dependency injection support testing?",
+          "answer": "A service can receive a controlled collaborator through its constructor, allowing its business behavior to be tested without starting Spring."
+        },
+        {
+          "question": "What does ApplicationContext add to BeanFactory?",
+          "answer": "ApplicationContext combines bean management with application features including events, resources and environment integration; it is the usual application-level container."
+        },
+        {
+          "question": "Why is the service-locator pattern harder to reason about?",
+          "answer": "Dependencies are discovered inside methods instead of declared at construction, hiding requirements and complicating isolated tests and lifecycle ownership."
+        },
+        {
+          "question": "How would you keep a domain model independent of Spring?",
+          "answer": "Keep business decisions in ordinary types with explicit dependencies; place container configuration and infrastructure adapters at application boundaries."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Constructor injection and cycles",
+      "mechanism": "Constructor dependencies express required state before an object becomes usable. A cycle signals mutually dependent construction, even when deferred lookup can postpone it.",
+      "tradeOff": "Lazy resolution can unblock construction while leaving the underlying design cycle intact.",
+      "verify": "Start a context with missing and cyclic collaborators and verify failure explains the dependency path.",
+      "questions": [
+        {
+          "question": "Why prefer constructor injection for required dependencies?",
+          "answer": "It exposes requirements, supports final fields and makes incomplete construction harder. It also enables straightforward unit construction without reflective field injection."
+        },
+        {
+          "question": "When is setter injection reasonable?",
+          "answer": "For genuinely optional or reconfigurable collaborators with a documented valid default state, rather than as a way to conceal required dependencies."
+        },
+        {
+          "question": "How does Spring resolve a single constructor injection point?",
+          "answer": "A bean with one constructor can generally use it without Autowired; argument resolution still depends on eligible candidates and qualifiers."
+        },
+        {
+          "question": "Why is Lazy not always a sound circular-dependency fix?",
+          "answer": "It can defer the failure until use or preserve tangled responsibilities. Refactor shared policy or orchestration when the cycle reflects a design problem."
+        },
+        {
+          "question": "How would you split two services that call each other during construction?",
+          "answer": "Extract common capabilities or introduce an orchestrator so dependencies form a directed construction graph with explicit runtime collaboration."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Bean scopes",
+      "mechanism": "Singleton scope is one instance per container definition, not one instance per JVM or a thread-safety promise. Scoped collaborators require explicit lifetime handling.",
+      "tradeOff": "Long-lived sharing reduces construction but increases the importance of state confinement.",
+      "verify": "Overlap two users and verify no request data leaks through singleton fields.",
+      "questions": [
+        {
+          "question": "What does Spring singleton scope mean?",
+          "answer": "The container maintains one shared instance for that bean definition within its context, rather than guaranteeing one object globally across the process."
+        },
+        {
+          "question": "When should prototype scope be used?",
+          "answer": "For objects requiring a fresh instance on lookup, with a clear ownership and cleanup contract. It does not make every injection dynamically fresh."
+        },
+        {
+          "question": "What happens when a prototype is injected once into a singleton?",
+          "answer": "The singleton normally retains the particular injected instance. Use a provider or supported scoped mechanism for repeated runtime lookup."
+        },
+        {
+          "question": "Why does a singleton service holding current-user state fail under load?",
+          "answer": "Requests share the same field and race, potentially mixing identities. Pass request data explicitly or use a correctly managed request scope."
+        },
+        {
+          "question": "How would you manage prototype resources safely?",
+          "answer": "Define the caller as owner where appropriate and close each created instance explicitly; do not assume the container manages the full destruction lifecycle."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Lifecycle callbacks",
+      "mechanism": "Bean initialization and destruction occur within a container lifecycle. Initialization callbacks are not a substitute for readiness policy or durable job recovery.",
+      "tradeOff": "Eager initialization finds failures sooner but increases startup dependencies.",
+      "verify": "Fail initialization, close the context and verify each owned resource is cleaned up without hiding the original error.",
+      "questions": [
+        {
+          "question": "What is the purpose of PostConstruct?",
+          "answer": "It runs initialization after dependency injection, allowing a managed bean to validate or prepare state before normal use."
+        },
+        {
+          "question": "When should InitializingBean be avoided in domain code?",
+          "answer": "Prefer framework-independent initialization or lifecycle annotations when coupling business types directly to Spring's callback interfaces offers no clear benefit."
+        },
+        {
+          "question": "How do bean post-processors relate to initialization?",
+          "answer": "They participate around bean initialization and can wrap objects, including with proxies; lifecycle behavior depends on the configured processing chain."
+        },
+        {
+          "question": "Why can starting threads in a constructor cause leaks?",
+          "answer": "Construction can fail before ownership is registered, leaving workers running. Start and stop resources through deliberate lifecycle boundaries."
+        },
+        {
+          "question": "How would you implement orderly application shutdown?",
+          "answer": "Stop admitting work, wait within a defined deadline, interrupt cooperatively when appropriate and release resources with observable incomplete-work recovery."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Qualifiers and candidate selection",
+      "mechanism": "Type matching can yield several candidates. Qualifiers narrow the desired role; Primary provides a preference where applicable without deleting other definitions.",
+      "tradeOff": "Implicit defaults reduce wiring but can hide accidental configuration overlap.",
+      "verify": "Resolve named and unqualified injection points under missing and duplicate candidate configurations.",
+      "questions": [
+        {
+          "question": "What is the difference between Qualifier and Primary?",
+          "answer": "Qualifier narrows the intended candidate set; Primary expresses a preferred candidate when multiple eligible single-valued dependencies remain."
+        },
+        {
+          "question": "When should a collection of beans be injected?",
+          "answer": "When the service deliberately composes all implementations, such as a strategy registry, with explicit ordering and duplicate handling."
+        },
+        {
+          "question": "Does bean registration order define reliable business precedence?",
+          "answer": "No. Use a documented ordering mechanism or explicit domain priority; incidental scanning or registration order is not a business contract."
+        },
+        {
+          "question": "Why can two primary beans still fail injection?",
+          "answer": "Primary is a preference mechanism, not a uniqueness constraint that automatically selects between multiple equally preferred candidates."
+        },
+        {
+          "question": "How would you select a tenant-specific strategy safely?",
+          "answer": "Use validated tenant identity and an explicit allowlisted registry. Reject unknown mappings instead of falling back to an arbitrary implementation."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Java configuration",
+      "mechanism": "Configuration classes register definitions; Bean methods describe managed objects. Full configuration proxying and lite mode have different inter-method-call semantics.",
+      "tradeOff": "Reducing proxying can simplify AOT and startup but requires explicit collaborator parameters.",
+      "verify": "Count created instances when one configuration method calls another in both supported modes.",
+      "questions": [
+        {
+          "question": "What does a Bean method declare?",
+          "answer": "A recipe for a container-managed object, including its identity and lifecycle metadata; it is more than a general-purpose factory helper."
+        },
+        {
+          "question": "When is Configuration proxyBeanMethods=false suitable?",
+          "answer": "When configuration methods do not depend on intercepted self-calls to retrieve shared beans; pass required beans as method parameters instead."
+        },
+        {
+          "question": "How does a full Configuration class preserve singleton inter-bean calls?",
+          "answer": "Its enhanced configuration object can intercept Bean method calls and delegate retrieval to the container."
+        },
+        {
+          "question": "Why can direct calls to lite-mode Bean methods create duplicate clients?",
+          "answer": "Those calls behave like ordinary Java method calls and can create fresh objects rather than retrieving the managed singleton."
+        },
+        {
+          "question": "How would you review third-party client bean configuration?",
+          "answer": "Check scope, construction arguments, conditional registration, connection reuse, destruction hooks and whether any direct factory calls bypass the container."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Environment and property sources",
+      "mechanism": "Environment resolves properties from ordered sources and active profiles. Binding and validation are separate from finding a key.",
+      "tradeOff": "Flexible external configuration requires deterministic precedence and safe diagnostics.",
+      "verify": "Provide conflicting sources plus missing, blank and invalid values; assert resolved values without printing secrets.",
+      "questions": [
+        {
+          "question": "What does Spring Environment represent?",
+          "answer": "The application's active profiles and property-resolution view, allowing code and configuration to inspect environment-dependent values."
+        },
+        {
+          "question": "When should Profile be used?",
+          "answer": "For deliberate environment-specific bean composition. Avoid scattering business feature decisions across many profile names with unclear combinations."
+        },
+        {
+          "question": "How does property resolution differ from type conversion?",
+          "answer": "Resolution chooses a value for a key; conversion interprets that value as a required type, which can still fail afterward."
+        },
+        {
+          "question": "Why can a correctly named property have no business effect?",
+          "answer": "Nothing may bind or read it, or another source may override it. Inspect the actual binding target and effective configuration."
+        },
+        {
+          "question": "How would you change a runtime setting safely?",
+          "answer": "Define whether beans support refresh, validate the new configuration atomically and specify how in-flight work and old resources transition."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "AOP and proxy boundaries",
+      "mechanism": "Spring proxy AOP intercepts calls through the proxy. Advice does not automatically apply to ordinary target self-invocation or manually constructed instances.",
+      "tradeOff": "Cross-cutting behavior is concise but invocation paths become part of correctness.",
+      "verify": "Call the same operation externally and through a self-call; observe actual advice execution.",
+      "questions": [
+        {
+          "question": "What is an aspect in Spring AOP?",
+          "answer": "A declaration of cross-cutting behavior applied at selected method execution join points through configured advice and pointcuts."
+        },
+        {
+          "question": "When are interface proxies and class proxies appropriate?",
+          "answer": "Interface proxies expose interfaces; subclass proxies expose a class shape but cannot override final methods. Choose according to actual application contracts."
+        },
+        {
+          "question": "Why does self-invocation bypass ordinary Spring proxy advice?",
+          "answer": "The target calls itself directly without routing the invocation through the external proxy that owns the interceptor chain."
+        },
+        {
+          "question": "Why might a private Transactional method not establish a transaction?",
+          "answer": "Private methods cannot be intercepted by normal subclass override, and ordinary proxy calls cannot expose them as external advised methods."
+        },
+        {
+          "question": "How would you combine metrics, retry and transactions?",
+          "answer": "Specify interceptor ordering and verify attempt counts, transaction boundaries and timing semantics. Outer versus inner advice changes the meaning of measurements and rollback."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Transaction boundaries",
+      "mechanism": "A transaction manager coordinates a specific resource model. Declarative annotations establish logical boundaries whose physical effects depend on propagation and the invocation path.",
+      "tradeOff": "Wide transactions simplify atomic local work but retain locks and connections longer.",
+      "verify": "Force failure before commit and inspect durable state from an independent transaction.",
+      "questions": [
+        {
+          "question": "What does Transactional do?",
+          "answer": "It supplies transaction metadata used by Spring's transaction infrastructure around eligible managed invocations; the annotation alone does not execute a transaction."
+        },
+        {
+          "question": "Where should a transaction boundary usually live?",
+          "answer": "Around a coherent service use case that needs atomic local data changes, while keeping slow remote operations outside where practical."
+        },
+        {
+          "question": "Which exceptions trigger default declarative rollback?",
+          "answer": "Normally unchecked exceptions and Errors trigger rollback; checked exceptions require an explicit rule when rollback is intended. Verify the configured policy."
+        },
+        {
+          "question": "Why can catching an exception still lead to UnexpectedRollbackException?",
+          "answer": "An inner participating operation may have marked the shared transaction rollback-only; catching its exception does not necessarily clear that state."
+        },
+        {
+          "question": "How would you coordinate a database commit with message publication?",
+          "answer": "Persist publication intent in the database transaction and relay it durably, or use another explicit protocol. Account for duplicate delivery after relay crashes."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Propagation and savepoints",
+      "mechanism": "Propagation controls how logical invocations interact with transactions. Independent physical transactions and nested savepoints have different resource and recovery semantics.",
+      "tradeOff": "Independent transactions isolate commits but can consume additional connections and violate all-or-nothing expectations.",
+      "verify": "Observe committed rows after outer and inner failures with the intended transaction manager.",
+      "questions": [
+        {
+          "question": "How does REQUIRED propagation behave?",
+          "answer": "It joins an existing compatible transaction or starts one when absent, so several logical scopes can share one physical transaction."
+        },
+        {
+          "question": "When is REQUIRES_NEW appropriate?",
+          "answer": "When an independent commit is a genuine requirement. It suspends the outer transaction and may need another connection; use it deliberately."
+        },
+        {
+          "question": "How does NESTED differ from REQUIRES_NEW?",
+          "answer": "Where supported, NESTED uses savepoints within the same physical transaction; REQUIRES_NEW uses an independent transaction with independent completion."
+        },
+        {
+          "question": "Why can REQUIRES_NEW exhaust a connection pool?",
+          "answer": "Threads can retain outer connections while waiting for inner transactions to obtain additional connections, creating capacity starvation."
+        },
+        {
+          "question": "How would you choose propagation for audit records?",
+          "answer": "Decide whether audit data must survive business rollback, then test independent commit requirements, pool capacity and whether sensitive business state is exposed prematurely."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Isolation and locking",
+      "mechanism": "Isolation governs observable concurrent database behavior, not arbitrary remote effects. The database's actual implementation and constraints determine which anomalies remain possible.",
+      "tradeOff": "Stronger isolation can simplify reasoning while increasing retries or blocking.",
+      "verify": "Run two controlled connections against the target database and assert the business invariant.",
+      "questions": [
+        {
+          "question": "What is transaction isolation?",
+          "answer": "A contract describing how concurrent transactions interact with uncommitted and changing data under the selected database implementation."
+        },
+        {
+          "question": "When should a database constraint replace an application pre-check?",
+          "answer": "When uniqueness or another enforceable invariant must survive concurrent requests. A pre-check alone leaves a race before insertion or update."
+        },
+        {
+          "question": "Does readOnly=true prohibit every write?",
+          "answer": "It is generally a hint and optimization signal whose enforcement depends on manager and database configuration; do not use it as authorization."
+        },
+        {
+          "question": "Why can two individually valid reads lead to overselling?",
+          "answer": "Both transactions can decide from the same stale availability. Use an atomic conditional update, locking or appropriate isolation plus constraints."
+        },
+        {
+          "question": "How would you make serialization retries safe?",
+          "answer": "Retry the whole transaction under a bounded policy, recomputing from fresh state and excluding irreversible external effects from repeated work."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "MVC request lifecycle",
+      "mechanism": "DispatcherServlet routes requests through mappings, adapters, argument resolution and response handling. Filters and handler interceptors belong to different pipeline layers.",
+      "tradeOff": "Centralized binding is convenient but error paths can bypass controller business code.",
+      "verify": "Test unmatched routes, malformed bodies and validation failures as well as successful controller invocation.",
+      "questions": [
+        {
+          "question": "What role does DispatcherServlet play?",
+          "answer": "It acts as Spring MVC's front controller, dispatching requests to appropriate handlers and coordinating result rendering or response writing."
+        },
+        {
+          "question": "When should a servlet Filter be used instead of HandlerInterceptor?",
+          "answer": "Use filters for container-level request and response concerns; interceptors provide MVC handler-oriented integration and are not universal replacements for security filters."
+        },
+        {
+          "question": "How are controller arguments resolved?",
+          "answer": "Configured argument resolvers bind route, query, header, body and contextual values, applying conversion and validation according to the parameter contract."
+        },
+        {
+          "question": "Why can invalid JSON bypass a controller's try-catch block?",
+          "answer": "Deserialization can fail during argument resolution before the controller method is invoked; handle it through the appropriate global exception mechanism."
+        },
+        {
+          "question": "How would you preserve an HTTP contract during controller refactoring?",
+          "answer": "Replay representative requests and compare statuses, media types, headers, field names and safe error bodies, including all binding and absence cases."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Validation and conversion",
+      "mechanism": "Validation checks invariants after values are represented; conversion and binding can fail earlier. Method validation also depends on configured infrastructure and eligible invocation paths.",
+      "tradeOff": "Layered validation improves clarity but duplicate inconsistent rules create divergent behavior.",
+      "verify": "Test null, blank, malformed and cross-field invalid inputs at each supported entry point.",
+      "questions": [
+        {
+          "question": "How do binding and validation differ?",
+          "answer": "Binding maps external inputs into typed values; validation checks whether those values satisfy constraints. Either phase can fail independently."
+        },
+        {
+          "question": "When is Valid needed for nested object validation?",
+          "answer": "When the validation contract should cascade into a nested value rather than checking only constraints on the containing object's fields."
+        },
+        {
+          "question": "Why is NotNull insufficient for a required textual value?",
+          "answer": "It allows empty and whitespace-only strings. Choose constraints matching the business definition and normalize only where the contract permits."
+        },
+        {
+          "question": "Why can method validation differ between direct and proxied calls?",
+          "answer": "Configured proxy-based method validation applies through eligible managed invocation paths, while direct construction or self-invocation can bypass that infrastructure."
+        },
+        {
+          "question": "How would you validate a request used by both HTTP and message consumers?",
+          "answer": "Share domain invariants in a reusable boundary model or service contract, while keeping transport parsing and transport-specific error mapping separate."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Error contracts",
+      "mechanism": "Exception resolution translates application and framework failures into client-visible outcomes. Safe diagnostics preserve useful context without leaking internal details.",
+      "tradeOff": "Uniform error shapes help clients, but distinct failure categories must remain distinguishable.",
+      "verify": "Assert stable codes and correlation identifiers for malformed, forbidden, missing and unavailable outcomes.",
+      "questions": [
+        {
+          "question": "What does ControllerAdvice provide?",
+          "answer": "Shared controller-related advice, including exception handling and binding customization across selected controllers."
+        },
+        {
+          "question": "When should a domain error become a client error response?",
+          "answer": "When the client violated a documented request or business precondition; infrastructure outages should not be mislabeled as invalid input."
+        },
+        {
+          "question": "How can ProblemDetail improve an API?",
+          "answer": "It supplies a standard structured problem representation, while the application still defines stable types, codes and safe detail content."
+        },
+        {
+          "question": "Why is returning exception.getMessage directly risky?",
+          "answer": "Messages can expose SQL, infrastructure names, secrets or unstable implementation wording and make the public contract inconsistent."
+        },
+        {
+          "question": "How would you distinguish a timeout from a confirmed failed write?",
+          "answer": "Report an unknown or pending outcome when commitment is uncertain, include an operation identity and provide a reconciliation path instead of inventing certainty."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "WebFlux and reactive context",
+      "mechanism": "WebFlux uses reactive execution with nonblocking components; returning a publisher does not change blocking libraries. Reactive context differs from ordinary thread-local storage.",
+      "tradeOff": "Reactive composition supports streaming and concurrency but requires careful demand and scheduler reasoning.",
+      "verify": "Inject slow dependencies, cancel subscriptions and inspect queueing, buffered memory and context continuity.",
+      "questions": [
+        {
+          "question": "How does WebFlux differ from Spring MVC?",
+          "answer": "They use different web execution models and integration stacks. Choose from workload, dependencies and team ownership rather than assuming one is universally faster."
+        },
+        {
+          "question": "When must blocking JDBC work be isolated from an event loop?",
+          "answer": "Whenever that work would run on an event-loop thread. Use an intentional bounded boundary or an appropriate nonblocking driver and transaction model."
+        },
+        {
+          "question": "What is Reactor Context used for?",
+          "answer": "Per-subscription contextual data that can travel through reactive composition, rather than relying on one stable executing thread."
+        },
+        {
+          "question": "Why does calling block inside a reactive request path fail under load?",
+          "answer": "It can occupy scarce event-loop capacity or violate scheduler restrictions, preventing unrelated requests from progressing."
+        },
+        {
+          "question": "How would you choose reactive code versus virtual-thread blocking code?",
+          "answer": "Compare streaming needs, library support, cancellation and operational complexity. Both need bounded access to finite downstream resources."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "HTTP clients",
+      "mechanism": "RestClient and WebClient serve different programming models. Transport configuration, timeout stages and pooled connection lifecycle remain explicit responsibilities.",
+      "tradeOff": "Connection reuse improves efficiency but stale connections and unbounded pending acquisition need control.",
+      "verify": "Fail DNS, connection establishment and response delivery separately; count actual downstream effects.",
+      "questions": [
+        {
+          "question": "When should RestClient be considered?",
+          "answer": "For a modern synchronous HTTP API in supported Spring versions, with explicit transport, error handling and timeout configuration."
+        },
+        {
+          "question": "When is WebClient useful?",
+          "answer": "For reactive HTTP composition and streaming, especially when the rest of the execution model can remain nonblocking."
+        },
+        {
+          "question": "Why are connect timeout and response timeout different?",
+          "answer": "One limits connection establishment; another limits waiting for response activity according to client semantics. Neither alone defines every end-to-end wait."
+        },
+        {
+          "question": "Why can automatic retries duplicate a POST effect?",
+          "answer": "The remote server may commit before the client loses the response. Retry only with a safe operation contract such as durable idempotency."
+        },
+        {
+          "question": "How would you prevent a client from exhausting the application under dependency failure?",
+          "answer": "Bound pending work, connection acquisition and total deadlines; classify retryable failures and expose capacity plus latency metrics."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Events and scheduling",
+      "mechanism": "Application events coordinate in-process listeners; scheduling invokes local work. Neither automatically persists delivery or elects one worker across replicas.",
+      "tradeOff": "Simple local coordination is cheap but durable business work needs persistent identity and recovery.",
+      "verify": "Crash before and after a business effect, restart multiple replicas and verify duplicate-safe recovery.",
+      "questions": [
+        {
+          "question": "What is an application event in Spring?",
+          "answer": "A notification delivered through the application context's event infrastructure, with behavior influenced by listener and executor configuration."
+        },
+        {
+          "question": "When is TransactionalEventListener useful?",
+          "answer": "When listener execution should align with a transaction phase. Its phase semantics do not by themselves provide durable cross-process delivery."
+        },
+        {
+          "question": "How do fixed-delay and fixed-rate scheduling differ?",
+          "answer": "Fixed delay waits after an execution completes; fixed rate targets an invocation cadence. Asynchronous handoff changes what completion means."
+        },
+        {
+          "question": "Why can a Scheduled task run more than once in a cluster?",
+          "answer": "Each application instance can schedule its own invocation. Local scheduling does not create cluster-wide uniqueness."
+        },
+        {
+          "question": "How would you guarantee recoverable invoice-job execution?",
+          "answer": "Use durable job keys, atomic state transitions, bounded ownership and duplicate-safe effects, with storage-enforced fencing when stale workers must be rejected."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Caching abstraction",
+      "mechanism": "Spring's cache annotations describe advice; the selected provider supplies storage, expiry and synchronization behavior. Cache keys and invalidation timing are part of correctness.",
+      "tradeOff": "Caching lowers origin load while introducing staleness and consistency obligations.",
+      "verify": "Test tenant separation, concurrent misses, rollback and failed post-commit invalidation.",
+      "questions": [
+        {
+          "question": "What does Cacheable normally do?",
+          "answer": "It checks the selected cache for a generated key and can reuse a stored result rather than invoking the method, subject to configuration."
+        },
+        {
+          "question": "How does CachePut differ from Cacheable?",
+          "answer": "CachePut is intended to invoke the method and update the cache, while Cacheable can avoid method execution on a cache hit."
+        },
+        {
+          "question": "Does sync=true imply distributed single-flight loading?",
+          "answer": "No universal cluster-wide guarantee follows. The selected cache provider determines its synchronization and loading capabilities."
+        },
+        {
+          "question": "Why can self-invocation defeat cache annotations?",
+          "answer": "Ordinary Spring proxy advice is bypassed by direct target self-calls, so the expected cache interception may never run."
+        },
+        {
+          "question": "How would you choose an invalidation strategy for mutable data?",
+          "answer": "Define allowed staleness, coordinate with successful commit, handle invalidation failure and prevent stale concurrent loaders from repopulating obsolete values."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Testing Spring boundaries",
+      "mechanism": "Unit tests verify ordinary decisions; context, web and infrastructure tests verify the relevant framework contracts. Shared cached contexts must not conceal mutable global test state.",
+      "tradeOff": "Narrow tests give fast feedback while full integration tests expose wiring and real resource behavior.",
+      "verify": "Run representative tests alone and in parallel, including cleanup after a failing operation.",
+      "questions": [
+        {
+          "question": "What is the role of Spring TestContext?",
+          "answer": "It integrates context management and testing support with supported test frameworks, including context caching and configured test listeners."
+        },
+        {
+          "question": "When should MockMvc be used?",
+          "answer": "To exercise Spring MVC request handling without requiring a full external HTTP deployment, while understanding which container and network behaviors remain outside scope."
+        },
+        {
+          "question": "What does a transactional test rollback establish?",
+          "answer": "It rolls back work participating in that test-managed transaction; separately executed requests or asynchronous work may use different transactions."
+        },
+        {
+          "question": "Why can a passing mock-based test miss a transaction bug?",
+          "answer": "A mock does not reproduce real commits, locks, constraints or transaction participation and can accept invalid call sequences."
+        },
+        {
+          "question": "How would you verify proxy-based behavior independently of business logic?",
+          "answer": "Obtain the actual managed bean, exercise external and self-call paths, and assert observable transaction, cache or retry effects against a real supported boundary."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Resources and application integration",
+      "mechanism": "Spring resource abstractions unify access to different locations without promising identical capabilities. Classpath content inside an archive may not be a normal filesystem file.",
+      "tradeOff": "Abstraction improves portability, but callers must respect stream ownership and location-specific limits.",
+      "verify": "Run from an executable archive, close streams and test missing or oversized resources.",
+      "questions": [
+        {
+          "question": "What does Resource abstract?",
+          "answer": "A handle to content such as classpath, filesystem or URL-backed data, with capabilities depending on the concrete resource implementation."
+        },
+        {
+          "question": "When should getInputStream be preferred to getFile?",
+          "answer": "When content may be packaged inside an archive or otherwise lack a normal filesystem path; process the stream under explicit ownership."
+        },
+        {
+          "question": "How does MessageSource support localization?",
+          "answer": "It resolves message keys and parameters for a locale; stable business decisions should use codes rather than translated display text."
+        },
+        {
+          "question": "Why can a resource path become a security boundary?",
+          "answer": "Untrusted paths or URLs can access unintended files or destinations. Validate allowed locations and avoid treating arbitrary input as trusted resource configuration."
+        },
+        {
+          "question": "How would you design a reusable Spring integration module?",
+          "answer": "Expose focused configuration and stable interfaces, avoid hidden global state, document lifecycle and conditional behavior, and test supported contexts and version combinations."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "@Component and @ComponentScan internals",
+      "mechanism": "Configuration processing discovers eligible annotated metadata and registers BeanDefinitions. Object construction happens later; a stereotype does not itself instantiate a service or open a transaction.",
+      "tradeOff": "Broad scanning saves configuration but can register unintended application or test components.",
+      "verify": "Inspect definitions before instantiation and start with an intentionally excluded package.",
+      "questions": [
+        {
+          "question": "How does @Component become a managed bean internally?",
+          "answer": "A configured scanner recognizes its metadata or composed stereotypes and registers a BeanDefinition, which the container later uses for construction and lifecycle processing."
+        },
+        {
+          "question": "How do @Service and @Repository differ from @Component?",
+          "answer": "They are specialized stereotypes. Repository also participates in configured persistence exception translation; Service does not automatically make methods transactional."
+        },
+        {
+          "question": "What does @ComponentScan actually control?",
+          "answer": "Candidate discovery within configured packages and filters, rather than every possible bean registered through imports or factory methods."
+        },
+        {
+          "question": "Why can a correctly annotated @Service remain missing?",
+          "answer": "Its package may be outside scanning, excluded by filters or ineligible under conditions; the annotation alone does not register it globally."
+        },
+        {
+          "question": "How would you audit a broad component scan?",
+          "answer": "List registered definitions and origins, identify accidental test or library components and replace unstable package assumptions with deliberate boundaries."
+        }
+      ],
+      "kind": "annotation"
+    },
+    {
+      "title": "@Autowired resolution internals",
+      "mechanism": "AutowiredAnnotationBeanPostProcessor handles supported annotated injection metadata, while bean-factory dependency resolution chooses eligible candidates. Constructors, fields and methods have different initialization implications.",
+      "tradeOff": "Implicit resolution is convenient but ambiguous dependencies should have explicit roles.",
+      "verify": "Start contexts with zero, one and multiple candidates and assert injected identities.",
+      "questions": [
+        {
+          "question": "Which infrastructure interprets @Autowired?",
+          "answer": "Spring's configured injection post-processing and bean-factory resolution infrastructure; an ordinary object constructed outside that path receives no automatic injection."
+        },
+        {
+          "question": "When can a constructor omit @Autowired?",
+          "answer": "A single constructor can generally be used implicitly; candidate resolution and required collaborator availability still apply."
+        },
+        {
+          "question": "How do @Qualifier and @Primary influence @Autowired?",
+          "answer": "Qualifiers constrain the candidate role; Primary can prefer one eligible candidate for a single-valued dependency without removing other beans."
+        },
+        {
+          "question": "Why can field injection hide an invalid object state?",
+          "answer": "The constructor can complete before required fields are supplied, and direct unit construction can leave those fields unset."
+        },
+        {
+          "question": "How would you diagnose an ambiguous @Autowired dependency?",
+          "answer": "Inspect all matching definitions, qualifiers and primary markers, then express the intended role instead of relying on incidental naming or registration order."
+        }
+      ],
+      "kind": "annotation"
+    },
+    {
+      "title": "@Configuration, @Bean and @Import internals",
+      "mechanism": "ConfigurationClassPostProcessor participates in parsing configuration and registering definitions. Full configuration can be enhanced to intercept Bean method self-calls; lite mode behaves differently.",
+      "tradeOff": "Disabling enhancement reduces proxy requirements but ordinary inter-method calls may allocate duplicates.",
+      "verify": "Compare instance identities when invoking one Bean method from another with enhancement enabled and disabled.",
+      "questions": [
+        {
+          "question": "What processes @Configuration and @Bean declarations?",
+          "answer": "Spring's configuration-class infrastructure parses the metadata and registers bean definitions before ordinary bean creation."
+        },
+        {
+          "question": "How does @Import differ from component scanning?",
+          "answer": "It explicitly brings configuration or supported import mechanisms into the configuration graph rather than discovering arbitrary candidate classes by package."
+        },
+        {
+          "question": "What does proxyBeanMethods=false change internally?",
+          "answer": "The configuration class is not enhanced for Bean self-call interception, so direct method calls use ordinary Java execution."
+        },
+        {
+          "question": "Why can a direct @Bean method call create a second connection pool?",
+          "answer": "In lite mode or an unmanaged configuration instance, the method can construct a fresh object instead of resolving the shared managed bean."
+        },
+        {
+          "question": "How would you avoid inter-bean factory-call ambiguity?",
+          "answer": "Inject required collaborators as Bean method parameters and test creation count plus destruction ownership."
+        }
+      ],
+      "kind": "annotation"
+    },
+    {
+      "title": "@Profile, @Conditional and @Lazy internals",
+      "mechanism": "Conditions determine eligibility during configuration processing or registration. Lazy changes initialization or introduces deferred lookup at supported injection points; neither validates the eventual collaborator automatically.",
+      "tradeOff": "Deferral improves startup selectivity while moving some failures onto later use.",
+      "verify": "Evaluate supported profiles and force first use of every required lazy dependency.",
+      "questions": [
+        {
+          "question": "How is @Profile implemented conceptually?",
+          "answer": "It is a conditional configuration mechanism based on the active Environment profiles, influencing which definitions become eligible."
+        },
+        {
+          "question": "When does @Conditional affect a bean?",
+          "answer": "At supported configuration evaluation phases, before the corresponding definition is used as an ordinary created bean; exact phase depends on the condition."
+        },
+        {
+          "question": "How can @Lazy at an injection point defer resolution?",
+          "answer": "A supported lazy-resolution proxy can postpone obtaining the target until use, which differs from merely marking a definition for lazy initialization."
+        },
+        {
+          "question": "Why does @Lazy not prove a circular dependency is solved?",
+          "answer": "The first invocation can traverse the same cycle or reveal missing wiring; construction deferral is not architectural decoupling."
+        },
+        {
+          "question": "How would you test conditional annotation behavior?",
+          "answer": "Vary environment and available collaborators in isolated contexts, assert definition eligibility and invoke deferred paths explicitly."
+        }
+      ],
+      "kind": "annotation"
+    },
+    {
+      "title": "@Aspect, @Around and @Order internals",
+      "mechanism": "AspectJ-style annotation metadata can be translated into advisors applied by Spring's auto-proxy infrastructure. Around advice owns whether and when execution proceeds.",
+      "tradeOff": "Powerful interception can hide control flow and alter transaction or retry semantics.",
+      "verify": "Assert advice order, invocation count and failure propagation on the managed proxy.",
+      "questions": [
+        {
+          "question": "Does @Aspect alone register an object as a Spring bean?",
+          "answer": "No. It marks aspect metadata; the aspect still needs registration and the relevant AOP infrastructure enabled."
+        },
+        {
+          "question": "How does @Around influence method execution?",
+          "answer": "Its advice can invoke the proceeding join point, change returned results or throw, so omitting proceed can skip the underlying operation."
+        },
+        {
+          "question": "What does @Order affect for aspects?",
+          "answer": "It can influence advisor precedence under the supported ordering rules; nesting means entry and exit observations can occur in different directions."
+        },
+        {
+          "question": "Why can an @Around timing metric undercount retries?",
+          "answer": "Its placement may wrap one attempt rather than the whole retrying operation, or vice versa; the measured boundary must be explicit."
+        },
+        {
+          "question": "How would you prove an aspect is applied correctly?",
+          "answer": "Call through the actual proxy, include self-invocation and exception cases and assert observable outcomes rather than only checking annotation presence."
+        }
+      ],
+      "kind": "annotation"
+    },
+    {
+      "title": "@Transactional interceptor internals",
+      "mechanism": "Transaction metadata is read for eligible methods and used by transaction advice to select a manager, begin or join work and apply completion rules. Proxy reachability remains essential.",
+      "tradeOff": "Declarative boundaries reduce boilerplate while obscuring which resource and invocation actually participate.",
+      "verify": "Observe connection/transaction identity through external and internal calls with forced rollback.",
+      "questions": [
+        {
+          "question": "How does @Transactional cause database behavior internally?",
+          "answer": "Configured transaction advice reads its attributes and delegates to a transaction manager around an eligible invocation, controlling participation and completion."
+        },
+        {
+          "question": "What does rollbackFor change?",
+          "answer": "It adjusts exception-based rollback rules; it does not undo external side effects or guarantee the exception crosses the advised boundary."
+        },
+        {
+          "question": "How do class-level and method-level transaction declarations interact?",
+          "answer": "Method-specific metadata can refine applicable class defaults under Spring's resolution rules; verify the effective public use-case boundary."
+        },
+        {
+          "question": "Why does @Transactional fail on a manually constructed service?",
+          "answer": "The object has not received the configured transaction interception infrastructure, so the annotation is only metadata."
+        },
+        {
+          "question": "How would you test transaction advice ordering with retries?",
+          "answer": "Record transaction identity and committed rows for each attempt, then ensure the chosen nesting provides the intended fresh or shared transaction semantics."
+        }
+      ],
+      "kind": "annotation"
+    },
+    {
+      "title": "@RequestMapping and composed web annotations",
+      "mechanism": "Request-mapping infrastructure discovers controller handler metadata and selects a handler by route conditions. Argument resolvers and message converters execute before or after the method as appropriate.",
+      "tradeOff": "Composed annotations improve readability while overlapping mappings can become ambiguous.",
+      "verify": "Test method, path, media type, headers and malformed request behavior.",
+      "questions": [
+        {
+          "question": "How does @GetMapping work internally?",
+          "answer": "It is a composed RequestMapping declaration restricting HTTP method to GET; MVC handler-mapping infrastructure registers and matches the resulting metadata."
+        },
+        {
+          "question": "How does @RestController differ from @Controller?",
+          "answer": "It composes controller detection with response-body semantics, causing supported return values to be written through response conversion rather than ordinary view naming."
+        },
+        {
+          "question": "What interprets @RequestBody?",
+          "answer": "A configured argument resolver reads the request body through supported message converters before method invocation."
+        },
+        {
+          "question": "Why can two @RequestMapping methods cause an ambiguity?",
+          "answer": "Their applicable route conditions can overlap without a uniquely selectable handler, during registration or request matching depending on the mappings."
+        },
+        {
+          "question": "How would you migrate controller annotations safely?",
+          "answer": "Compare routing, binding, validation, response conversion and exception outcomes using actual HTTP contract fixtures."
+        }
+      ],
+      "kind": "annotation"
+    },
+    {
+      "title": "@Valid and @Validated boundaries",
+      "mechanism": "Valid requests cascaded Bean Validation, while Validated supplies Spring validation integration and group selection in supported paths. MVC's built-in method validation and proxy-based service validation have different activation rules.",
+      "tradeOff": "Annotation convenience can conceal missing providers or bypassed invocation paths.",
+      "verify": "Test nested invalid data and service calls both directly and through configured validation infrastructure.",
+      "questions": [
+        {
+          "question": "How does @Valid trigger nested validation?",
+          "answer": "At a supported validation boundary it requests cascading into the annotated value, using the installed Bean Validation provider and applicable constraints."
+        },
+        {
+          "question": "What additional role can @Validated play?",
+          "answer": "It supports Spring's validation integration and validation-group selection, including configured method-validation use cases."
+        },
+        {
+          "question": "Why does @NotNull accept an empty string?",
+          "answer": "It constrains nullness only; blank-text and size rules require appropriate separate constraints."
+        },
+        {
+          "question": "Why can validation fail before a controller method executes?",
+          "answer": "Binding or validation infrastructure can reject arguments during resolution, so controller-local try-catch code is never reached."
+        },
+        {
+          "question": "How would you verify annotation-driven validation actually runs?",
+          "answer": "Supply boundary-invalid values through each public entry path and assert real rejection plus safe errors, not just that the DTO carries constraints."
+        }
+      ],
+      "kind": "annotation"
+    },
+    {
+      "title": "@Async and @Scheduled execution internals",
+      "mechanism": "Configured post-processors detect eligible asynchronous and scheduled methods and integrate them with executors or schedulers. Submission and durable business completion are different events.",
+      "tradeOff": "Offloading improves responsiveness while requiring context, admission and error ownership.",
+      "verify": "Saturate executors, fail task bodies and terminate while accepted work remains.",
+      "questions": [
+        {
+          "question": "What activates @Async behavior?",
+          "answer": "Supported async infrastructure, commonly enabled through EnableAsync, applies advice that submits eligible managed invocations to the selected executor."
+        },
+        {
+          "question": "Why does self-invocation bypass normal @Async advice?",
+          "answer": "The target calls itself without crossing the configured proxy, so the invocation can execute synchronously."
+        },
+        {
+          "question": "What does @EnableScheduling contribute?",
+          "answer": "It activates scheduling infrastructure that detects supported Scheduled methods and registers local scheduling tasks."
+        },
+        {
+          "question": "Why does a void @Async failure need special handling?",
+          "answer": "The caller has no returned Future to observe; configure an appropriate uncaught-exception reporting path and operational visibility."
+        },
+        {
+          "question": "How would you make annotated background work reliable?",
+          "answer": "Bound executor admission, propagate approved context, record durable job identity where required and test cancellation, restart and cluster duplication."
+        }
+      ],
+      "kind": "annotation"
+    },
+    {
+      "title": "@Cacheable and cache-advisor internals",
+      "mechanism": "Caching advice evaluates cache metadata and keys around eligible method calls; a cache manager and provider implement storage behavior. Condition, unless and result timing have distinct roles.",
+      "tradeOff": "Annotation-based reuse is concise but incorrect keys or invalidation timing can violate data isolation.",
+      "verify": "Test tenant-specific inputs, self-calls, misses and updates that roll back.",
+      "questions": [
+        {
+          "question": "What interprets @Cacheable at runtime?",
+          "answer": "Configured caching advisors/interceptors use cache-operation metadata, resolve caches and keys, and decide whether the underlying method needs execution."
+        },
+        {
+          "question": "How do condition and unless differ conceptually?",
+          "answer": "A condition can decide whether caching applies before invocation; unless can veto storing a result after evaluation, under the supported annotation contract."
+        },
+        {
+          "question": "Why is @CacheEvict not automatically a distributed transaction?",
+          "answer": "Cache invalidation and database commit are separate resource operations whose ordering and failure behavior require explicit coordination."
+        },
+        {
+          "question": "Why can @Cacheable return another tenant's value?",
+          "answer": "The key can omit tenant or authorization-relevant inputs, allowing distinct requests to reuse the same cached result."
+        },
+        {
+          "question": "How would you verify a cache annotation migration?",
+          "answer": "Assert exact keys, actual invocation counts and provider behavior across rollback, concurrent loads and invalidation failures."
+        }
+      ],
+      "kind": "annotation"
+    }
+  ]
+}

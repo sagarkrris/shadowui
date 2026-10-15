@@ -48,6 +48,8 @@ illustrative. Replace them with your own evidence; do not present sample
 stories as personal experience. Company labels describe practice styles,
 not a verified hiring rubric.
 
+**Supplemental Part 22:** [Micronaut and Spring Boot](/senior-java-interview/part-22#part-22-micronaut-and-spring-boot-foundations-to-internals-q293-q320) adds twenty-eight beginner-to-deep interview ladders, Q293–Q320. Start with framework differences, then follow the DI, HTTP, data and production tracks.
+
 ## Contents
 
 1.  [Part 1: Course (Core Modules, Plan, Maven, GCP, Design, Programs,
@@ -78,7 +80,8 @@ not a verified hiring rubric.
 15. [Part 15: Full design walkthroughs and DP/graph problems](#part-15-full-system-design-walkthroughs-and-dpgraph-problems-q214q222)
 16. [Part 16: Hibernate and SQL](#part-16-hibernate-and-sql-questions-q223q244)
 17. [Part 21: Production resilience, delivery and JVM operations (Q273–Q292)](part-21.md#part-21-production-resilience-delivery-and-jvm-operations-q273-q292)
-18. [Version reference and important corrections](#version-reference-and-important-corrections)
+18. [Part 22: Micronaut and Spring Boot (Q293–Q320)](part-22.md#part-22-micronaut-and-spring-boot-foundations-to-internals-q293-q320)
+19. [Version reference and important corrections](#version-reference-and-important-corrections)
 
 ------------------------------------------------------------------------
 

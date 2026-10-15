@@ -28,7 +28,7 @@ test('workspace reader exposes file-upload answers, diagrams, and practice link'
   await expect(dialog.getByText('When to avoid:', { exact: true })).toHaveCount(6);
   await expect(dialog.locator('[data-course-diagram="fileDeletion"]')).toBeVisible();
   await expect(dialog.getByRole('region', { name: 'Related coding challenges' }).getByRole('link', { name: 'Enforce an upload byte budget', exact: true })).toBeVisible();
-  const answers = dialog.locator('details');
+  const answers = dialog.locator('article details');
   await expect(answers).toHaveCount(6);
   await answers.nth(2).locator('summary').click();
   await expect(answers.nth(2)).toContainText('immutable recorded version');

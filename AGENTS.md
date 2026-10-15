@@ -16,3 +16,13 @@ files. Do not report completion from a partial suite, compilation alone, or a
 failed/stale gate. Add course-specific behavioral regressions and register every
 declared Java course's fixture. Record actual results and infrastructure limits.
 The gate does not promise zero bugs and does not authorize deployment or publishing.
+
+## Interview answer depth
+
+New or revised interview-learning answers must be self-contained and progress
+from beginner explanation through mechanism, applied example, and deep dive.
+Include a complete answer a candidate can say aloud, concrete trade-offs and
+failure cases, verification guidance, and an explained follow-up. Define
+unfamiliar terms, state example assumptions, and cite primary references where
+technical claims require support. A one-line definition may be a summary, but
+must not be the entire interview answer. See `docs/interview-answer-standard.md`.

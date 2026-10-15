@@ -11,7 +11,7 @@ const chapterUrl = new URL("../content/senior-java/part-21.md", import.meta.url)
 test("Part 21 is catalogued, safely rendered and preserves all twenty learning ladders", async () => {
   const chapter = await readFile(chapterUrl, "utf8");
   const html = await readFile(new URL("../content/senior-java/rendered/part-21.html", import.meta.url), "utf8");
-  assert.equal(SENIOR_JAVA_GUIDE_PARTS.at(-1).slug, "part-21");
+  assert.ok(SENIOR_JAVA_GUIDE_PARTS.some(part => part.slug === "part-21"));
   const masterUrl = new URL("../content/senior-java/Senior-Java-Interview-Master-Guide-Corrected.md", import.meta.url);
   const master = await readFile(masterUrl, "utf8");
   const target = master.match(/\[Part 21:[^\]]+\]\(([^)]+)\)/)?.[1];

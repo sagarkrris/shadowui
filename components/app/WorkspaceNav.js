@@ -185,12 +185,13 @@ export function MobileBottomNav({ accent = "#8bd3ff", items = [] }) {
               <button
                 key={item.label}
                 type="button"
+                aria-label={item.label}
                 disabled={item.disabled}
                 aria-current={item.active ? "page" : undefined}
                 onClick={() => runAction(item)}
                 style={{ alignItems: "center", background: item.active ? "rgba(139,211,255,.11)" : "rgba(255,255,255,.035)", border: `1px solid ${item.active ? `${accent}55` : "rgba(255,255,255,.075)"}`, borderRadius: 8, color: item.danger ? "#f87171" : item.active ? "#f8fbff" : "#cbd5e1", cursor: item.disabled ? "not-allowed" : "pointer", display: "flex", fontSize: 11, fontWeight: 850, gap: 7, minHeight: 34, minWidth: 0, opacity: item.disabled ? .35 : 1, padding: "7px 8px", textAlign: "left" }}
               >
-                <i className={`ti ${item.icon}`} style={{ color: item.active ? accent : "currentColor", flexShrink: 0, fontSize: 15 }} />
+                <i aria-hidden="true" className={`ti ${item.icon}`} style={{ color: item.active ? accent : "currentColor", flexShrink: 0, fontSize: 15 }} />
                 <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.label}</span>
               </button>
             ))}

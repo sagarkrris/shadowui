@@ -1,0 +1,565 @@
+{
+  "date": "2026-10-14",
+  "scope": "Unique destinations exposed by homepage, expanded desktop/compact navigation, footer and FAQs. No recursive crawl of every lesson or exercise.",
+  "results": [
+    {
+      "url": "https://algomaster.io/",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "AlgoMaster.io \u2014 Master Software Engineering Interviews"
+    },
+    {
+      "url": "https://algomaster.io/learn/dsa",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/learn/dsa/course-introduction",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "Course Introduction | DSA | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/learn/system-design/course-introduction",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/learn/system-design/course-introduction",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "Course Introduction | System Design"
+    },
+    {
+      "url": "https://algomaster.io/learn/system-design-interviews",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/learn/system-design-interviews/course-roadmap",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "Course Roadmap | System Design Interview | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/learn/system-design-interviews/course-roadmap",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/learn/system-design-interviews/course-roadmap",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "Course Roadmap | System Design Interview | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/learn/lld/course-introduction",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/learn/lld/course-introduction",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "Course Introduction | LLD"
+    },
+    {
+      "url": "https://algomaster.io/learn/concurrency-interview",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/learn/concurrency-interview/introduction-to-concurrency",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "Introduction to Concurrency | Concurrency Interview | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/learn/behavioral/what-are-behavioral-interviews",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/learn/behavioral/what-are-behavioral-interviews",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "What are Behavioral Interviews? | Behavioral | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/learn/java",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/learn/java/course-roadmap",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "Course Roadmap | Java | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/learn/python",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/learn/python/course-roadmap",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "Course Roadmap | Python | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/learn/cpp",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/learn/cpp/course-roadmap",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "Course Roadmap | C++ | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/learn/csharp",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/learn/csharp/course-roadmap",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "Course Roadmap | C# | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/learn/go",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/learn/go/course-roadmap",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "Course Roadmap | Go | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/learn/git",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/learn/git/what-is-git",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "What is Git? | Git | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/courses",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/courses",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "Courses | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/mobile",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/mobile",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "AlgoMaster Mobile App \u2014 Master Coding Interviews On the Go | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/dashboard",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/login",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Sign-in redirect; protected destination not verified",
+      "title": "AlgoMaster.io - Master Software Engineering Interviews"
+    },
+    {
+      "url": "https://algomaster.io/saves?tab=notebook",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/login?tab=notebook",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Sign-in redirect; protected destination not verified",
+      "title": "AlgoMaster.io - Master Software Engineering Interviews"
+    },
+    {
+      "url": "https://algomaster.io/practice/dsa-patterns",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/practice/dsa-patterns",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "Master DSA Patterns | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/practice/system-design",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/practice/system-design",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "System Design Practice | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/practice/concurrency",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/practice/concurrency",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "Concurrency Practice | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/practice/low-level-design",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/practice/low-level-design",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "Low-Level Design Practice | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/practice/company",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/practice/company/google",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "Google Coding Interview Questions | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/premium",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/premium",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "AlgoMaster Premium | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/interview/coding",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/interview/coding",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "Coding Mock Interview | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/interview/system-design",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/interview/system-design",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "System Design Interview Practice | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/interview/low-level-design",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/interview/low-level-design",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "Low Level Design Practice | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/animations",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/animations",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "Interactive Animations | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/roadmaps",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/roadmaps",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "Learning Roadmaps | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/resume",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/resume/build",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "AI Resume Builder \u2014 algomaster.io"
+    },
+    {
+      "url": "https://algomaster.io/leaderboard",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/login",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Sign-in redirect; protected destination not verified",
+      "title": "AlgoMaster.io - Master Software Engineering Interviews"
+    },
+    {
+      "url": "https://algomaster.io/faqs",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/faqs",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "FAQs | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/contact",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/contact",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "Contact Us | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/policies/privacy-policy",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/policies/privacy-policy",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "Privacy Policy | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/policies/terms-of-service",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/policies/terms-of-service",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "Terms of Service | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/policies/shipping-policy",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/policies/shipping-policy",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "Shipping Policy | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/resume/build",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/resume/build",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "AI Resume Builder \u2014 algomaster.io"
+    },
+    {
+      "url": "https://algomaster.io/learn/lld",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/learn/lld",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "Learn Low Level Design | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/learn/eng-blogs",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/learn/eng-blogs",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "Curated Engineering Blogs | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/releases?tab=upcoming",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/releases?tab=upcoming",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "Releases & Requests | AlgoMaster.io"
+    },
+    {
+      "url": "https://algomaster.io/newsletter/articles",
+      "http": "200",
+      "finalUrl": "https://algomaster.io/newsletter/articles",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "Public destination rendered in browser",
+      "title": "Newsletter Articles | AlgoMaster.io"
+    },
+    {
+      "url": "https://www.linkedin.com/in/ashishps1/",
+      "http": "999",
+      "finalUrl": "https://www.linkedin.com/in/ashishps1/",
+      "type": "text/html",
+      "error": "",
+      "classification": "Automated access blocked; not confirmed broken"
+    },
+    {
+      "url": "https://www.youtube.com/@ashishps_1/videos",
+      "http": "200",
+      "finalUrl": "https://www.youtube.com/@ashishps_1/videos",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "HTTP reachable; external service behavior not verified"
+    },
+    {
+      "url": "https://www.instagram.com/algomasterio/",
+      "http": "200",
+      "finalUrl": "https://www.instagram.com/algomasterio/",
+      "type": "text/html; charset=\"utf-8\"",
+      "error": "",
+      "classification": "HTTP reachable; external service behavior not verified"
+    },
+    {
+      "url": "https://blog.algomaster.io/",
+      "http": "200",
+      "finalUrl": "https://blog.algomaster.io/",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "HTTP reachable; external service behavior not verified"
+    },
+    {
+      "url": "https://github.com/ashishps1",
+      "http": "200",
+      "finalUrl": "https://github.com/ashishps1",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "HTTP reachable; external service behavior not verified"
+    },
+    {
+      "url": "https://www.linkedin.com/in/daniel-ball-1502b062/",
+      "http": "999",
+      "finalUrl": "https://www.linkedin.com/in/daniel-ball-1502b062/",
+      "type": "text/html",
+      "error": "",
+      "classification": "Automated access blocked; not confirmed broken"
+    },
+    {
+      "url": "https://www.linkedin.com/in/dhanushkumar-s-g/",
+      "http": "999",
+      "finalUrl": "https://www.linkedin.com/in/dhanushkumar-s-g/",
+      "type": "text/html",
+      "error": "",
+      "classification": "Automated access blocked; not confirmed broken"
+    },
+    {
+      "url": "https://www.linkedin.com/in/arka-mazumder/",
+      "http": "999",
+      "finalUrl": "https://www.linkedin.com/in/arka-mazumder/",
+      "type": "text/html",
+      "error": "",
+      "classification": "Automated access blocked; not confirmed broken"
+    },
+    {
+      "url": "https://www.linkedin.com/in/eskhakha/",
+      "http": "999",
+      "finalUrl": "https://www.linkedin.com/in/eskhakha/",
+      "type": "text/html",
+      "error": "",
+      "classification": "Automated access blocked; not confirmed broken"
+    },
+    {
+      "url": "https://lnkd.in/p/gKkrHfGe",
+      "http": "200",
+      "finalUrl": "https://www.linkedin.com/posts/madhanvadlamudi_algomasterio-master-coding-interviews-activity-7318665726184099840-aaBf?utm_source=share&utm_medium=member_desktop&rcm=ACoAABT9QE0BiP3CAWgDMTJ5NLKmcGaVCgNn_nI",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "HTTP reachable; external service behavior not verified"
+    },
+    {
+      "url": "https://www.linkedin.com/in/pranoytez/",
+      "http": "999",
+      "finalUrl": "https://www.linkedin.com/in/pranoytez/",
+      "type": "text/html",
+      "error": "",
+      "classification": "Automated access blocked; not confirmed broken"
+    },
+    {
+      "url": "https://www.linkedin.com/in/alexandre-zajac/",
+      "http": "999",
+      "finalUrl": "https://www.linkedin.com/in/alexandre-zajac/",
+      "type": "text/html",
+      "error": "",
+      "classification": "Automated access blocked; not confirmed broken"
+    },
+    {
+      "url": "https://blog.algomaster.io/subscribe",
+      "http": "200",
+      "finalUrl": "https://blog.algomaster.io/subscribe",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "HTTP reachable; external service behavior not verified"
+    },
+    {
+      "url": "https://www.youtube.com/@ashishps_1",
+      "http": "200",
+      "finalUrl": "https://www.youtube.com/@ashishps_1",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "HTTP reachable; external service behavior not verified"
+    },
+    {
+      "url": "https://x.com/ashishps_1",
+      "http": "200",
+      "finalUrl": "https://x.com/ashishps_1",
+      "type": "text/html; charset=UTF-8",
+      "error": "",
+      "classification": "HTTP reachable; external service behavior not verified"
+    },
+    {
+      "url": "https://www.instagram.com/ashishps_1",
+      "http": "200",
+      "finalUrl": "https://www.instagram.com/ashishps_1",
+      "type": "text/html; charset=\"utf-8\"",
+      "error": "",
+      "classification": "HTTP reachable; external service behavior not verified"
+    },
+    {
+      "url": "https://discord.gg/rCtXvbFx9Z",
+      "http": "200",
+      "finalUrl": "https://discord.com/invite/rCtXvbFx9Z",
+      "type": "text/html",
+      "error": "",
+      "classification": "HTTP reachable; external service behavior not verified"
+    },
+    {
+      "url": "https://www.linkedin.com/company/algomaster-io",
+      "http": "999",
+      "finalUrl": "https://www.linkedin.com/company/algomaster-io",
+      "type": "text/html",
+      "error": "",
+      "classification": "Automated access blocked; not confirmed broken"
+    },
+    {
+      "url": "https://www.youtube.com/@algomaster-io",
+      "http": "200",
+      "finalUrl": "https://www.youtube.com/@algomaster-io",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "HTTP reachable; external service behavior not verified"
+    },
+    {
+      "url": "https://x.com/algomaster_io",
+      "http": "200",
+      "finalUrl": "https://x.com/algomaster_io",
+      "type": "text/html; charset=UTF-8",
+      "error": "",
+      "classification": "HTTP reachable; external service behavior not verified"
+    },
+    {
+      "url": "https://github.com/AlgoMaster-io",
+      "http": "200",
+      "finalUrl": "https://github.com/AlgoMaster-io",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "HTTP reachable; external service behavior not verified"
+    },
+    {
+      "url": "https://apps.apple.com/us/app/algomaster-interview-prep/id6788440905",
+      "http": "200",
+      "finalUrl": "https://apps.apple.com/us/app/algomaster-interview-prep/id6788440905",
+      "type": "text/html",
+      "error": "",
+      "classification": "HTTP reachable; external service behavior not verified"
+    },
+    {
+      "url": "https://play.google.com/store/apps/details?id=io.algomaster.app",
+      "http": "200",
+      "finalUrl": "https://play.google.com/store/apps/details?id=io.algomaster.app",
+      "type": "text/html; charset=utf-8",
+      "error": "",
+      "classification": "HTTP reachable; external service behavior not verified"
+    },
+    {
+      "url": "mailto:contact@algomaster.io",
+      "http": "N/A",
+      "finalUrl": "mailto:contact@algomaster.io",
+      "classification": "Valid mailto syntax; deliverability not tested"
+    }
+  ]
+}

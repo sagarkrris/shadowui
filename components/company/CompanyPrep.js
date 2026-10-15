@@ -2,10 +2,25 @@ import { useEffect, useState } from "react";
 import { buildCompanyMockPrompt, buildCompanyPrepRoom, buildCompanyProviderStatus, buildCompanyReadinessScore, buildQuestionBankRefreshState, markQuestionBankVerified } from "../../lib/companyPrep.mjs";
 import ApplicationTrackerPanel from "./ApplicationTrackerPanel";
 import BeginnerGuideBanner from "../BeginnerGuideBanner";
+import styles from "../../styles/CompanyPrep.module.css";
 
 const QUESTION_BANK_REFRESH_KEY = "interviewiq.companyPrep.refresh.v1";
 const CAREER_TOOLKIT_STORAGE_KEY = "interviewiq.careerToolkit.v1";
 const COMPANY_ROUND_MAP_KEY = "interviewiq.companyPrep.roundMap.v1";
+const COMPANY_VIEWS = [["overview", "Overview"], ["questions", "Practice questions"], ["brief", "Prep brief"], ["applications", "Applications"], ["sources", "Progress & sources"]];
+
+function CompanyPanel({ view, activeView, children }) {
+  return <div hidden={view !== activeView} className={styles.panel}>{children}</div>;
+}
+
+function roundMockPrompt(prep, prepRoom, round) {
+  return [
+    `Run a ${prep.company} ${round.name} round for ${prepRoom?.roleContext || "my target role"}.`,
+    `Round focus: ${round.focus}.`,
+    `Round detail: ${round.detail}.`,
+    round.weakMatches.length ? `Pay special attention to weak spots: ${round.weakMatches.join(", ")}.` : "Score clarity, depth, and interview readiness.",
+  ].join("\n");
+}
 
 async function readJsonIfAvailable(response) {
   const contentType = String(response.headers.get("content-type") || "").toLowerCase();
@@ -164,15 +179,10 @@ function RoundMap({ prep, prepRoom, weakSpots, state, theme, onUpdate, onMock, o
           const saved = state[round.id] || {};
           const status = saved.status || round.defaultStatus;
           const tone = statusTone[status] || theme.accentStrong;
-          const mockPrompt = [
-            `Run a ${prep.company} ${round.name} round for ${prepRoom?.roleContext || "my target role"}.`,
-            `Round focus: ${round.focus}.`,
-            `Round detail: ${round.detail}.`,
-            round.weakMatches.length ? `Pay special attention to weak spots: ${round.weakMatches.join(", ")}.` : "Score clarity, depth, and interview readiness.",
-          ].join("\n");
+          const mockPrompt = roundMockPrompt(prep, prepRoom, round);
 
           return (
-            <article key={round.id} style={{ background: "rgba(0,0,0,.14)", border: `1px solid ${tone}40`, borderRadius: 8, display: "grid", gap: 8, padding: 10 }}>
+            <article key={round.id} style={{ background: "var(--company-surface)", border: `1px solid ${tone}40`, borderRadius: 8, display: "grid", gap: 8, padding: 10 }}>
               <div style={{ alignItems: "center", display: "flex", gap: 7, justifyContent: "space-between" }}>
                 <span style={{ color: tone, fontSize: 10.5, fontWeight: 950, textTransform: "uppercase" }}>Round {round.order}</span>
                 <span style={{ color: tone, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>{status}</span>
@@ -210,6 +220,7 @@ export default function CompanyPrep({ theme, weakSpots, mockScores = [], message
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [roundMapState, setRoundMapState] = useState({});
+  const [activeView, setActiveView] = useState("overview");
 
   const loadCompany = async (company = query) => {
     const trimmed = company.trim() || "Amazon";
@@ -305,9 +316,13 @@ export default function CompanyPrep({ theme, weakSpots, mockScores = [], message
     jobDescriptionAnalysis: careerToolkitState.jobDescriptionAnalysis,
   });
   const providerStatus = buildCompanyProviderStatus({ prep, refreshState });
+  const rounds = prepRoom ? buildDefaultRoundMap(prepRoom, weakSpots) : [];
+  const nextRound = rounds.find(round => (roundMapState[round.id]?.status || round.defaultStatus) === "weak")
+    || rounds.find(round => (roundMapState[round.id]?.status || round.defaultStatus) !== "practiced") || rounds[0];
+  const practicedRounds = rounds.filter(round => roundMapState[round.id]?.status === "practiced").length;
 
   return (
-    <div className="workspace-content">
+    <div className={`workspace-content ${styles.workspace}`}>
       <div style={{ maxWidth: 1100, margin: "0 auto", display: "grid", gap: 14 }}>
         <BeginnerGuideBanner
           enabled={beginnerMode}
@@ -317,10 +332,10 @@ export default function CompanyPrep({ theme, weakSpots, mockScores = [], message
           detail="For company prep: pick one round, predict what the interviewer wants, explain one answer, practice a mock, then mark the round Practiced or Weak."
         />
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <div className={styles.heading}>
           <div style={{ flex: "1 1 260px" }}>
             <h1 style={{ fontSize: 18, color: "#e8e8f0", marginBottom: 4 }}>Company Prep</h1>
-            <p style={{ fontSize: 12.5, color: "#6b7280", lineHeight: 1.5 }}>Publicly reported questions, mock interviews, weak spots, and source links.</p>
+            <p style={{ fontSize: 12.5, color: "#6b7280", lineHeight: 1.5 }}>One company. One round at a time.</p>
           </div>
           <form onSubmit={(event) => { event.preventDefault(); loadCompany(); }} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 150px), 1fr))", gap: 7, flex: "1 1 430px", minWidth: 0 }}>
             <input className="glass-input" aria-label="Company search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search company, e.g. Amazon" style={{ minWidth: 0, border: "1px solid rgba(255,255,255,.09)", borderRadius: 8, padding: "9px 11px", color: "#e8e8f0", outline: "none", fontSize: 13 }} />
@@ -331,11 +346,11 @@ export default function CompanyPrep({ theme, weakSpots, mockScores = [], message
           </form>
         </div>
 
-        {error && <div style={{ color: "#f87171", fontSize: 12 }}>{error}</div>}
+        {error && <div role="alert" style={{ color: "#f87171", fontSize: 12 }}>{error}</div>}
 
         {prep && (
           <>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
+            <div className={styles.summary} aria-label="Company question summary">
               {[
                 ["DSA", prep.dsa.length, "ti-code"],
                 ["System Design", prep.systemDesign.length, "ti-topology-star"],
@@ -343,13 +358,28 @@ export default function CompanyPrep({ theme, weakSpots, mockScores = [], message
                 ["Resources", prep.resources.length, "ti-link"],
                 ["Readiness", `${readiness.score}%`, "ti-gauge"],
               ].map(([label, value, icon]) => (
-                <div key={label} className="glass-card" style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 10 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 7, color: theme.accentText, fontSize: 12, fontWeight: 700 }}><i className={`ti ${icon}`} />{label}</div>
-                  <div style={{ color: "#e8e8f0", fontSize: 20, fontWeight: 700, marginTop: 4 }}>{value}</div>
-                </div>
+                <span key={label}><i aria-hidden="true" className={`ti ${icon}`} />{label} <strong>{value}</strong></span>
               ))}
             </div>
 
+            <nav className={styles.views} aria-label="Company prep sections">
+              {COMPANY_VIEWS.map(([id, label]) => <button key={id} type="button" aria-current={activeView === id ? "page" : undefined} onClick={() => setActiveView(id)}>{label}</button>)}
+            </nav>
+
+            {nextRound && <CompanyPanel view="overview" activeView={activeView}>
+              <div className={styles.focus}>
+                <div>
+                  <span className={styles.eyebrow}>{prep.company} · Recommended practice</span>
+                  <h2>{nextRound.name}</h2>
+                  <p>{nextRound.focus}</p>
+                  <span className={styles.context}>{roleContext.trim() ? `For ${prepRoom.roleContext}` : `Focus: ${prepRoom.topicFocus}`} · {practicedRounds} of {rounds.length} rounds practised</span>
+                </div>
+                <button type="button" className={styles.primary} onClick={() => onMock(roundMockPrompt(prep, prepRoom, nextRound))}>Practise this round <i aria-hidden="true" className="ti ti-arrow-right" /></button>
+              </div>
+              <p className={styles.sourceNote}>Public prep material · Updated {prep.lastUpdated}. Verify recent interview reports in Progress & sources.</p>
+            </CompanyPanel>}
+
+            <CompanyPanel view="sources" activeView={activeView}>
             <div className="glass-card" style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 12 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
                 <div>
@@ -377,7 +407,9 @@ export default function CompanyPrep({ theme, weakSpots, mockScores = [], message
                 </div>
               )}
             </div>
+            </CompanyPanel>
 
+            <CompanyPanel view="brief" activeView={activeView}>
             {prepRoom && (
               <section className="glass-card" style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 12 }}>
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: 11 }}>
@@ -483,7 +515,9 @@ export default function CompanyPrep({ theme, weakSpots, mockScores = [], message
                 </section>
               </section>
             )}
+            </CompanyPanel>
 
+            <CompanyPanel view="overview" activeView={activeView}>
             {prepRoom && (
               <RoundMap
                 prep={prep}
@@ -496,7 +530,9 @@ export default function CompanyPrep({ theme, weakSpots, mockScores = [], message
                 onActivity={onActivity}
               />
             )}
+            </CompanyPanel>
 
+            <CompanyPanel view="sources" activeView={activeView}>
             <section className="glass-card" style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 12 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
                 <div>
@@ -551,8 +587,13 @@ export default function CompanyPrep({ theme, weakSpots, mockScores = [], message
               </button>
             </section>
 
-            <ApplicationTrackerPanel applications={applications} onChange={onApplicationsChange} theme={theme} />
+            </CompanyPanel>
 
+            <CompanyPanel view="applications" activeView={activeView}>
+              <ApplicationTrackerPanel applications={applications} onChange={onApplicationsChange} theme={theme} />
+            </CompanyPanel>
+
+            <CompanyPanel view="questions" activeView={activeView}>
             {topicFocus && focusQuestions.length > 0 && (
               <section className="glass-card" style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 12 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 10 }}>
@@ -630,6 +671,7 @@ export default function CompanyPrep({ theme, weakSpots, mockScores = [], message
                 </section>
               </aside>
             </div>
+            </CompanyPanel>
           </>
         )}
       </div>

@@ -1,0 +1,816 @@
+{
+  "groups": [
+    {
+      "title": "ORM and persistence",
+      "mechanism": "Hibernate maps object state to relational operations through a persistence context and database integration. Object navigation and SQL execution are different models.",
+      "tradeOff": "ORM reduces repetitive mapping while making generated queries and lifecycle behavior important to inspect.",
+      "verify": "Capture SQL for a representative use case and verify committed rows independently.",
+      "questions": [
+        {
+          "question": "What is an object-relational mapper?",
+          "answer": "A tool translating between object models and relational storage, including mapping, identity and state-management behavior."
+        },
+        {
+          "question": "When is Hibernate useful?",
+          "answer": "When entity relationships and managed state suit the domain and its query/transaction behavior can be owned and measured."
+        },
+        {
+          "question": "How does JPA relate to Hibernate?",
+          "answer": "JPA, now Jakarta Persistence, specifies APIs and contracts; Hibernate ORM is an implementation with additional capabilities."
+        },
+        {
+          "question": "Why is an entity not automatically a good API DTO?",
+          "answer": "Its lazy relationships, mutable state and persistence metadata can leak internal schema and cause unexpected loading during serialization."
+        },
+        {
+          "question": "How would you choose ORM versus direct SQL?",
+          "answer": "Compare access patterns, aggregate behavior, query complexity and team ownership; explicit SQL may better fit heavily specialized read workloads."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Persistence context",
+      "mechanism": "The persistence context tracks managed entity identity and state within a lifecycle. It is distinct from a shared second-level cache.",
+      "tradeOff": "Managed state simplifies updates but can retain large graphs and hide SQL timing.",
+      "verify": "Load the same row twice in one context, then compare with a separate context.",
+      "questions": [
+        {
+          "question": "What is the persistence context?",
+          "answer": "A unit tracking managed entity instances and their lifecycle, providing identity consistency for a persistent identity within that context."
+        },
+        {
+          "question": "When should a context be short-lived?",
+          "answer": "For request or use-case transactions where bounded retention and clear consistency are preferable to long-lived stale managed graphs."
+        },
+        {
+          "question": "How does first-level caching affect repeated finds?",
+          "answer": "A managed instance for an identity can be reused within the context, though query execution behavior depends on the operation."
+        },
+        {
+          "question": "Why can a large batch exhaust memory despite small rows?",
+          "answer": "The context retains managed entities and snapshots until cleared or ended; pending state grows even when individual objects are small."
+        },
+        {
+          "question": "How would you process a large update batch safely?",
+          "answer": "Use bounded chunks, appropriate flush/clear boundaries and explicit transaction/restart semantics, while measuring SQL batching and retained state."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Entity lifecycle",
+      "mechanism": "Transient, managed, detached and removed describe relationships to a persistence context. State transitions determine dirty tracking and available operations.",
+      "tradeOff": "Detachment avoids ongoing tracking but requires explicit update and conflict handling.",
+      "verify": "Exercise persist, detach, merge and remove with an independent verification transaction.",
+      "questions": [
+        {
+          "question": "What is a transient entity?",
+          "answer": "An instance not yet associated with a persistence context as a persistent managed entity."
+        },
+        {
+          "question": "When does an entity become detached?",
+          "answer": "When its association with the context ends or is explicitly removed, leaving an object whose later mutations are not automatically tracked there."
+        },
+        {
+          "question": "What does persist generally do?",
+          "answer": "It makes a new entity managed and schedules insertion according to identifier strategy, flush rules and transaction behavior."
+        },
+        {
+          "question": "Why do detached changes sometimes never reach the database?",
+          "answer": "The modified instance is no longer managed and no supported update or merge path was used."
+        },
+        {
+          "question": "How would you design a disconnected edit workflow?",
+          "answer": "Load authoritative state in a transaction, apply an explicit command, validate version and authorization, and avoid blindly merging arbitrary client object graphs."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Merge semantics",
+      "mechanism": "Merge copies detached state into a managed representation and returns that representation. The original detached instance does not automatically become managed.",
+      "tradeOff": "Convenient graph copying can overwrite fields that the client never intended to change.",
+      "verify": "Compare source and returned instances and test missing fields plus stale versions.",
+      "questions": [
+        {
+          "question": "What does merge return?",
+          "answer": "A managed instance receiving the supplied state; it may be a different Java object from the detached argument."
+        },
+        {
+          "question": "When is explicit command mapping safer than merge?",
+          "answer": "For partial client updates or security-sensitive fields, where copying an entire detached graph can overwrite authoritative state."
+        },
+        {
+          "question": "How does merge interact with cascaded associations?",
+          "answer": "Merge propagation depends on configured cascade semantics and the graph supplied; inspect which related entities can be copied or loaded."
+        },
+        {
+          "question": "Why can using the original instance after merge be wrong?",
+          "answer": "That object can remain detached, so subsequent changes may not be tracked in the active context."
+        },
+        {
+          "question": "How would you prevent stale detached updates from overwriting newer data?",
+          "answer": "Use version checks and explicit update semantics, surface conflicts and re-evaluate business decisions from fresh authoritative state."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Identifiers",
+      "mechanism": "Identifier generation determines when identity is assigned and can affect insert timing and batching. Entity identity must remain stable under the mapping contract.",
+      "tradeOff": "Different generation strategies trade database coordination against batching and portability.",
+      "verify": "Persist several entities and inspect generated identifiers, insert timing and batch behavior.",
+      "questions": [
+        {
+          "question": "Why does every entity need an identifier?",
+          "answer": "The persistence system needs a stable identity to distinguish rows and track managed instances across operations."
+        },
+        {
+          "question": "When is a generated surrogate key useful?",
+          "answer": "When a stable technical identity should remain separate from mutable or evolving business attributes."
+        },
+        {
+          "question": "How can IDENTITY generation affect insertion batching?",
+          "answer": "Obtaining generated identifiers can require inserts earlier and restrict batching opportunities; inspect actual Hibernate and database behavior."
+        },
+        {
+          "question": "Why is a mutable natural key a difficult primary identity?",
+          "answer": "Changes affect references, equality and cache keys; preserve stable identity or explicitly model migration of the business key."
+        },
+        {
+          "question": "How would you choose an identifier strategy for high write throughput?",
+          "answer": "Compare database support, allocation strategy, ordering, collision guarantees and real batching evidence rather than selecting by annotation convenience."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Equality and proxies",
+      "mechanism": "Entity equality must account for identity assignment and proxy behavior. Reference equality and mutable identifier hashing can break collection membership.",
+      "tradeOff": "Simple identity rules are safer than broad generated equals methods over associations.",
+      "verify": "Test transient, managed, detached and proxied forms in sets before and after persistence.",
+      "questions": [
+        {
+          "question": "Why is entity equality harder than DTO equality?",
+          "answer": "Entities have lifecycle and identity assignment, and proxies can alter runtime class behavior without changing persistent identity."
+        },
+        {
+          "question": "When should associations be excluded from equals and hashCode?",
+          "answer": "When traversing them risks recursion, lazy loading or mutable equality; entity identity should not depend on whole mutable graphs."
+        },
+        {
+          "question": "How can a generated ID affect hash-based collections?",
+          "answer": "If hashCode changes when the identifier is assigned, an entity already stored in a hash collection can become difficult to retrieve."
+        },
+        {
+          "question": "Why can strict getClass equality reject an equivalent proxy?",
+          "answer": "A proxy can have a different runtime class while representing the same persistent entity; use an intentional proxy-compatible identity strategy."
+        },
+        {
+          "question": "How would you validate an entity equality implementation?",
+          "answer": "Exercise null IDs, assigned IDs, detached copies, proxies and subclass cases while checking symmetry, stable hashing and collection behavior."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Association ownership",
+      "mechanism": "The owning side controls the relational association update. Inverse-side collections still need in-memory consistency but do not independently own the foreign key.",
+      "tradeOff": "Convenience navigation increases the need for explicit aggregate update methods.",
+      "verify": "Modify each side separately and inspect the foreign key after flush.",
+      "questions": [
+        {
+          "question": "What is the owning side of an association?",
+          "answer": "The mapped side responsible for writing the relationship's relational representation, such as the foreign key or join table."
+        },
+        {
+          "question": "When should helper methods update both association sides?",
+          "answer": "When bidirectional navigation is exposed and both references must remain consistent within the application's object graph."
+        },
+        {
+          "question": "What does mappedBy indicate?",
+          "answer": "That this side is inverse and the relationship is mapped by the named attribute on the owning side."
+        },
+        {
+          "question": "Why can adding to an inverse collection fail to persist the link?",
+          "answer": "The owning side was not changed, so the relational update required by the mapping was not established."
+        },
+        {
+          "question": "How would you design aggregate association methods?",
+          "answer": "Centralize add/remove operations, enforce ownership and invariants, and update both sides consistently without exposing uncontrolled collection mutation."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Cascades and orphan removal",
+      "mechanism": "Cascades propagate selected persistence operations; orphan removal models deletion of privately owned children removed from a relationship. Neither means universal recursive business ownership.",
+      "tradeOff": "Automation reduces boilerplate but can amplify accidental deletes across shared relationships.",
+      "verify": "Remove one link and inspect which rows are deleted, retained or reassigned.",
+      "questions": [
+        {
+          "question": "What is a cascade operation?",
+          "answer": "Propagation of a specified persistence operation from one entity to associated entities according to mapping configuration."
+        },
+        {
+          "question": "When is orphanRemoval appropriate?",
+          "answer": "For children whose lifecycle is owned by the parent and whose removal from that relationship should delete their persistent state."
+        },
+        {
+          "question": "How does orphanRemoval differ from cascade REMOVE?",
+          "answer": "Orphan removal responds to relationship orphaning; cascade REMOVE propagates parent removal. Their triggers and ownership implications differ."
+        },
+        {
+          "question": "Why is cascade REMOVE on shared references dangerous?",
+          "answer": "Deleting one owner can delete an entity still needed by other objects or business processes."
+        },
+        {
+          "question": "How would you review a deletion workflow?",
+          "answer": "Identify private versus shared ownership, inspect generated deletes and constraints, and test reassignment, missing children and historical references."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Fetch strategies",
+      "mechanism": "Lazy and eager describe fetch requirements rather than a universal SQL shape. Fetch joins, entity graphs and projections must match the use case.",
+      "tradeOff": "Loading too little creates extra queries; loading too much inflates rows and memory.",
+      "verify": "Record query count and transferred rows for empty, single and multiple associations.",
+      "questions": [
+        {
+          "question": "What does lazy fetching defer?",
+          "answer": "Loading associated state until needed through a supported managed access path, subject to mapping and enhancement capabilities."
+        },
+        {
+          "question": "When is a DTO projection preferable to loading entities?",
+          "answer": "For read-only endpoints needing a precise subset of fields without managed graph behavior or incidental lazy traversal."
+        },
+        {
+          "question": "Does eager fetching guarantee one SQL query?",
+          "answer": "No. Required state may be loaded through joins or additional queries depending on mapping, query and provider behavior."
+        },
+        {
+          "question": "Why can lazy access fail outside the context?",
+          "answer": "The entity lacks an active supported loading mechanism after detachment or session closure."
+        },
+        {
+          "question": "How would you choose a fetch plan for one endpoint?",
+          "answer": "Specify required data, choose joins or projections deliberately, and verify row multiplication, query count and pagination behavior under realistic cardinality."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "N+1 and pagination",
+      "mechanism": "N+1 occurs when loading a set triggers additional per-row queries. Joining multiple collections can instead create a large Cartesian-like row expansion.",
+      "tradeOff": "Fewer statements do not always mean less work or memory.",
+      "verify": "Compare statements, rows and latency for realistic parent and child counts.",
+      "questions": [
+        {
+          "question": "What is an N+1 query pattern?",
+          "answer": "One query loads many parents, then additional queries load related state separately for each parent or row."
+        },
+        {
+          "question": "When can batch fetching help?",
+          "answer": "When related lazy state for several owners can be fetched in bounded groups, reducing round trips without one huge join."
+        },
+        {
+          "question": "Why is collection fetch joining with pagination risky?",
+          "answer": "Row multiplication can distort page semantics or cause in-memory pagination; verify the provider's behavior rather than assuming database limits apply correctly."
+        },
+        {
+          "question": "Why can replacing N+1 with a giant join still be slow?",
+          "answer": "The join can duplicate parent data across many child combinations, increasing transfer, allocation and result processing."
+        },
+        {
+          "question": "How would you paginate parents with required child data?",
+          "answer": "Often select a deterministic page of parent identities first, then fetch bounded related data while preserving order and handling concurrent changes."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Dirty checking and flush",
+      "mechanism": "Dirty checking compares managed state and schedules writes. Flush synchronizes pending changes with the database; transaction commit determines durability.",
+      "tradeOff": "Automatic writes simplify code but make flush timing and state volume important.",
+      "verify": "Observe SQL before queries, at explicit flush and at commit; verify rollback separately.",
+      "questions": [
+        {
+          "question": "What is dirty checking?",
+          "answer": "Detection of changes to managed entity state so Hibernate can generate appropriate updates during synchronization."
+        },
+        {
+          "question": "When is explicit flush useful?",
+          "answer": "When database constraints or generated effects must be observed before continuing, while remembering that flush is not commit."
+        },
+        {
+          "question": "How does flush differ from commit?",
+          "answer": "Flush sends pending SQL within the transaction; commit completes the transaction and makes its successful effects durable under database guarantees."
+        },
+        {
+          "question": "Why can a query trigger an unexpected update?",
+          "answer": "Flush rules may synchronize pending managed changes before executing a query that must observe consistent state."
+        },
+        {
+          "question": "How would you diagnose an unexpected write?",
+          "answer": "Inspect which managed object changed, cascade paths, flush timing and transaction scope before blaming the final query that exposed the write."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Optimistic locking",
+      "mechanism": "A version predicate lets the database reject updates based on stale state. Detecting a conflict does not decide how the business should resolve it.",
+      "tradeOff": "Optimistic locking avoids long blocking but may require retries or user-visible conflicts.",
+      "verify": "Run two writers from the same version and assert one cannot silently overwrite the other.",
+      "questions": [
+        {
+          "question": "What does Version provide?",
+          "answer": "Optimistic concurrency checking using a version attribute so stale updates can be detected rather than silently replacing newer state."
+        },
+        {
+          "question": "When is optimistic locking a good fit?",
+          "answer": "When conflicts are relatively uncommon and the application can handle rejection or retry without holding long-lived database locks."
+        },
+        {
+          "question": "How does an optimistic update detect a conflict?",
+          "answer": "The update includes the expected version; a mismatch means the row no longer has the state version the writer read."
+        },
+        {
+          "question": "Why is blindly retrying a stale edit unsafe?",
+          "answer": "The original user decision may no longer be valid against the newer state. Recompute or surface a conflict according to the use case."
+        },
+        {
+          "question": "How would you test a versioned partial update?",
+          "answer": "Use independent transactions, apply conflicting field changes and verify stale input cannot overwrite newer authorized values or bypass business validation."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Pessimistic locking",
+      "mechanism": "Database locks protect specific rows or ranges under database rules. Locking requires an active transaction and a defined acquisition order plus timeout.",
+      "tradeOff": "Locks serialize conflicting work but increase waiting and deadlock risk.",
+      "verify": "Use two connections to test contention, timeout and release on rollback.",
+      "questions": [
+        {
+          "question": "What is pessimistic locking?",
+          "answer": "Acquiring database locks to prevent conflicting concurrent operations during a transaction, according to the selected lock mode and database behavior."
+        },
+        {
+          "question": "When is it preferable to optimistic retries?",
+          "answer": "When contention and expensive conflicting work make controlled serialization more predictable than repeated failed attempts."
+        },
+        {
+          "question": "Does locking an entity automatically lock every related row?",
+          "answer": "No. Scope depends on the query, lock mode, mapping and database; explicitly identify all rows protecting the invariant."
+        },
+        {
+          "question": "Why can consistent business code still deadlock?",
+          "answer": "Two transactions can acquire required locks in different orders and wait on each other."
+        },
+        {
+          "question": "How would you prevent lock-induced service exhaustion?",
+          "answer": "Keep transactions short, order acquisitions consistently, set bounded waits and retry deadlocks safely while monitoring connection and request queues."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Transaction and session boundaries",
+      "mechanism": "A session coordinates persistence state; a transaction coordinates database atomicity. Long session lifetimes can obscure when data is loaded or written.",
+      "tradeOff": "Convenient lazy access may extend database activity into presentation code.",
+      "verify": "Inspect SQL across service and response rendering boundaries and test detached use explicitly.",
+      "questions": [
+        {
+          "question": "How do Session and transaction differ?",
+          "answer": "A Session manages persistence context operations; a transaction defines a database consistency and completion boundary used by those operations."
+        },
+        {
+          "question": "When should remote calls be kept outside a database transaction?",
+          "answer": "When their latency and uncertainty would retain locks or connections unnecessarily and no local atomicity benefit covers the external effect."
+        },
+        {
+          "question": "Why is an open-session-in-view policy controversial?",
+          "answer": "It can permit lazy queries during response rendering, hiding query count and transaction-boundary assumptions in presentation paths."
+        },
+        {
+          "question": "What happens when asynchronous work uses a closed session?",
+          "answer": "Operations can fail or access detached state; sessions and transaction-bound connections should not be casually shared across threads."
+        },
+        {
+          "question": "How would you define a reliable persistence service boundary?",
+          "answer": "Load required state, validate and update inside a clear transaction, return explicit DTOs and expose commit or conflict outcomes deliberately."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Bulk operations",
+      "mechanism": "Bulk DML acts directly on database rows and can bypass normal entity-state synchronization and callbacks. Managed instances can become stale afterward.",
+      "tradeOff": "Bulk operations improve throughput while requiring explicit context and version handling.",
+      "verify": "Load an entity, run bulk DML and compare managed state with a fresh-context read.",
+      "questions": [
+        {
+          "question": "When is bulk update useful?",
+          "answer": "For set-based changes where per-entity loading is unnecessary and the bypassed lifecycle behavior is acceptable."
+        },
+        {
+          "question": "How does bulk DML differ from changing managed entities?",
+          "answer": "It operates through a query directly and does not provide the same per-instance dirty checking and callback semantics."
+        },
+        {
+          "question": "Why should the persistence context be cleared or refreshed after bulk DML?",
+          "answer": "Previously managed instances may retain stale values inconsistent with rows changed by the bulk operation."
+        },
+        {
+          "question": "Why can a bulk update undermine optimistic locking?",
+          "answer": "Version increments and predicates may need explicit handling; do not assume ordinary entity update semantics are automatically reproduced."
+        },
+        {
+          "question": "How would you execute a safe data correction?",
+          "answer": "Define exact predicates and affected-row expectations, handle version/cache consequences, verify in bounded batches and retain recovery evidence."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "SQL batching",
+      "mechanism": "JDBC batching groups compatible statements; transaction chunking and identifier strategies affect what can actually batch. Fetch batching is a different optimization.",
+      "tradeOff": "Larger batches reduce round trips but increase retained work and failure recovery size.",
+      "verify": "Observe actual batch execution and verify restart behavior after a mid-batch failure.",
+      "questions": [
+        {
+          "question": "What is JDBC statement batching?",
+          "answer": "Sending compatible parameterized statement executions together through the driver to reduce round trips and execution overhead."
+        },
+        {
+          "question": "When do flush and clear help batch processing?",
+          "answer": "At controlled chunk boundaries to send pending work and release managed-state retention, with a deliberate transaction policy."
+        },
+        {
+          "question": "How does insert ordering affect batching?",
+          "answer": "Grouping compatible entity statements can increase batch opportunities, but actual benefits depend on constraints and workload."
+        },
+        {
+          "question": "Why does setting batch_size not prove batching occurs?",
+          "answer": "Identifier generation, statement differences, driver support and flushing behavior can prevent the expected grouping."
+        },
+        {
+          "question": "How would you measure a batch optimization?",
+          "answer": "Compare round trips, statement batches, transaction duration, memory and failure recovery while confirming identical persisted business results."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Caching layers",
+      "mechanism": "First-level state belongs to a persistence context; second-level and query caches have separate provider and invalidation contracts. External writers can invalidate assumptions.",
+      "tradeOff": "Shared caching lowers repeated loads but adds stale-data and coordination risks.",
+      "verify": "Update through a different application path and measure what each cache observes.",
+      "questions": [
+        {
+          "question": "How does second-level cache differ from first-level cache?",
+          "answer": "Second-level cache can share mapped entity data across contexts, while first-level identity and managed state belong to one persistence context."
+        },
+        {
+          "question": "When is entity caching appropriate?",
+          "answer": "For read-heavy data with a suitable consistency and invalidation strategy, not simply every entity in the model."
+        },
+        {
+          "question": "What does a query cache need beyond result reuse?",
+          "answer": "Correct association with underlying data changes and the provider's invalidation semantics; cached query results are not a universal fresh-data guarantee."
+        },
+        {
+          "question": "Why can direct SQL writers create stale ORM cache entries?",
+          "answer": "They may bypass the cache invalidation path used by ORM-managed updates."
+        },
+        {
+          "question": "How would you validate a shared cache strategy?",
+          "answer": "Test concurrent readers/writers, external updates, eviction, provider failure and deployment compatibility under the required freshness contract."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Inheritance and mapping choices",
+      "mechanism": "Inheritance strategies map type hierarchies to different table layouts and query patterns. The object model does not determine the optimal relational representation.",
+      "tradeOff": "Convenient polymorphism can increase joins, null columns or union complexity.",
+      "verify": "Inspect generated queries and constraints for each concrete subtype.",
+      "questions": [
+        {
+          "question": "What are common JPA inheritance strategies?",
+          "answer": "Single-table, joined and table-per-class mappings, each with different schema and polymorphic query trade-offs."
+        },
+        {
+          "question": "When is an embeddable useful?",
+          "answer": "For a value-like group of fields owned by an entity rather than requiring an independent persistent identity and lifecycle."
+        },
+        {
+          "question": "How does single-table inheritance affect constraints?",
+          "answer": "Subtype-specific fields share one table, often complicating required-column rules and increasing nullable columns."
+        },
+        {
+          "question": "Why can joined inheritance slow polymorphic reads?",
+          "answer": "Retrieving subtype data can require joins across the hierarchy, increasing query complexity and row processing."
+        },
+        {
+          "question": "How would you choose between inheritance and composition in persistence?",
+          "answer": "Start with domain identity and query patterns, then compare schema constraints, joins, evolution and measured workload rather than mirroring Java inheritance automatically."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Queries and parameters",
+      "mechanism": "JPQL/HQL query entity models; native SQL exposes database-specific capabilities. Bound values prevent injection but dynamic identifiers still need controlled construction.",
+      "tradeOff": "Abstraction improves portability while complex queries may need explicit dialect-specific SQL.",
+      "verify": "Test malicious values, empty collections, null predicates and deterministic ordering.",
+      "questions": [
+        {
+          "question": "How do JPQL and native SQL differ?",
+          "answer": "JPQL targets mapped entities and attributes; native SQL targets the database schema and can use vendor-specific features."
+        },
+        {
+          "question": "When should a query use bound parameters?",
+          "answer": "For external values and dynamic data rather than string concatenation, preserving typing and preventing value-based injection."
+        },
+        {
+          "question": "Can a parameter safely replace an arbitrary table name?",
+          "answer": "Ordinary value parameters do not bind SQL identifiers. Choose identifiers from trusted fixed mappings instead of accepting arbitrary text."
+        },
+        {
+          "question": "Why do empty IN collections need deliberate handling?",
+          "answer": "Their SQL translation and semantics can vary; define whether empty input means no matches or omitted filtering and test that contract."
+        },
+        {
+          "question": "How would you review a query exposed through sorting options?",
+          "answer": "Allowlist supported sort fields and directions, bind values, enforce tenant predicates and add a unique tie-breaker for stable pagination."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Diagnosis and upgrades",
+      "mechanism": "ORM incidents require examining generated SQL, context lifetime and the actual database plan. Upgrades can alter query generation or mapping validation without source changes.",
+      "tradeOff": "Detailed SQL diagnostics can add overhead and expose sensitive values.",
+      "verify": "Capture representative SQL safely, compare plans and replay real boundary cases across versions.",
+      "questions": [
+        {
+          "question": "Where should an ORM performance investigation start?",
+          "answer": "With exact generated statements, query count, transferred rows, database waits and transaction boundaries for the slow use case."
+        },
+        {
+          "question": "When is Hibernate statistics useful?",
+          "answer": "For controlled visibility into operations such as query execution and cache behavior, while accounting for overhead and interpreting the right scope."
+        },
+        {
+          "question": "How can an upgrade break a previously accepted mapping?",
+          "answer": "Validation, SQL generation, type handling or specification alignment can become stricter or behave differently across supported versions."
+        },
+        {
+          "question": "Why is compiling entities insufficient upgrade validation?",
+          "answer": "It does not exercise mapping bootstrap, schema compatibility, lazy loading, query generation or concurrent transaction behavior."
+        },
+        {
+          "question": "How would you validate a Hibernate migration?",
+          "answer": "Bootstrap all mappings, run target-database integration tests, compare generated SQL and verify equality, locking, pagination and rollback-sensitive workflows."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "@Entity, @Table and access strategy",
+      "mechanism": "Hibernate reads entity mapping metadata during bootstrap. Identifier placement influences default field or property access, and explicit Access can override that choice.",
+      "tradeOff": "Annotations reduce mapping files but inconsistent access can silently change which state is persisted.",
+      "verify": "Bootstrap mappings and verify round trips for fields with deliberately different accessor behavior.",
+      "questions": [
+        {
+          "question": "What does @Entity cause Hibernate to recognize?",
+          "answer": "A managed persistent type in the persistence unit's discovered mapping set; the annotation does not itself register every class globally."
+        },
+        {
+          "question": "How does @Table differ from @Entity?",
+          "answer": "Entity identifies a persistence model type; Table specifies relational table mapping details rather than creating ordinary application instances."
+        },
+        {
+          "question": "How can @Id placement affect access strategy?",
+          "answer": "Placing mapping annotations on fields or getters establishes default field or property access under persistence rules unless explicitly overridden."
+        },
+        {
+          "question": "Why can annotating the wrong member leave a value unmapped?",
+          "answer": "The active access strategy may inspect a different member path, so inconsistent placement can produce unexpected mapping behavior."
+        },
+        {
+          "question": "How would you review mapping discovery and access?",
+          "answer": "Inspect persistence-unit discovery, access strategy and mapped attributes, then verify actual stored values rather than only schema generation."
+        }
+      ],
+      "kind": "annotation"
+    },
+    {
+      "title": "@Id and @GeneratedValue internals",
+      "mechanism": "Identifier metadata selects how persistent identity is assigned. Hibernate coordinates generator behavior with database capabilities, allocation and insert execution.",
+      "tradeOff": "Generation convenience can affect batching, ordering and portability.",
+      "verify": "Persist multiple new entities and inspect allocation, inserts and assigned identities.",
+      "questions": [
+        {
+          "question": "What does @Id identify?",
+          "answer": "The entity attribute or supported composite structure representing persistent identity within the mapping."
+        },
+        {
+          "question": "How does @GeneratedValue influence persistence?",
+          "answer": "It selects a supported identifier-generation strategy whose runtime behavior depends on provider and database integration."
+        },
+        {
+          "question": "Why can @SequenceGenerator allocationSize matter?",
+          "answer": "It affects identifier allocation coordination and performance; align its use with the database sequence and provider's expected strategy."
+        },
+        {
+          "question": "Why can assuming identifiers are consecutive fail?",
+          "answer": "Allocation, rollback, caching and concurrency can leave gaps. Identity uniqueness is not a gap-free business numbering contract."
+        },
+        {
+          "question": "How would you choose an annotation-based ID strategy?",
+          "answer": "Check database support, throughput, batching, migration compatibility and equality behavior before and after identity assignment."
+        }
+      ],
+      "kind": "annotation"
+    },
+    {
+      "title": "@Column, @Basic and @Transient",
+      "mechanism": "Mapping annotations describe persistence representation. Database constraints, validation annotations and Java memory visibility are distinct mechanisms despite similar terms.",
+      "tradeOff": "Schema metadata helps documentation but deployed schema must be checked independently.",
+      "verify": "Attempt invalid writes against the migrated database and inspect what is actually stored.",
+      "questions": [
+        {
+          "question": "What does @Column(nullable=false) express?",
+          "answer": "Column mapping/schema-generation metadata; enforce the intended deployed database constraint and validation rather than assuming every path rejects null early."
+        },
+        {
+          "question": "How does persistence @Transient differ from Java transient?",
+          "answer": "The annotation excludes a member from persistence mapping; the Java modifier affects serialization and can interact with field mapping rules differently."
+        },
+        {
+          "question": "Does @Column(length=...) validate every Java string assignment?",
+          "answer": "No. It supplies mapping metadata; runtime validation and database enforcement depend on configured validation plus actual schema."
+        },
+        {
+          "question": "Why can a schema and annotation disagree?",
+          "answer": "Production migrations, historical tables or disabled schema generation can differ from source mapping declarations."
+        },
+        {
+          "question": "How would you enforce a required bounded text field?",
+          "answer": "Align Bean Validation, explicit application rules and database constraints, then test writes through all supported paths."
+        }
+      ],
+      "kind": "annotation"
+    },
+    {
+      "title": "@OneToMany, @ManyToOne and @JoinColumn",
+      "mechanism": "Association metadata describes ownership, join columns, fetch and cascade behavior. The relational writer is the owning side; inverse collections do not own the foreign key.",
+      "tradeOff": "Rich navigation is useful while uncontrolled graph traversal causes hidden queries and mutation complexity.",
+      "verify": "Modify each side independently and verify foreign-key updates plus query counts.",
+      "questions": [
+        {
+          "question": "How does @ManyToOne map a common foreign-key relationship?",
+          "answer": "The referencing entity holds association metadata pointing to the target identity, commonly through a JoinColumn on the owning side."
+        },
+        {
+          "question": "What does mappedBy on @OneToMany mean internally?",
+          "answer": "It identifies the owning attribute on the other entity so this collection is inverse rather than an independent foreign-key writer."
+        },
+        {
+          "question": "How do fetch and cascade settings differ?",
+          "answer": "Fetch describes loading requirements; cascade describes propagation of persistence operations. Neither substitutes for the other."
+        },
+        {
+          "question": "Why does adding only to a mappedBy collection sometimes do nothing?",
+          "answer": "The owning association was not updated, so the required foreign-key change was not established."
+        },
+        {
+          "question": "How would you make a bidirectional mapping robust?",
+          "answer": "Provide aggregate methods updating both sides, choose narrow cascades and test add, remove, reassignment and detached cases."
+        }
+      ],
+      "kind": "annotation"
+    },
+    {
+      "title": "@OneToOne and @MapsId",
+      "mechanism": "One-to-one mappings require relational uniqueness and explicit ownership. Shared-primary-key associations tie dependent identity to the owner through supported MapsId semantics.",
+      "tradeOff": "Shared identity models private dependents well but constrains independent lifecycle and reassignment.",
+      "verify": "Test absent dependents, uniqueness conflicts and owner/dependent insert order.",
+      "questions": [
+        {
+          "question": "What does @OneToOne promise conceptually?",
+          "answer": "A single associated entity at each side's mapped cardinality, which should be supported by appropriate relational constraints."
+        },
+        {
+          "question": "When is @MapsId useful?",
+          "answer": "When a dependent entity's identity derives from an associated owner's identity under a shared or derived identifier mapping."
+        },
+        {
+          "question": "Why does optional=false not replace a database constraint?",
+          "answer": "Mapping assumptions and actual storage enforcement differ; external writers and historical data still require relational integrity."
+        },
+        {
+          "question": "Why can one-to-one lazy loading behave differently from expectations?",
+          "answer": "Ownership, optionality and provider enhancement capabilities can affect whether association presence or state requires a query."
+        },
+        {
+          "question": "How would you validate a dependent-entity lifecycle?",
+          "answer": "Persist, remove and reload both sides across separate contexts, verifying identity, nullability, uniqueness and private-ownership rules."
+        }
+      ],
+      "kind": "annotation"
+    },
+    {
+      "title": "@Version and lock annotations",
+      "mechanism": "Version metadata participates in update predicates to detect stale writes. Lock modes influence database locking but remain dependent on query and transaction context.",
+      "tradeOff": "Conflicts protect data but must become meaningful application outcomes.",
+      "verify": "Run competing writers and inspect affected-row/version behavior plus rollback.",
+      "questions": [
+        {
+          "question": "How does @Version protect an update internally?",
+          "answer": "Hibernate includes the expected version in the database update contract and detects a mismatch when the stored version changed."
+        },
+        {
+          "question": "When should a stale version be returned as a conflict?",
+          "answer": "When the caller's edit depends on the state it read and automatic recomputation would change the intended decision."
+        },
+        {
+          "question": "Does @Version automatically coordinate external side effects?",
+          "answer": "No. It protects participating entity updates, while remote writes and event publication require separate consistency design."
+        },
+        {
+          "question": "Why can a bulk update bypass ordinary version behavior?",
+          "answer": "Bulk DML does not necessarily reproduce managed-entity update processing; explicit version logic and context synchronization may be required."
+        },
+        {
+          "question": "How would you verify optimistic-lock annotations after migration?",
+          "answer": "Use separate transactions and detached copies, assert one stale write fails and check that no external irreversible effect was repeated during recovery."
+        }
+      ],
+      "kind": "annotation"
+    },
+    {
+      "title": "@Enumerated, @Convert and value mappings",
+      "mechanism": "Enum and converter metadata define translation between Java values and database representation. Persisted codes must remain stable across deployments.",
+      "tradeOff": "Automatic conversion reduces repetition while hiding compatibility hazards in historical data.",
+      "verify": "Round-trip null, unknown historical codes and every supported current alternative.",
+      "questions": [
+        {
+          "question": "Why choose EnumType.STRING over ORDINAL in many models?",
+          "answer": "Names are usually less sensitive to reordering than ordinals, although renaming constants still requires an explicit persisted-data migration."
+        },
+        {
+          "question": "What does @Converter do?",
+          "answer": "It declares a supported attribute converter translating between entity attribute and database representation under configured application rules."
+        },
+        {
+          "question": "How does autoApply change converter scope?",
+          "answer": "It can apply conversion to eligible matching attributes without each explicit Convert declaration, increasing the importance of scope review."
+        },
+        {
+          "question": "Why can a converter break old rows after deployment?",
+          "answer": "It may reject or reinterpret historical values, even though all newly written examples round-trip successfully."
+        },
+        {
+          "question": "How would you evolve a converted value type?",
+          "answer": "Define stable persisted codes and tolerant historical reading, migrate data deliberately and test both old and new representations before removing compatibility."
+        }
+      ],
+      "kind": "annotation"
+    },
+    {
+      "title": "@NamedEntityGraph and query mapping annotations",
+      "mechanism": "NamedEntityGraph declares named attribute-graph metadata. An application selects a graph through supported fetch/load hints or APIs; declaration alone does not apply it to every query. NamedQuery separately declares a reusable query definition.",
+      "tradeOff": "Reusable declarations aid consistency but query shape and data volume still determine cost.",
+      "verify": "Capture SQL and result completeness for empty, single and multiple related rows.",
+      "questions": [
+        {
+          "question": "What does @NamedQuery declare?",
+          "answer": "A named entity-model query available through persistence APIs, with provider validation and runtime execution under the active mapping model."
+        },
+        {
+          "question": "How does @NamedEntityGraph influence loading?",
+          "answer": "It declares named graph metadata that can be selected through supported fetch/load hints or APIs. Merely declaring the graph does not change every query automatically."
+        },
+        {
+          "question": "Does a graph guarantee one SQL statement?",
+          "answer": "No. The provider and mapping determine how required state is obtained; inspect actual statements and transferred rows."
+        },
+        {
+          "question": "Why can a reusable fetch graph hurt a paginated endpoint?",
+          "answer": "Fetching collections can multiply rows or force expensive handling, even when the graph is appropriate for a single-entity view."
+        },
+        {
+          "question": "How would you choose annotation-based versus explicit query fetch plans?",
+          "answer": "Keep reusable declarations focused, use projections where suitable and validate each endpoint's ordering, pagination and query cost independently."
+        }
+      ],
+      "kind": "annotation"
+    }
+  ]
+}

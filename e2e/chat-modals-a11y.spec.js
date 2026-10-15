@@ -4,6 +4,7 @@ import {
   gotoSeededApp,
   mockChat,
 } from "./helpers/app.js";
+test.use({ serviceWorkers: 'block' });
 
 test.describe("Chat, modals, latency states, and accessibility smoke", () => {
   test("sends a mocked chat message, shows loading state, and clears the conversation", async ({ page }) => {
@@ -21,40 +22,44 @@ test.describe("Chat, modals, latency states, and accessibility smoke", () => {
     await page.getByRole("button", { name: "Send" }).click();
     await expect(page.getByRole("button", { name: "Send" })).toBeDisabled();
     await expect(page.getByText("Explain React state trade-offs.")).toBeVisible();
-    await expect(page.getByText("Score: 8/10")).toBeVisible();
+    await expect(page.locator('.assistant-message').getByText("Score: 8/10", { exact: true })).toBeVisible();
 
+    await page.getByLabel("Workspace options", { exact: true }).click();
     await page.getByRole("button", { name: "Clear" }).click();
-    await expect(page.getByText("Score: 8/10")).toHaveCount(0);
+    await expect(page.locator('.assistant-message').getByText("Score: 8/10", { exact: true })).toHaveCount(0);
     await assertHealthyApp(page);
   });
 
   test("opens and closes Info, Analyze Screen, and Record Review modals", async ({ page }) => {
     await gotoSeededApp(page);
 
-    await page.getByRole("button", { name: "Info" }).click();
+    await page.getByLabel("Workspace options", { exact: true }).click();
+    await page.getByRole("button", { name: "About & help" }).click();
     await expect(page.getByRole("dialog")).toContainText("Built for focused interview preparation.");
-    await expect(page.getByLabel("InterviewIQ logo")).toBeVisible();
+    await expect(page.getByRole('dialog').getByRole('img', { name: 'InterviewIQ logo', exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Close about" }).click();
-    await expect(page.getByText("Voice Input")).toHaveCount(0);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
 
     await page.getByRole("button", { name: "Analyze Screen" }).click();
     await expect(page.getByRole("dialog")).toContainText("Analyze Screen");
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog")).toHaveCount(0);
 
-    await page.getByRole("button", { name: "Record Review" }).click();
+    await page.getByRole('button', { name: 'Prep controls', exact: true }).click();
+    await page.getByLabel('Compact prep controls menu').getByRole("button", { name: "Record Review", exact: true }).click();
     await expect(page.getByRole("dialog")).toContainText("Recording Review");
-    await page.getByRole("button", { name: "x" }).click();
+    await page.getByRole('dialog').getByRole("button", { name: "x", exact: true }).click();
     await assertHealthyApp(page);
   });
 
   test("routes sign-in and account creation to dedicated branded pages", async ({ page }) => {
     await gotoSeededApp(page);
 
+    await page.getByLabel("Workspace options", { exact: true }).click();
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page).toHaveURL(/\/sign-in$/);
     await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
-    await expect(page.getByLabel("InterviewIQ logo")).toBeVisible();
+    await expect(page.getByRole('main').getByRole('img', { name: 'InterviewIQ logo', exact: true })).toBeVisible();
 
     await page.getByRole("link", { name: "Create an account" }).click();
     await expect(page).toHaveURL(/\/sign-up$/);
@@ -66,10 +71,13 @@ test.describe("Chat, modals, latency states, and accessibility smoke", () => {
     await gotoSeededApp(page);
 
     await expect(page.getByLabel("Message composer")).toBeVisible();
-    await expect(page.getByLabel("Difficulty level")).toBeVisible();
-    await expect(page.getByLabel("Interview calibration mode")).toBeVisible();
-    await expect(page.getByLabel("Round Strategy Mode")).toBeVisible();
-    await expect(page.getByLabel("AI Interview Panel Mode")).toBeVisible();
+    await page.getByRole('button', { name: 'Prep controls', exact: true }).click();
+    const controls = page.getByLabel('Compact prep controls menu');
+    await expect(controls.getByLabel("Difficulty level")).toBeVisible();
+    await expect(controls.getByLabel("Interview calibration mode")).toBeVisible();
+    await expect(controls.getByLabel("Round Strategy Mode")).toBeVisible();
+    await expect(controls.getByLabel("AI Interview Panel Mode")).toBeVisible();
+    await page.getByRole('button', { name: 'Close prep controls', exact: true }).click();
 
     await page.keyboard.press("Tab");
     const firstFocusedLabel = await page.evaluate(() => document.activeElement?.getAttribute("aria-label") || document.activeElement?.textContent || "");
@@ -78,6 +86,6 @@ test.describe("Chat, modals, latency states, and accessibility smoke", () => {
     await page.getByLabel("Message composer").focus();
     await page.keyboard.type("Use keyboard to send this answer.");
     await page.keyboard.press("Enter");
-    await expect(page.getByText("Score: 6/10")).toBeVisible();
+    await expect(page.locator('.assistant-message').getByText("Score: 6/10", { exact: true })).toBeVisible();
   });
 });

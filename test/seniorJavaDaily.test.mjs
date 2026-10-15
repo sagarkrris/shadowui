@@ -6,8 +6,8 @@ import { SENIOR_JAVA_DAILY_SETS } from "../lib/seniorJavaDaily.mjs";
 const root = new URL("../content/senior-java/daily/", import.meta.url);
 
 test("daily sets preserve sequential identities, complete answers, and unique routes", async () => {
-  assert.deepEqual(SENIOR_JAVA_DAILY_SETS.slice(0, 8).map(set => set.slug), [
-    "2026-10-07-set-01", "2026-10-07-set-02", "2026-10-07-set-03", "2026-10-08-set-04", "2026-10-09-set-05", "2026-10-12-set-06", "2026-10-13-set-07", "2026-10-14-set-08",
+  assert.deepEqual(SENIOR_JAVA_DAILY_SETS.slice(0, 10).map(set => set.slug), [
+    "2026-10-07-set-01", "2026-10-07-set-02", "2026-10-07-set-03", "2026-10-08-set-04", "2026-10-09-set-05", "2026-10-12-set-06", "2026-10-13-set-07", "2026-10-14-set-08", "2026-10-14-set-09", "2026-10-15-set-10",
   ], "existing dated URLs cannot move when later sets are added");
   assert.deepEqual(SENIOR_JAVA_DAILY_SETS.map(set => set.number), Array.from({ length: SENIOR_JAVA_DAILY_SETS.length }, (_, index) => index + 1));
   assert.equal(new Set(SENIOR_JAVA_DAILY_SETS.map(set => set.slug)).size, SENIOR_JAVA_DAILY_SETS.length);

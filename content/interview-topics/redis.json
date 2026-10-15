@@ -1,0 +1,294 @@
+{
+  "groups": [
+    {
+      "title": "Data structures and command cost",
+      "mechanism": "Redis structures support different access patterns and command costs. In-memory storage does not make unbounded operations safe or remove network and allocation overhead.",
+      "tradeOff": "Compact modeling reduces work while oversized values and hot keys concentrate load.",
+      "verify": "Measure command latency and transferred bytes under realistic key cardinality and payload sizes.",
+      "questions": [
+        {
+          "question": "When should Redis be used?",
+          "answer": "When its supported structures and latency model fit caching, coordination or data-access needs with explicit durability and failure assumptions."
+        },
+        {
+          "question": "How do strings, hashes, sets and sorted sets differ?",
+          "answer": "Strings hold scalar/binary values; hashes map fields; sets represent uniqueness; sorted sets associate members with ordered scores."
+        },
+        {
+          "question": "Why should command complexity influence data modeling?",
+          "answer": "A command scanning a large structure can consume significant server execution time even when no disk read is involved."
+        },
+        {
+          "question": "Why can one large Redis value degrade unrelated traffic?",
+          "answer": "Transfer, serialization and server work for the large value can dominate capacity and create latency for other operations."
+        },
+        {
+          "question": "How would you model a leaderboard?",
+          "answer": "Use a sorted-set design with explicit score, tie and pagination semantics, then bound updates, retention and hot-key traffic."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "TTL and eviction",
+      "mechanism": "Expiration removes values according to time rules; eviction responds to memory pressure under the configured policy. Neither substitutes for a complete cache correctness contract.",
+      "tradeOff": "Memory bounds, freshness and hit rate compete and require separate settings.",
+      "verify": "Exercise expiration, memory pressure and key updates while checking origin load and missing-key handling.",
+      "questions": [
+        {
+          "question": "How do expiration and eviction differ?",
+          "answer": "Expiration follows a key's configured lifetime; eviction removes keys under a memory policy when memory pressure requires it."
+        },
+        {
+          "question": "When should TTL jitter be used?",
+          "answer": "When many related keys would otherwise expire together and cause synchronized origin reloads; a single hot key still needs its own protection."
+        },
+        {
+          "question": "Does updating a key always preserve its TTL?",
+          "answer": "No universal rule applies across commands and options. Verify the exact command's expiration behavior and use supported explicit options."
+        },
+        {
+          "question": "Why is a missing cache key not proof the underlying record is absent?",
+          "answer": "The key may have expired, been evicted, never loaded or become unavailable; consult the authoritative data under the cache policy."
+        },
+        {
+          "question": "How would you select an eviction policy?",
+          "answer": "Use workload locality, key lifetime requirements and memory limits, then test both useful hit rate and safe behavior when entries disappear."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Cache-aside and invalidation",
+      "mechanism": "Cache-aside separates lookup, origin load and cache fill. Concurrent updates can race with loaders, while invalidation failures can retain obsolete representations.",
+      "tradeOff": "Lower origin load comes with stale-data and coordination obligations.",
+      "verify": "Pause a loader, commit an update and resume the old loader to test stale repopulation.",
+      "questions": [
+        {
+          "question": "What is cache-aside?",
+          "answer": "Application-controlled cache lookup followed by authoritative loading on miss and storing the result under an explicit freshness policy."
+        },
+        {
+          "question": "When is negative caching useful?",
+          "answer": "For repeated confirmed absence with a short appropriate lifetime, while distinguishing missing data from failed or unauthorized lookups."
+        },
+        {
+          "question": "Why can deleting a key before database commit leave stale data?",
+          "answer": "Another reader can reload the old committed state before the write completes and repopulate the cache."
+        },
+        {
+          "question": "Why must tenant and currency sometimes be part of a key?",
+          "answer": "They can change the result's meaning; omitting them can mix distinct prices or expose another tenant's data."
+        },
+        {
+          "question": "How would you prevent stale loaders from overwriting fresh values?",
+          "answer": "Use a deliberate version or generation protocol, controlled invalidation/reconciliation or an accepted bounded-staleness design, tested against the actual race."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Pipelining and atomicity",
+      "mechanism": "Pipelining reduces network round trips but does not turn several commands into one isolated transaction. MULTI/EXEC and WATCH have specific execution and conflict semantics.",
+      "tradeOff": "Batching improves throughput while larger batches increase outstanding memory and latency.",
+      "verify": "Interleave another client with pipelined or transactional updates and inspect actual visible states.",
+      "questions": [
+        {
+          "question": "What does Redis pipelining optimize?",
+          "answer": "It sends multiple commands without waiting for each response individually, reducing round-trip overhead rather than changing each command's semantics."
+        },
+        {
+          "question": "How does MULTI/EXEC differ from pipelining?",
+          "answer": "It queues commands for transactional execution under Redis's contract; pipelining alone provides no equivalent multi-command isolation."
+        },
+        {
+          "question": "What does WATCH support?",
+          "answer": "Optimistic conflict detection on watched keys so a transaction can be aborted if relevant changes occur before execution."
+        },
+        {
+          "question": "Why is Redis transaction error handling not ordinary SQL rollback?",
+          "answer": "Redis does not generally undo earlier command effects when a queued command encounters an execution-time error; understand the documented error categories."
+        },
+        {
+          "question": "How would you implement a safe conditional multi-command update?",
+          "answer": "Use the appropriate supported atomic operation, WATCH retry protocol or bounded script/function, then test concurrent conflicts and command failures."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Scripts and bounded execution",
+      "mechanism": "Scripts execute under Redis's atomic execution model but must remain bounded. Blocking other operations and cross-slot constraints matter operationally.",
+      "tradeOff": "Server-side logic reduces round trips while increasing the blast radius of slow or faulty code.",
+      "verify": "Use small adversarial inputs and inspect latency, key declaration and failure semantics.",
+      "questions": [
+        {
+          "question": "When is a Lua script useful in Redis?",
+          "answer": "When a bounded multi-step key operation needs atomic execution and cannot be expressed adequately with a simpler supported command."
+        },
+        {
+          "question": "Does script atomicity imply automatic rollback on every error?",
+          "answer": "No. Atomic execution prevents interleaving, but runtime errors do not universally restore effects of commands already performed."
+        },
+        {
+          "question": "Why must scripts declare and use supported key arguments?",
+          "answer": "Correct key identification is important for execution, routing and cluster constraints; avoid arbitrary hidden key construction."
+        },
+        {
+          "question": "Why is scanning an unbounded dataset inside a script dangerous?",
+          "answer": "It can monopolize server execution and delay unrelated traffic, turning one request into a broader latency incident."
+        },
+        {
+          "question": "How would you review a production Redis script?",
+          "answer": "Check bounded work, numeric/argument validation, key scope, cluster compatibility and partial effects on failure using the actual Redis version."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Distributed locks and fencing",
+      "mechanism": "A lease controls temporary ownership under assumptions about time, failure and recovery. A stale holder can keep running after expiry, so downstream enforcement may be needed.",
+      "tradeOff": "Coordination reduces overlap but can become another availability dependency.",
+      "verify": "Pause a holder past expiry, start another and verify stale effects are rejected where required.",
+      "questions": [
+        {
+          "question": "Why use a unique token for a Redis lock owner?",
+          "answer": "Release must confirm the caller still owns that lease, preventing an old holder from deleting a newer holder's lock."
+        },
+        {
+          "question": "Why is SET NX with expiry not a complete business correctness proof?",
+          "answer": "The owner can pause, the lease can expire and another owner can start while the first continues executing."
+        },
+        {
+          "question": "What is a fencing token?",
+          "answer": "A monotonically ordered ownership marker checked by the protected storage or service so stale owners cannot apply effects."
+        },
+        {
+          "question": "Why is deleting a lock key unconditionally unsafe?",
+          "answer": "A delayed former owner can remove the current owner's lock after its own lease expired."
+        },
+        {
+          "question": "How would you decide whether Redis locking is appropriate?",
+          "answer": "State the protected invariant, failure and failover assumptions, and whether stale effects can be rejected; prefer database constraints for invariants they can enforce directly."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Replication and durability",
+      "mechanism": "Replication, persistence and failover have distinct guarantees. Acknowledged writes can still have loss or visibility implications under configured failure modes.",
+      "tradeOff": "Lower latency can trade against durability and recovery complexity.",
+      "verify": "Crash and fail over under realistic persistence settings, then reconcile acknowledged operations.",
+      "questions": [
+        {
+          "question": "How do RDB snapshots and AOF differ?",
+          "answer": "Snapshots persist selected dataset points; append-only persistence records write operations under configured policies, with different recovery and resource trade-offs."
+        },
+        {
+          "question": "Does Redis replication make every acknowledged write lossless?",
+          "answer": "No universal guarantee follows; replication and failover timing plus persistence configuration determine potential loss."
+        },
+        {
+          "question": "Why can replica reads be stale?",
+          "answer": "Replication can lag, so the replica may not yet contain the primary's latest acknowledged state."
+        },
+        {
+          "question": "What does WAIT fail to guarantee universally?",
+          "answer": "Replica acknowledgment does not by itself turn Redis into a strongly consistent system or eliminate every failover data-loss scenario."
+        },
+        {
+          "question": "How would you use Redis for important durable state?",
+          "answer": "Evaluate required loss tolerance against actual persistence and failover behavior, retain recovery evidence and use a more suitable authority when guarantees do not fit."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Cluster distribution and hot keys",
+      "mechanism": "Redis Cluster distributes keys through slots; a single hot key remains concentrated. Multi-key operations need compatible key placement under cluster rules.",
+      "tradeOff": "Sharding spreads independent keys but complicates cross-key atomicity and client behavior.",
+      "verify": "Test slot movement, redirects and one extremely hot key separately from uniform traffic.",
+      "questions": [
+        {
+          "question": "What does Redis Cluster distribute?",
+          "answer": "Key slots across nodes, allowing different keys to be served by different shard owners under cluster routing rules."
+        },
+        {
+          "question": "When are hash tags useful?",
+          "answer": "When related keys deliberately need the same slot for supported multi-key operations, while avoiding excessive concentration."
+        },
+        {
+          "question": "Why can a multi-key command fail with cross-slot keys?",
+          "answer": "Its atomic or routing contract may require all keys in one slot, which the chosen key names do not satisfy."
+        },
+        {
+          "question": "Why does adding shards not solve a single hot key automatically?",
+          "answer": "One key still maps to one slot owner; use appropriate local caching, replication of immutable representations or redesigned access patterns."
+        },
+        {
+          "question": "How would you validate a cluster-aware client?",
+          "answer": "Exercise redirects, failover, slot migration, connection limits and safe retries, including ambiguous outcomes for side-effecting commands."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Streams and delivery",
+      "mechanism": "Streams provide persisted entries and consumer-group progress under their configured retention and acknowledgment model. Pub/Sub has different delivery and replay behavior.",
+      "tradeOff": "Durable replay aids recovery while requiring pending-work and retention ownership.",
+      "verify": "Crash after applying an effect but before acknowledgment and inspect pending reclamation.",
+      "questions": [
+        {
+          "question": "How do Redis Streams differ from Pub/Sub?",
+          "answer": "Streams retain entries for supported reading/replay and consumer-group workflows; ordinary Pub/Sub is not a durable replay queue."
+        },
+        {
+          "question": "What does a stream consumer acknowledgment represent?",
+          "answer": "Progress in the consumer-group delivery model; it does not atomically commit an external database effect."
+        },
+        {
+          "question": "Why must pending messages be monitored?",
+          "answer": "A consumer can disappear or fail without acknowledging, leaving work requiring controlled recovery or reassignment."
+        },
+        {
+          "question": "Why can aggressive trimming harm recovery?",
+          "answer": "Entries needed by lagging or recovering consumers can be removed before they are safely processed."
+        },
+        {
+          "question": "How would you build a reliable stream consumer?",
+          "answer": "Use durable operation identity, bounded pending work, intentional acknowledgment timing and tested recovery for crashes, poison messages and retention limits."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Security and operations",
+      "mechanism": "Redis access needs explicit network restriction, authentication/authorization and transport protection where required. Diagnostics must avoid leaking data or blocking the server.",
+      "tradeOff": "Convenient administrative commands can impose substantial production load or expose payloads.",
+      "verify": "Test denied commands, connection exhaustion and diagnostic overhead with representative data.",
+      "questions": [
+        {
+          "question": "Why should Redis not be exposed directly to arbitrary clients?",
+          "answer": "Its data and administrative command surface can permit disclosure, modification or resource exhaustion without appropriate access boundaries."
+        },
+        {
+          "question": "When should ACLs be used?",
+          "answer": "To restrict principals to required command and key scopes under supported Redis authorization capabilities, alongside network and transport controls."
+        },
+        {
+          "question": "Why prefer SCAN to KEYS for many production inventories?",
+          "answer": "SCAN offers incremental traversal, though results and iteration guarantees still require correct handling; KEYS can impose a large blocking traversal."
+        },
+        {
+          "question": "Why can a connection pool become the bottleneck before Redis CPU?",
+          "answer": "Clients may wait for connections or hold them too long, consuming deadlines even when server execution capacity is available."
+        },
+        {
+          "question": "How would you diagnose Redis latency safely?",
+          "answer": "Correlate client acquisition, network, payload size, slow commands, memory and server latency evidence using bounded diagnostics and restricted data access."
+        }
+      ],
+      "kind": "concept"
+    }
+  ]
+}

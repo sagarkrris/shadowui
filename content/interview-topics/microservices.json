@@ -1,0 +1,758 @@
+{
+  "groups": [
+    {
+      "title": "Service boundaries",
+      "mechanism": "A service boundary groups a cohesive business capability with ownership of its data and operational contract. Deployment independence is an outcome, not merely a separate process.",
+      "tradeOff": "Fine-grained splitting increases network, coordination and ownership costs.",
+      "verify": "Trace one business change and count the teams, deployments and synchronous calls it requires.",
+      "questions": [
+        {
+          "question": "What defines a microservice?",
+          "answer": "An independently deployable service owning a focused capability and explicit contracts, rather than simply a small HTTP application."
+        },
+        {
+          "question": "When is a modular monolith preferable?",
+          "answer": "When independent scaling or ownership does not justify distributed coordination, and strong module boundaries can preserve clarity in one deployment."
+        },
+        {
+          "question": "How does bounded context help service design?",
+          "answer": "It identifies where terminology and business rules have consistent meaning, guiding boundaries and preventing accidental shared domain assumptions."
+        },
+        {
+          "question": "Why is splitting services by database table often ineffective?",
+          "answer": "Business operations can span many tables, creating chatty calls and coordinated changes instead of cohesive ownership."
+        },
+        {
+          "question": "How would you evaluate an existing service boundary?",
+          "answer": "Measure change coupling, data ownership, latency and failure dependencies, then consider merging or splitting based on operational and domain evidence."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Data ownership",
+      "mechanism": "Owning a database means controlling its schema and access contract, even when physical infrastructure is shared. Direct cross-service writes bypass that authority.",
+      "tradeOff": "Local autonomy increases the need for explicit data synchronization and reporting patterns.",
+      "verify": "Change a schema while exercising every known consumer and inspect unauthorized direct access.",
+      "questions": [
+        {
+          "question": "Why should a service own its data?",
+          "answer": "To maintain its invariants and evolve its schema without external writers silently violating business rules or requiring coordinated releases."
+        },
+        {
+          "question": "When is a shared physical database acceptable?",
+          "answer": "When ownership, permissions and schemas preserve service boundaries and the operational trade-off is deliberate rather than accidental coupling."
+        },
+        {
+          "question": "How can one service obtain another service's data?",
+          "answer": "Through an explicit API, published event or managed replicated view with defined freshness and compatibility semantics."
+        },
+        {
+          "question": "Why are cross-service database joins risky?",
+          "answer": "They couple schemas, availability and performance across owners, often bypassing authorization and making independent deployment difficult."
+        },
+        {
+          "question": "How would you support cross-service reporting?",
+          "answer": "Build an explicit read model or analytical pipeline with provenance, reconciliation and freshness guarantees instead of unrestricted operational-table access."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "API contracts",
+      "mechanism": "An API contract includes meanings, errors, ordering, limits and compatibility, not just a schema. Clients need stable ways to interpret absence and uncertain outcomes.",
+      "tradeOff": "Strict contracts improve reliability but require migration and versioning discipline.",
+      "verify": "Replay historical requests and malformed inputs against both old and new implementations.",
+      "questions": [
+        {
+          "question": "What makes an API backward compatible?",
+          "answer": "Existing supported clients can continue obtaining documented behavior, including field meaning, defaults, statuses and error recovery."
+        },
+        {
+          "question": "When should an API be versioned explicitly?",
+          "answer": "When a behavioral or representation change cannot be introduced compatibly within the existing contract and consumer migration is necessary."
+        },
+        {
+          "question": "How does pagination become part of the contract?",
+          "answer": "Ordering, cursor validity, duplicate handling and concurrent changes determine which records clients observe across pages."
+        },
+        {
+          "question": "Why can adding a required field break existing clients?",
+          "answer": "Older clients omit it, so validation or default semantics change. Use tolerant evolution or an explicit new contract."
+        },
+        {
+          "question": "How would you design a safe partial update API?",
+          "answer": "Distinguish omitted, null and supplied values, validate authorization per field and use version conditions to avoid silently overwriting concurrent changes."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Synchronous call chains",
+      "mechanism": "Each synchronous hop consumes latency budget and couples availability. Parallelism changes coordination and downstream load rather than removing dependency risk.",
+      "tradeOff": "Simple request-response flows can become fragile when critical paths grow long.",
+      "verify": "Inject latency into each hop and measure total deadline consumption plus fallback behavior.",
+      "questions": [
+        {
+          "question": "When is synchronous communication appropriate?",
+          "answer": "When the caller needs a timely response from another capability and the latency, availability and failure coupling are acceptable."
+        },
+        {
+          "question": "What is the risk of a long synchronous service chain?",
+          "answer": "Its response depends on many components and accumulated waits, so one slow dependency can exhaust upstream deadlines."
+        },
+        {
+          "question": "How should deadlines propagate across services?",
+          "answer": "Carry or calculate remaining budget and allocate time to acquisition, work and response handling without restarting a full timeout at every hop."
+        },
+        {
+          "question": "Why can parallel fan-out worsen an outage?",
+          "answer": "It multiplies simultaneous downstream requests and retained work, especially when callers retry after one branch fails."
+        },
+        {
+          "question": "How would you design a bounded aggregation endpoint?",
+          "answer": "Limit fan-out and pending work, define required versus optional branches, apply shared deadlines and return truthful partial or unavailable outcomes."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Idempotency",
+      "mechanism": "Idempotency ties repeated requests to one logical operation. Durable state must handle concurrent duplicates and unknown outcomes, not merely remember recent successes.",
+      "tradeOff": "Deduplication storage and retention cost are part of the operation contract.",
+      "verify": "Submit the same key concurrently and retry after a committed effect whose response was lost.",
+      "questions": [
+        {
+          "question": "What is an idempotent operation?",
+          "answer": "Repeating the same logical operation has the promised effect no more than intended, even if requests or delivery occur multiple times."
+        },
+        {
+          "question": "When should an API require an idempotency key?",
+          "answer": "For retryable side-effecting operations whose outcome may become uncertain, such as payment creation or order submission."
+        },
+        {
+          "question": "Why must an idempotency key include an operation scope?",
+          "answer": "Keys must not collide across tenants or unrelated operations; also bind the key to a consistent request meaning."
+        },
+        {
+          "question": "Why is caching completed responses insufficient for concurrent duplicates?",
+          "answer": "Two requests can execute before either response is cached. Use an atomic claim and durable operation state with recovery."
+        },
+        {
+          "question": "How would you choose deduplication retention?",
+          "answer": "Cover the documented retry and redelivery horizon plus recovery needs; define behavior after expiry rather than implying indefinite duplicate protection."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Retries and budgets",
+      "mechanism": "Retries repeat work and consume time plus dependency capacity. Retryability depends on operation semantics and uncertainty, not only error codes.",
+      "tradeOff": "Retries help transient failures while amplifying overload if unbounded or synchronized.",
+      "verify": "Count attempts under nested retries and verify total elapsed time stays within the caller's budget.",
+      "questions": [
+        {
+          "question": "Which failures are candidates for retry?",
+          "answer": "Transient failures on safely repeatable operations, subject to a bounded deadline and explicit policy; permanent validation and authorization failures usually are not."
+        },
+        {
+          "question": "Why use backoff with jitter?",
+          "answer": "Backoff reduces repeated immediate pressure; jitter spreads synchronized clients so they do not all retry together."
+        },
+        {
+          "question": "How do layered retries multiply work?",
+          "answer": "Each layer can repeat all downstream attempts. Three attempts at three layers can yield 27 final dependency calls."
+        },
+        {
+          "question": "Why can a timeout be an ambiguous success?",
+          "answer": "The remote side may have committed before the response was lost or the caller stopped waiting."
+        },
+        {
+          "question": "How would you implement a retry budget?",
+          "answer": "Limit extra attempts relative to useful traffic or capacity, preserve the overall deadline and measure both attempted calls and successful business effects."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Circuit breakers and bulkheads",
+      "mechanism": "Circuit breakers limit attempts toward failing dependencies; bulkheads limit shared-resource contention. They solve different problems and need explicit recovery behavior.",
+      "tradeOff": "Isolation consumes capacity while protecting unrelated capabilities from shared exhaustion.",
+      "verify": "Fail one dependency and verify unrelated endpoints retain usable capacity.",
+      "questions": [
+        {
+          "question": "What does a circuit breaker do?",
+          "answer": "It changes admission toward a dependency according to failure and recovery policy, commonly rejecting calls temporarily after failures."
+        },
+        {
+          "question": "When is a bulkhead useful?",
+          "answer": "When one dependency or workload can otherwise exhaust threads, connections or concurrency shared with unrelated work."
+        },
+        {
+          "question": "How does half-open recovery differ from normal traffic?",
+          "answer": "It permits controlled probes to decide whether the dependency has recovered rather than immediately restoring full load."
+        },
+        {
+          "question": "Why does a circuit breaker not replace a timeout?",
+          "answer": "A call already executing can still hang; per-call deadlines and cancellation ownership are separate from circuit admission state."
+        },
+        {
+          "question": "How would you design a truthful fallback?",
+          "answer": "Return only a degraded result whose meaning is valid for that operation, with explicit freshness or uncertainty; never fabricate committed business success."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Load balancing and discovery",
+      "mechanism": "Discovery supplies candidate endpoints; load balancing selects among them under health, locality and connection behavior. Removal is not instantaneous everywhere.",
+      "tradeOff": "Locality reduces latency but can concentrate risk or capacity pressure.",
+      "verify": "Drain an instance and inspect new requests, existing connections and stale discovery entries.",
+      "questions": [
+        {
+          "question": "What is service discovery?",
+          "answer": "A mechanism for locating current service instances or endpoints under an explicit naming and update model."
+        },
+        {
+          "question": "When should client-side balancing be used?",
+          "answer": "When the client integration deliberately owns endpoint selection and health behavior; compare it with managed proxy or platform balancing."
+        },
+        {
+          "question": "Why do persistent connections affect traffic distribution?",
+          "answer": "Several requests can share one selected connection, so request distribution may differ from simple endpoint-count assumptions."
+        },
+        {
+          "question": "What happens when discovery information is stale?",
+          "answer": "Clients may contact removed or unhealthy instances until refresh, connection failure or retry policy changes their selection."
+        },
+        {
+          "question": "How would you reduce deployment drain errors?",
+          "answer": "Withdraw readiness, account for discovery and routing propagation, bound old connections and allow a measured in-flight completion window."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Caching and consistency",
+      "mechanism": "Caching creates another representation with its own freshness and failure semantics. Invalidation and concurrent loading must preserve the chosen business contract.",
+      "tradeOff": "Lower latency and origin load compete with stale reads and coordination cost.",
+      "verify": "Expire hot keys, update origin data and inject invalidation failure under concurrent reads.",
+      "questions": [
+        {
+          "question": "When is cache-aside appropriate?",
+          "answer": "When the application can tolerate an explicit staleness policy and owns cache lookup, origin loading and invalidation behavior."
+        },
+        {
+          "question": "What is a cache stampede?",
+          "answer": "Many concurrent misses rebuild the same expensive value and overload the origin, often after synchronized expiry or cold deployment."
+        },
+        {
+          "question": "How can stale-while-revalidate help?",
+          "answer": "It serves an allowed stale value while controlled refresh occurs, trading bounded freshness for reduced synchronous load."
+        },
+        {
+          "question": "Why can invalidation before commit produce incorrect cache state?",
+          "answer": "A concurrent reader can reload old committed data before the write commits, leaving the cache stale after the transaction succeeds."
+        },
+        {
+          "question": "How would you cache authorization-sensitive data?",
+          "answer": "Include all identity and policy dimensions affecting the value, limit stale authorization decisions and keep enforcement at the authoritative boundary."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Sagas and compensation",
+      "mechanism": "A saga coordinates local transactions with explicit forward and compensating actions. Compensation is a business operation, not time travel or guaranteed rollback.",
+      "tradeOff": "Availability across independent services comes with intermediate states and recovery complexity.",
+      "verify": "Fail every step and each compensation, then verify durable progress and safe retries.",
+      "questions": [
+        {
+          "question": "What is a saga?",
+          "answer": "A sequence of local transactions coordinated with explicit recovery or compensation when the overall business process cannot complete normally."
+        },
+        {
+          "question": "When is orchestration preferable to choreography?",
+          "answer": "When centralized process visibility and control outweigh coupling to a coordinator; choose from ownership, complexity and failure diagnosis needs."
+        },
+        {
+          "question": "How does compensation differ from database rollback?",
+          "answer": "It performs a new business action after earlier effects became visible, and may be partial, delayed or impossible."
+        },
+        {
+          "question": "Why can refunding fail after payment succeeds?",
+          "answer": "Compensation uses another external operation with its own availability and outcome ambiguity; persist and reconcile its state."
+        },
+        {
+          "question": "How would you model an unrecoverable saga state?",
+          "answer": "Expose a durable pending or manual-resolution status, retain evidence and prevent uncontrolled retries from repeating irreversible effects."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Transactional outbox",
+      "mechanism": "An outbox stores business change and publication intent in one local transaction. The relay can send before recording success, so duplicates remain possible.",
+      "tradeOff": "It closes a local atomicity gap while adding lag, storage and relay ownership.",
+      "verify": "Crash before commit, after commit and after send but before marking publication.",
+      "questions": [
+        {
+          "question": "What problem does the outbox pattern solve?",
+          "answer": "It avoids losing the intent to publish an event when a local database change commits but direct broker publication fails."
+        },
+        {
+          "question": "When should a consumer inbox be added?",
+          "answer": "When duplicate events need durable detection or ordering before applying the consumer's local business effect."
+        },
+        {
+          "question": "How can an outbox relay duplicate a message?",
+          "answer": "It may publish successfully and crash before recording that publication, then send again after restart."
+        },
+        {
+          "question": "Why is deleting outbox entries immediately risky?",
+          "answer": "Deletion can remove evidence needed for replay, reconciliation or diagnosing ambiguous publication, depending on the recovery contract."
+        },
+        {
+          "question": "How would you operate a high-volume outbox?",
+          "answer": "Bound batches, partition ownership, track lag and failures, index pending work and retain enough durable identity for duplicate-safe recovery."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Event schema evolution",
+      "mechanism": "Events are durable contracts interpreted by present and future consumers. Field meaning, keys and replay behavior matter beyond schema compatibility tooling.",
+      "tradeOff": "Tolerant evolution reduces coordination but requires stable semantics and retained version knowledge.",
+      "verify": "Replay old events through new readers and new events through supported old consumers.",
+      "questions": [
+        {
+          "question": "How does an event differ from a command?",
+          "answer": "An event records something that happened; a command requests an action whose acceptance and completion still need a defined outcome."
+        },
+        {
+          "question": "When is an additive event change safe?",
+          "answer": "When supported readers tolerate the addition and existing fields retain their meaning; schema acceptance alone does not establish behavioral compatibility."
+        },
+        {
+          "question": "Why should an event include stable business identity?",
+          "answer": "Consumers need correlation, deduplication, ordering scope and reconciliation independent of transient transport delivery identifiers."
+        },
+        {
+          "question": "What breaks when a historical field is silently reinterpreted?",
+          "answer": "Replay and older consumers can apply a different business meaning to the same stored data, corrupting derived state."
+        },
+        {
+          "question": "How would you retire an event field?",
+          "answer": "Track consumers, preserve tolerant reading, migrate projections and only remove the field under an explicit compatibility and retention policy."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Ordering and delivery",
+      "mechanism": "Delivery guarantees apply within a defined transport and processing scope. Business effects require their own durable identity and completion model.",
+      "tradeOff": "Stronger ordering simplifies reasoning while reducing parallelism within the ordered scope.",
+      "verify": "Redeliver messages out of order and restart between effect and acknowledgment.",
+      "questions": [
+        {
+          "question": "What does at-least-once delivery imply?",
+          "answer": "A record may be delivered again, so consumers must tolerate duplicates and distinguish delivery from committed business completion."
+        },
+        {
+          "question": "When is per-entity ordering sufficient?",
+          "answer": "When invariants depend only on one aggregate or key, allowing unrelated entities to progress independently."
+        },
+        {
+          "question": "Why is global ordering expensive?",
+          "answer": "It restricts parallelism and requires coordination across otherwise independent producers or partitions."
+        },
+        {
+          "question": "How can acknowledgment before processing lose work?",
+          "answer": "Progress can become durable while the business effect is unfinished; after restart the transport may not redeliver that work."
+        },
+        {
+          "question": "How would you handle out-of-order updates?",
+          "answer": "Use domain versions or sequence rules, reject stale writes and define recovery for gaps rather than trusting arrival time."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Consistency and replication",
+      "mechanism": "Consistency describes observable ordering and visibility, while replication and availability describe different dimensions. A replicated service can still expose stale data.",
+      "tradeOff": "Stronger guarantees can require coordination that affects latency or availability during failures.",
+      "verify": "Read after writes through different replicas and inject network delay or partition.",
+      "questions": [
+        {
+          "question": "What is eventual consistency?",
+          "answer": "Replicas or derived views converge under stated assumptions after updates stop and replication succeeds, without promising immediate identical reads."
+        },
+        {
+          "question": "When does read-your-writes matter?",
+          "answer": "When a user expects an acknowledged change to be visible in subsequent interactions, such as profile edits or order status."
+        },
+        {
+          "question": "How does a network partition affect consistency choices?",
+          "answer": "Some operations must reject or delay rather than serve conflicting states if their consistency guarantee is to be preserved."
+        },
+        {
+          "question": "Why is a quorum not a universal linearizability guarantee?",
+          "answer": "Correctness depends on membership, write/read protocols, failure handling and overlapping operation ordering, not merely counting responses."
+        },
+        {
+          "question": "How would you choose a consistency model for inventory?",
+          "answer": "State the overselling invariant, select authoritative atomic operations and define what availability or latency may be sacrificed during uncertainty."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Authentication and authorization",
+      "mechanism": "Identity trust, service identity and resource authorization are separate controls. Network location alone does not establish who may act for which user.",
+      "tradeOff": "Central policy simplifies management but services still own business authorization boundaries.",
+      "verify": "Test wrong tenant, expired credentials and service-to-service calls without user permission.",
+      "questions": [
+        {
+          "question": "How do user identity and workload identity differ?",
+          "answer": "One identifies the person or caller principal; the other identifies the executing service. Delegation requires a separate explicit trust contract."
+        },
+        {
+          "question": "When should a service validate a token independently?",
+          "answer": "When it is an enforcement boundary; do not blindly trust arbitrary forwarded identity headers from untrusted request paths."
+        },
+        {
+          "question": "What does least privilege mean between services?",
+          "answer": "Each workload receives only the actions and resources required for its role, with controlled credential lifetime and auditable use."
+        },
+        {
+          "question": "Why is a valid role insufficient for object access?",
+          "answer": "The requested object may belong to another tenant or owner; enforce resource-level conditions alongside role checks."
+        },
+        {
+          "question": "How would you rotate service credentials safely?",
+          "answer": "Use overlapping trusted versions where supported, short-lived identities, observable refresh failures and a tested removal schedule."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Observability",
+      "mechanism": "Logs, metrics and traces answer related but different questions. Useful correlations preserve causality through asynchronous and retried work without leaking sensitive data.",
+      "tradeOff": "High-detail telemetry adds storage, cardinality and runtime cost.",
+      "verify": "Trace one operation across retries and events, then confirm every business effect has a durable correlation.",
+      "questions": [
+        {
+          "question": "What does distributed tracing reveal?",
+          "answer": "The causal timing of instrumented operations across boundaries, helping separate local execution, queueing and dependency waits."
+        },
+        {
+          "question": "When should a metric label be avoided?",
+          "answer": "When it has unbounded values such as raw user IDs, request IDs or arbitrary URLs, which can overwhelm the metrics system."
+        },
+        {
+          "question": "How does trace context differ from business operation identity?",
+          "answer": "Trace context describes one diagnostic execution chain; operation identity may need to survive retries, replays and longer business workflows."
+        },
+        {
+          "question": "Why can averaging latency conceal a regression?",
+          "answer": "A small but important slow population can violate tail targets while the overall average changes little."
+        },
+        {
+          "question": "How would you define useful service-level indicators?",
+          "answer": "Measure user-visible successful outcomes and latency with clear denominators, exclusions and error classification rather than only process uptime."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Deployment compatibility",
+      "mechanism": "Rolling releases temporarily run multiple versions against shared protocols and data. Backward-compatible writes and readers are essential for safe rollback.",
+      "tradeOff": "Gradual rollout reduces exposure but adds mixed-version states to test.",
+      "verify": "Run old and new instances concurrently against the expanded schema and event contracts.",
+      "questions": [
+        {
+          "question": "What is a canary deployment?",
+          "answer": "A limited rollout evaluated against explicit health and business criteria before wider traffic or instance expansion."
+        },
+        {
+          "question": "When is blue-green deployment useful?",
+          "answer": "When switching between prepared environments simplifies release and rollback, while shared database and external-effect compatibility remain addressed."
+        },
+        {
+          "question": "How does expand-contract schema migration work?",
+          "answer": "Add compatible structures first, migrate readers and writers, backfill, and only then remove old structures after consumers permit it."
+        },
+        {
+          "question": "Why can routing rollback fail to restore service?",
+          "answer": "The new version may have written incompatible data or emitted events that old code cannot interpret."
+        },
+        {
+          "question": "How would you set rollout stop conditions?",
+          "answer": "Define error, latency, saturation and business-invariant thresholds before deployment, with enough comparable baseline traffic to detect meaningful changes."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Capacity and backpressure",
+      "mechanism": "Queues store outstanding demand; they do not create service capacity. Admission control decides which work is accepted before deadlines or memory become impossible.",
+      "tradeOff": "Rejecting early sacrifices some requests while protecting useful throughput and recovery.",
+      "verify": "Overload the system and confirm bounded memory, queue age and downstream concurrency.",
+      "questions": [
+        {
+          "question": "What is backpressure?",
+          "answer": "A mechanism for aligning production or admission with consumer capacity, rather than letting pending work grow without bound."
+        },
+        {
+          "question": "When should a request be rejected immediately?",
+          "answer": "When capacity or remaining deadline makes useful completion unlikely and the contract supports a truthful retryable rejection."
+        },
+        {
+          "question": "How does Little's Law guide capacity reasoning?",
+          "answer": "In a stable system, average outstanding work relates to throughput and average time in system; use consistent boundaries and units."
+        },
+        {
+          "question": "Why can autoscaling fail to relieve a database bottleneck?",
+          "answer": "More application instances can multiply connections and offered load while the shared database's processing capacity stays fixed."
+        },
+        {
+          "question": "How would you design overload recovery?",
+          "answer": "Bound admission and queues, prioritize useful work, prevent retry storms and restore traffic gradually as dependency capacity becomes available."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Multi-tenancy",
+      "mechanism": "Tenant identity must be carried through authorization, data access, caching and telemetry. Isolation is a system-wide invariant rather than one request filter.",
+      "tradeOff": "Stronger separation increases operational cost but limits cross-tenant failure and exposure.",
+      "verify": "Run concurrent tenants with identical resource IDs and conflicting load patterns.",
+      "questions": [
+        {
+          "question": "What are common tenant isolation strategies?",
+          "answer": "Shared tables with tenant keys, separate schemas or separate databases, chosen according to security, scaling and operational requirements."
+        },
+        {
+          "question": "When should tenant identity be resolved?",
+          "answer": "At a trusted boundary from authenticated context, then validated and carried explicitly through downstream decisions."
+        },
+        {
+          "question": "How can a cache leak tenant data?",
+          "answer": "A key that omits tenant identity can reuse another tenant's result even when the underlying database queries were correctly scoped."
+        },
+        {
+          "question": "Why can one tenant starve others despite correct data isolation?",
+          "answer": "Shared pools, queues and rate limits may allow noisy-neighbor resource exhaustion without per-tenant admission controls."
+        },
+        {
+          "question": "How would you test tenant isolation end to end?",
+          "answer": "Use overlapping IDs, concurrent requests, async jobs and cached results; assert both authorization outcomes and bounded cross-tenant resource impact."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Incident recovery and reconciliation",
+      "mechanism": "A distributed incident can leave partially completed business operations. Recovery must establish durable truth before repeating uncertain effects.",
+      "tradeOff": "Fast restoration competes with evidence preservation and the risk of duplicate actions.",
+      "verify": "Inject failure at every commit/response boundary and exercise the documented reconciliation workflow.",
+      "questions": [
+        {
+          "question": "What is reconciliation in distributed systems?",
+          "answer": "Comparing durable records across components to detect and resolve missing, duplicated or inconsistent business outcomes."
+        },
+        {
+          "question": "When should operators avoid blindly replaying failed requests?",
+          "answer": "When a timeout or lost response leaves the original effect uncertain and repeating it could duplicate an irreversible action."
+        },
+        {
+          "question": "How do recovery point and recovery time objectives differ?",
+          "answer": "RPO concerns acceptable data loss; RTO concerns acceptable restoration time. Both must be tied to tested recovery capabilities."
+        },
+        {
+          "question": "Why is restoring a backup insufficient evidence of full recovery?",
+          "answer": "Clients, event offsets, external effects and derived views may remain inconsistent with the restored database state."
+        },
+        {
+          "question": "How would you close a distributed incident safely?",
+          "answer": "Restore capacity, reconcile ambiguous operations, verify business invariants and add targeted regression plus operational evidence for the actual failure window."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "API Gateway and Backend for Frontend patterns",
+      "mechanism": "A gateway centralizes selected transport concerns; a BFF shapes APIs for a particular client experience. Neither should become an uncontrolled shared domain monolith.",
+      "tradeOff": "Centralization simplifies clients while increasing shared blast radius and ownership coupling.",
+      "verify": "Fail the gateway's optional dependencies and verify unrelated client capabilities retain defined behavior.",
+      "questions": [
+        {
+          "question": "What is the API Gateway pattern?",
+          "answer": "A controlled entry point providing selected routing, authentication, limits or aggregation in front of services under an explicit contract."
+        },
+        {
+          "question": "When is a Backend for Frontend useful?",
+          "answer": "When different clients have substantially different composition or representation needs that justify separately owned adaptation layers."
+        },
+        {
+          "question": "How should authorization be split across gateway and service?",
+          "answer": "The gateway can enforce edge policy, while services still enforce trusted identity and resource-specific business authorization."
+        },
+        {
+          "question": "Why can a gateway become a bottleneck organizationally?",
+          "answer": "Every domain change may require a shared team and release if too much business logic is centralized there."
+        },
+        {
+          "question": "How would you keep gateway aggregation resilient?",
+          "answer": "Bound fan-out, distinguish required and optional data, propagate deadlines and return truthful partial results without duplicating domain ownership."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "CQRS and materialized views",
+      "mechanism": "CQRS separates write and read models where their needs differ. Asynchronous projections introduce lag and rebuild concerns; CQRS does not require event sourcing.",
+      "tradeOff": "Read optimization adds operational complexity and consistency decisions.",
+      "verify": "Rebuild projections from authoritative history and test read-after-write behavior during lag.",
+      "questions": [
+        {
+          "question": "What is CQRS?",
+          "answer": "Separating command-side changes from query-side models when different responsibilities or performance needs justify distinct representations."
+        },
+        {
+          "question": "When is CQRS unnecessary?",
+          "answer": "When one straightforward transactional model already serves reads and writes adequately and separate projections add no meaningful benefit."
+        },
+        {
+          "question": "How can a projection recover after an outage?",
+          "answer": "Replay or reconcile from a retained authoritative source with durable checkpoints, duplicate handling and versioned transformation logic."
+        },
+        {
+          "question": "Why can a command succeed while the query result stays old?",
+          "answer": "The write committed before asynchronous projection processing caught up; the API needs an explicit visibility contract."
+        },
+        {
+          "question": "How would you evolve a materialized view?",
+          "answer": "Version the projection logic, backfill or replay safely, compare results and cut over readers with rollback plus freshness monitoring."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Event sourcing pattern",
+      "mechanism": "Event sourcing stores an authoritative event history from which current state is derived. Event evolution and replay safety become core data-management responsibilities.",
+      "tradeOff": "Auditability and temporal reconstruction compete with schema, privacy and operational complexity.",
+      "verify": "Replay historical streams with new code and verify deterministic state plus rejected invalid transitions.",
+      "questions": [
+        {
+          "question": "What distinguishes event sourcing from publishing integration events?",
+          "answer": "Event history is the authoritative persisted state, rather than a secondary notification emitted from a separate current-state database."
+        },
+        {
+          "question": "When is event sourcing worth considering?",
+          "answer": "When durable history and reconstruction materially serve the domain and the team can own event evolution, replay and operational complexity."
+        },
+        {
+          "question": "How do snapshots help event-sourced aggregates?",
+          "answer": "They provide a supported state checkpoint to reduce replay work, while retained events and version compatibility remain necessary."
+        },
+        {
+          "question": "Why must replay avoid ordinary external side effects?",
+          "answer": "Rebuilding state must not charge, email or publish the same business action again merely because historical events are reprocessed."
+        },
+        {
+          "question": "How would you handle an incorrect historical event?",
+          "answer": "Preserve the audit contract and apply explicit corrective events or controlled migration; do not silently rewrite history without a defined governance policy."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Strangler Fig migration pattern",
+      "mechanism": "The strangler pattern replaces legacy capabilities incrementally behind controlled routing or boundaries. Shared data and mixed ownership require explicit transitional rules.",
+      "tradeOff": "Incremental delivery reduces cutover risk while prolonging temporary integration complexity.",
+      "verify": "Route selected operations to each implementation and verify shared invariants under mixed versions.",
+      "questions": [
+        {
+          "question": "What is the Strangler Fig pattern?",
+          "answer": "Incrementally replacing legacy functionality by routing selected capabilities to new implementations while retiring old paths over time."
+        },
+        {
+          "question": "When is an anti-corruption layer useful during migration?",
+          "answer": "When translating legacy terminology and behavior prevents the new domain model from inheriting incompatible assumptions."
+        },
+        {
+          "question": "How can routing by operation support gradual migration?",
+          "answer": "It allows a bounded capability to move while other operations retain the existing implementation, with explicit ownership and rollback criteria."
+        },
+        {
+          "question": "Why is dual writing without a recovery protocol dangerous?",
+          "answer": "One write can succeed while the other fails, creating divergent authoritative states and ambiguous repair decisions."
+        },
+        {
+          "question": "How would you migrate data ownership incrementally?",
+          "answer": "Choose one authority per phase, replicate or reconcile explicitly, verify cutover consistency and prevent old writers from continuing after ownership changes."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Sidecar and service mesh patterns",
+      "mechanism": "A sidecar or mesh can provide selected communication capabilities near workloads. It cannot infer domain idempotency or resource-level business authorization.",
+      "tradeOff": "Shared infrastructure policy reduces repetition while adding another failure and upgrade surface.",
+      "verify": "Observe behavior with proxy delay, restart and policy mismatch while tracing actual attempted calls.",
+      "questions": [
+        {
+          "question": "What is the sidecar pattern?",
+          "answer": "Deploying a cooperating helper alongside a workload to provide a focused capability with an explicit lifecycle and communication contract."
+        },
+        {
+          "question": "When can a service mesh help?",
+          "answer": "When consistent workload communication policy, transport identity or telemetry justifies the added operational and debugging complexity."
+        },
+        {
+          "question": "Does a mesh retry make every operation safe?",
+          "answer": "No. Transport retries can duplicate committed business effects unless the application operation has a safe idempotency contract."
+        },
+        {
+          "question": "Why can application and mesh retries amplify load?",
+          "answer": "Both layers may repeat requests independently, multiplying attempts beyond the intended budget."
+        },
+        {
+          "question": "How would you adopt mesh policies safely?",
+          "answer": "Inventory existing application behavior, define one owner for retry/deadline policy and test failure plus rollout interactions before broad enforcement."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Pattern selection and composition",
+      "mechanism": "Patterns protect particular invariants under stated assumptions. Combining patterns can change ordering, capacity and failure semantics, so composition needs end-to-end evidence.",
+      "tradeOff": "More patterns can add failure modes without improving the actual requirement.",
+      "verify": "Trace one operation through every pattern and inject failure between each durable boundary.",
+      "questions": [
+        {
+          "question": "How would you choose a microservices pattern?",
+          "answer": "Start with a concrete problem and invariant, compare simpler alternatives and select the smallest pattern whose assumptions fit."
+        },
+        {
+          "question": "When should a proposed service be merged back?",
+          "answer": "When coordination, latency and change coupling consistently exceed the benefit of independent deployment or ownership."
+        },
+        {
+          "question": "How do outbox, inbox and saga complement each other?",
+          "answer": "Outbox preserves publication intent, inbox can protect consumer effects, and saga coordinates longer business progress with explicit recovery."
+        },
+        {
+          "question": "Why does combining reliable components not guarantee a reliable workflow?",
+          "answer": "Their completion boundaries and assumptions may not align, leaving gaps between commits, acknowledgments and external effects."
+        },
+        {
+          "question": "How would you defend a design in an interview?",
+          "answer": "Name the invariant, explain one realistic failure path, justify the trade-off and describe a test that would falsify your correctness claim."
+        }
+      ],
+      "kind": "concept"
+    }
+  ]
+}

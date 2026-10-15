@@ -1,4 +1,5 @@
 import { HUB_LABS } from "../lib/hubLabs.mjs";
+import { DESIGN_PROBLEMS, designHref } from '../lib/designLibrary.mjs';
 import { LEARNING_PATHS } from "../lib/learningHub.mjs";
 import { SITE_URL } from "../lib/siteUrl.mjs";
 import { WEEKLY_CHALLENGES } from "../lib/weeklyChallenges.mjs";
@@ -17,12 +18,14 @@ import { ADVICE_FAILS_ARTICLES } from "../lib/adviceFails.mjs";
 import { EXPLAIN_LOGS } from "../lib/explainThisLog.mjs";
 import { SENIOR_JAVA_GUIDE_ITEMS } from "../lib/seniorJavaGuide.mjs";
 import { SENIOR_JAVA_DAILY_SETS } from "../lib/seniorJavaDaily.mjs";
+import { INTERVIEW_TOPICS, topicHref } from "../lib/interviewTopics.mjs";
 
 
 export default function Sitemap() { return null; }
 
 export function getServerSideProps({ res }) {
   const urls = [
+    ...['/hld', '/lld', ...DESIGN_PROBLEMS.map(designHref)].map(path => ({ loc: `${SITE_URL}${path}`, changefreq: 'monthly', priority: '0.8' })),
     ...["/learn", "/learn/ai-engineering", "/labs", ...HUB_LABS.map(lab => `/labs/${lab.id}`), ...LEARNING_PATHS.filter(path => path.id !== "java-backend").map(path => `/learn/roadmaps/${path.id}`)].map(path => ({ loc: `${SITE_URL}${path}`, changefreq: "monthly", priority: "0.8" })),
     { loc: `${SITE_URL}/system-design/visual-guide`, changefreq: "monthly", priority: "0.8" },
     ...BUILD_CHALLENGES.map(c => ({ loc: `${SITE_URL}/build/practice/${c.id}`, changefreq: 'monthly', priority: '0.8' })),
@@ -48,6 +51,8 @@ export function getServerSideProps({ res }) {
     ...JAVA_TUTORIAL_CATALOG.map((tutorial) => ({ loc: `${SITE_URL}/java/tutorial/${slugifyJavaTutorial(tutorial.title)}`, changefreq: "monthly", priority: "0.7" })),
     { loc: `${SITE_URL}/guides`, changefreq: "weekly", priority: "0.9" },
     { loc: `${SITE_URL}/senior-java-interview`, changefreq: "monthly", priority: "0.9" },
+    { loc: `${SITE_URL}/senior-java-interview/topics`, changefreq: "monthly", priority: "0.9" },
+    ...INTERVIEW_TOPICS.map(topic => ({ loc: `${SITE_URL}${topicHref(topic.slug)}`, changefreq: "monthly", priority: "0.8" })),
     ...SENIOR_JAVA_GUIDE_ITEMS.map(item => ({ loc: `${SITE_URL}/senior-java-interview/${item.slug}`, changefreq: "monthly", priority: "0.7" })),
     { loc: `${SITE_URL}/senior-java-interview/daily`, changefreq: "daily", priority: "0.8" },
     ...SENIOR_JAVA_DAILY_SETS.map(set => ({ loc: `${SITE_URL}/senior-java-interview/daily/${set.slug}`, changefreq: "monthly", priority: "0.7" })),

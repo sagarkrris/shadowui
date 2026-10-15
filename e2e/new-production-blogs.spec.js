@@ -42,7 +42,7 @@ for (const width of [375, 1366]) {
 
 test('visual guide can be found in Explore and the sitemap', async ({ page, request }) => {
   await page.goto('/explore');
-  const link = page.locator('a[href="/system-design/visual-guide"]').first();
+  const link = page.locator('main a[href="/system-design/visual-guide"]').first();
   await expect(link).toBeVisible();
   await link.click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('50 System Design Concepts, Seen Clearly');

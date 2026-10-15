@@ -11,6 +11,7 @@ test.describe("Features C and D: company prep, mock rounds, and weak spots", () 
     await gotoSeededApp(page, { activeTab: "company" });
 
     await expect(page.getByRole("heading", { name: "Company Prep" })).toBeVisible();
+    await page.getByRole('navigation', { name: 'Company prep sections' }).getByRole('button', { name: 'Progress & sources', exact: true }).click();
     await expect(page.getByText("Amazon Interview Console")).toBeVisible();
 
     await page.getByLabel("Company search").fill("Google");
@@ -21,6 +22,7 @@ test.describe("Features C and D: company prep, mock rounds, and weak spots", () 
     await page.getByLabel("Company search").fill("zzzxxy-not-a-company");
     await page.getByRole("button", { name: "Search" }).click();
     await expect(page.getByText("Zzzxxy-not-a-company Interview Console")).toBeVisible();
+    await page.getByRole('navigation', { name: 'Company prep sections' }).getByRole('button', { name: 'Practice questions', exact: true }).click();
     await expect(page.getByText("Generic prep").first()).toBeVisible();
     await assertHealthyApp(page);
   });
@@ -66,7 +68,9 @@ test.describe("Features C and D: company prep, mock rounds, and weak spots", () 
     await page.getByLabel("Tablet workspace menu").getByRole("button", { name: "Company Prep", exact: true }).click();
 
     await expect(page.getByRole("heading", { name: "Company Prep" })).toBeVisible();
+    await page.getByRole('navigation', { name: 'Company prep sections' }).getByRole('button', { name: 'Practice questions', exact: true }).click();
     await expect(page.getByLabel("Conversation messages").getByText("Databases", { exact: true }).first()).toBeVisible();
+    await page.getByRole('navigation', { name: 'Company prep sections' }).getByRole('button', { name: 'Progress & sources', exact: true }).click();
     await expect(page.getByText("Weak spot load")).toBeVisible();
     await assertHealthyApp(page);
   });

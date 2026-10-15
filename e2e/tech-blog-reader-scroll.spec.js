@@ -25,7 +25,7 @@ for (const viewport of [
       const close = dialog.getByRole("button", { name: "Close lesson reader" });
       expect(await close.evaluate(element => element.getBoundingClientRect().height)).toBeGreaterThanOrEqual(44);
     }
-    const example = reader.locator(":scope > pre");
+    const example = reader.locator('pre[aria-label="Course example"]');
     expect(await example.evaluate(element => element.scrollHeight - element.clientHeight)).toBeLessThanOrEqual(1);
 
     const scrollState = await reader.evaluate((element) => {
@@ -72,7 +72,7 @@ for (const viewport of [
       }
       await expect(dialog.getByText(blog.misconception.question, { exact: true })).toHaveCount(1);
       await dialog.getByRole("radio", { name: blog.misconception.options[blog.misconception.correct], exact: true }).check();
-      await expect(dialog.getByRole("status")).toHaveText(blog.misconception.feedback[blog.misconception.correct]);
+      await expect(dialog.getByRole("status").filter({ hasText: blog.misconception.feedback[blog.misconception.correct] })).toHaveText(blog.misconception.feedback[blog.misconception.correct]);
       await dialog.getByText("Sample answer", { exact: true }).click();
       await expect(dialog.locator("details[open]")).toContainText(blog.misconception.options[blog.misconception.correct]);
       const buttons = dialog.getByRole("button", { name: "Mark chapter complete", exact: true });

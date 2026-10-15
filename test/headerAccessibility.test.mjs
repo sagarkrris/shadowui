@@ -15,7 +15,7 @@ const workspaceSource = readFileSync(new URL("../lib/workspaces.mjs", import.met
   "Voice",
   "Clear",
   "Edit Profile",
-  "Info",
+  "About & help",
 ].forEach((label) => {
   test(`top bar icon button exposes ${label} to assistive technology`, () => {
     assert.match(`${indexSource}\n${navSource}\n${workspaceSource}`, new RegExp(`aria-label=\\{?${label === "Company Prep" || label === "AI for Software Engineers" ? "workspace\\.label" : `"${label}"`}`));

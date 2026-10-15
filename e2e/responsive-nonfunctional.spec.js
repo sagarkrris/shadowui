@@ -14,6 +14,12 @@ async function expectNoMobileHorizontalOverflow(page, label) {
       .map((element) => {
         const rect = element.getBoundingClientRect();
         const style = window.getComputedStyle(element);
+        // Content in a keyboard-accessible horizontal scroller is reachable.
+        let parent = element.parentElement;
+        while (parent && parent.tagName !== "MAIN") {
+          if (getComputedStyle(parent).overflowX === "auto" && parent.scrollWidth > parent.clientWidth && parent.tabIndex >= 0) return null;
+          parent = parent.parentElement;
+        }
         return {
           tag: element.tagName,
           text: (element.textContent || "").trim().replace(/\s+/g, " ").slice(0, 80),
@@ -26,7 +32,7 @@ async function expectNoMobileHorizontalOverflow(page, label) {
         };
       })
       .filter((item) => (
-        item.display !== "none"
+        item && item.display !== "none"
         && item.visibility !== "hidden"
         && item.width > 1
         && item.height > 1
@@ -56,6 +62,8 @@ async function openMobileMenuItem(page, name) {
 }
 
 async function openWorkspaceItem(page, name, viewportWidth) {
+  const compact = page.getByRole("button", { name: "Navigation & settings" });
+  if (await compact.isVisible() && await compact.getAttribute("aria-expanded") !== "true") await compact.click();
   if (viewportWidth >= 1800) {
     await page.getByRole("button", { name }).click();
     return;
@@ -158,6 +166,7 @@ test.describe("Non-functional UI/UX, responsiveness, and state management", () =
   test("keeps System Canvas and Design Lab fully visible on mobile", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await gotoSeededApp(page, {
+      skipReadyCheck: true,
       messages: [
         { role: "user", content: "Previous mobile test answer" },
         { role: "assistant", content: "Score: 7/10\nKeep practicing." },
@@ -173,8 +182,8 @@ test.describe("Non-functional UI/UX, responsiveness, and state management", () =
     await expectNoMobileHorizontalOverflow(page, "Design Lab");
 
     await openMobileMenuItem(page, "Scenario Bank");
-    await expect(page.getByText("Scenario Bank")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Java and database real-time interview scenarios" })).toBeVisible();
+    await expect(page.locator(".header-title")).toContainText("Scenario Bank");
+    await expect(page.getByRole("heading", { name: "Java, database, and recent public-report trap scenarios" })).toBeVisible();
     await expectNoMobileHorizontalOverflow(page, "Scenario Bank");
   });
 
@@ -186,7 +195,7 @@ test.describe("Non-functional UI/UX, responsiveness, and state management", () =
       await page.setViewportSize(viewport);
       await gotoSeededApp(page);
       if (viewport.width <= 760) {
-        await openMobileMenuItem(page, "Interview Ready Q&A");
+        await openMobileMenuItem(page, "Q&A");
       } else {
         await openWorkspaceItem(page, "Interview Ready Q&A", viewport.width);
       }
@@ -204,11 +213,17 @@ test.describe("Non-functional UI/UX, responsiveness, and state management", () =
       { width: 1440, height: 900 },
     ]) {
       await page.setViewportSize(viewport);
-      await gotoSeededApp(page);
+      await gotoSeededApp(page, { skipReadyCheck: true });
+      await expect(page.getByLabel("Message composer")).toBeVisible();
+      const compact = page.getByRole("button", { name: "Navigation & settings" });
+      if (await compact.isVisible() && await compact.getAttribute("aria-expanded") !== "true") await compact.click();
 
       await expect(page.getByRole("button", { name: "Home" })).toBeVisible();
-      await expect(page.getByRole("button", { name: "Topics" })).toBeVisible();
-      await expect(page.getByRole("button", { name: "Account" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Topics", exact: true })).toBeVisible();
+      await page.getByLabel("Workspace options", { exact: true }).click();
+      await expect(page.getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Create account", exact: true })).toBeVisible();
+      await page.keyboard.press("Escape");
 
       if (viewport.width < 1800) {
         await expect(page.getByRole("button", { name: "Workspace menu" })).toBeVisible();
@@ -229,13 +244,14 @@ test.describe("Non-functional UI/UX, responsiveness, and state management", () =
     await gotoSeededApp(page);
 
     for (let index = 0; index < 3; index += 1) {
-      await page.getByRole("button", { name: "AI for Software Engineers" }).click();
+      await openWorkspaceItem(page, "AI for Software Engineers", 1366);
       await expect(page.getByRole("heading", { name: "Stack Implementation Tracks" })).toBeVisible();
-      await page.getByRole("button", { name: "Company Prep" }).click();
+      await openWorkspaceItem(page, "Company Prep", 1366);
       await expect(page.getByRole("heading", { name: "Company Prep" })).toBeVisible();
-      await page.getByRole("button", { name: "Info" }).click();
-      await expect(page.getByText("Mock Interviews")).toBeVisible();
-      await page.getByRole("button", { name: "x" }).click();
+      await page.getByLabel("Workspace options", { exact: true }).click();
+      await page.getByRole("button", { name: "About & help" }).click();
+      await expect(page.getByText("Mock interviews and answer review")).toBeVisible();
+      await page.getByRole("button", { name: "Close about" }).click();
       await page.getByRole("button", { name: "Home" }).click();
       await expect(page.getByLabel("Message composer")).toBeVisible();
     }
@@ -248,9 +264,7 @@ test.describe("Non-functional UI/UX, responsiveness, and state management", () =
   test("supports keyboard-first Interview Ready Q&A controls and offline guidance", async ({ page, context }) => {
     await page.setViewportSize({ width: 768, height: 1024 });
     await gotoSeededApp(page);
-    await page.getByRole("button", { name: "Workspace menu" }).click();
-    const menu = page.getByLabel("Tablet workspace menu");
-    await menu.getByRole("button", { name: "Interview Ready Q&A", exact: true }).click();
+    await openWorkspaceItem(page, "Interview Ready Q&A", 768);
     await expect(page.getByRole("heading", { name: /Most-asked questions with polished answers/ })).toBeVisible();
 
     const questionInput = page.getByLabel("Ask your own interview question");
@@ -259,7 +273,7 @@ test.describe("Non-functional UI/UX, responsiveness, and state management", () =
     await questionInput.fill("How would you design a rate limiter?");
     await context.setOffline(true);
     await page.getByRole("button", { name: "Generate answer" }).click();
-    await expect(page.getByText(/Offline mode|Reconnect before sending/)).toBeVisible();
+    await expect(page.getByRole("alert").filter({ hasText: "Reconnect before sending" })).toBeVisible();
     await context.setOffline(false);
     await page.reload();
     await assertHealthyApp(page);

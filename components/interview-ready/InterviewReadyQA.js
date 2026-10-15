@@ -658,6 +658,7 @@ export default function InterviewReadyQA({
             <span aria-live="polite" style={{ color: "#9fb0c7", fontSize: 10.5 }}>Text {Math.round(textScale * 100)}%</span>
           </div>
         </div>
+        <details className="workspace-guidance"><summary>Interview answer checklist</summary>
         <section style={{ ...wrap, background: `${accent}10`, border: `1px solid ${accent}33`, borderRadius: 8, display: "grid", gap: 8, padding: 12 }}>
           <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Ace-the-interview checklist</div>
           <div style={responsiveGrid(210, 8)}>
@@ -673,6 +674,7 @@ export default function InterviewReadyQA({
             ))}
           </div>
         </section>
+        </details>
       </header>
 
       <section style={{ ...wrap, background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 8, padding: 10 }} aria-label="Answer style presets">

@@ -1,0 +1,20 @@
+.options { position: relative; flex-shrink: 0; color: var(--ui-text); font-size: 12px; }
+.options summary { list-style: none; display: flex; gap: 6px; align-items: center; padding: 9px 11px; border: 1px solid var(--ui-border); border-radius: 7px; cursor: pointer; }
+.options summary::-webkit-details-marker { display: none; }
+.content { position: absolute; top: calc(100% + 8px); right: 0; display: grid; gap: 8px; width: 235px; max-width: calc(100vw - 44px); padding: 12px; background: var(--ui-surface); border: 1px solid var(--ui-border); border-radius: 10px; box-shadow: 0 4px 12px #0002; }
+.content > button, .content :global(.header-account-actions) { width: 100%; }
+.content :global(.header-profile-label) { border: 0 !important; border-radius: 0 !important; padding: 4px 0 !important; white-space: normal !important; }
+.content > button { min-height: 36px; border: 1px solid var(--ui-border); background: transparent; border-radius: 7px; color: inherit; text-align: left; padding: 8px; font: inherit; cursor: pointer; }
+.content :global(.header-account-actions) { flex-wrap: wrap; }
+.content :global(.header-account-actions) button { flex: 1; min-height: 36px; }
+:global(.theme-light) .options { color: var(--ui-text); }
+:global(.theme-light) .options summary { border-color: var(--ui-border); }
+:global(.theme-light) .content { background: #fff; border-color: var(--ui-border); }
+:global(.theme-light) .content > button { border-color: var(--ui-border); }
+.options summary:focus-visible, .content button:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 3px; }
+@media (max-width: 1023px) {
+  /* The compact header scrolls: keep expanded actions in its normal flow. */
+  .options[open] { flex-basis: 100%; width: 100%; }
+  .options[open] > summary { width: fit-content; }
+  .content { position: static; box-sizing: border-box; width: 100%; max-width: 100%; margin-top: 8px; }
+}

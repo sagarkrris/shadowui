@@ -146,7 +146,8 @@ test.describe("Authentication and account lifecycle", () => {
       return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, deletionVerified: true }) });
     });
     await page.goto("/practice");
-    await expect(page.locator(".header-account-actions").getByRole("button", { name: /Account/ })).toBeVisible();
+    await page.getByLabel("Workspace options", { exact: true }).click();
+  await expect(page.locator(".header-account-actions").getByRole("button", { name: /Account/ })).toBeVisible();
     await page.locator(".header-account-actions").getByRole("button", { name: /Account/ }).click();
     await page.getByRole("menuitem", { name: /Account & settings/ }).click();
     await expect(page.getByRole("heading", { name: "Account profile & sync" })).toBeVisible();
@@ -159,3 +160,19 @@ test.describe("Authentication and account lifecycle", () => {
     await expect.poll(() => accountRequests.some((request) => request.method === "DELETE")).toBe(true);
   });
 });
+
+for (const path of ["/sign-in", "/sign-up"]) {
+  test(`${path} keeps email/password and only offers Google social sign-in`, async ({ page }, testInfo) => {
+    await page.route("**/api/auth?action=oauth&provider=google", route => route.fulfill({ contentType: "text/html", body: "<h1>Google sign-in handoff</h1>" }));
+    await page.goto(path);
+    await expect(page.getByLabel("Email", { exact: true })).toBeVisible();
+    await expect(page.getByLabel("Password", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: /GitHub/i })).toHaveCount(0);
+    const google = page.getByRole("button", { name: "Continue with Google", exact: true });
+    await expect(google).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath("auth-providers.png"), fullPage: true });
+    await google.click();
+    await expect(page).toHaveURL(/\/api\/auth\?action=oauth&provider=google$/);
+    await expect(page.getByRole("heading", { name: "Google sign-in handoff" })).toBeVisible();
+  });
+}

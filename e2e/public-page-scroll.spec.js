@@ -25,11 +25,13 @@ for (const viewport of [
       await page.mouse.move(viewport.width / 2, viewport.height / 2);
       await page.mouse.wheel(0, 500);
       await expect.poll(() => heading.evaluate(el => el.getBoundingClientRect().top)).toBeLessThan(before - 20);
+      await page.locator('main').click({ position: { x: 10, y: 10 } });
       await page.keyboard.press('End');
       await expect.poll(() => page.evaluate(() => {
-        const el = document.scrollingElement;
+        const el = document.querySelector('[data-reader-scroll]') || document.scrollingElement;
         return el.scrollHeight - el.clientHeight - el.scrollTop;
       })).toBeLessThan(3);
+      await page.locator('main a').last().scrollIntoViewIfNeeded();
       await expect(page.locator('main a').last()).toBeInViewport();
       expect(await page.evaluate(() => document.scrollingElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
     });

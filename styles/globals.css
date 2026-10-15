@@ -1119,6 +1119,18 @@ a:focus-visible,
   }
 }
 
+.brand-watermark[data-public="true"] { opacity: .13 !important; }
+.reader-article-scroll [id] { scroll-margin-top: 110px; }
+.application-tracker-label { display: grid; gap: 6px; color: #9fb0c7; font-size: 12px; }
+.application-tracker-label > .glass-input { min-width: 0; width: 100%; box-sizing: border-box; }
+.theme-light .application-tracker-label { color: #334e68; }
+.session-actions[data-workspace][data-mobile-open="false"] { display: none !important; }
+.app-topbar[data-workspace] .header-title { flex: 1 1 80px !important; }
+.workspace-guidance { color: #cbd5e1; font-size: 12px; margin: 0 0 12px; }
+.workspace-guidance > summary { cursor: pointer; padding: 8px 0; }
+.theme-light .workspace-guidance { color: #334e68; }
+.theme-light .system-design-canvas > details > summary { color: #17324d; }
+
 /* Keep the laptop/tablet header usable when the workspace, account, and
    prep controls cannot fit in one row. The controls wrap instead of being
    clipped off the right edge of the viewport. */
@@ -1293,6 +1305,10 @@ a:focus-visible,
 .theme-light .qa-expanded-answer span { color: #17324d !important; }
 
 .mobile-shell-controls { display: none; }
+@media (orientation: landscape) and (max-height: 500px) and (max-width: 1023px) {
+  .composer-footer textarea[aria-label="Message composer"] { height: 42px !important; min-height: 42px !important; padding-block: 6px !important; }
+  .composer-footer .composer-tools { flex-wrap: nowrap !important; max-width: none !important; }
+}
 @media (max-width: 1023px) {
   /* Only the content region scrolls. Hidden overflow allowed focus to pan main. */
   .app-shell > main { overflow: clip !important; }

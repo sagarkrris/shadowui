@@ -1,0 +1,1454 @@
+{
+  "groups": [
+    {
+      "title": "Values and references",
+      "mechanism": "Java always passes arguments by value; for objects the copied value is a reference. Reassigning a parameter changes the local copy, while mutating its referent can affect the caller.",
+      "tradeOff": "Sharing reduces copying but requires an ownership and mutation contract.",
+      "verify": "Pass one mutable object to two callers; distinguish reassignment, mutation and defensive copying.",
+      "questions": [
+        {
+          "question": "Is Java pass-by-value or pass-by-reference?",
+          "answer": "Always pass-by-value. An object argument copies a reference value, allowing shared-object mutation without allowing the callee to replace the caller's variable."
+        },
+        {
+          "question": "When should an API defensively copy a collection?",
+          "answer": "Copy when retaining a caller-owned mutable collection would violate the receiving object's invariants. Decide separately whether mutable elements also need copying."
+        },
+        {
+          "question": "Why does reassigning an object parameter not replace the caller's object?",
+          "answer": "The parameter is a separate variable initialized with the reference value. Assignment changes that variable rather than the caller's variable."
+        },
+        {
+          "question": "How can an immutable-looking object still change unexpectedly?",
+          "answer": "A final reference can point to mutable state. Constructor inputs and accessor results can expose that state unless copied or confined."
+        },
+        {
+          "question": "How would you define ownership for a high-throughput message object?",
+          "answer": "Specify who may mutate it and when ownership transfers. Choose immutable data or confinement, then measure copying costs before sharing mutable buffers."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Equality and hashing",
+      "mechanism": "Hash collections locate candidate buckets using hashes and distinguish keys with equality. Equal objects must share a hash; unequal objects may collide.",
+      "tradeOff": "Value equality simplifies lookup but requires stable equality-relevant state while keys are stored.",
+      "verify": "Test equal distinct instances, collisions, null handling and mutation after insertion.",
+      "questions": [
+        {
+          "question": "How do identity and equality differ?",
+          "answer": "Identity asks whether references designate the same object. Equality can express equivalent values according to the type's equals contract."
+        },
+        {
+          "question": "When must equals and hashCode be implemented together?",
+          "answer": "Whenever value equality is customized for use in hash-based collections. Equal instances must produce equal hash codes."
+        },
+        {
+          "question": "Why can a changed map key become unreachable?",
+          "answer": "Changing fields used by hashCode or equals invalidates the lookup assumptions associated with the key's original insertion."
+        },
+        {
+          "question": "Does the same hash code imply two objects are equal?",
+          "answer": "No. Collisions are permitted; the collection still uses equality to identify the matching key."
+        },
+        {
+          "question": "How would you review equality across a class hierarchy?",
+          "answer": "Check symmetry, transitivity and substitutability. Prefer explicit value semantics or composition where subclass state would make inherited equality inconsistent."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Collections and ordering",
+      "mechanism": "List, Set and Map encode different identity, duplication and ordering contracts. Choose implementations from access patterns rather than interchangeable syntax.",
+      "tradeOff": "An ordering guarantee often carries memory or update costs.",
+      "verify": "Exercise duplicates, empty input, iteration order and concurrent modification under the promised contract.",
+      "questions": [
+        {
+          "question": "How do List, Set and Map differ?",
+          "answer": "Lists represent sequences, sets represent uniqueness, and maps associate keys with values. Each implementation adds its own ordering and concurrency guarantees."
+        },
+        {
+          "question": "When is ArrayList preferable to LinkedList?",
+          "answer": "Usually for indexed access and iteration because of compact storage and locality. LinkedList insertion still requires locating the node through its public API."
+        },
+        {
+          "question": "What does a comparator need to guarantee?",
+          "answer": "A consistent ordering relation. In sorted sets, comparison returning zero determines uniqueness, which can differ from equals if designed inconsistently."
+        },
+        {
+          "question": "Why is fail-fast iteration not a concurrency guarantee?",
+          "answer": "ConcurrentModificationException is a best-effort bug detector. It does not make unsynchronized concurrent access correct or reliably detect every race."
+        },
+        {
+          "question": "How do you preserve deterministic output from a map-based aggregation?",
+          "answer": "Select an ordered representation or explicitly sort the result using a stable total order. Do not depend on incidental hash iteration order."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "HashMap internals",
+      "mechanism": "HashMap uses bucket indexing, equality-based collision resolution and resizing. Tree bins improve sufficiently crowded buckets under implementation-specific thresholds.",
+      "tradeOff": "Expected constant-time access depends on hashing, resizing and workload; it is not a universal worst-case guarantee.",
+      "verify": "Measure collision-heavy keys, resize pressure and key stability with representative cardinality.",
+      "questions": [
+        {
+          "question": "What is the purpose of a HashMap load factor?",
+          "answer": "It controls the occupancy threshold that triggers resizing. Higher occupancy can save space while increasing collision-related work."
+        },
+        {
+          "question": "Why pre-size a frequently populated map?",
+          "answer": "An appropriate initial capacity can reduce repeated growth and rehashing. Over-sizing also wastes memory, so derive it from expected entries."
+        },
+        {
+          "question": "How does HashMap distinguish keys sharing a bucket?",
+          "answer": "It compares candidate key hashes and equality, using linked or tree structures depending on implementation state."
+        },
+        {
+          "question": "What happens if several threads mutate a HashMap without coordination?",
+          "answer": "There is no thread-safety guarantee. Updates and reads can race, lose information or observe inconsistent state."
+        },
+        {
+          "question": "How would you choose between HashMap and ConcurrentHashMap?",
+          "answer": "Use HashMap for confined or externally synchronized state. Use ConcurrentHashMap for concurrent operations, while separately protecting multi-key business invariants."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Generics and variance",
+      "mechanism": "Java generics provide compile-time type checking, largely through erasure. Invariance prevents unsafe writes; wildcards express restricted reading or writing capabilities.",
+      "tradeOff": "Flexible signatures can become harder to understand if wildcards spread through internal code.",
+      "verify": "Compile representative subtype calls and deliberately unsafe writes; inspect raw-type warnings.",
+      "questions": [
+        {
+          "question": "Why is List<Integer> not a subtype of List<Number>?",
+          "answer": "If it were, a caller could add a Double through the Number view and violate the Integer list's element contract."
+        },
+        {
+          "question": "What does producer-extends consumer-super mean?",
+          "answer": "Read values through extends bounds and accept writes through super bounds. Choose variance from the operation's permitted use, not a memorized annotation pattern."
+        },
+        {
+          "question": "What information does erasure remove at runtime?",
+          "answer": "Most generic type arguments are not reified on instances. Runtime checks cannot generally distinguish List<String> from List<Integer>."
+        },
+        {
+          "question": "Why can raw types produce a delayed ClassCastException?",
+          "answer": "Raw access bypasses generic checks and permits incompatible values. The failure may appear later when a typed read inserts a cast."
+        },
+        {
+          "question": "How can an API preserve useful generic type information for serialization?",
+          "answer": "Use an explicit type token or framework-supported generic descriptor. A raw Class<List> does not capture the desired element type."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Exceptions and cleanup",
+      "mechanism": "Exceptions represent abrupt completion; resource ownership must still be resolved. Try-with-resources closes declared resources and preserves secondary close failures as suppressed exceptions.",
+      "tradeOff": "Checked exceptions expose handling obligations but can complicate APIs when the recovery contract is unclear.",
+      "verify": "Fail both the body and close operation; inspect the primary and suppressed failures.",
+      "questions": [
+        {
+          "question": "How do checked and unchecked exceptions differ?",
+          "answer": "Checked exceptions must be caught or declared under language rules. Unchecked exceptions do not require that declaration, but still need an intentional error policy."
+        },
+        {
+          "question": "When should an exception be translated at a boundary?",
+          "answer": "When a lower-level failure needs a stable domain or API meaning. Preserve the cause and avoid exposing secret-bearing internal messages."
+        },
+        {
+          "question": "What is a suppressed exception in try-with-resources?",
+          "answer": "A secondary failure, commonly during close, attached to the primary failure so cleanup does not hide the original problem."
+        },
+        {
+          "question": "Why is returning from finally dangerous?",
+          "answer": "It can replace a return value or suppress an exception from the try block, obscuring the actual outcome."
+        },
+        {
+          "question": "How should interruption be handled in reusable library code?",
+          "answer": "Propagate InterruptedException when possible, or restore the interrupt flag when translating it. Do not silently consume cancellation signals."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Immutability and records",
+      "mechanism": "Records define transparent data carriers with generated component-based methods. Their final component references do not recursively freeze referenced objects.",
+      "tradeOff": "Immutability simplifies sharing but may require copying and deliberate representation choices.",
+      "verify": "Mutate supplied collections after construction and verify the record's promised value stability.",
+      "questions": [
+        {
+          "question": "What does a Java record provide?",
+          "answer": "A component declaration with generated accessors, constructor-related behavior and value-oriented equals, hashCode and toString implementations."
+        },
+        {
+          "question": "When is a normal class better than a record?",
+          "answer": "When identity, controlled mutable state, inheritance requirements or hidden representation are central to the type's contract."
+        },
+        {
+          "question": "How can a compact record constructor validate inputs?",
+          "answer": "Validate constructor parameters and normalize or defensively copy mutable inputs before the implicit component assignment occurs."
+        },
+        {
+          "question": "Why is a record containing an array not deeply immutable?",
+          "answer": "The array remains mutable, and generated equality uses the component's equality semantics rather than automatically providing deep array equality."
+        },
+        {
+          "question": "How would you evolve a public record without breaking consumers?",
+          "answer": "Treat component additions and changes as constructor, serialization and behavioral contract changes. Introduce versioned DTOs or explicit compatibility boundaries."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Streams and collectors",
+      "mechanism": "Streams describe a pipeline over a source; terminal operations drive traversal. Intermediate operations should avoid interfering with the source or depending on incidental execution order.",
+      "tradeOff": "Declarative pipelines improve composition but can conceal allocation, ordering and repeated work.",
+      "verify": "Test empty input, duplicates, ordering, null policies and a sequential reference result.",
+      "questions": [
+        {
+          "question": "What makes a stream operation lazy?",
+          "answer": "Intermediate operations generally describe work that is executed when a terminal operation consumes the pipeline."
+        },
+        {
+          "question": "When should map be replaced by flatMap?",
+          "answer": "Use flatMap when each input produces zero or more elements and the desired output is one flattened stream."
+        },
+        {
+          "question": "What is required of a parallel reduction operation?",
+          "answer": "Its combining operation must be associative with a valid identity; mutable accumulation also needs a correct collector contract."
+        },
+        {
+          "question": "Why can peek-based side effects disappear or behave unexpectedly?",
+          "answer": "Stream optimizations and traversal requirements can alter which elements are evaluated. Use explicit terminal logic for required effects."
+        },
+        {
+          "question": "How would you evaluate replacing a loop with a parallel stream?",
+          "answer": "Measure task size, splitting cost, ordering, shared state and pool contention. Blocking downstream work needs its own bounded execution strategy."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Optional and null contracts",
+      "mechanism": "Optional models expected absence at a return boundary. It does not describe why infrastructure failed or authorize arbitrary use of null.",
+      "tradeOff": "Explicit absence improves callers' decisions but wrappers can complicate persistence and serialization models.",
+      "verify": "Test absent, present and exceptional results without using unchecked get calls.",
+      "questions": [
+        {
+          "question": "What problem does Optional solve?",
+          "answer": "It makes expected absence visible in a return type and encourages callers to choose an explicit alternative path."
+        },
+        {
+          "question": "How do orElse and orElseGet differ?",
+          "answer": "orElse evaluates its argument before the call. orElseGet invokes its supplier only when the Optional is empty."
+        },
+        {
+          "question": "What is the difference between map and flatMap on Optional?",
+          "answer": "map wraps a mapping result when present; flatMap accepts an Optional-producing function and avoids nested Optional values."
+        },
+        {
+          "question": "Why should a database outage not become Optional.empty?",
+          "answer": "It would confuse a failed lookup with a successful lookup that found no record, potentially causing destructive business decisions."
+        },
+        {
+          "question": "How would you design an API with missing, forbidden and failed outcomes?",
+          "answer": "Represent these outcomes explicitly through domain results or documented exceptions; do not collapse them into one null or empty value."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Java memory model",
+      "mechanism": "Happens-before relationships establish visibility and ordering between actions. Data-race freedom requires appropriate synchronization or ownership, not merely lucky observation.",
+      "tradeOff": "Coordination provides correctness but may add contention; confinement can remove sharing altogether.",
+      "verify": "Exercise real concurrent access and verify invariants rather than using sleep to assume timing.",
+      "questions": [
+        {
+          "question": "What does volatile guarantee?",
+          "answer": "Visibility and ordering associated with reads and writes of that variable. It does not make a compound operation such as increment atomic."
+        },
+        {
+          "question": "When does synchronized provide visibility?",
+          "answer": "Unlocking a monitor happens-before a later successful lock of that same monitor, alongside mutual exclusion for the protected region."
+        },
+        {
+          "question": "What is safe publication?",
+          "answer": "Making an object's initialized state visible to other threads through a supported happens-before mechanism such as synchronization or concurrent containers."
+        },
+        {
+          "question": "Why can double-checked locking fail without volatile?",
+          "answer": "The publication path can expose a reference without the required initialization visibility guarantees. Correct Java implementations use volatile for that pattern."
+        },
+        {
+          "question": "How would you reduce contention without weakening correctness?",
+          "answer": "Identify the protected invariant first, then consider confinement, immutable snapshots, partitioning or narrower synchronization with measured contention evidence."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Locks and atomics",
+      "mechanism": "Atomic classes support specific indivisible updates; locks protect larger state transitions. Neither automatically defines the business invariant being preserved.",
+      "tradeOff": "Lock-free updates can reduce blocking but retries and multi-variable coordination still have costs.",
+      "verify": "Test conflicting updates and cancellation while checking the full invariant.",
+      "questions": [
+        {
+          "question": "When is AtomicInteger preferable to volatile int?",
+          "answer": "When the operation needs atomic read-modify-write behavior such as increment, compare-and-set or update functions."
+        },
+        {
+          "question": "Why can two atomic variables still produce an inconsistent pair?",
+          "answer": "Each variable is updated atomically, but the relationship between both updates is not atomic unless explicitly coordinated."
+        },
+        {
+          "question": "What does compare-and-set establish?",
+          "answer": "An update succeeds only if the currently observed value matches the expected value under the primitive's comparison semantics."
+        },
+        {
+          "question": "What is the ABA problem?",
+          "answer": "A value changes from A to B and back to A, hiding intermediate history from a comparison that checks only the current value."
+        },
+        {
+          "question": "How would you choose between a lock and a CAS retry loop?",
+          "answer": "Compare invariant size, contention, retry cost, fairness and cancellation requirements. Prefer a clear correct lock over a fragile pseudo-lock-free design."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Executors and overload",
+      "mechanism": "An executor separates submission from execution. Queueing, worker capacity and rejection policy together determine overload behavior and retained memory.",
+      "tradeOff": "Queues smooth short bursts but unbounded queues convert overload into delay and memory growth.",
+      "verify": "Saturate workers, exceed queue capacity and verify rejection plus graceful shutdown.",
+      "questions": [
+        {
+          "question": "What is the difference between execute and submit?",
+          "answer": "execute accepts a task without a result Future. submit returns a Future whose failure must be observed to avoid silent task errors."
+        },
+        {
+          "question": "Why must an executor queue be bounded deliberately?",
+          "answer": "Queued work retains inputs and consumes request deadlines. An unbounded backlog can exhaust memory while throughput remains unchanged."
+        },
+        {
+          "question": "How do shutdown and shutdownNow differ?",
+          "answer": "shutdown rejects new tasks and allows accepted work to finish. shutdownNow attempts interruption and returns tasks that never started; termination remains cooperative."
+        },
+        {
+          "question": "Why can CallerRunsPolicy harm a request thread?",
+          "answer": "It executes rejected work on the submitting thread, potentially moving blocking or expensive work onto an event loop or latency-sensitive caller."
+        },
+        {
+          "question": "How would you size concurrency for a database-backed workload?",
+          "answer": "Start with downstream capacity and service time, then measure throughput and queueing. More workers cannot create extra database capacity."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Futures and cancellation",
+      "mechanism": "CompletableFuture composes completions; execution and cancellation depend on how work is launched and implemented. Timing out a dependent result does not undo remote effects.",
+      "tradeOff": "Composition simplifies asynchronous dependencies but can obscure ownership and exception propagation.",
+      "verify": "Complete sources exceptionally, cancel one dependent and verify sibling behavior and actual resource cleanup.",
+      "questions": [
+        {
+          "question": "What is the difference between thenApply and thenCompose?",
+          "answer": "thenApply transforms a completed value; thenCompose flattens a function returning another CompletionStage into one composed stage."
+        },
+        {
+          "question": "When is handle preferable to exceptionally?",
+          "answer": "Use handle when both success and failure must produce a transformed result. exceptionally handles only exceptional completion."
+        },
+        {
+          "question": "Does allOf return a list of component results?",
+          "answer": "No. It returns a completion stage indicating aggregate completion; obtain individual results separately under an explicit failure policy."
+        },
+        {
+          "question": "Does cancelling a CompletableFuture necessarily interrupt its underlying work?",
+          "answer": "No. CompletableFuture cancellation does not generally control the execution mechanism; cancellation of the actual task or operation needs separate ownership."
+        },
+        {
+          "question": "How would you enforce an end-to-end asynchronous deadline?",
+          "answer": "Allocate budget across acquisition and I/O, propagate remaining time, stop useful work cooperatively and reconcile effects whose remote outcome is unknown."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Virtual threads",
+      "mechanism": "Java 21 virtual threads multiplex onto carrier threads and can unmount during supported blocking operations. They improve waiting concurrency, not CPU speed or connection capacity.",
+      "tradeOff": "Cheaper waiting permits more outstanding work, which can overwhelm finite dependencies without admission limits.",
+      "verify": "Measure retained requests, connection waits and Java 21 pinning under representative load.",
+      "questions": [
+        {
+          "question": "What workload benefits from virtual threads?",
+          "answer": "Many concurrent tasks spending substantial time waiting for blocking I/O, provided downstream resources and admission are controlled."
+        },
+        {
+          "question": "Should virtual threads be pooled like platform workers?",
+          "answer": "Normally create one per task rather than pooling them to limit resources. Use explicit limits around the scarce dependency itself."
+        },
+        {
+          "question": "How does Java 21 monitor pinning affect virtual threads?",
+          "answer": "Blocking while holding certain synchronized monitors can pin a carrier in Java 21. Later JDK behavior differs, so verify the deployed runtime."
+        },
+        {
+          "question": "Why can virtual threads make database latency worse?",
+          "answer": "They can admit many more waiting requests against the same finite pool, increasing queue time without increasing database throughput."
+        },
+        {
+          "question": "How would you migrate a thread-local-heavy service to virtual threads?",
+          "answer": "Audit per-thread resource cost, context lifetime and cleanup. Avoid treating each virtual thread as a place to cache expensive reusable clients."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Garbage collection",
+      "mechanism": "Garbage collection reclaims unreachable managed objects. Reachability, allocation rate and retained live data determine pressure; a collector cannot free strongly reachable leaked state.",
+      "tradeOff": "Lower pauses, throughput and footprint compete; collector selection requires workload evidence.",
+      "verify": "Correlate allocation, post-GC live set, pause distributions and application latency during a controlled soak.",
+      "questions": [
+        {
+          "question": "What is a garbage-collection root?",
+          "answer": "A starting point for reachability analysis, such as live thread references and certain runtime-held references, from which retained objects are traced."
+        },
+        {
+          "question": "How do allocation pressure and a retention leak differ?",
+          "answer": "Allocation pressure creates many short-lived objects; a retention leak keeps unneeded objects reachable so the live set grows over time."
+        },
+        {
+          "question": "Why does System.gc not provide a cleanup contract?",
+          "answer": "It is a request to the runtime, not a guarantee of immediate collection or resource release. Close owned resources explicitly."
+        },
+        {
+          "question": "Why can increasing heap size worsen an incident?",
+          "answer": "It can postpone exhaustion while increasing memory cost or changing pause behavior, without fixing unbounded retention or downstream bottlenecks."
+        },
+        {
+          "question": "How would you choose a garbage collector for a service?",
+          "answer": "Use supported collectors and compare throughput, tail pauses, memory headroom and operational tooling under the real container limits."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Class loading and initialization",
+      "mechanism": "Class identity includes its defining class loader. Loading, linking and initialization are distinct phases with different failure modes.",
+      "tradeOff": "Custom loading enables isolation but complicates compatibility, unloading and diagnostics.",
+      "verify": "Test missing dependencies, initialization failures and repeated deployment with retained loader references.",
+      "questions": [
+        {
+          "question": "What is the difference between loading and initialization?",
+          "answer": "Loading obtains a class representation; initialization executes class initialization logic when required by language and runtime rules."
+        },
+        {
+          "question": "Why can two identical class names fail a cast?",
+          "answer": "If defined by different class loaders, they can represent distinct runtime types despite having the same binary name."
+        },
+        {
+          "question": "What can cause NoClassDefFoundError after a class previously existed?",
+          "answer": "A required definition may be unavailable, or initialization may have failed earlier. Inspect the original failure and loader path."
+        },
+        {
+          "question": "How can an application retain an obsolete class loader?",
+          "answer": "Long-lived threads, static registries, callbacks or thread-local values can retain classes and their defining loader after redeployment."
+        },
+        {
+          "question": "How would you diagnose a dependency linkage failure?",
+          "answer": "Identify the actual loaded artifact and class loader, inspect resolved dependencies and binary signatures, then correct the owning dependency conflict."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "I/O and buffers",
+      "mechanism": "I/O APIs differ in buffering, blocking and ownership. Character encoding and byte boundaries must be explicit; a buffer's position and limit define the active region.",
+      "tradeOff": "Buffer reuse reduces allocation but introduces lifecycle and aliasing risks.",
+      "verify": "Test partial reads, multibyte text, truncated input and resource closure on failure.",
+      "questions": [
+        {
+          "question": "How do byte streams and character readers differ?",
+          "answer": "Byte streams process raw bytes; readers decode characters using a charset. Choose an explicit charset for external data."
+        },
+        {
+          "question": "Why must code handle a partial read?",
+          "answer": "A read may return fewer bytes than requested without reaching end-of-stream. Continue according to the protocol's framing rules."
+        },
+        {
+          "question": "What does ByteBuffer.flip do?",
+          "answer": "It sets the limit to the current position and resets position to zero, preparing the region just written for reading."
+        },
+        {
+          "question": "Why can sharing a reusable buffer corrupt asynchronous results?",
+          "answer": "A producer can overwrite bytes before a consumer finishes. Transfer ownership, copy the required region or use controlled reference management."
+        },
+        {
+          "question": "How would you design a bounded file-upload pipeline?",
+          "answer": "Limit total bytes, buffered chunks and concurrent uploads; stream to owned storage and ensure cancellation removes incomplete artifacts safely."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Time and numerical correctness",
+      "mechanism": "Instant represents a point on the timeline; local date-time needs zone rules for interpretation. Exact decimal arithmetic still requires explicit scale and rounding policy.",
+      "tradeOff": "Precision, representation and business interpretation must be selected together.",
+      "verify": "Test overflow, DST boundaries, negative amounts and rounding at policy boundaries.",
+      "questions": [
+        {
+          "question": "When should Instant be preferred to LocalDateTime?",
+          "answer": "For an unambiguous timestamp representing an event on the timeline. Use local date-time for a wall-clock value with explicit zone interpretation."
+        },
+        {
+          "question": "Why should BigDecimal usually be constructed from decimal text?",
+          "answer": "A double may already contain binary floating-point approximation. Text preserves the intended decimal representation before arithmetic and rounding."
+        },
+        {
+          "question": "How do BigDecimal equals and compareTo differ?",
+          "answer": "equals includes scale in equality; compareTo compares numerical ordering, so numerically equal values with different scales can compare as zero."
+        },
+        {
+          "question": "Why can adding 24 hours differ from adding a calendar day?",
+          "answer": "Daylight-saving transitions can change the elapsed duration between local times on adjacent calendar dates."
+        },
+        {
+          "question": "How would you keep time-dependent tests deterministic?",
+          "answer": "Inject a Clock or equivalent time source, control zones explicitly, and test policy boundaries without sleeping on wall-clock time."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Diagnostics and performance",
+      "mechanism": "Performance conclusions require separating CPU, waiting, allocation and contention. A profile is a sample of a workload, not proof that every hot frame should be rewritten.",
+      "tradeOff": "Diagnostics themselves have cost and may expose sensitive data.",
+      "verify": "Reproduce the workload, capture before-and-after evidence and confirm the optimization preserves behavior.",
+      "questions": [
+        {
+          "question": "What does a CPU profile show?",
+          "answer": "Where executing threads spend sampled CPU time. It does not directly account for every blocked request's elapsed waiting time."
+        },
+        {
+          "question": "When is a thread dump useful?",
+          "answer": "For blocked threads, lock contention, deadlocks and repeated execution patterns. Correlate multiple snapshots with workload and latency evidence."
+        },
+        {
+          "question": "What can a heap dominator tree reveal?",
+          "answer": "Objects responsible for retaining substantial reachable memory and paths through which removing one owner could release retained objects."
+        },
+        {
+          "question": "Why are ad hoc microbenchmarks often misleading?",
+          "answer": "JIT warm-up, dead-code elimination, constant folding and measurement overhead can dominate. Use an appropriate harness and representative inputs."
+        },
+        {
+          "question": "How would you prove a performance change is production-worthy?",
+          "answer": "Demonstrate correct outputs, improved relevant latency or cost, bounded memory and stable behavior under sustained representative load and failure conditions."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "API compatibility and testing",
+      "mechanism": "Compatibility includes source, binary, wire and behavioral contracts. A change that compiles locally can still break older callers or persisted data.",
+      "tradeOff": "A smaller surface is easier to evolve, but explicit migration may be needed for meaningful changes.",
+      "verify": "Run boundary tests with old inputs and representative consumers; inspect actual public signatures.",
+      "questions": [
+        {
+          "question": "How do source and binary compatibility differ?",
+          "answer": "Source compatibility concerns recompilation; binary compatibility concerns existing compiled callers linking against the changed library without recompilation."
+        },
+        {
+          "question": "When is an unchecked exception a compatibility concern?",
+          "answer": "When callers rely on documented successful behavior, failure type or recovery paths. Checked signatures are not the whole behavioral contract."
+        },
+        {
+          "question": "Why can changing a collection's ordering break an API?",
+          "answer": "Consumers may depend on documented or historically promised order for pagination, output stability or business precedence."
+        },
+        {
+          "question": "What makes a regression test meaningful?",
+          "answer": "It exercises an observable invariant or failure path and would fail when the defect returns, rather than repeating internal implementation details."
+        },
+        {
+          "question": "How would you release an incompatible public API improvement?",
+          "answer": "Provide explicit versioning or deprecation, preserve old behavior during transition, test real consumer cases and document migration plus rollback constraints."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Primitives and numeric promotion",
+      "mechanism": "Primitive operations follow language conversion and overflow rules. Wider assignment does not undo overflow that already occurred in a narrower expression.",
+      "tradeOff": "Compact primitive storage needs explicit range and precision policy.",
+      "verify": "Test minimum, maximum, negative and mixed-type arithmetic inputs.",
+      "questions": [
+        {
+          "question": "How do primitives differ from wrapper objects?",
+          "answer": "Primitives represent built-in values; wrappers are reference types that support generics and null but introduce boxing and identity considerations."
+        },
+        {
+          "question": "When can unboxing throw NullPointerException?",
+          "answer": "When a null wrapper is converted to its primitive value, including implicit arithmetic or comparison contexts."
+        },
+        {
+          "question": "Why can assigning an int multiplication to long still overflow?",
+          "answer": "The multiplication may execute as int before assignment. Promote an operand or use an exact checked operation before the calculation."
+        },
+        {
+          "question": "Why should wrapper values not be compared with == for value equality?",
+          "answer": "Identity caching can make some comparisons appear correct while others fail. Use value equality with an explicit null policy."
+        },
+        {
+          "question": "How would you protect a numeric business invariant?",
+          "answer": "Define valid ranges and rounding, use checked arithmetic where needed and test overflow rather than assuming larger sample inputs remain representative."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Strings and Unicode",
+      "mechanism": "String stores text with UTF-16 indexing semantics; code units, code points and user-perceived characters differ. Charset conversion applies at byte boundaries.",
+      "tradeOff": "Simple indexing is efficient but can split supplementary characters or grapheme sequences.",
+      "verify": "Test supplementary characters, combining marks and malformed external encodings.",
+      "questions": [
+        {
+          "question": "Why is String immutable?",
+          "answer": "Its public contract does not permit changing an existing string's value, supporting safe sharing and stable string-key behavior."
+        },
+        {
+          "question": "When should StringBuilder be used?",
+          "answer": "For repeated local string construction where mutable accumulation improves clarity or avoids excessive intermediate strings; measure meaningful hot paths."
+        },
+        {
+          "question": "How does intern differ from ordinary string equality?",
+          "answer": "Interning obtains a canonical string reference for a value; equals compares values regardless of whether the instances share identity."
+        },
+        {
+          "question": "Why can char-based truncation corrupt visible text?",
+          "answer": "A char is a UTF-16 code unit, so truncation can split surrogate pairs or user-perceived character sequences."
+        },
+        {
+          "question": "How would you process external text safely?",
+          "answer": "Choose an explicit charset, bound input size, handle invalid sequences intentionally and distinguish protocol identifiers from locale-sensitive display text."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Object-oriented dispatch",
+      "mechanism": "Overloading selects a signature from compile-time information; overriding supplies runtime behavior for eligible virtual calls. Constructors and static methods have different rules.",
+      "tradeOff": "Inheritance offers substitution while composition often reduces lifecycle and equality coupling.",
+      "verify": "Exercise calls through base references, null arguments and overloaded signatures.",
+      "questions": [
+        {
+          "question": "How do overloading and overriding differ?",
+          "answer": "Overloading provides different parameter signatures; overriding supplies subtype behavior for an inherited eligible instance method."
+        },
+        {
+          "question": "When is composition preferable to inheritance?",
+          "answer": "When reuse does not require a true substitutable subtype and independent responsibilities or lifecycle would otherwise become tightly coupled."
+        },
+        {
+          "question": "How does runtime method dispatch choose an override?",
+          "answer": "For eligible virtual invocation, the actual receiver type determines the overriding implementation after the call's signature is selected."
+        },
+        {
+          "question": "Why can overloading with unrelated reference types make null ambiguous?",
+          "answer": "The compiler may find no uniquely most-specific applicable overload for a null argument."
+        },
+        {
+          "question": "How would you review a subclass for substitutability?",
+          "answer": "Check accepted inputs, promised outcomes, exceptions and state invariants so callers relying on the base contract remain correct."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Access and initialization order",
+      "mechanism": "Accessibility, static initialization and instance construction follow separate language rules. Calling overridable methods from constructors can expose incompletely initialized subclass state.",
+      "tradeOff": "Convenience initialization can create hidden ordering and startup dependencies.",
+      "verify": "Construct subclasses with overridden methods and test initialization failure paths.",
+      "questions": [
+        {
+          "question": "How do public, protected and package-private access differ?",
+          "answer": "They define different visibility boundaries across classes, packages and subclasses; use the narrowest access that serves the intended API."
+        },
+        {
+          "question": "When should static state be avoided?",
+          "answer": "When mutable global ownership would couple tests, users or class-loader lifetimes and make initialization or cleanup difficult."
+        },
+        {
+          "question": "How is static initialization different from an instance constructor?",
+          "answer": "Static initialization establishes class-level state when required; each constructor participates in creating one object and its instance state."
+        },
+        {
+          "question": "Why is calling an overridable method from a constructor risky?",
+          "answer": "The override can run before subclass fields are initialized, observing invalid default values or escaping the partially constructed object."
+        },
+        {
+          "question": "How would you remove fragile initialization ordering?",
+          "answer": "Make required state explicit through construction, avoid hidden global callbacks and separate bounded startup coordination from object constructors."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Enums and sealed hierarchies",
+      "mechanism": "Enums represent a fixed named set of instances; sealed hierarchies constrain permitted subtypes. Both help model closed alternatives without using arbitrary strings.",
+      "tradeOff": "Closed models improve exhaustiveness but additions can affect persistence and consumer compatibility.",
+      "verify": "Add a new alternative and inspect switches, serialized values and older readers.",
+      "questions": [
+        {
+          "question": "When is an enum preferable to string constants?",
+          "answer": "When the domain has a controlled set of alternatives and type checking should prevent arbitrary invalid values."
+        },
+        {
+          "question": "What does a sealed class constrain?",
+          "answer": "Which types may directly extend or implement it under Java's permitted-subtype rules."
+        },
+        {
+          "question": "How can pattern matching simplify a closed hierarchy?",
+          "answer": "It combines type testing and binding, and supported switch forms can help express exhaustive handling of known alternatives."
+        },
+        {
+          "question": "Why is persisting enum ordinal dangerous?",
+          "answer": "Reordering or inserting constants changes ordinal meanings and can reinterpret historical data without an obvious schema change."
+        },
+        {
+          "question": "How would you evolve a closed state model?",
+          "answer": "Use stable persisted codes, explicit transitions and tolerant migration boundaries; test old data and readers before adding or removing alternatives."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Annotations and retention",
+      "mechanism": "Annotations provide metadata consumed by compilers, processors or runtime frameworks. Retention controls availability; an annotation has no intrinsic business effect without a consumer.",
+      "tradeOff": "Metadata reduces boilerplate while making processing and invocation paths part of correctness.",
+      "verify": "Compile with and without the processor and inspect runtime metadata under each retention policy.",
+      "questions": [
+        {
+          "question": "What are Java annotations?",
+          "answer": "Typed metadata attached to supported program elements for tools or runtime consumers to interpret."
+        },
+        {
+          "question": "How do SOURCE, CLASS and RUNTIME retention differ?",
+          "answer": "SOURCE is discarded during compilation; CLASS is retained in class files; RUNTIME additionally makes metadata available through runtime reflection."
+        },
+        {
+          "question": "What does annotation processing do?",
+          "answer": "It inspects source-level program models during compilation and can generate additional artifacts; it does not automatically execute annotated application behavior."
+        },
+        {
+          "question": "Why can an annotation compile but do nothing?",
+          "answer": "Its required processor, runtime integration, registration or eligible invocation path may be absent."
+        },
+        {
+          "question": "How would you design a custom annotation contract?",
+          "answer": "Define target, retention, supported consumers, defaults and failure behavior, then test both valid usage and unsupported targets or missing processing."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Reflection and method handles",
+      "mechanism": "Reflection and method handles expose dynamic member access under access-control and module rules. Dynamic invocation does not erase type, security or packaging constraints.",
+      "tradeOff": "Flexibility can complicate AOT/native reachability and maintenance.",
+      "verify": "Test access across modules and actual packaged/native targets where supported.",
+      "questions": [
+        {
+          "question": "What is reflection used for?",
+          "answer": "Inspecting types and invoking or accessing supported members dynamically, common in tools and frameworks."
+        },
+        {
+          "question": "When might a method handle be useful?",
+          "answer": "For a typed dynamic invocation mechanism integrated with JVM linkage facilities, while still requiring correct access and adaptation."
+        },
+        {
+          "question": "How can strong module encapsulation affect reflection?",
+          "answer": "Non-open packages can restrict deep reflective access even when classpath-era code previously used it successfully."
+        },
+        {
+          "question": "Why is setAccessible not a universal bypass?",
+          "answer": "Runtime access rules, module boundaries and platform restrictions can prevent the requested access."
+        },
+        {
+          "question": "How would you reduce fragile reflection in a library?",
+          "answer": "Prefer public contracts or generated metadata, isolate unavoidable dynamic access and test supported module plus deployment configurations explicitly."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Modules and packaging",
+      "mechanism": "JPMS describes module dependencies and exports; opens enables supported reflective access. Classpath and module-path behavior differ.",
+      "tradeOff": "Stronger encapsulation improves contracts while migration can reveal accidental dependency assumptions.",
+      "verify": "Run the artifact on its supported launch path with only declared dependencies.",
+      "questions": [
+        {
+          "question": "What does module-info.java describe?",
+          "answer": "A named module's dependencies, exported packages, services and reflective opening decisions."
+        },
+        {
+          "question": "How do exports and opens differ?",
+          "answer": "Exports exposes package types for ordinary access; opens permits deeper runtime reflection under the module's rules."
+        },
+        {
+          "question": "When is automatic-module behavior relevant?",
+          "answer": "When placing non-modular JARs on the module path; inspect derived names and compatibility rather than assuming full explicit modularity."
+        },
+        {
+          "question": "Why can split packages complicate modularization?",
+          "answer": "Multiple modules containing the same package conflict with named-module organization and require dependency or package restructuring."
+        },
+        {
+          "question": "How would you modularize a mature application?",
+          "answer": "Inventory actual dependencies and reflective use, isolate boundaries gradually and validate packaging plus runtime access before broad restructuring."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Functional interfaces and lambdas",
+      "mechanism": "Lambdas implement target functional interfaces, capturing eligible lexical values. Capturing a reference does not freeze the object it points to.",
+      "tradeOff": "Concise callbacks can conceal retained objects and asynchronous ownership.",
+      "verify": "Modify captured mutable state concurrently and inspect lifetime plus exception behavior.",
+      "questions": [
+        {
+          "question": "What is a functional interface?",
+          "answer": "An interface with one abstract method contract suitable as a lambda target, accounting for inherited and Object-method rules."
+        },
+        {
+          "question": "Why must captured local variables be effectively final?",
+          "answer": "The lambda captures their values under language rules, avoiding mutable local-variable capture semantics that would be ambiguous across lifetimes."
+        },
+        {
+          "question": "How do Predicate, Function and Consumer differ?",
+          "answer": "Predicate tests, Function transforms and Consumer performs an action without returning a value; their types communicate different composition contracts."
+        },
+        {
+          "question": "Why can a lambda retain an unexpectedly large object graph?",
+          "answer": "It can capture this or another long-lived reference, keeping the referenced graph reachable as long as the callback remains registered."
+        },
+        {
+          "question": "How would you make asynchronous callbacks safe?",
+          "answer": "Define captured ownership, failure reporting, cancellation and deregistration; prefer immutable input values over uncontrolled shared mutable state."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Concurrent collections",
+      "mechanism": "Concurrent containers provide specific operation guarantees, not whole-workflow atomicity. Snapshot, weakly consistent and copy-on-write iteration serve different workloads.",
+      "tradeOff": "Safer individual operations can still allow incorrect compound business decisions.",
+      "verify": "Race conflicting updates and verify invariants spanning all affected keys.",
+      "questions": [
+        {
+          "question": "When is CopyOnWriteArrayList useful?",
+          "answer": "For relatively small read-heavy collections with rare writes where snapshot iteration justifies copying on mutation."
+        },
+        {
+          "question": "How does BlockingQueue support coordination?",
+          "answer": "It combines queue operations with waiting or timed admission/removal, allowing explicit producer-consumer capacity control."
+        },
+        {
+          "question": "What does ConcurrentHashMap.compute protect?",
+          "answer": "The specified per-key computation under its contract; it does not make arbitrary external side effects or multi-key transitions atomic."
+        },
+        {
+          "question": "Why can size followed by put exceed a concurrent limit?",
+          "answer": "Other threads can change the map between operations. Enforce capacity through a coordinated admission primitive or atomic state transition."
+        },
+        {
+          "question": "How would you choose a concurrent container?",
+          "answer": "Start with operation semantics, iteration guarantees, contention and memory, then test the actual compound invariant rather than only thread-safe method calls."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "ThreadLocal and context",
+      "mechanism": "ThreadLocal associates values with threads, not business requests. Reused workers and asynchronous handoffs make explicit cleanup and propagation essential.",
+      "tradeOff": "Implicit context is convenient but can leak identities and retain memory.",
+      "verify": "Reuse workers across users and test exceptional completion plus handoff cleanup.",
+      "questions": [
+        {
+          "question": "What does ThreadLocal store?",
+          "answer": "A value associated with the current thread under that ThreadLocal key, rather than a globally shared value."
+        },
+        {
+          "question": "When should a ThreadLocal value be removed?",
+          "answer": "At the defined ownership boundary, usually in finally for pooled-worker request context, to avoid retention or reuse by another request."
+        },
+        {
+          "question": "Why does async execution not automatically preserve ThreadLocal state?",
+          "answer": "The task can run on another thread with different local values; use supported context capture and restoration rather than assuming transfer."
+        },
+        {
+          "question": "How can pooled workers expose another request's identity?",
+          "answer": "A request can leave a value installed and the next task on that worker can observe it if cleanup is missing."
+        },
+        {
+          "question": "How would you design context propagation safely?",
+          "answer": "Capture only approved immutable context, restore prior worker state after execution and keep security decisions tied to trusted explicit identities."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Monitors and coordination",
+      "mechanism": "wait releases the owned monitor while waiting; notification only makes waiting threads eligible to compete again. Conditions require checking predicates in loops.",
+      "tradeOff": "Low-level coordination is powerful but easy to misuse; higher-level utilities often express intent better.",
+      "verify": "Control interleavings with barriers or latches and verify cancellation without sleep-based assumptions.",
+      "questions": [
+        {
+          "question": "How do wait and sleep differ?",
+          "answer": "wait requires monitor ownership and releases that monitor while waiting; sleep pauses the current thread without releasing held monitors."
+        },
+        {
+          "question": "Why must wait be used inside a predicate loop?",
+          "answer": "Wakeups can be spurious or the condition can change before the thread reacquires the monitor."
+        },
+        {
+          "question": "How does CountDownLatch differ from CyclicBarrier?",
+          "answer": "A latch typically represents one-way completion of a count; a barrier coordinates repeated rendezvous among participants under its contract."
+        },
+        {
+          "question": "Why is notify not a guarantee the right task will proceed?",
+          "answer": "It selects a waiter without granting immediate execution or ensuring that waiter's predicate is true."
+        },
+        {
+          "question": "How would you replace fragile wait-notify code?",
+          "answer": "State the condition and ownership model, then choose a queue, future, latch or explicit Condition that directly expresses the needed coordination."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Reference types and reachability",
+      "mechanism": "Weak, soft and phantom references alter how reachability interacts with collection. They do not provide reliable business deadlines or external-resource cleanup.",
+      "tradeOff": "Reference-sensitive caches reduce explicit retention while making availability and timing less predictable.",
+      "verify": "Retain and release strong owners, then verify application correctness without requiring a particular collection time.",
+      "questions": [
+        {
+          "question": "What is a weak reference?",
+          "answer": "A reference that does not by itself keep its referent strongly reachable, allowing collection when other reachability conditions permit it."
+        },
+        {
+          "question": "When is WeakHashMap useful?",
+          "answer": "For supported association lifetimes tied to weakly referenced keys, while ensuring values do not indirectly keep their own keys alive."
+        },
+        {
+          "question": "Why are soft references not a precise cache-size policy?",
+          "answer": "Their reclamation depends on runtime memory behavior, so they cannot express a dependable maximum size or freshness contract."
+        },
+        {
+          "question": "Why should finalization not own critical cleanup?",
+          "answer": "Its timing and execution are unreliable and it is deprecated for removal; release resources explicitly through clear ownership."
+        },
+        {
+          "question": "How would you prevent a listener-related memory leak?",
+          "answer": "Keep registration handles, remove listeners at owner shutdown and inspect retaining paths rather than relying on weak references to conceal lifecycle errors."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Serialization and trust boundaries",
+      "mechanism": "Serialization defines a wire or persistence contract, while deserialization consumes potentially hostile input. Type compatibility and security constraints remain explicit responsibilities.",
+      "tradeOff": "Generic object serialization is convenient but couples implementations and can expose dangerous object construction paths.",
+      "verify": "Test historical payloads, rejected types, size bounds and malformed data without using production secrets.",
+      "questions": [
+        {
+          "question": "How does Java serialization differ from a deliberate DTO protocol?",
+          "answer": "It encodes object-oriented state under serialization rules, often coupling consumers more closely to implementation types and evolution details."
+        },
+        {
+          "question": "What does serialVersionUID control?",
+          "answer": "A serialization compatibility identifier used in class-version checks; matching it does not guarantee meaningful behavioral compatibility."
+        },
+        {
+          "question": "Why is native Java deserialization of untrusted data risky?",
+          "answer": "It can construct complex object graphs and trigger dangerous type behavior; avoid it at untrusted boundaries and apply supported filters when unavoidable."
+        },
+        {
+          "question": "Why does transient not mean data is securely erased?",
+          "answer": "It affects default serialization of a field, not all logging, custom serialization, memory retention or external copies."
+        },
+        {
+          "question": "How would you evolve a persisted payload safely?",
+          "answer": "Use explicit schemas or DTO versions, tolerant readers, validated bounds and migration fixtures covering historical data plus rejected malicious forms."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Networking and HTTP",
+      "mechanism": "Network calls involve DNS, connection establishment, pooling, TLS and response processing. Each stage can fail after different amounts of work or remote commitment.",
+      "tradeOff": "Connection reuse reduces cost while complicating deadlines and stale-connection handling.",
+      "verify": "Simulate connection failure, slow bodies, lost responses and cancellation after a side effect.",
+      "questions": [
+        {
+          "question": "What does Java HttpClient provide?",
+          "answer": "A standard HTTP client API with synchronous and asynchronous operations under configured protocol and transport capabilities."
+        },
+        {
+          "question": "Why should an application reuse an HTTP client where appropriate?",
+          "answer": "Reuse can preserve connection pooling and configuration rather than creating new connection infrastructure for every request."
+        },
+        {
+          "question": "How do TLS trust and hostname verification differ?",
+          "answer": "Trust validates the certificate chain under configured authorities; hostname verification checks that the certificate identifies the requested endpoint."
+        },
+        {
+          "question": "Why can cancelling a request leave a remote write committed?",
+          "answer": "The remote server can finish before receiving cancellation or losing the connection; local completion state does not prove remote rollback."
+        },
+        {
+          "question": "How would you bound network resource use?",
+          "answer": "Control connection and request limits, body sizes, acquisition waits and total deadlines, while defining unknown-outcome reconciliation."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Files and filesystem safety",
+      "mechanism": "Path normalization, link resolution and authorization are separate concerns. Filesystem operations also have partial-failure and concurrent-update semantics.",
+      "tradeOff": "Simple path APIs do not automatically provide sandboxing or atomic multi-file updates.",
+      "verify": "Test traversal, symbolic links, interrupted writes and concurrent replacement in an isolated directory.",
+      "questions": [
+        {
+          "question": "How do Path and File differ conceptually?",
+          "answer": "Path participates in the NIO filesystem abstraction and richer operations, while File is an older pathname abstraction with different API ergonomics."
+        },
+        {
+          "question": "When should a temporary file plus atomic move be considered?",
+          "answer": "For replacing a complete file without exposing partial content, while checking filesystem support, durability and cross-filesystem constraints."
+        },
+        {
+          "question": "Why is normalize insufficient to prevent path traversal through symlinks?",
+          "answer": "It simplifies path syntax without resolving symbolic links or establishing the final authorized filesystem target."
+        },
+        {
+          "question": "Why can checking file existence before writing still race?",
+          "answer": "Another process can change the target between the check and operation; use appropriate atomic creation and filesystem permissions."
+        },
+        {
+          "question": "How would you design safe uploaded-file storage?",
+          "answer": "Use server-generated names, authorized directories, size limits and controlled link behavior, with atomic completion and cleanup of abandoned temporary files."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Algorithms and complexity",
+      "mechanism": "Complexity estimates depend on input size and operation cost; database or network calls can dominate a superficially linear loop.",
+      "tradeOff": "Asymptotic improvements must be weighed against memory, locality and real workload sizes.",
+      "verify": "Compare against a simple reference on empty, duplicate, adversarial and large inputs.",
+      "questions": [
+        {
+          "question": "How do time and space complexity differ?",
+          "answer": "Time describes how work grows with input size; space describes additional storage growth under stated assumptions."
+        },
+        {
+          "question": "When is a heap preferable to sorting every item?",
+          "answer": "When maintaining or retrieving a bounded top-k set or repeated extremes fits the operation pattern better than repeatedly ordering everything."
+        },
+        {
+          "question": "Why can recursion overflow despite correct base cases?",
+          "answer": "A deep input can require more call-stack frames than available; choose iterative traversal or enforce depth bounds where necessary."
+        },
+        {
+          "question": "Why can a hash-based linear algorithm still be vulnerable to poor inputs?",
+          "answer": "Collision behavior, allocation and memory can dominate; validate implementation guarantees and resource limits for untrusted cardinality."
+        },
+        {
+          "question": "How would you review an algorithm embedded in a service?",
+          "answer": "Include data access, round trips, concurrency and payload bounds in the cost model, then verify both mathematical correctness and operational limits."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "JIT and runtime optimization",
+      "mechanism": "The JIT optimizes observed execution using runtime profiles, with deoptimization when assumptions change. Source appearance is not a reliable cost model.",
+      "tradeOff": "Optimizations can improve warm throughput while startup and polymorphic workloads behave differently.",
+      "verify": "Measure warm-up and steady state separately with a suitable benchmark and production-like inputs.",
+      "questions": [
+        {
+          "question": "What is JIT compilation?",
+          "answer": "Runtime compilation of executed bytecode into optimized machine code, guided by JVM implementation behavior and observed workload."
+        },
+        {
+          "question": "Why separate startup from warmed performance?",
+          "answer": "Class loading, initialization and compilation work can dominate early requests while later execution benefits from optimized code."
+        },
+        {
+          "question": "How can escape analysis affect allocation?",
+          "answer": "The runtime may prove some objects do not escape and optimize their representation or synchronization; it is not a universal source-level guarantee."
+        },
+        {
+          "question": "Why can a microbenchmark report unrealistically fast code?",
+          "answer": "Unused results, constant inputs or insufficient warm-up can let optimization remove or transform the intended work."
+        },
+        {
+          "question": "How would you compare two low-level optimizations?",
+          "answer": "Use controlled benchmarks with consumed results and representative distributions, then confirm end-to-end improvement and unchanged correctness."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Design patterns in Java",
+      "mechanism": "Patterns name recurring design trade-offs rather than mandate class hierarchies. Select the smallest structure that expresses the actual variation or lifecycle.",
+      "tradeOff": "Abstraction helps stable variation points but speculative layers increase navigation and maintenance cost.",
+      "verify": "Add a second genuine behavior and evaluate whether the design changes locally and remains testable.",
+      "questions": [
+        {
+          "question": "When is Strategy appropriate?",
+          "answer": "When interchangeable algorithms share a stable contract and callers should select behavior without duplicating large conditional logic."
+        },
+        {
+          "question": "How does Factory differ from Builder?",
+          "answer": "A factory selects or creates an object; a builder organizes staged construction and validation of a complex configuration or value."
+        },
+        {
+          "question": "What does Decorator preserve?",
+          "answer": "The decorated interface while adding behavior around delegation, with explicit ordering and lifecycle responsibilities."
+        },
+        {
+          "question": "Why can Singleton make testing and lifecycle harder?",
+          "answer": "Global shared state hides dependencies, retains resources and couples tests unless ownership and reset behavior are deliberately controlled."
+        },
+        {
+          "question": "How would you justify introducing a design pattern?",
+          "answer": "Name the concrete variation or invariant, compare a simpler alternative and explain how the pattern improves change locality without obscuring behavior."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Modern language boundaries",
+      "mechanism": "Java versions determine available language and API contracts. Preview features require explicit compilation/runtime agreement and can change before finalization.",
+      "tradeOff": "Modern syntax helps expression, but upgrades must preserve target-runtime compatibility.",
+      "verify": "Compile against the declared release and test both historical inputs and supported runtime launch modes.",
+      "questions": [
+        {
+          "question": "What does javac --release protect?",
+          "answer": "It checks language and supported platform API compatibility for the selected release; it does not make every external dependency compatible."
+        },
+        {
+          "question": "When should a preview API be isolated?",
+          "answer": "When intentionally adopted under a pinned JDK, behind a boundary that makes later API changes and rollback manageable."
+        },
+        {
+          "question": "How does switch expression exhaustiveness help?",
+          "answer": "It requires supported expression forms to produce a result or fail deliberately, reducing accidental fall-through and missing alternatives."
+        },
+        {
+          "question": "Why is Java 21 structured concurrency not an ordinary stable API?",
+          "answer": "It is a preview API in that release and needs explicit preview flags plus matching runtime and build assumptions."
+        },
+        {
+          "question": "How would you plan a Java runtime upgrade?",
+          "answer": "Inventory dependencies, removed behaviors and tooling, test container resources plus concurrency, and compare representative correctness and performance before rollout."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Arrays and copying",
+      "mechanism": "Arrays have reified component types and fixed length. Copying an array normally copies element values, which can still be references to shared mutable objects.",
+      "tradeOff": "Compact indexed storage trades resizing flexibility for explicit bounds and ownership.",
+      "verify": "Test empty arrays, covariant writes and nested mutable elements after copying.",
+      "questions": [
+        {
+          "question": "How does an array differ from ArrayList?",
+          "answer": "An array has fixed length and a runtime component type; ArrayList is a resizable collection with generic compile-time element checking."
+        },
+        {
+          "question": "When is System.arraycopy useful?",
+          "answer": "For supported bulk element copying, while preserving correct source/destination ranges and understanding that referenced objects are not deeply cloned."
+        },
+        {
+          "question": "Why can assigning a String array to Object[] fail on a later write?",
+          "answer": "Array covariance permits the reference conversion, but storing a non-String object violates the array's runtime component type and throws ArrayStoreException."
+        },
+        {
+          "question": "Why is cloning a two-dimensional array usually shallow?",
+          "answer": "It copies the outer array while the inner array references still point to the same nested arrays."
+        },
+        {
+          "question": "How would you expose internal array data safely?",
+          "answer": "Return a copy or controlled read-only abstraction and define whether referenced mutable elements require additional defensive copying."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Control flow and operators",
+      "mechanism": "Evaluation order, short-circuiting and numeric promotion determine observable behavior. Clear control flow is preferable to relying on subtle operator interactions.",
+      "tradeOff": "Concise expressions can hide side effects and exceptional paths.",
+      "verify": "Test false branches, null operands, overflow and boundary loop counts.",
+      "questions": [
+        {
+          "question": "How do && and & differ for boolean expressions?",
+          "answer": "Both can combine boolean values, but && short-circuits the right operand while & evaluates both operands."
+        },
+        {
+          "question": "When should a switch expression be used?",
+          "answer": "When selecting a result among alternatives is clearer and supported by the target Java version, with explicit handling of all relevant cases."
+        },
+        {
+          "question": "Why does left-to-right argument evaluation matter?",
+          "answer": "Side effects and exceptions in earlier arguments occur before later argument evaluation, so expressions are not freely interchangeable."
+        },
+        {
+          "question": "How can a loop boundary produce an off-by-one failure?",
+          "answer": "Confusing inclusive and exclusive endpoints can skip the final element or access beyond the valid range, especially for empty input."
+        },
+        {
+          "question": "How would you simplify complex branching safely?",
+          "answer": "State the input partitions and invariant, remove hidden side effects and verify each branch with boundary plus exceptional cases before refactoring."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Interfaces and abstract types",
+      "mechanism": "Interfaces define supported behavior contracts, while abstract classes can share implementation and state. Default methods introduce inheritance rules without making every implementation change compatible.",
+      "tradeOff": "Shared behavior can reduce repetition but create diamond conflicts or unsupported assumptions.",
+      "verify": "Compile multiple-interface combinations and exercise existing implementations after API changes.",
+      "questions": [
+        {
+          "question": "How does an interface differ from an abstract class?",
+          "answer": "An interface primarily specifies a type contract with supported default/static behavior; an abstract class can define shared instance state and partial implementation."
+        },
+        {
+          "question": "When should a default interface method be added?",
+          "answer": "When a meaningful compatible default exists and its interaction with existing implementations and inherited defaults has been reviewed."
+        },
+        {
+          "question": "How are conflicting interface default methods resolved?",
+          "answer": "An implementing type may need an explicit override selecting or replacing behavior under Java's method-inheritance rules."
+        },
+        {
+          "question": "Why can adding a method still break existing implementations?",
+          "answer": "Abstract additions can require implementation, while default additions can create conflicts or behavioral changes despite appearing source-compatible."
+        },
+        {
+          "question": "How would you design an extension-friendly interface?",
+          "answer": "Keep responsibilities focused, define null/error/ordering contracts and evolve through explicit compatibility tests rather than exposing unstable implementation details."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Regular expressions and parsing",
+      "mechanism": "Regular expressions match patterns under defined syntax and Unicode behavior. Some backtracking patterns can take excessive time on adversarial input.",
+      "tradeOff": "Compact matching is useful for bounded syntax, but structured parsers suit richer protocols.",
+      "verify": "Test near-matches, long repeated input and Unicode boundaries under explicit size limits.",
+      "questions": [
+        {
+          "question": "When is a regular expression appropriate?",
+          "answer": "For a bounded textual pattern that remains understandable and does not require a full structured-language parser."
+        },
+        {
+          "question": "Why should a frequently reused Pattern be compiled once where appropriate?",
+          "answer": "It can avoid repeated compilation work while keeping Matcher instances and mutable matching state confined to each use."
+        },
+        {
+          "question": "How do matches and find differ?",
+          "answer": "matches tests the entire input region against the pattern; find searches for a matching subsequence."
+        },
+        {
+          "question": "Why can a regex become a denial-of-service risk?",
+          "answer": "Ambiguous nested repetition can cause catastrophic backtracking on crafted near-matching input, consuming excessive CPU."
+        },
+        {
+          "question": "How would you validate a complex untrusted payload?",
+          "answer": "Bound its size, use a suitable parser and explicit schema, then reserve regex for narrow checks with adversarial performance tests."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "JDBC and database ownership",
+      "mechanism": "JDBC exposes connections, statements and result sets with explicit resource and transaction lifetimes. Pooling does not make connections safe for arbitrary concurrent sharing.",
+      "tradeOff": "Direct SQL gives control while requiring careful cleanup, binding and timeout policy.",
+      "verify": "Fail statement execution and commit independently, then verify rollback and resource return.",
+      "questions": [
+        {
+          "question": "What responsibilities does JDBC give application code?",
+          "answer": "Obtaining and releasing connections, executing parameterized SQL, consuming results and managing transaction behavior under the chosen integration."
+        },
+        {
+          "question": "When should PreparedStatement be used?",
+          "answer": "For typed value binding and repeated statement execution without concatenating external values into SQL syntax."
+        },
+        {
+          "question": "How does auto-commit affect JDBC operations?",
+          "answer": "When enabled, supported individual statements complete their own transaction behavior; multi-statement atomic work requires an intentional transaction boundary."
+        },
+        {
+          "question": "Why can a connection leak cause timeouts with low database CPU?",
+          "answer": "The pool can run out of available connections even though the server is not busy executing queries."
+        },
+        {
+          "question": "How would you handle an uncertain JDBC commit outcome?",
+          "answer": "Preserve operation identity and reconcile durable state; a lost connection during commit does not prove the transaction rolled back."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Thread lifecycle and interruption",
+      "mechanism": "Thread states describe scheduling and waiting conditions rather than application progress. Interruption is a cooperative signal whose handling differs by operation.",
+      "tradeOff": "Low-level threads offer control but require explicit startup, publication and termination ownership.",
+      "verify": "Coordinate state transitions with latches and test interruption of waiting plus running tasks.",
+      "questions": [
+        {
+          "question": "What are Java's principal thread states?",
+          "answer": "NEW, RUNNABLE, BLOCKED, WAITING, TIMED_WAITING and TERMINATED, each describing a JVM thread lifecycle condition rather than a business status."
+        },
+        {
+          "question": "How does start differ from calling run directly?",
+          "answer": "start requests execution on a new thread; calling run is an ordinary method call on the current thread."
+        },
+        {
+          "question": "What does Thread.interrupted do to the interrupt flag?",
+          "answer": "It queries and clears the current thread's interrupt status, unlike isInterrupted which queries an instance without that clearing behavior."
+        },
+        {
+          "question": "Why is interrupt not a guaranteed immediate stop?",
+          "answer": "Work must cooperate or use interruptible operations; CPU loops, libraries or remote effects may continue despite the signal."
+        },
+        {
+          "question": "How would you terminate a worker robustly?",
+          "answer": "Stop admission, signal cancellation, unblock supported waits and await bounded termination while preserving recoverable ownership of unfinished work."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "ForkJoin and structured task ownership",
+      "mechanism": "ForkJoin supports divide-and-conquer scheduling, while structured concurrency associates child-task lifetime with a parent scope. Java 21 structured concurrency remains preview.",
+      "tradeOff": "Parallel composition can improve independent work but complicates blocking, cancellation and resource budgets.",
+      "verify": "Fail one branch and verify sibling cleanup plus bounded parent completion using the deployed JDK.",
+      "questions": [
+        {
+          "question": "When is ForkJoinPool useful?",
+          "answer": "For appropriately splittable computational tasks where work-stealing can balance independent subproblems with manageable overhead."
+        },
+        {
+          "question": "Why can blocking I/O harm a shared ForkJoin workload?",
+          "answer": "Blocked workers can reduce available execution capacity or interfere with unrelated tasks using the same shared pool."
+        },
+        {
+          "question": "What does structured concurrency try to make explicit?",
+          "answer": "The parent-child relationship of concurrent tasks, including joining, failure propagation and scope lifetime."
+        },
+        {
+          "question": "Why can cancelling sibling tasks still leave a scope waiting?",
+          "answer": "Cancellation is cooperative; a child ignoring interruption or stuck in unresponsive I/O may not terminate promptly."
+        },
+        {
+          "question": "How would you adopt Java 21 structured concurrency safely?",
+          "answer": "Pin the preview-enabled JDK, isolate the API and test failure, cancellation and close semantics, including children that do not cooperate."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Cryptography and secure boundaries",
+      "mechanism": "Hashes, message authentication and encryption provide different properties. Correct algorithms still require key management, randomness and protocol-level validation.",
+      "tradeOff": "Security primitives are not interchangeable shortcuts for business trust or authorization.",
+      "verify": "Test tampering, wrong keys, expired credentials and safe failure without exposing secrets.",
+      "questions": [
+        {
+          "question": "How do hashing and encryption differ?",
+          "answer": "Hashing maps input to a digest without a general decryption operation; encryption protects recoverable plaintext using a key under a defined scheme."
+        },
+        {
+          "question": "Why is an ordinary fast hash unsuitable for password storage?",
+          "answer": "Attackers can test guesses cheaply; use a vetted adaptive password-hashing scheme with unique salts and an appropriate work factor."
+        },
+        {
+          "question": "When should SecureRandom be used?",
+          "answer": "For security-sensitive unpredictable values under a suitable provider, rather than ordinary pseudorandom utilities intended for simulation or convenience."
+        },
+        {
+          "question": "Why does decoding a JWT not establish identity?",
+          "answer": "Decoding only parses data; trust requires signature verification plus issuer, audience, time and application authorization checks."
+        },
+        {
+          "question": "How would you use Java cryptography safely?",
+          "answer": "Use vetted standard protocols and supported libraries, manage keys explicitly and test negative trust cases instead of inventing algorithms or logging sensitive material."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Java toolchain and artifacts",
+      "mechanism": "Source compilation, bytecode compatibility and launch-time dependencies are separate stages. Reproducible builds require controlled toolchains and resolved artifacts.",
+      "tradeOff": "Packaging convenience does not eliminate dependency or runtime drift.",
+      "verify": "Build cleanly, inspect the produced artifact and launch with the declared runtime in isolation.",
+      "questions": [
+        {
+          "question": "How do JDK, runtime and bytecode relate?",
+          "answer": "The JDK supplies development tools and runtime components; Java source compiles to bytecode executed by a compatible runtime with required dependencies."
+        },
+        {
+          "question": "What does a JAR contain?",
+          "answer": "An archive of classes and resources with optional metadata such as a manifest; executable behavior depends on its packaging and launch configuration."
+        },
+        {
+          "question": "How do classpath and module path differ?",
+          "answer": "They provide different dependency organization and encapsulation models; named-module rules apply on the module path."
+        },
+        {
+          "question": "Why can code compile but fail with NoSuchMethodError?",
+          "answer": "The runtime can load a binary-incompatible dependency version lacking the method signature against which the caller was compiled."
+        },
+        {
+          "question": "How would you make a Java build reproducible?",
+          "answer": "Pin supported toolchains and dependency resolution, control generated inputs and verify the actual packaged artifact rather than relying on an IDE's retained outputs."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Test design and executable contracts",
+      "mechanism": "Tests establish observable properties over selected cases, not universal correctness. Determinism and realistic fixtures are essential for useful regression evidence.",
+      "tradeOff": "Fast isolated tests and slower boundary tests serve different confidence needs.",
+      "verify": "Show that each regression fails with the defect present and passes with the intended behavior.",
+      "questions": [
+        {
+          "question": "How do unit and integration tests differ?",
+          "answer": "Unit tests isolate a focused decision or type; integration tests include the real interactions needed to verify a boundary contract."
+        },
+        {
+          "question": "When are parameterized tests useful?",
+          "answer": "When one behavior needs systematic input partitions such as null, empty, duplicate, boundary and invalid values without copying test logic."
+        },
+        {
+          "question": "What is property-based testing useful for?",
+          "answer": "Checking general invariants over many generated inputs, with meaningful generators and shrinking rather than replacing all domain-specific examples."
+        },
+        {
+          "question": "Why are sleep-based concurrency tests fragile?",
+          "answer": "Scheduling varies across environments, so elapsed time does not prove the intended interleaving or completion happened."
+        },
+        {
+          "question": "How would you test concurrent correctness deterministically?",
+          "answer": "Use barriers, latches or controlled executors to establish the target race and assert the business invariant plus resource cleanup."
+        }
+      ],
+      "kind": "concept"
+    }
+  ]
+}

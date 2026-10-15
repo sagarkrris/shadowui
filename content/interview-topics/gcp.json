@@ -1,0 +1,584 @@
+{
+  "groups": [
+    {
+      "title": "Resource hierarchy",
+      "mechanism": "Organization, folders, projects and resources define management and policy scope. Billing association and permission inheritance are related but distinct mechanisms.",
+      "tradeOff": "Shared structure simplifies governance while broad inherited permissions enlarge exposure.",
+      "verify": "Inspect effective access on one resource through every ancestor and role binding.",
+      "questions": [
+        {
+          "question": "What is a Google Cloud project?",
+          "answer": "A management boundary grouping resources, API enablement, quotas and billing association under an identifier and policy hierarchy."
+        },
+        {
+          "question": "When should workloads use separate projects?",
+          "answer": "When ownership, environments, billing, quota or security boundaries benefit from separation and the operational overhead is justified."
+        },
+        {
+          "question": "How does hierarchy affect access management?",
+          "answer": "Applicable inherited policies and resource-level rules contribute to effective access; inspect the actual evaluation rather than only one local binding."
+        },
+        {
+          "question": "Why is a project name not a security boundary by itself?",
+          "answer": "Names express intent, while IAM, network policy and service configuration enforce access and isolation."
+        },
+        {
+          "question": "How would you structure production and development resources?",
+          "answer": "Separate trust and operational boundaries, define least-privilege access and make shared infrastructure dependencies explicit and auditable."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "IAM and least privilege",
+      "mechanism": "IAM binds principals to roles at specific scopes, with additional policy controls affecting effective access. Authorization should follow workload needs rather than broad convenience.",
+      "tradeOff": "Granular roles improve isolation but require lifecycle and access-review ownership.",
+      "verify": "Test permitted and denied actions with the actual deployed principal.",
+      "questions": [
+        {
+          "question": "What is the difference between a principal and a role?",
+          "answer": "A principal is an identity; a role groups permissions that can be granted to a principal at an applicable resource scope."
+        },
+        {
+          "question": "When should a predefined role be preferred to Owner?",
+          "answer": "When its permissions cover the required tasks with less privilege; avoid broad administrative access for ordinary workloads."
+        },
+        {
+          "question": "How do service permissions differ from network reachability?",
+          "answer": "A request can reach an endpoint and still lack authorization, or have permission while network policy prevents connectivity."
+        },
+        {
+          "question": "Why can inherited access surprise a resource owner?",
+          "answer": "An ancestor binding may grant permissions even when the resource's own policy appears restrictive."
+        },
+        {
+          "question": "How would you investigate an unexpected permission denial?",
+          "answer": "Identify the effective principal, requested permission, resource scope and applicable policies; use audit evidence rather than repeatedly widening roles."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Workload identities",
+      "mechanism": "Workloads should obtain credentials through supported attached or federated identities rather than embedded long-lived keys.",
+      "tradeOff": "Short-lived credentials reduce persistent secret exposure while requiring correct trust configuration.",
+      "verify": "Run from the target platform and verify identity, audience and credential refresh failure behavior.",
+      "questions": [
+        {
+          "question": "What is a service account?",
+          "answer": "A workload identity that can receive permissions and authenticate under supported Google Cloud mechanisms."
+        },
+        {
+          "question": "When is Workload Identity Federation useful?",
+          "answer": "When external or platform workloads need trusted short-lived access without distributing long-lived service-account keys."
+        },
+        {
+          "question": "How does service-account impersonation differ from sharing a key?",
+          "answer": "An authorized principal obtains scoped short-lived credentials through a controlled mechanism instead of copying a persistent private key."
+        },
+        {
+          "question": "Why are downloaded service-account keys risky?",
+          "answer": "They can be copied, leaked and used outside the intended environment until revoked, with difficult ownership and rotation management."
+        },
+        {
+          "question": "How would you migrate away from static cloud keys?",
+          "answer": "Identify each consumer, configure supported identity trust, grant minimal roles, test refresh and remove keys after verified transition."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Regions and zones",
+      "mechanism": "Regions and zones define placement and failure domains, while each service has its own replication and availability model.",
+      "tradeOff": "Geographic redundancy improves resilience but adds cost, latency and consistency decisions.",
+      "verify": "Disable or isolate one failure domain in a controlled exercise and observe actual recovery.",
+      "questions": [
+        {
+          "question": "How do regions and zones differ?",
+          "answer": "A region is a geographic area containing zones; zones represent deployment and failure-isolation domains within that region."
+        },
+        {
+          "question": "When is multi-zone deployment sufficient?",
+          "answer": "When the required availability model tolerates regional failure and the service's data plus compute distribution actually spans zones."
+        },
+        {
+          "question": "Does choosing a regional resource prove every dependency is regional?",
+          "answer": "No. Databases, secrets, networking and external integrations can have different placement or availability characteristics."
+        },
+        {
+          "question": "Why can a multi-region application still have one failure point?",
+          "answer": "Its write authority, identity dependency, deployment process or routing configuration may remain concentrated in one region."
+        },
+        {
+          "question": "How would you choose cross-region replication?",
+          "answer": "Start with RPO, RTO, write consistency and latency requirements, then validate the selected service's replication and failover capabilities."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "VPC networking",
+      "mechanism": "VPC configuration controls network paths, address ranges and filtering. Private addressing and IAM solve different security problems.",
+      "tradeOff": "Connectivity simplicity must be balanced with segmentation and address planning.",
+      "verify": "Trace DNS, route, firewall and service authorization separately for a failed connection.",
+      "questions": [
+        {
+          "question": "What is a VPC used for?",
+          "answer": "Defining a virtual network environment for applicable resources, including addressing, routes and connectivity controls."
+        },
+        {
+          "question": "When should private connectivity be preferred?",
+          "answer": "When limiting public exposure and controlling service paths meets the workload's access requirements and supported service integration."
+        },
+        {
+          "question": "How do firewall rules differ from IAM policy?",
+          "answer": "Firewall rules control network traffic under their scope; IAM determines whether a principal may perform an authorized service action."
+        },
+        {
+          "question": "Why can two privately addressed services fail to connect?",
+          "answer": "Routes, ranges, DNS, firewall rules, service configuration or identity permissions may still block the request."
+        },
+        {
+          "question": "How would you debug a database connection failure?",
+          "answer": "Check resolved destination and path, network policy, TLS and credentials, then pool acquisition and server limits as separate stages."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Load balancing and ingress",
+      "mechanism": "Load balancing combines frontend protocols, backend health and routing policy. Product choice determines scope and supported behavior.",
+      "tradeOff": "Central ingress improves control but creates configuration and certificate ownership obligations.",
+      "verify": "Test host/path routes, unhealthy backends, certificates and traffic withdrawal.",
+      "questions": [
+        {
+          "question": "What is a cloud load balancer responsible for?",
+          "answer": "Accepting supported client traffic and distributing it to configured healthy backends according to routing and balancing policies."
+        },
+        {
+          "question": "When should global versus regional balancing be evaluated?",
+          "answer": "When traffic locality, service placement, failover needs and supported frontend/backend capabilities require different scopes."
+        },
+        {
+          "question": "How does a health check affect backend selection?",
+          "answer": "Its configured result influences eligibility, but it may not represent every business dependency or request path."
+        },
+        {
+          "question": "Why can a healthy backend still return application failures?",
+          "answer": "The health check can test a cheaper or different path than authenticated, database-backed user operations."
+        },
+        {
+          "question": "How would you validate an ingress migration?",
+          "answer": "Replay hosts, paths, protocols and error cases, verify TLS plus headers and test backend drain behavior before shifting broad traffic."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Compute Engine",
+      "mechanism": "Virtual machines provide control over guest runtime and machine resources. Instance groups and templates add managed replication and rollout behavior.",
+      "tradeOff": "VM control includes patching, image, capacity and lifecycle responsibilities.",
+      "verify": "Recreate an instance from its declared template and verify application plus data recovery.",
+      "questions": [
+        {
+          "question": "When is Compute Engine a suitable choice?",
+          "answer": "When workload requirements need VM-level runtime control, supported machine capabilities or operational patterns that managed application platforms do not fit."
+        },
+        {
+          "question": "What is an instance template used for?",
+          "answer": "Describing repeatable VM configuration that can be used by managed instance groups and related provisioning workflows."
+        },
+        {
+          "question": "How does an instance group improve availability?",
+          "answer": "It can maintain desired instance count and distribute or replace instances according to its configuration and failure-domain support."
+        },
+        {
+          "question": "Why should application state not depend on one VM's ephemeral files?",
+          "answer": "Replacement or failure can lose local transient state. Store durable state in an appropriate persistent system with tested recovery."
+        },
+        {
+          "question": "How would you roll out a VM-based service safely?",
+          "answer": "Use immutable tested images or templates, controlled replacement, health criteria and backward-compatible shared data plus a rehearsed rollback."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Cloud Run",
+      "mechanism": "Cloud Run runs supported container workloads under a managed execution and scaling model. Instance concurrency, startup and service limits must fit dependencies.",
+      "tradeOff": "Managed scaling reduces infrastructure work but can multiply downstream demand quickly.",
+      "verify": "Test cold starts, concurrent requests, instance termination and database connection counts.",
+      "questions": [
+        {
+          "question": "When is Cloud Run a good fit?",
+          "answer": "For compatible containerized services or jobs where managed infrastructure and demand-based scaling fit runtime and operational requirements."
+        },
+        {
+          "question": "What does per-instance concurrency control?",
+          "answer": "How many requests an instance may handle concurrently under the configured service model; it is not a database-capacity guarantee."
+        },
+        {
+          "question": "How can scale-out overload a shared database?",
+          "answer": "Each new instance can create its own pool, multiplying potential connections and concurrent queries beyond database capacity."
+        },
+        {
+          "question": "Why should background work outlive a request only through a supported design?",
+          "answer": "CPU allocation, instance lifecycle and shutdown behavior depend on configuration; untracked in-process work can be lost."
+        },
+        {
+          "question": "How would you configure a database-backed Cloud Run service?",
+          "answer": "Budget total connections across possible instances, bound per-instance work, set deadlines and verify identity, network connectivity and termination behavior."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "GKE fundamentals",
+      "mechanism": "GKE manages Kubernetes infrastructure while application owners still define resource, probe, security and deployment behavior.",
+      "tradeOff": "Orchestration flexibility adds configuration and operational complexity.",
+      "verify": "Reschedule a pod, drain a node and verify routing plus state recovery.",
+      "questions": [
+        {
+          "question": "What does GKE provide?",
+          "answer": "A managed Kubernetes environment with supported control-plane and cluster capabilities; applications still need correct workload configuration."
+        },
+        {
+          "question": "When should GKE be preferred to a simpler managed runtime?",
+          "answer": "When Kubernetes-specific scheduling, networking, ecosystem or workload control justifies the additional operational surface."
+        },
+        {
+          "question": "How do requests and limits affect a pod?",
+          "answer": "They influence scheduling and runtime resource constraints under Kubernetes behavior; misconfiguration can cause throttling, eviction or failed placement."
+        },
+        {
+          "question": "Why can a readiness probe cause a service-wide outage?",
+          "answer": "A shared dependency failure can mark every pod unready if the policy removes all usable capacity instead of supporting deliberate degradation."
+        },
+        {
+          "question": "How would you verify a GKE rollout?",
+          "answer": "Exercise startup, health, scaling, node disruption and termination while checking user-visible latency, resource pressure and persisted work recovery."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Cloud Storage",
+      "mechanism": "Object storage addresses immutable object generations rather than arbitrary shared filesystem mutation. Access, lifecycle and concurrency rules must be explicit.",
+      "tradeOff": "Durability and scale are useful but request, transfer and retention costs need ownership.",
+      "verify": "Race object updates using generation preconditions and test lifecycle plus authorization rules.",
+      "questions": [
+        {
+          "question": "What kind of storage is Cloud Storage?",
+          "answer": "Managed object storage organized into buckets and named objects, with service-specific consistency, access and lifecycle capabilities."
+        },
+        {
+          "question": "When should a signed URL be used?",
+          "answer": "For controlled temporary access to a specific object operation, with constrained lifetime and permissions rather than broad bucket credentials."
+        },
+        {
+          "question": "How do generation preconditions protect updates?",
+          "answer": "They can require an expected object generation or existence condition, preventing an operation from blindly overwriting a changed object."
+        },
+        {
+          "question": "Why is object storage not a drop-in local filesystem?",
+          "answer": "Atomic rename, random in-place updates and directory assumptions differ; design using object operations and their explicit contracts."
+        },
+        {
+          "question": "How would you design a safe upload workflow?",
+          "answer": "Limit size and type, authorize destination, verify completion and ownership, and recover or expire incomplete/unreferenced objects without deleting valid uploads."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Cloud SQL",
+      "mechanism": "Cloud SQL manages supported relational database operations, but schema, queries, pooling and application transaction semantics remain application responsibilities.",
+      "tradeOff": "Managed operations reduce toil without eliminating capacity and recovery planning.",
+      "verify": "Test failover and maintenance effects on pooled connections plus retry-safe transactions.",
+      "questions": [
+        {
+          "question": "What does Cloud SQL manage?",
+          "answer": "A managed relational database service for supported engines, with operational capabilities such as backups and availability options depending on configuration."
+        },
+        {
+          "question": "When should a connector or supported proxy integration be considered?",
+          "answer": "When its supported identity and connection-management capabilities fit the application, while separately understanding its networking prerequisites."
+        },
+        {
+          "question": "How does high availability differ from a read replica?",
+          "answer": "HA targets availability of the primary service; a replica serves a distinct replication/read role with its own lag and promotion considerations."
+        },
+        {
+          "question": "Why does a read replica not guarantee read-your-writes?",
+          "answer": "Replication can lag, so a recent primary commit may not yet be visible on the replica."
+        },
+        {
+          "question": "How would you validate Cloud SQL failover readiness?",
+          "answer": "Exercise connection recovery, transaction ambiguity, application deadlines and authoritative data reconciliation rather than checking only that the instance returns healthy."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Spanner",
+      "mechanism": "Spanner provides a distributed relational service with its own transaction, key-distribution and query model. Schema and key choices affect data placement and load.",
+      "tradeOff": "Strong transactional capabilities do not remove latency, hotspot or cost trade-offs.",
+      "verify": "Load realistic key distributions and retry supported transaction aborts safely.",
+      "questions": [
+        {
+          "question": "When is Spanner worth evaluating?",
+          "answer": "When relational consistency, scale and geographic requirements exceed simpler database options enough to justify its cost and application model."
+        },
+        {
+          "question": "Why does primary-key design matter in a distributed database?",
+          "answer": "It influences distribution and access locality; concentrated writes can create hotspots despite large aggregate service capacity."
+        },
+        {
+          "question": "How should transaction aborts be handled?",
+          "answer": "Through supported retry semantics that recompute the transaction from fresh state without repeating irreversible external side effects."
+        },
+        {
+          "question": "Why can a low-volume test conceal a key hotspot?",
+          "answer": "Small datasets and uniform traffic may not reproduce a production concentration of writes or reads on one key range."
+        },
+        {
+          "question": "How would you migrate to Spanner responsibly?",
+          "answer": "Validate schema and SQL compatibility, key distribution, transaction behavior and latency under representative load, with explicit data verification and cutover recovery."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Firestore",
+      "mechanism": "Firestore's document and query model has explicit indexing, transaction and access-rule behavior. Document design follows access patterns and update contention.",
+      "tradeOff": "Denormalization can simplify reads while increasing coordinated-update and storage costs.",
+      "verify": "Test missing fields, index requirements, concurrent transactions and authorization boundaries.",
+      "questions": [
+        {
+          "question": "When is Firestore suitable?",
+          "answer": "When a managed document model and its supported queries, transactions and client integration fit the workload better than relational joins."
+        },
+        {
+          "question": "How should document boundaries be chosen?",
+          "answer": "From read/update patterns, size limits, contention and ownership rather than mechanically mapping each relational row."
+        },
+        {
+          "question": "Why can a query require a new index?",
+          "answer": "Firestore supports queries through its indexing model, and compound query shapes can require explicit index configuration."
+        },
+        {
+          "question": "Why must transaction callbacks avoid external side effects?",
+          "answer": "Supported transaction retries can run application logic again, potentially repeating email, payment or external API effects."
+        },
+        {
+          "question": "How would you maintain derived documents safely?",
+          "answer": "Use durable operation identity and controlled update/retry behavior, then reconcile partial changes instead of assuming all denormalized copies stay atomic automatically."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "BigQuery",
+      "mechanism": "BigQuery is an analytical system optimized for large-scale queries rather than ordinary per-request transactional updates. Partition and projection choices influence work and cost.",
+      "tradeOff": "Analytical flexibility can become expensive without bounded query patterns and ownership.",
+      "verify": "Inspect processed data, partition pruning and correctness on late-arriving records.",
+      "questions": [
+        {
+          "question": "When should BigQuery be used?",
+          "answer": "For analytical processing and reporting over large datasets, not as a casual replacement for an operational transaction database."
+        },
+        {
+          "question": "Why select only needed columns?",
+          "answer": "Column projection can reduce scanned data and work, while improving clarity and limiting unnecessary data exposure."
+        },
+        {
+          "question": "How does partition pruning help?",
+          "answer": "Suitable predicates can restrict which partitions are scanned, reducing work under the table's partitioning and query rules."
+        },
+        {
+          "question": "Why can LIMIT fail to make a query cheap?",
+          "answer": "Limiting returned rows does not necessarily limit all scanned or processed input data."
+        },
+        {
+          "question": "How would you build a reliable daily analytics report?",
+          "answer": "Define event-time boundaries, late data, deduplication and schema evolution, then validate totals and cost on representative partitions."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Pub/Sub",
+      "mechanism": "Pub/Sub separates publication from subscription delivery. Acknowledgment timing and delivery guarantees must be interpreted within the configured feature scope.",
+      "tradeOff": "Asynchronous buffering improves decoupling but introduces backlog, redelivery and ordering decisions.",
+      "verify": "Lose an acknowledgment, delay processing and restart consumers while checking durable effects.",
+      "questions": [
+        {
+          "question": "What does a Pub/Sub subscription represent?",
+          "answer": "A delivery relationship through which consumers receive messages from a topic under the configured acknowledgment and retention behavior."
+        },
+        {
+          "question": "When is an ordering key useful?",
+          "answer": "When related messages need supported ordered delivery within a defined scope; it does not establish universal ordering across independent keys."
+        },
+        {
+          "question": "Does an acknowledgment make an external database write atomic?",
+          "answer": "No. Database commit and message progress are separate boundaries unless a supported explicit protocol coordinates them."
+        },
+        {
+          "question": "Why can a message be delivered again after successful processing?",
+          "answer": "The effect can commit before acknowledgment succeeds, or the acknowledgment deadline and delivery state can permit redelivery."
+        },
+        {
+          "question": "How would you use an exactly-once delivery feature carefully?",
+          "answer": "Read its subscription and regional scope, verify acknowledgment outcomes and retain idempotency for external side effects and application-level retries."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Secrets and configuration",
+      "mechanism": "Secret Manager stores secret versions with access policy, while applications still own retrieval, caching, rotation and accidental-exposure prevention.",
+      "tradeOff": "Frequent retrieval improves freshness but adds dependency and latency considerations.",
+      "verify": "Rotate versions during traffic and test denied access plus unavailable retrieval.",
+      "questions": [
+        {
+          "question": "Why use Secret Manager instead of source-controlled credentials?",
+          "answer": "It provides controlled secret storage and versioned access without distributing credentials through code history or packaged artifacts."
+        },
+        {
+          "question": "When should a workload fetch a secret?",
+          "answer": "According to a deliberate startup or refresh policy balancing availability, rotation latency and the integration's credential behavior."
+        },
+        {
+          "question": "How do secret versions affect rotation?",
+          "answer": "Consumers need a defined version-selection and refresh strategy, including overlap and removal of older credentials when supported."
+        },
+        {
+          "question": "Why can reading the latest secret once fail during rotation?",
+          "answer": "A long-lived client may keep the old credential indefinitely, or new credentials may not be active at the remote system yet."
+        },
+        {
+          "question": "How would you prevent secret leakage in diagnostics?",
+          "answer": "Redact values, restrict management endpoints, avoid logging credential-bearing URLs or payloads and test both normal and exceptional paths."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Monitoring and SLOs",
+      "mechanism": "Cloud telemetry must represent user outcomes and causal timing. Alerting should focus on actionable service degradation rather than every resource fluctuation.",
+      "tradeOff": "More signals aid diagnosis while high cardinality and noisy alerts increase cost and fatigue.",
+      "verify": "Inject a user-visible failure and verify metrics, trace linkage and actionable alert routing.",
+      "questions": [
+        {
+          "question": "What is an SLO?",
+          "answer": "A target for a defined service-level indicator over a period, such as successful requests within a latency threshold."
+        },
+        {
+          "question": "When is error-budget burn useful?",
+          "answer": "When assessing how quickly current failures consume the allowed unreliability and whether intervention or rollout restraint is justified."
+        },
+        {
+          "question": "How do logs, metrics and traces complement each other?",
+          "answer": "Logs provide events, metrics aggregate behavior and traces connect instrumented operations; correlation aligns them around a real request or business operation."
+        },
+        {
+          "question": "Why is CPU-only alerting insufficient?",
+          "answer": "Users can experience timeouts from queues or dependencies while CPU is low, or high CPU can occur without breaching user targets."
+        },
+        {
+          "question": "How would you control observability cost?",
+          "answer": "Bound labels, retention and sampling, prioritize actionable evidence and preserve necessary security plus failure visibility under explicit ownership."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Deployment and supply chain",
+      "mechanism": "A deployable artifact needs provenance, controlled configuration and promotion criteria. Deployment tools do not guarantee schema or protocol compatibility.",
+      "tradeOff": "Automation speeds delivery while requiring trusted artifacts and explicit rollback conditions.",
+      "verify": "Promote the same artifact through environments and test mixed-version operation.",
+      "questions": [
+        {
+          "question": "Why promote an immutable artifact?",
+          "answer": "It reduces differences between tested and deployed code and makes provenance plus rollback identification clearer."
+        },
+        {
+          "question": "When should deployment approval depend on business metrics?",
+          "answer": "When technical health can stay green while the release violates conversion, payment or data-processing invariants."
+        },
+        {
+          "question": "How do service revisions help rollout control?",
+          "answer": "They identify deployed application configurations and can support controlled traffic changes under the selected platform's capabilities."
+        },
+        {
+          "question": "Why can rebuilding for each environment weaken validation?",
+          "answer": "Each artifact may resolve different dependencies or inputs, so production can differ from what earlier tests exercised."
+        },
+        {
+          "question": "How would you secure a cloud delivery pipeline?",
+          "answer": "Limit identity permissions, verify source/artifact provenance, isolate untrusted builds and require relevant compatibility plus behavioral checks before promotion."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Scaling and cost",
+      "mechanism": "Scaling changes offered capacity and often increases demand on shared dependencies. Cost should be evaluated per useful outcome, including storage, transfer and idle resources.",
+      "tradeOff": "Reducing idle spend can increase cold-start latency or recovery requirements.",
+      "verify": "Load the workload, measure unit cost and inspect downstream saturation plus rejected requests.",
+      "questions": [
+        {
+          "question": "Why is autoscaling not a complete capacity plan?",
+          "answer": "Its signals, limits and reaction time may not match traffic bursts or the capacity of databases and external systems."
+        },
+        {
+          "question": "When should minimum instances be considered?",
+          "answer": "When measured cold-start or readiness latency justifies keeping capacity warm under the chosen platform's behavior and cost model."
+        },
+        {
+          "question": "How can egress influence architecture cost?",
+          "answer": "Data movement across regions, services or external boundaries can be material; verify current applicable billing rules rather than assuming transfer is free."
+        },
+        {
+          "question": "Why can a budget alert fail to stop overspending?",
+          "answer": "An alert informs; it is not generally a hard universal service spending cap. Quotas and operational controls have different scopes."
+        },
+        {
+          "question": "How would you optimize cloud cost responsibly?",
+          "answer": "Measure cost per successful operation, identify waste and bottlenecks, then compare rightsizing, retention and architecture changes against reliability requirements."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Disaster recovery",
+      "mechanism": "Backups, replication and failover solve different recovery problems. Restoration must account for identity, routing, secrets and effects outside restored data.",
+      "tradeOff": "Tighter RPO/RTO requires additional capacity and practiced procedures.",
+      "verify": "Restore an isolated environment and verify critical business operations before claiming recovery.",
+      "questions": [
+        {
+          "question": "What should a cloud disaster-recovery plan include?",
+          "answer": "Objectives, dependencies, data restoration, traffic routing, identities, secrets, application artifacts and reconciliation ownership."
+        },
+        {
+          "question": "When is multi-region deployment insufficient for disaster recovery?",
+          "answer": "When replicated corruption, missing backups or an untested control-plane dependency prevents restoring a correct usable state."
+        },
+        {
+          "question": "How do backups protect against accidental deletion differently from replicas?",
+          "answer": "Backups preserve selected historical recovery points, while replicas can promptly reproduce the same unwanted deletion."
+        },
+        {
+          "question": "Why must external effects be reconciled after restoration?",
+          "answer": "Payments or messages after the restored point may already exist outside the recovered database, creating duplicate or missing operational records."
+        },
+        {
+          "question": "How would you prove the recovery plan works?",
+          "answer": "Execute it, measure RPO/RTO, verify integrity and authorized access, and reconcile event positions plus ambiguous business effects."
+        }
+      ],
+      "kind": "concept"
+    }
+  ]
+}

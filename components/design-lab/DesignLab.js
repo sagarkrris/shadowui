@@ -391,7 +391,7 @@ function EndToEndWorkflowSimulator({ accent }) {
         <span style={{ color: "#cbd5e1", fontSize: 11.5, lineHeight: 1.45 }}>{workflow.summary}</span>
       </div>
 
-      <div style={{ display: "grid", gap: 7, gridTemplateColumns: `repeat(${Math.min(workflow.steps.length, 9)}, minmax(94px, 1fr))`, minWidth: 0, overflowX: "auto", paddingBottom: 2 }}>
+      <div role="region" aria-label="Workflow steps; scroll horizontally" tabIndex={0} style={{ display: "grid", gap: 7, gridTemplateColumns: `repeat(${Math.min(workflow.steps.length, 9)}, minmax(94px, 1fr))`, minWidth: 0, overflowX: "auto", paddingBottom: 2 }}>
         {workflow.steps.map((step, index) => {
           const active = index === activeStepIndex;
           return (
@@ -600,7 +600,7 @@ function PatternVisualDiagram({ pattern, accent }) {
         </div>
       </div>
 
-      <div style={{ display: "grid", gap: 7, gridTemplateColumns: `repeat(${Math.min(visual.roles.length, 5)}, minmax(96px, 1fr))`, minWidth: 0, overflowX: "auto" }}>
+      <div role="region" aria-label="Pattern roles; scroll horizontally" tabIndex={0} style={{ display: "grid", gap: 7, gridTemplateColumns: `repeat(${Math.min(visual.roles.length, 5)}, minmax(96px, 1fr))`, minWidth: 0, overflowX: "auto" }}>
         {visual.roles.map((role, index) => {
           const active = index === activeRoleIndex;
           return (
@@ -1075,7 +1075,7 @@ export default function DesignLab({ theme = {}, onAction, beginnerMode = false, 
         onStepSelect={onBeginnerStepChange}
         detail="For design: watch one pattern, predict the trade-off, explain the API shape, practice a design prompt, then review the missing constraint."
       />
-      <AnswerAtAGlance category="HLD LLD Design" takeaway="Start with the user request, split responsibilities into boundaries, then prove the design under scale and failure." complexity="Compare latency, throughput, consistency, operability, and cost before choosing a pattern." edgeCases="Retries, duplicate commands, partial failure, stale data, hot keys, and versioned contracts." />
+      <details className="workspace-guidance"><summary>Approach &amp; worked example</summary><AnswerAtAGlance category="HLD LLD Design" takeaway="Start with the user request, split responsibilities into boundaries, then prove the design under scale and failure." complexity="Compare latency, throughput, consistency, operability, and cost before choosing a pattern." edgeCases="Retries, duplicate commands, partial failure, stale data, hot keys, and versioned contracts." /></details>
 
       <header style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "space-between" }}>
         <div style={wrap}>

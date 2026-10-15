@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import Link from "next/link";
 import ReaderLayout from "../../components/reader/ReaderLayout";
+import BookReader from "../../components/reader/BookReader";
 import { SENIOR_JAVA_GUIDE_ITEMS, SENIOR_JAVA_GUIDE_CODE } from "../../lib/seniorJavaGuide.mjs";
 import styles from "../../styles/Reader.module.css";
 
@@ -12,7 +13,9 @@ export default function SeniorJavaGuideSection({ item, content, isCode, previous
     <h1>{item.title}</h1>
     <p className={styles.lead}>{item.description}</p>
     <GuidePagination previous={previous} next={next} label="Guide pages, top" />
-    {isCode ? <pre className={styles.guideCode}><code>{content}</code></pre> : <article className={styles.guideArticle} dangerouslySetInnerHTML={{ __html: content }} />}
+    <BookReader key={item.slug} storageId={item.slug} title={item.title} previous={previous} next={next}>
+      {isCode ? <pre className={styles.guideCode}><code>{content}</code></pre> : <article className={styles.guideArticle} dangerouslySetInnerHTML={{ __html: content }} />}
+    </BookReader>
     <GuidePagination previous={previous} next={next} label="Guide pages, bottom" />
   </ReaderLayout>;
 }
@@ -31,6 +34,7 @@ export async function getStaticProps({ params }) {
   const item = SENIOR_JAVA_GUIDE_ITEMS[index];
   const codeFile = SENIOR_JAVA_GUIDE_CODE.find(file => file.slug === item.slug);
   const filename = codeFile ? codeFile.filename : path.join("rendered", `${item.slug}.html`);
-  const content = await readFile(path.join(process.cwd(), "content/senior-java", filename), "utf8");
+  const source = await readFile(path.join(process.cwd(), "content/senior-java", filename), "utf8");
+  const content = codeFile ? source : source.replace(/<table>/g, '<table tabindex="0">');
   return { props: { item, content, isCode: Boolean(codeFile), previous: SENIOR_JAVA_GUIDE_ITEMS[index - 1] || null, next: SENIOR_JAVA_GUIDE_ITEMS[index + 1] || null } };
 }

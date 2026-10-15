@@ -37,6 +37,9 @@ test('evaluation locks Next and level, deduplicates keyboard events, and persist
     for (let i = 0; i < 3; i++) element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', ctrlKey: true, bubbles: true }));
   });
   await expect.poll(() => calls).toBe(1);
+  await page.getByLabel('Workspace options', { exact: true }).click();
+  await page.getByRole('button', { name: 'Session tools', exact: true }).click();
+  await page.getByLabel('Workspace options', { exact: true }).press('Escape');
   await page.getByRole('button', { name: 'Follow-up', exact: true }).click();
   await expect(page.getByText('Use the Tech Buddy controls, or return to the conversation first.', { exact: true })).toBeVisible();
   expect(requests.length).toBe(1);

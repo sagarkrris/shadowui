@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { normalizeAnalyticsEvent } from "../lib/analytics.mjs";
-import { createOAuthNonce, exchangeOAuthCode, oauthState, verifyOAuthState } from "../lib/oauth.mjs";
+import { authorizationUrl, createOAuthNonce, exchangeOAuthCode, oauthState, providerConfig, verifyOAuthState } from "../lib/oauth.mjs";
 import { PUBLIC_STACK_GUIDES, getStackGuide } from "../lib/seoGuides.mjs";
 import { JAVA_TUTORIAL_CATALOG, slugifyJavaTutorial } from "../lib/javaDigest.mjs";
 
@@ -37,15 +37,15 @@ test("analytics accepts only bounded product events", () => {
 
 test("oauth state is signed and rejects tampering", () => {
   const previousSecret = process.env.SESSION_SECRET;
-  const previousClient = process.env.GITHUB_CLIENT_ID;
-  const previousProviderSecret = process.env.GITHUB_CLIENT_SECRET;
-  process.env.SESSION_SECRET = "test-secret"; process.env.GITHUB_CLIENT_ID = "client"; process.env.GITHUB_CLIENT_SECRET = "secret";
-  const state = oauthState("github", createOAuthNonce());
-  assert.equal(verifyOAuthState(state), "github");
+  const previousClient = process.env.GOOGLE_CLIENT_ID;
+  const previousProviderSecret = process.env.GOOGLE_CLIENT_SECRET;
+  process.env.SESSION_SECRET = "test-secret"; process.env.GOOGLE_CLIENT_ID = "client"; process.env.GOOGLE_CLIENT_SECRET = "secret";
+  const state = oauthState("google", createOAuthNonce());
+  assert.equal(verifyOAuthState(state), "google");
   assert.equal(verifyOAuthState(`${state}x`), null);
   if (previousSecret === undefined) delete process.env.SESSION_SECRET; else process.env.SESSION_SECRET = previousSecret;
-  if (previousClient === undefined) delete process.env.GITHUB_CLIENT_ID; else process.env.GITHUB_CLIENT_ID = previousClient;
-  if (previousProviderSecret === undefined) delete process.env.GITHUB_CLIENT_SECRET; else process.env.GITHUB_CLIENT_SECRET = previousProviderSecret;
+  if (previousClient === undefined) delete process.env.GOOGLE_CLIENT_ID; else process.env.GOOGLE_CLIENT_ID = previousClient;
+  if (previousProviderSecret === undefined) delete process.env.GOOGLE_CLIENT_SECRET; else process.env.GOOGLE_CLIENT_SECRET = previousProviderSecret;
 });
 
 test("OAuth profiles retain only secure provider photo URLs", async () => {
@@ -73,4 +73,20 @@ test("OAuth profiles retain only secure provider photo URLs", async () => {
   global.fetch = originalFetch;
   if (previousClient === undefined) delete process.env.GOOGLE_CLIENT_ID; else process.env.GOOGLE_CLIENT_ID = previousClient;
   if (previousSecret === undefined) delete process.env.GOOGLE_CLIENT_SECRET; else process.env.GOOGLE_CLIENT_SECRET = previousSecret;
+});
+
+test("GitHub OAuth remains disabled even when legacy credentials are configured", async () => {
+  const previousClient = process.env.GITHUB_CLIENT_ID;
+  const previousSecret = process.env.GITHUB_CLIENT_SECRET;
+  process.env.GITHUB_CLIENT_ID = "legacy-client";
+  process.env.GITHUB_CLIENT_SECRET = "legacy-secret";
+  try {
+    assert.equal(providerConfig("github"), null);
+    assert.equal(authorizationUrl("github", oauthState("github", createOAuthNonce())), "");
+    assert.equal(verifyOAuthState(oauthState("github", createOAuthNonce())), null);
+    await assert.rejects(exchangeOAuthCode("github", "legacy-code"), /not configured/);
+  } finally {
+    if (previousClient === undefined) delete process.env.GITHUB_CLIENT_ID; else process.env.GITHUB_CLIENT_ID = previousClient;
+    if (previousSecret === undefined) delete process.env.GITHUB_CLIENT_SECRET; else process.env.GITHUB_CLIENT_SECRET = previousSecret;
+  }
 });

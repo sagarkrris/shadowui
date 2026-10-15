@@ -1634,7 +1634,7 @@ export default function SystemDesignCanvas({
         onStepSelect={onBeginnerStepChange}
         detail="For system design: capture requirements, predict the request flow, explain one trade-off, practice a mock question, then review missing scale and failure details."
       />
-      <AnswerAtAGlance category="HLD LLD System Design" takeaway="Use the canvas as a causal story: request path, state ownership, failure boundary, and recovery action." complexity="Attach QPS, latency, storage, availability, and cost estimates to the diagram." edgeCases="Region loss, dependency timeout, replayed events, schema migration, overload, and degraded reads." />
+      <details className="workspace-guidance"><summary>Approach &amp; worked example</summary><AnswerAtAGlance category="HLD LLD System Design" takeaway="Use the canvas as a causal story: request path, state ownership, failure boundary, and recovery action." complexity="Attach QPS, latency, storage, availability, and cost estimates to the diagram." edgeCases="Region loss, dependency timeout, replayed events, schema migration, overload, and degraded reads." /></details>
 
       <header
         style={{

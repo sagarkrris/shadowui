@@ -1,0 +1,294 @@
+{
+  "groups": [
+    {
+      "title": "Topics and partitions",
+      "mechanism": "A topic is divided into ordered partitions. Ordering is local to a partition, and keys influence placement under producer partitioning behavior.",
+      "tradeOff": "More partitions increase parallelism while affecting ordering, overhead and migration assumptions.",
+      "verify": "Produce related and unrelated keys, inspect placement and test consumer ordering.",
+      "questions": [
+        {
+          "question": "What is a Kafka topic?",
+          "answer": "A named stream divided into partitions with configured storage, replication and retention behavior."
+        },
+        {
+          "question": "What is a partition offset?",
+          "answer": "A position within one partition's log; it is not a global topic sequence or universal business operation identity."
+        },
+        {
+          "question": "When should messages share a key?",
+          "answer": "When they need consistent partition affinity under the chosen partitioning contract, often to preserve per-entity processing order."
+        },
+        {
+          "question": "Why can increasing partition count alter key routing?",
+          "answer": "The partitioner's mapping can change as the available partition set changes, affecting affinity assumptions for later records."
+        },
+        {
+          "question": "How would you choose a partition count?",
+          "answer": "Balance throughput, key distribution, consumer concurrency, broker overhead and future growth, then test realistic hot-key traffic."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Brokers and replication",
+      "mechanism": "Partition leaders serve requests while replicas maintain copies according to Kafka's replication model. ISR and producer acknowledgment settings jointly affect accepted-write behavior.",
+      "tradeOff": "Availability, durability and latency depend on several aligned settings rather than replication factor alone.",
+      "verify": "Fail leaders and replicas under the intended acknowledgment and ISR configuration.",
+      "questions": [
+        {
+          "question": "What is the role of a Kafka broker?",
+          "answer": "Hosting partitions and participating in storage, replication and client request handling within the cluster."
+        },
+        {
+          "question": "How does replication factor differ from minimum in-sync replicas?",
+          "answer": "Replication factor defines copies; min.insync.replicas constrains required ISR size for applicable writes, notably with the relevant producer acknowledgment configuration."
+        },
+        {
+          "question": "What does acks=all mean?",
+          "answer": "The producer waits for acknowledgment according to the current in-sync replica set and broker rules, not every configured replica regardless of state."
+        },
+        {
+          "question": "Why can unsafe leader election threaten acknowledged data?",
+          "answer": "Selecting a replica lacking the latest accepted records can make previously acknowledged data unavailable or lost under the failure scenario."
+        },
+        {
+          "question": "How would you evaluate durability settings?",
+          "answer": "Combine replication, ISR policy, acknowledgments, election behavior and operational failures, then measure accepted-write survival and availability trade-offs."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Producer behavior",
+      "mechanism": "Producers serialize records, select partitions, batch sends and observe acknowledgments. Delivery timeouts and retries can leave application-level uncertainty.",
+      "tradeOff": "Batching improves throughput while increasing latency or outstanding memory.",
+      "verify": "Test serialization failure, unavailable brokers, lost acknowledgments and bounded flush/close behavior.",
+      "questions": [
+        {
+          "question": "Why does a Kafka producer batch records?",
+          "answer": "To amortize network and processing overhead across records going to appropriate destinations, subject to latency and memory settings."
+        },
+        {
+          "question": "When is compression useful?",
+          "answer": "When reduced network and storage work outweigh compression CPU and latency costs for the actual payload distribution."
+        },
+        {
+          "question": "How do delivery timeout and request timeout differ?",
+          "answer": "They cover different producer timing boundaries; configure the full operation budget rather than treating one setting as every possible wait."
+        },
+        {
+          "question": "Why can a send callback report failure after the application lost certainty?",
+          "answer": "The record may have reached the broker before acknowledgment or timeout handling completed; reconcile according to producer and operation identity semantics."
+        },
+        {
+          "question": "How would you operate a high-throughput producer?",
+          "answer": "Reuse the supported producer safely, bound buffered work, observe errors and latency, and test ordering plus duplicate behavior under retries."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Idempotent producers and transactions",
+      "mechanism": "Kafka producer idempotence and transactions protect defined Kafka-side scopes. They do not automatically deduplicate a user's repeated business requests or atomically include an external database.",
+      "tradeOff": "Stronger Kafka coordination adds configuration and lifecycle requirements.",
+      "verify": "Crash between database commit, Kafka send and transaction completion.",
+      "questions": [
+        {
+          "question": "What does producer idempotence protect against?",
+          "answer": "Duplicates caused by supported producer retry behavior within Kafka's producer protocol scope, subject to required configuration and lifecycle semantics."
+        },
+        {
+          "question": "When are Kafka transactions useful?",
+          "answer": "For atomic Kafka record publication and supported offset coordination in Kafka-centric processing workflows."
+        },
+        {
+          "question": "What does read_committed change for a consumer?",
+          "answer": "It restricts visibility according to Kafka transaction commitment semantics, rather than exposing records from aborted transactions as ordinary committed data."
+        },
+        {
+          "question": "Why does exactly-once Kafka processing not guarantee exactly-once payment?",
+          "answer": "The payment provider is outside Kafka's transaction boundary, and application retries can represent new external attempts."
+        },
+        {
+          "question": "How would you integrate Kafka with a relational write?",
+          "answer": "Use an outbox/inbox or another explicit coordination protocol, durable business keys and recovery tests for each cross-system uncertainty window."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Consumer groups and ownership",
+      "mechanism": "A group assigns partitions among participating consumers under its protocol. Ownership can change, and external effects must remain safe when a former owner is delayed.",
+      "tradeOff": "Parallel consumers improve throughput only up to partition and workload limits.",
+      "verify": "Trigger reassignment during active work and verify no skipped or duplicated business effects.",
+      "questions": [
+        {
+          "question": "What does a consumer group provide?",
+          "answer": "Coordinated partition consumption for a logical subscriber, distributing partition ownership among group members under supported protocol rules."
+        },
+        {
+          "question": "Can adding more consumers than partitions increase active partition parallelism?",
+          "answer": "Not for ordinary group assignment; some consumers can remain without partitions while other bottlenecks still limit throughput."
+        },
+        {
+          "question": "What happens during a rebalance?",
+          "answer": "Partition ownership changes, requiring the application to handle outstanding work and progress according to its supported consumer integration."
+        },
+        {
+          "question": "Why should a KafkaConsumer not be casually shared across threads?",
+          "answer": "Its threading contract is restricted; use an intentional poll/processing architecture and supported coordination rather than concurrent arbitrary access."
+        },
+        {
+          "question": "How would you prevent stale consumers from applying unsafe effects?",
+          "answer": "Use durable idempotency or storage-enforced ownership/version rules, and coordinate revocation with pending work without assuming interruption stops it."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Offsets and acknowledgments",
+      "mechanism": "Committed offsets describe a consumer's restart position. Application processing completion and durable business effects are separate events.",
+      "tradeOff": "Early commits improve apparent progress while risking loss; late commits create duplicate windows.",
+      "verify": "Crash before and after the effect and before and after the offset commit.",
+      "questions": [
+        {
+          "question": "What does committing a consumer offset mean?",
+          "answer": "Recording the position from which the group should resume under Kafka's offset convention; it is not proof of an external business commit."
+        },
+        {
+          "question": "Why is commit-before-process risky?",
+          "answer": "A crash after committing progress but before completing the effect can prevent the unfinished record from being redelivered normally."
+        },
+        {
+          "question": "Why is process-before-commit still duplicate-prone?",
+          "answer": "The effect can commit while offset acknowledgment fails, so the record is processed again after restart."
+        },
+        {
+          "question": "How can out-of-order completion skip work?",
+          "answer": "Committing beyond an unfinished earlier record advances the restart position past that record in the same partition."
+        },
+        {
+          "question": "How would you track safe progress with parallel workers?",
+          "answer": "Preserve partition ordering or maintain a supported contiguous completed prefix with bounded in-flight work and explicit revocation behavior."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Retention and compaction",
+      "mechanism": "Retention removes data by configured policies; compaction retains key-oriented history according to its asynchronous rules. Neither means every historical record remains forever.",
+      "tradeOff": "Storage controls can conflict with replay and lagging-consumer recovery needs.",
+      "verify": "Run lagging readers and rebuild projections while applying the actual retention policy.",
+      "questions": [
+        {
+          "question": "How does time/size retention differ from compaction?",
+          "answer": "Retention removes eligible log segments; compaction reduces older keyed records according to key-history rules while preserving supported latest-state semantics."
+        },
+        {
+          "question": "What is a tombstone in a compacted topic?",
+          "answer": "A keyed record with a null value used to represent deletion under compaction and retention rules."
+        },
+        {
+          "question": "Does compaction immediately leave exactly one record per key?",
+          "answer": "No. It is asynchronous and readers can encounter multiple versions before cleaning occurs."
+        },
+        {
+          "question": "Why can a slow consumer lose its replay opportunity?",
+          "answer": "Required records can age out or be removed before the consumer processes or rebuilds from them."
+        },
+        {
+          "question": "How would you select retention for recovery?",
+          "answer": "Cover expected outages, replay duration and audit needs, budget storage and monitor lag against the remaining recovery horizon."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Schemas and event evolution",
+      "mechanism": "Serialization defines the durable contract understood by producers and consumers. Schema compatibility checks do not prove preserved business meaning.",
+      "tradeOff": "Flexible evolution reduces synchronized deployment but requires historical replay testing.",
+      "verify": "Read old events with new code and supported new events with old consumers.",
+      "questions": [
+        {
+          "question": "Why use an explicit event schema?",
+          "answer": "To define field types and compatibility expectations independently of incidental implementation objects."
+        },
+        {
+          "question": "When is adding an optional field safe?",
+          "answer": "When supported readers tolerate it and its default or absence preserves meaning; verify both schema rules and application behavior."
+        },
+        {
+          "question": "Why should event timestamps specify meaning?",
+          "answer": "Creation, business occurrence and ingestion time can differ, affecting windows, ordering and reconciliation."
+        },
+        {
+          "question": "What breaks when an event key changes casually?",
+          "answer": "Partition affinity, compaction identity and downstream deduplication can all change even if the value schema is unchanged."
+        },
+        {
+          "question": "How would you version an incompatible event?",
+          "answer": "Introduce an explicit new contract with consumer migration, replay handling and a retirement plan for retained old data."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Poison messages and retries",
+      "mechanism": "Repeated failures can block partition progress or create uncontrolled retry traffic. Quarantine requires durable evidence and a safe relationship to acknowledgment.",
+      "tradeOff": "Skipping preserves availability but can violate ordering or leave business state incomplete.",
+      "verify": "Inject malformed and permanently invalid records, then fail the quarantine destination itself.",
+      "questions": [
+        {
+          "question": "What is a poison message?",
+          "answer": "A record that repeatedly fails processing under the current contract, often because the failure is permanent rather than transient."
+        },
+        {
+          "question": "When should a message be quarantined?",
+          "answer": "After a deliberate classification and retry policy, retaining enough identity and diagnostic context for safe correction or replay."
+        },
+        {
+          "question": "Why can a dead-letter path still lose a record?",
+          "answer": "If progress is acknowledged before quarantine is durably accepted, failure can leave neither normal processing nor recoverable quarantine evidence."
+        },
+        {
+          "question": "How do retry topics affect ordering?",
+          "answer": "Moving one record aside can let later records proceed, so per-key business ordering may no longer match the original partition sequence."
+        },
+        {
+          "question": "How would you design a safe replay tool?",
+          "answer": "Authorize scope, preserve business idempotency, validate corrected payloads and track replay identity plus outcomes without blindly repeating irreversible effects."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Security and operations",
+      "mechanism": "Kafka authorization, transport identity and encryption protect different boundaries. Operational health includes lag age, processing success and broker resource pressure.",
+      "tradeOff": "More telemetry helps diagnosis but payload logging can expose sensitive business data.",
+      "verify": "Test denied topic actions, credential rotation, broker failure and consumer backlog recovery.",
+      "questions": [
+        {
+          "question": "What should Kafka ACLs restrict?",
+          "answer": "The actions and resources a principal may use, including relevant topic, group and transactional capabilities under the deployment's security model."
+        },
+        {
+          "question": "Why is consumer lag alone insufficient?",
+          "answer": "An offset difference does not directly express record age, processing cost or whether external effects are correct."
+        },
+        {
+          "question": "When does adding consumers fail to reduce lag?",
+          "answer": "Partitions, hot keys, slow dependencies or processing failures can remain the bottleneck regardless of extra group members."
+        },
+        {
+          "question": "Why can large fetches exhaust application memory?",
+          "answer": "Fetched records, deserialized objects and queued worker tasks can accumulate beyond the intended in-flight bound."
+        },
+        {
+          "question": "How would you diagnose a growing backlog?",
+          "answer": "Compare ingress rate, processing throughput, record age, partition skew, errors and dependency latency, then verify a bounded recovery rate without overloading downstream systems."
+        }
+      ],
+      "kind": "concept"
+    }
+  ]
+}

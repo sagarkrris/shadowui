@@ -37,7 +37,7 @@ export default function Sidebar({ topics, open, onClose, expandedCat, selectedCa
             </div>
           </div>
           {isMobile && (
-            <button onClick={onClose} style={{ background: "none", border: "none", color: "#6b7280", fontSize: 22, lineHeight: 1, cursor: "pointer", padding: "2px 4px" }}>x</button>
+            <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--ui-muted)", fontSize: 22, lineHeight: 1, cursor: "pointer", padding: "2px 4px" }}>x</button>
           )}
         </div>
 
@@ -50,7 +50,7 @@ export default function Sidebar({ topics, open, onClose, expandedCat, selectedCa
               <div style={{ display: "flex", alignItems: "center", gap: 7, color: theme.accentText, fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
                 <i className="ti ti-lock" />Setup required
               </div>
-              <p style={{ color: "#6b7280", fontSize: 11.5, lineHeight: 1.45 }}>
+              <p style={{ color: "var(--ui-muted)", fontSize: 11.5, lineHeight: 1.45 }}>
                 Fill your name, role, experience, and stack to unlock personalized topics.
               </p>
             </div>
@@ -70,15 +70,15 @@ export default function Sidebar({ topics, open, onClose, expandedCat, selectedCa
                   border: "none",
                   borderLeft: `2px solid ${isActive ? theme.accent : "transparent"}`,
                   textAlign: "left",
-                  color: topicsLocked ? "#4b5563" : (isActive ? theme.accentText : "#9ca3af"),
+                  color: topicsLocked ? "var(--ui-muted)" : (isActive ? theme.accentText : "var(--ui-muted)"),
                   cursor: topicsLocked ? "not-allowed" : "pointer",
                   transition: "all .12s",
                   minHeight: 42,
                   opacity: topicsLocked ? .72 : 1,
                 }}>
-                  <i className={`ti ${topicsLocked ? "ti-lock" : topic.icon}`} style={{ fontSize: 16, color: !topicsLocked && isActive ? topic.color : "#4b5563", flexShrink: 0 }} />
+                  <i className={`ti ${topicsLocked ? "ti-lock" : topic.icon}`} style={{ fontSize: 16, color: !topicsLocked && isActive ? topic.color : "var(--ui-muted)", flexShrink: 0 }} />
                   <span style={{ flex: 1, fontSize: 13, fontWeight: isActive ? 500 : 400, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{topic.cat}</span>
-                  <i className={`ti ${topicsLocked ? "ti-info-circle" : `ti-chevron-${isExpanded ? "up" : "down"}`}`} style={{ fontSize: 11, color: "#374151", flexShrink: 0 }} />
+                  <i className={`ti ${topicsLocked ? "ti-info-circle" : `ti-chevron-${isExpanded ? "up" : "down"}`}`} style={{ fontSize: 11, color: "var(--ui-muted)", flexShrink: 0 }} />
                 </button>
                 {!topicsLocked && isExpanded && topic.subs.map((sub) => (
                   <button aria-label={sub} key={sub} className={selectedSub === sub ? "glass-button" : ""} onClick={() => onSelectSub(topic.cat, sub)} style={{
@@ -89,7 +89,7 @@ export default function Sidebar({ topics, open, onClose, expandedCat, selectedCa
                     border: "none",
                     textAlign: "left",
                     fontSize: 12.5,
-                    color: selectedSub === sub ? theme.accentStrong : "#6b7280",
+                    color: selectedSub === sub ? theme.accentStrong : "var(--ui-muted)",
                     fontWeight: selectedSub === sub ? 500 : 400,
                     cursor: "pointer",
                     whiteSpace: "nowrap",
@@ -102,7 +102,7 @@ export default function Sidebar({ topics, open, onClose, expandedCat, selectedCa
             );
           })}
         </div>
-        <div style={{ padding: "11px 16px", borderTop: "1px solid rgba(255,255,255,.06)", fontSize: 11, color: "#1f2937", flexShrink: 0 }}>
+        <div style={{ padding: "11px 16px", borderTop: "1px solid rgba(255,255,255,.06)", fontSize: 11, color: "var(--ui-muted)", flexShrink: 0 }}>
           {userPrepLabel || prepLabel} - Free
         </div>
       </aside>

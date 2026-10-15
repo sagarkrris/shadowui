@@ -1,7 +1,7 @@
 // Keep the shell cache versioned and never serve an HTML document from it first.
 // Next.js documents contain the current build's asset references; serving an old
 // document is what previously made users clear the cache after deployments.
-const CACHE_NAME = "interviewiq-shell-v3";
+const CACHE_NAME = "interviewiq-shell-v4";
 const SHELL = ["/", "/privacy", "/reset-password"];
 
 self.addEventListener("install", (event) => {
@@ -17,6 +17,9 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
+  // Development chunks keep their URLs across edits. Let the browser fetch
+  // them normally rather than replaying scripts from an earlier render.
+  if (["localhost", "127.0.0.1", "[::1]"].includes(self.location.hostname)) return;
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin || url.pathname.startsWith("/api/")) return;

@@ -1,7 +1,9 @@
+import ReaderLayout from "../components/reader/ReaderLayout";
+
 export default function PrivacyPolicy() {
   return (
-    <main className="privacyPage">
-      <section className="privacyShell">
+    <ReaderLayout title="Privacy Policy" description="How InterviewIQ processes information and the choices available to you.">
+      <section>
         <p className="privacyEyebrow">InterviewIQ</p>
         <h1>Privacy Policy</h1>
         <p className="privacyUpdated">Last updated: May 27, 2026</p>
@@ -59,6 +61,6 @@ export default function PrivacyPolicy() {
           through the support contact listed on the Google Play store listing.
         </p>
       </section>
-    </main>
+    </ReaderLayout>
   );
 }

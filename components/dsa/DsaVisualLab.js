@@ -3026,7 +3026,7 @@ function DsaVisualLabContent({ initialLessonId = "arrays", onPractice, theme = {
         onStepSelect={onBeginnerStepChange}
         detail="For DSA: watch the pointer or state move, predict the next step, explain the invariant, practice one input, then review the missed edge case."
       />
-      <AnswerAtAGlance category="DSA" takeaway="Visualize the invariant before coding; then replay one input until every pointer and state change is explainable." complexity="Usually O(n) time and O(1) or O(n) space depending on the chosen state." edgeCases="Empty input, one item, duplicates, sorted or reversed input, and maximum constraints." />
+      <details className="workspace-guidance"><summary>Approach &amp; worked example</summary><AnswerAtAGlance category="DSA" takeaway="Visualize the invariant before coding; then replay one input until every pointer and state change is explainable." complexity="Usually O(n) time and O(1) or O(n) space depending on the chosen state." edgeCases="Empty input, one item, duplicates, sorted or reversed input, and maximum constraints." /></details>
 
       <header style={{ display: "grid", gap: 10 }}>
         <div style={{ alignItems: "center", display: "flex", gap: 8, justifyContent: "space-between", flexWrap: "wrap" }}>

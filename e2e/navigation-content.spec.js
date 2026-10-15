@@ -32,9 +32,9 @@ test.describe("Feature B: navigation and content modules", () => {
     await page.getByRole("button", { name: "AI for Software Engineers", exact: true }).click();
 
     await expect(page.getByRole("heading", { name: "Stack Implementation Tracks" })).toBeVisible();
-    await expect(page.getByText("Practice task", { exact: true }).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Practice this lesson", exact: true }).first()).toBeVisible();
     await expect(page.getByText("Capstone", { exact: true }).first()).toBeVisible();
-    await expect(page.getByRole("list", { name: "Lesson workflow" })).toHaveCount(6);
+    await expect(page.locator('article[id^="module-"]')).toHaveCount(6);
     await expect(page.getByRole("link", { name: /Download the complete lab/ })).toBeVisible();
     await assertHealthyApp(page);
   });

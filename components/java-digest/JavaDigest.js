@@ -937,7 +937,7 @@ export default function JavaDigest({ theme = {}, onAction, onJavaProgressChange,
         onStepSelect={onBeginnerStepChange}
         detail="For Java: read one concept, predict the interview trap, explain the code cue, practice one drill card, then review the follow-up."
       />
-      {activeView !== "Tech Blogs" && <AnswerAtAGlance category="Java" takeaway="Read the runtime rule first, then connect it to the API choice and the production behavior you would observe." complexity="State the relevant time/space cost and the safety or throughput trade-off." edgeCases="Nulls, mutable keys, empty collections, concurrent access, lifecycle boundaries, and version compatibility." />}
+      {activeView !== "Tech Blogs" && <details className="workspace-guidance"><summary>Approach &amp; worked example</summary><AnswerAtAGlance category="Java" takeaway="Read the runtime rule first, then connect it to the API choice and the production behavior you would observe." complexity="State the relevant time/space cost and the safety or throughput trade-off." edgeCases="Nulls, mutable keys, empty collections, concurrent access, lifecycle boundaries, and version compatibility." /></details>}
 
       <header style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "space-between" }}>
         <div style={wrap}>

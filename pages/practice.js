@@ -20,6 +20,7 @@ import ScoreBadge from "../components/chat/ScoreBadge";
 import TechBackground from "../components/TechBackground";
 import TypingDots from "../components/chat/TypingDots";
 import CommandPalette from "../components/app/CommandPalette";
+import WorkspaceOptions from "../components/app/WorkspaceOptions";
 import { DesktopWorkspaceNav, MobileBottomNav, TabletWorkspaceMenu } from "../components/app/WorkspaceNav";
 const AgenticUICourse = dynamic(() => import("../components/course/AgenticUICourse"), { ssr: false });
 const DesignLab = dynamic(() => import("../components/design-lab/DesignLab"), { ssr: false });
@@ -1658,6 +1659,8 @@ export default function Home() {
 
       const key = event.key.toLowerCase();
       if (key === "k") {
+        // This workspace owns Ctrl/Command+K for its question field.
+        if (activeTab === "interviewReady") return;
         event.preventDefault();
         setSidebar((previous) => !previous);
       } else if (event.shiftKey && key === "p") {
@@ -1681,7 +1684,7 @@ export default function Home() {
 
     window.addEventListener("keydown", handlePowerKeys);
     return () => window.removeEventListener("keydown", handlePowerKeys);
-  }, [clearChat, startSession, toggleVoice, techBuddyOpen]);
+  }, [clearChat, startSession, toggleVoice, techBuddyOpen, activeTab]);
 
   const themeVars = {
     "--tech-accent": techTheme.accent,
@@ -1797,8 +1800,8 @@ export default function Home() {
             <button type="button" className="glass-button" aria-expanded={mobileActionsOpen} aria-controls="session-actions" onClick={() => setMobileActionsOpen(value => !value)}>Session actions</button>
           </div>
           {/* ── Top bar ── */}
-          <header id="app-header" data-mobile-open={mobileHeaderOpen} className="glass-chrome app-topbar" style={{ position:"relative", zIndex:130, display:"flex", alignItems:"center", gap:8, padding:"9px 12px", borderBottom:"1px solid rgba(255,255,255,.08)", flexShrink:0, minHeight:52 }}>
-            <button className={`icon-btn ${activeTab==="chat" && messages.length===0 ? "active" : ""}`} onClick={goHome} title="Home" data-tooltip="Home" aria-label="Home">
+          <header id="app-header" data-workspace={activeTab} data-mobile-open={mobileHeaderOpen} className="glass-chrome app-topbar" style={{ position:"relative", zIndex:130, display:"flex", alignItems:"center", gap:8, padding:"9px 12px", borderBottom:"1px solid rgba(255,255,255,.08)", flexShrink:0, minHeight:52 }}>
+            <button className={`icon-btn ${activeTab==="chat" && messages.length===0 ? "active" : ""}`} onClick={goHome} title={activeTab === "chat" ? "Home" : "Back to today"} data-tooltip={activeTab === "chat" ? "Home" : "Back to today"} aria-label="Home">
               <i className="ti ti-home" />
             </button>
             <button className="icon-btn" onClick={() => setSidebar(p => !p)} title="Topics" data-tooltip="Topics" aria-label="Topics">
@@ -1828,6 +1831,8 @@ export default function Home() {
             </span>
             {localSaveStatus === "error" && <button onClick={() => setSaveRetry(v => v + 1)}>Retry device save</button>}
             {auth.user && cloudStatus === "offline" ? <button type="button" className="cloud-sync-retry glass-button" onClick={retryCloudSync} aria-label="Retry cloud sync" title="Retry cloud sync">Retry sync</button> : null}
+
+            <WorkspaceOptions enabled={true}>
             {candidateProfile && (
               <span className="header-profile-label" aria-label={`Local prep profile: ${userPrepLabel}`} title="This is a local prep profile, not a signed-in account." style={{ display:isMobile?"none":"inline-flex", alignItems:"center", gap:5, padding:"3px 8px", borderRadius:999, border:`1px solid ${techTheme.accentBorder}`, background:techTheme.accentMuted, color:techTheme.accentText, fontSize:10.5, fontWeight:600, whiteSpace:"nowrap" }}>
                 <i className={`ti ${techTheme.icon}`} style={{ fontSize:12 }} />Local prep: {userPrepLabel}
@@ -1845,7 +1850,14 @@ export default function Home() {
                 <button type="button" className="glass-button" onClick={() => openAuthSettings("register")} style={{ border: `1px solid ${techTheme.accentBorder}`, borderRadius: 7, color: techTheme.accentText, cursor: "pointer", fontSize: 11, fontWeight: 850, padding: "5px 9px", whiteSpace: "nowrap" }}>Create account</button>
               </>}
             </div>
-            {activeTab !== "chat" && <button type="button" className="glass-button today-back-button" onClick={goHome} title="Back to today's plan" data-tooltip="Back to today" style={{ border: `1px solid ${techTheme.accentBorder}`, borderRadius: 7, color: techTheme.accentText, fontSize: 11, fontWeight: 850, padding: "5px 9px", whiteSpace: "nowrap" }}><i className="ti ti-arrow-left" /> Today</button>}
+            <>
+              {candidateProfile && <button type="button" aria-label="Edit Profile" onClick={() => { setProfileDraft(candidateProfile); setActiveTab("chat"); setEditingProfile(true); }}><i aria-hidden="true" className="ti ti-user-cog" /> Edit Profile</button>}
+              <button type="button" aria-label="About & help" onClick={() => setShowSettings(true)}><i aria-hidden="true" className="ti ti-info-circle" /> About &amp; help</button>
+              {messages.length > 0 && <button type="button" aria-label="Clear" onClick={clearChat}>Clear conversation</button>}
+              <button type="button" aria-controls="session-actions" aria-expanded={mobileActionsOpen} onClick={() => setMobileActionsOpen(value => !value)}>Session tools</button>
+            </>
+            </WorkspaceOptions>
+
 
             {/* Desktop-only controls */}
             {showInterviewTools && <div style={{ display:"flex", alignItems:"center", gap:6 }} className="desktop-controls">
@@ -1957,16 +1969,10 @@ export default function Home() {
               </div>
             )}
 
-            {messages.length > 0 && (
-              <button className="icon-btn" onClick={clearChat} title="Clear" aria-label="Clear"><i className="ti ti-trash" /></button>
-            )}
-            {candidateProfile && (
-              <button className="icon-btn" onClick={() => { setProfileDraft(candidateProfile); setEditingProfile(true); }} title="Edit Profile" aria-label="Edit Profile"><i className="ti ti-user-cog" /></button>
-            )}
-            <button className="icon-btn" onClick={() => setShowSettings(true)} title="About and help" data-tooltip="About & help" aria-label="Info"><i className="ti ti-info-circle" /></button>
+
           </header>
 
-          <div id="session-actions" data-mobile-open={mobileActionsOpen} className="glass-chrome session-actions" style={{ alignItems: "center", borderBottom: "1px solid rgba(255,255,255,.06)", display: "flex", flexWrap: "wrap", gap: 7, padding: "8px 12px" }}>
+          <div id="session-actions" data-workspace={activeTab} data-mobile-open={mobileActionsOpen} className="glass-chrome session-actions" style={{ alignItems: "center", borderBottom: "1px solid rgba(255,255,255,.06)", display: "flex", flexWrap: "wrap", gap: 7, padding: "8px 12px" }}>
             <button type="button" className="glass-button" onClick={retryLastAiRequest} style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 7, color: "#cbd5e1", fontSize: 11, fontWeight: 800, padding: "5px 8px" }}>
               Retry AI
             </button>
@@ -1989,20 +1995,21 @@ export default function Home() {
             )}
           </div>
 
-          {aiHealth?.configured === false && (
-            <div role="status" style={{ alignItems: "center", background: "rgba(250,204,21,.09)", borderBottom: "1px solid rgba(250,204,21,.18)", color: "#fde68a", display: "flex", flexShrink: 0, fontSize: 11.5, gap: 8, lineHeight: 1.4, padding: "7px 12px" }}>
-              <i className="ti ti-alert-triangle" style={{ color: "#facc15", flexShrink: 0 }} />
-              <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>
-                AI provider not configured. Local Scenario Bank, Java Digest, DSA, Canvas, and Design Lab still work; set GEMINI_API_KEY to enable chat, screen, and generated drills.
-              </span>
-            </div>
-          )}
+
 
           {/* ── Chat area ── */}
           <div ref={chatRef} className="chat-scroll" role={techBuddyOpen ? "region" : "log"} aria-live={techBuddyOpen ? "off" : "polite"} aria-relevant="additions text" aria-busy={loading || !sessionReady} aria-label="Conversation messages" style={{ flex:1, minHeight:0, minWidth:0, overflowX:"hidden", overflowY:"auto", padding: isMobile?"12px 10px":"20px 16px", display:"flex", flexDirection:"column" }}>
+          {aiHealth?.configured === false && (
+            <div className="ai-availability-notice" role="status" style={{ alignItems: "center", background: "rgba(250,204,21,.09)", borderBottom: "1px solid rgba(250,204,21,.18)", color: "#fde68a", display: "flex", flexShrink: 0, fontSize: 11.5, gap: 8, lineHeight: 1.4, padding: "7px 12px" }}>
+              <i className="ti ti-alert-triangle" style={{ color: "#facc15", flexShrink: 0 }} />
+              <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>
+                AI practice is currently unavailable. You can still use the Scenario Bank, Java Digest, DSA, Canvas, and Design Lab.
+              </span>
+            </div>
+          )}
             {!sessionReady ? <div className="dashboard-skeleton" role="status" aria-label="Loading InterviewIQ workspace"><span /><span /><span /><span /></div> : null}
             {sessionReady ? <>
-            {activeTab === "chat" && candidateProfile && !editingProfile && !techBuddyOpen && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}><button type="button" className="glass-button" disabled={loading} style={{ padding: '10px 14px' }} onClick={() => openTechBuddy()}>Open Tech Buddy</button><button type="button" className="glass-button" disabled={loading} onClick={() => openTechBuddy({ mode: 'warmup' })}>Five-question interview warm-up</button><Link href="/tech-buddy-demo">Try offline demo</Link><Link href="/learn">Learning hub</Link><Link href="/labs">Interactive labs</Link></div>}
+            {activeTab === "chat" && candidateProfile && !editingProfile && !techBuddyOpen && <div className="workspace-shortcuts" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}><button type="button" className="glass-button" disabled={loading} style={{ padding: '10px 14px' }} onClick={() => openTechBuddy()}>Open Tech Buddy</button><button type="button" className="glass-button" disabled={loading} onClick={() => openTechBuddy({ mode: 'warmup' })}>Five-question interview warm-up</button><Link href="/tech-buddy-demo">Try offline demo</Link><Link href="/learn">Learning hub</Link><Link href="/labs">Interactive labs</Link></div>}
             {loading ? <div className="ai-progress-status" role="status" aria-live="polite"><span className="dot" />InterviewIQ is preparing your response…</div> : null}
             {activeTab === "course" ? (
               <AgenticUICourse theme={techTheme} variant="full" />
@@ -2316,7 +2323,7 @@ export default function Home() {
               !isMobile && (
               <div style={{ marginTop:5, display:"flex", justifyContent:"space-between", fontSize:10.5, color:"#cbd5e1" }}>
                 <span>{voiceHint || `${footerHint} · Keyboard Power Mode: / focus, ⌘K topics, ⌘↵ mock`}</span>
-                <span style={{ color:"#9ca3af" }}>Created with love ❤️ by Sagar Krishna</span>
+                <span style={{ color: "var(--ui-muted)", marginRight: 90, whiteSpace: "nowrap" }}>By Sagar Krishna</span>
               </div>
               )
             )}

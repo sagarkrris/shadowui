@@ -33,6 +33,17 @@ for (const size of sizes) {
       await scroll.focus();
       await page.keyboard.press("End");
       await expect.poll(() => scroll.evaluate(el => el.scrollHeight - el.clientHeight - el.scrollTop)).toBeLessThan(3);
+      // Wheel and keyboard scrolling animate; finish the previous gesture
+      // before reversing direction so its queued events cannot undo Home.
+      await scroll.evaluate(async element => {
+        for (let sample = 0; sample < 30; sample++) {
+          const top = element.scrollTop;
+          await new Promise(resolve => setTimeout(resolve, 100));
+          if (element.scrollTop === top) return;
+        }
+        throw new Error("Native scrolling did not settle");
+      });
+      await scroll.focus();
       await page.keyboard.press("Home");
       await expect.poll(() => scroll.evaluate(el => el.scrollTop)).toBeLessThan(3);
     });

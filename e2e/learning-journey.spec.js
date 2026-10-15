@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 test.use({ serviceWorkers: 'block' });
 test('home routes by intent and passes symptom search to the atlas', async ({ page }) => {
   await page.goto('/');
-  for (const name of ['Diagnose a problem', 'Learn a concept', 'Practice for an interview']) await expect(page.getByRole('link', { name, exact: true })).toBeVisible();
+  for (const name of ['Find your learning path', 'Try an interactive lab', 'Resume unfinished practice']) await expect(page.locator('main').getByRole('link', { name, exact: true })).toBeVisible();
   await page.getByRole('searchbox', { name: 'Search engineering symptoms' }).fill('rollback');
   await page.getByRole('button', { name: 'Find diagnostic steps' }).click();
   await expect(page.getByRole('searchbox', { name: 'Search symptoms', exact: true })).toHaveValue('rollback');

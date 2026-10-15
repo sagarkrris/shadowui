@@ -1,0 +1,584 @@
+{
+  "groups": [
+    {
+      "title": "Relational modeling",
+      "mechanism": "Tables represent relations with keys and constraints. Physical storage and query plans are implementation choices separate from the logical schema.",
+      "tradeOff": "Normalization protects consistency but query patterns may justify deliberate derived representations.",
+      "verify": "Insert conflicting and incomplete rows and confirm the database enforces the intended invariants.",
+      "questions": [
+        {
+          "question": "What is a relational database table?",
+          "answer": "A named structure of rows and typed columns with defined keys and constraints, rather than an inherently ordered list."
+        },
+        {
+          "question": "When should a natural key be supplemented by a surrogate key?",
+          "answer": "When business identifiers can change or are cumbersome references, while still enforcing required natural uniqueness separately."
+        },
+        {
+          "question": "How do primary and unique keys differ?",
+          "answer": "A primary key identifies rows and disallows nulls; additional unique constraints enforce other uniqueness rules with database-specific null semantics."
+        },
+        {
+          "question": "Why is application validation insufficient for uniqueness?",
+          "answer": "Concurrent writers can both pass a pre-check. A database constraint must arbitrate the final conflicting writes."
+        },
+        {
+          "question": "How would you model a tenant-scoped business identifier?",
+          "answer": "Include tenant scope in uniqueness and access predicates, and consider composite references so cross-tenant relationships cannot be created accidentally."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Null and three-valued logic",
+      "mechanism": "SQL predicates can evaluate to true, false or unknown. WHERE retains true rows, so null-sensitive expressions need explicit reasoning.",
+      "tradeOff": "Null models absence but complicates comparisons, aggregation and constraints.",
+      "verify": "Use fixtures containing nulls on both sides of joins and subqueries.",
+      "questions": [
+        {
+          "question": "Why does column = NULL not find null rows?",
+          "answer": "Comparison with null yields unknown; use IS NULL or IS NOT NULL for null checks."
+        },
+        {
+          "question": "When should COALESCE be used?",
+          "answer": "When substituting a value accurately reflects business meaning; do not use it to conceal unknown data as a meaningful zero or empty string."
+        },
+        {
+          "question": "How does null affect COUNT(column)?",
+          "answer": "COUNT(column) excludes null values, while COUNT(*) counts input rows regardless of individual column nulls."
+        },
+        {
+          "question": "Why can NOT IN return no expected rows?",
+          "answer": "A null in the compared set can make predicates unknown. Use deliberately null-safe logic such as a correctly correlated NOT EXISTS."
+        },
+        {
+          "question": "How would you distinguish missing, zero and not-applicable values?",
+          "answer": "Model their business meanings explicitly through nullable fields, status or separate relations rather than assuming one default represents every case."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Filtering and projection",
+      "mechanism": "SELECT projects expressions while WHERE filters rows before grouping. Written clause order differs from logical processing and physical execution.",
+      "tradeOff": "Concise expressions can hide null and conversion behavior.",
+      "verify": "Test empty sets, nulls, type boundaries and predicates with conflicting conditions.",
+      "questions": [
+        {
+          "question": "What does SELECT DISTINCT do?",
+          "answer": "It removes duplicate output rows after evaluating the selected expressions, according to the database's equality semantics."
+        },
+        {
+          "question": "When should a predicate use parentheses?",
+          "answer": "Whenever mixed AND and OR conditions could obscure intended grouping, especially when mandatory tenant or authorization filters are combined."
+        },
+        {
+          "question": "How do WHERE and HAVING differ?",
+          "answer": "WHERE filters input rows; HAVING filters groups after aggregation under the query's grouping semantics."
+        },
+        {
+          "question": "Why can selecting fewer columns improve a query?",
+          "answer": "It can reduce transfer, memory and sometimes enable index-only access, though actual benefit depends on the plan and visibility checks."
+        },
+        {
+          "question": "How would you review a dynamic filter builder?",
+          "answer": "Preserve mandatory predicates, bind values, define absent versus empty filters and compare generated SQL against boundary fixtures."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Joins and cardinality",
+      "mechanism": "Joins combine matching rows and can multiply output cardinality. Outer joins preserve unmatched rows until later predicates potentially remove them.",
+      "tradeOff": "Correct joins express relationships; accidental multiplicity can inflate aggregates and API payloads.",
+      "verify": "Test zero, one and multiple matches on both sides.",
+      "questions": [
+        {
+          "question": "How does INNER JOIN differ from LEFT JOIN?",
+          "answer": "INNER JOIN keeps matches; LEFT JOIN also preserves unmatched left rows with null-extended right values."
+        },
+        {
+          "question": "When should EXISTS replace a join?",
+          "answer": "When only existence matters and joined columns are unnecessary, avoiding accidental result multiplication from several matches."
+        },
+        {
+          "question": "Why can a WHERE predicate turn a left join into inner-like behavior?",
+          "answer": "A predicate requiring a right-side value can reject the null-extended unmatched rows."
+        },
+        {
+          "question": "Why does joining two child collections inflate counts?",
+          "answer": "Each child's matches can combine with the other child's matches, multiplying rows before aggregation."
+        },
+        {
+          "question": "How would you aggregate several child relationships correctly?",
+          "answer": "Aggregate each relationship at the required parent grain before combining, or use appropriately correlated subqueries and verify multiplicity explicitly."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Aggregations",
+      "mechanism": "Aggregates operate over the query's actual input rows, including duplicates introduced by joins. The grouping key defines the result grain.",
+      "tradeOff": "One compact query can be wrong when it mixes incompatible grains.",
+      "verify": "Build a small dataset with duplicate children, null values and empty groups.",
+      "questions": [
+        {
+          "question": "What does GROUP BY establish?",
+          "answer": "It defines groups of rows over which aggregate functions compute results, producing output at the selected grouping grain."
+        },
+        {
+          "question": "When is COUNT(DISTINCT key) appropriate?",
+          "answer": "When the contract needs distinct identities rather than joined row count, while considering null behavior and execution cost."
+        },
+        {
+          "question": "How does SUM behave on an empty input in PostgreSQL?",
+          "answer": "It returns null rather than zero; apply an explicit business-appropriate default when the consumer needs zero."
+        },
+        {
+          "question": "Why can averaging group averages be incorrect?",
+          "answer": "Groups may have different sizes; weight by their counts or compute from underlying sums and counts."
+        },
+        {
+          "question": "How would you validate a revenue aggregation?",
+          "answer": "Define currency, refunds, duplicates, time boundaries and join grain, then compare against a manually calculated adversarial dataset."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Subqueries and CTEs",
+      "mechanism": "Subqueries and CTEs express intermediate relations, but optimization and materialization depend on database rules and query properties.",
+      "tradeOff": "Naming intermediate results improves clarity without guaranteeing a performance barrier or speedup.",
+      "verify": "Inspect plans and compare equivalent results for correlated and set-based formulations.",
+      "questions": [
+        {
+          "question": "What is a correlated subquery?",
+          "answer": "A subquery referencing values from an outer query row, whose execution strategy is chosen by the optimizer."
+        },
+        {
+          "question": "When is a CTE useful?",
+          "answer": "For readable decomposition or recursive relationships; decide performance from the target database's planning behavior rather than syntax alone."
+        },
+        {
+          "question": "How do EXISTS and scalar subqueries differ?",
+          "answer": "EXISTS tests whether rows exist; a scalar subquery produces one value and must obey its single-row contract."
+        },
+        {
+          "question": "Why can a scalar subquery fail on production data?",
+          "answer": "It can return multiple rows when uniqueness was assumed but not enforced."
+        },
+        {
+          "question": "How would you rewrite a slow correlated query?",
+          "answer": "Understand its semantics first, then compare joins, pre-aggregation or indexed probes using actual plans and duplicate/null fixtures."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Window functions",
+      "mechanism": "Window functions compute over related rows without collapsing each row into one grouped result. Ordering and frame boundaries determine the calculation.",
+      "tradeOff": "Expressive windows can require sorting and substantial memory.",
+      "verify": "Test ties, null ordering and boundary frames using explicit expected rows.",
+      "questions": [
+        {
+          "question": "What does ROW_NUMBER compute?",
+          "answer": "A sequential number within each partition under the specified ordering; ties need a deterministic tie-breaker when stable results matter."
+        },
+        {
+          "question": "When should RANK be used instead of DENSE_RANK?",
+          "answer": "Use RANK when ties should leave gaps in subsequent positions; DENSE_RANK assigns consecutive rank values after ties."
+        },
+        {
+          "question": "How does a window frame affect a running total?",
+          "answer": "It determines which ordered rows contribute to each result; default frame semantics may include peers rather than exactly one physical row step."
+        },
+        {
+          "question": "Why can top-one-per-group return inconsistent winners?",
+          "answer": "Ordering without a unique tie-breaker leaves tied rows without a deterministic selection contract."
+        },
+        {
+          "question": "How would you calculate a moving business-period metric?",
+          "answer": "Define partition, time zone, ordering, missing periods and frame semantics, then test sparse data and multiple events with equal timestamps."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Indexes",
+      "mechanism": "An index supplies an additional access path with ordering and filtering properties. It costs storage and write maintenance and may not be selected.",
+      "tradeOff": "Indexes accelerate suitable reads while increasing write and operational work.",
+      "verify": "Compare actual plans, logical work and write overhead before and after adding one.",
+      "questions": [
+        {
+          "question": "What does a B-tree index help with?",
+          "answer": "Suitable equality, range and ordering operations, depending on indexed expressions, column order and query predicates."
+        },
+        {
+          "question": "When should a composite index be considered?",
+          "answer": "When common predicates and ordering benefit from a combined key; design leading columns from measured access patterns."
+        },
+        {
+          "question": "What is a covering index trying to achieve?",
+          "answer": "Making needed values available through the index so fewer table accesses are required, subject to database visibility and plan rules."
+        },
+        {
+          "question": "Why might a database ignore an existing index?",
+          "answer": "The estimated selectivity, table size, predicate form or cost can favor another plan; stale statistics can also mislead selection."
+        },
+        {
+          "question": "How would you justify an index in production?",
+          "answer": "Show improved target queries, acceptable write/storage costs and a safe creation strategy, then monitor actual usage and redundant indexes."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Sargability and expressions",
+      "mechanism": "Predicates must match available access paths. Functions, casts and collations can change semantics and index usability.",
+      "tradeOff": "Expression indexes can help selected patterns but add maintenance and portability costs.",
+      "verify": "Compare typed predicates with expression forms and inspect index conditions in the plan.",
+      "questions": [
+        {
+          "question": "What does sargable mean in query tuning?",
+          "answer": "A predicate can be used effectively by an index access strategy rather than requiring evaluation over every candidate row."
+        },
+        {
+          "question": "When is an expression index useful?",
+          "answer": "When an important stable query repeatedly filters or orders by the same supported expression and ordinary indexes do not serve it."
+        },
+        {
+          "question": "How can implicit casts affect an indexed predicate?",
+          "answer": "They can change which side is transformed and whether the predicate matches an available index, as well as comparison semantics."
+        },
+        {
+          "question": "Why can wrapping a timestamp column in a function slow filtering?",
+          "answer": "The transformed expression may not match the ordinary index. A correct range predicate can preserve the intended access path."
+        },
+        {
+          "question": "How would you implement case-insensitive lookup safely?",
+          "answer": "Choose explicit normalization, collation or supported indexed expression semantics, then test Unicode and uniqueness behavior under the target database."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Execution plans",
+      "mechanism": "Plans describe chosen operators and estimates; actual execution adds observed rows, time and resource behavior. Plan analysis must include waits and workload context.",
+      "tradeOff": "Running an analyzed plan executes work and can affect data for modifying statements.",
+      "verify": "Use safe environments, representative parameters and before/after resource measurements.",
+      "questions": [
+        {
+          "question": "What does EXPLAIN show?",
+          "answer": "The optimizer's chosen plan and estimates for a statement, with extra execution evidence only when requested through supported options."
+        },
+        {
+          "question": "When should EXPLAIN ANALYZE be used cautiously?",
+          "answer": "Because it actually executes the statement, including writes, triggers and external effects that rollback may not undo."
+        },
+        {
+          "question": "Why do estimated and actual row counts matter?",
+          "answer": "Large differences can lead to poor join or access choices and suggest statistics or predicate-correlation problems."
+        },
+        {
+          "question": "Why is a sequential scan not automatically a defect?",
+          "answer": "For small tables or broad predicates it can cost less than many indexed lookups and random accesses."
+        },
+        {
+          "question": "How would you diagnose a query slow only for some parameters?",
+          "answer": "Compare data distributions, plans, row estimates and prepared-plan behavior for both selective and nonselective parameter values."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Transactions and atomicity",
+      "mechanism": "Transactions group database changes under commit/rollback semantics. External calls are outside that atomicity unless explicitly coordinated.",
+      "tradeOff": "Long transactions retain locks, snapshots and connections, affecting other workloads.",
+      "verify": "Fail between statements and inspect results from a separate connection after completion.",
+      "questions": [
+        {
+          "question": "What does atomicity mean for a database transaction?",
+          "answer": "Its database changes commit as one unit or are rolled back, subject to the database's transactional behavior and supported operations."
+        },
+        {
+          "question": "When should several statements share a transaction?",
+          "answer": "When the business invariant requires their local changes to succeed or fail together rather than leave partial state."
+        },
+        {
+          "question": "How does a savepoint differ from a transaction commit?",
+          "answer": "A savepoint allows partial rollback within an ongoing transaction; it does not independently commit or make changes durable."
+        },
+        {
+          "question": "Why is a network call inside a transaction risky?",
+          "answer": "Its latency and ambiguous outcome can retain locks while remaining impossible to roll back with the database."
+        },
+        {
+          "question": "How would you implement a transfer between two local accounts?",
+          "answer": "Validate constraints and update both balances atomically under a concurrency strategy that prevents conflicting writes and avoids inconsistent lock ordering."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Isolation and MVCC",
+      "mechanism": "MVCC supports visibility through transaction snapshots and row versions. Isolation names must be interpreted through the actual database's implementation.",
+      "tradeOff": "Stronger isolation can prevent anomalies while requiring retry or increased coordination.",
+      "verify": "Run paired transactions with controlled interleavings against PostgreSQL 17.",
+      "questions": [
+        {
+          "question": "What is MVCC?",
+          "answer": "A mechanism maintaining row-version visibility so transactions can read according to snapshots while concurrent changes occur."
+        },
+        {
+          "question": "How does PostgreSQL READ COMMITTED choose snapshots?",
+          "answer": "Ordinary statements see a snapshot established for that statement, so successive statements can observe newly committed changes."
+        },
+        {
+          "question": "Can PostgreSQL REPEATABLE READ prevent every business anomaly?",
+          "answer": "No. Its snapshot isolation can still permit write-skew patterns; stronger isolation or explicit invariant protection may be required."
+        },
+        {
+          "question": "Why can SERIALIZABLE transactions need retries?",
+          "answer": "The database can reject executions that cannot fit the required serializable ordering, requiring the application to retry the transaction safely."
+        },
+        {
+          "question": "How would you choose isolation for a booking invariant?",
+          "answer": "Model the conflicting transactions, use constraints or locking where possible and test whether the selected isolation prevents the exact oversubscription pattern."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Locks and deadlocks",
+      "mechanism": "Locks coordinate conflicting access; deadlocks arise from cyclic waiting. Lock duration follows transaction lifetime rather than individual Java method return.",
+      "tradeOff": "Serialization preserves invariants but waiting can exhaust application pools.",
+      "verify": "Use two connections, reverse acquisition order and verify bounded failure plus retry behavior.",
+      "questions": [
+        {
+          "question": "When is SELECT FOR UPDATE useful?",
+          "answer": "When rows read for a subsequent decision must be locked against conflicting modifications within the transaction."
+        },
+        {
+          "question": "What does SKIP LOCKED change?",
+          "answer": "It lets supported locking reads skip currently locked rows, useful for competing work claims but unsuitable for every complete-consistency query."
+        },
+        {
+          "question": "How does a lock timeout differ from a statement timeout?",
+          "answer": "One limits waiting to acquire locks; the other limits statement execution according to database semantics and configuration."
+        },
+        {
+          "question": "Why can a deadlock victim be chosen despite valid SQL?",
+          "answer": "The SQL operations can each be valid while their concurrent lock dependencies form a cycle."
+        },
+        {
+          "question": "How would you build a database-backed job claim?",
+          "answer": "Atomically identify and transition eligible jobs under the chosen locking strategy, record ownership and expiry, and prevent stale owners from applying unauthorized effects."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Constraints and upserts",
+      "mechanism": "Constraints enforce invariants atomically under concurrent access. Upsert syntax resolves selected uniqueness conflicts but does not define every business update policy.",
+      "tradeOff": "Database enforcement simplifies correctness while requiring deliberate error and conflict mapping.",
+      "verify": "Race concurrent inserts and verify both final state and returned outcomes.",
+      "questions": [
+        {
+          "question": "How do foreign keys help correctness?",
+          "answer": "They enforce permitted relationships between referenced and referencing rows according to configured update and deletion actions."
+        },
+        {
+          "question": "When should CHECK constraints be used?",
+          "answer": "For row-level conditions expressible safely in the database, alongside appropriate nullability and other constraints."
+        },
+        {
+          "question": "What does PostgreSQL ON CONFLICT do?",
+          "answer": "It chooses a specified alternative action when an insert hits a supported uniqueness conflict, according to its conflict target and update logic."
+        },
+        {
+          "question": "Why can an upsert overwrite a newer value incorrectly?",
+          "answer": "Its update branch may ignore domain versions or expected prior state, turning a conflict into an unintended last-writer-wins update."
+        },
+        {
+          "question": "How would you combine idempotency with a business write?",
+          "answer": "Enforce a scoped unique operation key and apply the associated business effect in the same transaction, validating repeated keys against consistent request meaning."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Pagination and ordering",
+      "mechanism": "Without ORDER BY, row order is not promised. Stable pagination requires a deterministic total order and an explicit model for concurrent changes.",
+      "tradeOff": "Offset supports arbitrary shallow page numbers; keyset improves deep traversal under suitable ordering.",
+      "verify": "Insert and delete between pages and check duplicates, omissions and cursor validity.",
+      "questions": [
+        {
+          "question": "Why is ORDER BY required for deterministic output?",
+          "answer": "The database can return rows through different plans and physical orders unless the query states the intended order."
+        },
+        {
+          "question": "When is keyset pagination preferable?",
+          "answer": "For efficient traversal of large ordered results where the next page can be selected relative to a stable cursor."
+        },
+        {
+          "question": "Why should an ordering include a unique tie-breaker?",
+          "answer": "Nonunique sort values leave page boundaries ambiguous and can cause repeated or omitted records across requests."
+        },
+        {
+          "question": "How can nullable sort fields complicate cursors?",
+          "answer": "Null ordering and comparisons need explicit treatment; a simple greater-than predicate may not reproduce the defined total order."
+        },
+        {
+          "question": "How would you secure an API pagination cursor?",
+          "answer": "Validate its shape, scope, filters and limits; protect integrity where needed and avoid accepting arbitrary SQL or cross-tenant boundaries from it."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Time and numeric data",
+      "mechanism": "Database types encode representation, while business rules define units, rounding and time-zone interpretation. Timestamp storage alone does not preserve every local-calendar intention.",
+      "tradeOff": "Exactness improves financial correctness but requires explicit scale and overflow handling.",
+      "verify": "Test DST transitions, rounding ties, negative amounts and out-of-range values.",
+      "questions": [
+        {
+          "question": "When should NUMERIC be used instead of floating point?",
+          "answer": "When exact decimal representation and controlled rounding are required, such as many monetary calculations, with an explicit scale policy."
+        },
+        {
+          "question": "What does PostgreSQL timestamptz represent?",
+          "answer": "A timestamp interpreted as an instant with time-zone-aware input/output behavior; it does not preserve the original named zone as a separate business attribute."
+        },
+        {
+          "question": "Why use half-open time intervals for filtering?",
+          "answer": "Inclusive start and exclusive end compose adjacent periods without double-counting boundary instants, provided conversion and zone rules are correct."
+        },
+        {
+          "question": "Why can a date-based report differ across time zones?",
+          "answer": "The same instant can fall on different local dates. Define the reporting zone before calculating period boundaries."
+        },
+        {
+          "question": "How would you reconcile monetary totals across systems?",
+          "answer": "Align currency, scale, rounding stage and inclusion rules, then compare exact values with traceable operation identity rather than floating-point tolerance alone."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Schema evolution",
+      "mechanism": "DDL changes interact with locks, data volume and concurrently running application versions. Data migration is an operational process with restart and rollback constraints.",
+      "tradeOff": "Compatibility often requires several smaller steps instead of one disruptive schema change.",
+      "verify": "Test old/new code concurrently and interrupt backfill between batches.",
+      "questions": [
+        {
+          "question": "What is an expand-contract migration?",
+          "answer": "Introducing compatible schema, migrating usage and data, then removing obsolete structures only after consumers support removal."
+        },
+        {
+          "question": "When should a backfill be chunked?",
+          "answer": "When one large transaction would hold excessive locks, generate heavy replication lag or make restart and recovery costly."
+        },
+        {
+          "question": "How can adding an index affect availability?",
+          "answer": "Index creation uses resources and locking under database-specific rules; choose a supported production-safe method and monitor impact."
+        },
+        {
+          "question": "Why is a destructive down migration not always a rollback plan?",
+          "answer": "Removed data may be unrecoverable, and new writes may no longer fit the old schema even if DDL is reversed."
+        },
+        {
+          "question": "How would you add a uniqueness rule to dirty historical data?",
+          "answer": "Identify and resolve existing conflicts, control new conflicting writes, then add and validate the constraint using an appropriate staged database procedure."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Query safety",
+      "mechanism": "Bound parameters separate values from SQL syntax. They do not authorize data access or make arbitrary identifiers and sort expressions safe.",
+      "tradeOff": "Flexible querying requires allowlisted structure and strict limits.",
+      "verify": "Use malicious values, unknown sort names, huge limits and cross-tenant IDs.",
+      "questions": [
+        {
+          "question": "How do prepared statements prevent value-based injection?",
+          "answer": "They bind data separately from statement structure, so supplied values are not parsed as executable SQL syntax."
+        },
+        {
+          "question": "When is allowlisting still required with prepared statements?",
+          "answer": "For dynamic identifiers, operators and ordering choices that ordinary value parameters cannot represent safely."
+        },
+        {
+          "question": "Why should query limits be enforced server-side?",
+          "answer": "Client-controlled limits can cause unbounded work or memory use and can bypass intended service resource constraints."
+        },
+        {
+          "question": "How can a tenant predicate disappear in dynamic SQL?",
+          "answer": "Incorrect AND/OR grouping or omitted branches can broaden access. Mandatory authorization scope must be applied independently of optional filters."
+        },
+        {
+          "question": "How would you audit a search endpoint's SQL construction?",
+          "answer": "Trace every structural input, verify allowlists and bound values, inspect mandatory access predicates and test empty, malformed and adversarial combinations."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Maintenance and storage",
+      "mechanism": "PostgreSQL updates and deletes leave version cleanup work for vacuum. Long-lived snapshots can prevent reclamation and increase storage or scan cost.",
+      "tradeOff": "Maintenance needs resources, while delaying it can create larger operational problems.",
+      "verify": "Track long transactions, dead tuples, vacuum activity and table/index growth together.",
+      "questions": [
+        {
+          "question": "Why does PostgreSQL need vacuum?",
+          "answer": "To maintain storage and visibility metadata and reclaim reusable space from obsolete row versions, subject to active snapshot constraints."
+        },
+        {
+          "question": "When can a long transaction harm unrelated workloads?",
+          "answer": "It can retain old snapshots or locks, delaying cleanup and increasing bloat, contention or replication-related operational pressure."
+        },
+        {
+          "question": "How do statistics affect query planning?",
+          "answer": "They estimate data distribution and cardinality, influencing join order and access choices; inaccurate estimates can yield poor plans."
+        },
+        {
+          "question": "Why is deleting many rows not immediate file shrinkage?",
+          "answer": "Logical removal and reusable space differ from returning storage to the operating system; physical reclamation follows specific maintenance behavior."
+        },
+        {
+          "question": "How would you investigate growing database storage?",
+          "answer": "Separate live data growth, obsolete versions, indexes, logs and retention policies, then correlate each with workload and maintenance evidence."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Backup and recovery",
+      "mechanism": "Recovery involves data, transaction history and consumers outside the database. A backup is useful only if restoration is tested within the promised objectives.",
+      "tradeOff": "Shorter recovery targets require additional replication, retention and operational investment.",
+      "verify": "Restore into an isolated environment and reconcile applications plus event positions.",
+      "questions": [
+        {
+          "question": "How do backup and replication differ?",
+          "answer": "Backups retain recoverable historical states; replication maintains additional current copies and can also replicate accidental corruption or deletion."
+        },
+        {
+          "question": "What do RPO and RTO measure?",
+          "answer": "RPO bounds acceptable lost data; RTO bounds restoration time. Both need measured recovery procedures rather than configuration claims."
+        },
+        {
+          "question": "How does point-in-time recovery help?",
+          "answer": "It can reconstruct a database state before an unwanted change when the required base backup and transaction history are available."
+        },
+        {
+          "question": "Why can restoring the database duplicate external effects?",
+          "answer": "Payments, messages or emails may already have occurred after the restored point, while the restored database no longer records them."
+        },
+        {
+          "question": "How would you validate a recovery plan?",
+          "answer": "Perform an actual restore, measure objectives, verify constraints and critical records, and reconcile external effects plus downstream replay positions."
+        }
+      ],
+      "kind": "concept"
+    }
+  ]
+}

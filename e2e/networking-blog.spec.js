@@ -28,7 +28,7 @@ test('workspace reader exposes the complete networking course and authored answe
   await expect(dialog.getByText('When to avoid:', { exact: true })).toHaveCount(6);
   await expect(dialog.locator('[data-course-diagram="proxyTrust"]')).toBeVisible();
   await expect(dialog.getByRole('region', { name: 'Related coding challenges' }).getByRole('link', { name: 'Derive a downstream timeout', exact: true })).toBeVisible();
-  const answers = dialog.locator('details');
+  const answers = dialog.locator('details').filter({ has: page.locator('summary', { hasText: /^Sample answer$/ }) });
   await expect(answers).toHaveCount(6);
   await answers.nth(3).locator('summary').click();
   await expect(answers.nth(3)).toContainText('reconcile');

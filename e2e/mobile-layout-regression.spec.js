@@ -40,9 +40,9 @@ test("expanded Q&A uses readable light-theme colors", async ({ page }) => {
   await gotoSeededApp(page, { activeTab: "interviewReady", homeDemoSeen: true });
   await page.getByRole("button", { name: /Reveal polished answer/ }).first().click();
   const answer = page.locator(".qa-expanded-answer").first();
-  await expect(answer).toHaveCSS("background-color", "rgb(241, 245, 249)");
-  await expect(answer.locator("p").first()).toHaveCSS("color", "rgb(23, 50, 77)");
-  await expect(answer.locator("h4").first()).toHaveCSS("color", "rgb(23, 50, 77)");
+  await expect(answer).toHaveCSS("background-color", "rgb(241, 243, 244)");
+  await expect(answer.locator("p").first()).toHaveCSS("color", "rgb(32, 33, 36)");
+  await expect(answer.locator("h4").first()).toHaveCSS("color", "rgb(32, 33, 36)");
   expect(await page.locator("main").evaluate(e => e.scrollLeft)).toBe(0);
 });
 
@@ -52,6 +52,9 @@ test("Product of Array Except Self returns its own Java code", async ({ request 
   const chapter = await response.json();
   expect(chapter.sourceOrder).toBe(7);
   expect(chapter.sections.find(s => s.heading === "Java solution").content).toContain("productExceptSelf");
-  const missing = await request.get("/api/blind75-guide?problemId=binary-search&mapping=2");
-  expect(missing.status()).toBe(404);
+  const binary = await request.get("/api/blind75-guide?problemId=binary-search&mapping=2");
+  expect(binary.status()).toBe(200);
+  expect((await binary.json()).sections.find(s => s.heading === "Java solution").content).toContain('public int search(int[] nums, int target)');
+  const missing = await request.get("/api/blind75-guide?problemId=does-not-exist&mapping=2");
+  expect(missing.status()).toBe(400);
 });

@@ -43,7 +43,7 @@ test('workspace reader exposes authored feature-flag answers, diagram, and pract
   await expect(dialog.getByText('When to avoid:', { exact: true })).toHaveCount(6);
   await expect(dialog.locator('[data-course-diagram="featureFlag"]').first()).toBeVisible();
   await expect(dialog.getByRole('region', { name: 'Related coding challenges' }).getByRole('link', { name: 'Assign a stable feature cohort', exact: true })).toBeVisible();
-  const answers = dialog.locator('details');
+  const answers = dialog.locator('article details');
   await expect(answers).toHaveCount(6);
   await answers.nth(3).locator('summary').click();
   await expect(answers.nth(3)).toContainText('policy has changed');

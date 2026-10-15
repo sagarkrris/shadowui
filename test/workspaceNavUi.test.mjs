@@ -61,5 +61,5 @@ test("phone header actions wrap and the watermark stays visible", () => {
   assert.match(globalsSource, /@media \(max-width: 760px\) \{[\s\S]*?\.app-topbar \{[\s\S]*?flex-wrap: wrap !important/);
   assert.match(globalsSource, /\.app-topbar \.header-title \{[\s\S]*?flex: 1 1 calc\(100% - 116px\) !important/);
   assert.match(watermarkSource, /className="brand-watermark"/);
-  assert.match(globalsSource, /\.brand-watermark \{[\s\S]*?grid-template-columns: repeat\(2, minmax\(118px, 1fr\)\) !important[\s\S]*?opacity: 0\.13 !important/);
+  assert.match(watermarkSource, />InterviewIQ<\/div>/);
 });

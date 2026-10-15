@@ -41,7 +41,7 @@ test('new articles work in the existing practice workspace reader', async ({ pag
   await page.getByText(BACKEND_FIELD_NOTES[0].title, { exact: true }).click();
   const dialog = page.getByRole('dialog', { name: `${BACKEND_FIELD_NOTES[0].title} full lesson` });
   await expect(dialog).toBeVisible();
-  await dialog.getByRole('link', { name: 'Open the article, runnable example, references and misconception check →' }).click();
+  await dialog.getByRole('link', { name: 'Open the article, runnable example, and references →' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(BACKEND_FIELD_NOTES[0].title);
   expect(errors).toEqual([]);
 });

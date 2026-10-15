@@ -41,7 +41,7 @@ test('roadmap links resolve and fit mobile and desktop readers', async ({ page, 
 });
 test('home and reading paths expose the guided roadmap', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('link', { name: 'Start the Java Backend Engineer roadmap →' }).click();
+  await page.getByRole('link', { name: /FROM FOUNDATIONS TO PRODUCTION Java & Backend/ }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Java Backend Engineer roadmap');
   await page.goto('/series');
   await page.getByRole('link', { name: 'Java Backend Engineer roadmap', exact: true }).click();

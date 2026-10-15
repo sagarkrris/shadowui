@@ -55,13 +55,13 @@ export default function ApplicationTrackerPanel({ applications = [], onChange, t
         </span>
       </div>
 
-      <div style={{ display: "grid", gap: 7, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 120px), 1fr))" }}>
+      <div style={{ display: "grid", alignItems: 'end', gap: 7, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 120px), 1fr))" }}>
         <input className="glass-input" value={draft.company} onChange={(event) => setDraft((current) => ({ ...current, company: event.target.value }))} placeholder="Company" maxLength={80} style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, color: "#e2e8f0", padding: 8 }} />
         <input className="glass-input" value={draft.role} onChange={(event) => setDraft((current) => ({ ...current, role: event.target.value }))} placeholder="Role" maxLength={100} style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, color: "#e2e8f0", padding: 8 }} />
-        <select className="glass-input" value={draft.stage} onChange={(event) => setDraft((current) => ({ ...current, stage: event.target.value }))} style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, color: "#cbd5e1", padding: 8 }}>
+        <label className="application-tracker-label">Stage<select aria-label="Application stage" className="glass-input" value={draft.stage} onChange={(event) => setDraft((current) => ({ ...current, stage: event.target.value }))} style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, color: "#cbd5e1", padding: 8 }}>
           {APPLICATION_STAGES.map((stage) => <option key={stage} value={stage}>{stage}</option>)}
-        </select>
-        <input className="glass-input" type="datetime-local" value={draft.followUpAt} onChange={(event) => setDraft((current) => ({ ...current, followUpAt: event.target.value }))} style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, color: "#cbd5e1", padding: 8 }} />
+        </select></label>
+        <label className="application-tracker-label">Follow-up date & time<input aria-label="Follow-up date and time" className="glass-input" type="datetime-local" value={draft.followUpAt} onChange={(event) => setDraft((current) => ({ ...current, followUpAt: event.target.value }))} style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, color: "#cbd5e1", padding: 8 }} /></label>
         <input className="glass-input" value={draft.recruiterName} onChange={(event) => setDraft((current) => ({ ...current, recruiterName: event.target.value }))} placeholder="Recruiter" maxLength={80} style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, color: "#e2e8f0", padding: 8 }} />
         <input className="glass-input" value={draft.recruiterEmail} onChange={(event) => setDraft((current) => ({ ...current, recruiterEmail: event.target.value }))} placeholder="Recruiter email" maxLength={254} style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, color: "#e2e8f0", padding: 8 }} />
       </div>

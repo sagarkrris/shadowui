@@ -28,7 +28,7 @@ export function techBlogGateCommands(output) {
     ['practice-java', 'npm', ['run', 'test:build-challenges']],
     ['lint', 'npm', ['run', 'lint']],
     ['build', 'npm', ['run', 'build']],
-    ['readers-and-diagrams', 'npx', ['playwright', 'test', 'e2e/tech-blog-release.spec.js', 'e2e/networking-blog.spec.js', 'e2e/visual-integrity.spec.js', 'e2e/build-challenges.spec.js', 'e2e/senior-java-guide.spec.js', 'e2e/indexing-signals.spec.js', 'e2e/learning-hub.spec.js', 'e2e/java-backend-roadmap.spec.js', '--project=chromium', '--workers=2', '--retries=0', '--forbid-only', '--reporter=line,json', `--output=${join(output, 'browser')}`]],
+    ['readers-and-diagrams', 'npx', ['playwright', 'test', 'e2e/tech-blog-release.spec.js', 'e2e/system-design-concept-lessons.spec.js', 'e2e/design-library.spec.js', 'e2e/networking-blog.spec.js', 'e2e/visual-integrity.spec.js', 'e2e/build-challenges.spec.js', 'e2e/senior-java-guide.spec.js', 'e2e/interview-topics.spec.js', 'e2e/workspace-options.spec.js', 'e2e/book-mode.spec.js', 'e2e/reader-experience.spec.js', 'e2e/public-ui.spec.js', 'e2e/symptoms-atlas.spec.js', 'e2e/senior-java-daily.spec.js', 'e2e/indexing-signals.spec.js', 'e2e/learning-hub.spec.js', 'e2e/java-backend-roadmap.spec.js', '--project=chromium', '--workers=2', '--retries=0', '--forbid-only', '--reporter=line,json', `--output=${join(output, 'browser')}`]],
     ['diff-whitespace', 'git', ['diff', '--check']],
   ];
 }

@@ -19,11 +19,11 @@ test("returns the Java theme when Java is the selected stack", () => {
 test("builds a readable light workspace theme without losing stack accents", () => {
   const theme = getWorkspaceTheme(getTechTheme("Java"), "chat", "light");
 
-  assert.equal(theme.surface, "#f4f7fb");
+  assert.equal(theme.surface, "#f8f9fa");
   assert.equal(theme.appearance, "light");
-  assert.equal(theme.accent, "#5b6f8f");
-  assert.equal(theme.accentText, "#17324d");
-  assert.equal(theme.glass.panelStrong, "rgba(255,255,255,.98)");
+  assert.equal(theme.accent, "#1967d2");
+  assert.equal(theme.accentText, "#202124");
+  assert.equal(theme.glass.panelStrong, "#ffffff");
 });
 
 test("returns the Python theme when Python is the selected stack", () => {
@@ -133,35 +133,34 @@ test("provides glossy glass tokens derived from the selected stack", () => {
   assert.match(theme.glass.shadow, /rgba\(2,12,26/);
 });
 
-test("keeps stack identity while giving each workspace a different room theme", () => {
-  const baseTheme = getTechTheme("Java, Spring Boot");
-  const workspaceThemes = ["chat", "company", "canvas", "designLab", "scenarioBank", "javaDigest", "dsaLab", "course"]
-    .map((activeTab) => getWorkspaceTheme(baseTheme, activeTab));
-
-  assert.deepEqual(workspaceThemes.map((theme) => theme.key), Array(8).fill("java"));
-  assert.deepEqual(workspaceThemes.map((theme) => theme.icon), Array(8).fill("ti-brand-java"));
-  assert.equal(new Set(workspaceThemes.map((theme) => theme.accent)).size, workspaceThemes.length);
-  assert.equal(new Set(workspaceThemes.map((theme) => theme.surface)).size, workspaceThemes.length);
-  assert.equal(workspaceThemes[0].stackAccent, "#9a6a2f");
+test("keeps stack identity inside one consistent workspace palette", () => {
+  const base = getTechTheme("Java, Spring Boot");
+  for (const appearance of ["light", "dark"]) {
+    const themes = ["chat", "company", "canvas", "designLab", "scenarioBank", "javaDigest", "dsaLab", "course"].map(id => getWorkspaceTheme(base, id, appearance));
+    assert.deepEqual(themes.map(theme => theme.key), Array(8).fill("java"));
+    assert.deepEqual(themes.map(theme => theme.icon), Array(8).fill("ti-brand-java"));
+    assert.equal(new Set(themes.map(theme => theme.accent)).size, 1);
+    assert.equal(new Set(themes.map(theme => theme.surface)).size, 1);
+    assert.equal(themes[0].stackAccent, base.accent);
+    for (const theme of themes) {
+      assert.equal(theme.appearance, appearance);
+      assert.equal(theme.glass.shadow, "none");
+      assert.equal(theme.background.image, theme.surface);
+      assert.deepEqual(theme.background.glyphs, []);
+    }
+  }
 });
 
-test("uses polished room palettes for major workspace windows", () => {
-  const baseTheme = getTechTheme("Python, Azure");
-
-  assert.deepEqual(
-    ["chat", "company", "canvas", "designLab", "scenarioBank", "javaDigest", "dsaLab", "course"].map((activeTab) => {
-      const theme = getWorkspaceTheme(baseTheme, activeTab);
-      return [theme.workspaceKey, theme.accent, theme.accentStrong, theme.surface, theme.background.glyphs[0]];
-    }),
-    [
-      ["chat", "#5b6f8f", "#9fb2d1", "#101c2d", "Mock Round"],
-      ["company", "#7a6836", "#d0b76f", "#17253a", "Company Prep"],
-      ["canvas", "#3f6f86", "#8eb8ca", "#122238", "Architecture"],
-      ["designLab", "#6d678f", "#aaa4ce", "#18233a", "HLD"],
-      ["scenarioBank", "#58744d", "#a0ba8c", "#14243a", "Scenarios"],
-      ["javaDigest", "#936734", "#c89d61", "#17263d", "Java Digest"],
-      ["dsaLab", "#287c7d", "#79c2bd", "#10263a", "DSA Lab"],
-      ["course", "#7b5d79", "#c09bbb", "#1d243b", "Course"],
-    ],
-  );
+test("workspace palette retains readable text and action contrast in both appearances", () => {
+  const luminance = hex => {
+    const values = hex.slice(1).match(/../g).map(x => parseInt(x, 16) / 255).map(v => v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4);
+    return values[0] * .2126 + values[1] * .7152 + values[2] * .0722;
+  };
+  for (const appearance of ["light", "dark"]) {
+    const theme = getWorkspaceTheme(getTechTheme("Python, Azure"), "canvas", appearance);
+    for (const [a,b] of [[theme.accentText,theme.panel],[theme.accentStrong,theme.panel],[theme.accentStrong,theme.accentSoft]]) {
+      const x=luminance(a),y=luminance(b);
+      assert.ok((Math.max(x,y)+.05)/(Math.min(x,y)+.05) >= 4.5);
+    }
+  }
 });

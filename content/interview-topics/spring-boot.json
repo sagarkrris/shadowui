@@ -1,0 +1,758 @@
+{
+  "groups": [
+    {
+      "title": "Boot and Spring",
+      "mechanism": "Boot assembles an opinionated Spring application through dependency management, conditional configuration and operational integrations. It does not replace Spring's underlying container or transaction semantics.",
+      "tradeOff": "Conventions reduce setup but defaults must fit the deployed application.",
+      "verify": "Compare the resolved dependencies and registered beans of a minimal application.",
+      "questions": [
+        {
+          "question": "What problem does Spring Boot solve?",
+          "answer": "It reduces repetitive Spring application setup through starters, managed dependency versions, conditional auto-configuration and executable packaging."
+        },
+        {
+          "question": "When should Boot conventions be overridden?",
+          "answer": "When a measured requirement or explicit contract differs from the default. Override the narrowest supported setting and verify the resulting behavior."
+        },
+        {
+          "question": "How does Boot depend on Spring Framework?",
+          "answer": "Boot configures and integrates Spring components; DI, MVC and transaction contracts remain those of the selected Spring Framework version."
+        },
+        {
+          "question": "Why is adding a starter not proof a feature is configured correctly?",
+          "answer": "Conditions, missing properties and custom beans can change activation. Verify actual wiring and behavior rather than classpath presence alone."
+        },
+        {
+          "question": "How would you evaluate a Boot upgrade?",
+          "answer": "Inspect the release and dependency changes, preserve API and data contracts, run representative integration tests and rehearse rollback compatibility."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Application startup",
+      "mechanism": "SpringApplication prepares the environment and context before starting the application. Startup completion and business readiness are separate operational decisions.",
+      "tradeOff": "Failing early improves safety, while optional dependency checks should not cause unnecessary restart loops.",
+      "verify": "Start with missing required settings and with an unavailable optional integration.",
+      "questions": [
+        {
+          "question": "What does SpringApplication.run do?",
+          "answer": "It bootstraps a Spring application context and coordinates startup using the application's configuration and environment."
+        },
+        {
+          "question": "When should ApplicationRunner be used?",
+          "answer": "For bounded startup work requiring the initialized context, while defining whether failure should prevent readiness or abort startup."
+        },
+        {
+          "question": "How do runners affect startup completion?",
+          "answer": "Configured runners execute during application startup before the application is considered fully ready by the normal startup sequence."
+        },
+        {
+          "question": "Why is an unbounded warm-up loop in a runner dangerous?",
+          "answer": "It can block startup indefinitely and retain resources, causing repeated failed deployments without a useful readiness signal."
+        },
+        {
+          "question": "How would you make startup work recoverable?",
+          "answer": "Use bounded retries and durable progress for essential work; keep idempotency and ownership explicit across application restarts."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Auto-configuration conditions",
+      "mechanism": "Auto-configuration imports candidate configurations and evaluates conditions involving classes, properties and beans. A user definition can cause selected defaults to back off.",
+      "tradeOff": "Convenient conditional wiring can surprise users when dependencies change.",
+      "verify": "Inspect a conditions report before and after adding a custom bean.",
+      "questions": [
+        {
+          "question": "What is auto-configuration?",
+          "answer": "Boot's conditional registration of useful configuration based on the application's classpath, environment and existing bean definitions."
+        },
+        {
+          "question": "When does a custom bean replace a Boot default?",
+          "answer": "When the relevant auto-configuration condition is designed to back off for that bean type or name; verify the specific configuration contract."
+        },
+        {
+          "question": "How are auto-configuration candidates registered in modern Boot?",
+          "answer": "Through the supported auto-configuration imports mechanism, rather than relying on arbitrary component scanning of library packages."
+        },
+        {
+          "question": "Why can a dependency addition change application behavior unexpectedly?",
+          "answer": "New classes can satisfy conditions and activate configuration that previously did not apply, changing beans or operational endpoints."
+        },
+        {
+          "question": "How would you debug an unexpected DataSource bean?",
+          "answer": "Inspect condition outcomes, effective properties and user definitions, then trace the dependency that supplied the relevant auto-configuration classes."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Starters and BOMs",
+      "mechanism": "Starters describe useful dependency sets; a BOM manages compatible versions without automatically adding every dependency. Resolved graphs determine the actual runtime.",
+      "tradeOff": "Central management improves compatibility while independent overrides can create binary conflicts.",
+      "verify": "Inspect the dependency tree and effective build after any override.",
+      "questions": [
+        {
+          "question": "What is a Boot starter?",
+          "answer": "A curated dependency entry point for a common application capability, reducing manual coordination of related libraries."
+        },
+        {
+          "question": "What is the difference between dependency management and a dependency?",
+          "answer": "Management supplies defaults such as versions; an actual dependency declaration places an artifact on the relevant graph."
+        },
+        {
+          "question": "How does a Boot BOM help compatibility?",
+          "answer": "It aligns many library versions tested as a platform, reducing accidental mismatches between independently selected components."
+        },
+        {
+          "question": "Why can overriding one transitive version break startup?",
+          "answer": "Other components may expect different binary APIs, leading to linkage errors even when the application source compiles."
+        },
+        {
+          "question": "How would you address a vulnerable managed dependency?",
+          "answer": "Inspect the introducing path and supported platform updates first; validate any necessary override against the full resolved graph and runtime tests."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "External configuration",
+      "mechanism": "Boot combines packaged and external sources according to defined precedence. Binding, validation and activation remain separate steps.",
+      "tradeOff": "External flexibility requires documented ownership and safe exposure of effective settings.",
+      "verify": "Test conflicting sources, missing secrets and invalid typed values.",
+      "questions": [
+        {
+          "question": "Why externalize application configuration?",
+          "answer": "To deploy one artifact with environment-specific settings while keeping required invariants explicit and validated."
+        },
+        {
+          "question": "When are grouped configuration properties preferable to Value strings?",
+          "answer": "For related settings with shared types, defaults and cross-field validation, reducing scattered independent lookups."
+        },
+        {
+          "question": "What is configuration precedence?",
+          "answer": "The rule deciding which property source wins when the same key appears in several supported locations."
+        },
+        {
+          "question": "Why can an environment variable override a packaged value unexpectedly?",
+          "answer": "External sources can have higher precedence. Inspect the effective binding and deployment inputs rather than reading only application.properties."
+        },
+        {
+          "question": "How would you expose configuration diagnostics safely?",
+          "answer": "Publish permitted effective modes and origins, redact secrets, restrict management access and test that sensitive values never appear in responses or logs."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Typed configuration validation",
+      "mechanism": "ConfigurationProperties binds settings into a model. Validation must reject unusable combinations, not merely values that parse.",
+      "tradeOff": "Safe defaults simplify setup but must not disguise missing production requirements.",
+      "verify": "Exercise blank endpoints, invalid durations and contradictory enabled flags.",
+      "questions": [
+        {
+          "question": "What does ConfigurationProperties provide?",
+          "answer": "Structured binding of related external settings into a typed object with a stable prefix and optional validation."
+        },
+        {
+          "question": "When should a configuration default be rejected?",
+          "answer": "When silently using it would violate production safety or business behavior, such as sending real traffic to a sandbox endpoint."
+        },
+        {
+          "question": "How is parsing different from validating configuration?",
+          "answer": "A URI or duration can parse successfully while still violating allowed schemes, destinations or operational bounds."
+        },
+        {
+          "question": "Why is NotNull insufficient for an endpoint?",
+          "answer": "A non-null URI can still be relative, use an unsupported scheme or target an unapproved host; validate the intended contract."
+        },
+        {
+          "question": "How would you update related settings atomically?",
+          "answer": "Treat them as one validated configuration version and define replacement plus in-flight behavior; ordinary binding does not promise automatic live refresh."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Profiles and deployment modes",
+      "mechanism": "Profiles select configuration and beans. Multiple active profiles can combine, so deployment modes need explicit valid combinations.",
+      "tradeOff": "Profile-based convenience becomes difficult when used as an unbounded feature system.",
+      "verify": "Start every supported profile combination and assert selected integrations.",
+      "questions": [
+        {
+          "question": "What is a Boot profile used for?",
+          "answer": "Selecting environment-specific properties and Spring bean composition through the application's supported profile mechanism."
+        },
+        {
+          "question": "When should a feature flag replace a profile?",
+          "answer": "When a runtime business capability needs independent targeting or change policy rather than a broad application composition mode."
+        },
+        {
+          "question": "How can profile-specific configuration interact with external sources?",
+          "answer": "Both activation and precedence affect the final values; the presence of a profile file does not make it the winning source."
+        },
+        {
+          "question": "Why can enabling test and production profiles together be dangerous?",
+          "answer": "Conflicting fake and real integrations may become eligible simultaneously, producing ambiguous wiring or unsafe fallbacks."
+        },
+        {
+          "question": "How would you prevent accidental sandbox activation in production?",
+          "answer": "Validate deployment mode centrally, restrict fake beans to explicit conditions and assert the actual selected client before accepting traffic."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "HTTP server choices",
+      "mechanism": "Boot supports different web stacks and embedded-server integrations. MVC and WebFlux have different execution and testing models.",
+      "tradeOff": "A familiar programming model may be simpler than switching stacks for unmeasured throughput claims.",
+      "verify": "Identify the actual server and exercise blocking dependencies under load.",
+      "questions": [
+        {
+          "question": "What is an embedded server in Boot?",
+          "answer": "A server integration started as part of the application's executable process rather than requiring a separately deployed application server."
+        },
+        {
+          "question": "When should MVC be preferred to WebFlux?",
+          "answer": "When a synchronous stack fits the dependencies and team; assess streaming and concurrency needs instead of choosing by assumed performance superiority."
+        },
+        {
+          "question": "How does Boot choose web application behavior?",
+          "answer": "From configured application type and available dependencies under supported auto-configuration rules; verify the selected stack in the actual build."
+        },
+        {
+          "question": "Why can adding both web starters produce a surprising result?",
+          "answer": "Classpath-based selection follows Boot's rules rather than the developer's naming intention; explicitly verify which stack is active."
+        },
+        {
+          "question": "How would you diagnose slow HTTP handling after changing servers?",
+          "answer": "Compare queueing, worker limits, connection behavior and dependency latency with equivalent endpoints and workload."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Actuator endpoints",
+      "mechanism": "Actuator exposes operational information through configured management interfaces. Endpoint availability, exposure and authorization are separate concerns.",
+      "tradeOff": "Operational visibility is useful but can disclose sensitive internals or enable powerful actions.",
+      "verify": "Test management access from both permitted and untrusted network paths.",
+      "questions": [
+        {
+          "question": "What does Actuator add?",
+          "answer": "Production-oriented management capabilities such as health information and integration with metrics and application diagnostics."
+        },
+        {
+          "question": "When should management traffic use a separate interface or port?",
+          "answer": "When network isolation and access policy benefit from separation; verify routing, authentication and monitoring reachability explicitly."
+        },
+        {
+          "question": "Does enabling an endpoint automatically make it publicly accessible?",
+          "answer": "No. Availability, exposure and security configuration jointly determine reachability, and those rules vary by endpoint and version."
+        },
+        {
+          "question": "Why is broad management exposure risky?",
+          "answer": "Diagnostic data and administrative operations can reveal internal structure or permit unintended control if insufficiently restricted."
+        },
+        {
+          "question": "How would you validate an Actuator security policy?",
+          "answer": "Enumerate exposed endpoints and test anonymous, authenticated and authorized access, including alternate management paths and error responses."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Health and readiness",
+      "mechanism": "Liveness, readiness and startup checks answer different questions. Dependency health should reflect whether the instance can usefully serve its promised capability.",
+      "tradeOff": "Aggressive checks can amplify outages by removing all instances or repeatedly restarting them.",
+      "verify": "Simulate a slow dependency and inspect routing plus restart behavior.",
+      "questions": [
+        {
+          "question": "How do liveness and readiness differ?",
+          "answer": "Liveness asks whether restart may recover a broken process; readiness asks whether the instance should currently receive traffic."
+        },
+        {
+          "question": "When should a dependency affect readiness?",
+          "answer": "When its failure prevents the instance from providing required service, according to an explicit degradation and routing policy."
+        },
+        {
+          "question": "Why is a successful health endpoint insufficient for a business SLO?",
+          "answer": "It may exercise a cheaper path than user requests and omit overloaded pools, stale data or failing dependencies."
+        },
+        {
+          "question": "How can dependency-based liveness cause an outage loop?",
+          "answer": "A shared external failure can trigger restarts across healthy processes without repairing the dependency, adding cold-start load."
+        },
+        {
+          "question": "How would you test probe behavior during deployment?",
+          "answer": "Introduce slow startup and dependency failure, then verify traffic admission, graceful withdrawal and bounded restart behavior."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Metrics and tracing",
+      "mechanism": "Boot integrates observation infrastructure, but useful telemetry still requires stable naming, bounded labels and meaningful boundaries.",
+      "tradeOff": "Detailed dimensions aid diagnosis while unbounded cardinality can overwhelm monitoring systems.",
+      "verify": "Check a successful request, retry, timeout and asynchronous handoff end to end.",
+      "questions": [
+        {
+          "question": "What is the purpose of application metrics?",
+          "answer": "To quantify throughput, errors, latency and resource pressure over time using measurements aligned with operational questions."
+        },
+        {
+          "question": "When should a request identifier be logged rather than used as a metric tag?",
+          "answer": "When its cardinality is effectively unbounded. Logs or traces can carry individual identities without creating one time series per request."
+        },
+        {
+          "question": "How do retries affect latency observations?",
+          "answer": "A measurement around the entire operation differs from one around each attempt. Define both boundaries when diagnosing retry overhead."
+        },
+        {
+          "question": "Why can tracing disappear after an executor handoff?",
+          "answer": "Context may not propagate through arbitrary task submission. Use supported propagation and verify both success and failure paths."
+        },
+        {
+          "question": "How would you detect a connection-pool bottleneck?",
+          "answer": "Correlate acquisition wait, active connections, query latency and request deadlines instead of relying only on HTTP duration metrics."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Boot testing layers",
+      "mechanism": "Boot test support can load focused slices or broad application contexts. Selecting the boundary matters more than maximizing context size.",
+      "tradeOff": "Narrow slices run quickly but omit integrations; full contexts can hide expensive or accidental coupling.",
+      "verify": "Verify representative behavior with the smallest test that includes the relevant real boundary.",
+      "questions": [
+        {
+          "question": "What is SpringBootTest intended for?",
+          "answer": "Bootstrapping application-level integration tests using Boot configuration, with web environment chosen explicitly by the test."
+        },
+        {
+          "question": "When is a web slice test useful?",
+          "answer": "For controller routing, binding, validation and HTTP behavior while controlling collaborators and acknowledging excluded infrastructure."
+        },
+        {
+          "question": "How does a repository slice differ from a real production database test?",
+          "answer": "Its database, dialect and selected configuration may differ, so it cannot establish every production SQL, locking or migration behavior."
+        },
+        {
+          "question": "Why can a transactional HTTP integration test leave rows behind?",
+          "answer": "The server request can execute on another thread and transaction, outside the test thread's rollback scope."
+        },
+        {
+          "question": "How would you balance the Boot test suite?",
+          "answer": "Use unit tests for decisions, slices for framework boundaries and a smaller set of real packaged/infrastructure tests for integration risks."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Database integration",
+      "mechanism": "Boot can configure data sources and persistence support, while transaction and database semantics remain explicit application concerns.",
+      "tradeOff": "Convenient setup does not make pool size, migration ownership or query behavior universally correct.",
+      "verify": "Start with schema drift, pool exhaustion and a rollback scenario.",
+      "questions": [
+        {
+          "question": "What does data-source auto-configuration do?",
+          "answer": "It can assemble supported connection infrastructure from dependencies and settings when its conditions apply."
+        },
+        {
+          "question": "When should pool size be changed?",
+          "answer": "After observing connection waits and database capacity. More connections can increase contention and memory without improving throughput."
+        },
+        {
+          "question": "How do schema migration tools fit startup?",
+          "answer": "They apply versioned database changes under configured lifecycle rules; application and deployment ownership must prevent conflicting migration execution."
+        },
+        {
+          "question": "Why is automatic schema mutation risky for production?",
+          "answer": "Unexpected changes can alter or destroy data without a reviewed migration and rollback-compatible rollout plan."
+        },
+        {
+          "question": "How would you roll out a new required column?",
+          "answer": "Use expand-contract steps: add compatible schema, deploy tolerant readers and writers, backfill safely, then enforce stricter constraints when all consumers permit it."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Security integration",
+      "mechanism": "Boot supplies conditional defaults and integrations; application-specific authorization still requires explicit policy. Authentication does not establish ownership of a requested resource.",
+      "tradeOff": "Defaults help safe startup but are not a complete product security model.",
+      "verify": "Test anonymous, wrong-role and wrong-tenant requests plus management endpoints.",
+      "questions": [
+        {
+          "question": "Does adding the security starter complete API security?",
+          "answer": "No. Define identity trust, route policy, object-level authorization, session or token behavior and operational endpoint access."
+        },
+        {
+          "question": "When should resource-server support be used?",
+          "answer": "When validating bearer tokens under a configured trusted issuer and required claims, rather than implementing ad hoc token parsing."
+        },
+        {
+          "question": "How do authentication and authorization differ?",
+          "answer": "Authentication establishes a trusted identity; authorization determines whether that identity may perform a specific action on a specific resource."
+        },
+        {
+          "question": "Why can a valid token still be rejected correctly?",
+          "answer": "It may have the wrong audience, insufficient permission, wrong tenant or invalid time claims for the operation."
+        },
+        {
+          "question": "How would you verify a custom security configuration after an upgrade?",
+          "answer": "Replay positive and negative route cases, validate token trust and claim rules, and check filter ordering plus management exposure."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Packaging and containers",
+      "mechanism": "Executable packaging assembles application code and dependencies into a deployable artifact. Container layers and buildpacks affect rebuild cost and runtime environment.",
+      "tradeOff": "A smaller image is useful only if security, diagnostics and compatibility remain adequate.",
+      "verify": "Run the produced artifact in the target container rather than only through the IDE.",
+      "questions": [
+        {
+          "question": "What is an executable Boot JAR?",
+          "answer": "A packaged application with launcher support and dependencies arranged so the application can run as an executable Java artifact."
+        },
+        {
+          "question": "When are layered images useful?",
+          "answer": "When separating changing application code from more stable dependencies improves image reuse, build speed and deployment transfer cost."
+        },
+        {
+          "question": "What is a buildpack-based image build?",
+          "answer": "A supported process that turns application artifacts into an OCI image using builder-provided build and runtime conventions."
+        },
+        {
+          "question": "Why can a container pass local startup but fail in deployment?",
+          "answer": "Architecture, certificates, filesystem permissions, memory limits or environment inputs can differ from the developer machine."
+        },
+        {
+          "question": "How would you harden a production application image?",
+          "answer": "Use a supported minimal runtime, non-root execution where possible, controlled writable paths and verified dependencies while preserving required diagnostics."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Graceful shutdown",
+      "mechanism": "Shutdown must coordinate traffic withdrawal, accepted work and resource cleanup under a finite deployment deadline.",
+      "tradeOff": "Long drain windows preserve more work but delay rollout and still cannot guarantee forced-kill cleanup.",
+      "verify": "Terminate the process during short, long and side-effecting requests.",
+      "questions": [
+        {
+          "question": "What is graceful shutdown trying to achieve?",
+          "answer": "Stopping new work while allowing accepted operations to finish within a bounded period before resources and the process terminate."
+        },
+        {
+          "question": "When should readiness change during termination?",
+          "answer": "Early enough for routing to stop sending new work, while allowing for propagation delay and existing connections."
+        },
+        {
+          "question": "How does a shutdown timeout affect long-running requests?",
+          "answer": "Work beyond the allowed drain period may be interrupted or disconnected; the client-visible outcome can remain uncertain after a side effect."
+        },
+        {
+          "question": "Why are shutdown hooks insufficient for durable business recovery?",
+          "answer": "Abrupt termination can skip hooks. Persist enough state to reconcile or resume unfinished work after restart."
+        },
+        {
+          "question": "How would you validate a rolling update's termination policy?",
+          "answer": "Measure routing withdrawal, in-flight completion, resource closure and recovery of ambiguous operations under the actual orchestrator timing."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "AOT and native images",
+      "mechanism": "Spring AOT processes application configuration for optimized execution; GraalVM native-image compilation is a separate step with closed-world constraints.",
+      "tradeOff": "Startup and footprint benefits compete with build cost, library compatibility and diagnostic differences.",
+      "verify": "Exercise the actual native artifact with deployment-specific configuration and rare code paths.",
+      "questions": [
+        {
+          "question": "Does Spring Boot support native images?",
+          "answer": "Yes, through supported Spring AOT and GraalVM native-image integration, subject to version and dependency compatibility."
+        },
+        {
+          "question": "When does native packaging deserve a prototype?",
+          "answer": "When measured startup or memory constraints dominate, and the service's libraries and operational tooling can support the target."
+        },
+        {
+          "question": "What are runtime hints used for?",
+          "answer": "To describe dynamic access and resources needed by AOT or native processing when they cannot be discovered adequately through ordinary analysis."
+        },
+        {
+          "question": "Why is a passing JVM test insufficient for a native release?",
+          "answer": "Reachability, resource inclusion, initialization and dynamic behavior differ in the native artifact."
+        },
+        {
+          "question": "How would you compare JVM and native deployments fairly?",
+          "answer": "Use equivalent behavior, traffic, resource limits and dependencies; compare readiness, footprint, steady throughput, tail latency and build/diagnostic costs."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Dependency upgrades and compatibility",
+      "mechanism": "The platform version aligns a matrix of framework, library and plugin behavior. Major upgrades can alter namespaces, APIs and defaults.",
+      "tradeOff": "Staying current reduces maintenance risk but upgrades must preserve observable contracts.",
+      "verify": "Inspect resolved graphs and test old requests, persisted states and rollback compatibility.",
+      "questions": [
+        {
+          "question": "Why should Boot and Spring versions normally be aligned?",
+          "answer": "Boot's dependency management defines a supported combination; arbitrary framework overrides can produce untested binary and behavioral interactions."
+        },
+        {
+          "question": "When is a major Boot upgrade more than a version edit?",
+          "answer": "When it changes Java requirements, namespaces, framework contracts, configuration properties or supported dependencies."
+        },
+        {
+          "question": "How would you find deprecated configuration before upgrading?",
+          "answer": "Use release guidance, configuration metadata and relevant migration tooling, then verify effective behavior in the upgraded application."
+        },
+        {
+          "question": "Why can a successful compile conceal an upgrade regression?",
+          "answer": "Serialization, security defaults, queries, management exposure and runtime wiring can change without a compiler error."
+        },
+        {
+          "question": "How would you stage a major framework migration?",
+          "answer": "Inventory contracts, update compatible infrastructure first, test representative flows, canary with stop thresholds and preserve a viable data-compatible rollback."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Production diagnosis",
+      "mechanism": "Operational incidents need an evidence-based decomposition of startup, traffic, dependencies and resource limits. Boot diagnostics are tools rather than conclusions.",
+      "tradeOff": "Collecting everything indiscriminately can add overhead and expose sensitive data.",
+      "verify": "Reproduce one controlled failure and trace it through logs, metrics and dependency timing.",
+      "questions": [
+        {
+          "question": "Where should a Boot startup failure investigation begin?",
+          "answer": "With the earliest causal exception, condition outcomes, effective required settings and the actual packaged dependency graph."
+        },
+        {
+          "question": "When is the conditions report more useful than changing annotations?",
+          "answer": "When a bean is unexpectedly present or absent because auto-configuration conditions did not match the developer's assumption."
+        },
+        {
+          "question": "How do you separate CPU saturation from downstream waiting?",
+          "answer": "Compare CPU profiles, thread state, connection acquisition and distributed traces alongside latency and throughput."
+        },
+        {
+          "question": "Why can a healthy instance produce many timeouts?",
+          "answer": "Readiness can omit saturated queues or dependencies, and requests may spend most of their deadline waiting before execution."
+        },
+        {
+          "question": "How would you close an incident investigation with evidence?",
+          "answer": "Reproduce the cause, apply the smallest corrective change, run a representative load/failure test and record residual limitations plus rollback steps."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "Custom auto-configuration",
+      "mechanism": "Reusable Boot modules should declare explicit conditions, defaults and extension points. User overrides and ordering must be verified rather than assumed.",
+      "tradeOff": "Opinionated defaults are helpful only when back-off behavior remains predictable.",
+      "verify": "Test the module with missing classes, custom user beans and invalid properties.",
+      "questions": [
+        {
+          "question": "When should a reusable integration supply auto-configuration?",
+          "answer": "When several applications need consistent conditional setup with documented defaults and clear user override behavior."
+        },
+        {
+          "question": "What should an auto-configuration module expose as its contract?",
+          "answer": "Required dependencies, property names, conditions, produced bean types, lifecycle, security expectations and supported override points."
+        },
+        {
+          "question": "How can ApplicationContextRunner support auto-configuration tests?",
+          "answer": "It creates controlled contexts with selected configuration and inputs, making activation and back-off behavior practical to assert."
+        },
+        {
+          "question": "Why should auto-configuration avoid broad component scans?",
+          "answer": "Broad scanning can register unrelated components and make library behavior depend on package contents rather than explicit configuration."
+        },
+        {
+          "question": "How would you prevent a library upgrade from changing application wiring silently?",
+          "answer": "Test activation matrices and user overrides across supported platform versions, inspect bean identities and document intentional behavior changes."
+        }
+      ],
+      "kind": "concept"
+    },
+    {
+      "title": "@SpringBootApplication composition",
+      "mechanism": "SpringBootApplication composes Boot configuration, auto-configuration enablement and component scanning. Each part is handled by its own configuration infrastructure, not one magical startup action.",
+      "tradeOff": "Convention reduces setup while package placement and conditional activation remain consequential.",
+      "verify": "Move a component outside the scan root and inspect the resulting definitions plus condition report.",
+      "questions": [
+        {
+          "question": "Which annotations does @SpringBootApplication compose?",
+          "answer": "It combines SpringBootConfiguration, EnableAutoConfiguration and ComponentScan, bringing related but distinct configuration mechanisms together."
+        },
+        {
+          "question": "Why does the application class's package matter?",
+          "answer": "Its default scan location influences discovered application components; deliberate package boundaries avoid missing or accidentally registered beans."
+        },
+        {
+          "question": "Does scanBasePackages control every persistence scan?",
+          "answer": "No. Component scanning, entity discovery and repository scanning have separate configuration contracts and must be verified independently."
+        },
+        {
+          "question": "Why can an application start while a controller is absent?",
+          "answer": "Its component was not discovered or eligible, so startup can succeed without registering the intended route."
+        },
+        {
+          "question": "How would you diagnose a startup-annotation misunderstanding?",
+          "answer": "Separate component discovery, auto-configuration imports and persistence scanning, then inspect the actual definitions and routes produced by each."
+        }
+      ],
+      "kind": "annotation"
+    },
+    {
+      "title": "@EnableAutoConfiguration and @AutoConfiguration",
+      "mechanism": "EnableAutoConfiguration imports candidate configuration through Boot infrastructure. AutoConfiguration marks library configuration for that mechanism; conditional metadata decides activation.",
+      "tradeOff": "Automatic integration depends on stable imports and deliberate back-off, not broad package scans.",
+      "verify": "Test a library with and without its optional classes and with an application-provided replacement bean.",
+      "questions": [
+        {
+          "question": "How does @EnableAutoConfiguration work internally?",
+          "answer": "It activates Boot's import-selection infrastructure, loading registered candidates and applying exclusion plus condition logic before configuration is used."
+        },
+        {
+          "question": "What does @AutoConfiguration indicate?",
+          "answer": "A configuration intended for Boot's auto-configuration mechanism, with supported ordering metadata and conditional registration behavior."
+        },
+        {
+          "question": "Why use AutoConfiguration.imports for library registration?",
+          "answer": "It explicitly identifies supported auto-configuration candidates through the modern Boot mechanism rather than relying on consumer scans."
+        },
+        {
+          "question": "Does auto-configuration ordering determine ordinary bean initialization order?",
+          "answer": "Not universally. Configuration ordering and dependency-driven bean construction are different concerns; declare actual dependencies explicitly."
+        },
+        {
+          "question": "How would you test custom auto-configuration back-off?",
+          "answer": "Create controlled contexts with missing prerequisites and user-defined beans, then assert selected identities, counts and lifecycle behavior."
+        }
+      ],
+      "kind": "annotation"
+    },
+    {
+      "title": "@ConditionalOnClass and @ConditionalOnMissingBean",
+      "mechanism": "Boot condition implementations evaluate metadata and bean availability at defined phases. Matching depends on what has been processed and the exact type search contract.",
+      "tradeOff": "Conditional defaults support extensibility while hidden return types or ordering assumptions can break intended overrides.",
+      "verify": "Vary classpath and user definitions and inspect condition outcomes rather than annotations alone.",
+      "questions": [
+        {
+          "question": "What does @ConditionalOnClass check?",
+          "answer": "Whether specified classes are available under the supported condition-processing rules; it does not establish correct configuration or external-system availability."
+        },
+        {
+          "question": "How does @ConditionalOnMissingBean support overrides?",
+          "answer": "It allows selected defaults to register only when matching beans are absent under its configured search and type rules."
+        },
+        {
+          "question": "Why should a @Bean return type expose useful concrete type information?",
+          "answer": "Condition evaluation and type prediction rely on available metadata; overly general return types can hide types needed by later conditions."
+        },
+        {
+          "question": "Why can a missing-bean condition behave unexpectedly in user configuration?",
+          "answer": "Its evaluation sees definitions processed at that point, so unsupported ordering assumptions can change what is considered present."
+        },
+        {
+          "question": "How would you debug duplicate conditional clients?",
+          "answer": "Inspect candidate types, factory return metadata, context search scope and configuration ordering, then make the intended override contract explicit."
+        }
+      ],
+      "kind": "annotation"
+    },
+    {
+      "title": "@ConditionalOnProperty and configuration modes",
+      "mechanism": "Property conditions gate registration; typed configuration binding and validation happen through separate mechanisms. A present property can still contain an invalid business value.",
+      "tradeOff": "Compact switches are useful but defaults and match-if-missing behavior need careful review.",
+      "verify": "Test absent, blank, false, true and unexpected values with the configured condition attributes.",
+      "questions": [
+        {
+          "question": "What does @ConditionalOnProperty control?",
+          "answer": "Whether configuration or a bean is eligible based on selected environment properties and its declared matching rules."
+        },
+        {
+          "question": "Does @ConditionalOnProperty validate a whole settings object?",
+          "answer": "No. It evaluates its property condition; type conversion, endpoint safety and cross-field rules need binding and validation."
+        },
+        {
+          "question": "Why should havingValue and matchIfMissing be explicit when important?",
+          "answer": "They clarify which values and absent settings activate behavior instead of leaving critical modes dependent on implicit defaults."
+        },
+        {
+          "question": "Why can a false-valued property still be mishandled by application logic?",
+          "answer": "Independent code may interpret presence rather than the condition's semantics, creating divergent enabled/disabled decisions."
+        },
+        {
+          "question": "How would you design a safe optional integration?",
+          "answer": "Use one typed enabled mode, validate required fields when enabled and ensure missing production configuration cannot activate a fake fallback."
+        }
+      ],
+      "kind": "annotation"
+    },
+    {
+      "title": "@ConfigurationProperties registration and validation",
+      "mechanism": "ConfigurationProperties describes binding metadata; EnableConfigurationProperties or ConfigurationPropertiesScan can register supported binding targets. Validation requires the relevant validation integration and constraints.",
+      "tradeOff": "Typed settings improve contracts while immutable construction and version differences require explicit tests.",
+      "verify": "Bind valid, missing, malformed and cross-field invalid values through the actual application context.",
+      "questions": [
+        {
+          "question": "Does @ConfigurationProperties alone always register a bean?",
+          "answer": "No universal registration follows from the annotation alone; use the supported registration mechanism or an intentional managed bean definition."
+        },
+        {
+          "question": "How do @EnableConfigurationProperties and @ConfigurationPropertiesScan differ?",
+          "answer": "One explicitly lists binding types; the other discovers eligible configuration-properties types under its scan rules."
+        },
+        {
+          "question": "What does @Validated add to a properties type?",
+          "answer": "It requests supported validation during binding, with an installed validation provider and applicable constraints."
+        },
+        {
+          "question": "Why can valid-looking properties still fail startup?",
+          "answer": "Conversion or constructor invariants can fail, nested validation can reject values, or required combinations can be inconsistent."
+        },
+        {
+          "question": "How would you test immutable configuration binding?",
+          "answer": "Load the actual binding target with representative source precedence and invalid combinations, then assert the constructed values or explicit startup rejection."
+        }
+      ],
+      "kind": "annotation"
+    },
+    {
+      "title": "@SpringBootTest and slice annotation internals",
+      "mechanism": "Boot test annotations integrate bootstrap, context selection and test customizers. Slice annotations restrict configuration and auto-configuration rather than promising a full production deployment.",
+      "tradeOff": "Focused contexts improve feedback but can omit the boundary whose behavior matters.",
+      "verify": "Inspect loaded beans and exercise a real failure relevant to each chosen test scope.",
+      "questions": [
+        {
+          "question": "How does @SpringBootTest locate application configuration?",
+          "answer": "Boot test bootstrap support searches or uses declared configuration according to its supported rules, then creates the selected application context and web environment."
+        },
+        {
+          "question": "What does @WebMvcTest intentionally narrow?",
+          "answer": "It focuses on MVC-related components and test configuration, excluding much ordinary application infrastructure unless explicitly supplied."
+        },
+        {
+          "question": "What does @DataJpaTest fail to prove by itself?",
+          "answer": "That the production database dialect, migrations, networking and every transaction workflow behave identically to its configured test environment."
+        },
+        {
+          "question": "Why can a @SpringBootTest pass without opening a real HTTP port?",
+          "answer": "Its selected web environment may use a mock context; choose a real server environment when the network boundary matters."
+        },
+        {
+          "question": "How would you prevent test annotations from masking production wiring?",
+          "answer": "Assert selected integration identities and retain a small packaged-artifact smoke suite using production-like conditions and actual required infrastructure."
+        }
+      ],
+      "kind": "annotation"
+    }
+  ]
+}

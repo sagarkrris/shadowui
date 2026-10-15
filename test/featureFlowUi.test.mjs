@@ -45,7 +45,7 @@ test("company prep uses the shared workspace scroller instead of a nested touch 
 });
 
 test("long workspaces use the shared flowing content wrapper", () => {
-  assert.match(companySource, /className="workspace-content"/);
+  assert.match(companySource, /className=\{`workspace-content /);
   assert.match(interviewReadySource, /className="workspace-content"/);
   assert.match(globalsSource, /\.workspace-content[\s\S]*flex:\s*0 0 auto/);
 });

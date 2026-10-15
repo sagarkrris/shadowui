@@ -42,9 +42,11 @@ boundaries.each_with_index do |start, index|
 end
 
 # Supplemental chapters retain their question numbering from the master export.
-supplement = File.read(File.join(root, "content/senior-java/part-21.md"))
-renderer = GuideRenderer.new(filter_html: true, safe_links_only: true, no_images: true)
-pages["part-21"] = Redcarpet::Markdown.new(renderer, fenced_code_blocks: true, tables: true, autolink: true, strikethrough: true).render(supplement)
+["part-21", "part-22"].each do |slug|
+  supplement = File.read(File.join(root, "content/senior-java/#{slug}.md"))
+  renderer = GuideRenderer.new(filter_html: true, safe_links_only: true, no_images: true)
+  pages[slug] = Redcarpet::Markdown.new(renderer, fenced_code_blocks: true, tables: true, autolink: true, strikethrough: true).render(supplement)
+end
 
 anchor_aliases = {
   "2-number-of-islands-dfs-orows--cols" => "2-number-of-islands-dfs-o-rows-cols",
