@@ -15,7 +15,7 @@ test('public pages keep the InterviewIQ watermark visible without blocking contr
     await expect(watermark).toHaveCSS('transform', 'none');
     await page.getByRole('button', { name: 'Preview cache capacity 3', exact: true }).click();
     await expect(page.getByRole('status', { name: 'Cache preview result' })).toContainText('4 hits; 3 misses');
-    await page.screenshot({ path: `/private/tmp/interviewiq-watermark-${width}.png` });
+    await page.screenshot({ path: test.info().outputPath(`interviewiq-watermark-${width}.png`) });
   }
 });
 
@@ -138,7 +138,7 @@ for (const width of [390, 768, 1440]) test(`public redesign fits, scrolls and re
     await page.addScriptTag({ path: 'node_modules/axe-core/axe.min.js' });
     expect(await page.evaluate(async () => (await window.axe.run('[data-reader-scroll]', { runOnly: ['wcag2a', 'wcag2aa', 'wcag21aa'] })).violations), path).toEqual([]);
     if (path === '/') {
-      await page.screenshot({ path: `/private/tmp/interviewiq-ui/home-${width}.png` });
+      await page.screenshot({ path: test.info().outputPath(`interviewiq-ui/home-${width}.png`) });
       await page.mouse.move(width / 2, 500); await page.mouse.wheel(0, 600);
       await expect.poll(() => shell.evaluate(element => element.scrollTop)).toBeGreaterThan(20);
     }
@@ -152,6 +152,6 @@ for (const width of [390, 768, 1440]) test(`public redesign fits, scrolls and re
   await expect(page.getByRole('dialog')).toBeVisible();
   await page.addScriptTag({ path: 'node_modules/axe-core/axe.min.js' });
   expect(await page.evaluate(async () => (await window.axe.run('dialog', { runOnly: ['wcag2a', 'wcag2aa', 'wcag21aa'] })).violations)).toEqual([]);
-  await page.screenshot({ path: `/private/tmp/interviewiq-ui/search-${width}.png` });
+  await page.screenshot({ path: test.info().outputPath(`interviewiq-ui/search-${width}.png`) });
   expect(errors).toEqual([]);
 });

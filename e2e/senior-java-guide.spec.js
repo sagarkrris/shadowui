@@ -241,7 +241,7 @@ test("Book Mode keeps long code and tables accessible, including the final page"
   await expect(modal).toBeVisible();
   await modal.getByText("Reading settings", { exact: true }).click();
   await expect.poll(() => modal.getByRole("status").textContent()).toMatch(/^Pages 1–2 of \d+$/);
-  await page.screenshot({ path: "/private/tmp/book-mode-desktop.png" });
+  await page.screenshot({ path: test.info().outputPath("book-mode-desktop.png") });
   const pages = modal.getByRole("region", { name: "Book pages" });
   const sizes = await pages.locator("pre,table").evaluateAll(elements => elements.map(element => ({ height: element.getBoundingClientRect().height, limit: element.closest('[role="region"]').clientHeight })));
   expect(sizes.length).toBeGreaterThan(5);
@@ -259,7 +259,7 @@ test("Book Mode keeps long code and tables accessible, including the final page"
   await expect(modal.getByRole("button", { name: "Next page", exact: false })).toBeEnabled();
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(modal.getByRole("status")).toHaveText(/^Page \d+ of \d+$/);
-  await page.screenshot({ path: "/private/tmp/book-mode-mobile.png" });
+  await page.screenshot({ path: test.info().outputPath("book-mode-mobile.png") });
   expect(errors).toEqual([]);
 });
 

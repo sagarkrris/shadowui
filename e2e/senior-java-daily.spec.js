@@ -41,9 +41,9 @@ for (const viewport of [{ width: 1366, height: 768 }, { width: 390, height: 844 
         await skip.focus();
         await page.keyboard.press("Enter");
         await expect(page.locator("#reader-main")).toBeFocused();
-        await page.screenshot({ path: `/private/tmp/java-daily-set${code}-${viewport.width}-top.png` });
+        await page.screenshot({ path: test.info().outputPath(`java-daily-set${code}-${viewport.width}-top.png`) });
         await page.locator("article pre").last().scrollIntoViewIfNeeded();
-        await page.screenshot({ path: `/private/tmp/java-daily-set${code}-${viewport.width}-coding.png` });
+        await page.screenshot({ path: test.info().outputPath(`java-daily-set${code}-${viewport.width}-coding.png`) });
       }
     }
   });

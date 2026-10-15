@@ -20,7 +20,7 @@ test("public homepage lets a new reader discover articles and paths without onbo
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Prepare for your next engineering role.");
   await expect(page.getByLabel("Name", { exact: true })).toHaveCount(0);
-  await page.screenshot({ path: "/private/tmp/reader-home-desktop.png", fullPage: true });
+  await page.screenshot({ path: test.info().outputPath("reader-home-desktop.png"), fullPage: true });
   await page.getByRole("searchbox", { name: "Search articles" }).fill("slow sql");
   await expect(page.getByRole("status").filter({ hasText: /^1 articles$/ })).toHaveText("1 articles");
   await page.getByRole("link", { name: "How to Investigate a Slow SQL Query", exact: true }).click();
