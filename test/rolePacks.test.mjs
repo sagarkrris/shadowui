@@ -77,3 +77,25 @@ test("returns cloned packs so callers cannot mutate the catalog", () => {
   assert.ok(!second.focusTopics.includes("Mutated topic"));
   assert.ok(!second.rounds[0].signals.includes("Mutated signal"));
 });
+
+test('unsupported stacks receive general preparation instead of an unrelated specialist pack', () => {
+  for (const profile of [
+    {position:'Backend Developer',stack:'JavaScript, Node.js'},
+    {position:'Backend Engineer',stack:'Go'},
+    {position:'QA Engineer',stack:'Selenium'},
+    {position:'Consultant',stack:'Excel'},
+    {position:'Systems Engineer',stack:'C++'},
+  ]) {
+    const pack=buildRolePack({profile});
+    assert.equal(pack.id,'general-engineering',JSON.stringify(profile));
+    assert.equal(pack.matched,false);
+    assert.match(pack.matchExplanation,/No curated role pack matches/);
+    assert.ok(pack.focusTopics.length > 0);
+  }
+});
+
+test('specific stack signals select supported packs and explicit choice overrides profile', () => {
+  assert.equal(buildRolePack({profile:{position:'Backend Developer',stack:'Python, FastAPI'}}).id,'python-backend');
+  assert.equal(buildRolePack({profile:{position:'Frontend Developer',stack:'React, TypeScript'}}).id,'react-frontend-senior');
+  assert.equal(getRolePack({role:'Rust Systems',profile:{stack:'Java Spring Boot'}}).id,'rust-systems');
+});

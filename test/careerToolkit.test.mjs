@@ -153,7 +153,9 @@ test("rewards measurable impact and complete resume basics in the review breakdo
 
   assert.ok(byId["ats-basics"] >= 80);
   assert.ok(byId["content-strength"] >= 80);
-  assert.ok(byId["interview-proof"] >= 80);
+  const demonstrated = analysis.findings.filter((item) => item.status === "demonstrated");
+  assert.equal(byId["interview-proof"], Math.round(demonstrated.length / analysis.findings.length * 100));
+  assert.equal(analysis.findings.find((item) => item.name === "DSA").status, "mentioned");
   assert.ok(analysis.issues.every((issue) => issue.severity !== "High"));
 });
 

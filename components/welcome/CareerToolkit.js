@@ -56,6 +56,8 @@ function readToolkitState() {
     if (!raw) return EMPTY_STATE;
     const parsed = JSON.parse(raw);
     const state = { ...EMPTY_STATE, ...(parsed?.state || {}) };
+    if (state.resumeAnalysis?.analysisVersion !== 3) state.resumeAnalysis = null;
+    if (state.jobDescriptionAnalysis?.analysisVersion !== 2) state.jobDescriptionAnalysis = null;
     return { ...state, artifactVersions: { ...EMPTY_STATE.artifactVersions, ...(state.artifactVersions || {}) } };
   } catch {
     return EMPTY_STATE;
@@ -99,10 +101,12 @@ function scoreBandColor(score, theme) {
 }
 
 function normalizeResumeAnalysis(analysis) {
-  if (!analysis) return null;
+  if (!analysis || analysis.analysisVersion !== 3) return null;
 
   return {
     ...analysis,
+    findings: Array.isArray(analysis?.findings) ? analysis.findings : [],
+    matchedSkills: Array.isArray(analysis?.matchedSkills) ? analysis.matchedSkills : [],
     scoreBreakdown: Array.isArray(analysis?.scoreBreakdown) ? analysis.scoreBreakdown : [],
     issues: Array.isArray(analysis?.issues) ? analysis.issues : [],
     rewriteSuggestions: Array.isArray(analysis?.rewriteSuggestions) ? analysis.rewriteSuggestions : [],
@@ -113,7 +117,7 @@ function normalizeResumeAnalysis(analysis) {
 }
 
 function normalizeJobDescriptionAnalysis(analysis) {
-  if (!analysis) return null;
+  if (!analysis || analysis.analysisVersion !== 2) return null;
 
   return {
     ...analysis,
@@ -163,6 +167,14 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
     onToolkitStateChange?.(state);
   }, [ready, state, onToolkitStateChange]);
 
+  const analysisContext = JSON.stringify([profile, topics]);
+  useEffect(() => {
+    if ((state.resumeAnalysis && state.resumeAnalysis.contextSignature !== analysisContext)
+      || (state.jobDescriptionAnalysis && state.jobDescriptionAnalysis.contextSignature !== analysisContext)) {
+      setState((previous) => ({ ...previous, resumeAnalysis: null, jobDescriptionAnalysis: null }));
+    }
+  }, [analysisContext, state.resumeAnalysis, state.jobDescriptionAnalysis]);
+
   const reviewQueue = useMemo(
     () => buildSpacedReviewQueue({ messages, reviewHistory: state.reviewHistory }),
     [messages, state.reviewHistory],
@@ -201,6 +213,7 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
   const runResumeAnalysis = () => {
     const analysis = analyzeResumeGaps({
       resumeText: state.resumeText,
+      jobDescriptionText: state.jobDescriptionText,
       profile,
       topics,
     });
@@ -346,7 +359,7 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
               <i className="ti ti-briefcase-2" />Role Pack Builder
             </span>
             <p style={{ color: "#9ca3af", fontSize: 11.3, lineHeight: 1.45, marginTop: 5 }}>
-              {rolePack.title} tuned from your target role and stack.
+              {rolePack.matched === false ? rolePack.matchExplanation : `${rolePack.title} tuned from your target role and stack.`}
             </p>
           </span>
           <span style={{ border: `1px solid ${theme.accentBorder}`, background: theme.accentMuted, color: theme.accentStrong, borderRadius: 999, padding: "5px 9px", fontSize: 10.8, fontWeight: 900 }}>
@@ -374,8 +387,12 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
           <div style={{ color: theme.accentText, fontSize: 12, fontWeight: 900, display: "flex", alignItems: "center", gap: 7, marginBottom: 8 }}>
             <i className="ti ti-file-cv" />Resume Gap Analysis
           </div>
+          <p style={{ color: "#cbd5e1", fontSize: 11, lineHeight: 1.5 }}>
+            Review resume evidence against your profile, or paste a Target Job Description below for required and preferred skills. Analysis uses local text rules.
+          </p>
           <input type="file" aria-label="Upload resume file" accept=".txt,.md,.markdown,.pdf,.doc,.docx" onChange={handleResumeFile} disabled={resumeUploadBusy} style={{ color: "#9ca3af", fontSize: 11, marginBottom: 8, width: "100%", opacity: resumeUploadBusy ? .55 : 1 }} />
           <textarea
+            aria-label="Resume text"
             value={state.resumeText}
                   onChange={(event) => setState((previous) => ({ ...previous, resumeText: event.target.value, resumeAnalysis: null, jobDescriptionAnalysis: null }))}
                   onBlur={(event) => setState((previous) => ({ ...previous, artifactVersions: { ...previous.artifactVersions, resume: recordArtifactVersion(previous.artifactVersions?.resume, event.target.value) } }))}
@@ -391,19 +408,40 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
           {resumeAnalysis && (
             <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <strong style={{ color: theme.accentText, fontSize: 22 }}>{resumeAnalysis.score}%</strong>
+                <strong style={{ color: theme.accentText, fontSize: 22 }}>{resumeAnalysis.assessable ? `${resumeAnalysis.score}%` : "Unscored"}</strong>
                 <span style={{ color: "#9ca3af", fontSize: 11.3 }}>{resumeAnalysis.summary}</span>
               </div>
-              {weakestScoreAreas.length > 0 && (
+              <div style={{ color: "#cbd5e1", fontSize: 11, lineHeight: 1.5 }}>
+                <strong>Resume coverage assessment</strong>
+                <p>Compared with: {resumeAnalysis.basis}</p>
+                <p>{resumeAnalysis.limitation}</p>
+                <details><summary>How the score works</summary><p>{resumeAnalysis.scoreExplanation}</p></details>
+              </div>
+              {resumeAnalysis.findings.length > 0 && (
+                <details open>
+                  <summary style={{ color: theme.accentText, fontWeight: 800 }}>Skill evidence ({resumeAnalysis.findings.length})</summary>
+                  <div style={{ display: "grid", gap: 8, marginTop: 8 }}>
+                    {resumeAnalysis.findings.map((finding) => (
+                      <article key={finding.name} style={{ border: "1px solid rgba(255,255,255,.12)", borderRadius: 8, padding: 9, fontSize: 11, color: "#cbd5e1" }}>
+                        <strong>{finding.name} · {finding.requirement === "profile" ? "Profile expectation" : finding.requirement === "required" ? "Required" : "Preferred"}</strong>
+                        <p>{finding.status === "demonstrated" ? "Demonstrated in an experience statement (unverified)" : finding.status === "mentioned" ? "Mentioned — add a concrete experience example" : "Not found — confirm whether you have relevant experience"}</p>
+                        {finding.evidence && <blockquote style={{ margin: "6px 0", paddingLeft: 8, borderLeft: `2px solid ${theme.accentBorder}`, overflowWrap: "anywhere" }}>{finding.evidence}</blockquote>}
+                        {finding.requirementEvidence && <p>Job description: {finding.requirementEvidence}</p>}
+                      </article>
+                    ))}
+                  </div>
+                </details>
+              )}
+              {resumeAnalysis.assessable && weakestScoreAreas.length > 0 && (
                 <div style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 8, padding: 8, background: "rgba(255,255,255,.025)" }}>
                   <strong style={{ display: "block", color: theme.accentText, fontSize: 11.5, marginBottom: 4 }}>Why this score?</strong>
                   <p style={{ color: "#cbd5e1", fontSize: 10.8, lineHeight: 1.45 }}>
-                    Lowest areas: {weakestScoreAreas.map((item) => `${item.label} ${item.score}%`).join(" and ")}. Improve these first to raise the resume match.
+                    Lowest areas: {weakestScoreAreas.map((item) => `${item.label} ${item.score}%`).join(" and ")}. Review these findings and add only evidence that reflects your actual work.
                   </p>
                 </div>
               )}
 
-              {resumeAnalysis.scoreBreakdown.length > 0 && (
+              {resumeAnalysis.assessable && resumeAnalysis.scoreBreakdown.length > 0 && (
               <div>
                 <div style={{ color: theme.accentText, fontSize: 11.5, fontWeight: 900, marginBottom: 7 }}>
                   Score Breakdown
@@ -415,6 +453,7 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
                         <span>{item.label}</span>
                         <strong style={{ color: scoreBandColor(item.score, theme) }}>{item.score}%</strong>
                       </div>
+                      <p style={{ color: "#9ca3af", fontSize: 10.5 }}>{item.detail}</p>
                       <div style={{ height: 5, borderRadius: 999, background: "rgba(255,255,255,.08)", overflow: "hidden" }}>
                         <div style={{ width: `${item.score}%`, height: "100%", background: scoreBandColor(item.score, theme), borderRadius: 999 }} />
                       </div>
@@ -444,6 +483,7 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
                 </div>
               )}
 
+              {resumeAnalysis.rewriteSuggestions.length === 0 && <p style={{ color: "#cbd5e1", fontSize: 11 }}>Add one real project or experience bullet to receive a grounded rewrite. What did you do, and what outcome can you verify?</p>}
               {resumeAnalysis.rewriteSuggestions.length > 0 && (
                 <div>
                   <div style={{ color: theme.accentText, fontSize: 11.5, fontWeight: 900, marginBottom: 7 }}>
@@ -513,8 +553,9 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
             <i className="ti ti-file-search" />Target Job Description
           </div>
           <textarea
+            aria-label="Target job description text"
             value={state.jobDescriptionText}
-                  onChange={(event) => setState((previous) => ({ ...previous, jobDescriptionText: event.target.value, jobDescriptionAnalysis: null }))}
+                  onChange={(event) => setState((previous) => ({ ...previous, jobDescriptionText: event.target.value, jobDescriptionAnalysis: null, resumeAnalysis: null }))}
                   onBlur={(event) => setState((previous) => ({ ...previous, artifactVersions: { ...previous.artifactVersions, jobDescription: recordArtifactVersion(previous.artifactVersions?.jobDescription, event.target.value) } }))}
             rows={5}
             className="glass-input"
@@ -530,6 +571,7 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
                 <strong style={{ color: scoreBandColor(jobDescriptionAnalysis.score, theme), fontSize: 22 }}>{jobDescriptionAnalysis.score}%</strong>
                 <span style={{ color: "#9ca3af", fontSize: 11.3 }}>{jobDescriptionAnalysis.summary}</span>
               </div>
+              <p style={{ color: "#cbd5e1", fontSize: 11 }}>{jobDescriptionAnalysis.scoreExplanation}</p>
               <div style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 9, background: theme.accentMuted }}>
                 <div style={{ color: theme.accentText, fontSize: 11.8, fontWeight: 900, marginBottom: 7 }}>
                   <i className="ti ti-sparkles" /> JD Copilot
@@ -591,7 +633,7 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
                 </div>
               </div>
               {[
-                ["Required signals", jobDescriptionAnalysis.requiredSkills, "#cbd5e1", "rgba(255,255,255,.07)", "rgba(255,255,255,.025)"],
+                ["Job description signals", jobDescriptionAnalysis.requiredSkills, "#cbd5e1", "rgba(255,255,255,.07)", "rgba(255,255,255,.025)"],
                 ["Covered by resume", jobDescriptionAnalysis.coveredSkills, "#86efac", "rgba(134,239,172,.28)", "rgba(134,239,172,.08)"],
                 ["Missing from resume", jobDescriptionAnalysis.missingSkills, theme.accentStrong, theme.accentBorder, theme.accentMuted],
               ].map(([label, skills, color, border, background]) => (
@@ -600,7 +642,7 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     {(skills.length ? skills : [{ name: "None detected" }]).slice(0, 8).map((skill) => (
                       <span key={`${label}-${skill.name}`} style={{ color, border: `1px solid ${border}`, background, borderRadius: 999, padding: "3px 7px", fontSize: 10.5, fontWeight: 700 }}>
-                        {skill.name}
+                        {skill.name}{skill.requirement ? ` · ${skill.requirement}` : ""}
                       </span>
                     ))}
                   </div>

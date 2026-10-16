@@ -1,0 +1,319 @@
+<p><strong>Set 11 · 16 October 2026 — Validating outcomes and reconstructing decisions</strong></p>
+
+<p>Reference assumptions: <strong>Java 21 without preview features</strong>, Spring Framework 6.2 with imperative transactions (Boot 3.5 generation), Jakarta Persistence 3.2 locking contracts, PostgreSQL 17 and Kafka Streams 4.0. These are explicit reference versions, not latest-release claims. Check the actual provider/API combination in a Boot application before using Persistence 3.2. HTTP caching follows RFC 9111; recovery guidance was checked against OWASP on 16 October 2026.</p>
+
+<p>Stable IDs: <strong>S11-Q01–S11-Q12</strong>, in order. Spoken answers target 45–90 seconds, including a brief example. All scenarios are original illustrations, not personal experience. The two Java blocks are complete class members with <code>java.util.*</code> imports; their published code is compiled with <code>--release 21</code> and exercised against independent oracles. Other flows are contextual designs, not deployed framework or database applications.</p>
+
+<hr>
+<h3 id="1-two-required-futures-fail-and-a-third-is-still-running-does-completablefuture-allof-return-every-failure-immediately">1. Two required futures fail and a third is still running. Does CompletableFuture.allOf return every failure immediately?</h3>
+
+<p><strong>Say aloud:</strong>
+“A future represents an eventual outcome. allOf is a completion barrier: it completes after all supplied futures complete. It returns no collected values and, if inputs fail, its exceptional result is not a report containing every failure. It also does not cancel siblings automatically.</p>
+
+<p>For a bounded batch where every outcome matters, I attach handle to each input and convert completion into an explicit success or failure value carrying the input identity. Then I wait for those handled stages and assemble the report. A successful null value must remain distinguishable from failure. If reporting itself throws, that is a separate failure rather than missing data.</p>
+
+<p>A request deadline still needs a policy for unfinished work. I can return a partial report with pending items explicitly marked, while operation owners enforce transport cancellation. I would not interpret the barrier&#39;s failure as proof that the other operations stopped.”</p>
+
+<ul>
+<li><strong>Example:</strong> A fails validation, B fails transport, C succeeds with null. Three handled results retain all three identities and distinguish null success from failure.</li>
+<li><strong>Guarantee/cost:</strong> O(n) reporting work/storage for n admitted inputs; this does not bound remote concurrency. allOf with zero inputs is already complete.</li>
+<li><strong>Trade-off/failure:</strong> Waiting for all outcomes can outlive one failure; early termination needs a separate contract. Preserve sanitized error categories rather than returning raw exception messages.</li>
+<li><strong>Verify:</strong> Complete inputs manually in different orders, including two failures, cancellation, null success and an unfinished sibling. Assert the barrier remains pending until the last completion.</li>
+<li><strong>Follow-ups:</strong> “Does handle recover?” → Its returned value normally completes the dependent stage successfully, so use an explicit outcome type. “All exceptions suppressed?” → Not an allOf guarantee; gather per-input outcomes.</li>
+<li><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/CompletableFuture.html">Java 21 CompletableFuture</a>.</li>
+</ul>
+
+<hr>
+<h3 id="2-hashset-keeps-both-2-0-and-2-00-but-treeset-keeps-one-which-bigdecimal-contract-explains-the-discrepancy">2. HashSet keeps both 2.0 and 2.00, but TreeSet keeps one. Which BigDecimal contract explains the discrepancy?</h3>
+
+<p><strong>Say aloud:</strong>
+“BigDecimal stores an integer value together with a decimal scale. Its equals method compares value and scale, while compareTo compares numerical value. Therefore 2.0 and 2.00 compare as numerically equal but are not equal objects. HashSet uses equals and hashCode; a naturally ordered TreeSet uses comparison to determine membership.</p>
+
+<p>The fix starts with the domain&#39;s identity rule. If scale records meaningful precision, preserve it and choose collection semantics accordingly. If identity means numerical amount, normalize at a controlled boundary or use a wrapper whose equality, hashing and ordering agree. stripTrailingZeros can produce negative scales, so it is not a promise of a fixed display format.</p>
+
+<p>For a fixed-scale contract I can validate with setScale and UNNECESSARY, rejecting values that need rounding. I would keep currency in the identity too, and test equivalent textual forms across lookup, persistence and serialization.”</p>
+
+<ul>
+<li><strong>Example:</strong> <code>new BigDecimal(&quot;2.0&quot;).compareTo(new BigDecimal(&quot;2.00&quot;)) == 0</code>, while equals is false; this is about identity, not the earlier set&#39;s rounding-allocation problem.</li>
+<li><strong>Guarantee/cost:</strong> BigDecimal arithmetic/comparison costs depend on precision and scale; do not label arbitrary-precision operations constant time.</li>
+<li><strong>Trade-off/failure:</strong> Silent rounding can merge different amounts. Changing key normalization needs migration for existing stored/cache keys.</li>
+<li><strong>Verify:</strong> Test trailing zeroes, zero, negative scale, over-precision rejection and round trips; ensure comparator equality agrees with intended membership.</li>
+<li><strong>Follow-ups:</strong> “Is compareTo inconsistent with equals illegal?” → BigDecimal documents it; sorted collections need deliberate semantics. “Always two decimals?” → Only for a domain explicitly specifying that scale.</li>
+<li><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/math/BigDecimal.html">Java 21 BigDecimal equality and ordering</a>.</li>
+</ul>
+
+<hr>
+<h3 id="3-a-hand-written-timing-loop-claims-an-unused-calculation-takes-zero-nanoseconds-how-would-you-establish-a-credible-jvm-comparison">3. A hand-written timing loop claims an unused calculation takes zero nanoseconds. How would you establish a credible JVM comparison?</h3>
+
+<p><strong>Say aloud:</strong>
+“The just-in-time compiler translates frequently executed Java code into optimized machine code. If a calculation has no observable result, the compiler may remove it. Measuring an empty optimized loop says little about the operation we intended to compare.</p>
+
+<p>I would use JMH, the Java Microbenchmark Harness, and return the result or pass it to a Blackhole consumer so it remains observable, and supply realistic changing input through benchmark state. Warmup gives compilation time to settle; separate JVM forks reduce contamination from earlier benchmark profiles. I would report the runtime, flags, data sizes and variability rather than one attractive number.</p>
+
+<p>Then I would confirm the benchmark models the real bottleneck: allocation, contention or I/O may dominate production despite a fast isolated method. Correctness tests come first. A microbenchmark is evidence for a narrow operation under stated conditions, not an endpoint latency guarantee.”</p>
+
+<ul>
+<li><strong>Example:</strong> Compare two parsers on varied valid and invalid messages, consume the parsed output and measure allocation as well as throughput. No timing figures here are benchmark results.</li>
+<li><strong>Guarantee/cost:</strong> Harness controls reduce known measurement errors; results still depend on CPU, JVM, workload and measurement design.</li>
+<li><strong>Trade-off/failure:</strong> Constant input can allow constant folding; putting many operations in a manual loop may change optimization. Shared state can introduce unintended contention.</li>
+<li><strong>Verify:</strong> Inspect generated behavior/profiles when results are implausible; repeat independent forks and compare against an application-level profile.</li>
+<li><strong>Follow-ups:</strong> “Cold startup?” → Measure a separate startup workload, not warmed steady state. “Blackhole proves realism?” → It prevents a specific elimination hazard; representative input remains your responsibility.</li>
+<li><strong>Primary reference:</strong> <a href="https://github.com/openjdk/jmh/blob/master/jmh-samples/src/main/java/org/openjdk/jmh/samples/JMHSample_08_DeadCode.java">OpenJDK JMH dead-code sample</a>.</li>
+</ul>
+
+<hr>
+<h3 id="4-a-transactional-service-starts-work-on-another-thread-then-rolls-back-why-can-the-background-database-write-still-commit">4. A transactional service starts work on another thread, then rolls back. Why can the background database write still commit?</h3>
+
+<p><strong>Say aloud:</strong>
+“An imperative Spring transaction is normally associated with the current thread. Starting another thread does not transfer that transaction, and an annotation on the caller does not make background work part of its atomic commit.</p>
+
+<p>I would pass immutable command data, not a managed entity or EntityManager, to a separate worker. If the worker needs database atomicity, it enters its own transaction through an intercepted service boundary or an explicit transaction template. That transaction can commit even if the caller later fails, so the business contract must accept independent outcomes.</p>
+
+<p>If work should happen only after a successful caller commit, a durable job or outbox row in that transaction is safer than merely launching a task. If both changes must commit together, keep them in the same transactional operation. I would verify outcomes with controlled execution order, not assume the async annotation supplies propagation.”</p>
+
+<ul>
+<li><strong>Example:</strong> Caller creates a draft and schedules an audit worker, then fails. A worker transaction may retain an audit for a draft that never committed; decide whether that is intended.</li>
+<li><strong>Guarantee/cost:</strong> Independent transactions have independent resource and failure boundaries. Queue limits, rejection handling and task lifetime need explicit ownership.</li>
+<li><strong>Trade-off/failure:</strong> Waiting on the future does not merge transactions. Launching before commit can also make the worker miss uncommitted rows.</li>
+<li><strong>Verify:</strong> Hold worker execution with a latch; roll back the caller, then release the worker and inspect durable state in a fresh transaction. This lesson is a design, not an executed Spring integration test.</li>
+<li><strong>Follow-ups:</strong> “Reactive transactions?” → They use Reactor context, a different propagation model. “Copy the ThreadLocal?” → Do not share a connection/persistence context across threads to imitate transaction propagation.</li>
+<li><strong>Primary reference:</strong> <a href="https://docs.spring.io/spring-framework/docs/6.2.x/javadoc-api/org/springframework/transaction/annotation/Transactional.html">Spring 6.2 Transactional thread-bound semantics</a>.</li>
+</ul>
+
+<hr>
+<h3 id="5-order-has-a-version-field-yet-two-edits-to-different-orderline-rows-both-succeed-against-the-same-order-revision-is-the-whole-aggregate-protected">5. Order has a version field, yet two edits to different OrderLine rows both succeed against the same order revision. Is the whole aggregate protected?</h3>
+
+<p><strong>Say aloud:</strong>
+“An aggregate is a group of domain objects whose rules we want to enforce together. A JPA version field protects the versioned entity&#39;s concurrency contract; it does not automatically version every change to a different entity reachable from it.</p>
+
+<p>For example, changing a line&#39;s scalar quantity need not change the order&#39;s row or version. If the API treats the order revision as protection for all lines, every aggregate writer must participate in that contract. One approach is an optimistic force increment, which requires a parent version increment, while validating the expected revision and changing children in the same transaction. Another is locking the parent before reading and editing the aggregate.</p>
+
+<p>Both require all writers to cooperate, including bulk jobs and deletion paths. On conflict I discard the transaction&#39;s work and re-read before deciding whether to retry. I would verify emitted SQL and actual concurrent behavior rather than infer aggregate safety from the mapping alone.”</p>
+
+<ul>
+<li><strong>Example:</strong> Two requests read order revision 8, edit different lines and force-increment that same parent; at most one transaction should commit against that revision.</li>
+<li><strong>Guarantee/cost:</strong> Parent coordination creates an aggregate contention point; it does not protect external side effects or writers bypassing the protocol.</li>
+<li><strong>Trade-off/failure:</strong> Collection relationship version rules and child scalar updates differ. A client-supplied revision alone is not a lock. Large aggregates may need smaller invariant boundaries.</li>
+<li><strong>Verify:</strong> Synchronize two real transactions after the read, then attempt both commits; assert one conflict and no partial child change. Also test child insert/delete and native/bulk writer paths for the chosen provider.</li>
+<li><strong>Follow-ups:</strong> “Force increment timing?” → Provider timing may vary; rely on successful commit, not an immediate in-memory version value. “Retry blindly?” → Revalidate command intent and suppress duplicate external effects.</li>
+<li><strong>Primary reference:</strong> <a href="https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2.html#locking">Jakarta Persistence 3.2 locking and version rules, sections 3.5.2–3.5.4</a>.</li>
+</ul>
+
+<hr>
+<h3 id="6-a-one-minute-kafka-streams-total-changes-after-the-minute-ends-how-would-you-define-a-correct-late-event-policy">6. A one-minute Kafka Streams total changes after the minute ends. How would you define a correct late-event policy?</h3>
+
+<p><strong>Say aloud:</strong>
+“Event time is when an event happened; processing time is when we handle it. A delayed device message can arrive after newer messages, so ending a minute on the wall clock does not mean all its events have arrived.</p>
+
+<p>I would define the timestamp source, window boundaries and grace period, meaning how long the window admits out-of-order data after its end according to stream-time progress. In Kafka Streams, stream time advances from processed record timestamps; it is not simply the current wall clock. A grace period permits updates until the window closes, while later arrivals are rejected from that aggregation.</p>
+
+<p>Consumers must know whether totals are provisional updates or final results. Longer grace increases delay and retained state. Events beyond grace need an explicit correction or reconciliation path if the business requires completeness. Exactly-once processing cannot manufacture missing or rejected historical events.”</p>
+
+<ul>
+<li><strong>Example:</strong> Window <code>[12:00,12:01)</code> with two-minute grace may accept a 12:00:45 event while stream time is 12:02:30; it is closed once progress passes the closing boundary. Test the precise boundary for the selected operator/version.</li>
+<li><strong>Guarantee/cost:</strong> State grows with active keys, retained windows and operator settings. Retention must cover the required window and grace contract.</li>
+<li><strong>Trade-off/failure:</strong> A bad future timestamp can advance progress prematurely; an idle input does not make event time advance like a wall clock. Validate timestamp extraction and monitor rejected late records.</li>
+<li><strong>Verify:</strong> Feed deterministic timestamps out of order, including at and beyond close, and test idle input; verify update versus final emission policy separately.</li>
+<li><strong>Follow-ups:</strong> “Deduplication?” → A separate event-identity/state-retention contract. “Need immediate final totals?” → Arbitrarily late input prevents both immediate finality and perfect completeness.</li>
+<li><strong>Primary references:</strong> <a href="https://kafka.apache.org/40/streams/core-concepts/">Kafka Streams time concepts</a>, <a href="https://kafka.apache.org/40/javadoc/org/apache/kafka/streams/kstream/TimeWindows.html">Kafka 4.0 TimeWindows grace contract</a>.</li>
+</ul>
+
+<hr>
+<h3 id="7-two-room-reservations-pass-a-no-overlap-query-and-both-insert-how-can-postgresql-enforce-interval-exclusion-directly">7. Two room reservations pass a no-overlap query and both insert. How can PostgreSQL enforce interval exclusion directly?</h3>
+
+<p><strong>Say aloud:</strong>
+“A pre-insert query is an observation, not a reservation of every possible conflicting interval. Another transaction can pass the same query before either commits. Row locks on existing bookings do not necessarily protect an empty gap.</p>
+
+<p>In PostgreSQL I can model a booking as a timestamp range and use an exclusion constraint: for the same room, two stored ranges must not overlap. An exclusion constraint rejects combinations for which all the specified comparisons are true. With GiST, PostgreSQL&#39;s extensible search-tree index framework, and the appropriate operator support, room equality and range overlap can enforce the rule at the database boundary.</p>
+
+<p>I would use half-open ranges so adjacent bookings can touch, reject missing, empty or unbounded ranges if the domain requires finite bookings, and map a conflict to a useful response. A friendly availability query remains useful, but the constraint decides correctness under concurrent inserts.”</p>
+
+<ul>
+<li><strong>Example:</strong> Contextual schema shape: <code>EXCLUDE USING gist (room_id WITH =, during WITH &amp;&amp;)</code> with <code>btree_gist</code> for the room scalar type. <code>[10:00,11:00)</code> and <code>[11:00,12:00)</code> can coexist; <code>[10:30,11:30)</code> conflicts in the same room.</li>
+<li><strong>Guarantee/cost:</strong> Index-backed enforcement covers all writes subject to the constraint. Actual index/write cost depends on data and contention; budget extension installation and migration validation.</li>
+<li><strong>Trade-off/failure:</strong> Nulls or empty ranges can defeat an intended universal overlap rule unless constrained. Cancellation needs an explicit active-row policy, such as a carefully defined partial exclusion constraint.</li>
+<li><strong>Verify:</strong> Race concurrent inserts into initially empty data; test adjacency, different rooms, cancellation, nulls, empty/unbounded intervals and timestamp-zone conversion.</li>
+<li><strong>Follow-ups:</strong> “Portable JPA?” → This is database schema behavior; portable annotations alone do not express it. “Serializable instead?” → Possible with correct reads and full-transaction retry; choose one explicit enforcement design.</li>
+<li><strong>Primary reference:</strong> <a href="https://www.postgresql.org/docs/17/rangetypes.html#RANGETYPES-CONSTRAINT">PostgreSQL 17 range exclusion constraints</a>.</li>
+</ul>
+
+<hr>
+<h3 id="8-two-requests-redeem-the-same-password-reset-link-concurrently-what-makes-a-token-truly-single-use">8. Two requests redeem the same password-reset link concurrently. What makes a token truly single-use?</h3>
+
+<p><strong>Say aloud:</strong>
+“A reset token is a bearer credential: whoever possesses it can attempt account recovery. Randomness and expiry are necessary, but reading an unused flag and then updating it in a separate operation is not single-use under concurrency.</p>
+
+<p>I would generate a cryptographically random token, store a protected verifier rather than the raw link secret, and bind it to one account and purpose with an expiry. Redemption atomically claims an unused, unexpired token and changes the password in the same database transaction. If the claim affects no row, the request fails safely; rollback must leave the token and password consistent.</p>
+
+<p>Recovery also needs generic request responses, rate limits and trusted reset URLs to resist enumeration and abuse. After success I notify the user through an approved channel and apply the session invalidation policy. I would not automatically log in a requester merely because they submitted a reset.”</p>
+
+<ul>
+<li><strong>Example:</strong> Contextual transaction: conditional update of the token where unused and unexpired; require one affected row, change the account verifier, invalidate other reset credentials according to policy, then commit.</li>
+<li><strong>Guarantee/cost:</strong> Atomic redemption prevents two successful uses of that token when all writers follow the protocol. It does not make a stolen token harmless before use.</li>
+<li><strong>Trade-off/failure:</strong> A link preview must not consume the token on GET; require an intentional password submission. Never log reset URLs or allow untrusted Host headers to choose their origin.</li>
+<li><strong>Verify:</strong> Race two submissions and assert one success; inject failure between claim and password update and check rollback. Test expiry, unknown account responses, token leakage and old-session policy.</li>
+<li><strong>Follow-ups:</strong> “Two different outstanding links?” → Define one account-wide credential-generation or invalidation policy with concurrency control. “New password hash cost?” → Bound abuse and compute safely without holding database locks unnecessarily.</li>
+<li><strong>Primary reference:</strong> <a href="https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html">OWASP forgot-password guidance</a>.</li>
+</ul>
+
+<hr>
+<h3 id="9-an-authenticated-statement-page-is-cached-by-a-shared-proxy-is-cache-control-no-cache-enough-to-prevent-disclosure">9. An authenticated statement page is cached by a shared proxy. Is Cache-Control: no-cache enough to prevent disclosure?</h3>
+
+<p><strong>Say aloud:</strong>
+“A shared cache serves multiple users, while a private cache belongs to one user agent. In HTTP, no-cache permits storage but requires validation before reuse. It does not mean do not store.</p>
+
+<p>For a sensitive statement I would normally use no-store and explicitly configure the CDN or proxy to bypass storage, verifying both the response policy and deployment rules. private prevents shared-cache storage but can still allow browser storage, so it solves a different requirement. Authentication by itself is not a complete cache policy; cookie-based personalization especially needs deliberate handling.</p>
+
+<p>I would test two accounts requesting the same URL through the real cache boundary, including redirects and errors. Correct database authorization cannot repair a response already served from an unsafe shared cache. Existing cached responses also need a purge or migration plan when fixing policy.”</p>
+
+<ul>
+<li><strong>Example:</strong> A statement containing balances uses <code>Cache-Control: no-store</code>; a non-sensitive personalized preference response might permit private browser caching if the product allows it.</li>
+<li><strong>Guarantee/cost:</strong> Compliant caches obey the applicable directives; no-store is not retroactive erasure of prior stored copies or protection from a malicious intermediary.</li>
+<li><strong>Trade-off/failure:</strong> <code>Vary: Cookie</code> can create huge key cardinality and is not an authorization check. A 304 revalidation path must preserve the same security boundary.</li>
+<li><strong>Verify:</strong> Inspect upstream and downstream headers plus cache-hit indicators; exercise A then B at the same path and audit CDN overrides. Browser-local testing alone cannot certify CDN behavior.</li>
+<li><strong>Follow-ups:</strong> “Authorization header?” → RFC 9111 restricts shared reuse unless explicitly allowed; do not rely on that for all cookie sessions. “no-cache versus max-age=0?” → Both involve freshness/validation semantics; neither expresses a blanket storage prohibition.</li>
+<li><strong>Primary reference:</strong> <a href="https://www.rfc-editor.org/rfc/rfc9111.html">RFC 9111 cache directives and authenticated requests</a>.</li>
+</ul>
+
+<hr>
+<h3 id="10-a-stampedlock-optimistic-read-validates-successfully-but-code-then-rereads-the-fields-is-the-returned-snapshot-protected">10. A StampedLock optimistic read validates successfully, but code then rereads the fields. Is the returned snapshot protected?</h3>
+
+<p><strong>Say aloud:</strong>
+“An optimistic read tries to observe state without holding a read lock. StampedLock gives a stamp that can be validated to detect an intervening write lock. Validation checks the read attempt; it does not lock future reads.</p>
+
+<p>For a small pair of primitive fields I copy both into local variables first, then validate. If validation fails or the stamp is zero, I acquire a read lock and copy them again, releasing it in finally. The result is built from those local copies. Rereading shared fields after validation starts a new unprotected observation and can mix generations.</p>
+
+<p>All relevant writers must use the same write lock. The speculative section must tolerate inconsistency and avoid side effects or unsafe traversal of mutable structures. For complex state, a normal read lock or immutable snapshot is often simpler. I would measure a real read-heavy workload before choosing this extra complexity.”</p>
+
+<ul>
+<li><strong>Example:</strong> A writer changes <code>(x,y)</code> together. Read <code>localX</code>, then <code>localY</code>, validate, and return that pair; do not validate and then read <code>(x,y)</code> for the return expression.</li>
+<li><strong>Guarantee/cost:</strong> Optimistic reads may require retry under a read lock; no fairness or bounded wait guarantee is implied. StampedLock is not reentrant.</li>
+<li><strong>Trade-off/failure:</strong> Optimistic traversal of a mutating collection can fail before validation. Holding a stamp does not grant thread-owned reentrant lock semantics.</li>
+<li><strong>Verify:</strong> Coordinate a writer between the two speculative reads and assert fallback rereads both fields. Test a writer immediately after validation and assert the returned locals remain one valid snapshot.</li>
+<li><strong>Follow-ups:</strong> “Read then write?” → Try conversion and handle failure by unlocking/reacquiring and rechecking the condition. “Always faster?” → No; contention, retry rate and complexity determine value.</li>
+<li><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/locks/StampedLock.html">Java 21 StampedLock optimistic-read contract and example</a>.</li>
+</ul>
+
+<hr>
+<h3 id="11-choose-non-overlapping-paid-jobs-for-maximum-total-value-and-return-the-actual-chosen-jobs-why-does-earliest-finish-greedy-fail">11. Choose non-overlapping paid jobs for maximum total value and return the actual chosen jobs. Why does earliest-finish greedy fail?</h3>
+
+<p><strong>Say aloud:</strong>
+“Each job has a start, end and nonnegative value. We use half-open intervals, so a job ending when another starts is compatible. Earliest-finish greedy maximizes the number of compatible jobs, but can discard one expensive job in favor of several cheap ones.</p>
+
+<p>I sort a copy by end time. For each job, binary search finds how many earlier jobs end no later than its start. The best value for the first i jobs is the greater of skipping job i and taking its value plus the best compatible prefix. I store both that predecessor prefix and whether taking was strictly better.</p>
+
+<p>To reconstruct, walk backward: a taken job jumps to its compatible prefix, while a skipped job moves one position back. Reverse the result into execution order. Ties skip the current job for deterministic output. I use long totals, reject invalid intervals and preserve caller input.”</p>
+
+<ul>
+<li><strong>Example:</strong> Jobs <code>(0,2,4)</code>, <code>(2,4,4)</code> and <code>(0,4,11)</code> choose the last job, value 11, instead of the two-job value 8.</li>
+</ul>
+
+<pre><code class="java">record Job(int id, int start, int end, int value) {}
+record Plan(long value, List&lt;Job&gt; jobs) {}
+
+static Plan bestSchedule(List&lt;Job&gt; input) {
+    Objects.requireNonNull(input, &quot;input&quot;);
+    Job[] jobs = input.toArray(Job[]::new);
+    Set&lt;Integer&gt; ids = new HashSet&lt;&gt;();
+    for (Job job : jobs) {
+        Objects.requireNonNull(job, &quot;job&quot;);
+        if (job.start() &gt;= job.end() || job.value() &lt; 0 || !ids.add(job.id()))
+            throw new IllegalArgumentException(&quot;invalid job or duplicate id&quot;);
+    }
+    Arrays.sort(jobs, Comparator.comparingInt(Job::end)
+        .thenComparingInt(Job::start).thenComparingInt(Job::id));
+    int n = jobs.length;
+    long[] best = new long[n + 1];
+    int[] previous = new int[n];
+    boolean[] take = new boolean[n];
+    for (int i = 0; i &lt; n; i++) {
+        int low = 0, high = i;
+        while (low &lt; high) {
+            int mid = low + (high - low) / 2;
+            if (jobs[mid].end() &lt;= jobs[i].start()) low = mid + 1;
+            else high = mid;
+        }
+        previous[i] = low;
+        long candidate = best[low] + jobs[i].value();
+        take[i] = candidate &gt; best[i];
+        best[i + 1] = take[i] ? candidate : best[i];
+    }
+    List&lt;Job&gt; selected = new ArrayList&lt;&gt;();
+    for (int i = n; i &gt; 0; ) {
+        if (take[i - 1]) {
+            selected.add(jobs[i - 1]);
+            i = previous[i - 1];
+        } else i--;
+    }
+    Collections.reverse(selected);
+    return new Plan(best[n], List.copyOf(selected));
+}
+</code></pre>
+
+<ul>
+<li><strong>Guarantee/complexity:</strong> O(n log n) time, O(n) auxiliary/output space. Expected O(n) ID validation with hashing; sorting and predecessor search dominate. Values are nonnegative int, so any representable Java array&#39;s total fits long. Empty input returns an empty zero-value plan; nulls, duplicate IDs and nonpositive duration are rejected.</li>
+<li><strong>Trade-off/failure:</strong> Only one optimum is returned, not all optima or a minimum-job-count optimum. Caller must bound input memory and keep the input stable while copied. Negative timestamps are allowed; negative durations are not.</li>
+<li><strong>Verify/reasoning:</strong> Every optimum either excludes the final job or includes it with an optimal compatible prefix. Independently enumerate all subsets for small inputs; verify both the value and that reconstructed jobs are original, unique and pairwise compatible. Test ties, touching endpoints and overflow-sized totals.</li>
+<li><strong>Follow-ups:</strong> “Streaming insertion?” → Sorting/prefix DP assumes a static batch; arbitrary insertions can change many decisions. “Setup gap?” → Adjust the compatibility condition with overflow-safe arithmetic and retain the same recurrence.</li>
+</ul>
+
+<hr>
+<h3 id="12-assign-every-vertex-in-an-undirected-conflict-graph-to-one-of-two-groups-or-report-that-this-is-impossible-why-must-you-restart-traversal">12. Assign every vertex in an undirected conflict graph to one of two groups, or report that this is impossible. Why must you restart traversal?</h3>
+
+<p><strong>Say aloud:</strong>
+“A bipartite graph can be split into two groups so every edge crosses between them. An odd cycle makes this impossible because alternating two labels returns to a vertex needing the opposite label. A self-loop is already a conflict.</p>
+
+<p>I use breadth-first search, assigning each newly reached neighbor the opposite group. If an edge joins two vertices with the same group, no valid assignment exists. A graph can have disconnected components, so I start another traversal at every still-unassigned vertex; checking only vertex zero can miss a distant odd cycle.</p>
+
+<p>The implementation builds both directions from an edge list, validates every endpoint before traversal, and returns an explicit optional result. An empty graph has a valid empty assignment, which is different from failure. Each vertex is enqueued once and each stored edge is scanned, giving linear work in vertices plus edges.”</p>
+
+<ul>
+<li><strong>Example:</strong> Edges <code>0–1, 1–2</code> permit groups <code>[0,1,0]</code>; adding a disconnected triangle on <code>3,4,5</code> makes the entire graph impossible.</li>
+</ul>
+
+<pre><code class="java">static Optional&lt;int[]&gt; twoGroups(int vertices, int[][] edges) {
+    if (vertices &lt; 0) throw new IllegalArgumentException(&quot;negative vertices&quot;);
+    Objects.requireNonNull(edges, &quot;edges&quot;);
+    List&lt;List&lt;Integer&gt;&gt; neighbors = new ArrayList&lt;&gt;(vertices);
+    for (int i = 0; i &lt; vertices; i++) neighbors.add(new ArrayList&lt;&gt;());
+    for (int[] edge : edges) {
+        Objects.requireNonNull(edge, &quot;edge&quot;);
+        if (edge.length != 2 || edge[0] &lt; 0 || edge[0] &gt;= vertices
+                || edge[1] &lt; 0 || edge[1] &gt;= vertices)
+            throw new IllegalArgumentException(&quot;invalid edge&quot;);
+        neighbors.get(edge[0]).add(edge[1]);
+        neighbors.get(edge[1]).add(edge[0]);
+    }
+    int[] group = new int[vertices];
+    Arrays.fill(group, -1);
+    ArrayDeque&lt;Integer&gt; queue = new ArrayDeque&lt;&gt;();
+    for (int start = 0; start &lt; vertices; start++) {
+        if (group[start] != -1) continue;
+        group[start] = 0;
+        queue.addLast(start);
+        while (!queue.isEmpty()) {
+            int from = queue.removeFirst();
+            for (int to : neighbors.get(from)) {
+                if (group[to] == -1) {
+                    group[to] = 1 - group[from];
+                    queue.addLast(to);
+                } else if (group[to] == group[from]) return Optional.empty();
+            }
+        }
+    }
+    return Optional.of(group);
+}
+</code></pre>
+
+<ul>
+<li><strong>Guarantee/complexity:</strong> O(V+E) time/storage for V vertices and E input edges, including duplicates. No recursion-depth risk. Nulls, negative vertex counts, malformed edges and out-of-range endpoints are rejected. Valid self-loops produce impossibility rather than an input error.</li>
+<li><strong>Trade-off/failure:</strong> The returned array is caller-owned and mutable. Labels are not a balanced partition or a unique assignment; isolated vertices go to group zero. This is an undirected model, not directed dependency ordering.</li>
+<li><strong>Verify/reasoning:</strong> Assignment propagates the forced opposite label along each component. Check against exhaustive binary assignments for all small graphs, and validate every returned edge crossing. Test a disconnected odd cycle, duplicate edges, self-loops, zero vertices and invalid input appearing after a conflicting edge.</li>
+<li><strong>Follow-ups:</strong> “Return the odd cycle?” → Store BFS parents/depths, then join paths from a same-label conflicting edge to their common ancestor. “Three groups?” → General three-colorability has a different computational boundary; this BFS rule no longer solves it.</li>
+</ul>
+
+<hr>
+
+<p><strong>Topic coverage:</strong> S11-Q01 complete asynchronous outcome reports; Q02 decimal identity and collection membership; Q03 JVM measurement validity; Q04 asynchronous transaction boundaries; Q05 aggregate version participation; Q06 event-time grace and corrections; Q07 database interval exclusion; Q08 concurrent reset redemption; Q09 shared HTTP cache policy; Q10 optimistic-read snapshot validation; Q11 reconstructable weighted scheduling; Q12 disconnected bipartite validation. The app contains <strong>148 authored prompts across eleven sets</strong>; Set 9 contains 28 prompts and some earlier-topic reinforcement. Count is not a claim of 148 unique concepts.</p>
+
+<p><strong>Next set:</strong> Continue at Set 12 even if another run occurs today. Build on these boundaries with concurrent schema backfills, CDC snapshot handoff, Java date/time ambiguity, resource-safe streaming responses, maximum-flow modeling and dynamic programming with an explicit memory budget. Do not repeat today&#39;s scenarios by merely changing entity names.</p>

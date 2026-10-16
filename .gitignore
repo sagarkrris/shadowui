@@ -27,6 +27,14 @@ yarn-error.log*
 *.log
 verify-android-screen*.png
 
+# Generated Playwright reports and run artifacts
+/playwright-report/
+/test-results/
+
+# Local exports, audit evidence, and media production artifacts
+/output/
+/exports/
+
 # Vercel
 .vercel
 
