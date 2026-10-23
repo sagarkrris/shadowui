@@ -46,6 +46,7 @@ import { isModalCloseKey } from "../../lib/modalKeyboard.mjs";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import BeginnerGuideBanner from "../BeginnerGuideBanner";
 import AnswerAtAGlance from "../learning/AnswerAtAGlance";
+import { DiagramSymbol } from '../learning/DiagramArtwork';
 import GuideSectionContent from './GuideSectionContent';
 import guideStyles from '../../styles/DsaGuide.module.css';
 
@@ -699,7 +700,7 @@ function VisualInput({ input, highlight, accent, isPlaying }) {
 
   if (Array.isArray(input)) {
     return (
-      <div style={{ display: "grid", gap: 9, gridTemplateColumns: "repeat(auto-fit, minmax(58px, 1fr))", alignItems: "end" }}>
+      <div data-diagram-artwork="dsa-array" style={{ background: "#fffdf8", borderRadius: 16, padding: 16, display: "grid", gap: 9, gridTemplateColumns: "repeat(auto-fit, minmax(58px, 1fr))", alignItems: "end" }}>
         {input.map((value, index) => {
           const isActive = active.has(index);
           const height = typeof value === "number" ? Math.max(50, Math.min(106, 44 + Number(value) * 7)) : 62;
@@ -708,17 +709,17 @@ function VisualInput({ input, highlight, accent, isPlaying }) {
             <div key={`${value}-${index}`} style={{ display: "grid", gap: 5, alignItems: "end" }}>
               <div style={{ display: "flex", justifyContent: "center", gap: 3, minHeight: 18 }}>
                 {pointerBadges(index, highlight, accent, input.length).map(([label, color]) => (
-                  <span key={label} style={{ background: `${color}22`, border: `1px solid ${color}88`, borderRadius: 999, color, fontSize: 9.5, fontWeight: 900, padding: "2px 5px" }}>
+                  <span key={label} style={{ background: "#20364c", border: `1px solid ${color}88`, borderRadius: 999, color, fontSize: 9.5, fontWeight: 900, padding: "2px 5px" }}>
                     {label}
                   </span>
                 ))}
               </div>
               <div
                 style={{
-                  background: isActive ? `linear-gradient(180deg, ${accent}44, rgba(255,255,255,.055))` : "rgba(255,255,255,.045)",
-                  border: `1px solid ${isActive ? accent : "rgba(255,255,255,.08)"}`,
+                  background: isActive ? "linear-gradient(180deg, #b9dafa, #ded0fa)" : "#e8eef5",
+                  border: `2px solid ${isActive ? "#20364c" : "#71839a"}`,
                   borderRadius: 8,
-                  color: "#f8fbff",
+                  color: "#20364c",
                   display: "grid",
                   gap: 4,
                   minHeight: height,
@@ -730,7 +731,7 @@ function VisualInput({ input, highlight, accent, isPlaying }) {
                 }}
               >
                 <strong style={{ fontSize: 15 }}>{value}</strong>
-                <span style={{ color: isActive ? accent : "#7d8aa2", fontSize: 10, fontWeight: 800 }}>i={index}</span>
+                <span style={{ color: "#40586d", fontSize: 10, fontWeight: 800 }}>i={index}</span>
               </div>
             </div>
           );
@@ -740,7 +741,7 @@ function VisualInput({ input, highlight, accent, isPlaying }) {
   }
 
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+    <div data-diagram-artwork="dsa-characters" style={{ background: "#fffdf8", borderRadius: 16, padding: 16, display: "flex", flexWrap: "wrap", gap: 7 }}>
       {String(input).split("").map((char, index) => {
         const isActive = active.has(index);
 
@@ -748,10 +749,10 @@ function VisualInput({ input, highlight, accent, isPlaying }) {
           <span
             key={`${char}-${index}`}
             style={{
-              background: isActive ? `${accent}22` : "rgba(255,255,255,.045)",
-              border: `1px solid ${isActive ? accent : "rgba(255,255,255,.08)"}`,
+              background: isActive ? "#b9dafa" : "#e8eef5",
+              border: `2px solid ${isActive ? "#20364c" : "#71839a"}`,
               borderRadius: 7,
-              color: "#f8fbff",
+              color: "#20364c",
               display: "inline-grid",
               fontSize: 15,
               fontWeight: 800,
@@ -1340,17 +1341,17 @@ function ChallengeVisualExplanation({ challenge, choiceId, accent }) {
 
 function StatePanel({ panel, accent }) {
   return (
-    <section style={{ background: "rgba(255,255,255,.045)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 9, padding: 12 }}>
-      <div style={{ alignItems: "center", color: accent, display: "flex", fontSize: 11, fontWeight: 900, gap: 7, textTransform: "uppercase" }}>
-        <i className="ti ti-chart-dots" />
+    <section data-diagram-artwork="dsa-state" style={{ background: "#fffdf8", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 9, padding: 12 }}>
+      <div style={{ alignItems: "center", color: "#20364c", display: "flex", fontSize: 11, fontWeight: 900, gap: 7, textTransform: "uppercase" }}>
+        <DiagramSymbol kind={panel.kind === "stack" ? "stack" : "collection"} size={32} />
         State Panel
       </div>
-      <strong style={{ color: "#f8fbff", fontSize: 13, lineHeight: 1.35 }}>{panel.title}</strong>
+      <strong style={{ color: "#20364c", fontSize: 13, lineHeight: 1.35 }}>{panel.title}</strong>
       <div style={{ display: "grid", gap: 7 }}>
         {panel.items.map((item) => (
-          <div key={`${item.label}-${item.value}`} style={{ alignItems: "center", background: "rgba(0,0,0,.15)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 7, display: "grid", gap: 5, gridTemplateColumns: "90px 1fr", padding: 8 }}>
-            <span style={{ color: "#7d8aa2", fontSize: 10.5, fontWeight: 850 }}>{item.label}</span>
-            <strong style={{ color: "#dbeafe", fontSize: 11.5, lineHeight: 1.35 }}>{String(item.value)}</strong>
+          <div key={`${item.label}-${item.value}`} style={{ alignItems: "center", background: "#e8eef5", border: "1px solid rgba(255,255,255,.07)", borderRadius: 7, display: "grid", gap: 5, gridTemplateColumns: "90px 1fr", padding: 8 }}>
+            <span style={{ color: "#40586d", fontSize: 10.5, fontWeight: 850 }}>{item.label}</span>
+            <strong style={{ color: "#20364c", fontSize: 11.5, lineHeight: 1.35 }}>{String(item.value)}</strong>
           </div>
         ))}
       </div>

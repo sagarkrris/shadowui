@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { COURSE_VISUAL_GUIDES, calculateTeachingBudget } from '../../lib/courseVisualGuides.mjs';
+import IllustrationPanel from '../learning/IllustrationPanel';
+import { sequenceArtworkModel } from '../../lib/diagramArtwork.mjs';
 
 const panel = { padding: 16, border: '1px solid #64748b', borderRadius: 10, color: '#e2e8f0', background: 'rgba(127,127,127,.04)', minWidth: 0, fontSize: 14, lineHeight: 1.7, overflowWrap: 'anywhere' };
 const button = { padding: '8px 12px', margin: '4px 8px 4px 0', color: '#e2e8f0' };
@@ -14,6 +16,7 @@ export default function LessonVisual({ lessonId }) {
     <p>{guide.story}</p>
     <figure style={{ margin: '16px 0' }}>
       <figcaption>{guide.layout === 'comparison' ? 'Compare these choices; they are not consecutive steps.' : 'Follow the example.'} Select a numbered card to focus on its explanation.</figcaption>
+      <IllustrationPanel model={sequenceArtworkModel(guide.steps, guide.title, guide.layout === 'comparison')} artworkKey="ai-lesson" activeNode={`step-${active}`} />
       <ol data-visual-steps style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: 10, padding: 0, listStyle: 'none' }}>
         {guide.steps.map(([title, detail], index) => <li key={title} style={{ minWidth: 0 }}>
           <button type="button" aria-pressed={active === index} onClick={() => setActive(index)} style={{ ...panel, width: '100%', height: '100%', textAlign: 'left', cursor: 'pointer', border: `2px solid ${active === index ? '#93c5fd' : '#475569'}`, background: active === index ? 'rgba(96,165,250,.12)' : 'rgba(127,127,127,.04)' }}>

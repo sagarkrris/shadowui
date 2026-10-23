@@ -1,12 +1,5 @@
-import { useId } from "react";
-
-function DiagramNode({ x, y, label, detail, accent }) {
-  return <g><rect x={x} y={y} width="138" height="58" rx="9" fill="rgba(255,255,255,.045)" stroke={accent} strokeOpacity=".52" /><text x={x + 69} y={y + 24} fill="var(--jd-text)" fontSize="14" fontWeight="800" textAnchor="middle">{label}</text><text x={x + 69} y={y + 42} fill="var(--jd-text-muted)" fontSize="12" textAnchor="middle">{detail}</text></g>;
-}
-
-function Arrow({ x1, y1, x2, y2, accent, label, markerId }) {
-  return <g><line x1={x1} y1={y1} x2={x2} y2={y2} stroke={accent} strokeOpacity=".75" strokeWidth="2" markerEnd={`url(#${markerId})`} />{label ? <text x={(x1 + x2) / 2} y={y1 - 8} fill="var(--jd-text-muted)" fontSize="9" textAnchor="middle">{label}</text> : null}</g>;
-}
+import IllustrationPanel from '../learning/IllustrationPanel';
+import { artworkGraph } from '../../lib/diagramArtwork.mjs';
 
 const DIAGRAMS = {
   javaTimeline: { label: "Java evolution timeline", nodes: [[22, "Java 8", "lambdas + streams"], [210, "Java 11", "modules + HttpClient"], [398, "Java 17", "records + sealed"], [570, "Java 21+", "virtual threads + JVM"]] },
@@ -38,8 +31,13 @@ const DIAGRAMS = {
   default: { label: "System design reasoning loop", nodes: [[22, "Requirements", "user + target"], [210, "Components", "boundaries"], [398, "Trade-offs", "cost + risk"], [570, "Operate", "measure + recover"]] },
 };
 
-export default function SystemDesignDiagram({ kind = "default", concept, accent }) {
+export default function SystemDesignDiagram({ kind = "default", concept }) {
   const diagram = DIAGRAMS[kind] || DIAGRAMS.default;
-  const markerId = `system-design-arrow-${useId()}`;
-  return <figure className="system-design-diagram" style={{ background: "var(--jd-surface-sunken)", border: "1px solid var(--jd-border)", borderRadius: 8, minWidth: 0, margin: "9px 0 0", padding: "9px 8px 6px" }}><figcaption style={{ color: accent, fontSize: 10.5, fontWeight: 900, marginBottom: 4, textTransform: "uppercase" }}>{diagram.label}</figcaption><div role="region" aria-label={`${diagram.label} scrollable diagram`} tabIndex={0} style={{ maxWidth: "100%", overflowX: "auto" }}><svg style={{ minWidth: 720, display: "block" }} role="img" aria-label={`${diagram.label}: ${concept}`} viewBox="0 0 720 82" width="100%" preserveAspectRatio="xMidYMid meet"><defs><marker id={markerId} markerHeight="6" markerWidth="7" orient="auto" refX="6" refY="3" viewBox="0 0 7 6"><path d="M0,0 L7,3 L0,6 Z" fill={accent} /></marker></defs>{diagram.nodes.map(([x, label, detail]) => <DiagramNode key={label} x={x} y={12} label={label} detail={detail} accent={accent} />)}{diagram.nodes.slice(0, -1).map(([x], index) => <Arrow key={x} x1={x + 143} y1={41} x2={diagram.nodes[index + 1][0] - 7} y2={41} accent={accent} markerId={markerId} />)}</svg></div></figure>;
+  const nodes = diagram.nodes.map(([, label, detail], index) => ({ id: `node-${index}`, label, detail, symbol: 'component' }));
+  const model = artworkGraph(nodes, nodes.slice(1).map((node,index) => ({ from: nodes[index].id, to: node.id, label: 'next in this overview' })), diagram.label, concept || diagram.label);
+  return <figure className="system-design-diagram" style={{ minWidth: 0, margin: '16px 0' }}>
+    <figcaption>{diagram.label}</figcaption>
+    <IllustrationPanel model={model} artworkKey="system-design-overview" />
+    <details><summary>Read diagram as text</summary><ul>{nodes.map(node => <li key={node.id}><strong>{node.label}</strong>: {node.detail}</li>)}</ul></details>
+  </figure>;
 }

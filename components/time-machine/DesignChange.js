@@ -1,9 +1,12 @@
 import { designTransition } from '../../lib/timeMachineDesign.mjs';
 import styles from '../../styles/TimeMachine.module.css';
+import IllustrationPanel from '../learning/IllustrationPanel';
+import { artworkGraph, diagramSymbol } from '../../lib/diagramArtwork.mjs';
 function DesignSnapshot({ title, design }) {
   const labels = new Map(design.nodes.map(node => [node.id, node.label]));
   return <section className={styles.snapshot} aria-label={`${title} design`}>
     <h4>{title}</h4>
+    <IllustrationPanel artworkKey="time-machine" model={artworkGraph(design.nodes.map(node => ({ ...node, detail: `${node.status ? `${node.status}: ` : ''}${node.detail}`, symbol: diagramSymbol(node.id) })), design.links.map(link => ({ ...link, label: `${link.status ? `${link.status}: ` : ''}${link.label}` })), `${title} design`, 'Connections show responsibilities, not deployed infrastructure.')} />
     <div className={styles.nodes}>{design.nodes.map(node => <div className={styles.node} data-change={node.status || 'Before'} key={node.id}>
       {node.status && <span className={styles.badge}>{node.status}</span>}<strong>{node.label}</strong><p>{node.detail}</p>
     </div>)}</div>

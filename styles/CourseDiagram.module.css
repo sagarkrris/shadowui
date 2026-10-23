@@ -29,6 +29,10 @@
 .connections li { padding: 6px 0; overflow-wrap: anywhere; }
 .relationship { display: inline-block; padding: 0 6px; margin: 0 5px; border: 1px solid var(--jd-border, #38516e); border-radius: 4px; }
 .textView { overflow-wrap: anywhere; }
+.illustrationTools { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; font-size: 12px; }
+.illustrationTools > span { margin-right: auto; color: var(--jd-text-muted, #adc2db); font-weight: 700; }
+.illustrationTools button { min-height: 44px; padding: 8px 12px; border: 1px solid var(--jd-border, #38516e); border-radius: 8px; background: var(--jd-surface-sunken, #101d30); color: inherit; font: inherit; cursor: pointer; }
+.illustrationTools button:focus-visible { outline: 2px solid var(--jd-text, #e5edf8); outline-offset: 3px; }
 @media (max-width: 480px) {
   .figure { padding: 12px; }
   .title { font-size: 16px; }

@@ -3,9 +3,88 @@ import { listTechBlogs } from '../lib/techBlogs.mjs';
 import { COURSE_DEMOS, COURSE_DEMO_ASSIGNMENTS } from '../lib/courseDemos.mjs';
 import { BUILD_CHALLENGES } from '../lib/buildChallenges.mjs';
 import { gotoSeededApp } from './helpers/app.js';
+import { COURSE_DIAGRAMS } from '../lib/techBlogDiagrams.mjs';
+import { readFile } from 'node:fs/promises';
 
 // No hand-maintained course list: every new catalog entry joins the executed browser gate.
 const courses = listTechBlogs();
+
+const illustratedLessons = [
+  ['java-memory-management-evolution', 'memory'],
+  ['api-gateway-production-patterns', 'gatewayTrust'],
+  ['java-design-patterns-with-diagrams', 'patternStrategy'],
+];
+
+for (const [slug, key] of illustratedLessons) {
+  for (const width of [375, 1366]) test(`${key}: illustration enlargement, accessible relationships and export at ${width}px`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto(`/tech-blogs/${slug}`);
+    const figure = page.locator(`[data-course-diagram="${key}"]`).first();
+    const svg = figure.locator('[data-illustrated-diagram]');
+    await expect(svg).toBeVisible();
+    const connectors = await svg.locator('path[marker-end]').evaluateAll(paths => paths.map(path => ({
+      moves: (path.getAttribute('d').match(/M/gi) || []).length,
+      markerFound: Boolean(document.getElementById(path.getAttribute('marker-end').slice(5, -1))),
+      hollow: path.getAttribute('stroke-dasharray') === '6 4',
+    })));
+    expect(connectors).toHaveLength(3);
+    expect(connectors.every(path => path.moves === 1 && path.markerFound)).toBe(true);
+    expect(connectors.filter(path => path.hollow)).toHaveLength(key === 'patternStrategy' ? 2 : 0);
+    const originalWidth = await svg.evaluate(el => el.getBoundingClientRect().width);
+    expect(originalWidth).toBeGreaterThanOrEqual(900);
+    const clipped = await svg.locator('text').evaluateAll(labels => labels.filter(label => {
+      const box = label.getBBox();
+      const matrix = label.getCTM();
+      const rootMatrix = label.ownerSVGElement.getCTM().inverse();
+      const relative = rootMatrix.multiply(matrix);
+      const topLeft = new DOMPoint(box.x, box.y).matrixTransform(relative);
+      const bottomRight = new DOMPoint(box.x + box.width, box.y + box.height).matrixTransform(relative);
+      return topLeft.x < 0 || topLeft.y < 0 || bottomRight.x > 900 || bottomRight.y > 540;
+    }).map(label => label.textContent));
+    expect(clipped).toEqual([]);
+    await figure.getByRole('button', { name: 'Enlarge illustration', exact: true }).click();
+    expect(await svg.evaluate(el => el.getBoundingClientRect().width)).toBeGreaterThan(originalWidth);
+    const downloadEvent = page.waitForEvent('download');
+    await figure.getByRole('button', { name: 'Download SVG', exact: true }).click();
+    const download = await downloadEvent;
+    expect(download.suggestedFilename()).toBe(`${key}-illustration.svg`);
+    const exported = await readFile(await download.path(), 'utf8');
+    expect(exported).toContain('xmlns="http://www.w3.org/2000/svg"');
+    expect(exported).toContain('font-family="system-ui, sans-serif"');
+    expect(exported).toContain(COURSE_DIAGRAMS[key].title);
+    if (width === 1366) {
+      const preview = await page.context().newPage();
+      await preview.setViewportSize({ width: 960, height: 600 });
+      await preview.goto(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(exported)}`);
+      await expect(preview.getByRole('img')).toBeVisible();
+      await preview.locator('svg').screenshot({ path: testInfo.outputPath(`${key}-export.png`) });
+      await preview.close();
+    }
+    await figure.getByRole('button', { name: 'Text view', exact: true }).focus();
+    await page.keyboard.press('Enter');
+    await expect(svg).toBeHidden();
+    for (const [from, to, label] of COURSE_DIAGRAMS[key].edges) {
+      const relation = figure.getByRole('listitem').filter({ hasText: label }).filter({ hasText: COURSE_DIAGRAMS[key].nodes.find(node => node[0] === from)[3] });
+      await expect(relation).toContainText(COURSE_DIAGRAMS[key].nodes.find(node => node[0] === from)[3]);
+      await expect(relation).toContainText(COURSE_DIAGRAMS[key].nodes.find(node => node[0] === to)[3]);
+    }
+    await figure.getByRole('button', { name: 'Diagram', exact: true }).click();
+    await expect(figure.getByRole('button', { name: 'Reset illustration size' })).toHaveAttribute('aria-pressed', 'true');
+    await figure.getByRole('button', { name: 'Reset illustration size' }).click();
+    expect(await svg.evaluate(el => el.getBoundingClientRect().width)).toBe(originalWidth);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBeTruthy();
+    await figure.screenshot({ path: testInfo.outputPath(`${key}-${width}.png`) });
+  });
+
+  test(`${key}: workspace uses the same illustration`, async ({ page }) => {
+    await gotoSeededApp(page, { activeTab: 'javaDigest', homeDemoSeen: true });
+    await page.getByRole('button', { name: 'Tech Blogs', exact: true }).click();
+    const course = courses.find(item => item.id === slug);
+    await page.getByText(course.title, { exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: `${course.title} full lesson` });
+    await expect(dialog.locator(`[data-illustrated-diagram="${key}"]`).first()).toBeVisible();
+  });
+}
 
 async function verifyDemo(reader, course) {
   const region = reader.getByRole('region', { name: 'Interactive course demo', exact: true });

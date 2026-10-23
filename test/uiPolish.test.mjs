@@ -88,6 +88,8 @@ test("Tech Blogs is a public self-contained study section", () => {
   const readerSource = readFileSync(new URL("../components/java-digest/TechBlogReader.js", import.meta.url), "utf8");
   const overviewSource = readFileSync(new URL("../components/java-digest/CourseOverviewDiagram.js", import.meta.url), "utf8");
   const diagramSource = readFileSync(new URL("../components/java-digest/CourseDiagram.js", import.meta.url), "utf8");
+  const artworkSource = readFileSync(new URL("../components/learning/DiagramArtwork.js", import.meta.url), "utf8");
+  const topicArtworkSource = readFileSync(new URL("../components/java-digest/IllustratedCourseDiagram.js", import.meta.url), "utf8");
   const publicSource = readFileSync(new URL("../pages/tech-blogs/[slug].js", import.meta.url), "utf8");
   const fieldNoteSource = readFileSync(new URL("../components/reader/BackendFieldNote.js", import.meta.url), "utf8");
   // All readers must use the authored course mapping, not a generic fallback.
@@ -99,7 +101,12 @@ test("Tech Blogs is a public self-contained study section", () => {
   assert.match(readerSource, /minHeight: 0, overflowY: "auto"/);
   assert.match(readerSource, /blog\.capstone/);
   assert.match(diagramSource, /aria-label=/);
-  assert.match(diagramSource, /role="img"/);
+  assert.match(diagramSource, /<DiagramArtwork model=\{model\}/);
+  assert.match(diagramSource, /<IllustratedCourseDiagram diagramKey=\{diagramKey\}/);
+  for (const source of [artworkSource, topicArtworkSource]) {
+    assert.match(source, /role="img"/);
+    assert.match(source, /aria-labelledby=/);
+  }
   assert.match(diagramSource, /Text view/);
   assert.match(techBlogsSource, /system-design-handbook/);
   assert.match(techBlogsSource, /practice:/);

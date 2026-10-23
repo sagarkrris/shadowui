@@ -1,3 +1,5 @@
+import ReadableFlowDiagram from '../learning/ReadableFlowDiagram';
+
 const wrap = { minWidth: 0, overflowWrap: "anywhere", wordBreak: "break-word" };
 
 function ChipButton({ label, icon, active, onClick, accent }) {
@@ -23,7 +25,7 @@ export default function JavaDigestTutorialCard({ tutorial, accent, completedIds,
         <div style={{ color: "var(--jd-text-soft)", fontSize: 11.2, lineHeight: 1.5 }}><b>How to think:</b> {tutorial.howToThink}</div>
         <p style={{ color: "var(--jd-text-soft)", fontSize: 11 }}>Contextual snippet: supply the enclosing method, imports and application types. Expected result describes behavior, not necessarily console output.</p><code style={{ background: "var(--jd-surface-sunken)", borderRadius: 6, color: "var(--jd-code-text)", display: "block", fontSize: 10.8, lineHeight: 1.45, padding: 7, whiteSpace: "pre-wrap" }}>{tutorial.example}</code>
         {tutorial.output && <div style={{ color: "var(--jd-accent-alt)", fontSize: 11.1 }}><b>Expected result:</b> {tutorial.output}</div>}
-        <pre style={{ background: "var(--jd-surface-sunken)", border: "1px solid var(--jd-border)", borderRadius: 6, color: "var(--jd-accent-alt)", fontSize: 10.6, lineHeight: 1.45, margin: 0, overflowX: "auto", padding: 7, whiteSpace: "pre-wrap" }}>{tutorial.diagram}</pre>
+        <ReadableFlowDiagram value={tutorial.diagram} title={`${tutorial.title}: concept flow`} />
         <div style={{ color: "var(--jd-text-soft)", fontSize: 11.1, lineHeight: 1.5 }}><b>Benchmark:</b> {tutorial.benchmark}</div>
         <div style={{ color: "var(--jd-danger-text)", fontSize: 11.1, lineHeight: 1.5 }}><b>Common mistakes:</b> {tutorial.mistakes}</div>
         <div style={{ color: "var(--jd-warning-text)", fontSize: 11.1, lineHeight: 1.5 }}><b>Production note:</b> {tutorial.productionNote}</div>

@@ -18,6 +18,8 @@ import {
 } from "../../lib/systemDesignCanvas.mjs";
 import BeginnerGuideBanner from "../BeginnerGuideBanner";
 import AnswerAtAGlance from "../learning/AnswerAtAGlance";
+import IllustrationPanel from '../learning/IllustrationPanel';
+import { arrowArtworkModel, sequenceArtworkModel } from '../../lib/diagramArtwork.mjs';
 import ReadableFlowDiagram from "../learning/ReadableFlowDiagram";
 import DesignRevisionWorkshop from './DesignRevisionWorkshop';
 
@@ -1209,6 +1211,7 @@ function DbIndexVisualizer({ accent }) {
           </button>
         ))}
       </div>
+      <IllustrationPanel model={sequenceArtworkModel(selectedQuery.scan, `Index path: ${selectedQuery.label}`)} artworkKey="database-index" />
       <div style={responsiveGrid(230, 8)}>
         <div style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 6, padding: 9 }}>
           <strong style={{ color: "#f8fbff", fontSize: 11 }}>Query</strong>
@@ -1372,6 +1375,7 @@ function InterviewAnswerPanel({ answer, accent }) {
         <h3 style={{ color: "#f8fbff", fontSize: 15, lineHeight: 1.3, marginTop: 3 }}>{answer.title}</h3>
         <p style={{ color: "#9fb0c7", fontSize: 11.4, lineHeight: 1.5, marginTop: 4 }}>{answer.summary}</p>
       </div>
+      <IllustrationPanel model={sequenceArtworkModel(answer.flow.map(step => [step, '']), answer.title)} artworkKey="interview-architecture" />
       <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 6 }} aria-label="Architecture diagram">
         {answer.flow.map((step, index) => <div key={step} style={{ alignItems: "center", display: "flex", gap: 6 }}>
           <span style={{ background: index === 0 ? `${accent}18` : "rgba(255,255,255,.05)", border: `1px solid ${index === 0 ? `${accent}55` : "rgba(255,255,255,.1)"}`, borderRadius: 7, color: "#eaf2ff", fontSize: 10.8, fontWeight: 750, maxWidth: 170, padding: "7px 8px" }}>{step}</span>
@@ -1405,6 +1409,8 @@ function DiagramBoard({ board, roadmap, accent, onEvaluate }) {
         </div>
         <ActionButton icon="ti-sparkles" label="Evaluate Diagram" onClick={onEvaluate} tone={accent} />
       </div>
+
+      <IllustrationPanel model={arrowArtworkModel(board.edges.join('\n'), board.title)} artworkKey="system-canvas" />
 
       <section style={{ ...wrappingTextStyle, background: `${accent}10`, border: `1px solid ${accent}2f`, borderRadius: 8, display: "grid", gap: 6, padding: 10 }}>
         <div style={{ color: accent, fontSize: 10.8, fontWeight: 900, textTransform: "uppercase" }}>Beginner System Design Context</div>

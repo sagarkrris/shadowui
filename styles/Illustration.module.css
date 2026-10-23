@@ -1,0 +1,8 @@
+.panel { min-width:0; max-width:100%; margin:14px 0; }
+.tools { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
+.tools button { font:inherit; font-size:12px; min-height:44px; padding:8px 12px; border:1px solid var(--jd-border,#71839a); border-radius:8px; color:inherit; background:var(--jd-surface-sunken,transparent); cursor:pointer; }
+.tools button:focus-visible,.canvas:focus-visible { outline:3px solid #4484c8; outline-offset:3px; }
+.canvas { width:100%; max-width:100%; overflow:auto; border:1px solid #71839a; border-radius:16px; background:#fffdf8; }
+.hint { font-size:12px; line-height:1.6; margin:8px 0; overflow-wrap:anywhere; }
+.source { color:#20364c; background:#fffdf8; border:1px solid #71839a; border-radius:16px; padding:18px; overflow:auto; max-width:100%; }
+.sourceTitle { display:flex; align-items:center; gap:12px; font-weight:700; margin-bottom:12px; }

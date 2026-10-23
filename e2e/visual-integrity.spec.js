@@ -24,6 +24,7 @@ for (const width of [375, 1366]) test(`all ${routes.length} illustrated readers 
       const key = figure.dataset.courseDiagram;
       const svg = figure.querySelector('svg');
       const issues = [];
+      if (!svg.hasAttribute('data-diagram-artwork') && !svg.hasAttribute('data-illustrated-diagram')) issues.push(`${key}: old diagram renderer`);
       if (!svg.getAttribute('aria-labelledby')) issues.push(`${key}: missing accessible name`);
       for (const group of svg.querySelectorAll('[data-diagram-node]')) {
         const box = group.querySelector('rect').getBBox();

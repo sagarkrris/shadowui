@@ -16,6 +16,9 @@ import {
   listUmlClassPracticeSystems,
   normalizeDesignSystemSearchQuery,
 } from "../../lib/designLab.mjs";
+import IllustrationPanel from '../learning/IllustrationPanel';
+import { DiagramSymbol } from '../learning/DiagramArtwork';
+import { sequenceArtworkModel } from '../../lib/diagramArtwork.mjs';
 import BeginnerGuideBanner from "../BeginnerGuideBanner";
 import AnswerAtAGlance from "../learning/AnswerAtAGlance";
 import DesignRevisionWorkshop from '../system-design/DesignRevisionWorkshop';
@@ -295,6 +298,7 @@ function WorkflowDiagram({ diagram, accent }) {
         <p style={{ ...wrap, color: "#9fb0c7", fontSize: 11.5, lineHeight: 1.45, marginTop: 5 }}>{diagram.summary}</p>
       </div>
 
+      <IllustrationPanel model={sequenceArtworkModel(diagram.stages.map(stage => [stage.title, stage.nodes.join(' · ')]), diagram.title, true)} artworkKey="workflow-groups" />
       <div style={{ display: "grid", gap: 9, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 170px), 1fr))", minWidth: 0 }}>
         {diagram.stages.map((stage, index) => (
           <article key={stage.title} style={{ ...wrap, background: "rgba(0,0,0,.16)", border: "1px solid rgba(255,255,255,.085)", borderRadius: 8, display: "grid", gap: 8, minHeight: 176, padding: 10, position: "relative" }}>
@@ -391,6 +395,7 @@ function EndToEndWorkflowSimulator({ accent }) {
         <span style={{ color: "#cbd5e1", fontSize: 11.5, lineHeight: 1.45 }}>{workflow.summary}</span>
       </div>
 
+      <IllustrationPanel model={sequenceArtworkModel(workflow.steps.map(step => [step.node, step.action || step.detail || step.node]), workflow.title)} artworkKey="design-workflow" activeNode={`step-${activeStepIndex}`} />
       <div role="region" aria-label="Workflow steps; scroll horizontally" tabIndex={0} style={{ display: "grid", gap: 7, gridTemplateColumns: `repeat(${Math.min(workflow.steps.length, 9)}, minmax(94px, 1fr))`, minWidth: 0, overflowX: "auto", paddingBottom: 2 }}>
         {workflow.steps.map((step, index) => {
           const active = index === activeStepIndex;
@@ -600,13 +605,14 @@ function PatternVisualDiagram({ pattern, accent }) {
         </div>
       </div>
 
+      <IllustrationPanel model={sequenceArtworkModel(visual.flow, visual.title)} artworkKey="design-pattern-flow" activeNode={`step-${activeFlowIndex}`} />
       <div role="region" aria-label="Pattern roles; scroll horizontally" tabIndex={0} style={{ display: "grid", gap: 7, gridTemplateColumns: `repeat(${Math.min(visual.roles.length, 5)}, minmax(96px, 1fr))`, minWidth: 0, overflowX: "auto" }}>
         {visual.roles.map((role, index) => {
           const active = index === activeRoleIndex;
           return (
           <button key={`${pattern.id}-${role.label}`} type="button" onClick={() => setActiveRoleIndex(index)} style={{ ...wrap, background: active ? `${role.tone}1d` : `${role.tone}10`, border: `1px solid ${active ? role.tone : `${role.tone}3d`}`, borderRadius: 8, cursor: "pointer", display: "grid", gap: 5, minHeight: 88, minWidth: 96, padding: 8, position: "relative", textAlign: "left" }}>
             <span style={{ alignItems: "center", background: `${role.tone}18`, border: `1px solid ${role.tone}44`, borderRadius: 999, color: role.tone, display: "inline-grid", fontSize: 10, fontWeight: 900, height: 22, placeItems: "center", width: 22 }}>{index + 1}</span>
-            <strong style={{ color: "#f8fbff", fontSize: 11.3, lineHeight: 1.25 }}>{role.label}</strong>
+            <DiagramSymbol size={34} /><strong style={{ color: "#f8fbff", fontSize: 11.3, lineHeight: 1.25 }}>{role.label}</strong>
             <span style={{ color: "#cbd5e1", fontSize: 10.6, lineHeight: 1.35 }}>{role.detail}</span>
             {index < visual.roles.length - 1 ? (
               <i className="ti ti-arrow-right" style={{ color: role.tone, fontSize: 16, position: "absolute", right: -12, top: 34, zIndex: 1 }} />
@@ -734,6 +740,7 @@ function UmlClassBoard({ systems, accent, onAction }) {
       {systems.map((system) => (
         <LabPanel key={system.id} title={system.title} icon="ti-hierarchy-3" accent={accent}>
           <p style={{ ...wrap, color: "#cbd5e1", fontSize: 11.5, lineHeight: 1.45, marginBottom: 9 }}>{system.system}</p>
+          <IllustrationPanel model={sequenceArtworkModel(system.classes.map(item => [item.name, `Fields: ${item.fields}. Methods: ${item.methods}`]), system.title, true)} artworkKey="uml-classes" />
           <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 190px), 1fr))", minWidth: 0 }}>
             {system.classes.map((item) => (
               <article key={item.name} style={{ ...wrap, background: "rgba(0,0,0,.16)", border: `1px solid ${accent}30`, borderRadius: 8, overflow: "hidden" }}>
@@ -773,6 +780,7 @@ function AgenticAiBoard({ problems, accent, onAction }) {
           <div style={{ color: DETAIL_TONE, fontSize: 11, fontWeight: 900, marginBottom: 6 }}>{problem.difficulty}</div>
           <p style={{ ...wrap, color: "#cbd5e1", fontSize: 11.5, lineHeight: 1.45, marginBottom: 9 }}>{problem.goal}</p>
           <strong style={{ color: "#eaf2ff", fontSize: 11.5 }}>Agent Architecture</strong>
+          <IllustrationPanel model={sequenceArtworkModel(problem.architecture.map(node => [node, '']), problem.title)} artworkKey="agent-architecture" />
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, margin: "7px 0 10px" }}>
             {problem.architecture.map((node, index) => (
               <span key={node} style={{ alignItems: "center", background: index === 0 ? `${accent}16` : "rgba(255,255,255,.045)", border: `1px solid ${index === 0 ? `${accent}44` : "rgba(255,255,255,.08)"}`, borderRadius: 999, color: "#dbeafe", display: "inline-flex", fontSize: 10.5, fontWeight: 850, gap: 5, padding: "5px 8px" }}>
