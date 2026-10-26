@@ -196,9 +196,9 @@ for (const width of [390, 1280]) {
     await page.goto(link);
     await expect(page.getByRole("heading", { name: "Expected result", exact: true })).toBeInViewport();
     await diagram.getByRole('button', { name: 'Text view', exact: true }).click();
-    await page.getByRole("button", { name: "Copy code example 2", exact: true }).click();
+    await diagram.locator(".reader-copy-code").click();
     expect(await page.evaluate(() => window.__copied)).toContain("JVM executes bytecode");
-    await expect(page.getByRole("status").filter({ hasText: "Code example 2 copied." })).toBeVisible();
+    await expect(page.getByRole("status").filter({ hasText: "Code example 4 copied." })).toBeVisible();
     await diagram.getByRole('button', { name: 'Diagram', exact: true }).click();
     await diagram.getByRole('button', { name: 'Fit to panel', exact: true }).click();
     await diagram.locator('svg[data-diagram-artwork]').screenshot({ path: testInfo.outputPath('jdk-visual-diagram.png') });
@@ -243,3 +243,70 @@ test("failed copy keeps the original button label and offers manual copying", as
   await expect(page.getByRole("status").filter({ hasText: "Copy was unavailable." })).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Text to copy", exact: true })).toHaveValue(await page.locator("#example pre").textContent());
 });
+
+for (const width of [390, 1280]) {
+  test(`learning answers keep code readable and depth keyboard accessible at ${width}px`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/java/tutorial/jdk-vs-jre-vs-jvm');
+    const answer = page.getByLabel('Answer at a glance', { exact: true });
+    await expect(answer.getByText('Answer in 30 seconds', { exact: true })).toBeVisible();
+    await expect(answer.getByLabel('Answer flow')).toHaveCount(0);
+    await expect(answer.locator('#example pre')).toHaveCount(1);
+    await expect(page.locator('#example')).toHaveCount(1);
+    await expect(answer.locator('#example code')).toContainText('public class Greeting {\n');
+    await expect(answer.locator('#example pre')).toHaveCSS('white-space', 'pre');
+    await expect(answer.locator('#example code span').first()).toHaveText('// Greeting.java');
+    const sourceWidth = await answer.locator('#example').evaluate(element => element.getBoundingClientRect().width);
+    expect(sourceWidth).toBeGreaterThan((await answer.boundingBox()).width * .8);
+    await expect(answer.getByRole('heading', { name: 'Compile with the JDK', exact: true }).locator('..').locator('code')).toHaveText('javac Greeting.java');
+    await expect(answer.locator('#expected-result')).toHaveText(/Expected result.*Hello from the JVM/s);
+    await expect(answer).not.toContainText('Nulls, empty values');
+    await expect(page.locator('#example')).not.toContainText('javac Greeting.java');
+    const depth = answer.locator('details');
+    await expect(depth).not.toHaveAttribute('open', '');
+    await depth.locator('summary').focus();
+    await page.keyboard.press('Enter');
+    await expect(depth).toHaveAttribute('open', '');
+    await expect(depth).toContainText('--release');
+    await page.keyboard.press('Space');
+    await expect(depth).not.toHaveAttribute('open', '');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+    await answer.evaluate(element => element.scrollIntoView({ block: 'start' }));
+    await page.screenshot({ path: testInfo.outputPath('answer-panel.png') });
+  });
+
+  test(`public question lists show the answer once without invented detail at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/sql/sql-interview-questions');
+    const question = page.locator('main details').filter({ has: page.getByLabel('Answer at a glance', { exact: true }) }).first();
+    await question.locator('summary').click();
+    const answer = question.getByLabel('Answer at a glance', { exact: true });
+    const text = await answer.locator('p').textContent();
+    expect(text.trim().length).toBeGreaterThan(0);
+    expect((await question.textContent()).split(text).length - 1).toBe(1);
+    await expect(answer.getByRole('heading')).toHaveCount(0);
+    await expect(answer.locator('details, pre')).toHaveCount(0);
+    expect(await question.evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
+  });
+}
+
+
+for (const width of [390, 1280]) {
+  test(`lesson practice has one contextual action and explains independent progress at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/java/tutorial/jdk-vs-jre-vs-jvm');
+    const practice = page.getByRole('region', { name: 'Practice JDK vs JRE vs JVM', exact: true });
+    await expect(page.getByRole('link', { name: /Practi[cs]e this (topic|lesson) with Tech Buddy/ })).toHaveCount(1);
+    await expect(practice.getByRole('link', { name: 'Practise this lesson with Tech Buddy →' })).toHaveAttribute('href', /buddyTopic=/);
+    const completion = practice.getByRole('checkbox', { name: 'I completed this lesson and its self-check' });
+    const revisit = practice.getByRole('checkbox', { name: 'I need another attempt at this lesson' });
+    await completion.check();
+    await revisit.check();
+    await page.reload();
+    await expect(completion).toBeChecked();
+    await expect(revisit).toBeChecked();
+    await expect(practice.getByRole('group', { name: 'Your learning progress' })).toHaveAccessibleDescription(/both can be selected/);
+    expect(await completion.evaluate(element => element.getBoundingClientRect().width)).toBeGreaterThanOrEqual(18);
+    expect(await practice.evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
+  });
+}

@@ -50,9 +50,9 @@ for (const width of [390, 1280]) {
         const guide = page.locator('.workspace-guidance');
         await expect(guide).not.toHaveAttribute('open', '');
         await expect(guide.locator('.answer-at-a-glance')).toBeHidden();
-        await guide.locator('summary').click();
-        await expect(guide.getByText('Worked example', { exact: true })).toBeVisible();
-        await guide.locator('summary').click();
+        await guide.locator(':scope > summary').click();
+        await expect(guide.locator('.answer-at-a-glance').getByText('Approach and checks', { exact: true })).toBeVisible();
+        await guide.locator(':scope > summary').click();
       }
       if (workspace.id === 'interviewReady') {
         const checklist = page.locator('.workspace-guidance');

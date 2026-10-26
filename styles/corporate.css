@@ -92,9 +92,6 @@ html[data-design="corporate"] .app-shell .java-digest {
   --jd-accent-surface: var(--ui-selected); --jd-accent-surface-strong: var(--ui-selected);
   --jd-code-text: var(--ui-text); --jd-accent-alt: var(--ui-accent);
 }
-html[data-design="corporate"] :is(.app-shell,.corporate-public) .answer-at-a-glance { background: var(--ui-subtle) !important; border-color: var(--ui-border) !important; color: var(--ui-text) !important; }
-html[data-design="corporate"] :is(.app-shell,.corporate-public) .answer-at-a-glance :is(div,span,strong,p) { color: var(--ui-text) !important; text-shadow: none !important; }
-html[data-design="corporate"] :is(.app-shell,.corporate-public) .answer-at-a-glance [style*="background"] { background: transparent !important; border-color: var(--ui-border) !important; }
 html[data-design="corporate"] .brand-watermark {
   position: fixed !important; inset: auto 16px 8px auto !important; z-index: 999;
   display: block !important; width: auto !important; height: auto !important;

@@ -1064,7 +1064,7 @@ export default function DesignLab({ theme = {}, onAction, beginnerMode = false, 
         onStepSelect={onBeginnerStepChange}
         detail="For design: watch one pattern, predict the trade-off, explain the API shape, practice a design prompt, then review the missing constraint."
       />
-      <details className="workspace-guidance"><summary>Approach &amp; worked example</summary><AnswerAtAGlance category="HLD LLD Design" takeaway="Start with the user request, split responsibilities into boundaries, then prove the design under scale and failure." complexity="Compare latency, throughput, consistency, operability, and cost before choosing a pattern." edgeCases="Retries, duplicate commands, partial failure, stale data, hot keys, and versioned contracts." /></details>
+      <details className="workspace-guidance"><summary>Approach and checks</summary><AnswerAtAGlance title="Approach and checks" category="HLD LLD Design" takeaway="Start with the user request, split responsibilities into boundaries, then prove the design under scale and failure." complexity="Compare latency, throughput, consistency, operability, and cost before choosing a pattern." edgeCases="Retries, duplicate commands, partial failure, stale data, hot keys, and versioned contracts." /></details>
 
       <header style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "space-between" }}>
         <div style={wrap}>

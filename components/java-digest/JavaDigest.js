@@ -201,25 +201,17 @@ function StructuredInterviewAnswer({ entry, accent }) {
           <MechanismDiagram steps={entry.diagramSteps} accent={accent} title="Mechanism at a glance" />
         </section>
       ) : null}
-      <section style={{ background: "var(--jd-accent-surface)", border: `1px solid ${accent}33`, borderRadius: 7, padding: 10 }}>
-        <strong style={{ color: accent, display: "block", fontSize: 10.5, letterSpacing: ".04em", textTransform: "uppercase" }}>Short answer</strong>
-        <p style={{ color: "var(--jd-text)", fontSize: 12, lineHeight: 1.58, margin: "5px 0 0" }}>{entry.answer}</p>
-      </section>
-      <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
-        <section style={answerCardStyle}><strong style={answerLabelStyle(accent)}>How it works</strong><p style={answerTextStyle}>{entry.internals}</p></section>
-        <section style={answerCardStyle}><strong style={answerLabelStyle("var(--jd-warning)")}>What to watch for</strong><p style={answerTextStyle}>{entry.commonMistakes}</p></section>
-        <section style={answerCardStyle}><strong style={answerLabelStyle("var(--jd-accent-alt)")}>Complexity / trade-off</strong><p style={answerTextStyle}>{entry.performanceNotes}</p></section>
-      </div>
+      <AnswerAtAGlance title="Short answer" takeaway={entry.answer} why={entry.internals}
+        exampleCode={entry.example} output={entry.expectedOutput} failure={entry.commonMistakes}
+        complexity={entry.performanceNotes} />
       <section style={answerCardStyle}><strong style={answerLabelStyle(accent)}>Explain it in this order</strong><ol style={{ color: "var(--jd-text-soft)", fontSize: 11.35, lineHeight: 1.52, margin: "6px 0 0", paddingLeft: 20 }}>{entry.actionSteps.map((step) => <li key={step}>{step}</li>)}</ol></section>
-      {entry.example ? <details style={{ ...answerCardStyle, padding: "8px 10px" }}><summary style={{ color: accent, cursor: "pointer", fontSize: 11.2, fontWeight: 850 }}>Show Java example</summary><pre style={{ background: "var(--jd-surface-sunken)", borderRadius: 6, color: "var(--jd-code-text)", fontSize: 10.8, lineHeight: 1.5, margin: "8px 0 0", overflowX: "auto", padding: 8, whiteSpace: "pre-wrap" }}>{entry.example}</pre></details> : null}
-      <div style={{ background: "var(--jd-surface-sunken)", border: "1px solid var(--jd-border)", borderRadius: 7, color: "var(--jd-text-soft)", fontSize: 11.2, lineHeight: 1.5, padding: "8px 9px" }}><strong style={{ color: accent }}>Proof to mention:</strong> {entry.expectedOutput}<br /><strong style={{ color: accent }}>How to test:</strong> {entry.testingNotes}</div>
+      <div style={{ ...answerCardStyle, color: "var(--jd-text-soft)", fontSize: 12, lineHeight: 1.6 }}><strong style={{ color: accent }}>How to test:</strong> {entry.testingNotes}</div>
     </div>
   );
 }
 
 const answerCardStyle = { background: "var(--jd-surface-subtle)", border: "1px solid var(--jd-border)", borderRadius: 7, padding: "9px 10px" };
 const answerLabelStyle = (color) => ({ color, display: "block", fontSize: 10.5, textTransform: "uppercase" });
-const answerTextStyle = { color: "var(--jd-text-soft)", fontSize: 11.35, lineHeight: 1.52, margin: "5px 0 0" };
 
 function InterviewDrillCard({ article, accent, onAction }) {
   const drill = buildArticleDrill(article);
@@ -937,7 +929,7 @@ export default function JavaDigest({ theme = {}, onAction, onJavaProgressChange,
         onStepSelect={onBeginnerStepChange}
         detail="For Java: read one concept, predict the interview trap, explain the code cue, practice one drill card, then review the follow-up."
       />
-      {activeView !== "Tech Blogs" && <details className="workspace-guidance"><summary>Approach &amp; worked example</summary><AnswerAtAGlance category="Java" takeaway="Read the runtime rule first, then connect it to the API choice and the production behavior you would observe." complexity="State the relevant time/space cost and the safety or throughput trade-off." edgeCases="Nulls, mutable keys, empty collections, concurrent access, lifecycle boundaries, and version compatibility." /></details>}
+      {activeView !== "Tech Blogs" && <details className="workspace-guidance"><summary>Approach and checks</summary><AnswerAtAGlance title="Approach and checks" category="Java" takeaway="Read the runtime rule first, then connect it to the API choice and the production behavior you would observe." complexity="State the relevant time/space cost and the safety or throughput trade-off." edgeCases="Nulls, mutable keys, empty collections, concurrent access, lifecycle boundaries, and version compatibility." /></details>}
 
       <header style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "space-between" }}>
         <div style={wrap}>

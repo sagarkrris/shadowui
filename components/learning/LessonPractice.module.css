@@ -1,0 +1,39 @@
+.card {
+  --practice-bg: var(--jd-surface-subtle, #102b43);
+  --practice-text: var(--jd-text, #e1edf8);
+  --practice-border: var(--jd-border, #4f8eaa);
+  --practice-accent: #9fe4ff;
+  background: var(--practice-bg);
+  border: 1px solid var(--practice-border);
+  border-radius: 10px;
+  color: var(--practice-text);
+  display: grid;
+  gap: 16px;
+  line-height: 1.65;
+  margin: 24px 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  padding: clamp(16px, 3vw, 24px);
+  font-size: 15px;
+}
+:global(.corporate-public) .card,
+:global(html[data-design="corporate"]) .card,
+:global(html[data-theme="light"]) .card {
+  --practice-bg: #f4f7fb;
+  --practice-text: #243449;
+  --practice-border: #c7d3e0;
+  --practice-accent: #174ea6;
+}
+.card h3 { font-size: 19px; line-height: 1.4; margin: 0; }
+.card p { margin: 0; }
+.checkpoint { border-left: 3px solid var(--practice-border); padding-left: 12px; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+.card a { color: var(--practice-accent); text-underline-offset: 3px; }
+.card .start { background: #174ea6; border: 1px solid #174ea6; border-radius: 7px; color: #fff; display: inline-flex; min-height: 44px; align-items: center; padding: 9px 14px; font-weight: 700; text-decoration: none; }
+.progress { border: 1px solid var(--practice-border); border-radius: 8px; min-width: 0; padding: 12px 16px; }
+.progress legend { padding: 0 6px; font-weight: 700; }
+.progress label { align-items: flex-start; display: flex; gap: 10px; min-height: 44px; padding: 8px 0; cursor: pointer; }
+.progress input { flex: 0 0 auto; width: 18px; height: 18px; margin-top: 4px; accent-color: #174ea6; }
+.help { font-size: 13px; }
+.status:empty { display: none; }
+.card :is(a,input):focus-visible { outline: 2px solid var(--practice-accent); outline-offset: 4px; }

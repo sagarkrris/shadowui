@@ -1,0 +1,54 @@
+.root {
+  --answer-bg: #102b43;
+  --answer-border: #4f8eaa;
+  --answer-text: #e1edf8;
+  --answer-accent: #9fe4ff;
+  --answer-code-bg: #071b2b;
+  --answer-keyword: #a8d8ff;
+  --answer-string: #b8f7d5;
+  --answer-comment: #aec3d4;
+  background: var(--answer-bg);
+  border: 1px solid var(--answer-border);
+  border-radius: 10px;
+  color: var(--answer-text);
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+  margin: 14px 0;
+  padding: clamp(14px, 3vw, 24px);
+  font-size: 15px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+:global(.corporate-public) .root,
+:global(html[data-design="corporate"]) .root,
+:global(html[data-theme="light"]) .root {
+  --answer-bg: #f4f7fb;
+  --answer-border: #c7d3e0;
+  --answer-text: #243449;
+  --answer-accent: #174ea6;
+  --answer-code-bg: #fff;
+  --answer-keyword: #6639a6;
+  --answer-string: #126334;
+  --answer-comment: #536577;
+}
+.root section { min-width: 0; }
+.root h3 { color: var(--answer-accent); font-size: 1em; line-height: 1.4; margin: 0 0 8px; }
+.root p { margin: 0; white-space: pre-wrap; }
+.eyebrow { color: var(--answer-accent); font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.takeaway { font-size: 1.08em; }
+.note { border-left: 3px solid var(--answer-border); padding-left: 12px; }
+.example { border-top: 1px solid var(--answer-border); padding-top: 16px; }
+.example p + p { margin-top: 8px; }
+.code { background: var(--answer-code-bg); border: 1px solid var(--answer-border); border-radius: 7px; color: var(--answer-text); font-size: 13px; line-height: 1.65; margin: 10px 0 0; max-width: 100%; overflow-x: auto; padding: 14px; white-space: pre; overflow-wrap: normal; tab-size: 2; }
+.code code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.keyword, .number { color: var(--answer-keyword); }
+.string { color: var(--answer-string); }
+.comment { color: var(--answer-comment); }
+.output { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.depth { border-top: 1px solid var(--answer-border); padding-top: 12px; }
+.depth summary { color: var(--answer-accent); cursor: pointer; font-weight: 700; }
+.depth section { margin-top: 16px; }
+.depth summary:focus-visible { outline: 2px solid var(--answer-accent); outline-offset: 4px; }
+.compact { font-size: 14px; gap: 12px; padding: 14px; }
+@media print { .root { break-inside: auto; } .code { white-space: pre-wrap; } }

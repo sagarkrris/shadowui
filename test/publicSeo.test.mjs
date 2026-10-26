@@ -38,7 +38,7 @@ test("public SEO routes expose metadata, structured data, sitemap, robots, and R
   assert.match(article, /Build a strong answer, step by step/);
   assert.match(article, /Read the fuller explanation/);
   assert.match(javaDigest, /Short answer/);
-  assert.match(javaDigest, /Complexity \/ trade-off/);
+  assert.match(javaDigest, /complexity=\{entry\.performanceNotes\}/);
   assert.match(javaDigest, /Explain it in this order/);
   assert.match(verticalArticle, /Related .* interview prep/);
   assert.match(verticalArticle, /PUBLIC_VERTICAL_LISTICLES/);

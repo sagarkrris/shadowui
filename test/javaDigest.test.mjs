@@ -172,8 +172,9 @@ test("JDK, JRE, and JVM tutorial explains the compile-and-run boundary", () => {
   const tutorial = getJavaTutorialBySlug("jdk-vs-jre-vs-jvm");
 
   assert.match(tutorial.walkthrough, /javac/);
-  assert.match(tutorial.walkthrough, /JDK 11 and later do not have a JRE image/);
-  assert.match(tutorial.example, /javac Greeting\.java/);
+  assert.match(tutorial.walkthrough, /stopped offering them with JDK 11/);
+  assert.equal(tutorial.exampleCommands[0].code, "javac Greeting.java");
+  assert.equal(tutorial.exampleCommands[1].code, "java Greeting");
   assert.match(tutorial.diagram, /Greeting\.class bytecode/);
   assert.match(tutorial.interviewAnswer, /source → javac → \.class bytecode/);
   assert.doesNotMatch(tutorial.example, /trace the state/);
