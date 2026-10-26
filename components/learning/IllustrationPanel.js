@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import DiagramArtwork, { SourceArtwork } from './DiagramArtwork';
 import styles from '../../styles/Illustration.module.css';
 
@@ -19,18 +19,63 @@ export function downloadDiagramSvg(container, filename) {
 }
 
 export default function IllustrationPanel({ model, source, title, artworkKey, activeNode }) {
+  const id = useId();
   const container = useRef(null);
-  const [enlarged, setEnlarged] = useState(false);
-  if (!model && !source) return null;
+  const [textView, setTextView] = useState(false);
+  const [sizeMode, setSizeMode] = useState('natural');
+  const [selectedNode, setSelectedNode] = useState(null);
+  const [message, setMessage] = useState('');
   const heading = model?.title || title || 'Original diagram layout';
+  const focusedNode = selectedNode || activeNode;
+  const enlarged = sizeMode === 'enlarged';
+  const fit = sizeMode === 'fit';
+
+  useEffect(() => {
+    setSelectedNode(null);
+    setMessage('');
+  }, [activeNode, heading]);
+  if (!model && !source) return null;
+
+  function focusNode(node) {
+    setSelectedNode(node.id);
+    setSizeMode('fit');
+    setTextView(false);
+    setMessage(`${node.label} highlighted in the diagram.`);
+  }
+
   return <div className={styles.panel} data-illustration-panel>
     <div className={styles.tools} role="group" aria-label={`Illustration tools: ${heading}`}>
-      <button type="button" aria-pressed={enlarged} onClick={() => setEnlarged(value => !value)}>{enlarged ? 'Reset illustration size' : 'Enlarge illustration'}</button>
+      <button type="button" aria-pressed={!textView} aria-controls={`diagram-${id}`} onClick={() => setTextView(false)}>Diagram</button>
+      <button type="button" aria-pressed={textView} aria-controls={`text-${id}`} onClick={() => setTextView(true)}>Text view</button>
+      <button type="button" aria-pressed={fit} onClick={() => setSizeMode(fit ? 'natural' : 'fit')}>Fit to panel</button>
+      <button type="button" aria-pressed={sizeMode === 'natural'} onClick={() => setSizeMode('natural')}>Natural size</button>
+      <button type="button" aria-pressed={enlarged} onClick={() => setSizeMode(enlarged ? 'natural' : 'enlarged')}>{enlarged ? 'Reset illustration size' : 'Enlarge illustration'}</button>
       <button type="button" onClick={() => downloadDiagramSvg(container.current, 'learning-illustration')}>Download SVG</button>
     </div>
-    <div ref={container} className={styles.canvas} role="region" tabIndex={0} aria-label={`${heading} scrollable illustration`}>
-      {model ? <DiagramArtwork model={model} artworkKey={artworkKey} enlarged={enlarged} activeNode={activeNode} /> : <SourceArtwork source={source} title={heading} artworkKey={artworkKey} enlarged={enlarged} />}
+    <div id={`diagram-${id}`} hidden={textView}>
+      <div ref={container} className={styles.canvas} role="region" aria-label={`${heading} scrollable illustration`} tabIndex={0}>
+        {model ? <DiagramArtwork model={model} artworkKey={artworkKey} enlarged={enlarged} fit={fit} activeNode={focusedNode} /> : <SourceArtwork source={source} title={heading} artworkKey={artworkKey} enlarged={enlarged} fit={fit} />}
+      </div>
+      <p className={styles.hint}>{model ? 'Follow the labeled connections.' : 'Read the original diagram in its preserved layout.'} Scroll to explore the picture, or switch to Text view.</p>
     </div>
-    <p className={styles.hint}>{model ? 'Follow the connection key.' : 'Read the original diagram in its preserved layout.'} Scroll to explore the picture; the complete text explanation follows.</p>
+    <div id={`text-${id}`} hidden={!textView} className={styles.textView}>
+      {model ? <>
+        <p>Select a component to highlight it in the diagram.</p>
+        <ul className={styles.nodes} aria-label={`${heading} components`}>
+          {model.nodes.map(node => <li key={node.id}>
+            <button type="button" aria-pressed={focusedNode === node.id} onClick={() => focusNode(node)}>
+              <strong>{node.label}</strong>{node.detail && <span>{node.detail}</span>}
+            </button>
+          </li>)}
+        </ul>
+        {model.edges.length > 0 && <>
+          <h3>Connections</h3>
+          <ol className={styles.connections}>{model.edges.map((edge, index) => <li key={`${edge.from}:${edge.to}:${index}`}>
+            <strong>{model.nodes.find(node => node.id === edge.from)?.label}</strong> → <strong>{model.nodes.find(node => node.id === edge.to)?.label}</strong><span>{edge.label}</span>
+          </li>)}</ol>
+        </>}
+      </> : <pre className={styles.source} tabIndex={0} aria-label={`${heading}: original diagram text`}>{source}</pre>}
+    </div>
+    {message && <p className={styles.hint} role="status" aria-live="polite">{message}</p>}
   </div>;
 }

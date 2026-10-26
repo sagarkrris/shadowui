@@ -21,6 +21,7 @@ test('interviews cover all experience levels with explained follow-ups and codin
   for (const level of ['Beginner', 'Intermediate', 'Senior']) assert.ok(course.interviewQuestions.filter(item => item.level === level).length >= 4);
   assert.equal(new Set(course.interviewQuestions.map(item => item.id)).size, course.interviewQuestions.length);
   assert.ok(course.interviewQuestions.every(item => item.followUpAnswer && item.rubric.length >= 3));
+  assert.ok(course.interviewQuestions.every(item => item.visual?.steps?.length >= 2));
   assert.ok(course.interviewQuestions.some(item => /Coding/.test(item.category)));
 });
 test('context budget fails closed on overflow and invalid values', () => {

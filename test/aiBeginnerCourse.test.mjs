@@ -14,6 +14,7 @@ test('beginner paths have distinct lessons and valid comprehension checks', () =
       assert.ok(Number.isInteger(lesson.quiz.correct));
       assert.ok(lesson.quiz.correct >= 0 && lesson.quiz.correct < lesson.quiz.options.length);
       assert.ok(lesson.quiz.explanation);
+      assert.ok(lesson.quiz.visual?.steps?.length >= 3);
     }
   }
   assert.equal(new Set(ids).size, 12);

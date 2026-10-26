@@ -11,6 +11,7 @@ export default function CourseDiagram({ diagramKey, accent = "#8bd3ff" }) {
   const id = useId();
   const [textView, setTextView] = useState(false);
   const [enlarged, setEnlarged] = useState(false);
+  const [fit, setFit] = useState(false);
   const canvas = useRef(null);
   const diagram = COURSE_DIAGRAMS[diagramKey];
   if (!diagram) return null;
@@ -32,11 +33,12 @@ export default function CourseDiagram({ diagramKey, accent = "#8bd3ff" }) {
     <div id={`visual-${id}`} hidden={textView}>
     <div className={styles.illustrationTools} role="group" aria-label="Illustration tools">
       <span>Illustrated explainer</span>
-      <button type="button" aria-pressed={enlarged} aria-controls={`canvas-${id}`} onClick={() => setEnlarged(value => !value)}>{enlarged ? 'Reset illustration size' : 'Enlarge illustration'}</button>
+      <button type="button" aria-pressed={enlarged} aria-controls={`canvas-${id}`} onClick={() => { setEnlarged(value => !value); setFit(false); }}>{enlarged ? 'Reset illustration size' : 'Enlarge illustration'}</button>
+      <button type="button" aria-pressed={fit} aria-controls={`canvas-${id}`} onClick={() => { setFit(value => !value); setEnlarged(false); }}>Fit to panel</button>
       <button type="button" onClick={downloadIllustration}>Download SVG</button>
     </div>
     <div ref={canvas} id={`canvas-${id}`} role="region" aria-label={`${diagram.title} scrollable diagram`} tabIndex={0} className={styles.canvas}>
-      {illustrated ? <IllustratedCourseDiagram diagramKey={diagramKey} diagram={diagram} enlarged={enlarged} /> : <DiagramArtwork model={model} artworkKey={diagramKey} enlarged={enlarged} />}
+      {illustrated ? <IllustratedCourseDiagram diagramKey={diagramKey} diagram={diagram} enlarged={enlarged} fit={fit} /> : <DiagramArtwork model={model} artworkKey={diagramKey} enlarged={enlarged} fit={fit} />}
     </div>
     <p className={styles.hint}>Follow the labeled arrows. Scroll sideways for the full diagram, or choose Text view.</p>
     </div>

@@ -14,6 +14,7 @@ test('every advanced scenario has a unique identity and valid remediation worksh
     assert.equal(scenario.rubric.length, 4);
     assert.equal(new Set(scenario.rubric).size, 4);
     assert.ok(scenario.clarifications.length && scenario.reasoning.length && scenario.pitfalls.length);
+    assert.ok(scenario.visual?.steps?.length >= 4);
   }
   for (const workshop of ADVANCED_WORKSHOPS) {
     assert.equal(workshop.concepts.length, 3);

@@ -123,13 +123,13 @@ function StrategyPicture({ diagram, arrow, implementation }) {
   </>;
 }
 
-export default function IllustratedCourseDiagram({ diagramKey, diagram, enlarged }) {
+export default function IllustratedCourseDiagram({ diagramKey, diagram, enlarged, fit = false }) {
   const id = useId();
   const arrow = `picture-arrow-${id}`, implementation = `picture-implements-${id}`;
   const Picture = { memory: MemoryPicture, gatewayTrust: GatewayPicture, patternStrategy: StrategyPicture }[diagramKey];
   if (!Picture || !canIllustrateCourseDiagram(diagramKey, diagram)) return null;
   return <svg xmlns="http://www.w3.org/2000/svg" data-illustrated-diagram={diagramKey} role="img" aria-labelledby={`picture-title-${id} picture-desc-${id}`}
-    viewBox="0 0 900 540" style={{ display: 'block', width: '100%', minWidth: enlarged ? 1200 : 900, height: 'auto', fontFamily: 'system-ui, sans-serif' }}>
+    viewBox="0 0 900 540" style={{ display: 'block', width: '100%', minWidth: fit ? 0 : enlarged ? 1200 : 900, height: 'auto', fontFamily: 'system-ui, sans-serif' }}>
     <title id={`picture-title-${id}`}>{diagram.title}</title>
     <desc id={`picture-desc-${id}`}>{diagram.description} {diagram.edges.map(([from,to,label]) => `${diagram.nodes.find(node => node[0] === from)[3]} → ${diagram.nodes.find(node => node[0] === to)[3]}: ${label}.`).join(' ')}</desc>
     <defs>

@@ -2,6 +2,7 @@ import useHubProgress from "../learning/useHubProgress";
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { BACKEND_ROADMAP_KEY, JAVA_BACKEND_STAGES, normalizeRoadmapProgress, nextRoadmapActivity, roadmapActivityId } from '../../lib/javaBackendRoadmap.mjs';
+import { ACTIVE_PATH_KEY } from '../../lib/learningHub.mjs';
 import { NOTEBOOK_KEY, normalizeNotebook, saveNote } from '../../lib/learningNotebook.mjs';
 import styles from '../../styles/Reader.module.css';
 
@@ -11,6 +12,7 @@ export default function JavaBackendJourney() {
   const [ready, setReady] = useState(false);
   const [message, setMessage] = useState('');
   useEffect(() => {
+    try { localStorage.setItem(ACTIVE_PATH_KEY, 'java-backend'); } catch { /* Resume shortcut is optional. */ }
     try { setDone(normalizeRoadmapProgress(JSON.parse(localStorage.getItem(BACKEND_ROADMAP_KEY) || '[]'))); }
     catch { setMessage('Saved progress is unavailable. You can still follow the roadmap.'); }
     setReady(true);
@@ -40,7 +42,7 @@ export default function JavaBackendJourney() {
       <p><strong>Your checkpoint:</strong> {stage.outcome}</p>
       <ol className={styles.list}>{stage.activities.map(activity => {
         const id = roadmapActivityId(stage.id, activity.label);
-        return <li key={id}><strong>{activity.label}</strong><p><Link prefetch={false} href={activity.href}>{activity.title}</Link></p><label><input type="checkbox" disabled={!ready} checked={done.includes(id)} onChange={() => toggle(id)} />Completed {stage.title}: {activity.label}</label></li>;
+        return <li key={id}><strong>{activity.label}</strong><p><Link prefetch={false} href={activity.href}>{activity.title}</Link>{activity.access === 'ai' && <span className={styles.small}> · AI provider required</span>}</p><label><input type="checkbox" disabled={!ready} checked={done.includes(id)} onChange={() => toggle(id)} />Completed {stage.title}: {activity.label}</label></li>;
       })}</ol>
       <label><input type="checkbox" disabled={!hub.ready} checked={hub.progress.weak.includes(`stage-java-backend-${stage.id}`)} onChange={() => hub.toggle("weak", `stage-java-backend-${stage.id}`)} />I need to revisit {stage.title}</label><p role="status">{hub.message}</p><StageReflection stage={stage} />
     </article>)}</div>

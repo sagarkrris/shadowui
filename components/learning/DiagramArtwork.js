@@ -30,14 +30,14 @@ export function DiagramSymbol({ kind = 'component', size = 44 }) {
 
 // Preserve unfamiliar tree/diagram syntax as a portable picture of the original
 // layout. No parser guesses at ownership, execution, or missing connections.
-export function SourceArtwork({ source, title, enlarged = false, artworkKey = 'authored-source' }) {
+export function SourceArtwork({ source, title, enlarged = false, fit = false, artworkKey = 'authored-source' }) {
   const id = useId();
   if (typeof source !== 'string' || !source) return null;
   const lines = source.split('\n');
   const width = Math.max(900, ...lines.map(line => [...line.replace(/\t/g, '    ')].length * 15 + 80));
   const height = Math.max(220, 130 + lines.length * 26);
   return <svg xmlns="http://www.w3.org/2000/svg" data-diagram-artwork={artworkKey} data-source-preserved role="img" aria-labelledby={`source-title-${id} source-desc-${id}`} viewBox={`0 0 ${width} ${height}`} width={width} height={height}
-    style={{ display: 'block', width: '100%', minWidth: enlarged ? width * 4 / 3 : width, height: 'auto' }}>
+    style={{ display: 'block', width: '100%', minWidth: fit ? 0 : enlarged ? width * 4 / 3 : width, height: 'auto' }}>
     <title id={`source-title-${id}`}>{title}</title><desc id={`source-desc-${id}`}>{source}</desc>
     <rect width={width} height={height} rx="18" fill="#fffdf8" />
     <DiagramGlyph kind="code" x={30} y={20} size={36} />
@@ -47,20 +47,20 @@ export function SourceArtwork({ source, title, enlarged = false, artworkKey = 'a
   </svg>;
 }
 
-export default function DiagramArtwork({ model, enlarged = false, activeNode, artworkKey = 'graph' }) {
+export default function DiagramArtwork({ model, enlarged = false, fit = false, activeNode, artworkKey = 'graph' }) {
   const id = useId();
   const layout = layoutArtwork(model);
   if (!layout) return null;
   const marker = `artwork-arrow-${id}`;
   return <svg xmlns="http://www.w3.org/2000/svg" data-diagram-artwork={artworkKey} role="img" aria-labelledby={`artwork-title-${id} artwork-desc-${id}`}
     viewBox={`0 0 ${layout.width} ${layout.height}`} width={layout.width} height={layout.height}
-    style={{ display: 'block', width: '100%', minWidth: enlarged ? layout.width * 4 / 3 : layout.width, height: 'auto', fontFamily: 'system-ui, sans-serif' }}>
+    style={{ display: 'block', width: '100%', minWidth: fit ? 0 : enlarged ? layout.width * 4 / 3 : layout.width, height: 'auto', fontFamily: 'system-ui, sans-serif' }}>
     <title id={`artwork-title-${id}`}>{model.title}</title>
-    <desc id={`artwork-desc-${id}`}>{model.description} {model.edges.map(edge => `${model.nodes.find(node => node.id === edge.from).label} → ${model.nodes.find(node => node.id === edge.to).label}: ${edge.label}.`).join(' ')}</desc>
+    <desc id={`artwork-desc-${id}`}>{model.description} {model.nodes.map(node => `${node.label}: ${node.detail}.`).join(' ')} {model.edges.map(edge => `${model.nodes.find(node => node.id === edge.from).label} → ${model.nodes.find(node => node.id === edge.to).label}: ${edge.label}.`).join(' ')}</desc>
     <defs><marker id={marker} markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 Z" fill="#52687d" /></marker></defs>
     <rect width={layout.width} height={layout.height} rx="18" fill="#fffdf8" />
-    <text x="40" y="43" fontSize="14" fontWeight="700" fill="#20364c">{model.edges.length ? 'FOLLOW THE AUTHORED CONNECTIONS' : 'COMPONENTS AT A GLANCE'}</text>
-    <text x="40" y="69" fontSize="12" fill="#40586d">{model.edges.length ? 'Numbers identify connections; they do not imply execution order.' : 'Position does not imply a dependency or execution order. Read the accompanying explanation.'}</text>
+    <text x="40" y="43" fontSize="14" fontWeight="700" fill="#20364c">{model.relation === 'timeline' ? 'FOLLOW THE TIMELINE' : model.relation === 'sequence' ? 'FOLLOW THE AUTHORED ORDER' : model.relation === 'feedback' ? 'FOLLOW THE FEEDBACK LOOP' : model.edges.length ? 'FOLLOW THE AUTHORED CONNECTIONS' : 'COMPONENTS AT A GLANCE'}</text>
+    <text x="40" y="69" fontSize="12" fill="#40586d">{model.relation === 'timeline' ? 'Arrows show chronological progression.' : model.relation === 'sequence' ? 'Arrows show the authored step order.' : model.relation === 'feedback' ? 'Follow the labeled connections around the loop.' : model.relation === 'comparison' ? 'Compare the items; position does not imply order or dependency.' : model.edges.length ? 'Numbers identify labeled connections; placement does not imply execution order.' : 'Position does not imply a dependency or execution order. Read the accompanying explanation.'}</text>
     {layout.routes.map(edge => <g key={edge.number}>
       <path data-artwork-edge={`${edge.from}:${edge.to}`} d={edge.path} fill="none" stroke="#52687d" strokeWidth="2" markerEnd={`url(#${marker})`} />
     </g>)}

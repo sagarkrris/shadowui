@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import AnswerSketch from './AnswerSketch';
 
 const block = { border: '1px solid rgba(255,255,255,.12)', borderRadius: 8, padding: 14, minWidth: 0 };
 const copy = { color: '#cbd5e1', fontSize: 13, lineHeight: 1.7, overflowWrap: 'anywhere' };
@@ -34,6 +35,7 @@ function InterviewQuestion({ item, theme }) {
       <p><strong>Strong answer:</strong> {item.strongAnswer}</p>
       <p><strong>Interviewer follow-up:</strong> {item.followUp}</p>
       <p><strong>Explained follow-up:</strong> {item.followUpAnswer}</p>
+      <AnswerSketch visual={item.visual} />
       <strong>Self-assessment rubric</strong><ul>{item.rubric.map(criterion => <li key={criterion}>{criterion}</li>)}</ul>
     </div>}
   </article>;

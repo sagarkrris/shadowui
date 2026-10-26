@@ -1,4 +1,5 @@
 import LessonVisual from './LessonVisual';
+import AnswerSketch from './AnswerSketch';
 import { useEffect, useState } from 'react';
 import { ADVANCED_WORKSHOPS, ADVANCED_READINGS, INTERVIEW_SCENARIOS, remainingInterviewSeconds, interviewSelfAssessment } from '../../lib/aiAdvancedCourse.mjs';
 
@@ -118,6 +119,7 @@ function InterviewRound({ scenario, theme }) {
       {phase === 'review' && <section aria-label="Interview answer review">
         <h4>Strong reference answer · 60–90 second structure</h4><p>{scenario.conciseAnswer}</p>
         <h4>Expand your reasoning</h4><ol>{scenario.reasoning.map(item => <li key={item}>{item}</li>)}</ol>
+        <AnswerSketch visual={scenario.visual} summary="View the failure and recovery sketch" />
         <h4>Follow-up answer explained</h4><p>{scenario.followUpAnswer}</p>
         <h4>Common weak answers</h4><ul>{scenario.pitfalls.map(item => <li key={item}>{item}</li>)}</ul>
         <fieldset style={card}><legend>Self-assessment · mark only points you demonstrated</legend>

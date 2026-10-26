@@ -51,8 +51,8 @@ export default function LandingHome({ catalogue, promise, counts }) {
       ['01', 'Understand', 'Read a clear explanation with examples, assumptions and sources.', 'book', '/series'],
       ['02', 'Experiment', 'Change a constraint and follow what happens in a visual lab.', 'lab', '/labs'],
       ['03', 'Build', 'Write a small implementation and test its failure cases.', 'code', '/build'],
-      ['04', 'Explain', 'Practise your answer, discover gaps and come back stronger.', 'chat', '/practice'],
-    ].map(([number, title, text, icon, href]) => <article key={title}><div><span>{number}</span><UiIcon name={icon} size={23} /></div><h3><Link prefetch={false} href={href}>{title}</Link></h3><p>{text}</p></article>)}</div></section>
+      ['04', 'Explain', 'Practise your answer, discover gaps and come back stronger.', 'chat', '/practice', 'Workspace practice needs a prep profile; AI practice also needs an available provider.'],
+    ].map(([number, title, text, icon, href, note]) => <article key={title}><div><span>{number}</span><UiIcon name={icon} size={23} /></div><h3><Link prefetch={false} href={href}>{title}</Link></h3><p>{text}</p>{note && <small>{note}</small>}</article>)}</div></section>
     <section className={home.section}><div className={home.sectionHeading}><div><p className={home.eyebrow}>PRACTICE</p><h2>Practice with engineering problems</h2><p>Pick a quick investigation or go deep on a build.</p></div><Link prefetch={false} href="/build">Browse challenges<UiIcon name="arrow" size={17} /></Link></div><div className={home.practiceGrid}>{[
       ['pulse', 'PRODUCTION DETECTIVE · ABOUT 5 MINUTES', 'The rollback that never happened', 'A transfer failed, but one balance changed. Follow the evidence and choose your repair.', '/weekly/2026-09-18-transaction-boundaries', 'Investigate the failure'],
       ['code', 'BUILD · JAVA 17', 'Apply only a newer webhook version', 'Implement a version contract. Test what happens when updates arrive twice or out of order.', '/build/practice/webhook-version-gate', 'Take the coding challenge'],

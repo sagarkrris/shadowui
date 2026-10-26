@@ -17,6 +17,10 @@ for (const width of [390, 1440]) test(`beginner paths and inspectable RAG at ${w
   await expect(genai.getByRole('status')).toHaveCount(0);
   await genai.getByRole('button', { name: 'Check answer' }).click();
   await expect(genai.getByRole('status')).toContainText('Correct.');
+  const answerSketch = genai.getByText('See the answer explained visually', { exact: true });
+  await expect(answerSketch).toBeVisible();
+  await answerSketch.click();
+  await expect(genai.getByRole('figure', { name: 'Hand-drawn course diagram: Reserve room for the answer' })).toBeVisible();
   await genai.getByRole('button', { name: 'Next lesson' }).click();
   await expect(genai.getByRole('status')).toHaveCount(0);
   const rag = page.getByRole('region', { name: 'RAG from Scratch', exact: true });

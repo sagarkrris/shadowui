@@ -22,6 +22,10 @@ for (const width of [390, 1440]) test(`AI curriculum and attempt-before-reveal a
   await question.getByLabel('Your attempt').fill('Filter authorized notes before ranking, then test the private top result.');
   await reveal.click();
   await expect(question.getByText('Explained follow-up:', { exact: true })).toBeVisible();
+  const answerSketch = question.getByText('See the reasoning as a sketch', { exact: true });
+  await expect(answerSketch).toBeVisible();
+  await answerSketch.click();
+  await expect(question.getByRole('figure', { name: /Hand-drawn course diagram:/ })).toBeVisible();
   await question.getByLabel('Your attempt').fill('');
   await expect(question.getByText('Strong answer:', { exact: true })).toHaveCount(0);
   await studio.getByLabel('Experience level').selectOption('Senior');

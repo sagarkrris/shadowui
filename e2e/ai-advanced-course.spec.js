@@ -30,6 +30,10 @@ for (const width of [390, 1440]) test(`advanced workshop and mock review at ${wi
   await finish.click();
   const review = simulator.getByRole('region', { name: 'Interview answer review' });
   await expect(review.getByRole('heading', { name: 'Follow-up answer explained' })).toBeVisible();
+  const recoverySketch = review.getByText('View the failure and recovery sketch', { exact: true });
+  await expect(recoverySketch).toBeVisible();
+  await recoverySketch.click();
+  await expect(review.getByRole('figure', { name: /Hand-drawn course diagram:/ })).toBeVisible();
   await review.getByRole('checkbox').first().check();
   await expect(review.getByRole('status')).toContainText('1/4');
   await review.getByLabel('Rewrite your answer after review').fill('Contain, invalidate, enforce trusted access scope, and independently test revocation.');

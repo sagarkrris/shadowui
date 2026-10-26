@@ -1,4 +1,5 @@
 import LessonVisual from './LessonVisual';
+import AnswerSketch from './AnswerSketch';
 import { useState } from 'react';
 import { BEGINNER_PATHS } from '../../lib/aiBeginnerPaths.mjs';
 import { runRagPlayground } from '../../lib/ragPlayground.mjs';
@@ -23,6 +24,7 @@ function BeginnerLesson({ lesson, theme }) {
       {lesson.quiz.options.map((option, index) => <label key={option} style={{ display: 'block', margin: '8px 0' }}><input type="radio" name={`quiz-${lesson.id}`} checked={choice === index} onChange={() => { setChoice(index); setChecked(false); }} /> {option}</label>)}
       <button type="button" className="glass-button" style={button} disabled={choice === null} onClick={() => setChecked(true)}>Check answer</button>
       {checked && <p role="status"><strong>{choice === lesson.quiz.correct ? 'Correct.' : 'Not quite.'}</strong> {lesson.quiz.explanation}</p>}
+      {checked && <AnswerSketch visual={lesson.quiz.visual} summary="See the answer explained visually" />}
     </fieldset>
     <details><summary style={{ color: theme.accentText, cursor: 'pointer' }}>Interview practice: {lesson.interview}</summary><p>{lesson.answer}</p></details>
   </article>;
