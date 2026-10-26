@@ -2,7 +2,38 @@ import { test, expect } from '@playwright/test';
 import { listTechBlogs } from '../lib/techBlogs.mjs';
 import { SYMPTOM_DIAGRAMS, BUILD_DIAGRAMS } from '../lib/learningDiagrams.mjs';
 import { gotoSeededApp } from './helpers/app.js';
-import { JAVA_INTERVIEW_QA } from '../lib/javaDigest.mjs';
+import { JAVA_INTERVIEW_QA, JAVA_TUTORIAL_CATALOG, slugifyJavaTutorial } from '../lib/javaDigest.mjs';
+
+for (const width of [375, 1366]) test(`all ${JAVA_TUTORIAL_CATALOG.length} Java tutorials use genuine visual diagrams without repeated source at ${width}px`, async ({ page }, testInfo) => {
+  test.setTimeout(180000);
+  await page.setViewportSize({ width, height: 900 });
+  const reviewed = [];
+  for (const tutorial of JAVA_TUTORIAL_CATALOG) {
+    await page.goto(`/java/tutorial/${slugifyJavaTutorial(tutorial.title)}`);
+    const diagram = page.locator('[data-flow-kind]');
+    await expect(diagram).toHaveCount(1);
+    const svg = diagram.locator('svg[data-diagram-artwork="authored-flow"]');
+    await expect(svg).toBeVisible();
+    expect(await svg.locator('[data-diagram-node]').count(), tutorial.title).toBeGreaterThan(0);
+    expect(await svg.locator('[data-artwork-edge]').count(), tutorial.title).toBeGreaterThan(0);
+    await expect(page.locator('[data-source-preserved], [data-diagram-source]')).toHaveCount(0);
+    await expect(diagram.locator('pre:visible')).toHaveCount(0);
+    await diagram.getByRole('button', { name: 'Text view', exact: true }).click();
+    await expect(svg).toBeHidden();
+    await expect(diagram.getByRole('region', { name: /original relationships$/ })).toHaveText(tutorial.diagram.trim());
+    await expect(diagram.locator('pre')).toHaveCount(1);
+    await diagram.getByRole('button', { name: 'Diagram', exact: true }).click();
+    await expect(svg).toBeVisible();
+    await expect(diagram.locator('pre:visible')).toHaveCount(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), tutorial.title).toBe(true);
+    reviewed.push(tutorial.title);
+    if (['Modules', 'Spring profiles', 'Java Memory Management'].includes(tutorial.title)) {
+      await diagram.getByRole('button', { name: 'Fit to panel', exact: true }).click();
+      await svg.screenshot({ path: testInfo.outputPath(`${slugifyJavaTutorial(tutorial.title)}-${width}.png`) });
+    }
+  }
+  await testInfo.attach('tutorial-diagram-audit', { body: JSON.stringify({ width, reviewed }, null, 2), contentType: 'application/json' });
+});
 
 const routes = [
   ...listTechBlogs().map(blog => `/tech-blogs/${blog.id}`),
@@ -18,6 +49,7 @@ for (const width of [375, 1366]) test(`all ${routes.length} illustrated readers 
     const response = await page.goto(route);
     expect(response.status(), route).toBe(200);
     const diagrams = page.locator('[data-course-diagram]');
+    await expect(page.locator('[data-source-preserved]')).toHaveCount(0);
     expect(await diagrams.count(), route).toBeGreaterThan(0);
     await page.evaluate(() => document.fonts.ready);
     await expect.poll(() => diagrams.evaluateAll(figures => figures.flatMap(figure => {
@@ -46,8 +78,11 @@ for (const width of [375, 1366]) test(`tutorial branches and new project diagram
   await page.setViewportSize({ width, height: 900 });
   await page.goto('/java/tutorial/dependency-inversion');
   const flow = page.locator('[data-flow-kind="source"]');
+  await expect(flow.locator('[data-artwork-edge]')).toHaveCount(2);
+  await expect(flow.locator('pre:visible')).toHaveCount(0);
+  await flow.getByRole('button', { name: 'Text view', exact: true }).click();
   await expect(flow).toContainText('policy → owned port ← infrastructure adapter');
-  await expect(flow.getByRole('listitem')).toHaveCount(0);
+  await expect(flow.getByRole('listitem')).toHaveCount(5);
   await flow.screenshot({ path: testInfo.outputPath('reverse-dependency-flow.png') });
   await page.goto('/build/inverted-index');
   const diagram = page.locator('[data-course-diagram="buildIndex"]');
@@ -90,8 +125,12 @@ test('workspace mechanisms retain every authored step', async ({ page }) => {
   const diagrams = page.locator('[data-mechanism-diagram]');
   await expect(diagrams).toHaveCount(entries.length);
   for (let index = 0; index < entries.length; index++) {
-    const steps = await diagrams.nth(index).getByRole('listitem', { includeHidden: true }).allTextContents();
-    expect(steps.map((text, step) => text.replace(`Step ${step + 1}${step < steps.length - 1 ? ' →' : ''}`, ''))).toEqual(entries[index].diagramSteps);
+    const diagram = diagrams.nth(index);
+    const authored = diagram.getByRole('list', { name: 'Mechanism at a glance components', exact: true, includeHidden: true });
+    const details = await authored.locator('li button > span').allTextContents();
+    expect(details).toEqual(entries[index].diagramSteps);
+    await expect(diagram.locator('[data-artwork-edge]')).toHaveCount(entries[index].diagramSteps.length - 1);
+    await expect(diagram.locator(':scope > ol')).toHaveCount(0);
   }
 });
 

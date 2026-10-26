@@ -14,6 +14,12 @@ export default function SeniorJavaInterviewGuide({ introduction }) {
     <p className={styles.small}>Prepared for experienced Java engineers. The source guide uses Java 21 for its new practice file; framework excerpts are teaching examples, and illustrative incident stories should be replaced with your own experience.</p>
     <div className={styles.actions}><Link className={styles.button} href="/senior-java-interview/daily">Daily SDE-3 practice sets</Link><Link href="/senior-java-interview/part-1a">Start with the refresher</Link><Link href="/senior-java-interview/part-9">Go to coding practice →</Link></div>
     <details className={styles.guideNotes}><summary>Read the guide’s scope and verification notes</summary><div className={styles.guideArticle} dangerouslySetInnerHTML={{ __html: introduction }} /></details>
+    <section className={styles.featuredGuide} aria-labelledby="code-comprehension-title">
+      <p className={styles.eyebrow}>INTERVIEW FORMAT PRACTICE</p>
+      <h2 id="code-comprehension-title">Code comprehension and AI-assisted debugging</h2>
+      <p>Prepare to read unfamiliar code, trace failures and verify a focused fix. Includes Google’s reported pilot, eight detailed Java exercises, a cache walkthrough, AI-output pitfalls and a mock-round plan.</p>
+      <Link href="/senior-java-interview/code-comprehension">Prepare for code comprehension →</Link>
+    </section>
     <TopicCatalog />
     <p><Link href="/senior-java-interview/topics">Browse all topics and additional guide subjects →</Link></p>
     <h2 id="original-parts">Original guide parts and worked examples</h2>

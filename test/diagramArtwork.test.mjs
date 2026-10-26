@@ -1,8 +1,63 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { arrowArtworkModel, artworkGraph, courseArtworkModel, layoutArtwork, sequenceArtworkModel } from '../lib/diagramArtwork.mjs';
+import { arrowArtworkModel, artworkGraph, courseArtworkModel, layoutArtwork, resolveFlowArtwork, sequenceArtworkModel } from '../lib/diagramArtwork.mjs';
 import { COURSE_DIAGRAMS } from '../lib/techBlogDiagrams.mjs';
 import { COURSE_VISUAL_GUIDES } from '../lib/courseVisualGuides.mjs';
+import { getJavaTutorialBySlug, JAVA_TUTORIAL_CATALOG } from '../lib/javaDigest.mjs';
+import { buildSystemDesignInterviewAnswer, SYSTEM_DESIGN_INTERVIEW_PRACTICE_CATALOG } from '../lib/systemDesignCanvas.mjs';
+
+test('every Java tutorial resolves to actual nodes and edges, including labels containing graph', () => {
+  for (const tutorial of JAVA_TUTORIAL_CATALOG) {
+    const { picture, source } = resolveFlowArtwork(tutorial.diagram, tutorial.title, tutorial.diagramSteps);
+    assert.ok(picture?.nodes.length, tutorial.title);
+    assert.ok(picture.edges.length, tutorial.title);
+    assert.equal(source, tutorial.diagram.trim());
+  }
+  for (const slug of ['modules', 'spring-profiles', 'java-memory-management']) {
+    const tutorial = getJavaTutorialBySlug(slug);
+    assert.ok(resolveFlowArtwork(tutorial.diagram, tutorial.title).picture, slug);
+  }
+  const { picture } = resolveFlowArtwork('input → reachability graph → result; retained objects → evidence', 'Separate paths');
+  const labels = new Map(picture.nodes.map(node => [node.id, node.label]));
+  assert.deepEqual(picture.edges.map(edge => [labels.get(edge.from), labels.get(edge.to)]), [
+    ['input', 'reachability graph'], ['reachability graph', 'result'], ['retained objects', 'evidence'],
+  ]);
+});
+
+test('all authored system-design interview exports retain exact flow labels and directions', () => {
+  for (const entry of SYSTEM_DESIGN_INTERVIEW_PRACTICE_CATALOG) {
+    const answer = buildSystemDesignInterviewAnswer(entry);
+    const { picture } = resolveFlowArtwork(answer.mermaid, answer.title);
+    assert.ok(picture, answer.title);
+    assert.deepEqual(picture.nodes.map(node => node.label), answer.flow.slice(0, 8), answer.title);
+    assert.deepEqual(picture.edges.map(edge => [edge.from, edge.to]), answer.flow.slice(1, 8).map((_, index) => [`N${index}`, `N${index + 1}`]), answer.title);
+  }
+});
+
+test('ambiguous notation remains exact source instead of inventing picture connections', () => {
+  for (const source of ['root\n ├─ left\n └─ right', 'flowchart LR\n A -->|hit| B', 'graph LR A --> B', 'flowchart unsupported → B']) {
+    const resolved = resolveFlowArtwork(source, 'Unrecognized relationships');
+    assert.equal(resolved.source, source);
+    assert.equal(resolved.picture, null);
+  }
+  const empty = resolveFlowArtwork(null);
+  assert.equal(empty.source, '');
+  assert.equal(empty.picture, null);
+});
+
+test('JDK tutorial renders an authored compile-and-run graph with complete readable stages', () => {
+  const tutorial = getJavaTutorialBySlug('jdk-vs-jre-vs-jvm');
+  const model = sequenceArtworkModel(tutorial.diagramSteps, 'Compile and run');
+  assert.equal(model.nodes.length, 6);
+  assert.equal(model.edges.length, 5);
+  assert.deepEqual(model.nodes.map(node => node.label), ['Greeting.java', 'javac · JDK compiler', 'Greeting.class', 'java · runtime launcher', 'JVM executes bytecode', 'Program output']);
+  assert.deepEqual(model.edges.map(edge => [edge.from, edge.to]), Array.from({ length: 5 }, (_, i) => [`step-${i}`, `step-${i + 1}`]));
+  const layout = layoutArtwork(model);
+  for (const node of layout.nodes) {
+    assert.equal(node.labelLines.join(' '), node.label);
+    assert.equal(node.detailLines.join(' '), node.detail);
+  }
+});
 
 test('every authored course keeps its exact nodes, directed edges and full relationship labels', () => {
   for (const [key, diagram] of Object.entries(COURSE_DIAGRAMS)) {

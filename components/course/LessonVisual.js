@@ -10,17 +10,18 @@ export default function LessonVisual({ lessonId, tone = 'dark' }) {
   const [active, setActive] = useState(0);
   if (!guide) return null;
   const light = tone === 'light';
+  const accent = light ? '#1d4ed8' : '#93c5fd';
   const panel = { padding: 16, border: `1px solid ${light ? '#c5cbd2' : '#64748b'}`, borderRadius: 10, color: light ? '#273746' : '#e2e8f0', background: light ? '#f8fafc' : 'rgba(127,127,127,.04)', minWidth: 0, fontSize: 14, lineHeight: 1.7, overflowWrap: 'anywhere' };
   const button = { ...buttonBase, color: light ? '#273746' : '#e2e8f0' };
   return <section aria-label={`Visual guide: ${guide.title}`} style={panel}>
-    <p style={{ color: '#93c5fd', margin: 0 }}>Picture it first</p>
+    <p style={{ color: accent, margin: 0 }}>Picture it first</p>
     <div style={{ margin: '16px 0' }}>
       <CourseSketch title={guide.title} story={guide.story} steps={guide.steps} layout={guide.layout} active={active} onFocus={setActive} />
       <p aria-live="polite"><strong>Selected:</strong> {guide.steps[active][0]}</p>
     </div>
     <p><strong>The idea to keep:</strong> {guide.takeaway}</p>
     {guide.terms && <dl>{guide.terms.map(([term, meaning]) => <div key={term} style={{ marginTop: 8 }}><dt style={{ fontWeight: 700 }}>{term}</dt><dd style={{ marginLeft: 0 }}>{meaning}</dd></div>)}</dl>}
-    {guide.question && <details><summary style={{ cursor: 'pointer', color: '#93c5fd' }}>Pause and predict: {guide.question}</summary><p>{guide.answer}</p></details>}
+    {guide.question && <details><summary style={{ cursor: 'pointer', color: accent }}>Pause and predict: {guide.question}</summary><p>{guide.answer}</p></details>}
     {lessonId === 'llm-foundations' && <ContextBudget button={button} light={light} />}
   </section>;
 }

@@ -741,17 +741,6 @@ function UmlClassBoard({ systems, accent, onAction }) {
         <LabPanel key={system.id} title={system.title} icon="ti-hierarchy-3" accent={accent}>
           <p style={{ ...wrap, color: "#cbd5e1", fontSize: 11.5, lineHeight: 1.45, marginBottom: 9 }}>{system.system}</p>
           <IllustrationPanel model={sequenceArtworkModel(system.classes.map(item => [item.name, `Fields: ${item.fields}. Methods: ${item.methods}`]), system.title, true)} artworkKey="uml-classes" />
-          <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 190px), 1fr))", minWidth: 0 }}>
-            {system.classes.map((item) => (
-              <article key={item.name} style={{ ...wrap, background: "rgba(0,0,0,.16)", border: `1px solid ${accent}30`, borderRadius: 8, overflow: "hidden" }}>
-                <div style={{ background: `${accent}14`, borderBottom: `1px solid ${accent}28`, color: "#f8fbff", fontSize: 12, fontWeight: 900, padding: "7px 8px" }}>{item.name}</div>
-                <div style={{ color: "#9fb0c7", display: "grid", fontSize: 10.8, gap: 5, lineHeight: 1.35, padding: 8 }}>
-                  <span><strong style={{ color: "#eaf2ff" }}>Fields:</strong> {item.fields}</span>
-                  <span><strong style={{ color: "#eaf2ff" }}>Methods:</strong> {item.methods}</span>
-                </div>
-              </article>
-            ))}
-          </div>
           <div style={responsiveGrid(220, 9)}>
             <div>
               <strong style={{ color: "#eaf2ff", display: "block", fontSize: 11.5, margin: "10px 0 6px" }}>Relationships</strong>
@@ -781,14 +770,6 @@ function AgenticAiBoard({ problems, accent, onAction }) {
           <p style={{ ...wrap, color: "#cbd5e1", fontSize: 11.5, lineHeight: 1.45, marginBottom: 9 }}>{problem.goal}</p>
           <strong style={{ color: "#eaf2ff", fontSize: 11.5 }}>Agent Architecture</strong>
           <IllustrationPanel model={sequenceArtworkModel(problem.architecture.map(node => [node, '']), problem.title)} artworkKey="agent-architecture" />
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, margin: "7px 0 10px" }}>
-            {problem.architecture.map((node, index) => (
-              <span key={node} style={{ alignItems: "center", background: index === 0 ? `${accent}16` : "rgba(255,255,255,.045)", border: `1px solid ${index === 0 ? `${accent}44` : "rgba(255,255,255,.08)"}`, borderRadius: 999, color: "#dbeafe", display: "inline-flex", fontSize: 10.5, fontWeight: 850, gap: 5, padding: "5px 8px" }}>
-                {node}
-                {index < problem.architecture.length - 1 && <i className="ti ti-arrow-right" style={{ color: accent }} />}
-              </span>
-            ))}
-          </div>
           <strong style={{ color: "#eaf2ff", fontSize: 11.5 }}>Safety Guardrails</strong>
           <BulletList items={problem.guardrails} color="#fcd34d" />
           <strong style={{ color: "#eaf2ff", display: "block", fontSize: 11.5, marginTop: 8 }}>Evaluation</strong>

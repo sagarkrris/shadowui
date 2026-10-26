@@ -4,7 +4,7 @@
 .tools button:focus-visible,.canvas:focus-visible { outline:3px solid #4484c8; outline-offset:3px; }
 .canvas { width:100%; max-width:100%; overflow:auto; border:1px solid #71839a; border-radius:16px; background:#fffdf8; }
 .hint { font-size:12px; line-height:1.6; margin:8px 0; overflow-wrap:anywhere; }
-.source { color:#20364c; background:#fffdf8; border:1px solid #71839a; border-radius:16px; padding:18px; overflow:auto; max-width:100%; }
+.source { color:#20364c; background:#fffdf8; border:1px solid #71839a; border-radius:16px; padding:18px; overflow:auto; max-width:100%; white-space:pre; word-break:normal; }
 .sourceTitle { display:flex; align-items:center; gap:12px; font-weight:700; margin-bottom:12px; }
 .textView > p { font-size:12px; line-height:1.6; }
 .textView .nodes { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr)); gap:10px; margin:0; padding:0; list-style:none; }

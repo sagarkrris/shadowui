@@ -67,12 +67,20 @@ test('AI comparison pictures track focus without inventing execution arrows', as
   const beginner=page.locator('#beginner-genai');
   await beginner.getByLabel('Choose a lesson').selectOption('4');
   const guide=beginner.getByRole('region',{name:'Visual guide: Match the missing capability'});
-  const svg=guide.locator('[data-diagram-artwork="ai-lesson"]');
-  await expect(svg.locator('path[marker-end]')).toHaveCount(0);
-  await guide.locator('[data-visual-steps] button').last().click();
-  await expect(svg.locator('text').filter({hasText:'FOCUS'})).toHaveCount(1);
-  await expect(guide.locator('[data-visual-steps] button').last()).toHaveAttribute('aria-pressed','true');
-  await expect(svg.locator('[data-diagram-node]').last()).toContainText('FOCUS');
+  const choices=guide.locator('[data-visual-steps]');
+  await expect(choices.getByRole('button')).toHaveCount(4);
+  await expect(choices).not.toContainText('→');
+  await expect(choices).not.toContainText('↓');
+  const last=choices.getByRole('button').last();
+  const label=await last.locator('strong').textContent();
+  await last.click();
+  await expect(last).toHaveAttribute('aria-pressed','true');
+  await expect(choices.locator('button[aria-pressed="true"]')).toHaveCount(1);
+  await expect(guide.locator('[aria-live="polite"]')).toHaveText(`Selected: ${label}`);
+  await choices.getByRole('button').first().focus();
+  await page.keyboard.press('Enter');
+  await expect(choices.getByRole('button').first()).toHaveAttribute('aria-pressed','true');
+  await expect(last).toHaveAttribute('aria-pressed','false');
 });
 
 test('workspace tutorial previews use the same illustrated flow as public articles', async ({ page }) => {
@@ -80,8 +88,14 @@ test('workspace tutorial previews use the same illustrated flow as public articl
   await page.getByRole('navigation',{name:'Java Digest sections'}).getByRole('button',{name:'Tutorial Library',exact:true}).click();
   await page.getByText('Read full chapter',{exact:true}).first().click();
   await expect(page.locator('[data-flow-kind]').first().locator('[data-diagram-artwork="authored-flow"]')).toBeVisible();
-  await expect(page.locator('[data-flow-kind]').first().locator('[data-source-preserved]')).toHaveCount(1);
-  await expect(page.locator('[data-flow-kind]').first().getByRole('region',{name:/original relationships$/})).toContainText('Greeting.class bytecode');
+  const diagram=page.locator('[data-flow-kind]').first();
+  await expect(diagram.locator('[data-source-preserved]')).toHaveCount(0);
+  await expect(diagram.locator('[data-diagram-node]')).toHaveCount(6);
+  await expect(diagram.locator('[data-artwork-edge]')).toHaveCount(5);
+  await diagram.getByRole('button',{name:'Text view',exact:true}).click();
+  await expect(diagram.getByRole('region',{name:/original relationships$/})).toContainText('Greeting.class bytecode');
+  await diagram.getByRole('button',{name:'Program output Hello from the JVM',exact:true}).click();
+  await expect(diagram.locator('[data-diagram-node="step-5"]')).toContainText('FOCUS');
 });
 
 test('design workspaces retain selected steps and revision warnings', async ({ page }) => {

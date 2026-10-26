@@ -1,4 +1,90 @@
 import { expect, test } from "@playwright/test";
+import { COMPREHENSION_REFERENCE, COMPREHENSION_STARTER } from '../lib/codeComprehension.mjs';
+import { JAVA_COMPREHENSION_EXERCISES } from '../lib/codeComprehensionExercises.mjs';
+
+for (const width of [390, 1280]) {
+  test(`Java comprehension lessons expose worked traces, notebook sketches and keyboard answers at ${width}px`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/senior-java-interview/code-comprehension');
+    const exercises = page.locator('[data-comprehension-exercise]');
+    await expect(exercises).toHaveCount(8);
+    const navigation = page.getByRole('navigation', { name: 'Java comprehension exercise questions' });
+    for (const [index, lesson] of JAVA_COMPREHENSION_EXERCISES.entries()) {
+      await navigation.getByRole('link', { name: `Question ${index + 1}: ${lesson.title}`, exact: true }).click();
+      const section = page.locator(`[data-comprehension-exercise="${lesson.id}"]`);
+      await expect(page.locator(`#${lesson.id}`)).toBeInViewport();
+      await expect(section.getByLabel(`Question ${index + 1} starter code`, { exact: true })).toHaveText(lesson.starter);
+      await expect(section.getByRole('table', { name: `Question ${index + 1} execution trace` }).getByRole('row')).toHaveCount(lesson.trace.length + 1);
+      const diagram = section.getByRole('figure', { name: `Hand-drawn course diagram: ${lesson.title}` });
+      await expect(diagram.getByRole('button')).toHaveCount(lesson.flow.length);
+      await diagram.getByRole('button').last().focus();
+      await page.keyboard.press('Enter');
+      await expect(diagram.getByRole('button').last()).toHaveAttribute('aria-pressed', 'true');
+      await expect(diagram.locator('button[aria-pressed="true"]')).toHaveCount(1);
+      const corrected = section.locator('summary').filter({ hasText: `Show corrected Java code for question ${index + 1}` });
+      await corrected.focus();
+      await page.keyboard.press('Enter');
+      await expect(section.getByLabel(`Question ${index + 1} corrected code`, { exact: true })).toBeVisible();
+      await expect(section.getByLabel(`Question ${index + 1} corrected code`, { exact: true })).toHaveText(lesson.reference);
+      await expect(section.locator('blockquote')).toHaveText(lesson.spoken);
+      const deeper = section.locator('summary').filter({ hasText: `Trade-offs and explained follow-up for question ${index + 1}` });
+      await deeper.focus();
+      await page.keyboard.press('Enter');
+      await expect(deeper.locator('..')).toContainText(lesson.followUp[1]);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      if (index === 0) await diagram.screenshot({ path: testInfo.outputPath(`comprehension-notebook-${width}.png`) });
+    }
+    await exercises.last().getByRole('link', { name: 'Bookmark question 8', exact: true }).click();
+    await page.reload();
+    await expect(page.locator('#permit-cleanup')).toBeInViewport();
+    await expect(exercises.last().getByLabel('Question 8 corrected code')).toBeHidden();
+    await page.addScriptTag({ path: 'node_modules/axe-core/axe.min.js' });
+    const violations = await page.evaluate(async () => (await window.axe.run('main', { runOnly: ['wcag2a', 'wcag2aa', 'wcag21aa'] })).violations);
+    expect(violations).toEqual([]);
+    if (width === 390) {
+      const table = page.getByRole('table', { name: 'Cache expected versus actual results' });
+      await table.focus();
+      await expect(table).toBeFocused();
+      await page.keyboard.press('ArrowRight');
+      await expect.poll(() => table.evaluate(element => element.scrollLeft)).toBeGreaterThan(0);
+    }
+  });
+}
+
+for (const width of [390, 1280]) {
+  test(`code comprehension navigation, exercise and keyboard answers at ${width}px`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/senior-java-interview');
+    await page.getByRole('link', { name: 'Prepare for code comprehension →', exact: true }).click();
+    await expect(page).toHaveURL('/senior-java-interview/code-comprehension');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Code comprehension interview preparation');
+    await page.getByRole('link', { name: 'Worked debugging exercise', exact: true }).click();
+    await expect(page.locator('#exercise')).toBeInViewport();
+    const answer = page.locator('details').filter({ hasText: 'Reveal the trace and minimal fix' });
+    await expect(answer).not.toHaveAttribute('open', '');
+    await answer.locator('summary').focus();
+    await page.keyboard.press('Enter');
+    await expect(answer).toHaveAttribute('open', '');
+    await expect(page.getByLabel('Buggy cache reader', { exact: true })).toHaveText(COMPREHENSION_STARTER);
+    await expect(page.getByLabel('Corrected cache reader', { exact: true })).toHaveText(COMPREHENSION_REFERENCE);
+    await expect(answer).toContainText('undefined, “Ada”, “Ada”');
+    await page.getByRole('link', { name: 'Verify an AI suggestion', exact: true }).click();
+    await expect(page.locator('#ai-verification')).toBeInViewport();
+    const deepDive = page.locator('summary').filter({ hasText: 'Deep dive: trade-offs and explained follow-ups' });
+    await deepDive.focus();
+    await page.keyboard.press('Enter');
+    await expect(deepDive.locator('..')).toHaveAttribute('open', '');
+    await expect(deepDive.locator('..')).toContainText('older load must not overwrite');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath(`code-comprehension-${width}.png`) });
+    await page.reload();
+    await expect(page.locator('#ai-verification')).toBeInViewport();
+    const sitemap = await page.request.get('/sitemap.xml');
+    expect(await sitemap.text()).toContain('/senior-java-interview/code-comprehension');
+    const discovery = await page.request.get('/api/discovery');
+    expect((await discovery.json()).items.some(item => item.href === '/senior-java-interview/code-comprehension')).toBe(true);
+  });
+}
 
 test("the senior Java guide links through all new question parts", async ({ page }) => {
   await page.goto("/senior-java-interview");

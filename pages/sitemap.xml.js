@@ -51,6 +51,7 @@ export function getServerSideProps({ res }) {
     ...JAVA_TUTORIAL_CATALOG.map((tutorial) => ({ loc: `${SITE_URL}/java/tutorial/${slugifyJavaTutorial(tutorial.title)}`, changefreq: "monthly", priority: "0.7" })),
     { loc: `${SITE_URL}/guides`, changefreq: "weekly", priority: "0.9" },
     { loc: `${SITE_URL}/senior-java-interview`, changefreq: "monthly", priority: "0.9" },
+    { loc: `${SITE_URL}/senior-java-interview/code-comprehension`, changefreq: "monthly", priority: "0.8" },
     { loc: `${SITE_URL}/senior-java-interview/topics`, changefreq: "monthly", priority: "0.9" },
     ...INTERVIEW_TOPICS.map(topic => ({ loc: `${SITE_URL}${topicHref(topic.slug)}`, changefreq: "monthly", priority: "0.8" })),
     ...SENIOR_JAVA_GUIDE_ITEMS.map(item => ({ loc: `${SITE_URL}/senior-java-interview/${item.slug}`, changefreq: "monthly", priority: "0.7" })),

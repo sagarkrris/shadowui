@@ -1104,7 +1104,6 @@ function MermaidExportPanel({ title, mermaid, accent }) {
         <ActionButton icon={copied ? "ti-check" : "ti-copy"} label={copied ? "Copied Mermaid" : "Copy Mermaid"} onClick={copyMermaid} tone={accent} />
       </div>
       <ReadableFlowDiagram value={mermaid} title="Readable architecture flow" accent={accent} />
-      <pre style={{ ...wrappingCodeStyle, background: "rgba(0,0,0,.24)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, color: "#d1fae5", fontSize: 10.8, lineHeight: 1.45, margin: 0, padding: 10 }}>{mermaid}</pre>
     </section>
   );
 }
@@ -1376,12 +1375,6 @@ function InterviewAnswerPanel({ answer, accent }) {
         <p style={{ color: "#9fb0c7", fontSize: 11.4, lineHeight: 1.5, marginTop: 4 }}>{answer.summary}</p>
       </div>
       <IllustrationPanel model={sequenceArtworkModel(answer.flow.map(step => [step, '']), answer.title)} artworkKey="interview-architecture" />
-      <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 6 }} aria-label="Architecture diagram">
-        {answer.flow.map((step, index) => <div key={step} style={{ alignItems: "center", display: "flex", gap: 6 }}>
-          <span style={{ background: index === 0 ? `${accent}18` : "rgba(255,255,255,.05)", border: `1px solid ${index === 0 ? `${accent}55` : "rgba(255,255,255,.1)"}`, borderRadius: 7, color: "#eaf2ff", fontSize: 10.8, fontWeight: 750, maxWidth: 170, padding: "7px 8px" }}>{step}</span>
-          {index < answer.flow.length - 1 ? <i className="ti ti-arrow-right" aria-hidden="true" style={{ color: accent }} /> : null}
-        </div>)}
-      </div>
       <div style={responsiveGrid(280)}>
         <ListPanel title="Model answer" icon="ti-message-2" items={answer.answer} accent={accent} />
         <ListPanel title="Senior trade-offs" icon="ti-scale" items={answer.tradeOffs} accent={accent} />

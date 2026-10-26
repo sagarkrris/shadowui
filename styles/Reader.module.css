@@ -38,6 +38,7 @@
 .guideArticle code, .guideCode code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 .guideArticle :not(pre) > code { padding: .1em .3em; background: #f1f3f4; border-radius: 3px; overflow-wrap: anywhere; }
 .guideArticle table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; margin: 22px 0; }
+.guideArticle :is(pre, table):focus-visible { outline: 3px solid #1967d2; outline-offset: 3px; }
 .guideArticle :is(th, td) { min-width: 100px; border: 1px solid #dadce0; padding: 9px 12px; text-align: left; vertical-align: top; }
 .guideArticle blockquote { margin-inline: 0; padding: 2px 20px; border-left: 4px solid #1967d2; background: #f8f9fa; }
 .guideArticle hr { border: 0; border-top: 1px solid #dadce0; margin: 34px 0; }

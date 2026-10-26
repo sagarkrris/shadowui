@@ -10,7 +10,7 @@ export default function CourseSketch({ title, story, steps, layout = 'sequence',
     <figcaption className={styles.caption}>{comparison ? 'Compare the choices' : 'Follow the idea'} · Select a card to focus it <span aria-hidden="true">✎</span></figcaption>
     <h4 className={styles.title}>{title}</h4>
     <p className={styles.story}>{story}</p>
-    <ol className={`${styles.steps} ${comparison ? styles.comparison : ''}`}>
+    <ol data-visual-steps className={`${styles.steps} ${comparison ? styles.comparison : ''}`}>
       {steps.map(([label, detail], index) => <li key={`${label}-${index}`}>
         <button type="button" aria-pressed={selected === index} onClick={() => select(index)}>
           <span className={styles.number}>{comparison ? String.fromCharCode(65 + index) : String(index + 1).padStart(2, '0')}</span>

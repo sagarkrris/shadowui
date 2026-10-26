@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import DiagramArtwork, { SourceArtwork } from './DiagramArtwork';
+import DiagramArtwork from './DiagramArtwork';
 import styles from '../../styles/Illustration.module.css';
 
 export function downloadDiagramSvg(container, filename) {
@@ -18,7 +18,7 @@ export function downloadDiagramSvg(container, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export default function IllustrationPanel({ model, source, title, artworkKey, activeNode }) {
+export default function IllustrationPanel({ model, source, title, artworkKey, activeNode, sourceLabel }) {
   const id = useId();
   const container = useRef(null);
   const [textView, setTextView] = useState(false);
@@ -43,6 +43,11 @@ export default function IllustrationPanel({ model, source, title, artworkKey, ac
     setMessage(`${node.label} highlighted in the diagram.`);
   }
 
+  if (!model) return <div className={styles.panel} data-diagram-source>
+    <p className={styles.hint}>Original relationship text. The layout and arrow directions are preserved below.</p>
+    <pre className={styles.source} role="region" tabIndex={0} aria-label={sourceLabel || `${heading}: original diagram text`}>{source}</pre>
+  </div>;
+
   return <div className={styles.panel} data-illustration-panel>
     <div className={styles.tools} role="group" aria-label={`Illustration tools: ${heading}`}>
       <button type="button" aria-pressed={!textView} aria-controls={`diagram-${id}`} onClick={() => setTextView(false)}>Diagram</button>
@@ -54,12 +59,11 @@ export default function IllustrationPanel({ model, source, title, artworkKey, ac
     </div>
     <div id={`diagram-${id}`} hidden={textView}>
       <div ref={container} className={styles.canvas} role="region" aria-label={`${heading} scrollable illustration`} tabIndex={0}>
-        {model ? <DiagramArtwork model={model} artworkKey={artworkKey} enlarged={enlarged} fit={fit} activeNode={focusedNode} /> : <SourceArtwork source={source} title={heading} artworkKey={artworkKey} enlarged={enlarged} fit={fit} />}
+        <DiagramArtwork model={model} artworkKey={artworkKey} enlarged={enlarged} fit={fit} activeNode={focusedNode} />
       </div>
-      <p className={styles.hint}>{model ? 'Follow the labeled connections.' : 'Read the original diagram in its preserved layout.'} Scroll to explore the picture, or switch to Text view.</p>
+      <p className={styles.hint}>Follow the labeled connections. Scroll to explore the picture, or switch to Text view.</p>
     </div>
     <div id={`text-${id}`} hidden={!textView} className={styles.textView}>
-      {model ? <>
         <p>Select a component to highlight it in the diagram.</p>
         <ul className={styles.nodes} aria-label={`${heading} components`}>
           {model.nodes.map(node => <li key={node.id}>
@@ -74,7 +78,7 @@ export default function IllustrationPanel({ model, source, title, artworkKey, ac
             <strong>{model.nodes.find(node => node.id === edge.from)?.label}</strong> → <strong>{model.nodes.find(node => node.id === edge.to)?.label}</strong><span>{edge.label}</span>
           </li>)}</ol>
         </>}
-      </> : <pre className={styles.source} tabIndex={0} aria-label={`${heading}: original diagram text`}>{source}</pre>}
+        {source && <pre className={styles.source} role="region" tabIndex={0} aria-label={sourceLabel || `${heading}: original diagram text`}>{source}</pre>}
     </div>
     {message && <p className={styles.hint} role="status" aria-live="polite">{message}</p>}
   </div>;

@@ -7,10 +7,5 @@ export default function MechanismDiagram({ steps, title = 'Mechanism at a glance
   return <figure data-mechanism-diagram className={styles.figure}>
     <figcaption className={styles.caption}>{title}</figcaption>
     <IllustrationPanel model={sequenceArtworkModel(steps, title)} artworkKey="mechanism" />
-    <ol aria-label={title} className={styles.steps}>
-      {steps.map((step, index) => <li key={index} className={styles.step}>
-        <span className={styles.number}>Step {index + 1}{index < steps.length - 1 ? ' →' : ''}</span>{step}
-      </li>)}
-    </ol>
   </figure>;
 }

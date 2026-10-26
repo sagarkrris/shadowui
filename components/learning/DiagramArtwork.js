@@ -28,25 +28,6 @@ export function DiagramSymbol({ kind = 'component', size = 44 }) {
   return <svg aria-hidden="true" width={size} height={size} viewBox="0 0 44 44" style={{ display: 'block', flexShrink: 0 }}><DiagramGlyph kind={kind} /></svg>;
 }
 
-// Preserve unfamiliar tree/diagram syntax as a portable picture of the original
-// layout. No parser guesses at ownership, execution, or missing connections.
-export function SourceArtwork({ source, title, enlarged = false, fit = false, artworkKey = 'authored-source' }) {
-  const id = useId();
-  if (typeof source !== 'string' || !source) return null;
-  const lines = source.split('\n');
-  const width = Math.max(900, ...lines.map(line => [...line.replace(/\t/g, '    ')].length * 15 + 80));
-  const height = Math.max(220, 130 + lines.length * 26);
-  return <svg xmlns="http://www.w3.org/2000/svg" data-diagram-artwork={artworkKey} data-source-preserved role="img" aria-labelledby={`source-title-${id} source-desc-${id}`} viewBox={`0 0 ${width} ${height}`} width={width} height={height}
-    style={{ display: 'block', width: '100%', minWidth: fit ? 0 : enlarged ? width * 4 / 3 : width, height: 'auto' }}>
-    <title id={`source-title-${id}`}>{title}</title><desc id={`source-desc-${id}`}>{source}</desc>
-    <rect width={width} height={height} rx="18" fill="#fffdf8" />
-    <DiagramGlyph kind="code" x={30} y={20} size={36} />
-    <text x="84" y="43" fontFamily="system-ui, sans-serif" fontSize="14" fontWeight="700" fill="#20364c">ORIGINAL DIAGRAM LAYOUT</text>
-    <text x="30" y="80" fontFamily="system-ui, sans-serif" fontSize="12" fill="#40586d">The original structure is preserved; no extra connections have been inferred.</text>
-    <text xmlSpace="preserve" fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace" fontSize="14" fill="#20364c">{lines.map((line,index) => <tspan key={index} x="30" y={116 + index * 26}>{line.replace(/\t/g,'    ')}</tspan>)}</text>
-  </svg>;
-}
-
 export default function DiagramArtwork({ model, enlarged = false, fit = false, activeNode, artworkKey = 'graph' }) {
   const id = useId();
   const layout = layoutArtwork(model);
