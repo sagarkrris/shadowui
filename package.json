@@ -14,7 +14,7 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:browser-matrix": "E2E_BROWSER_MATRIX=1 playwright test",
     "db:migrate": "node scripts/migrate-postgres.mjs",
-    "test:unit": "node --test test/*.test.mjs",
+    "test:unit": "node scripts/validation/run-unit-tests.mjs",
     "verify:background-jobs": "node scripts/validation/verify-background-jobs.mjs",
     "verify:tech-blog": "node scripts/validation/verify-tech-blog.mjs",
     "test:tiny-systems": "node scripts/validation/check-tiny-systems.mjs",

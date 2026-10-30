@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateTechBlogCatalog, verifyPublishedJava } from './tech-blog-contracts.mjs';
+import { testWorkers } from './test-workers.mjs';
 import { runTechBlogGate, sourceFingerprint, techBlogGateCommands } from './tech-blog-gate.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
@@ -12,6 +13,8 @@ const persist = value => writeFileSync(join(output, 'report.json'), JSON.stringi
 console.log(`Tech-blog gate artifacts: ${output}`);
 try {
   if (process.argv.length > 2) throw new Error('This mandatory gate accepts no skip/filter arguments');
+  report.workers = testWorkers();
+  console.log(`Validation worker budget: ${report.workers}`);
   report.sourceFingerprint = sourceFingerprint(root);
   persist(report);
   report.courses = validateTechBlogCatalog();

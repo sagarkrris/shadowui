@@ -1,0 +1,219 @@
+<p><strong>Set 18 · 29 October 2026 — Testing contracts and publication boundaries</strong></p>
+
+<p>Reference assumptions: <strong>Java 21 without preview features</strong>, Spring Framework 7.0 caching semantics, Jakarta Persistence 3.2 and Kafka 4.0. Verify provider and framework-managed versions in a real application. These are reference versions, not latest-version recommendations. Primary references checked 29 October 2026.</p>
+
+<p>Stable IDs: <strong>S18-Q01–S18-Q12</strong>, in order. Spoken answers target 45–90 seconds. Examples are original illustrations, not personal experience. Framework, filesystem, broker and security scenarios are contextual designs rather than executed integrations. Q11 contains the only runnable Java block, compiled and tested by its dedicated fixture. Q10 and Q12 are explicitly conceptual reasoning exercises.</p>
+
+<hr>
+<h3 id="1-a-concurrent-map-safely-publishes-a-mutable-arraylist-value-why-do-later-appends-still-race">1. A concurrent map safely publishes a mutable ArrayList value. Why do later appends still race?</h3>
+
+<p><strong>Say aloud:</strong> “Safe publication means that readers can see state established before the value was placed into the map. It does not turn that value into a concurrent collection. Two threads can retrieve the same ArrayList and mutate its internal size and storage without a shared coordination rule. Protecting the container and protecting its contents are separate responsibilities.</p>
+
+<p>I would prefer immutable lists replaced through an atomic per-key update, or choose a value structure whose operations fit the required contract. If several operations must happen together, even a concurrent value needs a larger protocol. Copying on each update trades allocation for simple reader ownership, and is unsuitable for an unbounded hot list. I would test competing writers with controlled scheduling, assert no accepted entries disappear, and check that readers cannot modify published snapshots. A successful map lookup alone proves neither deep immutability nor a consistent multi-key snapshot.”</p>
+
+<p><strong>Example:</strong> Conceptual: publish List.of(&quot;A&quot;); replace it atomically with a new immutable list containing A and B. Never append to a shared ArrayList merely because its containing map is concurrent.</p>
+
+<p><strong>Deep dive / verification:</strong> Copy replacement costs O(k) for k entries. Bound list growth. Null elements need an explicit policy; List.copyOf rejects them. Per-key atomic replacement does not protect a global total.</p>
+
+<p><strong>Follow-ups:</strong> Would synchronizedList suffice? Individual methods synchronize, but iteration and compound decisions require the documented external locking discipline. Can compute perform network calls? Keep callbacks short and move external effects outside.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ConcurrentHashMap.html">Java 21 ConcurrentHashMap</a>.</p>
+
+<hr>
+<h3 id="2-a-bounded-executorcompletionservice-queue-fills-why-can-a-caller-wait-forever-for-completed-tasks">2. A bounded ExecutorCompletionService queue fills. Why can a caller wait forever for completed tasks?</h3>
+
+<p><strong>Say aloud:</strong> “A completion service separates task execution from collecting finished futures. The queue holds completion notifications, not pending work. Its supplied queue is treated as unbounded: a failed insertion can make a completed task unavailable through the service. Therefore replacing the default queue with a tiny bounded queue is not a safe way to apply backpressure.</p>
+
+<p>I would bound admitted tasks before submission and continuously drain completion results. The default completion queue can then grow only within the deliberately bounded in-flight population. Submission rejection must reduce the count of completions expected, and every accepted task needs a tracked terminal outcome. If result processing is slow, admission must slow too. I would test a burst of completions while the collector pauses, then verify every accepted future is accounted for within a deadline. Queue capacity and executor capacity protect different stages; neither alone establishes end-to-end progress.”</p>
+
+<p><strong>Example:</strong> Conceptual: admit at most 20 jobs; process one completion before admitting another. Do not submit 10,000 jobs then expect a completion queue of size 20 to block workers safely.</p>
+
+<p><strong>Deep dive / verification:</strong> Bound both retained results and in-flight work. A completion is not necessarily success: get can reveal failure or cancellation. Cancellation handling must match the actual executor lifecycle.</p>
+
+<p><strong>Follow-ups:</strong> Can I block in a custom queue add? That changes worker behavior and can introduce deadlocks; prefer admission control. Is take deadline-aware? Use timed poll and an overall deadline.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ExecutorCompletionService.html">Java 21 ExecutorCompletionService</a>.</p>
+
+<hr>
+<h3 id="3-an-atomicinteger-ticket-counter-wraps-into-negative-ids-did-atomicity-promise-uniqueness-forever">3. An AtomicInteger ticket counter wraps into negative IDs. Did atomicity promise uniqueness forever?</h3>
+
+<p><strong>Say aloud:</strong> “Atomicity means that an operation has one indivisible update point. It does not enlarge an integer or validate business meaning. Java int arithmetic wraps, so incrementing the maximum signed value yields a negative result. Eventually a finite counter repeats values, and a process restart can repeat them much sooner.</p>
+
+<p>I would first define the identifier scope and lifetime: one process execution, one tenant, or durable global identity. For a bounded local sequence, a compare-and-set loop can reject exhaustion before changing the maximum value. For durable IDs I would use a database identity or another explicitly designed allocation scheme, retaining a uniqueness constraint at storage. A wider number postpones exhaustion but does not solve restart or multi-node collisions. I would test near the numeric boundary, concurrent exhaustion, and restart behavior. Atomic operations support a protocol; they do not supply the protocol&#39;s identity contract.”</p>
+
+<p><strong>Example:</strong> Conceptual: state MAX_VALUE-1 admits one last ticket; later callers receive exhaustion. Never allocate a wrapped negative ticket and then attempt to repair it after publication.</p>
+
+<p><strong>Deep dive / verification:</strong> A CAS retry loop has contention-dependent progress and no fixed per-caller retry bound. Checked arithmetic alone does not persist a counter or coordinate replicas.</p>
+
+<p><strong>Follow-ups:</strong> Is AtomicLong sufficient? Only with a documented lifetime and restart strategy. Can resetting to zero repair wrap? It creates collisions with still-live tickets.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/atomic/AtomicInteger.html">Java 21 AtomicInteger</a>.</p>
+
+<hr>
+<h3 id="4-a-recursive-dto-mapper-fails-on-a-deeply-nested-but-acyclic-document-why-is-cycle-detection-insufficient">4. A recursive DTO mapper fails on a deeply nested but acyclic document. Why is cycle detection insufficient?</h3>
+
+<p><strong>Say aloud:</strong> “A cycle revisits an earlier node; depth counts how many unfinished calls are nested. An acyclic chain can still be arbitrarily deep. A recursive mapper keeps one call frame for each level and can overflow the thread stack even when a cycle detector never finds a repeated node. Increasing heap size does not directly remove that call-depth requirement.</p>
+
+<p>I would impose explicit input depth and total-node limits at the trust boundary, then consider an iterative traversal with a bounded explicit work stack. Iteration moves bookkeeping into controlled storage but does not make unlimited input cheap. If shared references are allowed, distinguish a node on the current path from one visited on a different branch. I would test a long chain, a true cycle, a shared child, and an oversized branching tree. Raising the stack limit might postpone failure; it is not a substitute for a resource contract.”</p>
+
+<p><strong>Example:</strong> Conceptual: a 100,000-node parent-child chain has no cycle. Reject it at the configured maximum depth before recursively constructing its entire DTO graph.</p>
+
+<p><strong>Deep dive / verification:</strong> Full traversal costs O(V+E) for vertices and references when each is processed once. Track depth separately from visited identity; equality-based tracking can merge distinct nodes incorrectly.</p>
+
+<p><strong>Follow-ups:</strong> Catch StackOverflowError and retry? Reject excessive input earlier; recovery may itself need stack. Does iteration remove memory limits? No; cap queued nodes and output size.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/StackOverflowError.html">Java 21 StackOverflowError</a>.</p>
+
+<hr>
+<h3 id="5-cacheable-sync-true-stops-local-duplicate-loads-does-it-elect-one-loader-across-all-service-replicas">5. Cacheable(sync=true) stops local duplicate loads. Does it elect one loader across all service replicas?</h3>
+
+<p><strong>Say aloud:</strong> “A cache miss is a read for which the cache has no stored answer. Synchronized caching asks the selected cache implementation to coordinate competing loads for a key. It is not a universal distributed election guarantee. Ten replicas using independent local caches can still execute ten loads for the same missing key.</p>
+
+<p>I would identify the actual cache provider and its synchronization scope before promising stampede protection. For inexpensive reads, one load per replica may be acceptable. For expensive global work, use a provider-supported distributed protocol or redesign the work as a durable job with explicit ownership and failure recovery. Coordination introduces waiting, timeout and owner-failure behavior that must be specified. I would test concurrent misses within one instance and across instances, including a loader exception. Also verify calls cross the caching proxy. A cache annotation expresses policy; its backing implementation determines important execution guarantees.”</p>
+
+<p><strong>Example:</strong> Conceptual: replicas A and B each hold an empty local cache. Both may run a loader despite sync=true. A local barrier test alone cannot establish fleet-wide exclusion.</p>
+
+<p><strong>Deep dive / verification:</strong> Assume Spring Framework 7.0 annotation semantics; verify the deployed provider. Synchronized caching has documented restrictions, including one cache and no unless expression. Cached data still needs expiration and authorization-safe keys.</p>
+
+<p><strong>Follow-ups:</strong> Can a lock replace durable idempotency? No; retries after owner failure still need effect-level protection. Does self-invocation intercept? Default proxy mode does not intercept internal calls.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.spring.io/spring-framework/reference/integration/cache/annotations.html">Spring synchronized caching</a>.</p>
+
+<hr>
+<h3 id="6-a-single-result-jpa-lookup-starts-throwing-after-historical-duplicates-appear-should-the-dao-silently-select-the-first-row">6. A single-result JPA lookup starts throwing after historical duplicates appear. Should the DAO silently select the first row?</h3>
+
+<p><strong>Say aloud:</strong> “A single-result query states a cardinality expectation: at most one matching result, with an exception when the single-result contract is violated. Selecting the first row changes that expectation into an arbitrary choice. If an account lookup accidentally matches historical and current records, hiding the duplicate can route a write to the wrong record.</p>
+
+<p>I would clarify whether the business key is unique across all history or only within the current scope. Encode the appropriate tenant and lifecycle predicates, enforce the corresponding database invariant where possible, and repair existing data deliberately. If choosing the newest record is truly the business rule, specify a total ordering with a deterministic tie-breaker rather than relying on storage order. I would test absent, single, duplicate, historical and cross-tenant results. The query&#39;s exception is evidence of a broken expectation, not permission to guess which entity the user intended.”</p>
+
+<p><strong>Example:</strong> Conceptual: externalRef=R matches one archived account and one active account. A current-account command must explicitly select the authorized current scope and reject multiple current matches.</p>
+
+<p><strong>Deep dive / verification:</strong> Jakarta Persistence 3.2 getSingleResult throws NoResultException or NonUniqueResultException as applicable; these exceptions alone do not mark the transaction for rollback. Application/framework policy may differ. Index and inspect the scoped query.</p>
+
+<p><strong>Follow-ups:</strong> Is getSingleResultOrNull safer? It handles absence, not multiple results. Can DISTINCT repair duplicates? It can remove repeated result identities, not choose between distinct business entities.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2.html">Jakarta Persistence 3.2 query contracts</a>.</p>
+
+<hr>
+<h3 id="7-kafka-heartbeats-continue-while-processing-blocks-can-max-poll-interval-ms-still-force-a-rebalance">7. Kafka heartbeats continue while processing blocks. Can max.poll.interval.ms still force a rebalance?</h3>
+
+<p><strong>Say aloud:</strong> “Heartbeats tell the group coordinator that a member is reachable. Poll progress is a separate signal that the application is making progress. With ordinary dynamic group membership, exceeding the maximum interval between polls can cause the member to leave the group even when background heartbeats were healthy. A long-running handler therefore cannot rely solely on a generous session timeout.</p>
+
+<p>I would measure worst-case processing time for an admitted batch, reduce batch work or move processing behind bounded per-partition ownership, and keep consumer calls on their designated thread. Raising the poll interval trades slower stuck-member detection for more processing time; it does not fix a hung dependency. Any asynchronous design must commit only completed contiguous progress and reject stale owner completions after reassignment. I would force a handler stall and observe assignment changes and replay. Static membership changes the timing, so I would verify the configured protocol before predicting recovery latency.”</p>
+
+<p><strong>Example:</strong> Conceptual: a dynamic member polls at t=0, then processes for six minutes with a five-minute max poll interval. Healthy heartbeats alone do not make that batch safe from reassignment.</p>
+
+<p><strong>Deep dive / verification:</strong> Kafka 4.0 assumptions. For a non-null group.instance.id, exceeding max poll interval stops heartbeats and reassignment waits for session timeout rather than occurring immediately. Bound outstanding records and effect retries.</p>
+
+<p><strong>Follow-ups:</strong> Does pause replace poll? No; continue polling while paused. Can I commit the fetched batch immediately? That risks skipping unfinished effects after a crash.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://kafka.apache.org/40/configuration/consumer-configs/">Kafka 4.0 consumer configuration</a>.</p>
+
+<hr>
+<h3 id="8-a-configuration-writer-overwrites-a-file-while-readers-reload-it-how-can-partial-publication-be-prevented">8. A configuration writer overwrites a file while readers reload it. How can partial publication be prevented?</h3>
+
+<p><strong>Say aloud:</strong> “A file existing at a path does not mean its contents are complete. Truncating a shared file and writing it gradually lets another process observe an empty or partial configuration. Atomic publication means readers see a complete old version or a complete new version at the publication boundary.</p>
+
+<p>I would write and validate a temporary file on the same filesystem, then request an atomic move into the publication location where the provider supports the required semantics. If atomic replacement is unavailable, I would fail explicitly or use immutable versioned files with an independently safe version-selection protocol. I would not silently fall back to copy-and-delete while claiming atomicity. Concurrent writers need coordination or version checks to prevent lost updates. Tests should repeatedly reload during publication and inject write and move failures. Atomic visibility is separate from crash durability, which requires filesystem-specific synchronization and recovery design.”</p>
+
+<p><strong>Example:</strong> Conceptual protocol:
+<code>text
+write unique temporary version -&gt; validate complete contents
+request supported atomic publication -&gt; reload chosen complete version
+on failure: retain previous valid version; report failure
+</code></p>
+
+<p><strong>Deep dive / verification:</strong> Java 21 ATOMIC<em>MOVE support is provider-specific; replacement of an existing target is implementation-specific with this option. Other copy options are ignored for an atomic move. Do not assume REPLACE</em>EXISTING universally repairs this.</p>
+
+<p><strong>Follow-ups:</strong> Does close prove power-loss durability? No. Can two writers use one temp name? Use unique names plus explicit publication ownership; otherwise they can overwrite each other.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/nio/file/Files.html">Java 21 Files.move contract</a>.</p>
+
+<hr>
+<h3 id="9-a-malicious-username-inserts-fake-success-entries-into-application-logs-what-makes-logging-an-input-boundary">9. A malicious username inserts fake success entries into application logs. What makes logging an input boundary?</h3>
+
+<p><strong>Say aloud:</strong> “Log injection means untrusted input changes the structure or interpretation of an audit record. A username containing a newline can make a plain-text log appear to contain an additional trusted event. Parameterized logging avoids some formatting mistakes, but it does not automatically sanitize every downstream text format or viewer.</p>
+
+<p>I would use structured records with a real encoder, validate or encode control characters for the chosen sink, and keep event type, outcome and actor identity in separate fields. Bound field size and avoid recording tokens or unnecessary personal data. Correlation identifiers supplied by clients remain untrusted and should not overwrite server-generated identity. I would send newline, delimiter and oversized inputs through the complete ingestion and display pipeline, then verify one event remains one event. Logging should preserve useful evidence without letting the requester manufacture authority or exhaust the log budget.”</p>
+
+<p><strong>Example:</strong> Conceptual: the display name contains a newline followed by payment=SUCCESS. The stored event must still identify a failed login and encode that display name as data.</p>
+
+<p><strong>Deep dive / verification:</strong> Encoding costs O(k) for a bounded field of k characters. Structured JSON is useful only if downstream tooling preserves its structure. Protect log access and define behavior when the sink is unavailable.</p>
+
+<p><strong>Follow-ups:</strong> Can we remove all user input? Keep necessary bounded context while minimizing sensitive data. Does escaping HTML solve text logs? Encoding must match the actual output context.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html">OWASP logging guidance</a>.</p>
+
+<hr>
+<h3 id="10-a-retry-protocol-passes-happy-path-tests-how-would-a-state-machine-model-expose-an-illegal-success-after-a-crash">10. A retry protocol passes happy-path tests. How would a state-machine model expose an illegal success after a crash?</h3>
+
+<p><strong>Say aloud:</strong> “A state machine describes allowed states and the commands that change them. A model-based test compares an implementation with a simpler reference model after sequences of commands, rather than testing each method only in isolation. For a durable job, acceptance, execution and completion are different states, and a restart must recover from persisted evidence.</p>
+
+<p>I would define invariants before generating histories: acknowledged jobs remain recoverable, completed jobs have durable outcome evidence, and retries cannot produce two business effects. Then generate short histories containing duplicate requests, crash boundaries, timeouts and restart. The model should describe durable facts independently of the implementation&#39;s internal classes. For a failing history, shrink it to the smallest sequence that preserves the failure. I would retain that history as a regression. Passing generated tests gives bounded evidence, not proof of every concurrent schedule; real storage and transport fault tests still matter.”</p>
+
+<p><strong>Example:</strong> Original reasoning model: accept -&gt; persist pending -&gt; acknowledge -&gt; restart -&gt; execute -&gt; persist result. A model rejects acknowledge -&gt; crash -&gt; no recoverable job, even if the normal completion path works.</p>
+
+<p><strong>Deep dive / verification:</strong> For c command choices and maximum length d, exhaustive histories grow exponentially, O(c^d). Use small exhaustive models, reproducible random seeds and explicit scheduler control. This is a conceptual test design, not an executed distributed system.</p>
+
+<p><strong>Follow-ups:</strong> Can the model copy the production code? That risks reproducing the same mistake; model observable promises. What about external effects? Model an independent effect ledger and include ambiguous outcomes.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/atomic/AtomicInteger.html">Java atomic-operation scope as a boundary example</a>.</p>
+
+<hr>
+<h3 id="11-return-the-next-lexicographically-larger-integer-permutation-in-place-how-do-duplicates-affect-the-pivot">11. Return the next lexicographically larger integer permutation in place. How do duplicates affect the pivot?</h3>
+
+<p><strong>Say aloud:</strong> “Lexicographic order compares sequences at their first different position. The next permutation must keep the longest possible prefix unchanged and increase the remaining part by the smallest amount. I scan from the right to find the first element smaller than its successor. Everything after that pivot is nonincreasing, so that suffix is already its largest arrangement.</p>
+
+<p>I swap the pivot with the rightmost suffix element strictly larger than it, which is the smallest available increase because of the suffix order. Reversing the suffix then makes the remainder minimal. Strict comparisons are essential with duplicate values. If no pivot exists, I reverse the entire array to its smallest arrangement and return false to signal wraparound. Empty and singleton arrays also return false. I would verify against independently enumerated, sorted distinct permutations, including duplicates and extreme integers, rather than test only a few increasing inputs.”</p>
+
+<p><strong>Example:</strong> For [1,3,2], pivot 1 swaps with 2, then suffix reversal yields [2,1,3]. For [2,2,1], return false and leave [1,2,2]. Java 21 runnable code follows.</p>
+
+<p><strong>Deep dive / verification:</strong> O(n) time and O(1) extra storage; mutates input by contract. Null throws NullPointerException. Compare values directly rather than subtracting them, avoiding comparison overflow. The proof uses suffix ordering, not a library permutation API.</p>
+
+<p><strong>Follow-ups:</strong> Why rightmost larger? It is the smallest larger suffix value. Are equal-value arrangements repeated? Each step advances to the next distinct value sequence; wraparound is explicit.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Arrays.html">Java 21 array comparison API for verification</a>.</p>
+
+<pre><code class="java">public final class NextPermutation {
+    public static boolean advance(int[] values) {
+        java.util.Objects.requireNonNull(values, &quot;values&quot;);
+        int pivot = values.length - 2;
+        while (pivot &gt;= 0 &amp;&amp; values[pivot] &gt;= values[pivot + 1]) pivot--;
+        if (pivot &gt;= 0) {
+            int successor = values.length - 1;
+            while (values[successor] &lt;= values[pivot]) successor--;
+            swap(values, pivot, successor);
+        }
+        for (int left = pivot + 1, right = values.length - 1; left &lt; right; left++, right--) {
+            swap(values, left, right);
+        }
+        return pivot &gt;= 0;
+    }
+    private static void swap(int[] values, int a, int b) {
+        int previous = values[a];
+        values[a] = values[b];
+        values[b] = previous;
+    }
+}
+</code></pre>
+
+<hr>
+<h3 id="12-choose-the-fewest-inspection-times-hitting-every-closed-availability-interval-why-choose-the-earliest-finishing-endpoint">12. Choose the fewest inspection times hitting every closed availability interval. Why choose the earliest finishing endpoint?</h3>
+
+<p><strong>Say aloud:</strong> “An inspection time hits an interval when it lies between that interval&#39;s endpoints, including both endpoints. We want a minimum-size set of times covering every interval. I sort intervals by their right endpoint. For the earliest-ending interval not yet covered, I choose its right endpoint and skip every interval containing that point.</p>
+
+<p>The exchange argument explains optimality: every valid solution must choose some point inside the earliest-ending interval. Moving that chosen point right to this interval&#39;s end cannot lose coverage of any remaining interval that it previously hit, because those intervals end no earlier. Repeating this replacement gives an optimal solution with our greedy choices. Closed endpoints matter: touching intervals can share one inspection time. I would reject reversed or null intervals, leave the caller&#39;s input unchanged, and test the chosen times against a brute-force optimum over small integer endpoints. Empty input returns no times.”</p>
+
+<p><strong>Example:</strong> Conceptual algorithm: sort a copy by end; for each interval, choose end only if there is no chosen point or the latest point is less than start. [1,3], [2,5], [3,7] all share point 3; [4,4] then requires another point.</p>
+
+<p><strong>Deep dive / verification:</strong> O(n log n) sorting time and O(n) storage for copied input/output. Use comparator comparisons rather than endpoint subtraction. Open or half-open intervals require a revised proof and representation; do not reuse closed-endpoint logic blindly.</p>
+
+<p><strong>Follow-ups:</strong> Is this interval merging? No; merging reports unions, while this returns a minimum hitting set. What if inspections have unequal prices? This greedy proof no longer establishes minimum cost.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Arrays.html">Java 21 sorting API; exchange proof derived here</a>.</p>
+
+<hr>
+
+<p><strong>Topic coverage:</strong> Mutable value ownership, completion accounting, finite atomic counters, JVM recursion depth, cache coordination scope, JPA cardinality, Kafka poll progress, atomic filesystem publication, log integrity, state-machine testing, permutations and interval hitting sets.</p>
+
+<p><strong>Next set builds on:</strong> independent evidence for recovery protocols, evolving durable state machines, and algorithms that return verifiable optimality witnesses. Continue sequential set numbering even on the same date.</p>

@@ -4,9 +4,9 @@ import styles from '../../styles/Reader.module.css';
 
 export default function ComprehensionExercises() {
   return <section aria-labelledby="java-comprehension-title">
-    <h2 id="java-comprehension-title">Eight Java exercises: start small, then follow a service</h2>
-    <p>Start at question 1 if reading code is new to you. Questions 1–3 teach the basic vocabulary; 4–5 introduce collections and numeric boundaries; 6–8 follow state and failures across calls. These are original practice questions, not reported Google questions.</p>
-    <p>Each starter or corrected block is a complete <strong>Java 17</strong> class. Save one block at a time as <code>Exercise.java</code> and compile it with <code>javac --release 17 Exercise.java</code>. It has no main method. To try it interactively, start a fresh <code>jshell</code> session, enter <code>/open Exercise.java</code>, then enter the sample statements shown for that question. An exception in the starter is an expected observation; you can enter the next statement afterwards. Exit with <code>/exit</code>. Compilation alone does not prove an answer correct.</p>
+    <h2 id="java-comprehension-title">Sixteen Java exercises: foundations, advanced questions and mock projects</h2>
+    <p>Start at question 1 if reading code is new to you. Questions 1–3 teach the basic vocabulary; 4–5 introduce collections and numeric boundaries; 6–8 follow state and failures across calls. Questions 9–14 add collaborator tracing, optimization, AI patch validation, asynchronous ownership, graphs and pagination. Questions 15–16 are integrated mock projects. These are original practice questions, not reported Google questions.</p>
+    <p>Each single-file starter or corrected block is a complete <strong>Java 17</strong> class. Save one block at a time as <code>Exercise.java</code> and compile it with <code>javac --release 17 Exercise.java</code>. It has no main method. To try it interactively, start a fresh <code>jshell</code> session, enter <code>/open Exercise.java</code>, then enter the sample statements shown for that question. An exception in the starter is an expected observation; you can enter the next statement afterwards. Exit with <code>/exit</code>. Compilation alone does not prove an answer correct.</p>
     <h3>A quick guide to the Java syntax</h3>
     <ul>
       <li><code>public class Exercise</code> is the container for the example. A <strong>method</strong> is a named piece of code inside it.</li>
@@ -17,7 +17,7 @@ export default function ComprehensionExercises() {
       <li><code>List&lt;Integer&gt;</code> means a list of integer objects. <code>Map&lt;String, Event&gt;</code> means a lookup table from text keys to Event values.</li>
       <li><code>() -&gt; ...</code> supplies a small task, called a lambda. Later examples call that task to simulate work that can succeed or fail.</li>
     </ul>
-    <p>For each question: read the requirement, predict what the starter does, follow the trace, then compare the corrected code. A trace table records values after each important step. The diagram is a reading aid for the stated example, not a running application.</p>
+    <p>The advanced projects are runnable single-file models with nested collaborators, not deployed framework applications. Each mock includes a suggested 60-minute investigation. For each question: read the requirement, predict what the starter does, follow the trace, then compare the corrected code. A trace table records values after each important step. The diagram is a reading aid for the stated example, not a running application.</p>
     <nav aria-label="Java comprehension exercise questions"><ol>
       {JAVA_COMPREHENSION_EXERCISES.map((lesson, index) => <li key={lesson.id}><a href={`#${lesson.id}`}>Question {index + 1}: {lesson.title}</a> — {lesson.level}</li>)}
     </ol></nav>
@@ -46,6 +46,17 @@ export default function ComprehensionExercises() {
         <summary>Show corrected Java code for question {index + 1}</summary>
         <pre tabIndex={0} aria-label={`Question ${index + 1} corrected code`}><code>{lesson.reference}</code></pre>
       </details>
+      {lesson.projectFiles && <details className={styles.guideNotes}>
+        <summary>Practice this project across separate Java files</summary>
+        <p>The single-file model above also has this equivalent project layout. Choose starter or reference, save every named file from that variant together in a fresh folder, then run <code>javac --release 17 *.java</code> followed by <code>java Exercise</code> to execute the traced example. All files use the default package for this exercise. Compilation checks types; use the task and regression cases to verify behavior.</p>
+        {['starter', 'reference'].map(variant => <div key={variant}>
+          <h4>{variant === 'starter' ? 'Starter project files' : 'Corrected project files'}</h4>
+          {lesson.projectFiles[variant].map(file => <div key={file.name}>
+            <h5>{file.name}</h5>
+            <pre tabIndex={0} aria-label={`${lesson.id} ${variant} ${file.name}`}><code>{file.source}</code></pre>
+          </div>)}
+        </div>)}
+      </details>}
       <h3>A complete interview answer you can say aloud</h3><blockquote><p>{lesson.spoken}</p></blockquote>
       <h3>How to verify the answer</h3><ul>{lesson.tests.map(check => <li key={check}>{check}</li>)}</ul>
       <details className={styles.guideNotes}>

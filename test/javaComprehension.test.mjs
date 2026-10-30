@@ -7,11 +7,11 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { JAVA_COMPREHENSION_EXERCISES } from '../lib/codeComprehensionExercises.mjs';
 
-test('all eight published Java comprehension starters demonstrate failures and corrected examples satisfy their contracts', () => {
-  assert.equal(JAVA_COMPREHENSION_EXERCISES.length, 8);
+test('the eight foundation Java comprehension starters demonstrate failures and corrected examples satisfy their contracts', () => {
+  assert.equal(JAVA_COMPREHENSION_EXERCISES.length, 16);
   const directory = mkdtempSync(join(tmpdir(), 'java-comprehension-'));
   try {
-    const sources = JAVA_COMPREHENSION_EXERCISES.flatMap(lesson => {
+    const sources = JAVA_COMPREHENSION_EXERCISES.slice(0, 8).flatMap(lesson => {
       assert.equal(lesson.javaRelease, 17);
       const baseName = lesson.id.split('-').map(part => part[0].toUpperCase() + part.slice(1)).join('');
       return [['Starter', lesson.starter], ['Reference', lesson.reference]].map(([suffix, source]) => {

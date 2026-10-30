@@ -6,17 +6,17 @@ import ComprehensionExercises from '../../components/interview-guide/Comprehensi
 import CourseSketch from '../../components/course/CourseSketch';
 
 export default function CodeComprehension() {
-  return <ReaderLayout title="Code comprehension interview preparation" description="Prepare to read unfamiliar code, trace behavior, debug boundary cases and verify AI suggestions, with eight detailed Java exercises, a cache walkthrough and a mock interview plan.">
+  return <ReaderLayout title="Code comprehension interview preparation" description="Prepare to read unfamiliar code, trace behavior, debug boundary cases and verify AI suggestions, with sixteen detailed Java exercises, a cache walkthrough and a mock interview plan.">
     <nav className={styles.guideBreadcrumb}><Link href="/senior-java-interview">Senior Java interview guide</Link> / Code comprehension</nav>
     <article className={styles.guideArticle}>
-      <p className={styles.eyebrow}>INTERVIEW FORMATS · REVIEWED 26 OCTOBER 2026</p>
+      <p className={styles.eyebrow}>INTERVIEW FORMATS · REVIEWED 30 OCTOBER 2026</p>
       <h1>Code comprehension interview preparation</h1>
       <p className={styles.lead}>Explain what unfamiliar code does, demonstrate where it fails, and defend a small, verified improvement. Code comprehension means building an accurate mental model of existing code before changing it.</p>
-      <p>For Java candidates, the same approach applies to controllers, services, repositories and tests. Start with eight Java 17 questions below, ordered from beginner to applied service reasoning. Each has a full walkthrough and a visual flow. A separate JavaScript cache exercise shows how the same method transfers to another language. All exercises are original practice material, not Google interview questions.</p>
+      <p>For Java candidates, the same approach applies to controllers, services, repositories and tests. Start with sixteen Java 17 questions below, ordered from beginner through advanced reasoning and two integrated mock projects. Each has a full walkthrough and a visual flow. A separate JavaScript cache exercise shows how the same method transfers to another language. All exercises are original practice material, not Google interview questions.</p>
       <nav aria-label="Code comprehension sections"><ul>
         <li><a href="#reported-format">Google’s reported format</a></li>
         <li><a href="#reading-method">How to read an unfamiliar codebase</a></li>
-        <li><a href="#java-comprehension-title">Eight Java questions with detailed answers</a></li>
+        <li><a href="#java-comprehension-title">Sixteen Java questions with detailed answers</a></li>
         <li><a href="#exercise">Worked debugging exercise</a> — optional JavaScript cache example</li>
         <li><a href="#ai-verification">Verify an AI suggestion</a></li>
         <li><a href="#mock-round">Run a practice round</a></li>

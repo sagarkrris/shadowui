@@ -70,3 +70,22 @@ real infrastructure behavior, and whether the cases sufficiently cover the lesso
 - `npx playwright test e2e/practice-accessibility.spec.js`: WCAG A/AA axe scans, narrow layout, text scaling, keyboard access and reduced-motion checks for Today, system design and DSA. Real assistive-technology and physical-device usability are separate manual acceptance checks; emulation does not prove them.
 
 All commands exit nonzero on failure. See the release notes for the exact runs and scope.
+
+## Parallel local and CI validation
+
+`npm run verify:tech-blog`, `npm run test:release`, `npm run test:unit`,
+`npm run test:build-challenges` and `npm run test:e2e` use a shared worker budget.
+By default it is the available CPU count minus one, bounded to **2–4 workers**.
+Unit test files run in Node processes; Java practice suites run in isolated Node
+processes with their own temporary compilation directories; Playwright uses its
+worker processes. Each Java suite still checks all starter/reference modes.
+Gate stages stay sequential: the production build finishes before browser tests,
+and source fingerprint and zero-skip/zero-retry requirements remain in force.
+
+Override the budget for one run with `TEST_WORKERS=6 npm run verify:tech-blog`.
+Accepted values are integers 1–16; use 1 for debugging or constrained machines.
+Invalid values fail before verification. Export `TEST_WORKERS` in your shell to
+persist it locally, or set it in the CI job environment. Existing CI uses the
+automatic default. Direct Playwright commands can still override with `--workers`.
+The gate records its worker budget in `report.json`; higher counts may be slower
+when CPU or memory is saturated, so compare actual durations before increasing it.

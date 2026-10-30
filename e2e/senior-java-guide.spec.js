@@ -7,7 +7,8 @@ for (const width of [390, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/senior-java-interview/code-comprehension');
     const exercises = page.locator('[data-comprehension-exercise]');
-    await expect(exercises).toHaveCount(8);
+    test.setTimeout(120_000);
+    await expect(exercises).toHaveCount(16);
     const navigation = page.getByRole('navigation', { name: 'Java comprehension exercise questions' });
     for (const [index, lesson] of JAVA_COMPREHENSION_EXERCISES.entries()) {
       await navigation.getByRole('link', { name: `Question ${index + 1}: ${lesson.title}`, exact: true }).click();
@@ -31,13 +32,23 @@ for (const width of [390, 1280]) {
       await deeper.focus();
       await page.keyboard.press('Enter');
       await expect(deeper.locator('..')).toContainText(lesson.followUp[1]);
+      if (lesson.projectFiles) {
+        const project = section.locator('summary').filter({ hasText: 'Practice this project across separate Java files' });
+        await project.focus();
+        await page.keyboard.press('Enter');
+        for (const variant of ['starter', 'reference']) {
+          for (const file of lesson.projectFiles[variant]) {
+            await expect(section.getByLabel(`${lesson.id} ${variant} ${file.name}`, { exact: true })).toHaveText(file.source);
+          }
+        }
+      }
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-      if (index === 0) await diagram.screenshot({ path: testInfo.outputPath(`comprehension-notebook-${width}.png`) });
+      if ([0, 8, 14, 15].includes(index)) await diagram.screenshot({ path: testInfo.outputPath(`comprehension-notebook-${index + 1}-${width}.png`) });
     }
-    await exercises.last().getByRole('link', { name: 'Bookmark question 8', exact: true }).click();
+    await exercises.last().getByRole('link', { name: 'Bookmark question 16', exact: true }).click();
     await page.reload();
-    await expect(page.locator('#permit-cleanup')).toBeInViewport();
-    await expect(exercises.last().getByLabel('Question 8 corrected code')).toBeHidden();
+    await expect(page.locator('#mock-export-service')).toBeInViewport();
+    await expect(exercises.last().getByLabel('Question 16 corrected code')).toBeHidden();
     await page.addScriptTag({ path: 'node_modules/axe-core/axe.min.js' });
     const violations = await page.evaluate(async () => (await window.axe.run('main', { runOnly: ['wcag2a', 'wcag2aa', 'wcag21aa'] })).violations);
     expect(violations).toEqual([]);

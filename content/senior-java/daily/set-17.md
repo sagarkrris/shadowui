@@ -1,0 +1,230 @@
+**Set 17 · 28 October 2026 — Safe handoffs and bounded uncertainty**
+
+Reference assumptions: **Java 21 without preview features**, Spring Boot 3.5, Kafka 4.0, PostgreSQL 17. JPA/Hibernate discussion is contextual: verify mappings and provider behavior in the application's managed version. These are explicit reference versions, not latest-release recommendations. Primary references checked 28 October 2026; no dependencies changed.
+
+Stable IDs: **S17-Q01–S17-Q12**, in order. Spoken answers target 45–90 seconds. Examples are original illustrations. Distributed, framework, security and native-resource examples are contextual designs, not executed integrations. Only the Java block in Q11 is runnable; its dedicated fixture compiles the published source with `--release 21`.
+
+---
+
+**1. A byte-array digest is used as a map key. Why do identical digest bytes miss the lookup?**
+
+**Say aloud:** “An array is a mutable container, and its inherited equality compares object identity rather than element contents. Two separately allocated byte arrays with identical bytes are therefore different keys. A record containing an array does not automatically repair that contract: its generated equality still uses the component's equality. This differs from a collision, where distinct values happen to share a hash code and equality resolves the difference.
+
+I would define an immutable value key, copy incoming bytes, compare with Arrays.equals and compute the matching Arrays.hashCode. Any accessor must also avoid exposing the internal array. Alternatively, a canonical encoding such as fixed-case hexadecimal can serve as a string key. The choice affects allocations and storage. I would test independently allocated equal values, unequal values, mutation of the original array and attempted mutation through accessors. Correct equality is a prerequisite for caching, not a security proof about the digest algorithm.”
+
+**Example:** For byte sequences [1,2] and a separately allocated [1,2], ordinary array equality is false; content equality is true. A 32-byte key copied at construction cannot be changed by editing the caller’s buffer.
+
+**Deep dive / verification:** Content hashing and comparison cost O(k) for k bytes. Cache the hash only after copying. For secret verification, use an appropriate constant-time verification API rather than treating collection equality as a timing defense.
+
+**Follow-ups:** Can I wrap the array in a record? Only with defensive construction, safe access and explicit content equality/hash overrides. Does a matching hash prove equality? No; collisions still require equality.
+
+**Primary reference:** [Java 21 array content operations](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Arrays.html).
+
+---
+
+**2. An old asynchronous load removes a newer in-flight load from a ConcurrentHashMap. How should cleanup identify its owner?**
+
+**Say aloud:** “A concurrent map makes individual operations safe, but a sequence of operations still needs an ownership rule. Suppose a key maps to a future representing the current load. The first load times out and is replaced; its delayed completion then calls remove(key). That removes whichever load is current, including a newer one. The bug is stale cleanup, not corruption of the map itself.
+
+I would retain the exact installed future and use conditional removal with the key and expected value. With ordinary CompletableFuture instances, equality is identity, so only the owner's mapping is removed. The owner must be installed before completion callbacks can clean it up; otherwise synchronous completion can run cleanup before installation. I would keep remote calls outside map update callbacks, and define who may cancel shared work. A deterministic test should install B after A, complete A, and assert B remains registered before completing B.”
+
+**Example:** Conceptual protocol: install owner A; replace A with B through the chosen admission policy; A finishes; remove(key,A) fails and leaves B. Avoid removing by key alone in finally.
+
+**Deep dive / verification:** The removal is atomic for the mapping, not for external side effects. Bound the number and lifetime of in-flight keys. A failed conditional removal is normal after replacement; do not retry unconditional deletion.
+
+**Follow-ups:** What if values override equals? Ensure the equality contract actually identifies ownership, or use a unique identity wrapper. Does this cancel A? No; cleanup and transport cancellation are separate responsibilities.
+
+**Primary reference:** [Java 21 conditional map removal](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ConcurrentHashMap.html).
+
+---
+
+**3. A dynamically registered Phaser never advances after executor rejection. What lifecycle accounting is missing?**
+
+**Say aloud:** “A phaser is a reusable barrier: a phase advances after every registered party arrives. Registration counts expected participants; it does not prove their tasks were accepted or will run. If the coordinator registers a task and submission is rejected, no worker exists to make that arrival. Every remaining participant can wait forever even though no computation is busy.
+
+I would model registration as an obligation with a clear owner. The submitter registers before submission so a fast worker cannot arrive too early. On rejection, the submitter deregisters; after acceptance, the worker arrives and deregisters in a finally block. The coordinator also needs to release its own registration. Cancellation before execution requires equivalent accounting because the worker's finally may never run. I would test rejection, task failure and cancellation separately with bounded waits. A timeout of one waiter does not automatically repair the phaser or cancel the other work.”
+
+**Example:** A coordinator registers itself and two tasks. If task B is rejected, B’s registration must be removed; A’s successful completion alone cannot satisfy B’s missing arrival.
+
+**Deep dive / verification:** Use an executor with a known throw-on-rejection policy for this protocol; silent discard can hide the handoff. ShutdownNow can return accepted but unstarted tasks. Force termination releases barrier waits but does not undo task effects.
+
+**Follow-ups:** Why register first? A direct or very fast executor could otherwise finish before registration. Does awaitAdvance react to interrupt? Use its interruptible variant when required; the plain form continues waiting.
+
+**Primary reference:** [Java 21 Phaser lifecycle](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/Phaser.html).
+
+---
+
+**4. A native call uses only a numeric handle and automatic cleanup races with it. Where can reachabilityFence help?**
+
+**Say aloud:** “A native handle is an external resource identifier, not a Java reference that keeps its owning wrapper alive. Once Java execution no longer needs the wrapper, the runtime can determine it is unreachable even while a native operation still uses the extracted handle. Automatic cleanup can then race with that operation. Source-code scope alone is not a resource-lifetime guarantee.
+
+When this pattern genuinely requires reachability control, I would place Reference.reachabilityFence(owner) in a finally block after the native use. That keeps the owner strongly reachable through that point, including exceptional completion. It does not prevent another thread from calling explicit close. Close-versus-use needs a separate ownership protocol, such as locking or reference-counted leases, and deterministic close should remain the primary release mechanism. I would first ask whether a simpler scoped API can own the entire native operation, then test the explicit concurrency contract rather than depending on guessed garbage-collection timing.”
+
+**Example:** Conceptual flow: obtain handle; try nativeRead(handle); finally keep owner reachable through the end. If close is allowed concurrently, the fence alone leaves use-after-close possible.
+
+**Deep dive / verification:** A fence establishes reachability, not a memory lock, native completion notification or grace period for asynchronous native callbacks. For asynchronous use, ownership must last until the actual completion callback, not only until submission returns.
+
+**Follow-ups:** Can volatile handle replace the fence? Visibility does not establish owner lifetime. Should every method add a fence? No; use it only where the native lifetime and automatic cleanup design require it.
+
+**Primary reference:** [Java 21 reachabilityFence contract](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/ref/Reference.html).
+
+---
+
+**5. A Spring Boot runner launches warm-up asynchronously and immediately returns. What should readiness mean?**
+
+**Say aloud:** “Readiness means that this instance can serve its advertised workload. Starting a background task is not the same as completing the prerequisite it performs. Spring Boot runners execute during startup, but if a runner merely submits work and returns, the application can progress to ready while the warm-up is still incomplete. This creates a misleading healthy window rather than a slow-start problem alone.
+
+I would classify the warm-up: mandatory data needed for correct responses should gate readiness with bounded completion and a clear failure policy. Optional optimization can proceed asynchronously if cold requests remain correct and adequately bounded. I would avoid using readiness as a substitute for request-time validation and make the readiness contract visible in operational tests. I would simulate slow warm-up, failure and shutdown during initialization. The acceptance criterion is that no eligible request receives an invalid response before mandatory preparation finishes, while optional work cannot keep a healthy instance unavailable indefinitely.”
+
+**Example:** A routing dictionary required to interpret product codes must be present before accepting those requests. A cache that merely reduces latency can fill lazily if misses are safe and capacity is controlled.
+
+**Deep dive / verification:** Limit warm-up concurrency, time and dependency demand. A shared outage should not trigger endless liveness restarts. Readiness after startup may need ongoing dependency or local-state checks; one startup event is not a permanent health certificate.
+
+**Follow-ups:** Does ordering runners await their child tasks? No; the order concerns runner invocation, not unowned asynchronous completion. Should every cache gate readiness? Only if the advertised correctness/capacity contract requires it.
+
+**Primary reference:** [Spring Boot 3.5 startup and runners](https://docs.spring.io/spring-boot/3.5/reference/features/spring-application.html).
+
+---
+
+**6. A database cascade deletes child rows but managed JPA objects still reference them. Which state boundaries must be reconciled?**
+
+**Say aloud:** “A foreign-key cascade is a database rule that deletes dependent rows when their parent is deleted. JPA also maintains an in-memory persistence context containing managed objects and associations. A database action does not automatically rewrite every Java object already loaded in that context. Treating both layers as one synchronized object graph can expose deleted children through old references.
+
+I would choose and document the deletion mechanism deliberately: ORM lifecycle operations and database cascades have different callbacks, SQL costs and cache implications. After direct database deletion, I would avoid continuing business work through the stale context, usually ending that unit of work and loading needed state in a fresh context. Clearing can detach unrelated pending work, so it is not a harmless universal fix. I would test loaded and unloaded children with the actual Hibernate version, inspect SQL and callbacks, and check both database rows and subsequent reads through fresh and existing contexts.”
+
+**Example:** A maintenance command deletes parent 42 with ON DELETE CASCADE. A request that already loaded child 99 must not treat its Java reference as proof the row still exists.
+
+**Deep dive / verification:** Database cascades can efficiently enforce referential deletion but do not implement arbitrary Java domain events. Bulk/direct operations require explicit cache and context policy. Test concurrent edits, soft deletion and audit requirements before changing cascade ownership.
+
+**Follow-ups:** Is cascade REMOVE identical? No; it propagates ORM remove operations through mappings. Should the database constraint be dropped? No; referential integrity and Java lifecycle behavior solve different concerns.
+
+**Primary reference:** [PostgreSQL 17 foreign-key actions](https://www.postgresql.org/docs/17/ddl-constraints.html), [Jakarta Persistence 3.2 lifecycle contracts](https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2.html). API version is a reference contract; use the provider managed by your Boot release.
+
+---
+
+**7. Two Kafka consumers manually assign the same partition and both process it. Why did the group not make them exclusive?**
+
+**Say aloud:** “Kafka supports group-managed subscription and explicit partition assignment. With subscribe, the group coordinates partition distribution among its members. With assign, the application chooses partitions directly and does not get that group assignment coordination. Giving two manually assigned consumers the same group identifier does not establish exclusive processing ownership.
+
+I would use group subscription when automatic balancing is the intended ownership model. If explicit assignment is necessary, the application must define partition allocation, failure recovery and protection against overlapping owners. Shared offset storage can also be misleading when independently assigned consumers overwrite the same progress. I would give progress an intentional namespace and keep effects idempotent. Tests should start two explicit owners, demonstrate duplicate delivery, then verify the selected coordination scheme under failure. Changing commit settings alone cannot turn manual assignment into a distributed lock or prevent duplicate external side effects.”
+
+**Example:** Two batch exporters each assign partition 0. Both may read offset 100. Their matching group.id does not make exactly one exporter execute the record’s external write.
+
+**Deep dive / verification:** Do not mix assign and subscribe as concurrent ownership strategies in one consumer. KafkaConsumer itself is not generally thread-safe; centralize polling and use a defined handoff protocol for workers. Replay may be intentional for independent analytical readers.
+
+**Follow-ups:** Is a unique group ID enough for exclusivity? No; it isolates progress and can intentionally duplicate consumption. Does a committed offset lock a record? No; it records restart position, not exclusive execution.
+
+**Primary reference:** [Kafka 4.0 manual assignment](https://kafka.apache.org/40/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html).
+
+---
+
+**8. A causal projection buffers events waiting for missing dependencies until memory fills. How do you bound uncertainty without inventing progress?**
+
+**Say aloud:** “A causal dependency says that one event can be applied only after another prerequisite effect is available. Buffering preserves that rule when sources arrive out of order, but an unbounded buffer turns a missing dependency into a memory outage. A timeout does not prove the prerequisite is unnecessary, and dropping the waiting event while advancing progress can silently lose data.
+
+I would persist unresolved work with its dependency identity, bound active memory and admission, and define a reconciliation path that retrieves or diagnoses the missing prerequisite. Durable receipt progress must be distinguished from applied progress; a consumer may acknowledge receipt only when the pending work is safely recoverable under its contract. I would track pending age, bytes and dependency fan-out, then pause or reject upstream work at explicit thresholds. A test should keep one prerequisite missing across restart and prove the dependent effect is neither applied early nor forgotten.”
+
+**Example:** Invoice event B depends on customer revision A7. Persist B as pending, retain its source identity, and resume when A7 is available; do not substitute whichever customer revision happens to be cached.
+
+**Deep dive / verification:** This is a contextual protocol, not a broker feature. Persistent queues also need quotas, retention and corruption handling. O(p) pending records for p unresolved events can exceed capacity; a per-key cap alone does not bound total keys. Recovery must distinguish never-produced, delayed and permanently lost prerequisites.
+
+**Follow-ups:** Can we use a dead-letter queue? Yes, if ownership, visibility and replay remain explicit and applying progress does not falsely include quarantined effects. Can timeout force success? Only under a separately specified business rule.
+
+**Primary reference:** [Kafka 4.0 polling and flow-control settings](https://kafka.apache.org/40/configuration/consumer-configs/).
+
+---
+
+**9. A shadow request verifies a new service but sends a second customer notification. How should comparison traffic be isolated?**
+
+**Say aloud:** “Shadow traffic copies real inputs to a candidate implementation so outputs can be compared without making it authoritative. That comparison is unsafe when the copied execution performs production writes, charges or notifications. A response being ignored does not erase its side effects. Even nominal reads can update access logs, caches or downstream usage quotas.
+
+I would inventory all effects and route the shadow path to isolated dependencies or explicit dry-run interfaces that cannot reach production mutation credentials. I would normalize expected nondeterminism, protect copied personal data, and compare only outputs with aligned versions and input snapshots. Sampling and a separate resource budget keep verification from degrading production. The release criterion needs explainable mismatch categories and representative coverage, not merely a low aggregate disagreement percentage. I would test that notification and payment adapters cannot execute production commands from the shadow identity, including error and retry paths.”
+
+**Example:** Copy a quote request to the new calculator, but replace its notification adapter and use read-only snapshots. Compare currency, rounding and eligibility decisions rather than request IDs or current timestamps.
+
+**Deep dive / verification:** Contextual design. Shadowing may miss writes, contention and real failure effects, so it supplements integration tests and staged rollout. “Dry run” implemented only as a late boolean check can fail open; isolation should also exist at credentials/network boundaries.
+
+**Follow-ups:** Is identical JSON sufficient? No; both implementations can share a defect, and nondeterministic fields can create false mismatches. Can every request be mirrored? Only within explicit privacy and capacity constraints.
+
+**Primary reference:** [Google SRE staged release evaluation](https://sre.google/workbook/canarying-releases/); shadow isolation protocol derived here.
+
+---
+
+**10. An uploaded document is available for download while its malware scan is pending. What is the publication boundary?**
+
+**Say aloud:** “Accepting an upload and publishing a safe downloadable object are separate state transitions. A file extension or content-type header is supplied by the client and cannot certify safety. If the object becomes publicly readable before scanning completes, later quarantine cannot retract a download that already occurred. The invariant must hold before publication.
+
+I would store uploads in a private quarantine location under generated names, enforce size and type policy, and authorize access independently of possession of the filename. A scanner result must identify the exact immutable object version or digest that was scanned. Only that approved version may transition to available. Scanner failure should leave the object pending or rejected rather than fail open. I would test replacement during scanning, duplicate callbacks, delayed negative results and unauthorized downloads. Retention and deletion policies must bound quarantine storage without accidentally publishing objects when cleanup or retries race.”
+
+**Example:** Upload version v1 is scanned clean; a replacement creates v2. The approval for v1 cannot authorize v2. Publish a pointer to the approved immutable version, not a mutable path.
+
+**Deep dive / verification:** Use layered validation and safe download headers; scanning does not prove every file harmless. Bound compressed/expanded work and scanner time. Rejected/pending states need understandable user feedback and controlled retry, with no sensitive scanner diagnostics exposed.
+
+**Follow-ups:** Can a signed download URL bypass this? Issue it only after authorization and approval; previously issued URLs need bounded validity. Is MIME checking enough? No; inspect content and apply defense in depth.
+
+**Primary reference:** [OWASP upload publication controls](https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html).
+
+---
+
+**11. Return a minimum-jump path through nonnegative reach lengths. How can breadth-first discovery stay linear without materializing every edge?**
+
+**Say aloud:** “At index i, the value gives the maximum forward jump, not a mandatory jump length. The problem is an unweighted directed graph: each legal jump is one edge, so breadth-first search discovers a minimum-edge path. Explicitly building all those edges could take quadratic space and time.
+
+Here the outgoing neighbors form a contiguous interval. From zero, the discovered indices always form a prefix. I keep the first undiscovered index and assign parents only when expanding beyond that prefix. Because breadth-first processing visits vertices in increasing distance, the first parent assigned to a vertex gives a shortest path. Each vertex is discovered and expanded once; the implicit edges never need storage. I then follow parent links backward from the final index and reverse the result. I would verify both minimum jump count and every returned edge against a separate small-graph search, including unreachable targets and zero-length jumps.”
+
+**Example:** `[2,3,1,1,0]` returns indices `[0,1,4]`, two jumps. `[1,0,2]` is unreachable and returns an empty list. A one-element array returns `[0]`; an empty input returns an empty list. Values must be nonnegative, input nonnull, length at most one million. The result is immutable; caller must not mutate input concurrently. No particular shortest path is promised when several exist.
+
+```java
+static List<Integer> jumpPath(int[] reach) {
+    Objects.requireNonNull(reach);
+    int n = reach.length;
+    if (n > 1_000_000) throw new IllegalArgumentException("too many indices");
+    for (int value : reach)
+        if (value < 0) throw new IllegalArgumentException("negative reach");
+    if (n == 0) return List.of();
+    int[] parent = new int[n];
+    Arrays.fill(parent, -1);
+    parent[0] = 0;
+    int discovered = 0;
+    for (int i = 0; i <= discovered && discovered < n - 1; i++) {
+        int end = (int) Math.min(n - 1L, (long) i + reach[i]);
+        while (discovered < end) parent[++discovered] = i;
+    }
+    if (parent[n - 1] == -1) return List.of();
+    List<Integer> result = new ArrayList<>();
+    for (int at = n - 1;; at = parent[at]) {
+        result.add(at);
+        if (at == 0) break;
+    }
+    Collections.reverse(result);
+    return List.copyOf(result);
+}
+```
+
+**Deep dive / verification:** O(n) time and O(n) space including parents/output. Processing indices in increasing order is breadth-first here because each processed prefix extends a contiguous reachable prefix; by induction the next layer occupies the newly discovered interval. This optimization fails if arbitrary forbidden landing vertices or nonuniform edge costs invalidate the model. Use long for index-plus-reach before clamping to avoid integer overflow. Validate all entries, including unreachable suffixes, so malformed input has one consistent policy. The fixture uses explicit-edge BFS as an independent oracle on exhaustive small arrays, and checks returned edges, endpoint, input preservation, null/negative input, huge reach and a million-element chain.
+
+**Follow-ups:** *Why not jump to the farthest immediate index?* On `[2,3,0,0,0]`, jumping directly to 2 gets stuck; 1 reaches the end. *Does returning the path cost more than computing the count?* Parent storage costs O(n); a count-only frontier algorithm can use constant auxiliary space.
+
+**Primary reference:** [Java 21 integer arithmetic](https://docs.oracle.com/javase/specs/jls/se21/html/jls-4.html#jls-4.2.2). The implicit-graph proof and implementation are derived above and verified against explicit search.
+
+---
+
+**12. Choose one uniformly random item from an unknown-length stream. Why must replacement probability change at every item?**
+
+**Say aloud:** “Uniform sampling means every item position has the same final probability of selection. Reservoir sampling keeps a sample without retaining the entire stream. For a reservoir of one item, I keep the first item and replace the current choice at the ith item with probability one over i. I count occurrences, so repeated values remain separate opportunities.
+
+The proof is by induction: the new item is chosen with probability one over i, while an earlier item's probability becomes one over i minus one multiplied by one minus one over i, also one over i. This uses constant sample state and one pass. I would use a bounded random-integer API rather than modulo an unrestricted random value, which can introduce bias. Empty input must have an explicit no-result representation. For tests, I would inject a reproducible random source and verify the exact small choice tree; a noisy statistical test alone is weak evidence of correctness.”
+
+**Example:** For positions A, B, C, first choose A. At B replace with probability 1/2. At C replace with probability 1/3. A and B each survive with probability (1/2)(2/3)=1/3; C has probability 1/3. A stream `[7,7,9]` samples value 7 with probability 2/3, not 1/2. This is an algorithmic protocol; no second executable Java block is introduced.
+
+**Deep dive / verification:** Conceptual steps: maintain a long count and optional selected item; for every new item increment count, draw uniformly in `[0,count)`, and replace only on zero. Time O(n), auxiliary state O(1) excluding the retained item and upstream buffering. Reject or deliberately handle count overflow instead of wrapping the random bound. Enumeration of the two choices at item 2 and three at item 3 gives six equally probable histories: each position wins twice. Production randomness quality and independence matter; a deterministic seed is useful for tests but unsuitable for secret selection. The sampler does not bound the size of the selected object or upstream storage.
+
+**Follow-ups:** *Can I sample distinct values?* Not with the same occurrence-uniform contract; distinct-value sampling requires different state or assumptions. *Can samples from unequal shards be combined equally?* No; for one global item, choose a shard sample with probability proportional to its shard's item count, assuming independent uniform local samples.
+
+**Primary reference:** [Java 21 RandomGenerator bounded draws and security limits](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/random/RandomGenerator.html). The probability proof is derived above; the illustrative choice-tree check is not a certification of a random generator.
+
+---
+
+**Topic coverage:** S17-Q01 array value identity; Q02 asynchronous cleanup ownership; Q03 barrier admission accounting; Q04 native reachability; Q05 startup readiness; Q06 database/ORM deletion boundaries; Q07 manual Kafka ownership; Q08 bounded causal recovery; Q09 safe shadow comparisons; Q10 immutable upload approval; Q11 linear shortest-path reconstruction; Q12 uniform streaming sampling.
+
+**Next set will build on:** explicit state-machine testing, recovery from partial publication, reproducible rollout evidence and algorithms that produce verifiable certificates. Review the [Senior Java guide](/senior-java-interview) for foundations or [all daily sets](/senior-java-interview/daily) for sequential practice.
