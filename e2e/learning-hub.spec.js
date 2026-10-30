@@ -53,9 +53,9 @@ test('labs recompute, reset, and expose their boundaries', async ({ page }) => {
   await page.goto('/labs/queues'); await page.getByLabel('Arrivals per tick').fill('8'); await expect(page.getByText('6 served; 6 queued; 20 rejected')).toBeVisible();
   await page.goto('/labs/agents'); await expect(page.getByText('Paused: approval required before write')).toBeVisible(); await page.getByLabel('Simulate application approval for write').check(); await expect(page.getByText('Completed 3 simulated steps')).toBeVisible(); await page.getByLabel('Maximum steps').fill('0'); await expect(page.getByText('Stopped: step budget exhausted')).toBeVisible();
 });
-test('every catalogue chapter exposes contextual practice and a real anchor', async ({ page }) => {
-  for(const course of learningCatalogue()) {
-    if(course.id==='java-fundamentals') continue;
+// Give each course its own timeout so catalogue growth cannot exhaust one shared budget.
+for(const course of learningCatalogue().filter(course=>course.id!=='java-fundamentals')) {
+  test(`catalogue course ${course.id} exposes contextual practice and real anchors`, async ({ page }) => {
     await page.goto(course.href);
     for(const lesson of course.lessons) {
       const section=page.getByRole('region',{name:`Practice ${lesson.title}`,exact:true});
@@ -64,7 +64,9 @@ test('every catalogue chapter exposes contextual practice and a real anchor', as
       const anchor=lesson.href.split('#')[1];
       if(anchor) await expect(page.locator(`[id="${anchor}"]`)).toHaveCount(1);
     }
-  }
+  });
+}
+test('Java fundamentals chapter exposes contextual practice', async ({ page }) => {
   await page.goto('/java/tutorial/jdk-vs-jre-vs-jvm'); await expect(page.getByRole('region',{name:'Practice JDK vs JRE vs JVM',exact:true})).toBeAttached();
 });
 test('legacy backend and digest completion appear without corrupting saved data', async ({ page }) => {
