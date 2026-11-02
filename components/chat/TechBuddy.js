@@ -1,3 +1,4 @@
+import AssessmentReview from '../practice/AssessmentReview';
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import MessageContent from './MessageContent';
@@ -11,7 +12,7 @@ function FeedbackList({ title, items, empty }) {
   return <div><h4>{title}</h4>{items?.length ? <ul>{items.map((item, index) => <li key={index}>{item}</li>)}</ul> : <p>{empty}</p>}</div>;
 }
 
-export default function TechBuddy({ initialSession, config, profile, onChange, onAttempt, onClose, onConversation, messages = [], history = [] }) {
+export default function TechBuddy({ initialSession, config, profile, onChange, onAttempt, onClose, onConversation, messages = [], history = [], onAssessmentChange }) {
   const controller = useTechBuddySession({ initialSession, config, profile, onChange, onAttempt, onConversation, messages, history });
   const { session } = controller;
   const isAsk = session.interaction === 'ask';
@@ -24,7 +25,7 @@ export default function TechBuddy({ initialSession, config, profile, onChange, o
   const previousQuestionId = useRef(session.current?.id);
   const busy = ['loading', 'evaluating'].includes(session.phase);
   const complete = session.phase === 'complete';
-  const summary = summarizeTechBuddy(session);
+  const summary = summarizeTechBuddy({ ...session, turns: session.turns.map(turn => ({ ...turn, assessmentReview: history.find(attempt => attempt.id === turn.id)?.assessmentReview || turn.assessmentReview })) });
   const lastTurn = session.turns.at(-1);
   const currentQuestionId = session.current?.id;
   const currentQuestionText = session.current?.question;
@@ -152,7 +153,7 @@ export default function TechBuddy({ initialSession, config, profile, onChange, o
         </article>)}
       </section>}
       {lastTurn && (session.phase === 'review' || complete) && <article className={styles.tile} aria-label="Tech Buddy feedback">
-        <h3>Feedback · {lastTurn.score == null ? 'Not assessed' : `${lastTurn.score}/10`}</h3>
+        <AssessmentReview key={lastTurn.id} attempt={history.find(item => item.id === lastTurn.id) || lastTurn} onChange={onAssessmentChange} busy={busy} /><h3>Feedback · {lastTurn.score == null ? 'Not assessed' : `${lastTurn.score}/10`}</h3>
         <p><strong>Question:</strong> {lastTurn.question}</p>
         <p className={styles.answer}><strong>Your answer:</strong> {lastTurn.answer}</p>
         {session.mode === 'demo' ? <p>{lastTurn.feedback}</p> : <>

@@ -1,3 +1,5 @@
+import { exportPracticeBackup, summarizePracticeBackup, previewPracticeBackup } from '../../lib/practiceBackup.mjs';
+import { downloadText } from '../../lib/downloadText.mjs';
 import { PRODUCT_TAGLINE } from "../../lib/agenticCourse.mjs";
 import Link from "next/link";
 import BrandLogo from "../BrandLogo";
@@ -9,6 +11,7 @@ import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { getPasswordStrength } from "../../lib/passwordStrength.mjs";
 
 export default function SettingsModal({ onClose, onDeleteSuccess, theme, auth = {}, initialMode = "login", themePreference = "system", onThemePreferenceChange, themeStatus = "", appearance = "dark", authFocused = false }) {
+  const [signoutPreview, setSignoutPreview] = useState(null);
   const [mode, setMode] = useState(initialMode === "register" ? "register" : "login");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -57,6 +60,7 @@ export default function SettingsModal({ onClose, onDeleteSuccess, theme, auth = 
     setAccountAction(name);
     try {
       await action();
+      if (name === 'logout') window.location.reload();
       if (successMessage) setAccountFeedback(successMessage);
     } catch {
       setAccountFeedback("We could not complete that account action. Please try again.");
@@ -177,7 +181,8 @@ export default function SettingsModal({ onClose, onDeleteSuccess, theme, auth = 
               <input aria-label="Type DELETE to confirm" value={deleteConfirmText} onChange={(event) => setDeleteConfirmText(event.target.value.toUpperCase())} placeholder="DELETE" autoComplete="off" />
               <div><button type="button" className="glass-button danger-action" disabled={deleteConfirmText !== "DELETE" || Boolean(accountAction)} onClick={deleteAccount}>{accountAction === "delete" ? "Deleting…" : "Confirm deletion"}</button><button type="button" className="glass-button" onClick={() => { setDeleteConfirmOpen(false); setDeleteConfirmText(""); }}>Cancel</button></div>
             </div> : null}
-            <button type="button" className="glass-button" disabled={Boolean(accountAction)} onClick={() => runAccountAction("logout", auth.logout, "You have been signed out.")} style={{ marginTop: 12, minHeight: 36, padding: "8px 14px", opacity: accountAction ? .65 : 1 }}>{accountAction === "logout" ? "Signing out…" : "Sign out"}</button>
+            {signoutPreview && <section aria-label="Protect work before sign-out"><h3>Protect your saved work</h3><p>Signing out clears the preparation data on this device data, including browser-only notes and progress. Download a backup before continuing. Cloud sync covers only the areas listed in workspace sync details.</p><ul>{signoutPreview.summary.map((item, index) => <li key={index}>{item.label}: {item.detail}</li>)}</ul>{signoutPreview.backup ? <button type="button" onClick={() => { try { downloadText(signoutPreview.backup, 'interviewiq-before-signout.json', 'application/json'); setAccountFeedback('Backup downloaded. Keep it private.'); } catch { setAccountFeedback('Download failed. Cancel sign-out and use Backup and restore to copy your work.'); } }}>Download backup before sign-out</button> : <p>Backup could not be prepared. Cancel to review your saved work.</p>}<button type="button" disabled={Boolean(accountAction)} onClick={() => runAccountAction('logout', auth.logout, 'You have been signed out.')}>Sign out and clear device</button><button type="button" onClick={() => setSignoutPreview(null)}>Cancel sign-out</button></section>}
+            <button type="button" className="glass-button" disabled={Boolean(accountAction)} onClick={() => { try { const backup = exportPracticeBackup(localStorage); setSignoutPreview({ backup, summary: summarizePracticeBackup(previewPracticeBackup(backup)) }); } catch { setSignoutPreview({ backup: null, summary: [] }); } }} style={{ marginTop: 12, minHeight: 36, padding: "8px 14px", opacity: accountAction ? .65 : 1 }}>{accountAction === "logout" ? "Signing out…" : "Sign out"}</button>
           </> : <form onSubmit={submit} style={{ display: "grid", gap: 8 }}>
             <div style={{ display: "flex", gap: 8 }}>
               <button type="button" onClick={() => setMode("login")} aria-pressed={mode === "login"} className="glass-button">Sign in</button>

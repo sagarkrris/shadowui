@@ -265,7 +265,7 @@ test("cloud sync failures preserve local work and can be retried", () => {
   assert.match(indexSource, /aria-label="Retry cloud sync"/);
   assert.match(cloudStateSyncSource, /const retry = useCallback/);
   assert.match(cloudStateSyncSource, /setRetryNonce\(\(value\) => value \+ 1\)/);
-  assert.match(cloudStateSyncSource, /if \(user\) return;[\s\S]*hydratedUser\.current = ""/);
+  assert.match(cloudStateSyncSource, /hydratedUser\.current = "";[\s\S]*\[user\?\.id\]/);
   assert.match(indexSource, /localSaveStatus === "error" \? "Device save failed"/);
   assert.match(indexSource, /Saved on device · Sync failed/);
 });

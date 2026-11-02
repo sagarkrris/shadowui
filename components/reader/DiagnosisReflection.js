@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { NOTEBOOK_KEY, normalizeNotebook, saveNote } from '../../lib/learningNotebook.mjs';
+import { NOTEBOOK_KEY, normalizeNotebook, saveNote, notebookSaveMessage } from '../../lib/learningNotebook.mjs';
 import styles from '../../styles/Reader.module.css';
 export default function DiagnosisReflection({ id, title, href, explanation, evidence, tradeoff }) {
   const [note, setNote] = useState({ id, title, href, failure: '', evidence: '', repair: '', misconception: '', completed: false });
@@ -16,7 +16,7 @@ export default function DiagnosisReflection({ id, title, href, explanation, evid
     const next = { ...note, completed };
     setNote(next);
     try { saveNote(localStorage, next); setMessage('Saved in your notebook on this browser.'); }
-    catch { setMessage('Could not save. Copy your answers before leaving this page.'); }
+    catch (error) { setMessage(notebookSaveMessage(error, 'Could not save. Copy your answers before leaving this page.')); }
   }
   return <section className={`${styles.card} ${styles.reflection}`} aria-label="Explain your diagnosis"><h2>Explain your diagnosis</h2><p>Build an explanation you could give a teammate. No AI score: compare your evidence and assumptions with the editorial explanation.</p>
     {[['failure', 'What failed?'], ['evidence', 'Which evidence supports your conclusion?'], ['repair', 'What would you change, and what could it break?'], ['misconception', 'What would change your mind?']].map(([field, label]) => <label key={field}>{label}<textarea aria-label={label} rows={3} maxLength={3000} disabled={!ready} value={note[field]} onChange={event => setNote({ ...note, [field]: event.target.value, completed: false })} /></label>)}

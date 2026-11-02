@@ -1,4 +1,11 @@
 import { SITE_URL } from "../lib/siteUrl.mjs";
+import { cloudRecoveryBackup } from '../lib/practiceBackup.mjs';
+import { readLearningDeviceState, applyLearningDeviceState } from '../lib/learningDeviceState.mjs';
+import { downloadText } from '../lib/downloadText.mjs';
+import { archivePrepSession, normalizePrepSessionPlan } from '../lib/prepSessionPlan.mjs';
+import { applicationDebriefReview } from '../lib/applicationTracker.mjs';
+import LessonQuickStart from '../components/practice/LessonQuickStart';
+import { lessonPracticeContext, LESSON_PRACTICE_PROFILE } from '../lib/lessonQuickStart.mjs';
 import LearningSearch from "../components/practice/LearningSearch";
 import ExecutableDsa from "../components/practice/ExecutableDsa";
 import DesignWorkbench from "../components/practice/DesignWorkbench";
@@ -196,9 +203,13 @@ export default function Home() {
   const buddyLinkRef = useRef('');
   const [editingProfile, setEditingProfile] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [learningState, setLearningState] = useState({});
   const [cloudStatus, setCloudStatus] = useState("idle");
   const [themeStatus, setThemeStatus] = useState("");
   const [toast, setToast]             = useState(null);
+  const [repairRequested, setRepairRequested] = useState(false);
+  const [lessonContext, setLessonContext] = useState(null);
+  const [quickProfile, setQuickProfile] = useState(false);
   const [candidateProfile, setCandidateProfile] = useState(null);
   const [profileDraft, setProfileDraft] = useState(DEFAULT_PROFILE);
   const [voiceHint, setVoiceHint]     = useState("");
@@ -236,12 +247,18 @@ export default function Home() {
     window.addEventListener("resize", position);
     return () => window.removeEventListener("resize", position);
   }, [topControlsOpen, mode]);
+  useEffect(() => {
+    if (!router.isReady) return;
+    const context = lessonPracticeContext(router.query);
+    if (context) setLessonContext(context);
+  }, [router.isReady, router.query]);
   const initialWorkspaceLink = useRef(false);
   useEffect(() => {
     if (!sessionReady || !router.isReady || initialWorkspaceLink.current) return;
     initialWorkspaceLink.current = true;
+    if (router.query.buddy === "1") { setActiveTab("chat"); return; }
     if (typeof router.query.workspace === "string") setActiveTab(normalizeWorkspaceTab(router.query.workspace === "java-digest" ? "javaDigest" : router.query.workspace));
-  }, [sessionReady, router.isReady, router.query.workspace, setActiveTab]);
+  }, [sessionReady, router.isReady, router.query.workspace, router.query.buddy, setActiveTab]);
   const viewportBaselineHeight = useRef(0);
   const viewportWidthRef = useRef(0);
   const keyboardOpenRef = useRef(false);
@@ -258,9 +275,10 @@ export default function Home() {
   const displayName = getDisplayName(candidateProfile);
   const stackGreeting = getStackGreeting(candidateProfile);
   const userPrepLabel = candidateProfile ? buildUserPrepLabel(candidateProfile) : prepLabel;
-  const recordedSession = { ...interviewSessionState, turns: practice.attempts.map(a => ({ ...a, score: { value: a.score, gaps: a.gaps, recommendations: a.recommendations } })) };
-  const weakSpots = deriveWeakSpots(messages, recordedSession);
-  const mockScores = practice.attempts.length ? practice.attempts.map(a => a.score).filter(Number.isFinite) : deriveMockScores(messages, interviewSessionState);
+  const recordedSession = { ...interviewSessionState, turns: practice.attempts.filter(a => !a.assessmentReview?.exclude).map(a => ({ ...a, score: { value: a.score, gaps: a.gaps, recommendations: a.recommendations } })) };
+  const excludedAssessmentIds = new Set(practice.attempts.filter(a => a.assessmentReview?.exclude).map(a => a.id));
+  const weakSpots = deriveWeakSpots(messages.filter(message => !excludedAssessmentIds.has(message.attemptId)), recordedSession);
+  const mockScores = practice.attempts.length ? practice.attempts.filter(a => !a.assessmentReview?.exclude).map(a => a.score).filter(Number.isFinite) : deriveMockScores(messages, interviewSessionState);
   const showComposer = canUseChatComposer({ activeTab, candidateProfile });
   const showInterviewTools = canUseInterviewTools({ activeTab, candidateProfile });
   const canSelectPrepTopics = canUsePrepTopics({ candidateProfile });
@@ -730,8 +748,20 @@ export default function Home() {
     setThemeStatus(`${mode[0].toUpperCase()}${mode.slice(1)} theme enabled`);
   }, [systemThemeMode]);
 
-  const cloudSnapshot = useMemo(() => ({ session: createSessionSnapshot({ candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSession: interviewSessionState, systemDesignCanvas, input, codeInput, practice, mockTimer: { endsAt: mockTimerEndsAt, status: mockTimerStatus, remaining: mockTimerStatus === "paused" ? mockTimerRemaining : MOCK_ANSWER_SECONDS } }), themePreference, toolkitState, applications, javaDigestProgress, questionMemory, prepProgressState }), [candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSessionState, systemDesignCanvas, mockTimerEndsAt, mockTimerStatus, mockTimerRemaining, input, codeInput, practice, themePreference, toolkitState, applications, javaDigestProgress, questionMemory, prepProgressState]);
+  useEffect(() => {
+    if (!sessionReady) return;
+    const read = () => { try { setLearningState(readLearningDeviceState(localStorage)); } catch { /* Device save errors are shown by each learning activity. */ } };
+    read(); window.addEventListener('focus', read); window.addEventListener('storage', read);
+    return () => { window.removeEventListener('focus', read); window.removeEventListener('storage', read); };
+  }, [sessionReady]);
+  useEffect(() => {
+    const read = () => { try { setToolkitState(JSON.parse(localStorage.getItem('interviewiq.careerToolkit.v1') || '{}').state || {}); } catch { /* Keep current work. */ } };
+    window.addEventListener('career-toolkit-change', read);
+    return () => window.removeEventListener('career-toolkit-change', read);
+  }, []);
+  const cloudSnapshot = useMemo(() => ({ learningState, session: createSessionSnapshot({ candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSession: interviewSessionState, systemDesignCanvas, input, codeInput, practice, mockTimer: { endsAt: mockTimerEndsAt, status: mockTimerStatus, remaining: mockTimerStatus === "paused" ? mockTimerRemaining : MOCK_ANSWER_SECONDS } }), themePreference, toolkitState, applications, javaDigestProgress, questionMemory, prepProgressState }), [learningState, candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSessionState, systemDesignCanvas, mockTimerEndsAt, mockTimerStatus, mockTimerRemaining, input, codeInput, practice, themePreference, toolkitState, applications, javaDigestProgress, questionMemory, prepProgressState]);
   const applyCloudState = useCallback((snapshot) => {
+    if (snapshot.learningState) { applyLearningDeviceState(localStorage, snapshot.learningState); setLearningState(readLearningDeviceState(localStorage)); }
     const session = createSessionSnapshot(snapshot.session || snapshot);
     setCandidateProfile(session.candidateProfile);
     setProfileDraft(session.profileDraft);
@@ -763,7 +793,7 @@ export default function Home() {
     if (status === "saved") setToast((current) => current?.msg === "Cloud sync is temporarily unavailable; local work is safe." ? null : current);
   }, []);
   const handleCloudSyncError = useCallback(() => setCloudStatus("offline"), []);
-  const { retry: retryCloudSync } = useCloudStateSync({ user: auth.user, ready: auth.ready && sessionReady, csrfToken: auth.csrfToken, refreshCsrfToken: auth.refreshCsrfToken, snapshot: cloudSnapshot, onRemoteState: applyCloudState, onStatus: handleCloudSyncStatus, onError: handleCloudSyncError });
+  const { retry: retryCloudSync, conflict: cloudConflict, resolveConflict: resolveCloudConflict } = useCloudStateSync({ user: auth.user, ready: auth.ready && sessionReady, csrfToken: auth.csrfToken, refreshCsrfToken: auth.refreshCsrfToken, snapshot: cloudSnapshot, onRemoteState: applyCloudState, onStatus: handleCloudSyncStatus, onError: handleCloudSyncError });
 
   useEffect(() => {
     if (mockTimerStatus !== "answering" || !mockTimerEndsAt) return undefined;
@@ -933,6 +963,7 @@ export default function Home() {
         const feedback = evaluationMarkdown(evaluation);
         const attempt = { ...activeQuestion, ...evaluation, id: attemptId, answer, feedback, rubricVersion: 1, completedAt: new Date().toISOString() };
         setPractice(prev => recordAttempt(prev, attempt));
+        if (attempt.questionId && !attempt.assessmentOnly) setQuestionMemory(recordQuestionAttempt(window.localStorage, { questionId: attempt.questionId, question: attempt.question, topic: attempt.topic, score: attempt.score, attemptedAt: attempt.completedAt, attemptId: attempt.id }));
         setMessages(prev => [...prev.filter(m => !(m.attemptId === attemptId && m.role === "assistant")), { role: "assistant", content: feedback, attemptId }]);
         trackEvent("ai_completed", { attemptId, value: String(Date.now() - startedAt) });
         if (activeQuestion.parentId) { const comparison = compareAttempts(practice.attempts.find(a => a.id === activeQuestion.parentId), attempt); trackEvent("retest_completed", { attemptId, value: `${comparison.status}:${comparison.delta ?? "unassessed"}` }); }
@@ -1234,7 +1265,7 @@ export default function Home() {
   }, [candidateProfile, difficulty, selectedSub, selectedCat, setActiveTab, showToast, loading]);
 
   const saveBuddySession = useCallback(buddy => {
-    setPractice(previous => ({ ...previous, buddy }));
+    setPractice(previous => ({ ...previous, buddy: { ...buddy, turns: buddy.turns.map(turn => ({ ...turn, assessmentReview: previous.attempts.find(attempt => attempt.id === turn.id)?.assessmentReview || turn.assessmentReview })) } }));
     setTechBuddyLaunch(previous => previous?.fresh ? { ...previous, fresh: false } : previous);
   }, []);
   const closeBuddy = useCallback(buddy => {
@@ -1248,6 +1279,14 @@ export default function Home() {
       attemptId: crypto.randomUUID(),
     } : null }));
   }, []);
+  const reviewAssessment = (id, review) => {
+    setPractice(state => ({ ...state, attempts: state.attempts.map(attempt => attempt.id === id ? { ...attempt, assessmentReview: { ...review, updatedAt: new Date().toISOString() } } : attempt), buddy: state.buddy ? { ...state.buddy, turns: state.buddy.turns.map(turn => turn.id === id ? { ...turn, assessmentReview: review } : turn) } : null }));
+    setQuestionMemory(state => {
+      const next = { questions: Object.fromEntries(Object.entries(state.questions || {}).map(([key, question]) => [key, { ...question, attempts: question.attempts.map(attempt => attempt.attemptId === id ? { ...attempt, excluded: review.exclude } : attempt) }])) };
+      try { localStorage.setItem('interviewiq.questionMemory.v1', JSON.stringify({ version: 1, savedAt: new Date().toISOString(), memory: next })); } catch { showToast('Assessment saved for this visit; question memory could not be saved.', 'error'); }
+      return loadQuestionMemory(localStorage);
+    });
+  };
   const saveBuddyConversation = useCallback(entries => setMessages(previous => [...previous, ...entries.filter(entry => !previous.some(message => message.id === entry.id))]), []);
   const saveBuddyAttempt = useCallback(attempt => setPractice(previous => ({ ...recordAttempt(previous, attempt), active: previous.active, pending: previous.pending })), []);
 
@@ -1264,8 +1303,56 @@ export default function Home() {
     delete query.buddy;
     delete query.buddyTopic;
     delete query.buddyMode;
+    delete query.lessonHref;
+    delete query.lessonTitle;
     void router.replace({ pathname: router.pathname, query }, undefined, { shallow: true });
   }, [sessionReady, router, candidateProfile, openTechBuddy]);
+
+  const reviewLinkRef = useRef('');
+  useEffect(() => {
+    if (!sessionReady || !router.isReady || loading) return;
+    const applicationId = typeof router.query.debriefApplication === 'string' ? router.query.debriefApplication : '';
+    if (applicationId) {
+      const application = applications.find(item => item.id === applicationId);
+      const review = application && applicationDebriefReview(application);
+      const query = { ...router.query }; delete query.debriefApplication;
+      if (review) {
+        const memory = loadQuestionMemory(window.localStorage);
+        if (!memory.questions[review.questionId]) setQuestionMemory(recordQuestionAttempt(window.localStorage, { ...review, score: null, attemptId: review.questionId }));
+        query.reviewQuestion = review.questionId;
+      } else showToast('This interview debrief is unavailable on this device.', 'info');
+      void router.replace({ pathname: router.pathname, query }, undefined, { shallow: true });
+      return;
+    }
+    if (router.query.resumeBuddy === '1') {
+      if (!practice.buddy) { showToast('No saved Buddy session is available on this device.', 'info'); }
+      else {
+        if (!candidateProfile) { setCandidateProfile({ ...LESSON_PRACTICE_PROFILE }); setProfileDraft({ ...LESSON_PRACTICE_PROFILE }); setQuickProfile(true); return; }
+        if (!openTechBuddy()) return;
+      }
+      const query = { ...router.query }; delete query.resumeBuddy;
+      void router.replace({ pathname: router.pathname, query }, undefined, { shallow: true });
+    }
+    const id = typeof router.query.reviewQuestion === 'string' ? router.query.reviewQuestion : '';
+    if (!id) { reviewLinkRef.current = ''; return; }
+    if (reviewLinkRef.current === id) return;
+    const question = loadQuestionMemory(window.localStorage).questions[id];
+    if (question?.question && !candidateProfile) {
+      setCandidateProfile({ ...LESSON_PRACTICE_PROFILE }); setProfileDraft({ ...LESSON_PRACTICE_PROFILE }); setQuickProfile(true);
+      return;
+    }
+    reviewLinkRef.current = id;
+    if (!question?.question) showToast('This question is unavailable on this device. Choose another saved question.', 'info');
+    else {
+      const previous = practice.attempts.findLast(attempt => attempt.questionId === id);
+      setPractice(state => ({ ...state, active: { question: question.question, questionId: id, topic: question.topic, difficulty: previous?.difficulty || difficulty, round: previous?.round || roundStrategy, parentId: previous?.id, reviewBaseline: { answer: previous?.answer || '', score: previous?.score ?? question.lastScore }, attemptId: crypto.randomUUID() } }));
+      setMessages(state => [...state, { role: 'assistant', content: question.question }]);
+      setInput(''); setTechBuddyOpen(false); setHomeView(false); setActiveTab('chat');
+      setHomeDemoSeen(true);
+    }
+    const query = { ...router.query }; delete query.reviewQuestion;
+    void router.replace({ pathname: router.pathname, query }, undefined, { shallow: true });
+  }, [sessionReady, router, loading, practice.buddy, practice.attempts, applications, candidateProfile, difficulty, roundStrategy, openTechBuddy, setActiveTab, showToast]);
 
   useEffect(() => { if (activeTab !== 'chat') setTechBuddyOpen(false); }, [activeTab]);
 
@@ -1569,6 +1656,7 @@ export default function Home() {
     if (!nextProfile.name || !nextProfile.position || !nextProfile.experience || !nextProfile.stack) return;
     const nextTopics = getRecommendedTopics(nextProfile);
     setCandidateProfile(nextProfile);
+    setQuickProfile(false);
     setEditingProfile(false);
     setSelCat(nextTopics[0]?.cat || null);
     setExpanded(nextTopics[0]?.cat || null);
@@ -1825,9 +1913,11 @@ export default function Home() {
             <span className="header-title" style={{ flex:1, fontSize:13, fontWeight:500, color: currentLabel?"#e8e8f0":"#4b5563", minWidth:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
               {activeTab !== "chat" ? <><span className="header-breadcrumb-root">Today</span><span className="header-breadcrumb-separator">/</span>{headerTitle}</> : headerTitle}
             </span>
+            <details><summary>Device sync details</summary><p>Account sync: practice, plans, applications, question history, notebook, archive, bookmarks, roadmap and reading positions. Other workspace keys remain device-only; include them in a full backup. Open the practice workspace on each device to synchronize learning changes.</p></details>
+            {cloudConflict && <section aria-label="Cloud save conflict"><h2>Work changed on another device</h2><p>Automatic saving is paused. Download both copies before selecting which copy should become current. Your device draft is preserved.</p><button type="button" onClick={() => (() => { downloadText(cloudRecoveryBackup(cloudSnapshot), 'interviewiq-device-recovery.json', 'application/json'); downloadText(cloudRecoveryBackup(cloudConflict.state), 'interviewiq-cloud-recovery.json', 'application/json'); })()}>Download both copies</button><button type="button" onClick={() => { downloadText(cloudRecoveryBackup(cloudSnapshot), 'interviewiq-device-recovery.json', 'application/json'); resolveCloudConflict('cloud'); }}>Use cloud copy</button><button type="button" onClick={() => { downloadText(cloudRecoveryBackup(cloudConflict.state), 'interviewiq-cloud-recovery.json', 'application/json'); resolveCloudConflict('device'); }}>Keep this device copy</button></section>}
             <span className={`cloud-sync-status cloud-sync-${cloudStatus}`} role="status" aria-live="polite" title="Workspace sync status">
               <i className={`ti ${cloudStatus === "saving" || cloudStatus === "hydrating" ? "ti-loader-2" : cloudStatus === "offline" ? "ti-device-floppy" : "ti-cloud-check"}`} />
-              {localSaveStatus === "error" ? "Device save failed" : localSaveStatus !== "saved" ? "Loading…" : cloudStatus === "saving" ? "Saved on device · Syncing…" : cloudStatus === "hydrating" ? "Loading cloud…" : cloudStatus === "offline" ? "Saved on device · Sync failed" : !auth.user ? "Saved on this device" : cloudStatus === "saved" ? "Saved and synced" : "Saved on device · Waiting for sync"}
+              {localSaveStatus === "error" ? "Device save failed" : localSaveStatus !== "saved" ? "Loading…" : cloudStatus === "conflict" ? "Saved on device · Choose sync copy" : cloudStatus === "saving" ? "Saved on device · Syncing…" : cloudStatus === "hydrating" ? "Loading cloud…" : cloudStatus === "offline" ? "Saved on device · Sync failed" : !auth.user ? "Saved on this device" : cloudStatus === "saved" ? "Saved and synced" : "Saved on device · Waiting for sync"}
             </span>
             {localSaveStatus === "error" && <button onClick={() => setSaveRetry(v => v + 1)}>Retry device save</button>}
             {auth.user && cloudStatus === "offline" ? <button type="button" className="cloud-sync-retry glass-button" onClick={retryCloudSync} aria-label="Retry cloud sync" title="Retry cloud sync">Retry sync</button> : null}
@@ -2009,6 +2099,9 @@ export default function Home() {
           )}
             {!sessionReady ? <div className="dashboard-skeleton" role="status" aria-label="Loading InterviewIQ workspace"><span /><span /><span /><span /></div> : null}
             {sessionReady ? <>
+            {quickProfile && !lessonContext && <p className="practice-panel">Using quick-start defaults: Learner · general software engineering · experience not specified. Edit Profile to personalize.</p>}
+            {practice.active?.reviewBaseline && <section className="practice-panel" aria-label="Original question review"><h2>Retest your saved question</h2><p>{practice.active.question}</p><p>Previous score: {practice.active.reviewBaseline.score ?? 'Not assessed'}</p>{practice.active.reviewBaseline.answer && <details><summary>Your previous answer</summary><p>{practice.active.reviewBaseline.answer}</p></details>}<p>Submit a fresh answer below. Your previous attempt remains in history.</p></section>}
+            {lessonContext && <section className="practice-panel" aria-label="Current lesson"><strong>Practising: {lessonContext.title || lessonContext.topic}</strong>{quickProfile && <p>Using quick-start defaults: Learner · general software engineering · experience not specified.</p>}<div className="practice-actions">{lessonContext.href && <Link href={lessonContext.href}>Back to lesson</Link>}{candidateProfile && <button type="button" disabled={loading} onClick={() => { setProfileDraft(candidateProfile); setEditingProfile(true); setActiveTab('chat'); }}>Personalize practice profile</button>}</div></section>}
             {activeTab === "chat" && candidateProfile && !editingProfile && !techBuddyOpen && <div className="workspace-shortcuts" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}><button type="button" className="glass-button" disabled={loading} style={{ padding: '10px 14px' }} onClick={() => openTechBuddy()}>Open Tech Buddy</button><button type="button" className="glass-button" disabled={loading} onClick={() => openTechBuddy({ mode: 'warmup' })}>Five-question interview warm-up</button><Link href="/tech-buddy-demo">Try offline demo</Link><Link href="/learn">Learning hub</Link><Link href="/labs">Interactive labs</Link></div>}
             {loading ? <div className="ai-progress-status" role="status" aria-live="polite"><span className="dot" />InterviewIQ is preparing your response…</div> : null}
             {activeTab === "course" ? (
@@ -2132,11 +2225,13 @@ export default function Home() {
                 onActivity={recordWorkspaceActivity}
               />
             ) : editingProfile
-              ? <ProfileSetup theme={techTheme} draft={profileDraft} onChange={setProfileDraft} onSubmit={saveProfile} onCancel={() => { setProfileDraft(candidateProfile); setEditingProfile(false); }} onSignIn={() => openAuthSettings("login")} onOpenWorkspace={openWorkspace} isSignedIn={Boolean(auth.user)} keyboardOpen={isKeyboardOpen} />
+              ? <ProfileSetup theme={techTheme} draft={profileDraft} onChange={setProfileDraft} onSubmit={saveProfile} onCancel={() => { setProfileDraft(candidateProfile || DEFAULT_PROFILE); setEditingProfile(false); }} onSignIn={() => openAuthSettings("login")} onOpenWorkspace={openWorkspace} isSignedIn={Boolean(auth.user)} keyboardOpen={isKeyboardOpen} />
             : techBuddyOpen && candidateProfile
-              ? <TechBuddy key={techBuddyLaunch?.id} initialSession={techBuddyLaunch?.fresh ? null : practice.buddy} config={techBuddyLaunch?.config} profile={candidateProfile} messages={messages} history={practice.attempts} onConversation={saveBuddyConversation} onChange={saveBuddySession} onAttempt={saveBuddyAttempt} onClose={closeBuddy} />
+              ? <TechBuddy onAssessmentChange={reviewAssessment} key={techBuddyLaunch?.id} initialSession={techBuddyLaunch?.fresh ? null : practice.buddy} config={techBuddyLaunch?.config} profile={candidateProfile} messages={messages} history={practice.attempts} onConversation={saveBuddyConversation} onChange={saveBuddySession} onAttempt={saveBuddyAttempt} onClose={closeBuddy} />
             : (homeView || messages.length === 0) && !loading
-              ? sessionReady && auth.ready && !homeDemoSeen && (!candidateProfile || !auth.user)
+              ? lessonContext && !candidateProfile
+                ? <LessonQuickStart context={lessonContext} onStart={() => { setCandidateProfile({ ...LESSON_PRACTICE_PROFILE }); setProfileDraft({ ...LESSON_PRACTICE_PROFILE }); setQuickProfile(true); setHomeDemoSeen(true); }} onPersonalize={() => setEditingProfile(true)} />
+                : sessionReady && auth.ready && !homeDemoSeen && (!candidateProfile || !auth.user)
                 ? <HomeDemo onContinue={completeHomeDemo} onSignIn={() => openAuthSettings("login")} onOpenWorkspace={openWorkspace} />
                 : !candidateProfile
                 ? <ProfileSetup theme={techTheme} draft={profileDraft} onChange={setProfileDraft} onSubmit={saveProfile} onSignIn={() => openAuthSettings("login")} onOpenWorkspace={openWorkspace} isSignedIn={Boolean(auth.user)} keyboardOpen={isKeyboardOpen} />
@@ -2180,6 +2275,10 @@ export default function Home() {
                   onNotify={showToast}
                   onBeginnerStepChange={setBeginnerStep}
                   onExportPlan={exportPrepPlan}
+                  onNewSession={() => setPractice(state => ({ ...state, planHistory: state.plan.finished ? state.planHistory : [...state.planHistory, archivePrepSession(state.plan, state.attempts)], plan: normalizePrepSessionPlan({ minutes: state.plan.minutes, baselineAttemptIds: state.attempts.map(attempt => attempt.id) }) }))}
+                  onPlanChange={plan => setPractice(state => ({ ...state, planHistory: (plan.finished && !state.plan.finished) || plan.minutes !== state.plan.minutes ? [...state.planHistory, archivePrepSession(plan.finished ? { ...plan, baselineAttemptIds: state.plan.baselineAttemptIds || [] } : state.plan, state.attempts)] : state.planHistory, plan: { ...plan, baselineAttemptIds: plan.minutes !== state.plan.minutes ? state.attempts.map(attempt => attempt.id) : state.plan.baselineAttemptIds || state.attempts.map(attempt => attempt.id) } }))}
+                  onRecall={() => openTechBuddy({ topic: practice.attempts.at(-1)?.topic || selectedSub || selectedCat || '', targetQuestions: practice.plan.minutes === 5 ? 1 : practice.plan.minutes === 15 ? 2 : 3 })}
+                  onRepair={() => { setRepairRequested(true); setHomeView(false); if (!messages.length && practice.attempts.length) setMessages([{ role: 'assistant', content: practice.attempts.at(-1).question }]); }}
                   onToolkitStateChange={setToolkitState}
                 />
               : (
@@ -2201,7 +2300,7 @@ export default function Home() {
                       </div>
                     </div>
                   ))}
-                  <PracticeReview practice={practice} onExercise={exerciseNotes => setPractice(prev => ({ ...prev, exerciseNotes }))} loading={loading} onDelete={id => { setPractice(prev => ({ ...prev, attempts: prev.attempts.filter(a => a.id !== id) })); setMessages(prev => prev.filter(m => m.attemptId !== id)); }} onRetest={(attempt, comparable, exercise) => { setPractice(prev => ({ ...prev, active: { question: comparable ? attempt.followUp : attempt.question, topic: attempt.topic, difficulty: attempt.difficulty, round: attempt.round, parentId: attempt.id, exercise, attemptId: crypto.randomUUID() } })); setInput(""); setMockTimerRemaining(60); setMockTimerEndsAt(Date.now() + 60000); setMockTimerStatus("answering"); }} />
+                  <PracticeReview onAssessmentChange={reviewAssessment} onReassess={attempt => callAPI(attempt.answer, { retryEvaluation: { ...attempt, id: undefined, attemptId: crypto.randomUUID(), parentId: attempt.id, assessmentOnly: true, assessmentReview: { exclude: true, status: "disputed", reason: "Separate reassessment pending your check" } }, retryAnswer: attempt.answer })} repairRequested={repairRequested} onRepairChange={repair => setPractice(state => ({ ...state, repairs: [...state.repairs.filter(item => item.attemptId !== repair.attemptId), repair] }))} practice={practice} onExercise={exerciseNotes => setPractice(prev => ({ ...prev, exerciseNotes }))} loading={loading} onDelete={id => { setPractice(prev => ({ ...prev, attempts: prev.attempts.filter(a => a.id !== id) })); setMessages(prev => prev.filter(m => m.attemptId !== id)); }} onRetest={(attempt, comparable, exercise) => { setPractice(prev => ({ ...prev, active: { questionId: comparable ? undefined : attempt.questionId, question: comparable ? attempt.followUp : attempt.question, topic: attempt.topic, difficulty: attempt.difficulty, round: attempt.round, parentId: attempt.id, exercise, attemptId: crypto.randomUUID() } })); setHomeView(false); setInput(""); setMockTimerRemaining(60); setMockTimerEndsAt(Date.now() + 60000); setMockTimerStatus("answering"); }} />
                   <PostAnswerTools
                     profile={candidateProfile}
                     messages={messages}

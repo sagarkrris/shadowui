@@ -1,3 +1,4 @@
+import PrepSessionPlan from './PrepSessionPlan';
 import Link from "next/link";
 import { practiceSummary } from "../../lib/dailyPractice.mjs";
 import { useCallback, useEffect, useState } from "react";
@@ -16,11 +17,11 @@ import SmartPrepTimeline from "./SmartPrepTimeline";
 import UnifiedProgressBrain from "./UnifiedProgressBrain";
 import CodeRunner from "../CodeRunner";
 
-export default function Welcome({ practice = { attempts: [] }, onResume, hasDraft, onChip, onStart, onScreen, onVoice, onRecordReview, selectedCat, selectedSub, mode, difficulty, theme, profile, showCodeTools, topics, weakSpots, mockScores, messages, structuredSessions = [], questionMemory, onQuestionMemoryChange, systemDesignCanvas, onPracticeMock, onOpenWorkspace, beginnerMode, onBeginnerModeChange, prepProgressState, onNotify, onBeginnerStepChange, onExportPlan, onToolkitStateChange: onExternalToolkitStateChange }) {
+export default function Welcome({ practice = { attempts: [] }, onResume, hasDraft, onChip, onStart, onScreen, onVoice, onRecordReview, selectedCat, selectedSub, mode, difficulty, theme, profile, showCodeTools, topics, weakSpots, mockScores, messages, structuredSessions = [], questionMemory, onQuestionMemoryChange, systemDesignCanvas, onPracticeMock, onOpenWorkspace, beginnerMode, onBeginnerModeChange, prepProgressState, onNotify, onBeginnerStepChange, onExportPlan, onToolkitStateChange: onExternalToolkitStateChange, onPlanChange, onNewSession, onRecall, onRepair }) {
   const [toolkitState, setToolkitState] = useState({});
   const [activeSection, setActiveSection] = useState("overview");
   const summary = practiceSummary(practice.attempts);
-  const lastAttempt = practice.attempts.at(-1);
+  const lastAttempt = practice.attempts.filter(attempt => !attempt.assessmentReview?.exclude).at(-1);
   const topic = selectedSub || selectedCat;
   const quickPrompts = getQuickPrompts(selectedCat, selectedSub);
 
@@ -70,7 +71,7 @@ export default function Welcome({ practice = { attempts: [] }, onResume, hasDraf
   return (
     <div className="welcome-screen prep-home-screen" style={{ flex: 1, width: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "18px 20px 28px", textAlign: "center", overflowY: "visible" }}>
       <section className="practice-panel today-card">
-        <p>Today · 12 minutes</p><h1>Practise {lastAttempt?.topic || topic || 'your next interview topic'}</h1>
+        <p>Today · choose your study time</p><h1>Practise {lastAttempt?.topic || topic || 'your next interview topic'}</h1>
         <p>{lastAttempt?.gaps?.[0] ? `Your last answer: ${lastAttempt.gaps[0]}` : 'Answer one question, review the evidence, and try again.'}</p>
         <button onClick={() => onStart(lastAttempt?.topic || topic)}>Start practice</button>
         {hasDraft && <button onClick={onResume}>Resume last session</button>}
@@ -79,6 +80,7 @@ export default function Welcome({ practice = { attempts: [] }, onResume, hasDraf
         <button onClick={() => onOpenWorkspace?.('javaDigest')}>Explore topics</button>
         <p>Learn: study an explanation · Practice: improve an answer · Mock: timed interview · Review: revisit recorded evidence.</p>
       </section>
+      {onPlanChange && <PrepSessionPlan plan={practice.plan} history={practice.planHistory} onNewSession={onNewSession} onChange={onPlanChange} onRecall={onRecall} onRepair={onRepair} hasAttempt={practice.attempts.length > 0} />}
       <section className="practice-panel" style={{ width: "100%" }}><h2>Production Detective</h2><p>Investigate a five-minute debugging mystery. Follow the evidence, choose a diagnosis, and explore the repair.</p><Link href="/detective">Open the case files →</Link></section>
       <section className="practice-panel" style={{ width: "100%" }}><h2>When Advice Fails</h2><p>Five practical backend field notes on the conditions where familiar advice breaks—and how to verify a safer correction.</p><Link href="/advice-fails">Read the field notes →</Link></section>
       <section className="practice-panel" style={{ width: "100%" }}><h2>Explain This Log</h2><p>Decode fictional stack traces, query plans, thread dumps, and HTTP exchanges without uploading production data.</p><Link href="/explain-log">Open the log reader →</Link></section>

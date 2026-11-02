@@ -57,6 +57,16 @@ The public homepage and learning pages use grouped Learn, Practice, Interview, a
 
 The homepage includes a fixed-sequence LRU teaching preview, catalogue-derived counts, four learning paths, and links into the existing practice workspace. The learning hub supports course-category filters; the notebook searches saved evidence and filters activity status without rewriting stored records. Existing onboarding, AI endpoints, and runner configuration are unchanged.
 
+Returning learners see saved practice, roadmap, notebook, and reading shortcuts above the homepage introduction. Lesson practice links preserve the originating topic and offer a five-question quick start with disclosed general practice defaults; a personal profile remains optional for that handoff. Public and workspace search use the same public catalogue, with locally searched notebook/bookmark records and paginated results. Workspace search also includes saved attempts and designs. The notebook offers Markdown download with a copy fallback, Undo for the last removed note, and full JSON backup/restore with readable counts and dates. JSON restore replaces only the workspaces listed in its preview; Markdown is a portable reading export, not a restore format.
+
+The learning hub prioritizes your selected roadmap and shows why it suggests a different path after completion. Saved Buddy questions and drafts resume directly from the homepage. Due reviews include mastered questions and reopen the original prompt with its previous evidence when available. Practice review offers a saved study/exercise/retest workflow; roadmap completion remains explicitly self-assessed. Today supports 5-, 15-, and 30-minute plans with persistent checklists and reflections (suggested budgets, not enforced timers). Application records support stage and follow-up updates, saved interview debriefs, round preparation, and explicit debrief-to-review handoff. None of these actions sends recruiter messages or creates external calendar events.
+
+Device continuity and retention: signing out offers a full private backup before clearing device data. Active notebooks hold 100 notes; new notes at capacity are refused without removing older notes. Archive notes to make room; archived notes remain readable, exported and included in account learning sync. Completing or replacing prep plans retains dated history. Practice-session answers are linked using a baseline of existing attempts.
+
+Cloud state saves use an atomic database revision check. A stale device receives a conflict instead of overwriting newer work. The workspace pauses saving, offers restorable recovery backups, and lets you choose the device or cloud copy. Differing meaningful work discovered during startup also requires a choice. This is copy recovery, not an automatic field merge. Notebook, archive, bookmarks, roadmap and reading positions join account sync when the practice workspace opens; other browser-only workspaces remain covered by full JSON backup. Existing databases acquire the revision column during persistence initialization (`npm run db:migrate` uses the same initializer). Older clients without a revision must reload before saving.
+
+Application rounds can be scheduled with an IANA time zone and linked application ID; rescheduling edits the same record consumed by the toolkit and day pack. Calendar downloads use UTC instants and a clearly labeled one-hour placeholder, and never send invitations. Historical completed interviews are allowed. Assessment review preserves original feedback, records dispute/reference notes, excludes disputed scores from summaries and practice recommendations, and supports a separate reassessment without treating the same answer as a fresh practice completion. Reassessments remain excluded until the user checks and accepts them.
+
 ## Run Locally
 
 ```bash
@@ -210,20 +220,3 @@ Browser
   -> Gemini API or the private InterviewIQ Java runner
   -> streamed response back to the browser
 ```
-
-The browser never receives the Gemini API key or the Java runner token. Code execution requests go through `/api/run-code`, which validates and rate-limits each submission before forwarding it to the private runner.
-
-Account sync is available through `/api/auth` and `/api/state`. User state is encrypted with `APP_ENCRYPTION_KEY` and persisted in managed PostgreSQL through `lib/serverPersistence.mjs`; set `DATABASE_URL` before enabling account sync in production. The adapter creates its tables and indexes on first use, while database backups, point-in-time recovery, and retention should be configured in the managed provider. AI routes enforce bounded request sizes and distributed rate limits when Upstash is configured. Set `REQUIRE_AUTH=1` before making AI routes public.
-
-## Observability
-
-Every API response includes an `X-Request-Id` header and emits structured request-start and request-complete logs. The logs redact request bodies, cookies, authorization headers, credentials, prompts, and user identity by default. Set `METRICS_WEBHOOK_URL` (and its secret token) to forward the existing safe metrics to a monitoring system when you are ready.
-
-Production operations: configure Neon/Vercel automated backups, point-in-time recovery, and a retention window that matches your privacy policy; `DATA_RETENTION_DAYS` controls application-level cleanup of expired sessions, reset tokens, and audit records (bounded to 7–3650 days). The account export endpoint returns a versioned JSON attachment and deletion verifies that the authenticated session no longer resolves. Set `METRICS_WEBHOOK_URL` (and its secret token) to forward email delivery, failed-login, AI usage, and rate-limit metrics to your monitoring system. Keep `RESEND_API_KEY` out of source control; after a custom sending domain is verified in Resend, replace the temporary full-access key with a restricted production key and update `RESEND_FROM_EMAIL`.
-
-## Notes
-
-- Public company interview data is presented as reported/community-sourced, not official company material.
-- Resume gap analysis in the Career Toolkit supports `.pdf`, `.docx`, `.txt`, `.md`, and pasted text. Extraction runs through InterviewIQ's own API route and is not sent to Gemini or external AI services; legacy `.doc` files should be converted to `.docx` or pasted as text.
-- The Live Java Runner returns `503` until the private `JAVA_RUNNER_URL` and `JAVA_RUNNER_SHARED_TOKEN` are configured. Request-size safeguards remain in place.
-- Voice input depends on browser support. iOS Safari may require microphone permissions, Siri/dictation support, or keyboard dictation fallback.

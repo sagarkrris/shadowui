@@ -254,7 +254,7 @@ test('Java lesson entry carries its topic into the generated question', async ({
   const requests = await mockChat(page, 'How does the JVM execute bytecode?');
   await gotoSeededApp(page);
   await page.goto('/java/tutorial/jdk-vs-jre-vs-jvm');
-  await page.getByRole('link', { name: 'Practice this topic with Tech Buddy' }).click();
+  await page.getByRole('link', { name: 'Practise this lesson with Tech Buddy →' }).click();
   const buddy = buddyRegion(page);
   await expect(buddy).toContainText('Topic: JDK vs JRE vs JVM');
   await buddy.getByRole('button', { name: 'Start Buddy interview' }).click();

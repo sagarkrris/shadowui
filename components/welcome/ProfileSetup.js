@@ -195,6 +195,7 @@ export default function ProfileSetup({ draft, onChange, onSubmit, onCancel, onSi
                   Years of experience
                   <select id="profile-experience" value={draft.experience} onFocus={handleFieldFocus} onChange={(event) => onChange({ ...draft, experience: event.target.value })} style={fieldStyle}>
                     <option value="">Select experience</option>
+                    {draft.experience === "Not specified" && <option>Not specified</option>}
                     <option>0-1 years</option>
                     <option>2-4 years</option>
                     <option>5-7 years</option>

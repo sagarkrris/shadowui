@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import { NOTEBOOK_KEY, normalizeNotebook, saveNote } from '../../lib/learningNotebook.mjs';
+import { NOTEBOOK_KEY, normalizeNotebook, saveNote, notebookSaveMessage } from '../../lib/learningNotebook.mjs';
 import { interviewPrompt, INTERVIEW_CHECKS } from '../../lib/interviewTransfer.mjs';
 import styles from '../../styles/Reader.module.css';
 
@@ -18,7 +18,7 @@ export default function InterviewTransfer({ incident }) {
   }, [id]);
   function save() {
     try { saveNote(localStorage, { id, title: `Interview: ${incident.title}`, href: `/detective/${incident.slug}#interview-answer`, interviewAnswer: answer, interviewChecks: checks, completed: answer.trim().length > 0 && checks.length === 4 }); setMessage('Interview answer saved in your notebook.'); }
-    catch { setMessage('Could not save. Copy your answer before leaving.'); }
+    catch (error) { setMessage(notebookSaveMessage(error, 'Could not save. Copy your answer before leaving.')); }
   }
   return <section ref={section} id="interview-answer" className={`${styles.card} ${styles.reflection}`} aria-label="Interview practice"><h2>Turn this investigation into an interview answer</h2><p>{interviewPrompt(incident.slug)}</p><p>Aim for a concise answer you could say in about 90 seconds. State the mechanism, cite evidence, then describe the repair and its limits.</p>
     <label>Your interview answer<textarea aria-label="Your interview answer" rows={6} maxLength={4000} disabled={!ready} value={answer} onChange={event => { setAnswer(event.target.value); setChecks([]); }} /></label>

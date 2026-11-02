@@ -1,7 +1,10 @@
+import AssessmentReview from './AssessmentReview';
+import GapRepair from './GapRepair';
 import { useState } from 'react';
 import { PRACTICE_RUBRIC, compareAttempts, practiceSummary } from '../../lib/dailyPractice.mjs';
 
-export default function PracticeReview({ practice, onExercise, onRetest, onDelete, loading }) {
+export default function PracticeReview({ practice, onExercise, onRetest, onDelete, onRepairChange, repairRequested = false, onAssessmentChange, onReassess, loading }) {
+  const [repairOpen, setRepairOpen] = useState(repairRequested);
   const [query, setQuery] = useState('');
   const exercise = practice.exerciseNotes || '';
   const setExercise = onExercise;
@@ -12,7 +15,7 @@ export default function PracticeReview({ practice, onExercise, onRetest, onDelet
   const previous = attempts.find(a => a.id === latest.parentId);
   const comparison = previous ? compareAttempts(previous, latest) : null;
   return <section className="practice-panel" aria-label="Practice review">
-    <h2>Review your practice</h2>
+    <h2>Review your practice</h2><AssessmentReview key={latest.id} attempt={latest} onChange={onAssessmentChange} onReassess={onReassess} busy={loading} />
     <p role="status">{latest.score === null ? 'Not assessed' : `${latest.score}/10`} · {latest.topic} · {latest.difficulty} · {latest.round}</p>
     <p><strong>Strongest point:</strong> {latest.strengths?.[0] || 'Not established'}</p>
     <p><strong>Biggest gap:</strong> {latest.gaps?.[0] || 'No specific gap identified'}</p>
@@ -24,12 +27,13 @@ export default function PracticeReview({ practice, onExercise, onRetest, onDelet
     </details>
     <label>Targeted exercise notes<textarea value={exercise} onChange={e => setExercise(e.target.value)} placeholder="Work through the exercise, then attempt the retest in your own words." /></label>
     <div className="practice-actions"><button disabled={loading} onClick={() => { onRetest(latest, false, exercise); setExercise(''); }}>Explain it again · 60 seconds</button><button disabled={loading || !exercise.trim() || !latest.followUp} onClick={() => { onRetest(latest, true, exercise); setExercise(''); }}>Complete drill and retest</button></div>
+    {onRepairChange && <><button type="button" disabled={loading} onClick={() => setRepairOpen(value => !value)} aria-expanded={repairOpen}>Work on this gap</button>{(repairOpen) && <GapRepair key={latest.id} attempt={latest} repair={(practice.repairs || []).find(item => item.attemptId === latest.id)} onChange={onRepairChange} onRetest={onRetest} loading={loading} />}</>}
     <p>Both actions create a new attempt. Only your submitted answer counts toward improvement.</p>
     <details><summary>Attempt history and topic trends · {summary.completed} completed</summary>
       <p>{summary.readiness}</p>
       {summary.topics.map(t => <p key={t.topic}>{t.topic}: {t.scores.join(' → ')} /10 · Different difficulties are not directly comparable.</p>)}
       <label>Search saved attempts<input value={query} onChange={e => setQuery(e.target.value)} /></label>
-      {attempts.filter(a => `${a.question} ${a.topic}`.toLowerCase().includes(query.toLowerCase())).slice().reverse().map(a => <details key={a.id}><summary>{a.topic} · {a.score ?? 'Not assessed'} · {a.difficulty} · {a.completedAt ? new Date(a.completedAt).toLocaleString() : "Imported · date unavailable"}</summary><p>{a.question}</p><blockquote>{a.answer}</blockquote><p>{a.feedback}</p><button disabled={loading} onClick={() => onDelete(a.id)}>Remove this practice record</button></details>)}
+      {attempts.filter(a => `${a.question} ${a.topic}`.toLowerCase().includes(query.toLowerCase())).slice().reverse().map(a => <details key={a.id}><summary>{a.topic} · {a.score ?? 'Not assessed'} · {a.difficulty} · {a.completedAt ? new Date(a.completedAt).toLocaleString() : "Imported · date unavailable"}</summary><p>{a.question}</p><blockquote>{a.answer}</blockquote><p>{a.feedback}</p><button type="button" disabled={loading} onClick={() => onRetest(a, false, '')}>Retest this saved question</button><button disabled={loading} onClick={() => onDelete(a.id)}>Remove this practice record</button></details>)}
     </details>
   </section>;
 }

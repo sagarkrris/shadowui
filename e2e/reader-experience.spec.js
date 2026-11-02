@@ -11,7 +11,7 @@ test("homepage stays usable without the icon CDN and is statically generated", a
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   await page.getByRole("searchbox", { name: "Search articles" }).fill("slow sql");
-  await expect(page.getByRole("status").filter({ hasText: /^1 articles$/ })).toHaveText("1 articles");
+  await expect(page.getByRole("status").filter({ hasText: /^Showing 1 of 1 articles$/ })).toHaveText("Showing 1 of 1 articles");
   expect(await page.evaluate(() => JSON.parse(document.getElementById("__NEXT_DATA__").textContent).gsp)).toBe(true);
   await page.goto("/?workspace=java-digest&topic=transactions");
   await expect(page).toHaveURL(/\/practice\?workspace=java-digest&topic=transactions/);
@@ -22,7 +22,7 @@ test("public homepage lets a new reader discover articles and paths without onbo
   await expect(page.getByLabel("Name", { exact: true })).toHaveCount(0);
   await page.screenshot({ path: test.info().outputPath("reader-home-desktop.png"), fullPage: true });
   await page.getByRole("searchbox", { name: "Search articles" }).fill("slow sql");
-  await expect(page.getByRole("status").filter({ hasText: /^1 articles$/ })).toHaveText("1 articles");
+  await expect(page.getByRole("status").filter({ hasText: /^Showing 1 of 1 articles$/ })).toHaveText("Showing 1 of 1 articles");
   await page.getByRole("link", { name: "How to Investigate a Slow SQL Query", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("How to Investigate a Slow SQL Query");
   await expect(page.getByText("Runtime verification not yet recorded for this article.", { exact: false })).toBeVisible();

@@ -166,6 +166,12 @@ function RevengeCard({ category, onAction }) {
   );
 }
 
+function scheduledInterviewLabel(pack) {
+  if (!pack.startsAt) return pack.date || 'No interview scheduled';
+  try { return new Date(pack.startsAt).toLocaleString(undefined, { timeZone: pack.timeZone }) + ' · ' + pack.timeZone; }
+  catch { return pack.startsAt; }
+}
+
 export default function OfferWarRoom({
   theme = {},
   profile = null,
@@ -352,6 +358,7 @@ export default function OfferWarRoom({
         <p style={{ ...wrap, color: "#9fb0c7", fontSize: 11.3, lineHeight: 1.45, margin: 0 }}>
           {model.dayPack.company} | {model.dayPack.role} {model.dayPack.round ? `| ${model.dayPack.round}` : ""}
         </p>
+        <p>{scheduledInterviewLabel(model.dayPack)}</p>
         <div style={responsiveGrid(220, 10)}>
           {model.dayPack.warmups.map((item) => (
             <article key={item.title} style={{ background: "rgba(0,0,0,.15)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 8, padding: 10 }}>

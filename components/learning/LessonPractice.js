@@ -2,15 +2,17 @@ import Link from 'next/link';
 import { buddyHref } from '../../lib/learningHub.mjs';
 import useHubProgress from './useHubProgress';
 import { useId } from 'react';
+import { useRouter } from 'next/router';
 import styles from './LessonPractice.module.css';
 export default function LessonPractice({ id, title, question, exercise }) {
   const { progress, ready, message, toggle } = useHubProgress();
   const helpId = useId();
+  const router = useRouter();
   return <section aria-label={`Practice ${title}`} className={styles.card}>
     <h3>Practice this lesson</h3><p>{exercise || 'Write the smallest example, test a boundary input, and explain one limitation.'}</p>
     <p className={styles.checkpoint}><strong>Checkpoint:</strong> {question || `Explain ${title}, give an example, and defend one trade-off.`}</p>
     <div className={styles.actions}>
-      <Link className={styles.start} prefetch={false} href={buddyHref(`${title}: ${question || 'Explain the mechanism, a boundary case, and a trade-off.'}`)}>Practise this lesson with Tech Buddy →</Link>
+      <Link className={styles.start} prefetch={false} href={buddyHref(`${title}: ${question || 'Explain the mechanism, a boundary case, and a trade-off.'}`, { href: router.asPath.split('?')[0], title })}>Practise this lesson with Tech Buddy →</Link>
       <Link prefetch={false} href="/learn">View my learning progress →</Link>
     </div>
     <fieldset className={styles.progress} aria-describedby={helpId}>

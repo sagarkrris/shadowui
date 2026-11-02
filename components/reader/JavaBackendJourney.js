@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { BACKEND_ROADMAP_KEY, JAVA_BACKEND_STAGES, normalizeRoadmapProgress, nextRoadmapActivity, roadmapActivityId } from '../../lib/javaBackendRoadmap.mjs';
 import { ACTIVE_PATH_KEY } from '../../lib/learningHub.mjs';
-import { NOTEBOOK_KEY, normalizeNotebook, saveNote } from '../../lib/learningNotebook.mjs';
+import { NOTEBOOK_KEY, normalizeNotebook, saveNote, notebookSaveMessage } from '../../lib/learningNotebook.mjs';
 import styles from '../../styles/Reader.module.css';
 
 export default function JavaBackendJourney() {
@@ -21,7 +21,7 @@ export default function JavaBackendJourney() {
     const next = done.includes(id) ? done.filter(item => item !== id) : [...done, id];
     setDone(next);
     try { localStorage.setItem(BACKEND_ROADMAP_KEY, JSON.stringify(next)); setMessage('Progress saved in this browser.'); }
-    catch { setMessage('Could not save progress. Your checks will last only for this visit.'); }
+    catch (error) { setMessage(notebookSaveMessage(error, 'Could not save progress. Your checks will last only for this visit.')); }
   }
   const next = nextRoadmapActivity(done);
   const total = JAVA_BACKEND_STAGES.reduce((count, stage) => count + stage.activities.length, 0);
@@ -63,7 +63,7 @@ function StageReflection({ stage }) {
     try {
       saveNote(localStorage, { id, title: `Backend roadmap: ${stage.title}`, href: `/java/roadmap#review-${stage.id}`, interviewAnswer: text });
       setMessage('Reflection saved in your notebook on this browser.');
-    } catch { setMessage('Could not save reflection. Copy your notes before leaving.'); }
+    } catch (error) { setMessage(notebookSaveMessage(error, 'Could not save reflection. Copy your notes before leaving.')); }
   }
   return <details id={`review-${stage.id}`}><summary>Write your stage reflection</summary><label>Review notes for {stage.title}<textarea disabled={!ready} maxLength={4000} rows={5} value={text} onChange={event => setText(event.target.value)} /></label><button type="button" disabled={!ready || !text.trim()} onClick={save}>Save {stage.title} reflection</button><p role="status">{message}</p><Link prefetch={false} href="/notebook">Open my notebook →</Link></details>;
 }

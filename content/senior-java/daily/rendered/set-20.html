@@ -1,0 +1,216 @@
+<p><strong>Set 20 · 2 November 2026 — Identity, progress and constrained scheduling</strong></p>
+
+<p>Reference assumptions: <strong>Java 21 without preview features</strong>, Spring Framework 7.0 async support in a compatible Spring Boot application, Jakarta Persistence 3.2 and Kafka 4.0 consumer API. These are reference versions, not upgrade recommendations. Primary references checked 2 November 2026; verify actual provider and Boot-managed versions.</p>
+
+<p>Stable IDs: <strong>S20-Q01–S20-Q12</strong>, in order. Spoken answers target 45–90 seconds. Examples are original illustrations, not personal experience. Framework and distributed scenarios are contextual designs, not executed integrations. Q12 is compiled and behaviorally tested Java; other examples are contextual or conceptual.</p>
+
+<hr>
+<h3 id="1-a-literal-replacement-value-contains-1-and-changes-unexpectedly-in-replaceall-which-language-is-interpreting-it">1. A literal replacement value contains $1 and changes unexpectedly in replaceAll. Which language is interpreting it?</h3>
+
+<p><strong>Say aloud:</strong> “A regular expression describes what to match; a replacement string has its own small language for inserting captured groups. Quoting the pattern does not quote the replacement. If a customer&#39;s literal label contains a dollar sign or backslash, passing it directly as a regex replacement can interpret it as a group reference or fail instead of preserving the label.</p>
+
+<p>I would use String.replace when both operands are literal strings. When regex matching is intentional, I would pass the literal replacement through Matcher.quoteReplacement. I would keep those decisions visible at the call site because pattern escaping and replacement escaping solve different problems. Tests should include dollar signs, backslashes, empty matches and repeated matches. This protects the replacement&#39;s meaning; it does not make an expensive or untrusted pattern safe. I would separately bound input and select an appropriate matching algorithm.”</p>
+
+<p><strong>Example:</strong> Contextual Java: <code>text.replaceAll(&quot;TOKEN&quot;, Matcher.quoteReplacement(label))</code> preserves a literal label such as <code>$1</code>. Import java.util.regex.Matcher.</p>
+
+<p><strong>Deep dive / verification:</strong> Output allocation grows with the resulting text, which can exceed input size. Regex runtime depends on the pattern; no general linear-time guarantee applies. Verify exact output rather than merely absence of exceptions.</p>
+
+<p><strong>Follow-ups:</strong> Can Pattern.quote replace quoteReplacement? No; it quotes the matching language. Can Matcher be shared concurrently? No; it holds mutable matching state.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/regex/Matcher.html">Primary documentation</a>.</p>
+
+<hr>
+<h3 id="2-a-plugin-object-cannot-be-cast-to-an-interface-with-the-same-fully-qualified-name-why-can-identical-names-denote-different-types">2. A plugin object cannot be cast to an interface with the same fully qualified name. Why can identical names denote different types?</h3>
+
+<p><strong>Say aloud:</strong> “A class loader defines classes for a runtime namespace. In the JVM, a class is identified by its binary name together with its defining loader. Two copies of an interface loaded independently can therefore be different runtime types even when their source and names match. A cast can fail without either file being corrupt.</p>
+
+<p>I would inspect the defining loaders of the interface expected by the host and the interfaces implemented by the plugin. Shared contracts should normally be loaded through a common parent, while plugin implementation dependencies can remain isolated. I would remove duplicate contract definitions from the isolated loading path and verify delegation policy. Simply renaming jars or catching ClassCastException hides the boundary. I would test two plugins with different private dependencies plus one shared contract, including reload. Loader isolation is useful, but it requires deliberate ownership of every type crossing the boundary.”</p>
+
+<p><strong>Example:</strong> Conceptual: host loader H defines api.Report; child-first loader P independently defines api.Report. A P implementation is not automatically an H Report.</p>
+
+<p><strong>Deep dive / verification:</strong> This is runtime identity, not a hash collision or generic erasure issue. Log class name and defining loader; avoid relying on class names alone for compatibility. Initialization failures are a separate problem.</p>
+
+<p><strong>Follow-ups:</strong> Does identical bytecode fix it? No; defining-loader identity still differs. Should every dependency be shared? No; share boundary contracts and deliberately isolate private implementations.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/javase/specs/jvms/se21/html/jvms-5.html#jvms-5.3">Primary documentation</a>.</p>
+
+<hr>
+<h3 id="3-every-worker-submits-a-child-task-to-the-same-fixed-pool-and-waits-why-can-the-queue-remain-nonempty-forever">3. Every worker submits a child task to the same fixed pool and waits. Why can the queue remain nonempty forever?</h3>
+
+<p><strong>Say aloud:</strong> “Thread starvation occurs when work cannot obtain the execution capacity needed to make progress. If every thread in a fixed pool runs a parent that waits for a queued child in that same pool, no worker remains available to execute the children. No pair of Java monitor locks is required for this dependency deadlock.</p>
+
+<p>I would draw the dependency graph between tasks and execution resources, then inspect thread dumps and queue state. Prefer composing stages without blocking occupied workers, or execute a small child directly when ownership allows it. A separate bounded executor can break this particular cycle, but its own dependencies and admission policy still need analysis. Increasing the pool size only postpones failure when parent concurrency grows with it. I would create a deterministic test that gates all parents before child submission and verifies completion under the revised design, with bounded test cleanup.”</p>
+
+<p><strong>Example:</strong> Conceptual: two pool threads run two parents; each submits one child and calls get. Both children wait in the queue while both workers wait for results.</p>
+
+<p><strong>Deep dive / verification:</strong> Queue capacity bounds retained tasks, not dependency safety. Nonblocking composition still needs deadlines, bounded admission and explicit failure handling. Virtual threads do not remove downstream resource cycles.</p>
+
+<p><strong>Follow-ups:</strong> Would a larger queue help? No; children still need workers. Is CallerRunsPolicy a universal fix? No; it changes execution context and applies only when rejection occurs.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ThreadPoolExecutor.html">Primary documentation</a>.</p>
+
+<hr>
+<h3 id="4-a-spring-async-void-method-fails-after-its-caller-returns-where-should-the-failure-contract-live">4. A Spring Async void method fails after its caller returns. Where should the failure contract live?</h3>
+
+<p><strong>Say aloud:</strong> “Asynchronous invocation separates the caller&#39;s return from the worker&#39;s eventual outcome. A void return supplies no future through which the caller can observe a later exception. In Spring&#39;s proxy-based async support, that exception cannot simply travel back through a call stack that has already returned.</p>
+
+<p>I would choose the contract first. For a request that needs the outcome, return a supported future type and make its consumer observe failure. For background best-effort work, configure an AsyncUncaughtExceptionHandler and record enough safe context for diagnosis. For business-critical accepted work, use durable job state and a recovery protocol rather than assuming an exception handler makes execution reliable. I would test both worker failure and submission rejection; rejection can happen before execution begins. I would also verify the call actually crosses the async proxy and that the application has enabled async support.”</p>
+
+<p><strong>Example:</strong> Contextual Spring: a proxied <code>@Async void refreshPreview(long id)</code> needs an uncaught async exception policy; a CompletableFuture result supports caller observation when consumed.</p>
+
+<p><strong>Deep dive / verification:</strong> An exception handler is observation, not durable delivery or automatic retry. Bound executor resources and avoid recording secrets in failure context. Test the Boot-managed Spring version and actual executor configuration.</p>
+
+<p><strong>Follow-ups:</strong> Will a local try/catch around invocation catch later worker failure? No. Does switching to a future make failures visible automatically? Only if someone observes the result.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.spring.io/spring-framework/reference/integration/scheduling.html">Primary documentation</a>.</p>
+
+<hr>
+<h3 id="5-a-child-uses-orphanremoval-and-is-moved-between-parents-before-flush-why-is-this-a-fragile-reparenting-protocol">5. A child uses orphanRemoval and is moved between parents before flush. Why is this a fragile reparenting protocol?</h3>
+
+<p><strong>Say aloud:</strong> “Orphan removal expresses private lifecycle ownership: removing a child from its owning relationship can cause deletion at flush. It is appropriate when that child should cease to exist without its parent. Moving the same entity to another parent is a different domain operation, and portable application code must not rely on reassigning an entity that has been orphaned.</p>
+
+<p>I would clarify whether the child is a privately owned value-like component or an independently movable entity. For a movable assignment, choose a mapping and explicit command that update the owning foreign key while keeping both in-memory sides consistent. For a privately owned line item, removal may mean deletion and a new line may be created under the destination with explicit identity semantics. I would test flushed database state and rollback under the actual provider. A collection that looks right in memory is not proof that the resulting SQL preserves identity.”</p>
+
+<p><strong>Example:</strong> Conceptual: moving order line L from order A to B is not equivalent to deleting L and creating another line when external references must remain valid.</p>
+
+<p><strong>Deep dive / verification:</strong> Persistence 3.2 defines orphan-removal semantics and portability restrictions. Do not depend on a provider-specific flush order to rescue an ambiguous lifecycle. Lock/version the business invariant where concurrent moves are possible.</p>
+
+<p><strong>Follow-ups:</strong> Is cascade REMOVE identical? No; parent removal and relationship disassociation are different triggers. Can updating only the inverse collection move the foreign key? No; the owning side controls it.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2.html">Primary documentation</a>.</p>
+
+<hr>
+<h3 id="6-a-management-endpoint-calls-seek-on-a-kafkaconsumer-while-its-owner-polls-why-is-synchronizing-just-the-endpoint-insufficient">6. A management endpoint calls seek on a KafkaConsumer while its owner polls. Why is synchronizing just the endpoint insufficient?</h3>
+
+<p><strong>Say aloud:</strong> “A Kafka consumer has mutable connection, position and group state and is not generally thread-safe. Protecting only an administrative method with a lock does nothing if the polling thread does not follow the same synchronization protocol. Concurrent seek and poll also create a semantic problem: the administrator needs to know exactly which work belongs before and after the position change.</p>
+
+<p>I would keep consumer operations on one owner thread and send it bounded control commands. That owner can pause affected processing, account for in-flight work, apply a validated seek and report the resulting position. Kafka&#39;s wakeup method is a documented exception useful for interrupting a blocking owner operation, but it is not permission to invoke arbitrary consumer methods concurrently. I would test commands arriving during poll, shutdown and rebalance. Authorization and auditing also matter because repositioning can repeat or skip business effects.”</p>
+
+<p><strong>Example:</strong> Conceptual: endpoint enqueues a reposition request; owner handles it between polls. Specify whether completed effects are replayed and which offset is committed after the command.</p>
+
+<p><strong>Deep dive / verification:</strong> Bound the command queue and return explicit rejection or pending status. A seek changes fetch position, not previous database effects or automatically the committed restart position.</p>
+
+<p><strong>Follow-ups:</strong> Can workers process payloads concurrently? Yes, with consumer operations confined and completion tracking. Can wakeup close the consumer? No; the owner should handle wakeup and close in its lifecycle.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://kafka.apache.org/40/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html">Primary documentation</a>.</p>
+
+<hr>
+<h3 id="7-a-signed-pagination-token-still-works-after-the-user-loses-access-what-did-token-integrity-fail-to-establish">7. A signed pagination token still works after the user loses access. What did token integrity fail to establish?</h3>
+
+<p><strong>Say aloud:</strong> “Integrity means the token has not been modified without detection. Authorization means the current caller is allowed to perform this request. A signed continuation token can preserve a cursor and filters while saying nothing about whether access has since been revoked. Treating the signature as permanent permission confuses these contracts.</p>
+
+<p>I would authenticate the current request, verify the token&#39;s integrity and expiry, bind its purpose and tenant context, and enforce current authorization on every page query. The token should carry only the state needed for traversal; sensitive cursor contents may also require confidentiality. I would test reuse by another tenant, revoked membership, changed filters and malformed tokens. If a product intentionally grants a delegated capability, that is a separate explicit security contract with scope and revocation policy. A convenient pagination implementation should not silently invent such a capability.”</p>
+
+<p><strong>Example:</strong> Conceptual: token says tenant T, after invoice 84. Verify caller still belongs to T and apply the same row-level permission predicate as on page one.</p>
+
+<p><strong>Deep dive / verification:</strong> Token verification cost depends on the cryptographic scheme; query cost depends on indexing. Limit token size before parsing, handle key rotation, and avoid disclosing protected identifiers in error messages.</p>
+
+<p><strong>Follow-ups:</strong> Does encryption replace authorization? No; hiding fields does not grant current permission. Must a token contain roles? Prefer current policy evaluation; embedded roles can become stale.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html">Primary documentation</a>.</p>
+
+<hr>
+<h3 id="8-a-restored-service-reuses-old-request-ids-and-another-service-discards-new-commands-as-duplicates-how-should-recovery-preserve-identity">8. A restored service reuses old request IDs and another service discards new commands as duplicates. How should recovery preserve identity?</h3>
+
+<p><strong>Say aloud:</strong> “Deduplication remembers operation identities so retries do not repeat effects. A restore can move a local counter backward while another service keeps its newer history. Newly issued commands can then collide with old IDs and be incorrectly treated as already completed. Data recovery must include the identity namespace shared with other systems.</p>
+
+<p>I would define an operation ID independent of a rollback-prone local counter, or allocate a new recovery generation through a mechanism that cannot itself roll back into the old namespace. Existing retries must retain their original IDs; only genuinely new commands use new identities. I would inventory deduplication stores, retention windows and external effects before reopening writes. In a drill, restore only one participant while leaving downstream history intact. Restoring every component together hides this split-history failure. Random identifiers reduce collision probability but do not replace correct retry ownership or durable mapping.”</p>
+
+<p><strong>Example:</strong> Original protocol: downstream remembers command generation G, sequence 500. Restore local sequence 450; new operations must not reuse G/451 through G/500.</p>
+
+<p><strong>Deep dive / verification:</strong> This is a derived distributed recovery design, not a framework guarantee. Verify uniqueness, stable retry identity and retention independently. A generation stored only in the restored backup does not solve the problem.</p>
+
+<p><strong>Follow-ups:</strong> Can deleting the downstream dedup table repair it? It can replay old effects; reconcile first. Is timestamp alone unique? Clock rollback and concurrent issuance defeat that assumption.</p>
+
+<p><strong>Reasoning basis:</strong> The model, counterexample and correctness argument are derived here; they are not a library or framework guarantee.</p>
+
+<hr>
+<h3 id="9-an-api-changes-an-optional-field-from-absent-to-explicit-null-why-can-this-break-a-rolling-release">9. An API changes an optional field from absent to explicit null. Why can this break a rolling release?</h3>
+
+<p><strong>Say aloud:</strong> “A wire contract describes meaning as well as syntax. For an update API, an absent field can mean leave unchanged, while explicit null can mean clear the value. A serializer upgrade that emits nulls instead of omitting them can therefore change business behavior even though both payloads are valid JSON.</p>
+
+<p>I would document three states where needed: absent, supplied value and explicit removal. Use a request representation that preserves presence until validation and domain mapping finish. A plain nullable field often collapses absent and null into the same Java state. I would exercise old clients against new servers and new clients against old servers, including replayed persisted requests. Reject unsupported removal rather than silently converting it to an empty string. This is especially important during rolling upgrades and retries, because equivalent-looking messages may be interpreted by different versions before the rollout completes.”</p>
+
+<p><strong>Example:</strong> Original API design: <code>{}</code> preserves displayName; <code>{&quot;displayName&quot;:null}</code> clears it only if removal is allowed. These are explicitly chosen application semantics, not universal JSON rules.</p>
+
+<p><strong>Deep dive / verification:</strong> Validate lengths and allowed transitions after presence decoding. Preserve intent through DTO-to-command mapping and persisted retry payloads. Test authorization for clearing sensitive fields separately.</p>
+
+<p><strong>Follow-ups:</strong> Can Optional alone preserve all three states? Not without explicit presence handling in the binding contract. Is adding a default harmless? Only when every supported reader and persisted request agrees on its meaning.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://www.rfc-editor.org/rfc/rfc7396">RFC 7396 JSON Merge Patch</a> defines one standardized absent/null distinction. This example chooses its own application contract; ordinary JSON alone does not impose update semantics.</p>
+
+<hr>
+<h3 id="10-a-queue-reports-low-average-delay-while-one-tenant-waits-forever-which-progress-promise-is-missing">10. A queue reports low average delay while one tenant waits forever. Which progress promise is missing?</h3>
+
+<p><strong>Say aloud:</strong> “Starvation means some eligible work never receives service even while the system makes aggregate progress. Average delay over completed jobs excludes the jobs still waiting, so a scheduler can look healthy while repeatedly preferring newer or higher-priority work. Throughput and fairness are separate promises.</p>
+
+<p>I would measure oldest eligible age and wait distributions by bounded workload class, including unfinished jobs. Then define a policy: priority with aging, reserved capacity, or admission limits that make a maximum wait feasible under stated load assumptions. Aging gradually raises waiting work&#39;s priority, but cannot promise a deadline if arrivals exceed capacity indefinitely. I would test a sustained high-priority stream plus an older low-priority job and inspect when it actually starts. Per-tenant labels must remain bounded in telemetry. The goal is an explicit progress contract and evidence for it, rather than a low average that ignores the stranded work.”</p>
+
+<p><strong>Example:</strong> Original scheduling exercise: one low-priority job waits behind a continuous high-priority stream. Add a stated aging rule and simulate bounded arrival rates plus overload.</p>
+
+<p><strong>Deep dive / verification:</strong> A priority heap costs O(log n) per insertion/removal; changing effective priorities requires a correct update strategy. Fair start opportunities do not guarantee equal completion times for different job costs.</p>
+
+<p><strong>Follow-ups:</strong> Will FIFO always meet deadlines? No; long jobs can block short urgent ones. Can aging guarantee bounded delay under unlimited overload? No; admission and capacity assumptions are necessary.</p>
+
+<p><strong>Reasoning basis:</strong> The model, counterexample and correctness argument are derived here; they are not a library or framework guarantee.</p>
+
+<hr>
+<h3 id="11-find-the-minimum-simultaneous-rooms-for-half-open-meetings-why-must-an-end-be-processed-before-an-equal-start">11. Find the minimum simultaneous rooms for half-open meetings. Why must an end be processed before an equal start?</h3>
+
+<p><strong>Say aloud:</strong> “A half-open interval includes its start and excludes its end. A meeting ending at ten therefore shares a room with one beginning at ten. I would count active intervals with a sweep: create start and end events, sort them by time, and process ends before starts at equal times. The largest active count is the required number of rooms.</p>
+
+<p>Every simultaneously active meeting needs a distinct room, so that peak is a lower bound. Assigning a freed room whenever available achieves the same bound, which establishes optimality for interchangeable rooms without setup time. I would reject reversed intervals and ignore zero-length intervals under the stated empty-interval interpretation. Test touching endpoints, duplicates, nested meetings and negative time coordinates against an independent overlap oracle. The sweep gives the count; returning actual room assignments requires retaining identities and reusable room IDs. Changing to closed intervals changes the tie rule.”</p>
+
+<p><strong>Example:</strong> Conceptual: [1,3), [3,5), [2,4) need two rooms, not three. [2,2) occupies no time in this model.</p>
+
+<p><strong>Deep dive / verification:</strong> O(n log n) time and O(n) event storage. Compare timestamps directly rather than subtracting them in a comparator, which can overflow. Setup/cleanup durations must be included before applying this model.</p>
+
+<p><strong>Follow-ups:</strong> Why do starts first fail? They count touching meetings as overlapping. Are room-specific equipment constraints covered? No; compatibility introduces a different assignment problem.</p>
+
+<p><strong>Reasoning basis:</strong> The model, counterexample and correctness argument are derived here; they are not a library or framework guarantee.</p>
+
+<hr>
+<h3 id="12-schedule-independent-integer-duration-jobs-on-exactly-two-identical-workers-with-minimum-finish-time-why-is-longest-first-only-a-heuristic">12. Schedule independent integer-duration jobs on exactly two identical workers with minimum finish time. Why is longest-first only a heuristic?</h3>
+
+<p><strong>Say aloud:</strong> “The finish time is the larger of the two worker loads. With independent jobs, no setup costs and no preemption, choosing which jobs go to the first worker determines the entire schedule. Longest-first is a useful heuristic but does not always find the best partition. For small total duration, I would compute exactly which subset sums are reachable.</p>
+
+<p>Start with only sum zero reachable. For each job, update reachable sums backward so that job is used at most once. Choose the largest reachable sum at most half the total; its complement is the other load. This is optimal because moving the smaller load closer to half minimizes the larger load. I would compare against exhaustive assignments on small inputs and test zero durations, one job and skewed workloads. The method is pseudo-polynomial: its cost depends on numeric total, not just the number of jobs. Large totals need another explicitly bounded strategy.”</p>
+
+<p><strong>Example:</strong> Java 21 below returns only the optimum finish time. Durations [8,7,6,5,4] admit 15/15; longest-first yields 17/13 with usual least-loaded placement. Input is preserved.</p>
+
+<p><strong>Deep dive / verification:</strong> O(nS) time and O(S) storage for total S; reject negative values and totals above 1,000,000 before allocation. Empty input returns zero; null throws. No dependency or machine-compatibility constraints are modeled. Reconstruction needs extra decision information.</p>
+
+<p><strong>Follow-ups:</strong> Why backward updates? Forward updates could reuse the current job. Is this polynomial in input bits? No; binary-encoded large durations make S much larger than input length.</p>
+
+<p><strong>Reasoning basis:</strong> The model, counterexample and correctness argument are derived here; they are not a library or framework guarantee.</p>
+
+<pre><code class="java">public final class TwoWorkers {
+    public static int minimumFinish(int[] durations) {
+        java.util.Objects.requireNonNull(durations, &quot;durations&quot;);
+        long total = 0;
+        for (int duration : durations) {
+            if (duration &lt; 0) throw new IllegalArgumentException(&quot;negative duration&quot;);
+            total += duration;
+            if (total &gt; 1_000_000) throw new IllegalArgumentException(&quot;total too large&quot;);
+        }
+        int sum = (int) total;
+        boolean[] reachable = new boolean[sum / 2 + 1];
+        reachable[0] = true;
+        for (int duration : durations) {
+            for (int s = sum / 2; s &gt;= duration; s--) {
+                reachable[s] |= reachable[s - duration];
+            }
+        }
+        for (int s = sum / 2; s &gt;= 0; s--) {
+            if (reachable[s]) return sum - s;
+        }
+        throw new AssertionError(&quot;zero is reachable&quot;);
+    }
+}
+</code></pre>
+
+<hr>
+
+<p><strong>Topic coverage:</strong> Replacement syntax, JVM loader identity, executor dependency starvation, Spring async outcomes, JPA lifecycle portability, Kafka consumer ownership, token authorization, recovery namespaces, wire presence semantics, scheduler progress, sweep-line optimality and exact two-worker scheduling.</p>
+
+<p><strong>Next set builds on:</strong> proofs of bounded waiting under explicit admission assumptions, compatibility tests across recovery generations, and scheduling with dependencies or heterogeneous workers. Continue sequential set numbering even on the same date.</p>

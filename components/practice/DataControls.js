@@ -4,22 +4,16 @@ import {
   exportPracticeBackup,
   previewPracticeBackup,
   restorePracticeBackup,
+  summarizePracticeBackup,
 } from "../../lib/practiceBackup.mjs";
-export default function DataControls({ busy }) {
+import { downloadText } from '../../lib/downloadText.mjs';
+
+export default function DataControls({ busy = false, onRestored, showMeasurements = true }) {
   const [preview, setPreview] = useState(null);
   const [status, setStatus] = useState("");
   const download = () => {
     try {
-      const url = URL.createObjectURL(
-        new Blob([exportPracticeBackup(localStorage)], {
-          type: "application/json",
-        }),
-      );
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "interviewiq-practice-backup.json";
-      link.click();
-      URL.revokeObjectURL(url);
+      downloadText(exportPracticeBackup(localStorage), 'interviewiq-practice-backup.json', 'application/json');
       setStatus("Downloaded a backup containing personal practice data.");
     } catch (e) {
       setStatus(e.message);
@@ -65,14 +59,15 @@ export default function DataControls({ busy }) {
       </label>
       {preview && (
         <div>
+          <p>Backup date: {typeof preview.exportedAt === 'string' && !Number.isNaN(Date.parse(preview.exportedAt)) ? new Date(preview.exportedAt).toLocaleString() : 'Date unavailable'}</p>
           <p>
             Restore will replace these saved workspaces; other keys remain
             unchanged. Download a backup first.
           </p>
           <ul>
-            {Object.keys(preview.entries).map((key) => (
-              <li key={key}>
-                {key} · {preview.entries[key].length} characters
+            {summarizePracticeBackup(preview).map((item, index) => (
+              <li key={index}>
+                {item.label}: {item.detail}
               </li>
             ))}
           </ul>
@@ -82,7 +77,8 @@ export default function DataControls({ busy }) {
               try {
                 restorePracticeBackup(localStorage, preview);
                 sessionStorage.setItem("interviewiq.restoreLocal", "1");
-                location.reload();
+                if (onRestored) { onRestored(); setPreview(null); setStatus('Backup restored on this device.'); }
+                else location.reload();
               } catch (error) {
                 setStatus(error.message);
               }
@@ -93,7 +89,7 @@ export default function DataControls({ busy }) {
           <button onClick={() => setPreview(null)}>Cancel restore</button>
         </div>
       )}
-      <PracticeMeasurements />
+      {showMeasurements && <PracticeMeasurements />}
       <p role="status">{status}</p>
     </details>
   );

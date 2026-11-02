@@ -1,6 +1,8 @@
+import InterviewSchedule from './InterviewSchedule';
 import { useMemo, useState } from "react";
 import {
   APPLICATION_STAGES,
+  applicationFollowUpInput,
   buildApplicationBenchmarkComparison,
   buildApplicationTracker,
   buildCalendarFollowUpEvent,
@@ -17,6 +19,7 @@ const DRAFT = {
 };
 
 export default function ApplicationTrackerPanel({ applications = [], onChange, theme }) {
+  const [visibleCount, setVisibleCount] = useState(6);
   const [draft, setDraft] = useState(DRAFT);
   const tracker = useMemo(() => buildApplicationTracker(applications), [applications]);
   const benchmark = useMemo(() => buildApplicationBenchmarkComparison(applications), [applications]);
@@ -39,6 +42,7 @@ export default function ApplicationTrackerPanel({ applications = [], onChange, t
     setDraft(DRAFT);
   };
 
+  const updateApplication = (id, changes) => onChange?.(applications.map(item => item.id === id ? createApplication({ ...item, ...changes }) : item));
   return (
     <section className="glass-card" style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, display: "grid", gap: 12, padding: 12 }}>
       <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", gap: 8 }}>
@@ -99,7 +103,7 @@ export default function ApplicationTrackerPanel({ applications = [], onChange, t
       </section>
 
       <div style={{ display: "grid", gap: 8 }}>
-        {tracker.applications.slice(0, 6).map((application) => {
+        {tracker.applications.slice(0, visibleCount).map((application) => {
           const event = buildCalendarFollowUpEvent(application);
           return (
             <article key={application.id} style={{ background: "rgba(0,0,0,.14)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 6, padding: 10 }}>
@@ -110,6 +114,16 @@ export default function ApplicationTrackerPanel({ applications = [], onChange, t
               <div style={{ color: "#94a3b8", fontSize: 11 }}>
                 {application.followUpAt ? `Follow-up: ${application.followUpAt}` : "No follow-up scheduled yet."}
               </div>
+              <label>Update stage for {application.company}<select aria-label={`Stage for ${application.company}`} value={application.stage} onChange={event => updateApplication(application.id, { stage: event.target.value })}>{APPLICATION_STAGES.map(stage => <option key={stage}>{stage}</option>)}</select></label>
+              <label>Next follow-up for {application.company}<input type="datetime-local" value={applicationFollowUpInput(application.followUpAt)} onChange={event => updateApplication(application.id, { followUpAt: event.target.value })} /></label>
+              <a href={`/practice?buddy=1&buddyTopic=${encodeURIComponent(`${application.company} ${application.role}: ${application.stage} interview preparation`)}`}>Prepare for this round</a>
+              <InterviewSchedule application={application} />
+              <details><summary>Interview debrief for {application.company}</summary>
+                <p>Record what happened, then turn one difficult area into a review. Avoid confidential interview material.</p>
+                {[['questions', 'Questions asked'], ['difficultAreas', 'Difficult areas'], ['evidence', 'Evidence and stories used'], ['nextAction', 'Next action']].map(([field, label]) => <label key={field}>{label} for {application.company}<textarea rows={3} maxLength={field === 'nextAction' ? 2000 : 4000} value={application.debrief[field]} onChange={event => updateApplication(application.id, { debrief: { ...application.debrief, [field]: event.target.value, ...(field === 'difficultAreas' ? { reviewId: crypto.randomUUID() } : {}) } })} /></label>)}
+                <p>Changes save with your application workspace.</p>
+                {application.debrief.difficultAreas && <a href={`/practice?debriefApplication=${encodeURIComponent(application.id)}`}>Review this interview gap</a>}
+              </details>
               {event && (
                 <div style={{ border: "1px solid rgba(255,255,255,.07)", borderRadius: 7, color: "#cbd5e1", fontSize: 10.8, lineHeight: 1.45, padding: 8 }}>
                   <strong style={{ color: theme.accentText }}>Calendar Adapter</strong>
@@ -120,6 +134,7 @@ export default function ApplicationTrackerPanel({ applications = [], onChange, t
             </article>
           );
         })}
+        {tracker.applications.length > visibleCount && <button type="button" onClick={() => setVisibleCount(value => value + 6)}>Show more applications</button>}
         {!tracker.applications.length && (
           <div style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, color: "#94a3b8", fontSize: 11.4, padding: 10 }}>
             Add a few applications to unlock stage counts, due follow-ups, and calendar-ready reminders.

@@ -308,7 +308,7 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
 
     setState((previous) => ({
       ...previous,
-      interviews: [next, ...previous.interviews].slice(0, 12),
+      interviews: [next, ...previous.interviews.filter(event => event.id !== next.id)],
     }));
     setInterviewDraft(EMPTY_INTERVIEW);
     setInterviewNotice("");
@@ -728,6 +728,7 @@ export default function CareerToolkit({ profile, topics, messages, theme, onActi
                   <strong style={{ display: "block", color: "#e8e8f0", fontSize: 11.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{event.company} - {event.role}</strong>
                   <span style={{ display: "block", color: "#6b7280", fontSize: 10.8 }}>{event.date} · {event.round} · {event.status}</span>
                 </span>
+                <select aria-label={`Status for ${event.company} ${event.round}`} value={event.status} onChange={change => setState(previous => ({ ...previous, interviews: previous.interviews.map(item => item.id === event.id ? { ...item, status: change.target.value } : item) }))}>{['scheduled','completed','waiting','offer','rejected'].map(status => <option key={status}>{status}</option>)}</select>
                 <button onClick={() => removeInterview(event.id)} title="Remove interview" style={{ background: "none", border: "none", color: "#6b7280", cursor: "pointer", fontSize: 15 }}>
                   <i className="ti ti-x" />
                 </button>

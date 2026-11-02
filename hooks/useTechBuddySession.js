@@ -31,7 +31,7 @@ export function useTechBuddySession({ initialSession, config, profile, onChange,
     const timeout = setTimeout(() => controller.abort(), 90000);
     const isCurrent = () => operation.current === controller && state.current.id === snapshot.id;
     try {
-      snapshot = { ...snapshot, context: callbacks.current.messages, history: callbacks.current.history.filter(turn => turn.buddySessionId !== snapshot.id && (turn.topic === snapshot.topic || turn.lessonTopic === snapshot.topic)) };
+      snapshot = { ...snapshot, turns: snapshot.turns.map(turn => ({ ...turn, assessmentReview: callbacks.current.history.find(attempt => attempt.id === turn.id)?.assessmentReview || turn.assessmentReview })), context: callbacks.current.messages, history: callbacks.current.history.filter(turn => !turn.assessmentReview?.exclude && turn.buddySessionId !== snapshot.id && (turn.topic === snapshot.topic || turn.lessonTopic === snapshot.topic)) };
       const publish = entries => callbacks.current.onConversation?.(entries.map(entry => ({ ...entry, buddySessionId: snapshot.id })));
       if (snapshot.pending.kind === 'dialogue') {
         const content = await requestBuddyDialogue(snapshot, profile, controller.signal);

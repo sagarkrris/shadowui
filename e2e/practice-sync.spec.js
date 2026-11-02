@@ -12,7 +12,7 @@ test('failed cloud hydration never writes over the unread remote state', async (
 test('typing while cloud hydration waits preserves the newer local draft', async ({ page }) => {
   await auth(page); let release; const gate = new Promise(resolve => { release = resolve; });
   await page.route('**/api/state', async route => { if (route.request().method() === 'PUT') return route.fulfill({ json: { ok: true } }); await gate; return route.fulfill({ json: { state: { session: { ...createSessionSnapshot().snapshot, input: 'Old remote draft' } } } }); });
-  await gotoSeededApp(page, { homeDemoSeen: true, skipReadyCheck: true }); await page.getByLabel('Message composer').fill('New local draft'); release(); await expect(page.getByText('Saved and synced', { exact: true })).toBeVisible(); await expect(page.getByLabel('Message composer')).toHaveValue('New local draft');
+  await gotoSeededApp(page, { homeDemoSeen: true, skipReadyCheck: true }); await page.getByLabel('Message composer').fill('New local draft'); release(); await expect(page.getByRole('region', { name: 'Cloud save conflict' })).toBeVisible(); await page.getByRole('button', { name: 'Keep this device copy', exact: true }).click(); await expect(page.getByText('Saved and synced', { exact: true })).toBeVisible(); await expect(page.getByLabel('Message composer')).toHaveValue('New local draft');
 });
 test('cloud writes serialize while the user continues editing', async ({ page }) => {
   await auth(page); const writes = []; let release; const gate = new Promise(resolve => { release = resolve; });

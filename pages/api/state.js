@@ -12,12 +12,13 @@ async function handler(req, res) {
   const limit = await checkDistributedRateLimit(`state:${user.id}:${getClientAddress(req)}`, { limit: 60 });
   if (!limit.ok) return res.status(429).json({ error: "Too many state requests." });
   try {
-    if (req.method === "GET") return res.status(200).json({ state: await loadUserState(user.id) });
+    if (req.method === "GET") return res.status(200).json(await loadUserState(user.id, true));
     if (req.method === "PUT") {
       if (!(await requireCsrf(req))) return res.status(403).json({ error: "CSRF validation failed." });
       const state = req.body?.state;
       if (!state || typeof state !== "object" || JSON.stringify(state).length > 2_000_000) return res.status(413).json({ error: "State payload is invalid or too large." });
-      const result = await saveUserState(user.id, state);
+      const result = await saveUserState(user.id, state, req.body.revision);
+      if (result.conflict) return res.status(409).json({ error: "State changed on another device. Choose which copy to keep." });
       return res.status(200).json({ ok: true, ...result });
     }
     return res.status(405).json({ error: "Method not allowed." });
