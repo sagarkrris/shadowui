@@ -1,0 +1,45 @@
+.layout { display:grid; grid-template-columns:250px minmax(0,1fr); gap:30px; align-items:start; margin-top:24px; }
+.sidebar { position:sticky; top:90px; border:1px solid #d6dfda; border-radius:12px; background:#f6f9f6; padding:18px; min-width:0; max-height:calc(100dvh - 115px); overflow:auto; }
+.sidebar h2 { font-size:17px; margin:0 0 8px; }
+.sidebar progress { width:100%; accent-color:#277b69; }
+.sidebar label { display:block; font-size:13px; margin-top:16px; }
+.sidebar input { width:100%; box-sizing:border-box; }
+.lessonList { display:grid; gap:6px; }
+.sidebar .lessonButton { width:100%; text-align:left; display:flex; align-items:baseline; gap:10px; border:1px solid transparent; background:transparent; color:#294c45; padding:11px 10px; border-radius:8px; font-size:14px; line-height:1.5; }
+.sidebar .lessonButton[aria-pressed=true] { color:#134c3f; background:#dceee5; border-color:#9bbdac; font-weight:700; }
+.sidebar .lessonButton:hover { background:#e5eee7; }
+.sidebar .group { font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:#50685f; margin:20px 0 7px; }
+.number { font:12px/1.5 monospace; flex-shrink:0; }
+.main { min-width:0; }
+.header { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:start; gap:15px; margin-bottom:20px; }
+.header h1 { font-size:clamp(30px,4vw,46px); margin:0 0 10px; line-height:1.15; }
+.header p { margin:8px 0; }
+.badge { background:#e5f2e8; color:#1e5c45; font-size:12px; padding:6px 10px; border-radius:20px; }
+.metrics { display:flex; flex-wrap:wrap; gap:10px 24px; padding:15px 0; border-block:1px solid #d6dfda; font-size:13px; color:#50685f; margin-bottom:22px; }
+.metrics strong { color:#203e35; }
+.workspace { border:1px solid #b6cbc0; border-radius:12px; overflow:hidden; background:#fffefa; margin-bottom:30px; }
+.bar { display:flex; align-items:center; flex-wrap:wrap; gap:10px; padding:14px 18px; background:#edf4ee; border-bottom:1px solid #cad9cf; }
+.bar h2 { font-size:17px; margin:0; flex:1; }
+.editorGrid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+.editorPane,.resultPane { min-width:0; padding:18px; }
+.resultPane { border-left:1px solid #d6dfda; background:#f8faf6; }
+.editorPane label,.resultPane h3 { display:block; margin:0 0 12px; font-size:14px; }
+.editorPane textarea { min-height:230px; background:#122c2b; color:#e2f2e6; border:1px solid #254c46; }
+.shortcut { font-size:12px; color:#536d61; margin:10px 0; }
+.resultPane .empty { border:1px dashed #b2c8b8; padding:28px 16px; border-radius:8px; text-align:center; color:#4c675b; }
+.execution { border-top:1px solid #cad9cf; padding:18px; }
+.execution h3 { margin-top:0; }
+.steps { display:flex; flex-wrap:wrap; gap:8px; margin:15px 0; }
+.steps button { font-size:12px; border:1px solid #bccfc2; background:#f4f8f2; color:#264b40; border-radius:7px; padding:9px 12px; }
+.steps button[aria-pressed=true] { background:#214e41; color:#fff; border-color:#214e41; }
+.controls { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-top:15px; }
+.controls span { font-size:13px; margin-left:auto; }
+.status { padding:0 18px; min-height:24px; font-size:14px; }
+.challenge { padding:18px; border-top:1px solid #cad9cf; background:#f1f5ec; }
+.challenge h3 { margin:0; }
+.cardGrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr)); gap:16px; margin-block:20px; }
+.card { border:1px solid #ccd9cf; border-radius:10px; padding:18px; background:#fffef9; }
+.card h3 { margin:8px 0; }
+@media(max-width:1050px) { .layout { grid-template-columns:210px minmax(0,1fr); gap:20px; } .editorGrid { grid-template-columns:1fr; } .resultPane { border-left:0; border-top:1px solid #d6dfda; } }
+@media(max-width:700px) { .layout { grid-template-columns:1fr; gap:20px; } .sidebar { position:static; max-height:none; padding:14px; } .lessonList { grid-template-columns:repeat(2,minmax(0,1fr)); } .sidebar .group { grid-column:1 / -1; margin-top:12px; } .sidebar .lessonButton { height:100%; padding:9px; font-size:13px; } .header h1 { font-size:32px; } }
+.workspace .editorPane textarea { font:14px/1.7 ui-monospace, SFMono-Regular, Consolas, monospace; }

@@ -6,5 +6,5 @@ import { BUILD_CHALLENGES } from '../lib/buildChallenges.mjs';
 
 export default LandingHome;
 export function getStaticProps() {
-  return { props: { promise: EDITORIAL_PROMISE, catalogue: READER_ARTICLES, counts: { courses: listTechBlogs().length, labs: HUB_LABS.length, challenges: BUILD_CHALLENGES.length } } };
+  return { props: { promise: EDITORIAL_PROMISE, catalogue: READER_ARTICLES, counts: { courses: listTechBlogs().length, labs: HUB_LABS.length + 2, challenges: BUILD_CHALLENGES.length } } };
 }

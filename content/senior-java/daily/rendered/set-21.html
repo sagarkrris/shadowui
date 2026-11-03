@@ -1,0 +1,230 @@
+<p><strong>Set 21 · 3 November 2026 — Interpreting data and selecting boundaries</strong></p>
+
+<p>Reference assumptions: <strong>Java 21 without preview features</strong>, Spring Framework 7.0 in a compatible Spring Boot application, Jakarta Persistence 3.2 and Kafka 4.0. Primary references checked 3 November 2026. These are reference versions, not upgrade recommendations. Verify deployed provider and Boot-managed versions.</p>
+
+<p>Stable IDs: <strong>S21-Q01–S21-Q12</strong>, in order. Spoken answers target 45–90 seconds. Examples are original illustrations. Q1–Q10 are contextual scenarios, not executed framework integrations. Q11–Q12 contain compiled and behaviorally tested Java.</p>
+
+<hr>
+<h3 id="1-a-protocol-command-lowercases-correctly-locally-but-fails-on-a-turkish-server-which-locale-owns-machine-identifiers">1. A protocol command lowercases correctly locally but fails on a Turkish server. Which locale owns machine identifiers?</h3>
+
+<p><strong>Say aloud:</strong> “A locale is a set of language and regional conventions. Human text transformations may depend on it, but a machine protocol must define one stable interpretation. Calling toLowerCase without a locale uses the process default, so identical input can produce different keys across servers. In Turkish, capital I is a particularly useful counterexample.</p>
+
+<p>For a protocol explicitly defined as ASCII case-insensitive, I would validate the allowed alphabet first, then use locale-independent casing with Locale.ROOT. I would preserve the original spelling separately if users need it. Root casing alone does not define Unicode identity, remove visually similar characters, or implement every protocol&#39;s comparison rules. Tests should run the same command under English and Turkish defaults and restore global state afterward. For user-facing search I would instead choose the product&#39;s language rules deliberately; a universal lowercase helper conflates two different requirements.”</p>
+
+<p><strong>Example:</strong> Contextual Java: <code>command.toLowerCase(Locale.ROOT)</code> after ASCII command validation; <code>TITLE</code> must retain the same protocol meaning under every host locale.</p>
+
+<p><strong>Deep dive / verification:</strong> Transformation costs grow with text length and can change output length. Test persisted-key compatibility before changing existing normalization.</p>
+
+<p><strong>Follow-ups:</strong> Is equalsIgnoreCase a universal Unicode identity rule? No; identity must follow the protocol specification. Should display names use ROOT automatically? No; display requirements can be language-sensitive.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/String.html">Primary documentation</a>.</p>
+
+<hr>
+<h3 id="2-a-utf-8-character-crosses-two-network-buffers-and-becomes-two-replacement-characters-why-is-decoding-each-chunk-independently-unsafe">2. A UTF-8 character crosses two network buffers and becomes two replacement characters. Why is decoding each chunk independently unsafe?</h3>
+
+<p><strong>Say aloud:</strong> “UTF-8 represents some characters with several bytes, while a network chunk is only a transport boundary. A chunk can end in the middle of one encoded character. Creating an independent string from each chunk discards that relationship and can replace fragments that would have been valid when combined.</p>
+
+<p>I would use a streaming reader or a CharsetDecoder with a documented ownership lifecycle. Preserve unconsumed bytes after underflow, supply the next bytes, drain output on overflow, and mark end of input only when the stream really ends. For strict structured input I would report malformed data instead of silently changing identifiers. I would also bound bytes and decoded output separately. Tests should split every position of a multibyte example, then include truncated final input and invalid sequences. This solves framing of encoded characters; application message framing still needs its own length or delimiter protocol.”</p>
+
+<p><strong>Example:</strong> Conceptual: the euro sign is bytes E2 82 AC; receiving E2 82 followed by AC must produce one character, not two independent decode attempts.</p>
+
+<p><strong>Deep dive / verification:</strong> Use one decoder per owned decoding operation; decoders are stateful. Memory bounds include retained partial bytes and output buffers, not just chunk length.</p>
+
+<p><strong>Follow-ups:</strong> Does underflow always mean EOF? No; it can mean more bytes are needed. Can the decoder be shared concurrently? No; its mutable state needs confinement.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/nio/charset/CharsetDecoder.html">Primary documentation</a>.</p>
+
+<hr>
+<h3 id="3-a-sensor-value-passes-the-check-value-0-or-value-100-even-though-it-is-nan-what-does-a-range-check-assume">3. A sensor value passes the check value &lt; 0 or value &gt; 100 even though it is NaN. What does a range check assume?</h3>
+
+<p><strong>Say aloud:</strong> “NaN means not a number, a floating-point value representing an undefined numeric result. Ordered comparisons with NaN are false, so rejecting values below zero or above one hundred leaves a hole. Positive and negative infinity also need an explicit policy rather than being treated as ordinary readings.</p>
+
+<p>For a finite bounded measurement I would first require Double.isFinite, then check the allowed range. I would define whether negative zero is meaningful and whether rounding belongs before or after validation. The transport parser also needs a policy for unsupported numeric literals. I would test NaN, both infinities, both signed zeros, exact endpoints and nearby out-of-range values. Replacing floating point with decimal arithmetic is appropriate for some domains, but it does not replace defining the accepted measurement space. Validation should describe business meaning rather than relying on the absence of a comparison failure.”</p>
+
+<p><strong>Example:</strong> Contextual Java: reject when <code>!Double.isFinite(value) || value &lt; 0 || value &gt; 100</code> for a finite percentage contract.</p>
+
+<p><strong>Deep dive / verification:</strong> Constant-time scalar validation; aggregation can create NaN later, so validate computed outputs where the contract requires finite results.</p>
+
+<p><strong>Follow-ups:</strong> Can value == Double.NaN detect it? No; use isNaN. Do boxed Double equality rules exactly match primitive ==? No; NaN and signed zero differ.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Double.html">Primary documentation</a>.</p>
+
+<hr>
+<h3 id="4-a-compareandexchange-returns-7-and-code-treats-the-nonzero-result-as-success-what-does-the-witness-value-mean">4. A compareAndExchange returns 7 and code treats the nonzero result as success. What does the witness value mean?</h3>
+
+<p><strong>Say aloud:</strong> “Compare-and-exchange is a conditional atomic update: it changes a variable only if its current value equals the expected value. Its return is the witness, meaning the value observed at that operation, rather than a boolean or necessarily the new value. Success is determined by comparing the witness with the expected value.</p>
+
+<p>If I expect seven and propose eight, a returned seven means my exchange succeeded even though the stored value became eight at that instant. A returned nine means it failed and observed nine. Another thread can change the value immediately afterward, so reading it again cannot reliably determine my operation&#39;s success. I would keep this check beside the exchange and choose ordinary compareAndSet when only a boolean is needed. Tests should force both mismatch and match cases. Atomicity protects that one variable operation; it does not reserve the state indefinitely or enforce unrelated fields.”</p>
+
+<p><strong>Example:</strong> Contextual Java: <code>int witness = state.compareAndExchange(7, 8); boolean changed = witness == 7;</code>.</p>
+
+<p><strong>Deep dive / verification:</strong> One atomic operation has no application-level fairness promise. Retry loops need contention and progress analysis; side effects belong after a successful decision.</p>
+
+<p><strong>Follow-ups:</strong> Can failure return my proposed value? Yes, if that was already present. Does success prove no ABA history? No; use additional version identity when history matters.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/atomic/AtomicInteger.html">Primary documentation</a>.</p>
+
+<hr>
+<h3 id="5-a-serviceloader-finds-no-provider-in-a-packaged-application-although-development-worked-what-discovery-boundary-should-you-inspect">5. A ServiceLoader finds no provider in a packaged application although development worked. What discovery boundary should you inspect?</h3>
+
+<p><strong>Say aloud:</strong> “ServiceLoader discovers implementations of a service contract from deployment metadata and the relevant loading environment. Implementing the interface alone does not make a provider discoverable. Packaging can omit service descriptors, merge them incorrectly, or change the module and class-loader context.</p>
+
+<p>I would compare the built artifact with development execution: verify the service name, provider metadata, provider accessibility and the loader or module layer used for discovery. For named modules I would inspect uses and provides declarations. I would define what zero or multiple providers mean instead of silently choosing whichever is encountered first. Provider discovery and construction can fail lazily during iteration, so a startup check should actually traverse the required providers. A test should launch the packaged artifact in its intended mode. This is a deployment contract problem before it is a reason to add a global reflection scan.”</p>
+
+<p><strong>Example:</strong> Conceptual: a codec implementation exists in a jar, but its META-INF/services descriptor was dropped by packaging; the class being present is insufficient.</p>
+
+<p><strong>Deep dive / verification:</strong> Discovery cost depends on providers and loading; cache deliberately within the loader lifecycle. ServiceLoader instances are not safe for concurrent use without coordination.</p>
+
+<p><strong>Follow-ups:</strong> Does load instantiate all providers immediately? No; discovery is lazy. Is provider order a business priority policy? No; select by explicit capability and configuration.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/ServiceLoader.html">Primary documentation</a>.</p>
+
+<hr>
+<h3 id="6-a-qualifier-named-archive-is-put-on-two-beans-why-does-injecting-one-archive-client-remain-ambiguous">6. A qualifier named archive is put on two beans. Why does injecting one archive client remain ambiguous?</h3>
+
+<p><strong>Say aloud:</strong> “A Spring qualifier narrows the candidates matching a dependency&#39;s type. It is not inherently a unique object identifier. Several beans can share a qualifier because it can describe a category, such as archive-capable clients. A single-valued constructor parameter still needs one eligible choice after selection rules apply.</p>
+
+<p>I would decide whether the consumer requires one designated client or every client in that category. For one client, give the configuration an unambiguous selection using the appropriate qualifier and primary rules. For a group, inject a qualified collection and define dispatch semantics explicitly. I would avoid depending on an incidental parameter name to resolve an architectural choice. A context test should register both candidates and verify either the intended selection or a startup failure. Successful injection proves a wiring choice, not tenant routing correctness, thread safety, or availability of the remote service.”</p>
+
+<p><strong>Example:</strong> Contextual Spring: two Client beans both carry <code>@Qualifier(&quot;archive&quot;)</code>; a qualified collection can contain both, whereas a single Client needs unambiguous selection.</p>
+
+<p><strong>Deep dive / verification:</strong> Assume Spring Framework 7.0 in a compatible Boot app. Verify actual configuration and parameter metadata; selection happens during container wiring, not per-request routing.</p>
+
+<p><strong>Follow-ups:</strong> Does a qualifier change bean scope? No. Should a dynamic tenant choice use injection names? Prefer an explicit validated routing policy over accidental bean naming.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.spring.io/spring-framework/reference/core/beans/annotation-config/autowired-qualifiers.html">Primary documentation</a>.</p>
+
+<hr>
+<h3 id="7-a-calculated-jpa-field-is-annotated-transient-then-disappears-after-reload-what-persistence-contract-was-declared">7. A calculated JPA field is annotated Transient, then disappears after reload. What persistence contract was declared?</h3>
+
+<p><strong>Say aloud:</strong> “Persistence maps selected object state to durable database state. Jakarta Persistence Transient explicitly excludes a field or property from that mapping. Changing it on a managed entity therefore does not make it durable through normal dirty checking, which detects mapped changes for synchronization.</p>
+
+<p>I would first ask whether the value is derived or authoritative. A derived display total can be recomputed from mapped facts or placed in a response DTO. An authoritative approved amount needs an intentional mapping, schema migration and consistency rule; removing the annotation casually can expose stale or incompatible data. I would also inspect whether the entity uses field or property access, because placing mapping annotations on the wrong side can mislead the reader. Verify by committing, clearing the persistence context and reloading in another transaction. Looking at the same managed object only proves the in-memory assignment survived.”</p>
+
+<p><strong>Example:</strong> Conceptual JPA: <code>@Transient BigDecimal previewTotal</code> is recalculated after loading; storing an approved total requires a separately designed mapped attribute.</p>
+
+<p><strong>Deep dive / verification:</strong> Assume Jakarta Persistence 3.2. This annotation is distinct from Java serialization rules; neither annotation supplies encryption or access control.</p>
+
+<p><strong>Follow-ups:</strong> Does flush persist it? No; excluded state stays excluded. Can a transient value be returned in JSON? Yes, depending on the serializer; persistence exclusion is not output exclusion.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://jakarta.ee/specifications/persistence/3.2/apidocs/jakarta.persistence/jakarta/persistence/Transient.html">Primary documentation</a>.</p>
+
+<hr>
+<h3 id="8-kafka-carries-two-tenant-headers-and-two-consumers-choose-different-values-what-contract-is-missing">8. Kafka carries two tenant headers and two consumers choose different values. What contract is missing?</h3>
+
+<p><strong>Say aloud:</strong> “Kafka headers are an ordered collection of key-value entries, not a map guaranteeing one value per key. The headers API can return every entry for a key or the last entry. If one component chooses the first and another the last, both can parse the same record while assigning different meaning.</p>
+
+<p>I would define cardinality, byte encoding, size limits and trust ownership for each header. A security-sensitive tenant field should reject duplicates unless a precise protocol explicitly permits them. A trusted gateway should replace untrusted identity metadata rather than merely append another value. The consumer must still authenticate the source and authorize the operation; a unique header is not proof of authority. Tests should cover missing, null-valued, duplicate-equal and duplicate-conflicting headers, including replay of old records. This turns an incidental client-library selection into a deliberate interoperable message contract.”</p>
+
+<p><strong>Example:</strong> Conceptual Kafka: entries tenant=A, tenant=B make first-value and last-value readers disagree; reject duplicate identity entries before using either.</p>
+
+<p><strong>Deep dive / verification:</strong> Kafka 4.0 API; scanning H headers is O(H), with explicit total byte/count bounds. Legacy records need a migration or quarantine policy rather than arbitrary reinterpretation.</p>
+
+<p><strong>Follow-ups:</strong> Does lastHeader validate uniqueness? No. Does a record key automatically authenticate tenant identity? No; source trust and authorization remain application responsibilities.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://kafka.apache.org/40/javadoc/org/apache/kafka/common/header/Headers.html">Primary documentation</a>.</p>
+
+<hr>
+<h3 id="9-an-emergency-configuration-rollback-restores-a-revoked-destination-why-is-the-previous-configuration-not-automatically-safe">9. An emergency configuration rollback restores a revoked destination. Why is the previous configuration not automatically safe?</h3>
+
+<p><strong>Say aloud:</strong> “Rollback restores an earlier state; it does not establish that every fact in that state is still valid. Revocations, expired credentials and newly forbidden destinations are changes in external reality. Restoring a snapshot can reverse deployment settings while accidentally undoing a security decision.</p>
+
+<p>I would separate reversible rollout configuration from monotonic safety constraints that must survive rollback. Monotonic here means a constraint cannot be relaxed merely by selecting an older release snapshot. Resolve the candidate configuration against current revocations before activation and fail closed when that check cannot be established for a sensitive operation. Preserve an audited recovery path for intentionally lifting a restriction. A rehearsal should revoke a destination, roll back, and confirm traffic remains blocked. This costs operational complexity and can reduce availability during control-plane failure, so the service needs an explicit safety policy rather than an unqualified promise that rollback always restores health.”</p>
+
+<p><strong>Example:</strong> Conceptual design: snapshot v12 permits endpoint X; a later incident revokes X. Restoring v12 must still intersect its destinations with the current allowed set.</p>
+
+<p><strong>Deep dive / verification:</strong> This is an application invariant, not a Java library guarantee. Atomic publication needs coherent validated snapshots; previously dispatched traffic cannot be recalled by configuration alone.</p>
+
+<p><strong>Follow-ups:</strong> Can revocations themselves be rolled back? Only through an explicit authorized policy change. Does signing an old snapshot make it current? No; integrity and present validity differ.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/atomic/AtomicReference.html">Primary documentation</a>.</p>
+
+<hr>
+<h3 id="10-two-visually-identical-usernames-have-different-code-point-sequences-should-nfc-normalization-also-merge-all-lookalikes">10. Two visually identical usernames have different code-point sequences. Should NFC normalization also merge all lookalikes?</h3>
+
+<p><strong>Say aloud:</strong> “Unicode normalization gives equivalent encodings a common form. For example, a precomposed accented letter and a letter followed by a combining accent can normalize to the same NFC representation. That is different from deciding that visually similar letters from different scripts identify one account.</p>
+
+<p>I would define an identifier policy before enrollment: allowed characters, normalization form, case rules and a uniqueness constraint on the canonical representation. Keep a separate display spelling if needed. Apply the same policy to registration, lookup and recovery. Existing accounts require a collision audit before changing normalization; silently merging them can transfer identity. NFC alone does not detect every deceptive lookalike, establish ownership or authorize a login. Tests should include composed and decomposed accents, mixed scripts and legacy collisions. Human-facing names may need broader freedom than login identifiers, so avoid imposing an account-security policy on every displayed string.”</p>
+
+<p><strong>Example:</strong> Conceptual: U+00E9 and U+0065 U+0301 normalize together under NFC; Latin a and Cyrillic a are not made identical by that step.</p>
+
+<p><strong>Deep dive / verification:</strong> Bound input before and after canonicalization. Store a policy version when evolution requires migration; test database comparison behavior as well as Java output.</p>
+
+<p><strong>Follow-ups:</strong> Is NFKC interchangeable with NFC? No; compatibility mappings can collapse additional distinctions. Should collisions be solved by choosing the oldest account? No; require an explicit identity-resolution process.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/text/Normalizer.html">Primary documentation</a>.</p>
+
+<hr>
+<h3 id="11-find-the-first-position-at-which-a-sorted-integer-array-could-accept-a-target-without-breaking-order-why-is-any-matching-index-insufficient">11. Find the first position at which a sorted integer array could accept a target without breaking order. Why is any matching index insufficient?</h3>
+
+<p><strong>Say aloud:</strong> “A lower bound is the first index whose value is at least the target, or the array length when none qualifies. Unlike finding any occurrence, it gives a stable insertion boundary even when values repeat. I assume the input is nondecreasing and remains unchanged during the search.</p>
+
+<p>I keep a half-open search interval from lo inclusive to hi exclusive. Everything before lo is less than the target, and everything from hi onward is at least the target. At the midpoint, a smaller value lets me discard the midpoint and everything before it; otherwise I retain that midpoint as a possible answer by moving hi there. Each iteration strictly shrinks the interval. When the endpoints meet, the invariant identifies the first valid position. The method uses logarithmic time and constant extra space; validating sortedness on every call would instead cost linear time. I would test against an independent linear scan, especially empty input and repeated targets.”</p>
+
+<p><strong>Example:</strong> In <code>[2, 4, 4, 9]</code>, target 4 returns 1, target 5 returns 3, and target 10 returns 4. Java 21; null is rejected, input is not mutated. The caller owns the sortedness precondition.</p>
+
+<pre><code class="java">public final class LowerBound {
+    public static int firstAtLeast(int[] values, int target) {
+        java.util.Objects.requireNonNull(values);
+        int lo = 0, hi = values.length;
+        while (lo &lt; hi) {
+            int mid = lo + (hi - lo) / 2;
+            if (values[mid] &lt; target) lo = mid + 1;
+            else hi = mid;
+        }
+        return lo;
+    }
+}
+</code></pre>
+
+<p><strong>Deep dive / verification:</strong> O(log n) time and O(1) space, excluding input. Midpoint arithmetic avoids adding two potentially large indices. Concurrent mutation invalidates the invariant. Arrays.binarySearch does not promise the first duplicate; its negative insertion-point encoding also applies only when the key is absent. Compare every result with a scan on exhaustive small sorted arrays and extreme integer values.</p>
+
+<p><strong>Follow-ups:</strong> How do you get an upper bound? Change the predicate to first value strictly greater than target; do not compute target + 1 because it may overflow. How many occurrences? Subtract lower bound from upper bound.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Arrays.html">Java Arrays search contract</a>. The lower-bound proof above describes this algorithm rather than attributing a first-match promise to Arrays.binarySearch.</p>
+
+<hr>
+<h3 id="12-count-right-or-down-paths-through-a-blocked-grid-modulo-1-000-000-007-why-must-a-blocked-cell-erase-its-previous-count">12. Count right-or-down paths through a blocked grid modulo 1,000,000,007. Why must a blocked cell erase its previous count?</h3>
+
+<p><strong>Say aloud:</strong> “Dynamic programming stores answers to smaller subproblems. Here each open cell receives paths from its upper and left neighbors. I assume a rectangular grid, true means blocked, and movement is only one cell right or down. Returning the count modulo a fixed positive number bounds arithmetic; it does not return the exact count when that count is large.</p>
+
+<p>A one-dimensional array stores counts for the previous row until each position is updated. Before updating a column, its value represents paths from above; the already updated previous column represents paths from the left. At an obstacle I must set the count to zero, otherwise an old above count can leak through the barrier. Seed the first column with one before processing the start; a blocked start then correctly clears it. I would compare small grids with a recursive path enumeration that follows actual moves, including blocked starts, blocked finishes and a complete barrier.”</p>
+
+<p><strong>Example:</strong> A 3-by-3 grid with only its center blocked has two paths. A blocked single cell has zero; an open single cell has one. Null and ragged grids are rejected; empty dimensions return zero. Validation occurs before the dynamic program and does not mutate input.</p>
+
+<pre><code class="java">public final class GridPaths {
+    public static int count(boolean[][] blocked) {
+        java.util.Objects.requireNonNull(blocked);
+        if (blocked.length == 0) return 0;
+        java.util.Objects.requireNonNull(blocked[0]);
+        int columns = blocked[0].length;
+        for (boolean[] row : blocked) {
+            java.util.Objects.requireNonNull(row);
+            if (row.length != columns) throw new IllegalArgumentException(&quot;ragged grid&quot;);
+        }
+        if (columns == 0) return 0;
+        final int mod = 1_000_000_007;
+        int[] paths = new int[columns];
+        paths[0] = 1;
+        for (boolean[] row : blocked) {
+            for (int c = 0; c &lt; columns; c++) {
+                if (row[c]) paths[c] = 0;
+                else if (c &gt; 0) paths[c] = (paths[c] + paths[c - 1]) % mod;
+            }
+        }
+        return paths[columns - 1];
+    }
+}
+</code></pre>
+
+<p><strong>Deep dive / verification:</strong> O(rows × columns + rows) time including rectangularity validation; O(columns) auxiliary storage. Both summands are below the modulus, so their sum is at most 2,000,000,012, within int range. This safety depends on the chosen modulus. Exact counting needs BigInteger and a different arithmetic cost model. Exhaust all obstacle layouts through 4-by-4 and compare a larger open grid with a BigInteger binomial count modulo the same constant. Input memory is a caller responsibility; a service must separately bound accepted dimensions.</p>
+
+<p><strong>Follow-ups:</strong> Can this directly handle left and up moves? No; cycles invalidate this recurrence and may permit infinitely many walks. Can it reconstruct one path from only these counts? Modular zero does not prove unreachability; keep separate reachability and predecessor information.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/javase/specs/jls/se21/html/jls-4.html#jls-4.2.2">Java integer arithmetic rules</a>. The recurrence and complexity are proved here, not presented as library guarantees.</p>
+
+<hr>
+
+<p><strong>Topic coverage:</strong> S21-Q01–Q03 cover text and numeric interpretation; Q04–Q05 atomic results and provider discovery; Q06–Q08 Spring wiring, JPA mapping and Kafka header contracts; Q09–Q10 safe rollback and Unicode identity; Q11–Q12 binary search invariants and grid dynamic programming.</p>
+
+<p><strong>Next set builds on:</strong> configuration provenance across recovery, explicit compatibility policies for discovery and parsing, and algorithms that reconstruct witnesses rather than only counts. Keep version assumptions and distinguish validity, identity and authority.</p>

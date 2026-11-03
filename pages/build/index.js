@@ -8,6 +8,7 @@ export default function BuildIndex({ projects }) {
   return <ReaderLayout title="Build a tiny system" description="Understand engineering mechanisms by implementing small Java systems with runnable tests.">
     <p className={styles.eyebrow}>BUILD · TEST · EXPLAIN</p><h1>Build a tiny version of the real thing.</h1>
     <p>Each chapter adds a requirement, exposes the previous design’s limitation, and provides runnable tests. Download your Java and run it locally. No account required.</p>
+    <p><Link href="/assessments">Try the timed two-file Java repository assessment →</Link></p>
     <ChallengeCatalog />
     <h2>Guided multi-chapter projects</h2>
     <div className={styles.grid}>

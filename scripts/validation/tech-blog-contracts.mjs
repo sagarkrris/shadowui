@@ -22,6 +22,8 @@ export const JAVA_BLOG_FIXTURES = {
   'java-time-production': 'JavaTimeExampleChecks',
   'java-webhooks-production': 'WebhookExampleChecks',
   'java-cache-stampede-control': 'CacheStampedeExampleChecks',
+  'java-bulkheads-backpressure': 'BulkheadExampleChecks',
+  'java-idempotent-commands': 'IdempotencyCommandExampleChecks',
 };
 
 export function validateTechBlogCatalog(blogs = listTechBlogs(), assignments = COURSE_DEMO_ASSIGNMENTS, fixtures = JAVA_BLOG_FIXTURES) {

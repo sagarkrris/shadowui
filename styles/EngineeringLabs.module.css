@@ -1,0 +1,19 @@
+.tabs { display:flex; flex-wrap:wrap; gap:10px; margin:24px 0; }
+.tabs button[aria-pressed=true] { background:#193e3f; color:#fff; }
+.panel { border:1px solid #c5d3cc; border-radius:12px; padding:clamp(14px,3vw,28px); margin:20px 0; background:#fffef9; min-width:0; }
+.editor { width:100%; min-height:160px; resize:vertical; font:14px/1.6 monospace; padding:14px; border:1px solid #71857b; border-radius:6px; color:#183c3c; background:#fff; box-sizing:border-box; }
+.scroll { overflow:auto; max-width:100%; }
+.scroll table { border-collapse:collapse; width:100%; font:14px/1.5 monospace; }
+.scroll th,.scroll td { padding:10px; border:1px solid #c5d3cc; text-align:left; white-space:nowrap; }
+.columns { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr)); gap:14px; }
+.snapshot { white-space:pre-wrap; overflow-wrap:anywhere; background:#edf3ef; border-radius:6px; padding:14px; min-height:60px; }
+.graph { display:grid; gap:12px; padding:0; list-style:none; }
+.graph li { border-left:4px solid #357b71; padding:10px 15px; background:#edf3ef; border-radius:5px; }
+.graph code { overflow-wrap:anywhere; }
+.status { min-height:28px; font-weight:600; }
+.phase { scroll-margin-top:90px; }
+.phase input[type=checkbox] { width:auto; margin-right:8px; }
+.phase label { display:block; margin-block:12px; }
+.timer { font:600 26px/1.5 monospace; }
+@media(prefers-reduced-motion:reduce) { .panel * { scroll-behavior:auto; } }
+.commitSvg { display:block; max-width:none; background:#fbfdf8; border:1px solid #cad8cc; border-radius:8px; }
