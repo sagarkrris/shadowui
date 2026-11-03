@@ -41,7 +41,7 @@ for (const viewport of [{width:1366,height:900},{width:390,height:844}]) {
    await expect(page.getByRole('region',{name:'Logical execution steps'})).toHaveCount(0);
    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
    await page.getByRole('region',{name:'SQL workspace',exact:true}).scrollIntoViewIfNeeded();
-   await page.screenshot({path:`/private/tmp/sql-workspace-${viewport.width}.png`});
+   await page.screenshot({path:test.info().outputPath(`sql-workspace-${viewport.width}.png`)});
   });
   test('Git staging, branching and graph update with keyboard commands',async({page})=>{
    await page.goto('/labs/git');await page.getByLabel('Working tree: note.txt').fill('first edit');
@@ -69,7 +69,7 @@ for (const viewport of [{width:1366,height:900},{width:390,height:844}]) {
    await page.getByRole('button',{name:'Start another timed attempt with these files',exact:true}).click();await expect(page.getByLabel('ShippingPolicy.java',{exact:true})).toBeEnabled();
    await page.evaluate(()=>{const key='interviewiq.repositoryAssessment.v1';const value=JSON.parse(localStorage.getItem(key));value.attempts.checkout.deadline=Date.now()-1000;localStorage.setItem(key,JSON.stringify(value));});await page.reload();await expect(page.getByLabel('ShippingPolicy.java',{exact:true})).toBeDisabled();await expect(page.getByLabel('Time remaining')).toHaveText('00:00');
    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
-   await page.screenshot({path:`/private/tmp/swe-assessment-${viewport.width}.png`,fullPage:true});
+   await page.screenshot({path:test.info().outputPath(`swe-assessment-${viewport.width}.png`),fullPage:true});
   });
  });
 }
