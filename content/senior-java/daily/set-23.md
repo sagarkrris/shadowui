@@ -1,0 +1,234 @@
+**Set 23 · 5 November 2026 — Ownership, ordering and snapshot contracts**
+
+Reference assumptions: **Java 21 without preview features**. Primary API documentation checked 5 November 2026; no latest-release claim. Q1–Q10 are contextual illustrations, not deployed integrations. Q11–Q12 are runnable exercises with behavioral tests. Stable IDs: **S23-Q01–S23-Q12**. Spoken answers target 45–90 seconds.
+
+---
+
+**1. Optional.map turns a malformed present value into absence. What information was lost?**
+
+**Say aloud:** “Optional.map applies a conversion only to a present value, and a null conversion result becomes an empty Optional. That is convenient when null deliberately means no result, but it can hide the distinction between missing input and invalid input. I would define those states before choosing the return type.
+
+For an optional customer code, no submitted code may be acceptable while an unrecognized submitted code must produce a validation error. If the resolver returns null for unknown codes, mapping and defaulting can silently treat invalid input as an intentional default. I would validate a supplied code explicitly or return a result that distinguishes success, absence and error. Tests should cover missing input, recognized input, unknown input and resolver failure. Optional is a representation of presence, not a complete validation protocol, and exceptions from a mapper still propagate.”
+
+**Example:** Contextual Java: `Optional.of("unknown").map(code -> (String) null)` becomes empty; that does not prove the input was omitted.
+
+**Deep dive / verification:** O(1) container work plus mapper cost. Preserve error identity before choosing defaults; a richer result type costs more explicit handling but prevents silent acceptance.
+
+**Follow-ups:** Does flatMap accept a null Optional? No, it rejects a null mapper result. Should Optional itself be null? No; use empty for absence.
+
+**Primary reference:** [Java 21 Optional.map](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Optional.html#map(java.util.function.Function)).
+
+---
+
+**2. A subtraction comparator puts the smallest integer after the largest. What contract broke?**
+
+**Say aloud:** “A comparator returns a negative, zero or positive result to describe ordering. Subtracting two int values can overflow and reverse that sign, violating the ordering contract. I would use Integer.compare or Comparator.comparingInt rather than arithmetic subtraction. A comparator must also be transitive: if one item precedes a second and that second precedes a third, the first must precede the third.
+
+For priority ordering I would compare priority first and then an immutable ID when deterministic ties matter. Equal priority is not necessarily equal identity. Null placement must be explicit if nulls are permitted. I would test extreme values and triples for consistency, including reverse comparisons. Sorting cannot repair a contradictory comparator; it may produce incorrect results or reject the comparison contract. Changing a tie rule can also change observable pagination or selection behavior.”
+
+**Example:** `Integer.compare(Integer.MIN_VALUE, Integer.MAX_VALUE)` is negative; contextual Java.
+
+**Deep dive / verification:** Comparison is constant time for integer fields; sorting n records costs O(n log n) comparisons in the ordinary model.
+
+**Follow-ups:** Should every comparator use a tie breaker? Only when the intended order requires distinguishing tied records.
+
+**Primary reference:** [Java 21 API](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Comparator.html).
+
+---
+
+**3. Two jobs with equal deadlines overwrite each other in a TreeMap. Why?**
+
+**Say aloud:** “A TreeMap identifies keys through its ordering: comparison returning zero means the same map key. Ordering jobs only by deadline therefore models one entry per deadline, even if job IDs differ. If multiple jobs may share a deadline, I would use a composite immutable key containing deadline and ID, or deliberately map each deadline to a collection of jobs.
+
+The first design makes each job independently addressable; the second groups work but adds collection ownership and removal rules. Neither choice alone makes the structure thread safe. I would test two distinct jobs at the same deadline, removal of one job and replacement of the same logical key. The key ordering should agree with key equality to preserve the general Map contract. Mutable deadline keys are also unsafe because changing them does not reposition existing tree nodes.”
+
+**Example:** Contextual model: key `(deadline, jobId)` distinguishes jobs A and B due at time 10.
+
+**Deep dive / verification:** TreeMap get/put/remove are O(log n). A grouped bucket additionally pays for its own search and mutation.
+
+**Follow-ups:** Does replacing a value increase map size? No, an ordering-equal key replaces the mapping.
+
+**Primary reference:** [Java 21 API](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/TreeMap.html).
+
+---
+
+**4. A binary length field reads as 16777216 instead of 1. Which byte-order contract is missing?**
+
+**Say aloud:** “Byte order defines which byte of a multi-byte number carries the greatest significance. Big-endian puts that byte first; little-endian puts it last. A buffer reader must use the order defined by the wire format. Java ByteBuffer begins with big-endian order, so little-endian bytes for one can be interpreted as a much larger integer.
+
+I would configure the order explicitly at the parsing boundary and validate the decoded length before allocating or slicing. An invalid value should produce a controlled protocol error, not an enormous allocation. The frame also needs enough remaining bytes for the length field and payload. Changing byte order does not solve signed-versus-unsigned interpretation, malformed framing or concurrent mutation. Tests should use known byte sequences, zero, boundary lengths and truncated fields. I would also set order explicitly on derived views rather than assuming every view inherits it.”
+
+**Example:** Contextual Java: bytes `[1,0,0,0]` read with little-endian getInt produce 1; big-endian produces 16777216.
+
+**Deep dive / verification:** A four-byte read is constant work. Bound payload bytes before allocation; state a maximum legal frame and handle partial input by retaining parser state.
+
+**Follow-ups:** Is a positive length automatically safe? No; it may exceed frame or memory limits. Does byte order affect single-byte reads? No.
+
+**Primary reference:** [Java 21 ByteBuffer.order](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/nio/ByteBuffer.html#order(java.nio.ByteOrder)).
+
+---
+
+**5. Arrays.mismatch reports index 3, but one array has length 3. Is that an invalid result?**
+
+**Say aloud:** “A mismatch position is the first place two sequences differ, and a length boundary is a difference too. If the shorter array is a complete prefix of the longer array, Arrays.mismatch returns the shorter length. That index belongs to the longer array but cannot safely index both arrays. Equal arrays return minus one.
+
+For a binary artifact comparison, I would first check equality, then distinguish differing content from a missing suffix. The diagnostic should say that one artifact ended rather than trying to display a nonexistent byte. Tests should cover two empty arrays, equal arrays, a difference at the first element and strict prefixes in both directions. The method identifies where equality stops; it does not explain why a file was truncated or guarantee that either input represents a valid artifact. Concurrent input mutation also undermines the diagnostic’s consistency.”
+
+**Example:** Contextual Java: `Arrays.mismatch(new int[]{2,4,6}, new int[]{2,4,6,8})` returns 3.
+
+**Deep dive / verification:** O(min(n,m)) comparisons in a simple scan model and constant auxiliary space. Check each array’s bounds independently before showing values; avoid leaking sensitive artifact contents through diagnostics.
+
+**Follow-ups:** What is the result for equal arrays? Minus one. Can mismatch alone establish integrity? No; it compares the supplied arrays, not their provenance or completeness.
+
+**Primary reference:** [Java 21 Arrays.mismatch](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Arrays.html#mismatch(int%5B%5D,int%5B%5D)).
+
+---
+
+**6. A concurrent-map export mixes values from different moments. Why is thread safety insufficient?**
+
+**Say aloud:** “Thread safety protects permitted concurrent operations; a whole-map snapshot is a stronger promise that all exported entries describe one logical instant. ConcurrentHashMap traversal is weakly consistent: it can overlap updates without throwing but does not freeze the table. Individually valid entries can therefore form an aggregate that never existed as a whole.
+
+For approximate monitoring that may be acceptable. For a billing export I would use an authoritative database snapshot or an immutable versioned state published as one object, with all writers participating. Copying a concurrently changing map into another map does not retroactively create a single-time snapshot. I would test controlled updates across two related entries and define which combinations the export contract permits. Adding a lock only around the exporter is ineffective if writers ignore that same lock. The stronger guarantee often costs coordination or retained versions.”
+
+**Example:** Contextual model: account A changes before traversal visits it, while B changes after traversal has visited B.
+
+**Deep dive / verification:** Traversal costs O(n) plus contention-dependent work; consistency strength is independent of iteration complexity.
+
+**Follow-ups:** Is size suitable for enforcing a hard capacity under updates? No, admission needs its own atomic invariant.
+
+**Primary reference:** [Java 21 API](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ConcurrentHashMap.html).
+
+---
+
+**7. A fair ReentrantLock is acquired with repeated tryLock calls, yet queued threads lose. Why?**
+
+**Say aloud:** “A fair lock generally favors the longest waiting contender under contention, but untimed tryLock explicitly allows barging: it can acquire an available lock despite queued waiters. Fairness also cannot force the operating system to schedule every thread promptly. I would first state whether the requirement is approximate contention fairness, a bounded wait or business-level tenant fairness.
+
+For a lock queue policy I would use the acquisition method whose documented semantics match that policy, and always release successful acquisitions in finally. Busy polling wastes CPU and can undermine the intended queue behavior. A fair lock may reduce throughput and still supplies no end-to-end service deadline. I would verify acquisition modes in code and use controlled contention tests for protocol errors, rather than claiming that one successful stress run proves starvation impossible. Tenant scheduling generally needs an explicit scheduler above the lock.”
+
+**Example:** Contextual Java: `new ReentrantLock(true)` does not make untimed `tryLock()` honor queued predecessors.
+
+**Deep dive / verification:** Wait time depends on holders and scheduling; no constant-time completion guarantee follows from fairness.
+
+**Follow-ups:** What about timed tryLock? It honors the fairness setting; timeout and interruption remain explicit outcomes.
+
+**Primary reference:** [Java 21 API](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/locks/ReentrantLock.html).
+
+---
+
+**8. An equal replacement object fails an AtomicReference compareAndSet. What does expected mean?**
+
+**Say aloud:** “AtomicReference compareAndSet compares object identity, meaning the exact reference, rather than calling equals. A newly constructed value equal to the current value is therefore not necessarily an acceptable expected reference. I would read the actual reference, derive a replacement and attempt the comparison against that observed reference.
+
+For immutable configuration updates, a failed comparison means another writer may have won, so I would reread and revalidate before retrying. Blindly installing the earlier replacement can discard that writer’s change. The atomic operation covers one reference transition, not a database commit or a multi-object transaction. Tests should include two distinct but equal objects and a competing replacement. If the same reference can leave and return, identity alone also cannot establish that nothing happened in between; a revision or stamped protocol may be required when history matters.”
+
+**Example:** Contextual model: two distinct `new String("ready")` objects are equal but not identical.
+
+**Deep dive / verification:** One CAS attempt has fixed logical scope; a retry loop has no bounded completion count under contention.
+
+**Follow-ups:** Should I use equals before unconditional set? No, that separates observation from mutation and reintroduces a race.
+
+**Primary reference:** [Java 21 API](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/atomic/AtomicReference.html).
+
+---
+
+**9. A completion callback performs a slow disk write and delays the network completion thread. Why?**
+
+**Say aloud:** “A non-async CompletableFuture callback does not promise a separate worker. It may run on the thread completing the preceding future, so a slow callback can delay an I/O event loop or another critical completion path. I would keep inline transformations short and place blocking work on an explicitly owned executor with capacity and rejection behavior.
+
+Adding Async without an executor changes scheduling but usually selects the shared common pool, which can make unrelated tasks compete. Moving work also changes queue delay, context propagation and shutdown ownership. I would test with named controlled executors and a blocked callback to observe who owns execution. Completion ordering does not automatically propagate a request’s thread-local security or transaction context. Failure must remain visible through the returned stage; ignoring that stage can hide a rejected submission or write failure from the caller.”
+
+**Example:** Contextual Java: `future.thenApplyAsync(value -> writeReport(value), reportExecutor)` returns a stage whose outcome must be observed.
+
+**Deep dive / verification:** Queueing and blocking duration dominate; Async is scheduling, not a latency or cancellation guarantee.
+
+**Follow-ups:** Can an already completed source run a non-async callback in the registering thread? Yes; never assume a fixed completion thread.
+
+**Primary reference:** [Java 21 API](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/CompletableFuture.html).
+
+---
+
+**10. A synchronized list is iterated without locking because each method is synchronized. What is missing?**
+
+**Say aloud:** “A synchronized collection wrapper protects individual method calls through a common monitor. Iteration is a sequence of operations, and that whole traversal needs the wrapper’s documented external synchronization when concurrent writers exist. Locking each operation separately does not stop a mutation between hasNext and next.
+
+I would synchronize on the wrapper during traversal or copy its membership while holding that monitor and process the copy afterward. Calling slow external services while holding the lock can stall writers and create lock dependencies, so copying often gives a clearer boundary. All access must follow the same ownership protocol; a retained raw backing list bypasses wrapper synchronization. Tests should coordinate a writer and traversal, including the snapshot alternative. A membership copy remains shallow, so mutable elements need their own policy if a consistent export includes their changing fields.”
+
+**Example:** Contextual Java: `synchronized (list) { snapshot = new ArrayList<>(list); }`, then process snapshot outside the monitor.
+
+**Deep dive / verification:** Copy costs O(n) references and lock hold time; external processing outside the lock avoids holding it for network delays.
+
+**Follow-ups:** Should I lock the iterator instead? No, writers synchronize through the wrapper monitor, not the iterator object.
+
+**Primary reference:** [Java 21 API](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Collections.html).
+
+---
+
+**11. Move every zero to the end of an integer array while preserving nonzero order. Why is sorting wrong?**
+
+**Say aloud:** “Stable compaction means keeping the relative order of retained elements. Sorting puts zeros together but also reorders nonzero readings, violating the contract. I would scan once with a write cursor. Each nonzero value moves into the next output position, and after the scan I fill the remaining suffix with zeros. The cursor never runs ahead of the scan, so writing cannot destroy an unread value.
+
+For telemetry [0,7,0,-2], the result must be [7,-2,0,0], not a numerically sorted array. This method mutates the caller’s array and uses constant additional space; if callers need the original, copy it first. I would test empty arrays, all zeros, no zeros, negative values and repeated readings. The algorithm deliberately ignores the original positions of zeros. If those positions carry meaning, the requested transformation itself needs reconsideration.”
+
+**Example:** Runnable Java 21; null is rejected before mutation.
+
+```java
+public final class MoveZeros {
+  public static void move(int[] a) {
+    java.util.Objects.requireNonNull(a);
+    int write = 0;
+    for (int read = 0; read < a.length; read++) {
+      if (a[read] != 0) a[write++] = a[read];
+    }
+    java.util.Arrays.fill(a, write, a.length, 0);
+  }
+}
+```
+
+**Deep dive / verification:** O(n) time and O(1) auxiliary space. Compare against an independently constructed list of nonzero inputs followed by the required count of zeros; verify order, multiplicity and length. Concurrent readers require an ownership or synchronization policy because intermediate states are observable.
+
+**Follow-ups:** Can we avoid writes on zero-free arrays? Yes, skip self-writes when read equals write. Does that change asymptotic complexity? No; it changes write traffic.
+
+**Primary reference:** [Java 21 Arrays.fill](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Arrays.html#fill(int%5B%5D,int,int,int)). The cursor invariant is the reasoning for this original algorithm.
+
+---
+
+**12. Rotate an array right by a very large nonnegative distance in place. How can three reversals replace repeated shifting?**
+
+**Say aloud:** “Rotation moves elements around the ends without changing their cyclic order. Repeated one-position shifts take time proportional to both array length and distance. For a nonempty array I reduce the distance modulo length, reverse the whole array, then reverse the first distance entries and the remaining suffix. The first reversal exchanges the blocks and reverses each block internally; the next two restore their internal order.
+
+For [1,2,3,4,5] rotated right twice, the answer is [4,5,1,2,3]. I would explicitly define rightward direction, reject negative distances and treat an empty array as unchanged before computing a remainder. The method mutates the original and temporarily breaks its visible order, so it needs exclusive access. Tests should compare against an independently indexed output array, including distances larger than length, zero, singleton arrays and repeated values.”
+
+**Example:** Runnable Java 21; accepts distances through Long.MAX_VALUE without distance-times-length work.
+
+```java
+public final class RotateRight {
+  public static void rotate(int[] a, long distance) {
+    java.util.Objects.requireNonNull(a);
+    if (distance < 0) throw new IllegalArgumentException("negative distance");
+    if (a.length == 0) return;
+    int k = (int) (distance % a.length);
+    if (k == 0) return;
+    reverse(a, 0, a.length - 1);
+    reverse(a, 0, k - 1);
+    reverse(a, k, a.length - 1);
+  }
+  private static void reverse(int[] a, int left, int right) {
+    while (left < right) {
+      int old = a[left]; a[left++] = a[right]; a[right--] = old;
+    }
+  }
+}
+```
+
+**Deep dive / verification:** O(n) time and O(1) auxiliary space; modulo reduces work independently of the distance magnitude. Use an index-based oracle with a widened index sum; invalid distances must fail before modifying input. A temporary output array simplifies reasoning but costs O(n) storage.
+
+**Follow-ups:** How can we rotate left? Normalize a left distance and convert it to the equivalent right distance. Is this a concurrent atomic rearrangement? No, publish a completed copy when readers need an all-at-once change.
+
+**Primary reference:** [Java 21 Collections.rotate](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Collections.html#rotate(java.util.List,int)) describes rotation semantics for lists; this array implementation and proof are original.
+
+---
+
+# Topic coverage and next set
+
+Covered validation information loss, comparator laws, sorted-map identity, binary byte order, mismatch boundaries, concurrent exports, lock acquisition fairness, reference identity, callback execution, synchronized traversal, stable compaction and cyclic permutation. Next set will build on these ownership contracts with multi-stage validation and asynchronous cleanup, then return to framework and distributed-system recovery scenarios. Examples are illustrative, not personal experience; bounded fixtures do not prove universal correctness.

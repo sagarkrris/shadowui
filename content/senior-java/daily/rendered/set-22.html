@@ -1,0 +1,217 @@
+<p><strong>Set 22 · 4 November 2026 — Numeric boundaries and computation lifecycles</strong></p>
+
+<p>Reference assumptions: <strong>Java 21 without preview features</strong>. Primary Java API references checked 4 November 2026; no claim that this is the latest release. Examples are original illustrations. Q1–Q10 are contextual fragments and designs, not deployed integrations. Q11–Q12 are compiled behavioral exercises.</p>
+
+<p>Stable IDs: <strong>S22-Q01–S22-Q12</strong>, in order. Spoken answers target 45–90 seconds.</p>
+
+<hr>
+<h3 id="1-a-completion-ratio-is-stored-as-double-but-remains-zero-until-every-job-finishes-where-was-precision-lost">1. A completion ratio is stored as double but remains zero until every job finishes. Where was precision lost?</h3>
+
+<p><strong>Say aloud:</strong> “Integer division happens before assignment when both operands are integers. Assigning its result to double cannot restore the discarded fraction. For completed jobs divided by total jobs, I would widen an operand before dividing and define the zero-total case explicitly. A ratio is dimensionless, whereas a percentage multiplies that ratio by one hundred; confusing the two is a separate contract error.</p>
+
+<p>For a progress display, floating point is generally adequate, but financial allocation needs a stated decimal rounding policy. I would validate nonnegative counts and decide whether completed may exceed total during reconciliation. Tests should include one of three jobs, all jobs, zero jobs and inconsistent counters. This is a language evaluation issue rather than a JVM optimization bug; changing the destination type alone cannot fix it.”</p>
+
+<p><strong>Example:</strong> Contextual Java: <code>(double) completed / total</code> after validating total; <code>1 / 3</code> is zero before widening.</p>
+
+<p><strong>Deep dive / verification:</strong> Constant arithmetic cost. Independent concurrent counter reads can still describe different instants; correct numeric conversion does not create a coherent snapshot.</p>
+
+<p><strong>Follow-ups:</strong> Would casting the final quotient help? No, truncation already occurred. Should zero jobs mean complete? That is a product decision, not a division rule.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/javase/specs/jls/se21/html/jls-5.html">Java 21 specification</a>.</p>
+
+<hr>
+<h3 id="2-a-nullable-boolean-feature-flag-throws-when-used-in-an-if-statement-which-conversion-was-implicit">2. A nullable Boolean feature flag throws when used in an if statement. Which conversion was implicit?</h3>
+
+<p><strong>Say aloud:</strong> “Unboxing converts a wrapper object such as Boolean into its primitive value. A null reference has no primitive value, so using it directly as an if condition throws NullPointerException. I would first decide whether missing means disabled, inherited or invalid. That decision belongs at the configuration boundary rather than being accidentally chosen by a primitive conversion.</p>
+
+<p>If missing deliberately means disabled, Boolean.TRUE.equals(flag) expresses that policy safely. If missing means inherit, collapsing it to false loses information and a separate resolution step is needed. I would test all three states and make serialization defaults explicit. Using a primitive after validation simplifies internal code, but changing a public nullable field into a primitive can silently change compatibility. A null-safe expression solves dereferencing; it does not decide the business meaning of absence.”</p>
+
+<p><strong>Example:</strong> Contextual Java: <code>Boolean.TRUE.equals(flag)</code> accepts only explicit true when absence means disabled.</p>
+
+<p><strong>Deep dive / verification:</strong> Constant comparison cost. Validate configuration once where possible; do not scatter inconsistent fallback policies across consumers.</p>
+
+<p><strong>Follow-ups:</strong> Does Optional itself allow null? A variable can be null, but that violates its intended usage. Is false equivalent to missing? Only under an explicit contract.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/javase/specs/jls/se21/html/jls-5.html">Java 21 specification</a>.</p>
+
+<hr>
+<h3 id="3-shifting-an-array-right-with-a-forward-loop-repeats-its-first-element-how-does-arraycopy-handle-overlap">3. Shifting an array right with a forward loop repeats its first element. How does arraycopy handle overlap?</h3>
+
+<p><strong>Say aloud:</strong> “An overlapping copy uses the same storage as both source and destination. A forward loop that writes into a later index can overwrite values before reading them. System.arraycopy specifies overlap behavior as though the source region were first copied to temporary storage, so it preserves the original range for that operation.</p>
+
+<p>For shifting three values one position right, I would verify destination capacity and call arraycopy with the intended offsets and length. This is a shallow copy: object references move, but referenced objects are not cloned. It also does not make concurrent array access atomic or safe. Tests should cover overlap in both directions, zero length and invalid ranges. Reference-array type incompatibility can leave a partially copied destination, so the method should not be treated as a transaction with universal rollback on every exception.”</p>
+
+<p><strong>Example:</strong> Contextual Java: <code>System.arraycopy(a, 0, a, 1, 3)</code> changes <code>[1,2,3,4]</code> into <code>[1,1,2,3]</code>.</p>
+
+<p><strong>Deep dive / verification:</strong> Copying k entries takes O(k) work in this model; temporary-storage wording specifies observable semantics, not a required allocation strategy.</p>
+
+<p><strong>Follow-ups:</strong> Are elements cloned? No. Is a failed reference copy always unchanged? No; an incompatible element can fail after a prefix was copied.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/System.html">Java 21 specification</a>.</p>
+
+<hr>
+<h3 id="4-a-delimited-import-loses-its-final-empty-column-what-does-string-split-discard-by-default">4. A delimited import loses its final empty column. What does String.split discard by default?</h3>
+
+<p><strong>Say aloud:</strong> “A delimiter separates fields, and an empty field can still carry positional meaning. The one-argument String.split uses a zero limit, which removes trailing empty strings. That can make a row with a missing final value look as though it has fewer columns. I would use a negative limit when the format requires preserving trailing fields and validate the resulting column count.</p>
+
+<p>The delimiter is a regular expression, so a literal dot or vertical bar also requires correct escaping or Pattern.quote. This simple approach is appropriate only for a deliberately simple format. Quoted commas, escaped quotes and embedded line breaks need a parser for the actual format, not increasingly complicated splitting. Tests should distinguish empty input, interior empties, final empties and malformed records, with limits on record size to bound memory consumption.”</p>
+
+<p><strong>Example:</strong> Contextual Java: <code>&quot;a,b,&quot;.split(&quot;,&quot;, -1)</code> preserves three fields; the final field is empty.</p>
+
+<p><strong>Deep dive / verification:</strong> Output storage grows with the input and number of fields. General regular-expression runtime depends on the pattern; do not promise universal linear performance.</p>
+
+<p><strong>Follow-ups:</strong> Is this a CSV parser? No, it lacks quoted-field handling. Should an empty field become null? Only when the schema defines that conversion.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/String.html">Java 21 specification</a>.</p>
+
+<hr>
+<h3 id="5-a-shard-index-becomes-negative-despite-math-abs-on-the-hash-which-integer-has-no-positive-int-counterpart">5. A shard index becomes negative despite Math.abs on the hash. Which integer has no positive int counterpart?</h3>
+
+<p><strong>Say aloud:</strong> “Java int has one more negative value than positive values. The magnitude of Integer.MIN_VALUE is 2147483648, which does not fit in int. Math.abs therefore returns that same negative value for this input. Applying remainder afterward can still produce an invalid negative shard index.</p>
+
+<p>For a positive shard count I would use Math.floorMod(hash, shardCount), which defines a nonnegative result for that divisor. I would validate the count and keep the placement rule stable across readers and writers. This fixes range correctness, not distribution quality or migration when shard count changes. Tests should include the minimum integer, negative hashes, zero and one shard. Widening before taking the absolute value is another valid numeric technique, but it defines a different placement rule and should not silently replace an existing distributed contract.”</p>
+
+<p><strong>Example:</strong> Contextual Java: <code>Math.floorMod(Integer.MIN_VALUE, 3)</code> is 1; require a positive shard count.</p>
+
+<p><strong>Deep dive / verification:</strong> Constant arithmetic cost. A valid index gives no security protection against deliberately colliding inputs.</p>
+
+<p><strong>Follow-ups:</strong> Can absExact detect the problem? Yes, it throws on overflow. Does floorMod make placement stable after adding shards? No; placement migration remains separate.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Math.html">Java 21 specification</a>.</p>
+
+<hr>
+<h3 id="6-an-executor-is-shut-down-and-its-output-directory-is-immediately-deleted-why-can-workers-still-write-there">6. An executor is shut down and its output directory is immediately deleted. Why can workers still write there?</h3>
+
+<p><strong>Say aloud:</strong> “Shutdown closes admission to new tasks while permitting already submitted work to finish. It does not itself wait for termination. Deleting a resource immediately after shutdown can therefore race with tasks that still own that resource. I would make the executor owner also own the drain protocol and resource cleanup.</p>
+
+<p>After stopping admission, wait for termination with a defined deadline, then apply the documented escalation policy if work remains. shutdownNow attempts interruption and returns queued work that never started; it does not forcibly stop every running task. Tasks must cooperate and external effects may already have occurred. I would test with latches controlling a blocked task rather than timing sleeps. A finite shutdown deadline may mean reporting incomplete work instead of claiming cleanup success. Shared executors must not be shut down by an individual borrower.”</p>
+
+<p><strong>Example:</strong> Contextual sequence: stop submissions, call shutdown, inspect awaitTermination, then release task-owned storage only when ownership permits.</p>
+
+<p><strong>Deep dive / verification:</strong> Termination depends on task behavior. Waiting has a deadline; interruption is a request rather than a transactional undo.</p>
+
+<p><strong>Follow-ups:</strong> Does isShutdown imply isTerminated? No. What about Java 21 close? It waits for termination and may be unsuitable for a strict finite drain budget.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ExecutorService.html">Java 21 specification</a>.</p>
+
+<hr>
+<h3 id="7-an-asynchronous-lookup-returns-a-future-inside-a-future-why-did-thenapply-not-wait-for-the-second-operation">7. An asynchronous lookup returns a future inside a future. Why did thenApply not wait for the second operation?</h3>
+
+<p><strong>Say aloud:</strong> “A completion stage represents an eventual outcome. thenApply transforms a successful value, so if its function returns a future, that future becomes the value of the outer stage. thenCompose instead connects the returned stage into the completion chain. I would use composition when operation two depends on operation one and callers need the final outcome.</p>
+
+<p>For example, finding an account asynchronously and then fetching its permissions should expose one stage for permissions. I would propagate failures deliberately and avoid blocking join inside the transformation, which can consume scarce executor threads. Composition does not automatically propagate transport cancellation or impose a deadline. Tests should hold the second stage incomplete and assert the composed result remains incomplete, then verify success and failure. Executor ownership still matters because a non-async continuation can run on a completing thread.”</p>
+
+<p><strong>Example:</strong> Contextual Java: <code>findAccount(id).thenCompose(account -&gt; fetchPermissions(account))</code> exposes the second operation’s result.</p>
+
+<p><strong>Deep dive / verification:</strong> One dependent stage per step; remote work dominates cost. Composition expresses dependency, not parallelism or distributed rollback.</p>
+
+<p><strong>Follow-ups:</strong> When is thenApply correct? When transforming to an ordinary value, or intentionally returning a nested stage. Does compose require another thread? No.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/CompletableFuture.html">Java 21 specification</a>.</p>
+
+<hr>
+<h3 id="8-a-stream-is-counted-for-logging-and-then-collected-for-the-response-why-is-the-second-terminal-operation-invalid">8. A stream is counted for logging and then collected for the response. Why is the second terminal operation invalid?</h3>
+
+<p><strong>Say aloud:</strong> “A stream is a single-use computation pipeline rather than a reusable collection. A terminal operation consumes that pipeline, so a second terminal operation on the same stream violates its lifecycle. I would choose whether to materialize one bounded result and derive both count and response from it, or create separate streams over a stable reusable source.</p>
+
+<p>Those choices have different consistency and memory costs. Two queries over a changing source need not describe the same data, while collecting everything just for a count can exhaust memory. For resource-backed streams, creating another stream also creates another resource lifecycle that must be closed. Tests should exercise an empty source and a source changed between traversals. A supplier can create fresh streams, but merely returning the same consumed stream from a supplier does not make it reusable.”</p>
+
+<p><strong>Example:</strong> Contextual Java: collect a bounded page once and use its list size; do not call count then toList on the same stream.</p>
+
+<p><strong>Deep dive / verification:</strong> Materialization uses O(n) storage for n retained references. Fresh traversal can repeat I/O and does not create a snapshot.</p>
+
+<p><strong>Follow-ups:</strong> Can parallel make it reusable? No. Is detection guaranteed for every reuse? Implementations may detect reuse; code must obey single use regardless.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/stream/Stream.html">Java 21 specification</a>.</p>
+
+<hr>
+<h3 id="9-a-negative-cache-puts-null-into-concurrenthashmap-and-fails-how-should-absence-be-represented">9. A negative cache puts null into ConcurrentHashMap and fails. How should absence be represented?</h3>
+
+<p><strong>Say aloud:</strong> “A negative cache remembers that a lookup found no value, reducing repeated misses. ConcurrentHashMap forbids null keys and values, so null cannot serve as a stored negative result. I would use an explicit outcome such as a non-null wrapper containing Optional.empty, with expiry and a distinction between authoritative absence and a temporary lookup failure.</p>
+
+<p>If a timeout is cached as missing, users can lose access to a newly available object until expiry. Tenant and authorization scope must also be part of the key or checked separately. An empty result needs invalidation when creation occurs, and bounded retention to prevent arbitrary missing keys from filling memory. Tests should include create-after-miss, transient failures and cross-tenant lookups. A sentinel solves representation only; it does not define freshness, retry ownership or the authority of the underlying lookup.”</p>
+
+<p><strong>Example:</strong> Contextual type: <code>ConcurrentHashMap&lt;Key, Optional&lt;Value&gt;&gt;</code>; the map value itself must never be null.</p>
+
+<p><strong>Deep dive / verification:</strong> Expected constant-time lookup under suitable hashing; storage grows with retained keys. No expiry policy is supplied by this map.</p>
+
+<p><strong>Follow-ups:</strong> Does computeIfAbsent store null? No. Is every 404 safe to cache globally? No; scope and disclosure semantics must be defined.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ConcurrentHashMap.html">Java 21 specification</a>.</p>
+
+<hr>
+<h3 id="10-a-checked-multiplication-rejects-an-oversized-request-only-after-a-reservation-was-recorded-why-did-overflow-detection-not-make-the-operation-atomic">10. A checked multiplication rejects an oversized request only after a reservation was recorded. Why did overflow detection not make the operation atomic?</h3>
+
+<p><strong>Say aloud:</strong> “Checked arithmetic detects a result outside the numeric type, but it does not roll back earlier side effects. Math.multiplyExact throws ArithmeticException for overflow; if code reserves stock first and computes the total second, the reservation may already exist when the exception occurs. I would validate and calculate all pure derived values before applying effects wherever possible.</p>
+
+<p>When the calculation depends on mutable database state, the transaction must cover the read, validation and write under the appropriate concurrency rule. A remote reservation cannot be undone by a local Java exception without a separate protocol. Tests should put operands at exact safe boundaries and immediately beyond them, then assert that invalid requests created no reservation. Choosing long increases the range but does not remove the need to define maximum quantities, units and a safe failure response.”</p>
+
+<p><strong>Example:</strong> Contextual Java: calculate <code>Math.multiplyExact(unitMinor, quantity)</code> before invoking the reservation boundary; both operands here are long.</p>
+
+<p><strong>Deep dive / verification:</strong> Constant arithmetic cost. Checked arithmetic provides local detection, not isolation or compensation for already completed effects.</p>
+
+<p><strong>Follow-ups:</strong> Should overflow wrap for money? Usually reject under an explicit amount contract. Can BigInteger replace limits? It avoids fixed-width overflow but still needs business and resource bounds.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Math.html">Java 21 specification</a>.</p>
+
+<hr>
+<h3 id="11-compute-the-greatest-common-divisor-of-two-signed-int-values-why-must-widening-precede-absolute-value">11. Compute the greatest common divisor of two signed int values. Why must widening precede absolute value?</h3>
+
+<p><strong>Say aloud:</strong> “The greatest common divisor is the largest positive integer dividing both magnitudes. I define gcd of zero and zero as zero for this API. Euclid&#39;s algorithm repeatedly replaces the pair with the second number and the remainder until the second becomes zero. A divisor common to both inputs also divides their remainder, which preserves the answer at each step.</p>
+
+<p>I widen int inputs to long before taking absolute values, because the magnitude of Integer.MIN_VALUE does not fit in int. The result must also be long for that boundary. This implementation neither mutates external state nor requires recursion. I would compare against BigInteger.gcd for signed extremes and generated pairs, including zeros. For arbitrary long inputs the same widening trick is unavailable; a separate representation or explicit rejection contract is needed. This is arithmetic normalization, not cryptographic constant-time computation.”</p>
+
+<p><strong>Example:</strong> Complete Java 21 class; gcd(-18, 24) is 6, and gcd(MIN_VALUE, 0) is 2147483648.</p>
+
+<pre><code class="java">public final class SignedGcd {
+  public static long gcd(int a, int b) {
+    long x = Math.abs((long) a), y = Math.abs((long) b);
+    while (y != 0) {
+      long remainder = x % y;
+      x = y;
+      y = remainder;
+    }
+    return x;
+  }
+}
+</code></pre>
+
+<p><strong>Deep dive / verification:</strong> O(log(max(1, |a|, |b|))) remainder steps, O(1) auxiliary storage for fixed-width inputs. Each nonzero remainder is smaller than the divisor. Check symmetry, zero identity and the independent BigInteger oracle.</p>
+
+<p><strong>Follow-ups:</strong> Why does casting after abs fail? The int overflow has already happened. Can gcd be negative? This API always returns a nonnegative magnitude.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Math.html">Math absolute-value boundary</a>. Algorithm and complexity follow the decreasing-remainder invariant above.</p>
+
+<hr>
+<h3 id="12-compact-a-sorted-integer-array-to-one-copy-of-each-value-in-place-what-does-the-returned-length-own">12. Compact a sorted integer array to one copy of each value in place. What does the returned length own?</h3>
+
+<p><strong>Say aloud:</strong> “Compaction writes retained values into a prefix of an existing buffer. I return the logical length of that prefix, because Java arrays cannot shrink. The caller must ignore the remaining suffix. The input must be sorted in nondecreasing order; equal values are then adjacent, so comparing each value with the last retained value is enough.</p>
+
+<p>I keep a write count and scan each input value once. The write count never exceeds the number of values read, so writing the prefix cannot corrupt an unread value. For a checked public API I validate sortedness before any mutation, giving invalid input an unchanged-array contract. I would test empty arrays, all-equal values, negative values and integer extremes against an independent sorted-set oracle. If input ownership is shared, in-place mutation is inappropriate; returning an independent copy trades storage for simpler ownership.”</p>
+
+<p><strong>Example:</strong> Complete Java 21 class; [2,2,5,5,9] returns 3 with prefix [2,5,9]. Suffix contents are unspecified.</p>
+
+<pre><code class="java">public final class SortedCompact {
+  public static int unique(int[] a) {
+    java.util.Objects.requireNonNull(a, &quot;a&quot;);
+    for (int i = 1; i &lt; a.length; i++)
+      if (a[i] &lt; a[i - 1]) throw new IllegalArgumentException(&quot;sorted input required&quot;);
+    int used = 0;
+    for (int value : a)
+      if (used == 0 || value != a[used - 1]) a[used++] = value;
+    return used;
+  }
+}
+</code></pre>
+
+<p><strong>Deep dive / verification:</strong> Two linear passes remain O(n) time, O(1) auxiliary storage. The retained prefix equals the distinct values of the already scanned prefix. Do not test or depend on a particular suffix. Validation precedes mutation, including a late descending pair.</p>
+
+<p><strong>Follow-ups:</strong> What if input is unsorted? Reject here; sorting would change the contract and cost. Can this retain at most two copies? Compare against the element two retained positions back and adjust the invariant.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Arrays.html">Java arrays and sorting contracts</a>. Compaction is the explicit algorithm above, not a library guarantee.</p>
+
+<hr>
+
+<p><strong>Topic coverage:</strong> S22-Q01 integer evaluation; Q02 nullable flags; Q03 overlapping copies; Q04 parsing field boundaries; Q05 signed modular placement; Q06 executor resource ownership; Q07 asynchronous composition; Q08 stream lifecycle; Q09 negative caching; Q10 arithmetic before effects; Q11 Euclidean invariant; Q12 logical buffer length.</p>
+
+<p><strong>Next set:</strong> Build on these local invariants with multi-stage validation, asynchronous resource cleanup, and algorithms that preserve witnesses while transforming owned buffers. Resume framework and distributed scenarios through new decisions rather than repeating earlier prompts.</p>

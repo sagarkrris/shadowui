@@ -6,8 +6,8 @@ import { SENIOR_JAVA_DAILY_SETS } from "../lib/seniorJavaDaily.mjs";
 const root = new URL("../content/senior-java/daily/", import.meta.url);
 
 test("daily sets preserve sequential identities, complete answers, and unique routes", async () => {
-  assert.deepEqual(SENIOR_JAVA_DAILY_SETS.slice(0, 21).map(set => set.slug), [
-    "2026-10-07-set-01", "2026-10-07-set-02", "2026-10-07-set-03", "2026-10-08-set-04", "2026-10-09-set-05", "2026-10-12-set-06", "2026-10-13-set-07", "2026-10-14-set-08", "2026-10-14-set-09", "2026-10-15-set-10", "2026-10-16-set-11", "2026-10-21-set-12", "2026-10-22-set-13", "2026-10-23-set-14", "2026-10-26-set-15", "2026-10-27-set-16", "2026-10-28-set-17", "2026-10-29-set-18", "2026-10-30-set-19", "2026-11-02-set-20", "2026-11-03-set-21",
+  assert.deepEqual(SENIOR_JAVA_DAILY_SETS.slice(0, 24).map(set => set.slug), [
+    "2026-10-07-set-01", "2026-10-07-set-02", "2026-10-07-set-03", "2026-10-08-set-04", "2026-10-09-set-05", "2026-10-12-set-06", "2026-10-13-set-07", "2026-10-14-set-08", "2026-10-14-set-09", "2026-10-15-set-10", "2026-10-16-set-11", "2026-10-21-set-12", "2026-10-22-set-13", "2026-10-23-set-14", "2026-10-26-set-15", "2026-10-27-set-16", "2026-10-28-set-17", "2026-10-29-set-18", "2026-10-30-set-19", "2026-11-02-set-20", "2026-11-03-set-21", "2026-11-04-set-22", "2026-11-05-set-23", "2026-11-06-set-24",
   ], "existing dated URLs cannot move when later sets are added");
   assert.deepEqual(SENIOR_JAVA_DAILY_SETS.map(set => set.number), Array.from({ length: SENIOR_JAVA_DAILY_SETS.length }, (_, index) => index + 1));
   assert.equal(new Set(SENIOR_JAVA_DAILY_SETS.map(set => set.slug)).size, SENIOR_JAVA_DAILY_SETS.length);
@@ -30,6 +30,7 @@ test("daily sets preserve sequential identities, complete answers, and unique ro
       }
       assert.equal(count, 28);
     }
+    if (set.number === 24) assert.match(html, /<code>List&lt;Integer&gt;<\/code>/, "generic type remains visible rather than treated as HTML");
     if (set.number === 8) assert.match(html, /<code>tenant_id<\/code>, <code>external_ref<\/code>/, "SQL identifiers remain readable rather than Markdown emphasis");
     assert.doesNotMatch(html, /<\/?(?:script|iframe|style|img)\b|href="(?:javascript:|data:)|\/Users\/sagkrish\/|::inbox-item/i);
     assert.match(html, /<pre><code/);
