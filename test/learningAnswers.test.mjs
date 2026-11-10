@@ -6,11 +6,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { tokenizeJava } from '../lib/learningCode.mjs';
 import { JAVA_FOUNDATION_CHAPTERS, JAVA_EXAMPLE_OVERRIDES } from '../lib/javaBeginnerExamples.mjs';
+import { JAVA_RELEASE_CHAPTERS } from '../lib/javaReleaseLessons.mjs';
 import { JAVA_TUTORIAL_CATALOG, JAVA_EDITORIAL_CHAPTERS, getJavaTutorialBySlug } from '../lib/javaDigest.mjs';
 
 test('every tutorial uses authored glance detail without inheriting category filler', () => {
   for (const tutorial of JAVA_TUTORIAL_CATALOG) {
-    const authored = { ...(JAVA_EDITORIAL_CHAPTERS[tutorial.title] || JAVA_FOUNDATION_CHAPTERS[tutorial.title]), ...(JAVA_EXAMPLE_OVERRIDES[tutorial.title] || {}) };
+    const authored = { ...(JAVA_EDITORIAL_CHAPTERS[tutorial.title] || JAVA_FOUNDATION_CHAPTERS[tutorial.title] || JAVA_RELEASE_CHAPTERS[tutorial.title]), ...(JAVA_EXAMPLE_OVERRIDES[tutorial.title] || {}) };
     assert.ok(tutorial.atAGlance.takeaway.trim(), tutorial.title);
     assert.ok(tutorial.atAGlance.takeaway.split(/\s+/).length <= 90, tutorial.title);
     for (const field of ['why', 'failure', 'complexity', 'edgeCases']) {

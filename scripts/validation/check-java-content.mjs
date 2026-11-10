@@ -1,10 +1,10 @@
+import { javaTool } from './java-runtime.mjs';
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { JAVA_TUTORIAL_CATALOG } from '../../lib/javaDigest.mjs';
 const directory = await mkdtemp(join(tmpdir(), 'interviewiq-java-'));
-const javaHome = process.env.CONTENT_JAVA_HOME || '/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home';
 const imports = 'import java.util.*; import java.util.regex.*; import java.util.concurrent.*; import java.util.concurrent.atomic.*; import java.time.*; import java.nio.file.*; import java.nio.charset.*; import java.io.*; import java.util.function.*;';
 const direct = new Set(['Primitive types','Wrapper classes','Casting and promotion','Control flow','Enums','Records','String immutability','StringBuilder','Regular expressions','Arrays','ArrayList','LinkedList','HashSet','TreeSet','HashMap','TreeMap','PriorityQueue','ArrayDeque','equals and hashCode','Comparable and Comparator','Type erasure','Lambda expressions','Functional interfaces','Date and time API','Files and Paths','Threads','Atomics and CAS','CompletableFuture','Range queries']);
 const methods = {
@@ -27,11 +27,13 @@ for (const lesson of JAVA_TUTORIAL_CATALOG) {
   else { report.entries.push({ title: lesson.title, status: 'contextual-snippet', note: 'Requires application types, infrastructure, a harness, or describes behavior rather than console output.' }); continue; }
   const file = join(directory, lesson.runnableExample?.filename || `${className}.java`);
   await writeFile(file, source);
-  const release = /^\d+/.exec(lesson.javaVersions)?.[0] || '8';
-  const compile = spawnSync(join(javaHome, 'bin/javac'), ['--release', release, '-d', directory, file], { encoding: 'utf8', timeout: 20000 });
-  const run = compile.status === 0 ? spawnSync(join(javaHome, 'bin/java'), ['-cp', directory, className], { cwd: directory, encoding: 'utf8', timeout: 10000 }) : null;
+  const release = String(lesson.runnableExample?.release || /^\d+/.exec(lesson.javaVersions)?.[0] || '8');
+  const compileArgs = lesson.runnableExample?.compileArgs || ['--release', release];
+  const runArgs = lesson.runnableExample?.runArgs || [];
+  const compile = spawnSync(javaTool('javac', process.env, Number(release)), [...compileArgs, '-d', directory, file], { encoding: 'utf8', timeout: 20000 });
+  const run = compile.status === 0 ? spawnSync(javaTool('java', process.env, Number(release)), [...runArgs, '-cp', directory, className], { cwd: directory, encoding: 'utf8', timeout: 10000 }) : null;
   const passed = compile.status === 0 && run?.status === 0 && run.stdout.trim() === expected;
-  report.entries.push({ title: lesson.title, status: passed ? 'executed' : 'failed', release, ...(passed ? {} : { error: compile.stderr || run?.stderr || `Expected ${JSON.stringify(expected)}, received ${JSON.stringify(run?.stdout)}` }) });
+  report.entries.push({ title: lesson.title, status: passed ? 'executed' : 'failed', release, compileArgs, runArgs, ...(passed ? {} : { error: compile.error?.message || (compile.status !== 0 ? compile.stderr : run?.error?.message || run?.stderr || `Expected ${JSON.stringify(expected)}, received ${JSON.stringify(run?.stdout)}`) }) });
 }
 report.executed = report.entries.filter(e => e.status === 'executed').length;
 report.failed = report.entries.filter(e => e.status === 'failed');

@@ -40,7 +40,7 @@ test('roadmap renders the same complete order and retains historical progress', 
   await page.addInitScript(() => localStorage.setItem('interviewiq.javaRoadmapProgress.v1', JSON.stringify(['catalog-33', 'catalog-103'])));
   await page.goto('/java/roadmap');
   const checklist = page.getByRole('region', { name: 'Complete chapter checklist' });
-  await expect(checklist).toContainText('2 of 109 chapters complete');
+  await expect(checklist).toContainText(`2 of ${course.length} chapters complete`);
   const links = await checklist.locator('ol a').evaluateAll(elements => elements.map(element => element.getAttribute('href')));
   expect(links).toEqual(course.map(lesson => `/java/tutorial/${slugifyJavaTutorial(lesson.title)}`));
   for (const label of ['Generics complete', 'Java Memory Management complete']) await expect(checklist.getByRole('checkbox', { name: label, exact: true, includeHidden: true })).toBeChecked();

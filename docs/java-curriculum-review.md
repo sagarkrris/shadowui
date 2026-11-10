@@ -1,7 +1,8 @@
 # Java curriculum review — 10 November 2026
 
-The public chapter checklist, learning catalogue, Java Digest library and chapter
-navigation use one explicit 109-chapter sequence. Original catalog IDs 1–103 and
+The initial public chapter checklist, learning catalogue, Java Digest library and chapter
+navigation used one explicit 109-chapter sequence. The follow-up release expansion is
+recorded in `docs/java-release-path-review.md`. Original catalog IDs 1–103 and
 existing slugs retain their meanings. Six appended foundation chapters explain
 variables, classes, null, build dependencies, SQL and HTTP. Numbered chapters are
 the beginner entry point; the existing backend project journey follows them and

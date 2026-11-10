@@ -17,6 +17,13 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Install JDK 26 for modern Java lessons
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '26'
+      - name: Preserve the Java 26 toolchain path
+        run: echo "CONTENT_JAVA26_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

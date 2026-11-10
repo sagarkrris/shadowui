@@ -1,3 +1,4 @@
+import { javaTool } from '../scripts/validation/java-runtime.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
@@ -6,7 +7,6 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { JAVA_CURATED_TUTORIAL_CATALOG as course } from '../lib/javaDigest.mjs';
 
-const javaHome = process.env.CONTENT_JAVA_HOME || '/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home';
 const execute = (command, args, cwd) => {
   const result = spawnSync(command, args, { cwd, encoding: 'utf8', timeout: 300000 });
   assert.equal(result.status, 0, result.stderr || result.stdout || result.error?.message);
@@ -43,11 +43,11 @@ for (const [title, body] of Object.entries(checks)) test(`${title}: published im
     // Exercise the actual published regex rather than a test-owned copy.
     const checkedBody = title === 'Regular expressions' ? lesson.example.split('\n')[0].replace('Pattern email', 'java.util.regex.Pattern email').replace('Pattern.compile', 'java.util.regex.Pattern.compile') + '\nif (!email.matcher("a@example.com").matches() || email.matcher("a b@example.com").matches() || email.matcher("a@example.com ").matches()) throw new AssertionError();' : body;
     writeFileSync(join(dir, 'Checks.java'), `public class Checks { public static void main(String[] args) { ${checkedBody} } }`);
-    execute(join(javaHome, 'bin/javac'), ['--release', String(lesson.runnableExample.release), '-d', dir, 'LessonExample.java', 'Checks.java'], dir);
-    execute(join(javaHome, 'bin/java'), ['-cp', dir, 'Checks'], dir);
+    execute(javaTool('javac'), ['--release', String(lesson.runnableExample.release), '-d', dir, 'LessonExample.java', 'Checks.java'], dir);
+    execute(javaTool('java'), ['-cp', dir, 'Checks'], dir);
     if (title === 'Generics') {
       writeFileSync(join(dir, 'Invalid.java'), 'class Invalid { void invalid() { LessonExample.Box<String> box=new LessonExample.Box<>(); box.put(42); } }');
-      const invalid = spawnSync(join(javaHome, 'bin/javac'), ['-cp', dir, 'Invalid.java'], { cwd: dir, encoding: 'utf8' });
+      const invalid = spawnSync(javaTool('javac'), ['-cp', dir, 'Invalid.java'], { cwd: dir, encoding: 'utf8' });
       assert.notEqual(invalid.status, 0, 'wrong element type must fail before runtime');
       assert.match(invalid.stderr, /incompatible types/);
     }

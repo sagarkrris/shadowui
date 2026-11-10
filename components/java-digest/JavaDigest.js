@@ -3,6 +3,7 @@ import ChapterGuidance from "./ChapterGuidance";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
+import Link from 'next/link';
 import {
   CSES_JAVA_PARTS,
   FRESHER_DSA_GLOSSARY,
@@ -1220,7 +1221,7 @@ export default function JavaDigest({ theme = {}, onAction, onJavaProgressChange,
           <div style={responsiveGrid(260, 9)}>{visibleTutorials.map((tutorial) => <JavaDigestTutorialCard key={tutorial.id} tutorial={tutorial} accent={accent} completedIds={learningProgress.completedIds} bookmarkedIds={learningProgress.bookmarkedIds} onToggleStatus={toggleLearningStatus} onOpen={openTutorial} onBuddy={tutorial => onAction?.("", { type: "techBuddy", article: tutorial })} />)}</div>
           <section style={{ ...wrap, background: "var(--jd-surface-subtle)", border: "1px solid var(--jd-border)", borderRadius: 8, display: "grid", gap: 7, padding: 11 }}>
             <div style={{ color: accent, fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Java release guide</div>
-            {JAVA_VERSION_TOPIC_GUIDE.map((release) => <div key={release.version} style={{ color: "var(--jd-text-soft)", fontSize: 11.3, lineHeight: 1.45 }}><b style={{ color: "var(--jd-text)" }}>{release.version}:</b> {release.topics} — {release.focus}.</div>)}
+            <Link href="/java/releases">Open the detailed Java 8–26 release path →</Link>{JAVA_VERSION_TOPIC_GUIDE.map((release) => <div key={release.version} style={{ color: "var(--jd-text-soft)", fontSize: 11.3, lineHeight: 1.45 }}><b style={{ color: "var(--jd-text)" }}>{release.version}:</b> {release.topics} — {release.focus}.</div>)}
           </section>
         </div>
       )}

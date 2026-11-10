@@ -1,9 +1,9 @@
+import { javaTool } from './java-runtime.mjs';
 import { readFile, writeFile, mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 const references = JSON.parse(await readFile(new URL('../../lib/blind75JavaReferences.json', import.meta.url)));
-const javaHome = process.env.CONTENT_JAVA_HOME || '/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home';
 const directory = await mkdtemp(join(tmpdir(), 'interviewiq-blind75-'));
 const fixtures = {
 'contains-duplicate':'check(s.containsDuplicate(new int[]{1,2,1})); check(!s.containsDuplicate(new int[]{}));',
@@ -92,8 +92,8 @@ for (const [id, reference] of Object.entries(references)) {
   const solution=/class Solution\b/.test(code) ? 'Solution s=new Solution();' : '';
   const source=`import java.util.*;\n${helpers}\n${code}\nclass Verify { static void check(boolean b){if(!b)throw new AssertionError();} static ListNode list(int... values){ListNode head=new ListNode(),tail=head;for(int v:values){tail.next=new ListNode(v);tail=tail.next;}return head.next;} static TreeNode tree(){return new TreeNode(2,new TreeNode(1),new TreeNode(3));} public static void main(String[] args){${solution}${fixtures[id]}} }`;
   const folder=await mkdtemp(join(directory,'case-')); const file=join(folder,'Verify.java'); await writeFile(file,source);
-  const compiled=spawnSync(join(javaHome,'bin/javac'),['--release','8','-d',folder,file],{encoding:'utf8',timeout:20000});
-  const run=compiled.status===0 ? spawnSync(join(javaHome,'bin/java'),['-cp',folder,'Verify'],{encoding:'utf8',timeout:10000}):null;
+  const compiled=spawnSync(javaTool('javac'),['--release','8','-d',folder,file],{encoding:'utf8',timeout:20000});
+  const run=compiled.status===0 ? spawnSync(javaTool('java'),['-cp',folder,'Verify'],{encoding:'utf8',timeout:10000}):null;
   const passed=compiled.status===0 && run?.status===0;
   results.push({id,passed,...(passed?{}:{error:compiled.status!==0?compiled.stderr:run?.stderr})});
   if(!passed) console.log(id,results.at(-1).error);

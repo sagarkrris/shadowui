@@ -29,7 +29,7 @@ test('saved chapter identities survive curriculum reordering', () => {
 
 test('beginner concepts precede examples that require them', () => {
   const position = title => course.findIndex(lesson => lesson.title === title);
-  for (const [before, after] of [['Variables and assignment', 'Primitive types'], ['Classes and objects', 'Inheritance'], ['Null and references', 'Wrapper classes'], ['Generics', 'ArrayList'], ['Interfaces', 'Functional interfaces'], ['Functional interfaces', 'Lambda expressions'], ['Lambda expressions', 'Stream pipelines'], ['SQL foundations', 'JDBC basics'], ['JDBC basics', 'Spring Data JPA'], ['HTTP foundations', 'Spring MVC'], ['JUnit test design', 'Testing Spring applications']]) assert.ok(position(before) < position(after), `${before} before ${after}`);
+  for (const [before, after] of [['Variables and assignment', 'Primitive types'], ['Classes and objects', 'Inheritance'], ['Null and references', 'Wrapper classes'], ['Generics', 'ArrayList'], ['Interfaces', 'Functional interfaces'], ['Functional interfaces', 'Lambda expressions'], ['Lambda expressions', 'Stream pipelines'], ['SQL foundations', 'JDBC basics'], ['JDBC basics', 'Spring Data JPA'], ['HTTP foundations', 'Spring MVC'], ['JUnit test design', 'Testing Spring applications'], ['Local variable type inference', 'Collection factories and defensive copies'], ['Collection factories and defensive copies', 'Modern Stream and Optional APIs']]) assert.ok(position(before) < position(after), `${before} before ${after}`);
   assert.doesNotMatch(course.find(lesson => lesson.title === 'Methods and parameters').runnableExample.source, /ArrayList|List</);
   assert.doesNotMatch(course.find(lesson => lesson.title === 'Generics').runnableExample.source, /stream\(|\? extends/);
 });

@@ -96,7 +96,7 @@ test("java digest includes compact reference sheets with self-check answers", ()
 test("java digest exposes the expanded original catalog", () => {
   assert.ok(JAVA_TUTORIAL_CATALOG.length >= 60);
   assert.ok(JAVA_TUTORIAL_CATALOG.every((tutorial) => tutorial.title && tutorial.category && tutorial.level && tutorial.memoryHook && tutorial.practice));
-  assert.equal(JAVA_VERSION_TOPIC_GUIDE.length, 8);
+  assert.equal(JAVA_VERSION_TOPIC_GUIDE.length, 9);
   assert.ok(JAVA_PROGRAM_EXAMPLES.length >= 40);
   assert.equal(JAVA_QUIZ_BANK.length, 48);
 });

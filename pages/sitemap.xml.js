@@ -45,6 +45,7 @@ export function getServerSideProps({ res }) {
     { loc: `${SITE_URL}/`, changefreq: "weekly", priority: "1.0" },
     { loc: `${SITE_URL}/java`, changefreq: "weekly", priority: "0.9" },
     { loc: `${SITE_URL}/java/roadmap`, changefreq: "weekly", priority: "0.9" },
+    { loc: `${SITE_URL}/java/releases`, changefreq: "weekly", priority: "0.9" },
     { loc: `${SITE_URL}/resources`, changefreq: "monthly", priority: "0.8" },
     ...PUBLIC_RESOURCES.map((resource) => ({ loc: `${SITE_URL}/resources/${resource.slug}`, changefreq: "monthly", priority: "0.7" })),
     ...PUBLIC_ARTICLES.map((article) => ({ loc: `${SITE_URL}/java/${article.slug}`, changefreq: "monthly", priority: "0.9" })),
