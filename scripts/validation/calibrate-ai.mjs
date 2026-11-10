@@ -1,5 +1,7 @@
 // Uses synthetic answers only. Never prints credentials or raw provider errors.
 import { writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { runGeminiRouteOperation } from '../../lib/aiGateway.mjs';
 import { createGeminiClient, generateContent } from '../../lib/googleGenai.mjs';
 import { buildStructuredEvaluationPrompt, parseStructuredEvaluation } from '../../lib/interviewSession.mjs';
@@ -32,5 +34,5 @@ for (const sample of cases) {
   if (report.results.at(-1)?.error) break;
 }
 report.passed = report.results.length === cases.length * 2 && report.results.every(r => r.passed);
-await writeFile(process.argv[2] || '/private/tmp/shadow-ai-calibration.json', JSON.stringify(report, null, 2));
+await writeFile(process.argv[2] || join(tmpdir(), 'shadow-ai-calibration.json'), JSON.stringify(report, null, 2));
 process.exitCode = report.passed ? 0 : 1;

@@ -37,7 +37,7 @@ for (const lesson of JAVA_TUTORIAL_CATALOG) {
 }
 report.executed = report.entries.filter(e => e.status === 'executed').length;
 report.failed = report.entries.filter(e => e.status === 'failed');
-await writeFile(process.argv[2] || '/private/tmp/shadow-content-audit.json', JSON.stringify(report, null, 2));
+await writeFile(process.argv[2] || join(tmpdir(), 'shadow-content-audit.json'), JSON.stringify(report, null, 2));
 console.log(`${report.entries.length} chapters inventoried; ${report.executed} compiled/executed; ${report.failed.length} failed.`);
 for (const failure of report.failed) console.log(failure.title, failure.error);
 process.exitCode = report.failed.length ? 1 : 0;

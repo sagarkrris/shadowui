@@ -96,3 +96,17 @@ actual completion, all executed test counts, no-skip/no-retry evidence and sourc
 fingerprint. Record that report's actual result in the task delivery. Real HTTP/3
 transport, foreign native calls, trained AOT caches and production performance
 are outside these stated local fixture boundaries. No deployment is performed.
+
+## CI report-path follow-up
+
+Run 42773237550 reached the full unit suite: 942 tests passed and the inventory
+wrapper failed while writing `/private/tmp/shadow-content-audit.json` on Ubuntu.
+The default destination now uses `join(tmpdir(), filename)` in the Java-content,
+Blind-75 and optional calibration scripts; explicit CLI destinations are retained.
+The inventory regression executes all published programs with an isolated temporary
+root and reads back the JSON report, checking the complete chapter count, executable
+count and empty failure list. This would fail with the previous hardcoded path even
+on macOS, where `/private/tmp` happens to exist. Reviewed the remaining validation
+paths: CI-provided JDK homes take precedence over optional local fallback homes.
+The optional calibration makes live provider requests and is not run for this path fix.
+The final complete gate result is recorded in the task delivery.

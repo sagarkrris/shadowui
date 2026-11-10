@@ -98,6 +98,6 @@ for (const [id, reference] of Object.entries(references)) {
   results.push({id,passed,...(passed?{}:{error:compiled.status!==0?compiled.stderr:run?.stderr})});
   if(!passed) console.log(id,results.at(-1).error);
 }
-await writeFile(process.argv[2]||'/private/tmp/shadow-blind75-audit.json',JSON.stringify({createdAt:new Date().toISOString(),results},null,2));
+await writeFile(process.argv[2]||join(tmpdir(),'shadow-blind75-audit.json'),JSON.stringify({createdAt:new Date().toISOString(),results},null,2));
 console.log(`${results.filter(r=>r.passed).length}/${results.length} Java reference solutions passed.`);
 process.exitCode=results.every(r=>r.passed)?0:1;

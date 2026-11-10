@@ -1,20 +1,31 @@
 import { javaTool } from '../scripts/validation/java-runtime.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { JAVA_CURATED_TUTORIAL_CATALOG as course } from '../lib/javaDigest.mjs';
 
-const execute = (command, args, cwd) => {
-  const result = spawnSync(command, args, { cwd, encoding: 'utf8', timeout: 300000 });
+const execute = (command, args, cwd, env = process.env) => {
+  const result = spawnSync(command, args, { cwd, env, encoding: 'utf8', timeout: 300000 });
   assert.equal(result.status, 0, result.stderr || result.stdout || result.error?.message);
   return result.stdout.trim();
 };
 
 test('every published complete source compiles at its declared release and produces its shown output', { timeout: 420000 }, () => {
-  execute(process.execPath, ['scripts/validation/check-java-content.mjs']);
+  const directory = mkdtempSync(join(tmpdir(), 'java-curriculum-report-'));
+  try {
+    execute(process.execPath, ['scripts/validation/check-java-content.mjs'], undefined, {
+      ...process.env, TMPDIR: directory, TMP: directory, TEMP: directory,
+    });
+    // A fixed /private/tmp destination fails this check even on macOS, where
+    // that directory exists. CI must honor its actual OS temporary directory.
+    const report = JSON.parse(readFileSync(join(directory, 'shadow-content-audit.json'), 'utf8'));
+    assert.equal(report.entries.length, course.length);
+    assert.equal(report.executed, course.filter(lesson => lesson.runnableExample).length);
+    assert.deepEqual(report.failed, []);
+  } finally { rmSync(directory, { recursive: true, force: true }); }
 });
 
 const checks = {
