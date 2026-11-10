@@ -20,12 +20,12 @@ for (const lesson of JAVA_TUTORIAL_CATALOG) {
   const missing = fields.filter(key => !lesson[key]?.length);
   if (missing.length) throw new Error(`${lesson.title}: missing ${missing.join(', ')}`);
   let source, className = 'Sample', expected = lesson.output;
-  if (lesson.title === 'JDK vs JRE vs JVM') { source = lesson.example; className = 'Greeting'; }
+  if (lesson.runnableExample) { source = lesson.runnableExample.source; className = lesson.runnableExample.className; expected = lesson.runnableExample.output; }
   else if (lesson.title === 'Enums') source = `${imports} public class Sample { enum Status { NEW, PAID, CANCELLED } public static void main(String[] args) { ${lesson.example.split('\n').slice(1).join('\n')}\n } }`;
   else if (direct.has(lesson.title)) source = `${imports}\npublic class Sample { public static void main(String[] args) throws Exception {\n${lesson.example}\n} }`;
   else if (methods[lesson.title]) { source = `${imports}\npublic class Sample { ${lesson.example.replace(/^(boolean|int) /, 'static $1 ')}\n public static void main(String[] args) { ${methods[lesson.title].test} } }`; expected = methods[lesson.title].output; }
   else { report.entries.push({ title: lesson.title, status: 'contextual-snippet', note: 'Requires application types, infrastructure, a harness, or describes behavior rather than console output.' }); continue; }
-  const file = join(directory, `${className}.java`);
+  const file = join(directory, lesson.runnableExample?.filename || `${className}.java`);
   await writeFile(file, source);
   const release = /^\d+/.exec(lesson.javaVersions)?.[0] || '8';
   const compile = spawnSync(join(javaHome, 'bin/javac'), ['--release', release, '-d', directory, file], { encoding: 'utf8', timeout: 20000 });

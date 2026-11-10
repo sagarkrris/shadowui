@@ -23,14 +23,14 @@ export default function JavaDigestTutorialCard({ tutorial, accent, completedIds,
       <div style={{ display: "grid", gap: 7, marginTop: 8 }}>
         <div style={{ color: "var(--jd-text-soft)", fontSize: 11.2, lineHeight: 1.5 }}><b>Walkthrough:</b> {tutorial.walkthrough}</div>
         <div style={{ color: "var(--jd-text-soft)", fontSize: 11.2, lineHeight: 1.5 }}><b>How to think:</b> {tutorial.howToThink}</div>
-        <p style={{ color: "var(--jd-text-soft)", fontSize: 11 }}>Contextual snippet: supply the enclosing method, imports and application types. Expected result describes behavior, not necessarily console output.</p><code style={{ background: "var(--jd-surface-sunken)", borderRadius: 6, color: "var(--jd-code-text)", display: "block", fontSize: 10.8, lineHeight: 1.45, padding: 7, whiteSpace: "pre-wrap" }}>{tutorial.example}</code>
-        {tutorial.output && <div style={{ color: "var(--jd-accent-alt)", fontSize: 11.1 }}><b>Expected result:</b> {tutorial.output}</div>}
+        <p style={{ color: "var(--jd-text-soft)", fontSize: 11 }}>{tutorial.exampleNote}</p><code style={{ background: "var(--jd-surface-sunken)", borderRadius: 6, color: "var(--jd-code-text)", display: "block", fontSize: 10.8, lineHeight: 1.45, padding: 7, whiteSpace: "pre-wrap" }}>{tutorial.runnableExample?.source || tutorial.example}</code>{tutorial.runnableExample?.commands.map(command => <p key={command.label}><b>{command.label}:</b> <code>{command.code}</code></p>)}
+        {tutorial.output && <div style={{ color: "var(--jd-accent-alt)", fontSize: 11.1 }}><b>Expected result:</b> {tutorial.runnableExample?.output || tutorial.output}</div>}
         <ReadableFlowDiagram value={tutorial.diagram} steps={tutorial.diagramSteps} title={`${tutorial.title}: concept flow`} />
         <div style={{ color: "var(--jd-text-soft)", fontSize: 11.1, lineHeight: 1.5 }}><b>Benchmark:</b> {tutorial.benchmark}</div>
         <div style={{ color: "var(--jd-danger-text)", fontSize: 11.1, lineHeight: 1.5 }}><b>Common mistakes:</b> {tutorial.mistakes}</div>
         <div style={{ color: "var(--jd-warning-text)", fontSize: 11.1, lineHeight: 1.5 }}><b>Production note:</b> {tutorial.productionNote}</div>
-        <div style={{ color: "var(--jd-text-soft)", fontSize: 11.1, lineHeight: 1.5 }}><b>Retention exercise:</b> {tutorial.exercise}</div>
-        <div style={{ color: "var(--jd-accent-alt)", fontSize: 11.1, lineHeight: 1.5 }}><b>Interview answer:</b> {tutorial.interviewAnswer}</div>
+        <div style={{ color: "var(--jd-text-soft)", fontSize: 11.1, lineHeight: 1.5 }}><b>Retention exercise:</b> {tutorial.exercise}<details><summary>Show explained solution</summary><p>{tutorial.solution}</p></details></div>
+        <div style={{ color: "var(--jd-accent-alt)", fontSize: 11.1, lineHeight: 1.5 }}><b>Interview answer:</b> {tutorial.interviewAnswer}</div><p><b>Interview follow-up:</b> {tutorial.followUp}</p>
         {tutorial.relatedTopics?.length > 0 && <div style={{ color: "var(--jd-text-muted)", fontSize: 11.1, lineHeight: 1.5 }}><b>Related:</b> {tutorial.relatedTopics.join(" · ")}</div>}
         <div style={{ borderLeft: `3px solid ${accent}`, color: "var(--jd-text-soft)", fontSize: 11.1, lineHeight: 1.5, paddingLeft: 8 }}><b style={{ color: accent }}>Hypothetical STAR practice frame (not your experience):</b> {buildStarFrame(tutorial.title, tutorial.practice)}</div>
       </div>
