@@ -14,7 +14,7 @@ for (const width of [375, 1366]) {
       await expect(selector.getByRole('link', { name: 'Start this path now →' })).toHaveAttribute('href', track.modules[0][2]);
       for (const [, title, href] of track.modules) await expect(selector.getByRole('link', { name: title, exact: true })).toHaveAttribute('href', href);
     }
-    await page.screenshot({ path: `/private/tmp/interviewiq-hero-${width}.png`, fullPage: false });
+    await page.screenshot({ path: test.info().outputPath(`interviewiq-hero-${width}.png`), fullPage: false });
     await selector.getByRole('button', { name: 'Set up AI mock drills' }).click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
