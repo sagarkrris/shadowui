@@ -18,7 +18,7 @@ test("homepage stays usable without the icon CDN and is statically generated", a
 });
 test("public homepage lets a new reader discover articles and paths without onboarding", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Prepare for your next engineering role.");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Stop grinding LeetCode.Master production engineering & system design.");
   await expect(page.getByLabel("Name", { exact: true })).toHaveCount(0);
   await page.screenshot({ path: test.info().outputPath("reader-home-desktop.png"), fullPage: true });
   await page.getByRole("searchbox", { name: "Search articles" }).fill("slow sql");
@@ -176,7 +176,7 @@ for (const width of [390, 1280]) {
     await expect(diagram.locator('[data-diagram-node]')).toHaveCount(6);
     await expect(diagram.locator('[data-artwork-edge]')).toHaveCount(5);
     await expect(diagram.locator('[data-source-preserved]')).toHaveCount(0);
-    const original = diagram.getByRole('region', { name: 'See the concept flow: original relationships', exact: true, includeHidden: true });
+    const original = diagram.getByRole('region', { name: 'Compile and run path: original relationships', exact: true, includeHidden: true });
     await expect(original).toBeHidden();
     await expect(diagram.locator('pre')).toHaveCSS('white-space', 'pre');
     await diagram.getByRole('button', { name: 'Text view', exact: true }).click();
@@ -262,12 +262,12 @@ for (const width of [390, 1280]) {
     await expect(answer.locator('#expected-result')).toHaveText(/Expected result.*Hello from the JVM/s);
     await expect(answer).not.toContainText('Nulls, empty values');
     await expect(page.locator('#example')).not.toContainText('javac Greeting.java');
-    const depth = answer.locator('details');
+    const depth = page.locator('#retention-exercise details');
     await expect(depth).not.toHaveAttribute('open', '');
     await depth.locator('summary').focus();
     await page.keyboard.press('Enter');
     await expect(depth).toHaveAttribute('open', '');
-    await expect(depth).toContainText('--release');
+    await expect(depth).toContainText('UnsupportedClassVersionError');
     await page.keyboard.press('Space');
     await expect(depth).not.toHaveAttribute('open', '');
     expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);

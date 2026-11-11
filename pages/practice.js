@@ -1803,10 +1803,10 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>InterviewIQ</title>
+        <title>Interview practice workspace | InterviewIQ</title>
         <link rel="canonical" href={`${SITE_URL}/practice`} key="canonical" />
         <meta name="robots" content="noindex, follow" />
-        <meta name="description" content="AI-powered interview intelligence for modern software engineers" />
+        <meta name="description" content="Practice Java, system design and engineering interviews. A prep profile is required; AI feedback depends on provider availability." />
         <meta name="theme-color" content={techTheme.surface} />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
         <meta name="apple-mobile-web-app-capable" content="yes" />

@@ -2,7 +2,9 @@ import dynamic from "next/dynamic";
 const ReaderTools = dynamic(() => import("../components/reader/ReaderTools"), { ssr: false });
 const LearningPosition = dynamic(() => import("../components/reader/LearningPosition"), { ssr: false });
 const ArticleBookReader = dynamic(() => import("../components/reader/ArticleBookReader"), { ssr: false });
+import RuntimeBaseline from "../components/reader/RuntimeBaseline";
 import Head from "next/head";
+import { SITE_URL } from "../lib/siteUrl.mjs";
 import { useEffect } from "react";
 import "../styles/globals.css";
 import "../styles/corporate.css";
@@ -37,10 +39,12 @@ export default function App({ Component, pageProps, router }) {
   const bookRoute = bookReadingRoute(articlePath);
   const isReaderArticle = /^\/(?:java|tech-blogs|guides|spring|sql|python|aws|javascript|system-design)\/.+/.test(articlePath) && articlePath !== "/java/roadmap";
   const needsPublicHeader = /^\/(?:java$|guides$|resources(?:\/|$)|advice-fails(?:\/|$)|explain-log(?:\/|$)|share\/readiness)/.test(articlePath);
+  const socialPath = router.asPath.split(/[?#]/)[0];
+  const socialImage = /^\/(?:hld|detective|series)\/[^/]+$/.test(socialPath) ? `${SITE_URL}/api/og?path=${encodeURIComponent(socialPath)}` : `${SITE_URL}/interviewiq-social.png`;
   return (
     <>
-      <Head><meta name="description" content="InterviewIQ - AI-powered interview intelligence for modern software engineers" /></Head>
-      {router.pathname === '/practice' ? <Component {...pageProps} /> : <div className="corporate-public theme-light">{isReaderArticle ? <div className="reader-article-scroll">{articlePath !== '/system-design/visual-guide' && <PublicHeader />}<Component {...pageProps} /><ReaderTools key={articlePath} path={articlePath} /></div> : <>{needsPublicHeader && <PublicHeader />}<Component {...pageProps} /></>}</div>}
+      <Head><link rel="manifest" href="/manifest.webmanifest" /><meta name="theme-color" content="#174ea6" /><meta property="og:image" content={socialImage} /><meta name="twitter:card" content="summary_large_image" /><meta name="twitter:image" content={socialImage} /><meta name="description" content="Learn engineering through examples, investigations and interview practice." /></Head>
+      {router.pathname === '/practice' ? <Component {...pageProps} /> : <div className="corporate-public theme-light">{isReaderArticle ? <div className="reader-article-scroll">{articlePath !== '/system-design/visual-guide' && <PublicHeader />}<RuntimeBaseline /><Component {...pageProps} /><ReaderTools key={articlePath} path={articlePath} /></div> : <>{needsPublicHeader && <PublicHeader />}<Component {...pageProps} /></>}</div>}
       {bookRoute && <ArticleBookReader {...bookRoute} />}
       {(isReaderArticle || /^\/(?:build|detective)\/.+/.test(articlePath)) && <LearningPosition key={articlePath} path={articlePath} />}
       <BrandWatermark publicPage={router.pathname !== '/practice'} />

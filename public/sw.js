@@ -1,7 +1,7 @@
 // Keep the shell cache versioned and never serve an HTML document from it first.
 // Next.js documents contain the current build's asset references; serving an old
 // document is what previously made users clear the cache after deployments.
-const CACHE_NAME = "interviewiq-shell-v4";
+const CACHE_NAME = "interviewiq-shell-v5";
 const SHELL = ["/", "/privacy", "/reset-password"];
 
 self.addEventListener("install", (event) => {
@@ -31,10 +31,15 @@ self.addEventListener("fetch", (event) => {
   // visible on the next navigation. Retain the cached shell only as offline
   // fallback.
   if (isDocument) {
+    const publicReading = /^\/(?:java\/(?:tutorial\/[^/]+|roadmap|releases)|tech-blogs\/[^/]+|series\/[^/]+|system-design\/visual-guide|labs(?:\/[^/]+)?)$/.test(url.pathname) && !url.search;
     event.respondWith(
-      fetch(event.request, { cache: "no-store" })
-        .catch(() => caches.match(event.request).then((cached) => cached || caches.match("/")))
-        .then((response) => response || new Response("Offline", { status: 503, statusText: "Offline" })),
+      fetch(event.request, { cache: "no-store" }).then(response => {
+        if (publicReading && response.ok && response.type === "basic") {
+          const copy = response.clone();
+          event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.put(url.pathname, copy)).catch(() => undefined));
+        }
+        return response;
+      }).catch(() => caches.match(url.pathname).then(cached => cached || new Response("Offline: open this public lesson online once to save it for offline reading.", { status: 503, headers: { "Content-Type": "text/plain" } }))),
     );
     return;
   }
@@ -48,6 +53,6 @@ self.addEventListener("fetch", (event) => {
         caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)).catch(() => undefined);
       }
       return response;
-    })).catch(() => caches.match("/").then((cached) => cached || new Response("Offline", { status: 503, statusText: "Offline" }))),
+    })).catch(() => Promise.resolve(new Response("Offline", { status: 503, statusText: "Offline" }))),
   );
 });

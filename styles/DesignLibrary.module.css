@@ -128,3 +128,5 @@
 @media(prefers-reduced-motion:reduce) { .card { transition:none; } }
 @media(min-width:1101px) { .workspace { height:calc(100dvh - 86px); min-height:540px; }.description,.center,.insights { height:100%; overflow-y:auto; overscroll-behavior:contain; }.solutionBody { padding:16px; }.workspaceHeader { padding-block:14px; }.center .tabs { position:sticky; top:0; z-index:2; }.figure .diagramTools { position:sticky; top:45px; z-index:1; background:#fff; padding-block:8px; margin-top:0; }.boardCaption p { margin-bottom:8px!important; } }
 @media(max-width:1100px) { .boardSvg { max-height:none!important; min-width:680px!important; } }
+
+.workspaceShell .timerButton { background: #174ea6 !important; color: #ffffff !important; border-color: #174ea6; }

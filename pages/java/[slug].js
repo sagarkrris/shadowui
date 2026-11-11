@@ -8,7 +8,7 @@ export default function PublicJavaArticle({ article, related }) {
   const url = `${SITE_URL}${getPublicArticleUrl(article.slug)}`;
   const source = article.source || {};
   const isScenario = Boolean(source.triage);
-  const quickAnswer = firstSentences(article.body, 2);
+  const quickAnswer = article.quickAnswer || article.body;
   return (
     <>
       <Head>
@@ -19,7 +19,7 @@ export default function PublicJavaArticle({ article, related }) {
         <meta property="og:title" content={article.title} />
         <meta property="og:description" content={article.description} />
         <meta property="og:url" content={url} />
-        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:card" content="summary_large_image" />
         <link rel="canonical" href={url} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           "@context": "https://schema.org",
@@ -36,7 +36,7 @@ export default function PublicJavaArticle({ article, related }) {
       <main style={{ background: "#ffffff", color: "#202124", minHeight: "100vh", padding: "32px 18px" }}>
         <article style={{ margin: "0 auto", maxWidth: 920 }}>
           <nav aria-label="Breadcrumb" style={{ color: "#1967d2", fontSize: 12, marginBottom: 20 }}>
-            <Link href="/">InterviewIQ</Link> / <Link href="/?workspace=java-digest">Java Interview Prep</Link> / {article.category} / {article.title}
+            <Link href="/">InterviewIQ</Link> / <Link href="/java">Java learning hub</Link> / {article.category} / {article.title}
           </nav>
           <header style={{ borderBottom: "1px solid #22324a", paddingBottom: 20 }}>
             <div style={{ color: "#1967d2", fontSize: 12, fontWeight: 800, textTransform: "uppercase" }}>{article.category} · Interview guide</div>
@@ -57,12 +57,13 @@ export default function PublicJavaArticle({ article, related }) {
             <div style={eyebrowStyle}>START HERE · 30 SECONDS</div><h2>Say this first</h2><p style={{ fontSize: 18, color: "#202124" }}>{quickAnswer}</p>
             <details style={detailsStyle}><summary style={summaryStyle}>Read the fuller explanation</summary><p>{article.body}</p></details>
           </section>
-          {article.glossary?.length ? <section style={sectionStyle}><div style={eyebrowStyle}>PLAIN-LANGUAGE GLOSSARY</div><h2>Terms used in this incident guide</h2><p>For example, p99 is the time within which 99% of requests finish; it focuses attention on the slowest 1% of requests.</p><dl style={glossaryStyle}>{article.glossary.map(({ term, definition }) => <div key={term}><dt style={{ color: "#1967d2", fontWeight: 800 }}>{term}</dt><dd style={{ margin: "3px 0 0" }}>{definition}</dd></div>)}</dl></section> : null}
+          {article.glossary?.length ? <section style={sectionStyle}><div style={eyebrowStyle}>PLAIN-LANGUAGE GLOSSARY</div><h2>Terms used in this incident guide</h2><dl style={glossaryStyle}>{article.glossary.map(({ term, definition }) => <div key={term}><dt style={{ color: "#1967d2", fontWeight: 800 }}>{term}</dt><dd style={{ margin: "3px 0 0" }}>{definition}</dd></div>)}</dl></section> : null}
           <section id="explain" style={sectionStyle}><div style={eyebrowStyle}>INTERVIEW STRUCTURE</div><h2>Build a strong answer, step by step</h2><div style={stepsStyle}>{article.answerSteps.map((step, index) => <div key={step} style={stepStyle}><span style={stepNumberStyle}>0{index + 1}</span><span>{step}</span></div>)}</div></section>
           <section id="mental-model" style={sectionStyle}><div style={eyebrowStyle}>WHY IT WORKS</div><h2>Simple mental model</h2><p>{article.internals || "Start with the contract, identify the invariant or user-facing target, then trace the smallest set of components that can violate it. Separate diagnosis from mitigation and measure before and after every change."}</p></section>
           {isScenario ? <section id="production" style={sectionStyle}><div style={eyebrowStyle}>WHEN THINGS BREAK</div><h2>Production approach</h2><p><strong>Likely diagnosis:</strong> {source.diagnosis}</p><p><strong>Prevention:</strong> {source.prevention}</p></section> : <section id="production" style={sectionStyle}><div style={eyebrowStyle}>USE IT WELL</div><h2>Example, boundaries, and follow-ups</h2><pre style={codeStyle}><code>{source.example}</code></pre><p><strong>Interview follow-ups:</strong> {source.followUps}</p></section>}
-          <section id="star" style={sectionStyle}><h2>STAR interview story</h2><div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))" }}>{parseStar(article.star).map(([label, text]) => <div key={label} style={{ background: "#f8f9fa", border: "1px solid #dadce0", borderRadius: 7, padding: 10 }}><strong style={{ color: "#1967d2", display: "block", fontSize: 12 }}>{label}</strong><span>{text}</span></div>)}</div></section>
-          <section id="related" style={sectionStyle}><h2>Related topics</h2><div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>{related.map((item) => <Link key={item.slug} href={getPublicArticleUrl(item.slug)} style={{ color: "#1967d2" }}>{item.title}</Link>)}</div></section>
+          {article.runbook && <section style={sectionStyle}><h2>High CPU diagnostic runbook</h2><p>Diagnostic command fragments, not a runnable incident lab. Linux and HotSpot JDK 17+ are assumed; all output below is illustrative.</p>{article.runbook.steps.map(step => <section key={step.title}><h3>{step.title}</h3><p>{step.text}</p>{step.commands && <pre style={codeStyle}><code>{step.commands}</code></pre>}{step.output && <pre style={codeStyle}>{step.output}</pre>}</section>)}<h3>Likely follow-up</h3><p>{article.runbook.followUp}</p><h3>Primary references</h3>{article.runbook.references.map(ref => <p key={ref.url}><a href={ref.url}>{ref.title}</a></p>)}</section>}
+          <section id="star" style={sectionStyle}><h2>STAR interview story</h2><p>Illustrative sample, not a verified personal incident. Replace it with your own experience and evidence; do not present these results as yours.</p><div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))" }}>{parseStar(article.star).map(([label, text]) => <div key={label} style={{ background: "#f8f9fa", border: "1px solid #dadce0", borderRadius: 7, padding: 10 }}><strong style={{ color: "#1967d2", display: "block", fontSize: 12 }}>{label}</strong><span>{text}</span></div>)}</div></section>
+          <section id="related" style={sectionStyle}><h2>Related topics</h2>{article.slug === "hashmap-internals" && <p>Canonical concept lesson: <Link href="/java/tutorial/hashmap">HashMap tutorial</Link>. The guide applies it to an interview; symptom and debugging pages provide separate exercises.</p>}<div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>{related.map((item) => <Link key={item.slug} href={getPublicArticleUrl(item.slug)} style={{ color: "#1967d2" }}>{item.title}</Link>)}</div></section>
         </article>
       </main>
     </>
@@ -74,10 +75,6 @@ function parseStar(story) {
   return match ? [["Situation", match[1]], ["Task", match[2]], ["Action", match[3]], ["Result", match[4]]] : [["STAR story", story]];
 }
 
-function firstSentences(value, count) {
-  const sentences = String(value || "").match(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g) || [];
-  return sentences.slice(0, count).join(" ").trim() || value;
-}
 
 const buttonStyle = { background: "#ffffff", border: "1px solid #9aa0a6", borderRadius: 6, color: "#174ea6", display: "inline-block", padding: "8px 11px", textDecoration: "none" };
 const panelStyle = { background: "#f8f9fa", border: "1px solid #dadce0", borderRadius: 8, margin: "20px 0", padding: 14 };

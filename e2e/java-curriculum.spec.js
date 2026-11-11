@@ -13,7 +13,12 @@ for (const group of getJavaCurriculumGroups(course)) test(`Java chapter navigati
     await expect(footer.locator('a')).toHaveCount(Number(!!previous) + Number(!!next));
     if (previous) await expect(footer.getByRole('link', { name: `← ${previous.title}`, exact: true })).toHaveAttribute('href', `/java/tutorial/${slugifyJavaTutorial(previous.title)}`);
     if (next) await expect(footer.getByRole('link', { name: `${next.title} →`, exact: true })).toHaveAttribute('href', `/java/tutorial/${slugifyJavaTutorial(next.title)}`);
-    await expect(page.locator('#interview-follow-up')).toContainText(lesson.followUp);
+    if (lesson.likelyFollowUps) {
+      for (const [question, answer] of lesson.likelyFollowUps) {
+        await expect(page.locator('#interview-follow-up dt').filter({ hasText: question })).toBeVisible();
+        await expect(page.locator('#interview-follow-up dd').filter({ hasText: answer })).toBeVisible();
+      }
+    } else await expect(page.locator('#interview-follow-up')).toContainText(lesson.followUp);
     await expect(page.locator('#diagram figure').first()).toBeAttached();
     const solution = page.locator('#retention-exercise details');
     await expect(solution.locator('p')).not.toBeVisible();

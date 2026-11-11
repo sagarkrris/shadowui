@@ -14,7 +14,7 @@ export default function JavaDigestTutorialCard({ tutorial, accent, completedIds,
   return <article className="java-digest-card" style={{ ...wrap, borderRadius: 8, display: "grid", gap: 7, padding: 10 }}>
     <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 7 }}><span style={{ color: accent, fontSize: 10, fontWeight: 900, textTransform: "uppercase" }}>{tutorial.category}</span><span style={{ border: "1px solid var(--jd-border-strong)", borderRadius: 999, color: "var(--jd-warning-text)", fontSize: 9.8, fontWeight: 900, padding: "3px 6px" }}>{tutorial.level}</span></div>
     <h3 style={{ ...wrap, color: "var(--jd-text)", fontSize: 13.5, lineHeight: 1.25 }}>{tutorial.title}</h3>
-    <div style={{ color: "var(--jd-text-muted)", fontSize: 10.2 }}>Java {tutorial.javaVersions} · Reviewed {tutorial.reviewedAt} · {tutorial.editorialStatus === "curated" ? "Curated chapter" : "Editorial draft"}</div>
+    <div style={{ color: "var(--jd-text-muted)", fontSize: 10.2 }}>Java {tutorial.javaVersions} · Content updated {tutorial.reviewedAt} · {tutorial.editorialStatus === "curated" ? "Curated chapter" : "Editorial draft"}</div>
     <p style={{ ...wrap, color: "var(--jd-text-soft)", fontSize: 11.3, lineHeight: 1.5, margin: 0 }}>{tutorial.summary}</p>
     <div style={{ color: "var(--jd-accent-alt)", fontSize: 11.1, lineHeight: 1.5 }}><b>Memory hook:</b> {tutorial.memoryHook}</div>
     <p style={{ fontSize: 11 }}>Reference context: {(tutorial.references || []).map(ref => <a key={ref.url} href={ref.url} target="_blank" rel="noreferrer">{ref.title}</a>)}</p>

@@ -1,0 +1,10 @@
+{
+  "implemented": ["Role-based public onboarding", "Java hub entry points and meaningful metadata", "JDK lesson rewrite and compatibility exercise", "Primitive type examples and answer cleanup", "High CPU diagnostic runbook", "Level definitions and optional preview roadmap group", "Runtime reference table", "HLD follow-ups and timed self-scoring practice", "Public social-card generation", "Visited-public-lesson offline cache", "Role/path analytics events", "Local community export and discussion prototypes"],
+  "productionIntegrationsRequired": {
+    "verifiedCertificates": ["Authenticated completion identity", "Server-owned grading result and immutable task version", "Signed credential IDs, revocation and a public verification route", "Rate limits and privacy preferences before issuing GitHub badges"],
+    "publicDiscussions": ["Authenticated authorship and deletion", "Moderation and abuse-report workflow", "Stored posts with ownership and edit audit", "Rate limits and retention policy"],
+    "newsletter": ["Existing digest API must report configured delivery", "Double opt-in and unsubscribe verification", "No email collection when delivery is unavailable"]
+  },
+  "notClaimed": ["Deployment verification", "Named reviewer biographies", "Human cold-use sessions", "Complete tutorial coverage for currently missing DSA and infrastructure topics", "Personal API-key setup", "Verified completion certificates or public discussion posting"],
+  "rollout": "Run the mandatory tech-blog gate on the final immutable source. Review service-worker upgrade and offline behavior before deployment. Publish no verified credential or community submission claim before the integration contracts above are satisfied."
+}

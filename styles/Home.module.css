@@ -130,3 +130,30 @@
   .articleCard p:not(.eyebrow) { grid-column: 1; grid-row: auto; }
   .articleCard .eyebrow { margin: 0; }
 }
+
+.guidedHero { grid-template-columns: minmax(0, 1fr); gap: 32px; padding-top: 48px; }
+.guidedHero .heroCopy { max-width: 1000px; }
+.guidedHero .heroLead { max-width: 740px; }
+.onboarding { padding: clamp(18px, 3vw, 32px); background: #f8faff; border: 1px solid #bccde7; border-radius: 16px; box-shadow: 0 12px 40px #174ea60a; min-width: 0; }
+.onboarding h2 { margin: 0 0 8px; font-size: 24px; }
+.onboarding p { color: #4b5563; line-height: 1.6; }
+.roleButtons { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 24px 0; }
+.roleButtons button { text-align: left; padding: 15px; border: 1px solid #9aa0a6; border-radius: 9px; background: white; color: #202124; font-weight: 700; cursor: pointer; }
+.roleButtons button[aria-pressed=true] { background: #174ea6; border-color: #174ea6; color: white; }
+.roleButtons small { display: block; font-weight: 400; margin-top: 7px; line-height: 1.4; }
+.pathPreview { background: white; border: 1px solid #dadce0; padding: 20px; border-radius: 10px; }
+.pathPreview h3 { margin: 0 0 16px; font-size: 17px; }
+.pathPreview ol { margin: 0; padding-left: 24px; }
+.pathPreview li { padding: 8px 0; line-height: 1.5; }
+.pathPreview li span { display: inline-block; min-width: 95px; font-size: 12px; text-transform: uppercase; font-weight: 700; color: #4b5563; }
+.pathPreview a { color: #174ea6; }
+.onboarding .onboardingNote { font-size: 12px; }
+.mockEntry { border-top: 1px solid #dadce0; padding-top: 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 16px; font-size: 13px; }
+.mockEntry button, .setupDialog button { border: 1px solid #174ea6; border-radius: 6px; background: white; color: #174ea6; padding: 9px 12px; cursor: pointer; }
+.setupDialog { width: min(520px, calc(100vw - 36px)); max-height: 85vh; overflow: auto; border: 1px solid #9aa0a6; padding: 28px; border-radius: 14px; color: #202124; background: white; }
+.setupDialog::backdrop { background: #172b4dcc; }
+.setupDialog a { color: #174ea6; display: inline-block; margin: 12px 12px 12px 0; }
+.setupDialog details { margin-top: 24px; }
+.closeDialog { float: right; }
+.steps h3 button { font: inherit; border: 0; background: none; padding: 0; cursor: pointer; color: inherit; text-decoration: underline; }
+@media(max-width:700px) { .roleButtons { grid-template-columns: repeat(2, minmax(0, 1fr)); } .guidedHero .heroCopy h1 { font-size: 36px; } .pathPreview li span { display: block; } }

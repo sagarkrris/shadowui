@@ -42,7 +42,7 @@ export default function JavaBackendJourney() {
       <p><strong>Your checkpoint:</strong> {stage.outcome}</p>
       <ol className={styles.list}>{stage.activities.map(activity => {
         const id = roadmapActivityId(stage.id, activity.label);
-        return <li key={id}><strong>{activity.label}</strong><p><Link prefetch={false} href={activity.href}>{activity.title}</Link>{activity.access === 'ai' && <span className={styles.small}> · AI provider required</span>}</p><label><input type="checkbox" disabled={!ready} checked={done.includes(id)} onChange={() => toggle(id)} />Completed {stage.title}: {activity.label}</label></li>;
+        return <li key={id}><strong>{activity.label}</strong><p><Link prefetch={false} href={activity.href}>{activity.title}</Link>{activity.access === 'ai' && <span className={styles.small}> · Optional AI feedback requires a provider. Self-check: say your answer aloud, give an example, then defend a failure case using the linked lesson.</span>}</p><label><input type="checkbox" disabled={!ready} checked={done.includes(id)} onChange={() => toggle(id)} />Completed {stage.title}: {activity.label}</label></li>;
       })}</ol>
       <label><input type="checkbox" disabled={!hub.ready} checked={hub.progress.weak.includes(`stage-java-backend-${stage.id}`)} onChange={() => hub.toggle("weak", `stage-java-backend-${stage.id}`)} />I need to revisit {stage.title}</label><p role="status">{hub.message}</p><StageReflection stage={stage} />
     </article>)}</div>

@@ -1,0 +1,183 @@
+<p><strong>Set 27 · 11 November 2026 — State, admission and interpretation</strong></p>
+
+<p>Reference assumptions: <strong>Java 21 without preview features</strong>. Primary APIs checked 11 November 2026; no latest-version claim. Q1–Q10 are contextual illustrations, not complete integrations. Q11–Q12 share the standalone Java class below, tested from this source. Stable IDs: <strong>S27-Q01–S27-Q12</strong>. Examples are original; spoken answers target 45–90 seconds.</p>
+
+<hr>
+<h3 id="1-a-cached-matcher-mixes-two-requests-while-its-pattern-is-shared-safely-which-object-owns-matching-state">1. A cached Matcher mixes two requests while its Pattern is shared safely. Which object owns matching state?</h3>
+
+<p><strong>Say aloud:</strong> “A Pattern is a compiled regular expression; a Matcher is a mutable cursor over one input. Sharing the immutable pattern is useful, but sharing a matcher lets requests overwrite its input, match positions and captured groups. I would cache only the pattern and create a matcher per operation. Synchronizing individual calls is insufficient if reset, find and group must form one operation; locking the entire sequence serializes requests. A test should deliberately interleave two inputs and check captured values, rather than merely check that no exception occurs. This is an ownership error even when the expression itself is correct. For large inputs I would also bound input size and review expression behavior separately; thread confinement does not make expensive matching cheap.”</p>
+
+<p><strong>Example:</strong> Contextual: <code>static final Pattern CODE = Pattern.compile(&quot;[A-Z]+&quot;)</code>; each request uses <code>CODE.matcher(input)</code>.</p>
+
+<p><strong>Deep dive / verification:</strong> Matching cost depends on the expression and input; no general linear-time promise. Per-call matcher allocation trades small object churn for clear ownership. Test empty input and concurrent distinct captures.</p>
+
+<p><strong>Follow-ups:</strong> Can match results escape? Capture an immutable result or copied values before advancing the matcher; its current state changes.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/regex/Pattern.html">Java 21 API</a>.</p>
+
+<hr>
+<h3 id="2-a-validator-accepts-junk-surrounding-a-valid-code-because-find-succeeds-what-boundary-should-validation-check">2. A validator accepts junk surrounding a valid code because find succeeds. What boundary should validation check?</h3>
+
+<p><strong>Say aloud:</strong> “A search asks whether some substring fits a pattern; validation asks whether the entire allowed input fits. Matcher.find implements the first question, while matches checks the entire matcher region. For a whole-field validator I would create a fresh matcher over the complete string and use matches, after enforcing length and null policy. If code narrows the region first, matches validates only that region, so the caller must own that boundary too. I would test a valid value surrounded by punctuation, a newline and an empty string. Adding anchors without understanding their flags is less clear than choosing the operation that states the intent. This distinction matters for allowlists where accepting one good substring inside a bad identifier would broaden access unexpectedly.”</p>
+
+<p><strong>Example:</strong> <code>Pattern.compile(&quot;[A-Z]{3}&quot;).matcher(&quot;!ABC!&quot;).find()</code> is true; matches is false.</p>
+
+<p><strong>Deep dive / verification:</strong> Region size and expression determine work. A successful syntax check does not authorize access to the referenced object. Verify null handling before invoking the matcher.</p>
+
+<p><strong>Follow-ups:</strong> Does matches search for a later start? No; it requires the whole current region to match.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/regex/Matcher.html">Java 21 API</a>.</p>
+
+<hr>
+<h3 id="3-a-synchronousqueue-reports-size-zero-while-producers-are-blocked-does-that-mean-there-is-no-overload">3. A SynchronousQueue reports size zero while producers are blocked. Does that mean there is no overload?</h3>
+
+<p><strong>Say aloud:</strong> “A SynchronousQueue is a rendezvous: a producer transfers an item directly to a waiting consumer, without storing a queue of items. Its size therefore does not measure waiting demand. A blocked producer can retain its payload and request resources even though collection metrics show zero. I would measure active and waiting operations, use timed admission where appropriate, and bound the number of producers at the service boundary. When used by an executor, this queue also changes when new workers or rejection are needed, so I would review the executor configuration together with it. A deterministic test should attempt an offer without a consumer, then arrange a paired transfer. Zero internal capacity is a coordination choice, not evidence of zero memory pressure or unlimited safe throughput.”</p>
+
+<p><strong>Example:</strong> <code>new SynchronousQueue&lt;String&gt;().offer(&quot;job&quot;)</code> is false with no waiting consumer.</p>
+
+<p><strong>Deep dive / verification:</strong> Waiting time depends on a partner. Timed admission needs a clear rejected-result policy. Interruption and shutdown must release waiting callers; fairness is separate from capacity.</p>
+
+<p><strong>Follow-ups:</strong> Would a queue of capacity one behave identically? No; it can retain one item without a matching consumer.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/SynchronousQueue.html">Java 21 API</a>.</p>
+
+<hr>
+<h3 id="4-a-priorityblockingqueue-constructed-with-100-accepts-thousands-of-jobs-where-was-the-limit">4. A PriorityBlockingQueue constructed with 100 accepts thousands of jobs. Where was the limit?</h3>
+
+<p><strong>Say aloud:</strong> “Initial capacity is storage sizing, not an admission limit. PriorityBlockingQueue is logically unbounded, so offer normally accepts more work until resources become a problem. I would place a bounded admission protocol around the workload or choose a queue with the needed capacity semantics. Priority chooses which eligible job is removed next; it does not guarantee that low-priority work ever runs under sustained higher-priority demand. Tests should submit more than the initial capacity and verify the actual policy at the service boundary. I would not infer sorted iteration from ordered removal either: a heap maintains enough order to select its next element, not a fully sorted representation. Operational metrics should include retained payload size and oldest waiting age, not just job count.”</p>
+
+<p><strong>Example:</strong> <code>new PriorityBlockingQueue&lt;Integer&gt;(100)</code> does not impose a maximum of 100 elements.</p>
+
+<p><strong>Deep dive / verification:</strong> Typical heap insertion/removal is O(log n); payload retention grows with admitted work. Immutable ordering keys avoid invalidating heap order; define equal-priority handling explicitly.</p>
+
+<p><strong>Follow-ups:</strong> Can we inspect jobs in priority order using its iterator? No guarantee; use a sorted snapshot or controlled removals.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/PriorityBlockingQueue.html">Java 21 API</a>.</p>
+
+<hr>
+<h3 id="5-two-equal-optional-values-are-used-as-locks-why-is-value-equality-not-a-synchronization-identity">5. Two equal Optional values are used as locks. Why is value equality not a synchronization identity?</h3>
+
+<p><strong>Say aloud:</strong> “Optional describes presence or absence of a value, not ownership of a monitor. It is a value-based class: equal instances should be interchangeable, and its API explicitly discourages synchronization on instances. Two wrappers describing the same account need not be the same object, so locking them can leave the critical section unprotected. I would use a private stable lock for a local invariant, or a domain concurrency mechanism for cross-process updates. Choosing the lock requires defining which operations share the invariant and how long that identity lives. A test that happens to reuse one wrapper cannot prove the design safe. The remedy is to remove dependence on wrapper identity, rather than cache wrappers hoping that allocation behavior stays unchanged.”</p>
+
+<p><strong>Example:</strong> Contextual: <code>synchronized (Optional.of(accountId))</code> does not coordinate all updates to that account.</p>
+
+<p><strong>Deep dive / verification:</strong> A lock protects only cooperating accesses using that lock. A JVM monitor does not coordinate database writes made by another replica. Wrapper operations do not promise a stable identity.</p>
+
+<p><strong>Follow-ups:</strong> Is Optional.empty a documented singleton lock? No; do not rely on reference identity for it.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Optional.html">Java 21 API</a>.</p>
+
+<hr>
+<h3 id="6-a-utf-8-properties-file-loads-corrupted-names-through-inputstream-which-encoding-contract-was-selected">6. A UTF-8 properties file loads corrupted names through InputStream. Which encoding contract was selected?</h3>
+
+<p><strong>Say aloud:</strong> “Bytes do not carry an automatic agreement about character encoding. Properties.load with an InputStream uses ISO-8859-1 rules, whereas load with a Reader consumes characters decoded by that reader. For a file whose contract is UTF-8, I would create an explicit UTF-8 reader and pass it to load, while preserving the properties format escaping rules. I would test non-ASCII text, escapes and malformed input under the chosen decoder policy. Switching overloads can change historical file interpretation, so migration needs representative persisted files and a declared encoding. I would also close the reader in the owning layer. A successful parse only proves that some key-value text was read; it does not prove that its characters or required configuration values are correct.”</p>
+
+<p><strong>Example:</strong> Contextual: <code>try (var reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) { props.load(reader); }</code>.</p>
+
+<p><strong>Deep dive / verification:</strong> Text processing and retained configuration scale with file size. Bound external files. Validate required values after parsing; decoding and semantic validation are different boundaries.</p>
+
+<p><strong>Follow-ups:</strong> Does Java always use the platform default here? No; the InputStream properties overload has its own specified encoding.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Properties.html">Java 21 API</a>.</p>
+
+<hr>
+<h3 id="7-a-french-resource-bundle-returns-an-english-label-without-throwing-did-translation-coverage-pass">7. A French resource bundle returns an English label without throwing. Did translation coverage pass?</h3>
+
+<p><strong>Say aloud:</strong> “A resource bundle can resolve missing keys through its parent bundle, so successful lookup does not prove that the requested locale supplied a translation. This fallback is useful for availability but can hide incomplete releases. I would keep a base bundle for safe rendering and separately validate required locale keys against the actual translation source files. The product must decide whether fallback is acceptable for ordinary labels and whether legally required text needs a stricter release check. Tests should include a deliberately absent localized key and an unsupported locale, not only known translated strings. I would use stable keys in code rather than compare displayed labels. Language selection and authorization must remain separate because a fallback string is presentation data, not a business identifier.”</p>
+
+<p><strong>Example:</strong> Contextual: base bundle has <code>confirm=Confirm</code>; a French bundle omits confirm, so parent lookup can still return it.</p>
+
+<p><strong>Deep dive / verification:</strong> Bundle caching and parent search are library behavior; completeness is an application policy. Validate formatted placeholders as well as key presence to avoid runtime formatting failures.</p>
+
+<p><strong>Follow-ups:</strong> Should all missing translations crash requests? That is a product decision; fail release checks where required while retaining a deliberate runtime fallback.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/ResourceBundle.html">Java 21 API</a>.</p>
+
+<hr>
+<h3 id="8-updating-the-original-array-after-constructing-atomicreferencearray-has-no-effect-what-was-copied">8. Updating the original array after constructing AtomicReferenceArray has no effect. What was copied?</h3>
+
+<p><strong>Say aloud:</strong> “AtomicReferenceArray constructed from an array copies its element references into independent array storage. It does not remain a live wrapper over that array, and it does not deep-copy the objects referenced by its elements. Replacing an original slot therefore does not update the atomic array, while mutating a shared element object can still affect what readers observe. I would make element ownership explicit, preferably publishing immutable values and replacing references atomically when they change. A useful test separates slot replacement from mutation of the referenced object. Merely choosing an atomic container does not make every field of its payload thread-safe. It also does not make a multi-element snapshot atomic; readers can observe elements from different update moments unless a broader protocol supplies consistency.”</p>
+
+<p><strong>Example:</strong> Contextual: after <code>var atomic = new AtomicReferenceArray&lt;&gt;(source)</code>, assigning <code>source[0] = other</code> does not replace atomic slot zero.</p>
+
+<p><strong>Deep dive / verification:</strong> Construction copies O(n) references; indexed operations concern individual slots. Immutable aggregate replacement is an alternative when coherent multi-field snapshots matter, at copying cost.</p>
+
+<p><strong>Follow-ups:</strong> Is this a deep copy? No; the referenced objects are shared unless the application copies them.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/atomic/AtomicReferenceArray.html">Java 21 API</a>.</p>
+
+<hr>
+<h3 id="9-collections-disjoint-disagrees-when-one-set-uses-case-insensitive-ordering-which-equality-owns-the-question">9. Collections.disjoint disagrees when one set uses case-insensitive ordering. Which equality owns the question?</h3>
+
+<p><strong>Say aloud:</strong> “Disjoint asks whether collections have an element in common, but the participating collections must agree on what equality means. A sorted set can use a comparator that treats two strings as equivalent even when String.equals does not. Mixing that set with an ordinary collection can make a membership-based algorithm unsuitable; the API warns about incompatible equality tests. I would define the domain equivalence first and normalize both collections into a representation with that same rule, or implement an explicitly named comparison policy. For machine identifiers, normalization also needs a fixed locale and protocol rules. A test should include case variants and swap argument roles. I would not fix an inconsistent domain contract by depending on which collection the current implementation happens to iterate.”</p>
+
+<p><strong>Example:</strong> Contextual: a case-insensitive TreeSet containing &quot;ABC&quot; and an ordinary set containing &quot;abc&quot; use different membership equivalence.</p>
+
+<p><strong>Deep dive / verification:</strong> Normalization costs depend on text size; hash-based comparison is expected linear in element count after normalization. Keep original labels separately when display spelling matters.</p>
+
+<p><strong>Follow-ups:</strong> Can sorting both lists fix this automatically? Only if the chosen comparator actually expresses the same intended equivalence for both.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Collections.html">Java 21 API</a>.</p>
+
+<hr>
+<h3 id="10-malformed-utf-8-becomes-a-replacement-character-and-passes-identifier-validation-what-information-was-discarded">10. Malformed UTF-8 becomes a replacement character and passes identifier validation. What information was discarded?</h3>
+
+<p><strong>Say aloud:</strong> “Decoding turns bytes into characters; malformed input handling decides what happens when bytes are not valid in the chosen encoding. Replacement can turn different invalid byte sequences into the same visible character, hiding corruption before later validation runs. For a strict identifier protocol I would configure a CharsetDecoder to report malformed and unmappable input, reject decoding failure at the boundary, then validate the resulting characters. For human-readable best-effort logs a replacement policy may be deliberate, but that is a different contract. I would test malformed bytes, a genuine replacement character encoded correctly, and valid non-ASCII input. Rejecting malformed encoding alone does not define acceptable names, normalization or authorization; each remains an explicit subsequent step.”</p>
+
+<p><strong>Example:</strong> Contextual: <code>UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)</code> makes rejection policy explicit.</p>
+
+<p><strong>Deep dive / verification:</strong> Decoding costs scale with input and output; bound both. Decoder instances carry state and must have clear ownership. Replacement may be suitable for presentation but loses original-byte distinctions.</p>
+
+<p><strong>Follow-ups:</strong> Can we reject every replacement character afterward? That also rejects a legitimately encoded character and cannot reconstruct discarded bytes.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/nio/charset/CharsetDecoder.html">Java 21 API</a>.</p>
+
+<hr>
+<h3 id="11-return-the-first-integer-occurring-exactly-once-why-does-discovering-a-value-once-not-establish-uniqueness">11. Return the first integer occurring exactly once. Why does discovering a value once not establish uniqueness?</h3>
+
+<p><strong>Say aloud:</strong> “Unique here means a total frequency of one, and first means earliest input position. I cannot return on the first encounter because a later element may repeat it. I count every value in a hash map, then scan the original array again and return the first value with count one. This separates the evidence for uniqueness from the ordering decision. I use OptionalInt for absence because every int, including minus one, can be a valid result. Empty input returns empty, null is rejected and the input is preserved. I would compare against a simple oracle that counts each candidate by scanning the whole array. A streaming version that must finalize answers before end of input needs a stronger contract; future duplicates can invalidate an early answer.”</p>
+
+<p><strong>Example:</strong> [8, 3, 8, -1, 3] returns -1 as a present value; [2, 2] has no result.</p>
+
+<p><strong>Deep dive / verification:</strong> Expected O(n) time with hash-map operations, O(d) space for d distinct values. Frequency cannot exceed the Java array length and fits int. Adversarial key behavior can change generic map performance; these keys are integers.</p>
+
+<p><strong>Follow-ups:</strong> Can one pass of counting alone return the answer? Not from an unordered map; retain input order or track first positions as well. Two scans keep the implementation clear.</p>
+
+<hr>
+<h3 id="12-return-the-earliest-longest-strictly-increasing-contiguous-run-why-does-a-subsequence-algorithm-solve-a-different-problem">12. Return the earliest longest strictly increasing contiguous run. Why does a subsequence algorithm solve a different problem?</h3>
+
+<p><strong>Say aloud:</strong> “A contiguous run uses adjacent input positions without skipping. A subsequence may skip values, so it can produce a longer result that violates this requirement. I track the start of the current run and the best start and length. Whenever the next value is no greater than its predecessor, a new run starts there. After each position, I update the best only for a strictly greater length; that preserves the earliest answer on ties. I return a half-open range, whose end is excluded, so empty input has the natural range zero to zero. Comparisons use relational operators rather than subtraction to avoid overflow at extreme values. I would enumerate all contiguous ranges independently and compare both length and tie-breaking with the linear scan.”</p>
+
+<p><strong>Example:</strong> [1, 4, 2, 3] returns [0, 2), not the noncontiguous subsequence [1, 2, 3]. Equal adjacent values break a strictly increasing run.</p>
+
+<p><strong>Deep dive / verification:</strong> O(n) time and O(1) extra space. The range is a witness: callers can verify its bounds and adjacent comparisons. Null is rejected and input remains unchanged. Returning indices avoids allocating a copied run.</p>
+
+<p><strong>Follow-ups:</strong> How does nondecreasing change it? Break only when the next value is smaller; equality then extends the run. Keep the tie rule unchanged.</p>
+
+<pre><code class="java">public final class SequenceContracts {
+    public record Range(int start, int end) {}
+    public static java.util.OptionalInt firstUnique(int[] values) {
+        java.util.Objects.requireNonNull(values);
+        var counts = new java.util.HashMap&lt;Integer, Integer&gt;();
+        for (int value : values) counts.merge(value, 1, Integer::sum);
+        for (int value : values)
+            if (counts.get(value) == 1) return java.util.OptionalInt.of(value);
+        return java.util.OptionalInt.empty();
+    }
+    public static Range longestRun(int[] values) {
+        java.util.Objects.requireNonNull(values);
+        int start = 0, bestStart = 0, bestLength = 0;
+        for (int i = 0; i &lt; values.length; i++) {
+            if (i &gt; 0 &amp;&amp; values[i] &lt;= values[i - 1]) start = i;
+            int length = i - start + 1;
+            if (length &gt; bestLength) { bestStart = start; bestLength = length; }
+        }
+        return new Range(bestStart, bestStart + bestLength);
+    }
+}
+</code></pre>
+<h2 id="topic-coverage-and-next-set">Topic coverage and next set</h2>
+
+<p>This set covers regex state and validation scope, rendezvous admission, priority capacity, synchronization identity, configuration encoding, translation fallback, atomic slot ownership, equality consistency, strict decoding and two coding witnesses. It builds on earlier ownership and representation lessons through distinct API contracts. Primary references support API behavior; the two algorithms are justified by the counting and run invariants above.</p>
+
+<p>Next set will return to Spring validation boundaries, persistence refresh after bulk operations, and distributed recovery admission. Inspect earlier questions before selecting scenarios; do not repeat this set&#39;s decisions.</p>

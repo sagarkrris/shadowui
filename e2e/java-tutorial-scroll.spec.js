@@ -28,3 +28,18 @@ for (const viewport of [
     await expect(page.getByRole("heading", { name: "Related tutorials" })).toBeVisible();
   });
 }
+
+ test('hub exposes both audiences and the JDK lesson has working section links', async ({ page }) => {
+  await page.goto('/java');
+  await expect(page.getByRole('heading', { name: 'Start from the basics' })).toBeVisible();
+  await page.getByRole('link', { name: 'Start chapter 1: JDK vs JRE vs JVM →' }).click();
+  await expect(page.getByRole('heading', { name: 'JDK vs JRE vs JVM', exact: true })).toBeVisible();
+  for (const link of await page.locator('aside a[href^="#"]').all()) {
+    const href = await link.getAttribute('href');
+    await expect(page.locator(href)).toHaveCount(1);
+  }
+  await expect(page.getByRole('heading', { name: 'Interview follow-up', exact: true })).toHaveCount(1);
+  await page.getByText('Show explained solution', { exact: true }).click();
+  await expect(page.getByLabel('Illustrative compatibility diagnostics')).toContainText('UnsupportedClassVersionError');
+  await expect(page.getByText('Is the JVM platform-independent?', { exact: true })).toBeVisible();
+});

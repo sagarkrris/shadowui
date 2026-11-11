@@ -11,7 +11,7 @@ import CourseDemo from '../learning/CourseDemo';
 export default function BackendFieldNote({ blog }) {
   const [choice, setChoice] = useState(null);
   const path = `/tech-blogs/${blog.id}`;
-  return <><Head><title>{`${blog.title} | InterviewIQ`}</title><meta name="description" content={blog.summary} /><link rel="canonical" href={`${SITE_URL}${path}`} /></Head>
+  return <><Head><title>{`${blog.title} | InterviewIQ`}</title><meta name="description" content={blog.summary} /><meta property="og:title" content={blog.title} /><meta property="og:description" content={blog.summary} /><link rel="canonical" href={`${SITE_URL}${path}`} /></Head>
     <main className={styles.page}><article className={styles.article}>
       <nav aria-label="Article navigation"><Link href="/">Home</Link> / <Link href="/tech-blogs">Tech Blogs</Link> / <Link href="/series/backend-failure-boundaries">Backend failure boundaries</Link></nav>
       <header><p className={styles.eyebrow}>{blog.category} · {blog.minutes} MIN READ</p><h1>{blog.title}</h1><p className={styles.lead}>{blog.summary}</p></header>

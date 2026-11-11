@@ -13,8 +13,8 @@ test('public pages keep the InterviewIQ watermark visible without blocking contr
     await expect(watermark.getByText('InterviewIQ', { exact: true }).first()).toBeVisible();
     expect((await watermark.boundingBox()).width).toBeLessThan(100);
     await expect(watermark).toHaveCSS('transform', 'none');
-    await page.getByRole('button', { name: 'Preview cache capacity 3', exact: true }).click();
-    await expect(page.getByRole('status', { name: 'Cache preview result' })).toContainText('4 hits; 3 misses');
+    await page.getByRole('button', { name: 'System Architect Scale / reliability', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Recommended starting path for System Architect' })).toBeVisible();
     await page.screenshot({ path: test.info().outputPath(`interviewiq-watermark-${width}.png`) });
   }
 });
@@ -86,14 +86,11 @@ test('failed catalogue loads retain shortcuts and can be retried; saved notes st
   await expect(dialog.getByRole('link', { name: /Caching: reuse/ })).toBeVisible();
 });
 
-test('homepage preview computes changed cache outcomes and course category filters recover', async ({ page }) => {
+test('homepage role preview updates and course category filters recover', async ({ page }) => {
   await page.goto('/');
-  const result = page.getByRole('status', { name: 'Cache preview result' });
-  await expect(result).toContainText('3 hits; 4 misses');
-  await page.getByRole('button', { name: 'Preview cache capacity 1', exact: true }).click();
-  await expect(result).toContainText('1 hits; 6 misses');
-  await page.getByRole('button', { name: 'Preview cache capacity 3', exact: true }).click();
-  await expect(result).toContainText('4 hits; 3 misses');
+  await expect(page.getByRole('heading', { name: 'Recommended starting path for Senior Backend' })).toBeVisible();
+  await page.getByRole('button', { name: 'AI Engineer Models / tools / evaluation', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Recommended starting path for AI Engineer' })).toBeVisible();
   await page.goto('/learn');
   await page.getByLabel('Course category', { exact: true }).selectOption('Java backend correctness');
   await page.getByRole('searchbox', { name: 'Search courses and lessons' }).fill('Java Money');

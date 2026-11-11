@@ -13,6 +13,8 @@ export default function PublicHeader() {
   const [menu, setMenu] = useState(null);
   const [mobile, setMobile] = useState(false);
   const [search, setSearch] = useState(false);
+  const [shortcut, setShortcut] = useState("Ctrl K");
+  useEffect(() => { setShortcut(/Mac|iPhone|iPad/.test(navigator.platform) ? "⌘ K" : "Ctrl K"); }, []);
   const closeSearch = useCallback(() => setSearch(false), []);
   useEffect(() => {
     function keys(event) {
@@ -46,9 +48,9 @@ export default function PublicHeader() {
           </div>)}
         </nav>
         <div className={ui.headerActions}>
-          <button type="button" className={ui.searchTrigger} aria-label="Search learning library" onClick={() => { setMenu(null); setMobile(false); setSearch(true); }}><UiIcon name="search" size={18} /><span>Search</span><kbd>⌘ K</kbd></button>
+          <button type="button" className={ui.searchTrigger} aria-label="Search learning library" onClick={() => { setMenu(null); setMobile(false); setSearch(true); }}><UiIcon name="search" size={18} /><span>Search</span><kbd>{shortcut}</kbd></button>
           <Link prefetch={false} href="/notebook" className={ui.notebookLink} aria-label="My notebook"><UiIcon name="bookmark" size={19} /></Link>
-          <Link prefetch={false} href="/practice" className={ui.headerCta}>Start practising<UiIcon name="arrow" size={16} /></Link>
+          <Link prefetch={false} href="/practice" className={ui.headerCta}>Start practice<UiIcon name="arrow" size={16} /></Link>
         </div>
       </div>
     </header>

@@ -14,7 +14,7 @@ export default function JavaReleasePath() {
       <p>New to Java? Start with the <Link href="/java/roadmap">numbered foundation course</Link>. This path reuses those chapters and adds detailed modern-language, library and runtime lessons. A release card can link to a later permanent form; the chapter always states the JDK its example requires.</p>
       <p><strong>Before running examples:</strong> check java -version and javac -version. Java 26 preview labs require JDK 26 and --enable-preview at compilation and launch. The Vector lab instead requires its named incubator module. A lesson running successfully proves its stated fixture, not a live network, native-library integration or application benchmark.</p>
     </header>
-    <section aria-label="Release chapters" className={styles.grid}>{JAVA_RELEASE_PATH.map(release => <article key={release.release} id={`java-${release.release}`} className={styles.card}>
+    <section><h2>LTS interview checkpoints first</h2><p>Start with permanent features used by your target role’s runtime: <a href="#java-17">Java 17</a>, <a href="#java-21">Java 21</a>, then <a href="#java-25">Java 25</a>. Treat preview and incubator labs as optional; production adoption depends on your supported runtime.</p></section><section aria-label="Release chapters" className={styles.grid}>{JAVA_RELEASE_PATH.map(release => <article key={release.release} id={`java-${release.release}`} className={styles.card}>
       <h2>Java {release.release}: {release.title}</h2><p>{release.context}</p>
       <ul>{release.lessons.map(title => {
         const slug = slugifyJavaTutorial(title);
