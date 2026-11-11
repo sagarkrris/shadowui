@@ -29,6 +29,11 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
+      - name: Use official Ubuntu package mirrors
+        run: |
+          # The hosted image prioritizes Azure's mirror, whose DNS can fail.
+          # Retain the official archive/security mirrors and existing APT trust settings.
+          sudo sed -i '\|^http://azure\.archive\.ubuntu\.com/ubuntu/|d' /etc/apt/apt-mirrors.txt
       - run: npx playwright install --with-deps chromium
       - name: Mandatory tech-blog release gate
         run: npm run verify:tech-blog
