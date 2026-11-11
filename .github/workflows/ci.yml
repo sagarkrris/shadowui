@@ -29,12 +29,24 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
-      - name: Use official Ubuntu package mirrors
+      - name: Install pinned Chromium browser
+        # ubuntu-24.04 already supplies the native Chromium libraries. Avoid APT
+        # downloads of optional font packages; verify the actual browser below.
+        run: npx playwright install chromium
+      - name: Verify Chromium runtime dependencies
         run: |
-          # The hosted image prioritizes Azure's mirror, whose DNS can fail.
-          # Retain the official archive/security mirrors and existing APT trust settings.
-          sudo sed -i '\|^http://azure\.archive\.ubuntu\.com/ubuntu/|d' /etc/apt/apt-mirrors.txt
-      - run: npx playwright install --with-deps chromium
+          node --input-type=module <<'NODE'
+          import { chromium } from '@playwright/test';
+          const browser = await chromium.launch();
+          try {
+            const page = await browser.newPage();
+            await page.setContent('<h1>Chromium runtime ready</h1>');
+            await page.screenshot();
+            console.log(`Chromium ${browser.version()}: launch and render succeeded`);
+          } finally {
+            await browser.close();
+          }
+          NODE
       - name: Mandatory tech-blog release gate
         run: npm run verify:tech-blog
       - uses: actions/upload-artifact@v4
