@@ -62,6 +62,7 @@ async function sendAuthEmail({ type, user, token, req }) {
 }
 
 async function handler(req, res) {
+  res.setHeader("Cache-Control", "private, no-store, max-age=0");
   const action = String(req.query.action || "me");
   const logger = createRequestLogger({ route: "/api/auth", requestId: req.requestId });
   // CSRF bootstrap and session lookup are safe reads. Keep their allowance separate

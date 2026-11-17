@@ -216,7 +216,7 @@ test("builds deterministic answer coach actions for common answer rewrites", () 
   assert.match(actions.find((action) => action.label === "Convert to STAR").prompt, /Situation|Task|Action|Result/);
 });
 
-test("builds an answer rewrite studio with six interview-ready versions", () => {
+test("builds source-preserving answer drafts with separate format guidance", () => {
   assert.equal(typeof prepInsights.buildAnswerRewriteStudio, "function");
 
   const studio = prepInsights.buildAnswerRewriteStudio({
@@ -245,9 +245,11 @@ test("builds an answer rewrite studio with six interview-ready versions", () => 
     ],
   );
   assert.match(studio.versions[0].text, /checkout latency/i);
-  assert.ok(studio.versions[1].text.length < studio.versions[0].text.length);
-  assert.match(studio.versions[2].text, /owned|decision|stakeholder|risk/i);
-  assert.match(studio.versions[3].text, /Situation:|Task:|Action:|Result:/);
+  assert.ok(studio.versions[1].text.length <= studio.versions[0].text.length);
+  assert.equal(studio.versions[2].text, studio.versions[0].text);
+  assert.match(studio.versions[2].guidance, /decision|risk/i);
+  assert.equal(studio.versions[3].text, studio.versions[0].text);
+  assert.match(studio.versions[3].guidance, /Situation|Task|Action|Result/);
   assert.match(studio.versions[4].text, /real metric|measurable|latency|impact/i);
   assert.match(studio.versions[5].text, /trade-off|metric|interview-ready/i);
   assert.ok(studio.versions.every((version) => version.prompt.includes("Answer Rewrite Studio")));
@@ -275,7 +277,7 @@ test("judges code explanations for invariant edge cases complexity and trade-off
   );
   assert.ok(strong.checks.every((check) => check.covered));
   assert.ok(strong.score >= 90);
-  assert.match(strong.verdict, /interviewer-ready|strong/i);
+  assert.match(strong.verdict, /does not establish correctness/i);
 
   const weak = prepInsights.buildCodeExplanationJudge({
     profile,
@@ -354,7 +356,8 @@ test("builds an executive offer readiness score from prep signals", () => {
   assert.ok(readiness.score >= 65);
   assert.equal(readiness.factors.length, 6);
   assert.ok(readiness.factors.some((factor) => factor.label === "Story Coverage"));
-  assert.match(readiness.nextActionPrompt, /offer readiness/i);
+  assert.match(readiness.nextActionPrompt, /preparation evidence/i);
+  assert.match(readiness.label, /not a hiring prediction/);
 });
 
 test("derives an answer quality heatmap from rubric scores and feedback gaps", () => {

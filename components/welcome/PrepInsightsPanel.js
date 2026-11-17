@@ -50,7 +50,7 @@ export default function PrepInsightsPanel({ profile, topics, weakSpots, mockScor
   const roadmap = buildInterviewRoadmap({ profile, topics, weakSpots, mockScores });
   const dashboard = buildPrepProgressDashboard({ weakSpots, mockScores, mistakeBank, messages });
   const toolkitState = readToolkitState();
-  const companyPrepScore = Array.isArray(toolkitState.interviews) && toolkitState.interviews.length ? 70 : 35;
+  const companyPrepScore = Array.isArray(toolkitState.interviews) && toolkitState.interviews.length ? 70 : 0;
   const offerReadiness = buildOfferReadinessScore({
     resumeAnalysis: toolkitState.resumeAnalysis,
     jobDescriptionAnalysis: toolkitState.jobDescriptionAnalysis,
@@ -59,7 +59,7 @@ export default function PrepInsightsPanel({ profile, topics, weakSpots, mockScor
     proofStories,
     companyPrepScore,
   });
-  const shareReadiness = async () => { const params = new URLSearchParams({ score: String(Math.round(offerReadiness.score)), label: offerReadiness.label, stack: profile?.stack || "Software Engineering" }); const url = `${window.location.origin}/share/readiness?${params}`; trackEvent("readiness_shared", { value: String(Math.round(offerReadiness.score)) }); if (navigator.share) await navigator.share({ title: "My InterviewIQ readiness signal", url }); else await navigator.clipboard?.writeText(url); };
+  const shareReadiness = async () => { const params = new URLSearchParams({ score: String(Math.round(offerReadiness.score)), source: "self-reported-checklist", label: offerReadiness.label, stack: profile?.stack || "Software Engineering" }); const url = `${window.location.origin}/share/readiness?${params}`; trackEvent("readiness_shared", { value: String(Math.round(offerReadiness.score)) }); if (navigator.share) await navigator.share({ title: "My InterviewIQ preparation checklist", url }); else await navigator.clipboard?.writeText(url); };
   const dayPack = buildInterviewDayPack({
     profile,
     topics,
@@ -237,7 +237,7 @@ export default function PrepInsightsPanel({ profile, topics, weakSpots, mockScor
               {missionBoard.why.slice(0, 2).join(" ")}
             </p>
             <strong style={{ color: theme.accentStrong, fontSize: 11.3, whiteSpace: "nowrap" }}>
-              Offer readiness impact +{missionBoard.completionImpact.offerReadinessDelta}
+              Checklist estimate +{missionBoard.completionImpact.offerReadinessDelta}
             </strong>
           </div>
         </div>
@@ -289,7 +289,7 @@ export default function PrepInsightsPanel({ profile, topics, weakSpots, mockScor
         <div className="glass-card" style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 12 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 7 }}>
             <span style={{ display: "flex", alignItems: "center", gap: 7, color: theme.accentText, fontSize: 12, fontWeight: 800 }}>
-              <i className="ti ti-gauge" />Offer Readiness
+              <i className="ti ti-gauge" />Preparation Checklist
             </span>
             <strong style={{ color: offerReadiness.score >= 80 ? "#86efac" : theme.accentStrong, fontSize: 24 }}>{offerReadiness.score}%</strong>
           </div>
@@ -308,7 +308,7 @@ export default function PrepInsightsPanel({ profile, topics, weakSpots, mockScor
           <button className="glass-button" onClick={() => onAction(offerReadiness.nextActionPrompt)} style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 8, color: theme.accentText, fontSize: 11.5, fontWeight: 800, cursor: "pointer", width: "100%", textAlign: "left" }}>
             <i className="ti ti-player-play" /> Improve weakest signal
           </button>
-          <button className="glass-button" onClick={shareReadiness} style={{ border: "1px solid rgba(114,208,166,.45)", borderRadius: 8, marginTop: 7, padding: 8, color: "#a7f3d0", fontSize: 11.5, fontWeight: 800, cursor: "pointer", width: "100%", textAlign: "left" }}><i className="ti ti-share-3" /> Share readiness card</button>
+          <button className="glass-button" onClick={shareReadiness} style={{ border: "1px solid rgba(114,208,166,.45)", borderRadius: 8, marginTop: 7, padding: 8, color: "#a7f3d0", fontSize: 11.5, fontWeight: 800, cursor: "pointer", width: "100%", textAlign: "left" }}><i className="ti ti-share-3" /> Share preparation checklist</button>
         </div>
 
         <div className="glass-card" style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 12 }}>
@@ -364,7 +364,7 @@ export default function PrepInsightsPanel({ profile, topics, weakSpots, mockScor
             <i className="ti ti-report-analytics" />Final Interview Report
           </div>
           <p style={{ color: "#9ca3af", fontSize: 11.3, lineHeight: 1.45, marginBottom: 9 }}>
-            Combines offer readiness, role pack, masteryMap, weak spots, proof stories, and systemDesignCanvas notes.
+            Combines preparation checklists, role pack, masteryMap, weak spots, proof stories, and systemDesignCanvas notes.
           </p>
           <div style={{ display: "grid", gap: 6, marginBottom: 9 }}>
             <strong style={{ color: "#e8e8f0", fontSize: 11.5 }}>{rolePack.title}</strong>

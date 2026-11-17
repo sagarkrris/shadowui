@@ -1341,7 +1341,7 @@ function ChallengeVisualExplanation({ challenge, choiceId, accent }) {
 
 function StatePanel({ panel, accent }) {
   return (
-    <section data-diagram-artwork="dsa-state" style={{ background: "#fffdf8", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 9, padding: 12 }}>
+    <section aria-label={panel.title} data-diagram-artwork="dsa-state" style={{ background: "#fffdf8", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 9, padding: 12 }}>
       <div style={{ alignItems: "center", color: "#20364c", display: "flex", fontSize: 11, fontWeight: 900, gap: 7, textTransform: "uppercase" }}>
         <DiagramSymbol kind={panel.kind === "stack" ? "stack" : "collection"} size={32} />
         State Panel
@@ -2699,8 +2699,9 @@ function DsaVisualLabContent({ initialLessonId = "arrays", onPractice, theme = {
   );
   const currentWalkthrough = useMemo(() => {
     const steps = lesson.codeWalkthrough || [];
+    if (lesson.problemId === "best-time-to-buy-and-sell-stock") return steps[stepIndex === 0 ? 0 : stepIndex >= state.steps.length - 1 ? 2 : 1];
     return steps.find((item) => item.visualStep === stepIndex) || steps[Math.min(stepIndex, steps.length - 1)] || null;
-  }, [lesson, stepIndex]);
+  }, [lesson, stepIndex, state.steps.length]);
   const selectedLearningProblem = useMemo(
     () => blind75Problems.find((problem) => problem.id === selectedLearningProblemId) || blind75Problems[0],
     [blind75Problems, selectedLearningProblemId],
@@ -3911,7 +3912,7 @@ function DsaVisualLabContent({ initialLessonId = "arrays", onPractice, theme = {
 
           <section style={{ background: "rgba(255,255,255,.045)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, display: "grid", gap: 7, padding: 12 }}>
             <div style={{ color: accent, fontSize: 11, fontWeight: 900, textTransform: "uppercase" }}>Dry Run</div>
-            <p style={{ color: "#dbeafe", fontSize: 12.5, lineHeight: 1.5, margin: 0 }}>{lesson.dryRun}</p>
+            <p style={{ color: "#dbeafe", fontSize: 12.5, lineHeight: 1.5, margin: 0 }}>{state.dryRun || lesson.dryRun}</p>
             <DryRunTable rows={dryRunRows} activeIndex={Math.min(stepIndex, dryRunRows.length - 1)} accent={accent} />
             <div style={{ borderTop: "1px solid rgba(255,255,255,.07)", color: "#93a4bf", fontSize: 11.5, lineHeight: 1.45, paddingTop: 8 }}>
               Dry-run script: {currentStep?.interviewScript}

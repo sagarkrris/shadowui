@@ -165,9 +165,5 @@ export function useTechBuddyMedia(onTranscript, offline = false) {
     }
   };
 
-  const readThenListen = (text, draft = '') => {
-    speak(text, false, () => listen(typeof draft === 'function' ? draft() : draft));
-  };
-
-  return { ...media, setSpeechMode: speechMode => { stopSpeech(); update({ speechMode }); }, listen, speak, readThenListen, stopAll, stopSpeech, stopRecognition };
+  return { ...media, setSpeechMode: speechMode => { stopSpeech(); update({ speechMode }); }, listen, speak, stopAll, stopSpeech, stopRecognition };
 }

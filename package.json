@@ -20,7 +20,12 @@
     "test:tiny-systems": "node scripts/validation/check-tiny-systems.mjs",
     "test:build-challenges": "node scripts/validation/check-build-challenges.mjs",
     "test:release": "node scripts/validation/release-gate.mjs",
-    "test:content": "node scripts/validation/check-java-content.mjs && node scripts/validation/check-blind75.mjs"
+    "test:content": "node scripts/validation/check-java-content.mjs && node scripts/validation/check-blind75.mjs",
+    "verify:account-isolation": "node scripts/security/verify-account-isolation.mjs",
+    "verify:product-analytics": "node scripts/validation/check-product-analytics.mjs",
+    "verify:operations": "node scripts/validation/operational-preflight.mjs",
+    "report:learning-analytics": "node scripts/operations/product-analytics.mjs",
+    "prune:learning-analytics": "node scripts/operations/product-analytics.mjs --prune"
   },
   "dependencies": {
     "@google/genai": "2.17.1",

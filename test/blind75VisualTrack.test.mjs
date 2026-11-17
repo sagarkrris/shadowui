@@ -66,6 +66,16 @@ test("stock lesson uses stock-specific cases and an executable Java solution", (
   assert.doesNotMatch(template.code, /return null/);
 });
 
+test("each stock example explains its own input and result", () => {
+  const stock = getBlind75Problem("best-time-to-buy-and-sell-stock");
+  assert.deepEqual(stock.examples.map(example => example.output), ["5", "0", "2"]);
+  assert.match(stock.examples[1].explanation, /every later price is lower.*return 0/i);
+  assert.match(stock.examples[2].explanation, /buy at 2.*sell later at 4.*profit 2/i);
+  assert.doesNotMatch(stock.examples[1].explanation + stock.examples[2].explanation, /profit is 4 at price 5|final answer is 5/i);
+  assert.doesNotMatch(stock.quiz.answer, /active window/i);
+  assert.ok(stock.codeWalkthrough.every(step => !/window|counts/i.test(step.codeCue)));
+});
+
 test("returns a complete featured problem", () => {
   const problem = getBlind75Problem("two-sum");
 

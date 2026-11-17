@@ -94,3 +94,17 @@ Final completion-pass results:
 - `git diff --check`: passed. Release artifacts remain in the operating-system temporary directory; tracked test artifacts are untouched.
 
 Skipped by user: live Gemini scoring calibration. Manual acceptance still required: physical devices and actual screen-reader speech/navigation. Broader legacy DSA scenes remain labeled illustrations; only the three explicitly executable browser lessons claim real-input execution.
+
+## Practice recovery and layout — 2026-11-17
+
+- Failed evaluations persist their error and request ID beside the saved answer, including after reload. Retry keeps the original attempt identity. “Keep answer and continue” clears the unfinished request and active question while retaining the submitted message; it does not invent a completed assessment. The home card prioritizes resuming unfinished work.
+- Evaluation generation supplies a JSON schema and regenerates invalid feedback once. Exact evidence verification remains mandatory; two invalid responses return an error. Provider calls have a 25-second timeout and share a 50-second abort signal within the route's 60-second duration. Hosting/proxy non-JSON failures produce safe, actionable text. Provider credential and rate-limit failures have specific messages.
+- Completed reviews identify their assessed question and answer and are labeled as previous reviews while another question/request is active. Existing saved assessments are preserved rather than rewritten.
+- The screen dialog carries its own light/dark theme, remains scrollable within short viewports, labels its controls, explains disabled analysis, validates PNG/JPEG/WebP uploads up to 5 MB, and forwards the actual image MIME type. Screen analysis cannot overwrite an unfinished practice request. Native screen-sharing permission/cancellation remains controlled by the browser.
+- Warm-up/navigation links, backend exploration cards, and answer rewriting/check tools unfold on demand. Completed timers no longer take up composer space. Cloud conflicts use a compact disclosure with the existing backup and explicit copy-selection actions; differing user copies are never automatically replaced.
+
+Validation: 67 focused unit tests passed; 35 Chromium practice, sync and Tech Buddy journeys passed; changed-file ESLint, production build and `git diff --check` passed. Chrome visual verification covered the light dialog and a 390×700 viewport. Automated regressions cover light/dark dialog colors, 390×600 bounds, upload validation and JPEG MIME forwarding, error persistence, retry deduplication, continuation, and sync recovery.
+
+Live local evaluator verification returned an invalid-provider-key error, now shown safely with its request ID. Successful real-model generation/calibration remains unverified until a valid local `GEMINI_API_KEY` is configured. This local finding does not establish production's provider configuration. Screen sharing itself was not granted during verification. No deployment or storage migration was performed; rollback consists of reverting these scoped UI and API changes.
+
+Structured generation follows the provider's [structured-output contract](https://ai.google.dev/gemini-api/docs/structured-output).

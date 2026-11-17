@@ -86,6 +86,37 @@ test("builds a mock prompt that coaches implementation and dry run", () => {
   assert.match(prompt, /complexity/i);
 });
 
+test("stock frames expose actual prior-price and profit state for the supplied prices", () => {
+  const id = "blind75-best-time-to-buy-and-sell-stock";
+  const trace = buildDsaVisualizationState(id, [7, 1, 5, 3, 6, 4]);
+  assert.equal(trace.steps.length, 6);
+  assert.deepEqual(trace.steps[2].highlight, { index: 2, minimumPrice: 1, bestProfit: 4 });
+  assert.deepEqual(trace.steps[4].sidePanel.items, [
+    { label: "Current price", value: 6 },
+    { label: "Minimum buy price", value: 1 },
+    { label: "Best profit", value: 5 },
+  ]);
+  assert.match(trace.steps[2].changed, /minimum price is 1; best profit is 4/);
+  assert.ok(trace.steps.every(step => !/Left edge|Right edge|shrink/.test(step.changed + step.sidePanel.title)));
+  assert.equal(buildDsaVisualizationState(id, []).steps[0].highlight.bestProfit, 0);
+  assert.equal(buildDsaVisualizationState(id, [5]).steps[0].highlight.bestProfit, 0);
+  assert.equal(buildDsaVisualizationState(id, [9, 5, 1]).steps.at(-1).highlight.bestProfit, 0);
+  assert.match(buildDsaVisualizationState(id, [2, 4, 1]).dryRun, /best single-trade profit is 2/);
+  for (const invalid of [[-1], [1.5], [2147483648], ["not a price"], Array(201).fill(1)]) {
+    assert.equal(buildDsaVisualizationState(id, invalid).steps[0].sidePanel.kind, "validation");
+  }
+});
+
+test("stock trace final profit agrees with every valid buy/sell pair on bounded inputs", () => {
+  const id = "blind75-best-time-to-buy-and-sell-stock";
+  for (let a = 0; a < 4; a++) for (let b = 0; b < 4; b++) for (let c = 0; c < 4; c++) {
+    const prices = [a, b, c];
+    let expected = 0;
+    for (let buy = 0; buy < prices.length; buy++) for (let sell = buy + 1; sell < prices.length; sell++) expected = Math.max(expected, prices[sell] - prices[buy]);
+    assert.equal(buildDsaVisualizationState(id, prices).steps.at(-1).highlight.bestProfit, expected, String(prices));
+  }
+});
+
 test("returns selected-stack code templates for DSA lessons", () => {
   const java = getDsaCodeTemplate("two-pointers", "Java, Spring Boot");
   const python = getDsaCodeTemplate("two-pointers", "Python, FastAPI");

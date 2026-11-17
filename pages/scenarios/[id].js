@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import ReaderLayout from '../../components/reader/ReaderLayout';
-import { SCENARIO_SEEDS } from '../../lib/scenarioBank.mjs';
+import { PUBLIC_SCENARIOS, publicScenario } from '../../lib/publicScenarios.mjs';
 import styles from '../../styles/Reader.module.css';
 function ScenarioExercise({ scenario }) {
   const [answer, setAnswer] = useState('');
@@ -23,8 +23,8 @@ function ScenarioExercise({ scenario }) {
 export default function PublicScenario({ scenario }) {
   return <ReaderLayout title={scenario.title} description={scenario.prompt}><p><Link href="/symptoms">← Find a symptom</Link></p><section className={styles.hero}><p className={styles.eyebrow}>EXISTING SCENARIO BANK · {scenario.difficulty}</p><h1>{scenario.title}</h1><p className={styles.lead}>{scenario.prompt}</p><p>{scenario.interviewerIntent}</p><a href="#practice">Work through the exercise →</a></section><ScenarioExercise key={scenario.id} scenario={scenario} /><p><Link href="/practice?workspace=scenarioBank">Browse the full Scenario Bank workspace</Link></p></ReaderLayout>;
 }
-export function getStaticPaths() { return { paths: SCENARIO_SEEDS.map(scenario => ({ params: { id: scenario.id } })), fallback: false }; }
+export function getStaticPaths() { return { paths: PUBLIC_SCENARIOS.map(scenario => ({ params: { id: scenario.id } })), fallback: false }; }
 export function getStaticProps({ params }) {
-  const scenario = SCENARIO_SEEDS.find(item => item.id === params.id);
+  const scenario = publicScenario(params.id);
   return scenario ? { props: { scenario } } : { notFound: true };
 }

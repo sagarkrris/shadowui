@@ -47,7 +47,9 @@ test('undo restores the removed note and preserves newer notes and edits', () =>
 });
 test('local search retains bookmarks when notebook JSON is damaged and supports paging', () => {
   const store = storage({ [NOTEBOOK_KEY]: '{bad', [READER_BOOKMARK_KEY]: JSON.stringify([{ title: 'Cache ownership', href: '/java/cache#ownership' }]) });
-  assert.equal(savedLearningRecords(store)[0].title, 'Cache ownership');
+  const bookmark = savedLearningRecords(store)[0];
+  assert.equal(bookmark.title, 'cache — Cache ownership');
+  assert.equal(bookmark.href, '/java/cache#ownership');
   const records = Array.from({ length: 65 }, (_, i) => ({ title: `Cache lesson ${i}`, type: 'Lesson' }));
   assert.equal(searchDiscovery(records, 'cache').length, 30);
   assert.equal(searchDiscovery(records, 'cache', 'All', Infinity).length, 65);

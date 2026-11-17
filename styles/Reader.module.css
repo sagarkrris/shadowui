@@ -46,6 +46,12 @@
 .guideChapterNav span { color: #5f6368; }
 .card p { color: #5f6368; }
 .small { font-size: .82rem; color: #5f6368; }
+.continueCard { padding:18px 24px; }
+.continueCard h2 { margin-top:0; font-size:1.25rem; }
+.continueCard > ul { margin-block:10px; padding-left:20px; }
+.continueCard li p { margin-block:5px; }
+.continueCard summary { color:#1967d2; cursor:pointer; font-size:.9rem; }
+.continueCard details[open] { padding-top:8px; }
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; margin: 22px 0; }
 .list { padding-left: 25px; }
 .list li { margin: 18px 0; }

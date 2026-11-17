@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { CLOUD_OWNER_KEY, cloudHydrationNeedsChoice } from "../lib/cloudStateOwnership.mjs";
 
 export function useCloudStateSync({ user, ready, snapshot, csrfToken = "", refreshCsrfToken, onRemoteState, onError, onStatus } = {}) {
   const [conflict, setConflict] = useState(null);
   const revision = useRef(0);
   const currentUser = useRef(user?.id);
+  const previousOwner = useRef('');
   useEffect(() => { currentUser.current = user?.id; }, [user?.id]);
   const blocked = useRef(false);
   const [retryNonce, setRetryNonce] = useState(0);
@@ -26,22 +28,28 @@ export function useCloudStateSync({ user, ready, snapshot, csrfToken = "", refre
     const controller = new AbortController();
     let active = true;
     const initial = JSON.stringify(latest.current);
+    try { previousOwner.current ||= localStorage.getItem(CLOUD_OWNER_KEY) || ''; } catch { /* Storage may be disabled; retain the in-memory owner. */ }
     callbacks.current.onStatus?.("hydrating");
     fetch("/api/state", { signal: controller.signal })
       .then(response => { if (!response.ok) throw new Error("Cloud hydration failed. Local work is preserved."); return response.json(); })
       .then(payload => {
         if (!active) return;
+        if (payload.userId && payload.userId !== user.id) throw new Error('The signed-in account changed. Reload before syncing.');
         // Editing during hydration always wins over a late remote response.
         const restoredLocally = sessionStorage.getItem("interviewiq.restoreLocal") === "1";
         if (restoredLocally) sessionStorage.removeItem("interviewiq.restoreLocal");
         const local = latest.current;
-        const session = local?.session || {};
-        const hasLocalWork = Boolean(session.input || session.codeInput || session.messages?.length || session.practice?.attempts?.length || local?.applications?.length || Object.keys(local?.learningState || {}).length);
-        if (!restoredLocally && payload.state && hasLocalWork && JSON.stringify(payload.state) !== JSON.stringify(local)) {
-          blocked.current = true; setConflict(payload); callbacks.current.onStatus?.('conflict');
-        } else if (!restoredLocally && payload.state && JSON.stringify(local) === initial) callbacks.current.onRemoteState?.(payload.state);
+        const accountChanged = Boolean(previousOwner.current && previousOwner.current !== user.id);
+        const unownedDeviceWork = !previousOwner.current;
+        if (cloudHydrationNeedsChoice({ local, remote: payload.state, previousOwner: previousOwner.current, userId: user.id, restoredLocally })) {
+          blocked.current = true; setConflict({ ...payload, accountChanged, unownedDeviceWork }); callbacks.current.onStatus?.('conflict');
+        } else if (accountChanged || !restoredLocally && payload.state && JSON.stringify(local) === initial) callbacks.current.onRemoteState?.(payload.state || { session: {} }, { accountChanged });
         revision.current = Number.isSafeInteger(payload.revision) ? payload.revision : 0;
         hydratedUser.current = user.id;
+        if (!blocked.current) {
+          previousOwner.current = user.id;
+          try { localStorage.setItem(CLOUD_OWNER_KEY, user.id); } catch { /* Cloud operations still work without local storage. */ }
+        }
         setHydratedFor(user.id);
       })
       .catch(error => { if (!active) return; callbacks.current.onStatus?.("error"); callbacks.current.onError?.(error); });
@@ -57,7 +65,8 @@ export function useCloudStateSync({ user, ready, snapshot, csrfToken = "", refre
       queue.current = queue.current.catch(() => {}).then(async () => {
         if (!active || blocked.current) return;
         const save = async (token, retried = false) => {
-          const response = await fetch("/api/state", { method: "PUT", headers: { "Content-Type": "application/json", ...(token ? { "X-CSRF-Token": token } : {}) }, body: JSON.stringify({ state: snapshot, revision: revision.current }) });
+          if (!active || currentUser.current !== user.id) return false;
+          const response = await fetch("/api/state", { method: "PUT", headers: { "Content-Type": "application/json", ...(token ? { "X-CSRF-Token": token } : {}) }, body: JSON.stringify({ userId: user.id, state: snapshot, revision: revision.current }) });
           if (currentUser.current !== user.id) return false;
           if (response.status === 403 && !retried && callbacks.current.refreshCsrfToken) return save(await callbacks.current.refreshCsrfToken(), true);
           if (response.status === 409) {
@@ -66,6 +75,7 @@ export function useCloudStateSync({ user, ready, snapshot, csrfToken = "", refre
             if (!remoteResponse.ok) throw new Error('Could not load the newer cloud copy. Retry sync to compare copies.');
             const remote = await remoteResponse.json();
             if (currentUser.current !== user.id) return false;
+            if (remote.userId && remote.userId !== user.id) throw new Error('The signed-in account changed. Reload before syncing.');
             setConflict(remote); callbacks.current.onStatus?.('conflict');
             return false;
           }
@@ -84,7 +94,7 @@ export function useCloudStateSync({ user, ready, snapshot, csrfToken = "", refre
   }, [user, ready, hydratedFor, fingerprint, csrfToken, retryNonce, snapshot]);
   const retry = useCallback(async () => {
     if (blocked.current && !conflict) {
-      try { const response = await fetch('/api/state'); if (!response.ok) throw new Error('Could not compare cloud copies.'); const remote = await response.json(); if (currentUser.current !== user?.id) return; setConflict(remote); callbacks.current.onStatus?.('conflict'); }
+      try { const response = await fetch('/api/state'); if (!response.ok) throw new Error('Could not compare cloud copies.'); const remote = await response.json(); if (currentUser.current !== user?.id) return; if (remote.userId && remote.userId !== user?.id) throw new Error('The signed-in account changed. Reload before syncing.'); setConflict(remote); callbacks.current.onStatus?.('conflict'); }
       catch (error) { callbacks.current.onStatus?.('error'); callbacks.current.onError?.(error); }
       return;
     }
@@ -92,9 +102,12 @@ export function useCloudStateSync({ user, ready, snapshot, csrfToken = "", refre
   }, [conflict, user?.id]);
   const resolveConflict = useCallback((choice) => {
     if (!conflict) return;
+    if (currentUser.current !== user?.id || conflict.userId && conflict.userId !== user.id) return;
     revision.current = Number.isSafeInteger(conflict.revision) ? conflict.revision : 0;
-    if (choice === 'cloud') { try { callbacks.current.onRemoteState?.(conflict.state || { session: {} }); } catch (error) { callbacks.current.onError?.(error); return; } }
+    if (choice === 'cloud') { try { callbacks.current.onRemoteState?.(conflict.state || { session: {} }, { accountChanged: Boolean(conflict.accountChanged), discardUnownedData: Boolean(conflict.unownedDeviceWork) }); } catch (error) { callbacks.current.onError?.(error); return; } }
+    previousOwner.current = user.id;
+    try { localStorage.setItem(CLOUD_OWNER_KEY, user.id); } catch { /* Storage can be disabled. */ }
     blocked.current = false; setConflict(null); lastSaved.current = ''; setRetryNonce((value) => value + 1);
-  }, [conflict]);
+  }, [conflict, user?.id]);
   return { retry, conflict, resolveConflict };
 }

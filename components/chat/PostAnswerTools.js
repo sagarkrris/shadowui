@@ -40,6 +40,7 @@ export default function PostAnswerTools({
   }), [profile, messages, selectedCat, selectedSub]);
 
   if (loading || !hasUserAnswer || !hasAssistantResponse) return null;
+  if (!answerRewriteStudio.available || !codeExplanationJudge.available) return <p className="post-answer-tools-empty" role="status">Answer tools need a written answer. Screenshot labels and generated practice prompts are not assessed.</p>;
 
   const activeVersion =
     answerRewriteStudio.versions.find((version) => version.label === selectedVersion) ||
@@ -55,20 +56,20 @@ export default function PostAnswerTools({
         maxWidth: 900,
         alignSelf: "center",
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+        gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
         gap: 10,
         margin: "4px 0 18px",
       }}
     >
       <article className="glass-card" style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 12 }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, marginBottom: 9 }}>
-          <span>
+          <span style={{ minWidth: 0 }}>
             <span style={{ display: "flex", alignItems: "center", gap: 7, color: theme.accentText, fontSize: 12, fontWeight: 900 }}>
               <i className="ti ti-writing-sign" />Answer Rewrite Studio
             </span>
             <p style={{ color: "#8b949e", fontSize: 11, lineHeight: 1.45, marginTop: 4 }}>{answerRewriteStudio.summary}</p>
           </span>
-          <button className="glass-button" onClick={() => onAction(answerRewriteStudio.actionPrompt)} style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 7, padding: "5px 8px", color: theme.accentText, fontSize: 10.8, fontWeight: 850, cursor: "pointer", whiteSpace: "nowrap" }}>
+          <button className="glass-button" onClick={() => onAction(answerRewriteStudio.actionPrompt)} style={{ flexShrink: 0, border: `1px solid ${theme.accentBorder}`, borderRadius: 7, padding: "5px 8px", color: theme.accentText, fontSize: 10.8, fontWeight: 850, cursor: "pointer", whiteSpace: "nowrap" }}>
             Polish
           </button>
         </div>
@@ -110,6 +111,7 @@ export default function PostAnswerTools({
             </button>
           </div>
           <p style={{ color: "#d1d5db", fontSize: 12, lineHeight: 1.55, margin: 0 }}>{activeVersion?.text}</p>
+          {activeVersion?.guidance && <p className="rewrite-guidance"><strong>Format guidance:</strong> {activeVersion.guidance}</p>}
         </div>
       </article>
 
@@ -119,10 +121,10 @@ export default function PostAnswerTools({
             <span style={{ display: "flex", alignItems: "center", gap: 7, color: theme.accentText, fontSize: 12, fontWeight: 900 }}>
               <i className="ti ti-code-dots" />Code Explanation Judge
             </span>
-            <p style={{ color: "#8b949e", fontSize: 11, lineHeight: 1.45, marginTop: 4 }}>Checks whether your dry run sounds complete enough for an interviewer.</p>
+            <p style={{ color: "#8b949e", fontSize: 11, lineHeight: 1.45, marginTop: 4 }}>Keyword coverage only. Mentioning an area does not prove the explanation is correct.</p>
           </span>
           <strong style={{ color: codeExplanationJudge.score >= 90 ? "#86efac" : theme.accentStrong, fontSize: 22, lineHeight: 1 }}>
-            {codeExplanationJudge.score}
+            {codeExplanationJudge.score}%<span style={{ display: "block", fontSize: 10, marginTop: 5 }}>coverage</span>
           </strong>
         </div>
 
@@ -151,7 +153,7 @@ export default function PostAnswerTools({
                 <span style={{ display: "block", color: "#7f8792", fontSize: 10.3, lineHeight: 1.35 }}>{check.covered ? check.evidence : check.coaching}</span>
               </span>
               <span style={{ color: check.covered ? "#86efac" : theme.accentStrong, fontSize: 10.4, fontWeight: 850 }}>
-                {check.covered ? "Covered" : "Fix"}
+                {check.covered ? "Mentioned" : "Review"}
               </span>
             </button>
           ))}
@@ -159,7 +161,7 @@ export default function PostAnswerTools({
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, alignItems: "center" }}>
           <p style={{ color: "#cbd5e1", fontSize: 11.3, lineHeight: 1.45, margin: 0 }}>
-            {coveredCount}/4 covered. {codeExplanationJudge.verdict}
+            {coveredCount}/4 mentioned. {codeExplanationJudge.verdict}
           </p>
           <button className="glass-button" onClick={() => onAction(codeExplanationJudge.nextActionPrompt)} style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 7, padding: "6px 8px", color: theme.accentText, fontSize: 10.8, fontWeight: 850, cursor: "pointer", whiteSpace: "nowrap" }}>
             Practice explanation

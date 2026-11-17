@@ -64,11 +64,12 @@ export async function gotoCleanApp(page) {
 
 export async function gotoSeededApp(page, options = {}) {
   const session = createSessionSnapshot(options);
-  await page.addInitScript(({ key, value, homeDemoSeen }) => {
+  await page.addInitScript(({ key, value, homeDemoSeen, cloudOwner }) => {
     if (window.localStorage.getItem("__interviewiq_e2e_storage_ready__") !== "1") {
       window.localStorage.clear();
       window.sessionStorage.clear();
       window.localStorage.setItem(key, JSON.stringify(value));
+      if (cloudOwner) window.localStorage.setItem("interviewiq.cloudStateOwner.v1", cloudOwner);
       if (homeDemoSeen) window.localStorage.setItem("interviewiq.homeDemoSeen.v1", "1");
       window.localStorage.setItem("__interviewiq_e2e_storage_ready__", "1");
     }
@@ -76,7 +77,7 @@ export async function gotoSeededApp(page, options = {}) {
     window.alert = () => {
       window.__INTERVIEWIQ_ALERTED__ = true;
     };
-  }, { key: SESSION_STORAGE_KEY, value: session, homeDemoSeen: options.homeDemoSeen !== false });
+  }, { key: SESSION_STORAGE_KEY, value: session, homeDemoSeen: options.homeDemoSeen !== false, cloudOwner: options.cloudOwner });
   await page.goto("/practice");
   if (!options.skipReadyCheck && (!options.activeTab || options.activeTab === "chat")) await expect(page.getByRole("button", { name: "Start practice", exact: true })).toBeVisible();
 }

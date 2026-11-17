@@ -94,7 +94,7 @@ test('homepage role preview updates and course category filters recover', async 
   await page.goto('/learn');
   await page.getByLabel('Course category', { exact: true }).selectOption('Java backend correctness');
   await page.getByRole('searchbox', { name: 'Search courses and lessons' }).fill('Java Money');
-  await expect(page.getByRole('status').filter({ hasText: 'courses and collections' })).toHaveText('1 courses and collections');
+  await expect(page.getByRole('status').filter({ hasText: 'catalog entry' })).toHaveText('1 catalog entry');
   await page.getByRole('searchbox', { name: 'Search courses and lessons' }).fill('no-such-topic');
   await expect(page.getByText('No matching course. Try a broader topic.')).toBeVisible();
 });

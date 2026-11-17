@@ -54,7 +54,7 @@ test("offer war room builds an interview-day simulator with runbook and final re
   assert.equal(simulator.runbook[0].slot, 1);
   assert.equal(simulator.runbook[1].durationMinutes, 45);
   assert.match(simulator.fullDayPrompt, /complete interview-day simulator/i);
-  assert.match(simulator.fullDayPrompt, /final offer-readiness report/i);
+  assert.match(simulator.fullDayPrompt, /final practice-evidence report/i);
   assert.match(simulator.finalReportPrompt, /48-hour repair plan/i);
   assert.equal(simulator.weaknessToWatch, "Trade-offs");
 });

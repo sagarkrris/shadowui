@@ -275,17 +275,21 @@ for (const width of [390, 1280]) {
     await page.screenshot({ path: testInfo.outputPath('answer-panel.png') });
   });
 
-  test(`public question lists show the answer once without invented detail at ${width}px`, async ({ page }) => {
+  test(`public question lists show each authored answer once with verification at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/sql/sql-interview-questions');
-    const question = page.locator('main details').filter({ has: page.getByLabel('Answer at a glance', { exact: true }) }).first();
-    await question.locator('summary').click();
-    const answer = question.getByLabel('Answer at a glance', { exact: true });
-    const text = await answer.locator('p').textContent();
+    const question = page.locator('main details').filter({ has: page.locator('summary').filter({ hasText: 'What does an index do?' }) }).first();
+    await question.locator(':scope > summary').click();
+    const answer = question.getByRole('heading', { name: 'A complete answer', exact: true }).locator('..');
+    const text = await answer.locator(':scope > p').first().textContent();
     expect(text.trim().length).toBeGreaterThan(0);
     expect((await question.textContent()).split(text).length - 1).toBe(1);
-    await expect(answer.getByRole('heading')).toHaveCount(0);
-    await expect(answer.locator('details, pre')).toHaveCount(0);
+    await expect(answer.getByRole('heading', { name: 'Worked example and assumptions', exact: true })).toBeVisible();
+    const depth = answer.locator('details');
+    await expect(depth).not.toHaveAttribute('open', '');
+    await depth.locator('summary').click();
+    await expect(depth.getByRole('heading', { name: 'How to verify it', exact: true })).toBeVisible();
+    await expect(answer.getByRole('link').first()).toHaveAttribute('href', /^https:\/\//);
     expect(await question.evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
   });
 }

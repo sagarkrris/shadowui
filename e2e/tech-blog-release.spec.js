@@ -112,6 +112,20 @@ async function verifyDemo(reader, course) {
 }
 
 async function verifyLesson(reader, course) {
+  if (course.id === 'java-runtime-jdk-jvm-classloaders') {
+    for (const chapter of course.chapters) {
+      await expect(reader.getByRole('heading', { name: chapter.title, exact: true })).toBeVisible();
+      const diagram = reader.locator(`[data-course-diagram="${chapter.diagramKey}"]`).last();
+      await expect(diagram.getByRole('img')).toBeVisible();
+      await diagram.getByRole('button', { name: 'Text view', exact: true }).click();
+      await expect(diagram.getByRole('listitem').first()).toBeVisible();
+    }
+    const answers = reader.locator('details').filter({ has: reader.page().locator('summary', { hasText: /^Sample answer$/ }) });
+    for (let i = 0; i < course.chapters.length - 1; i++) {
+      await answers.nth(i).locator('summary').click();
+      await expect(answers.nth(i)).toContainText(course.chapters[i].answer);
+    }
+  }
   if (course.format !== 'field-note') {
     await expect(reader.getByText('When to avoid:', { exact: true })).toHaveCount(course.chapters.length);
     const answers = reader.locator('details').filter({ has: reader.page().locator('summary', { hasText: /^Sample answer$/ }) });

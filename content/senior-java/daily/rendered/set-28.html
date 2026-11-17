@@ -1,0 +1,192 @@
+<p><strong>Set 28 · 12 November 2026 — Validation stages and copy boundaries</strong></p>
+
+<p>Reference assumptions: <strong>Java 21 without preview features; Jakarta Validation 3.0</strong>. Primary references checked 12 November 2026, not latest-version claims. Stable IDs: <strong>S28-Q01–S28-Q12</strong>. Q1–Q10 are contextual teaching scenarios, not framework integrations. Q11–Q12 are runnable in the shared class below. Examples are original; spoken answers target 45–90 seconds.</p>
+
+<hr>
+<h3 id="1-a-checkout-dto-passes-default-validation-but-skips-its-payment-constraints-which-group-was-requested">1. A checkout DTO passes Default validation but skips its payment constraints. Which group was requested?</h3>
+
+<p><strong>Say aloud:</strong> “A validation group is a named subset of constraints. Default validation checks Default constraints; it does not automatically run every group declared on the object. I would make the checkout boundary request the payment group explicitly and document whether Default must also run. This is different from validating whether configuration values exist at startup: the decision here is which business operation is being checked. Tests should submit a structurally valid draft with invalid payment fields to both draft and checkout boundaries. Separate request types can make the contract clearer when groups become difficult to follow. Validation still cannot prove that a concurrently changing balance remains sufficient; that decision needs transactional enforcement.”</p>
+
+<p><strong>Example:</strong> Contextual Jakarta Validation 3.0: <code>validator.validate(command, Default.class, Payment.class)</code> requests both groups.</p>
+
+<p><strong>Deep dive / verification:</strong> Cost depends on selected validators and graph size. Avoid remote side effects inside validators; constraint evaluation is not a transaction.</p>
+
+<p><strong>Follow-ups:</strong> Does declaring a group execute it? No; the invocation or integration must select it.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://jakarta.ee/specifications/bean-validation/3.0/jakarta-bean-validation-spec-3.0.html#constraintdeclarationvalidationprocess-groupsequence">Specified API or language contract</a>.</p>
+
+<hr>
+<h3 id="2-an-expensive-validation-stage-runs-before-basic-checks-does-passing-two-groups-specify-their-order">2. An expensive validation stage runs before basic checks. Does passing two groups specify their order?</h3>
+
+<p><strong>Say aloud:</strong> “A group sequence orders validation stages and stops later stages when an earlier stage has violations. Passing several groups alone does not establish that ordering. I would define a sequence for basic and detailed checks, then test that an invalid basic field prevents the detailed validator from running. This can reduce wasted work, but it does not make a remote eligibility result durable. That result may change immediately after validation. Cyclic sequences are invalid, so keep the dependency simple and visible. I would use explicit workflow code when the stages need retries, persistence or side effects; validation sequencing is best suited to deciding which constraints to evaluate.”</p>
+
+<p><strong>Example:</strong> Contextual: <code>@GroupSequence({Basic.class, Detailed.class}) interface CheckoutChecks {}</code>; validate CheckoutChecks.</p>
+
+<p><strong>Deep dive / verification:</strong> Count validator invocations in a provider integration test. No complexity bound independent of validator implementations applies.</p>
+
+<p><strong>Follow-ups:</strong> Are all violations always returned? Later stages are skipped after an earlier stage fails.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://jakarta.ee/specifications/bean-validation/3.0/jakarta-bean-validation-spec-3.0.html#constraintdeclarationvalidationprocess-groupsequence">Specified API or language contract</a>.</p>
+
+<hr>
+<h3 id="3-an-arraycopy-throws-arraystoreexception-after-changing-the-destination-was-the-copy-atomic">3. An arraycopy throws ArrayStoreException after changing the destination. Was the copy atomic?</h3>
+
+<p><strong>Say aloud:</strong> “Atomic here would mean all requested changes happen or none do. System.arraycopy does not provide that promise when reference elements fail the destination element-type check. A compatible prefix can already have been copied. I would not catch the exception and continue using the destination as though it were unchanged. If the operation needs replacement semantics, build and validate independent storage first, then publish the completed result using the appropriate ownership protocol. This is a runtime array-type issue, distinct from overlap handling. A deterministic test should place a compatible element before an incompatible one and inspect the destination after failure. Input validation can prevent expected failures, but publication still needs its own concurrency design.”</p>
+
+<p><strong>Example:</strong> Contextual: copy <code>new Object[]{&quot;ok&quot;, 7}</code> into a two-element String array; its first slot can change before failure.</p>
+
+<p><strong>Deep dive / verification:</strong> Copy work scales with the copied prefix. A temporary destination costs extra storage; replacing a reference does not update aliases to the old array.</p>
+
+<p><strong>Follow-ups:</strong> Do invalid bounds also imply a partial copy? The API specifies no destination modification for its listed bounds failures; distinguish failure categories.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/System.html">Specified API or language contract</a>.</p>
+
+<hr>
+<h3 id="4-copyofrange-returns-extra-zeros-when-a-requested-range-exceeds-the-input-did-it-validate-a-complete-frame">4. copyOfRange returns extra zeros when a requested range exceeds the input. Did it validate a complete frame?</h3>
+
+<p><strong>Say aloud:</strong> “An array-copy helper implements its specified range semantics, not a network framing policy. Arrays.copyOfRange can pad beyond the original end with default values. For a binary frame that must contain exactly the declared bytes, padding would invent data. I would validate the declared length against available bytes before copying, using subtraction-based bounds checks that avoid integer overflow. I would also impose a maximum frame size before allocation. Tests should include a truncated frame that would otherwise look valid after zero padding. Padding is useful for deliberate resizing, so changing the library call globally could break legitimate callers. The boundary must state whether missing bytes mean rejection or intentional defaults.”</p>
+
+<p><strong>Example:</strong> <code>Arrays.copyOfRange(new int[]{7}, 0, 3)</code> produces [7, 0, 0].</p>
+
+<p><strong>Deep dive / verification:</strong> O(requested length) output storage and copy/initialization work. Reject negative lengths and out-of-bounds start positions.</p>
+
+<p><strong>Follow-ups:</strong> Is an empty source always invalid? Not for copying; the protocol decides whether an empty frame is allowed.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Arrays.html">Specified API or language contract</a>.</p>
+
+<hr>
+<h3 id="5-collections-copy-fails-when-the-destination-has-enough-capacity-but-size-zero-what-does-it-overwrite">5. Collections.copy fails when the destination has enough capacity but size zero. What does it overwrite?</h3>
+
+<p><strong>Say aloud:</strong> “Capacity is allocated storage; size is the number of logical list elements. Collections.copy replaces existing destination elements and requires enough size, not merely reserved capacity. I would use a new ArrayList constructed from the source when I want an independent list, or deliberately create destination slots when replacement is the goal. A list copy is shallow: mutable payload objects remain shared unless copied separately. Tests should distinguish an empty preallocated list from one containing placeholder elements. This distinction matters in batch assembly where a mistaken copy can abort a request before any output is constructed. Choosing the operation by its intended contract is clearer than padding a list merely to silence an exception.”</p>
+
+<p><strong>Example:</strong> Contextual: <code>new ArrayList&lt;String&gt;(10)</code> has size zero; it is not a ten-slot destination for Collections.copy.</p>
+
+<p><strong>Deep dive / verification:</strong> Copying n entries takes linear traversal work; the destination must support set. Independence of list structure does not imply payload independence.</p>
+
+<p><strong>Follow-ups:</strong> Does copy append? No; use addAll when appending is intended.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Collections.html">Specified API or language contract</a>.</p>
+
+<hr>
+<h3 id="6-a-checkedlist-wrapper-accepts-reads-of-a-preexisting-wrong-type-value-does-wrapping-sanitize-old-data">6. A checkedList wrapper accepts reads of a preexisting wrong-type value. Does wrapping sanitize old data?</h3>
+
+<p><strong>Say aloud:</strong> “A checked collection adds runtime type checks at insertion through that view. It does not inspect and repair historical contents, and another alias to the backing collection can still bypass the wrapper. I would validate or rebuild untrusted legacy contents first, then prevent mutation through unchecked aliases. Parameterized types remain the normal compile-time protection; checked views are useful at legacy boundaries where raw types can leak in. Tests should separately cover a bad insertion through the view and a bad value inserted before wrapping. This does not establish deep object validity: an object of the right class can still contain invalid fields. Ownership and business validation remain separate concerns.”</p>
+
+<p><strong>Example:</strong> Contextual: <code>Collections.checkedList(backing, String.class)</code> checks future insertions through that returned list.</p>
+
+<p><strong>Deep dive / verification:</strong> Wrapper checks add per-insertion type checks; an explicit cleanup scan is O(n). Null handling follows the backing collection and checked-view contract.</p>
+
+<p><strong>Follow-ups:</strong> Can a raw alias still corrupt the list? Yes; restrict access to the backing list.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Collections.html">Specified API or language contract</a>.</p>
+
+<hr>
+<h3 id="7-a-test-reads-a-bytearrayinputstream-after-close-and-passes-does-it-prove-the-parser-respects-resource-lifetime">7. A test reads a ByteArrayInputStream after close and passes. Does it prove the parser respects resource lifetime?</h3>
+
+<p><strong>Say aloud:</strong> “Close behavior belongs to the concrete resource contract. ByteArrayInputStream has no external resource to release and closing it has no effect, so a read-after-close test using it cannot detect a file or socket lifetime bug. I would test parser ownership with a purpose-built stream that records closure and rejects later reads, then add an integration test for the real resource where useful. The parser should clearly state whether it owns or borrows its input. Closing a borrowed stream can break a caller that still needs it; failing to close an owned stream can leak resources. A convenient in-memory test double is useful for bytes, but its lifecycle semantics must match the property being tested.”</p>
+
+<p><strong>Example:</strong> Contextual: close an in-memory byte stream and then read its first byte; that operation remains permitted.</p>
+
+<p><strong>Deep dive / verification:</strong> In-memory content occupies O(n) storage. Avoid concluding that every InputStream can be reopened or reused after close.</p>
+
+<p><strong>Follow-ups:</strong> Should every parser close its argument? Only when the API transfers ownership; otherwise the owner closes it.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/io/ByteArrayInputStream.html">Specified API or language contract</a>.</p>
+
+<hr>
+<h3 id="8-a-parser-marks-a-stream-and-resets-successfully-in-memory-but-fails-on-production-input-what-capability-was-assumed">8. A parser marks a stream and resets successfully in memory but fails on production input. What capability was assumed?</h3>
+
+<p><strong>Say aloud:</strong> “Mark records a position for a later reset only when the stream supports that capability under its documented limits. InputStream is an abstraction over many resources; not all implementations support rewinding. I would check the parser contract and either require a suitable buffered stream, retain a bounded lookahead buffer myself, or redesign parsing to proceed forward. Even supported marks may become invalid after the read limit is exceeded. Tests should include an input with markSupported false and a bounded buffering implementation. Buffering everything would hide the issue for small tests while introducing memory risk for large uploads. The decision must include a maximum lookahead and clear behavior when that maximum is exceeded.”</p>
+
+<p><strong>Example:</strong> Contextual: inspect <code>input.markSupported()</code> before relying on mark/reset; a file stream is not a seek API.</p>
+
+<p><strong>Deep dive / verification:</strong> Bounded lookahead needs O(k) memory for k retained bytes. Mark support alone does not promise unlimited replay.</p>
+
+<p><strong>Follow-ups:</strong> Can reset recover any earlier position? No; it refers to a supported valid mark, not arbitrary seeking.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/io/InputStream.html">Specified API or language contract</a>.</p>
+
+<hr>
+<h3 id="9-assigning-a-string-array-to-object-compiles-but-storing-an-integer-fails-why">9. Assigning a String array to Object[] compiles, but storing an Integer fails. Why?</h3>
+
+<p><strong>Say aloud:</strong> “Java reference arrays are covariant: a String array can be referenced as Object array. The actual array still knows its runtime component type and rejects an incompatible store. I would preserve the most precise type where possible and use generics for APIs that should prevent this mistake at compilation. A List of String is not a subtype of List of Object, precisely because allowing arbitrary Object insertion would be unsafe. Read-only generic interfaces can use bounded wildcards to express permitted access instead. Tests should exercise the store through the widened reference, because construction alone is legal. Catching ArrayStoreException is usually diagnosing an ownership or type-contract mistake, rather than implementing normal business branching.”</p>
+
+<p><strong>Example:</strong> Contextual: <code>Object[] values = new String[1]; values[0] = 42;</code> throws ArrayStoreException.</p>
+
+<p><strong>Deep dive / verification:</strong> Each store must respect the runtime element type. The type check is not validation of the stored object&#39;s business fields.</p>
+
+<p><strong>Follow-ups:</strong> Do primitive arrays widen to Object[]? No; an int array is an Object but not an Object array.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/ArrayStoreException.html">Specified API or language contract</a>.</p>
+
+<hr>
+<h3 id="10-cloning-a-matrix-isolates-its-outer-array-but-changing-one-cell-affects-both-copies-which-dimension-was-copied">10. Cloning a matrix isolates its outer array but changing one cell affects both copies. Which dimension was copied?</h3>
+
+<p><strong>Say aloud:</strong> “A Java matrix is an array whose elements reference row arrays. Cloning the outer array copies those row references, so changing a cell still changes shared row storage. I would define whether the operation needs an outer structural copy, a copy of every row, or copies of mutable objects inside rows as well. For an int matrix, cloning each non-null row is sufficient for independent cell values; for object cells it still shares the cell objects. Tests should mutate both an outer row slot and an inner cell to expose the difference. Null rows and ragged shapes are legal array structures, so the copy policy must explicitly preserve or reject them.”</p>
+
+<p><strong>Example:</strong> Contextual: <code>int[][] copied = original.clone()</code> shares rows; replacing copied[0] differs from assigning copied[0][0].</p>
+
+<p><strong>Deep dive / verification:</strong> Outer cloning costs O(rows); copying all primitive cells costs O(rows + cells). Sharing may be intentional when rows are immutable by ownership.</p>
+
+<p><strong>Follow-ups:</strong> Is rectangular shape guaranteed? No; each row has its own length and may be null.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.oracle.com/javase/specs/jls/se21/html/jls-10.html">Specified API or language contract</a>.</p>
+
+<hr>
+<h3 id="11-count-strict-inversions-without-changing-input-why-must-equal-values-not-count">11. Count strict inversions without changing input. Why must equal values not count?</h3>
+
+<p><strong>Say aloud:</strong> “An inversion is a pair of positions i before j whose earlier value is greater. Equal values do not qualify. I would merge-sort a clone and count cross-half inversions while merging sorted halves. When the right value is smaller than the current left value, every remaining left value is larger, so I add the number of remaining left entries. On equality I take the left entry without adding a count. Each inversion belongs either inside one half or across the halves, which gives the recursive proof. I return long because the number of pairs can exceed int. I would compare short exhaustive arrays against a quadratic pair-counting oracle and verify the caller&#39;s array remains unchanged.”</p>
+
+<p><strong>Example:</strong> [3, 1, 1] has two strict inversions, not three.</p>
+
+<p><strong>Deep dive / verification:</strong> O(n log n) time, O(n) storage plus O(log n) recursion. Null is rejected; empty input has zero inversions. Array indices use an overflow-safe midpoint.</p>
+
+<p><strong>Follow-ups:</strong> Why long? There can be n(n-1)/2 pairs, exceeding int for moderately large arrays.</p>
+
+<hr>
+<h3 id="12-find-the-longest-contiguous-run-of-alternating-parity-why-compare-normalized-parity-rather-than-remainders">12. Find the longest contiguous run of alternating parity. Why compare normalized parity rather than remainders?</h3>
+
+<p><strong>Say aloud:</strong> “Parity means even or odd, including for negative integers. Java remainder can give minus one for negative odd values, so comparing remainders directly can mistakenly treat negative odd and positive odd as different parities. I would use the low bit to represent parity as zero or one, then extend the current run only when adjacent parity differs. I record the best length while scanning; equal parity restarts a run at the current element. Empty input returns zero and null is rejected. A useful oracle enumerates every interval and checks its adjacent pairs independently. This is a contiguous-run problem, so skipping an inconvenient element would violate the contract even if it created a longer alternating subsequence.”</p>
+
+<p><strong>Example:</strong> [-3, 5, 2] has best length two; the first two values are both odd.</p>
+
+<p><strong>Deep dive / verification:</strong> O(n) time, O(1) extra storage, no input mutation. Bitwise parity works at Integer.MIN<em>VALUE and MAX</em>VALUE without absolute-value overflow.</p>
+
+<p><strong>Follow-ups:</strong> Can abs(value) fix negative remainders? It overflows for MIN_VALUE; low-bit normalization avoids that special case.</p>
+
+<pre><code class="java">public final class BoundaryAlgorithms {
+    public static long inversions(int[] input) {
+        java.util.Objects.requireNonNull(input);
+        int[] a = input.clone();
+        return count(a, new int[a.length], 0, a.length);
+    }
+    private static long count(int[] a, int[] tmp, int lo, int hi) {
+        if (hi - lo &lt; 2) return 0;
+        int mid = lo + (hi - lo) / 2;
+        long total = count(a, tmp, lo, mid) + count(a, tmp, mid, hi);
+        int i = lo, j = mid, k = lo;
+        while (i &lt; mid &amp;&amp; j &lt; hi) {
+            if (a[i] &lt;= a[j]) tmp[k++] = a[i++];
+            else { tmp[k++] = a[j++]; total += mid - i; }
+        }
+        while (i &lt; mid) tmp[k++] = a[i++];
+        while (j &lt; hi) tmp[k++] = a[j++];
+        System.arraycopy(tmp, lo, a, lo, hi - lo);
+        return total;
+    }
+    public static int alternatingParity(int[] a) {
+        java.util.Objects.requireNonNull(a);
+        int run = 0, best = 0;
+        for (int i = 0; i &lt; a.length; i++) {
+            run = i &gt; 0 &amp;&amp; ((a[i] &amp; 1) != (a[i - 1] &amp; 1)) ? run + 1 : 1;
+            best = Math.max(best, run);
+        }
+        return best;
+    }
+}
+</code></pre>
+<h2 id="topic-coverage-and-next-set">Topic coverage and next set</h2>
+
+<p>This set covers operation-specific validation and staged constraints, partial failure, padded copies, list size versus capacity, runtime type boundaries, resource-test fidelity, lookahead capabilities, nested array ownership, strict inversion counting and signed parity. Validation does not replace transactional business invariants. Copying storage does not automatically copy payload ownership.</p>
+
+<p>Next set will build on these boundaries with framework request lifetimes and distributed replay contracts, selected after checking the full prior ledger to avoid repeating bulk refresh and circuit recovery scenarios already covered in Sets 4–5.</p>

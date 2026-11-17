@@ -1,3 +1,4 @@
+import AnalyticsPreferences from "./AnalyticsPreferences";
 import PracticeMeasurements from "./PracticeMeasurements";
 import { useState } from "react";
 import {
@@ -89,7 +90,7 @@ export default function DataControls({ busy = false, onRestored, showMeasurement
           <button onClick={() => setPreview(null)}>Cancel restore</button>
         </div>
       )}
-      {showMeasurements && <PracticeMeasurements />}
+      {showMeasurements && <><PracticeMeasurements /><AnalyticsPreferences /></>}
       <p role="status">{status}</p>
     </details>
   );

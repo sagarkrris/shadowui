@@ -1,66 +1,16 @@
-import ReaderLayout from "../components/reader/ReaderLayout";
+import Link from 'next/link';
+import ReaderLayout from '../components/reader/ReaderLayout';
+import AnalyticsPreferences from '../components/practice/AnalyticsPreferences';
+import { publicDataPolicy } from '../lib/dataPolicy.mjs';
 
-export default function PrivacyPolicy() {
-  return (
-    <ReaderLayout title="Privacy Policy" description="How InterviewIQ processes information and the choices available to you.">
-      <section>
-        <p className="privacyEyebrow">InterviewIQ</p>
-        <h1>Privacy Policy</h1>
-        <p className="privacyUpdated">Last updated: May 27, 2026</p>
-
-        <p>
-          InterviewIQ helps users practice interviews, review resumes, analyze
-          preparation gaps, and use AI-assisted coaching workflows. This policy
-          explains what information the app uses and how it is handled.
-        </p>
-
-        <h2>Information We Process</h2>
-        <p>
-          The app may process profile details you enter, interview prompts,
-          chat messages, resume or job-description text you provide, uploaded
-          files, screenshots, microphone input, and camera or file-picker
-          content when you choose to use those features.
-        </p>
-
-        <h2>How Information Is Used</h2>
-        <p>
-          Information is used to generate interview practice responses, analyze
-          resumes or screenshots, personalize preparation topics, and provide
-          app functionality. AI and analysis requests are sent through
-          InterviewIQ server routes so API keys are not stored in the Android
-          app.
-        </p>
-
-        <h2>Permissions</h2>
-        <p>
-          Microphone access supports voice input. Camera and file access support
-          upload-oriented workflows such as screen, image, or document review.
-          Internet access is required because the Android app loads the hosted
-          InterviewIQ web application.
-        </p>
-
-        <h2>Third-Party Services</h2>
-        <p>
-          InterviewIQ may use Google AI services for generated responses and
-          Vercel hosting infrastructure for the web application and server
-          routes. These providers process data according to their own terms and
-          policies.
-        </p>
-
-        <h2>Data Choices</h2>
-        <p>
-          Do not submit secrets, passwords, proprietary source code, or highly
-          sensitive personal information. You can avoid optional microphone,
-          camera, upload, and resume features by not granting permissions or not
-          submitting those inputs.
-        </p>
-
-        <h2>Contact</h2>
-        <p>
-          For privacy questions or deletion requests, contact the app publisher
-          through the support contact listed on the Google Play store listing.
-        </p>
-      </section>
-    </ReaderLayout>
-  );
+export default function PrivacyPolicy({ policy }) {
+  return <ReaderLayout title="Privacy and your data" description="Where InterviewIQ stores learning data, what AI services receive, and how to export or delete your account."><h1>Privacy and your data</h1><p>Updated November 17, 2026. InterviewIQ runs at the ElevatePrep hosting address. Contact <a href={`mailto:${policy.supportEmail}?subject=InterviewIQ%20privacy%20request`}>{policy.supportEmail}</a> for privacy, account-help, retention or deletion questions. Never email a password, API key, session cookie or private interview transcript.</p>
+    <section><h2>What stays on this device</h2><p>Local prep profiles, drafts, conversations, answers, bookmarks, reading positions, notebook entries, diagnostic results and workspace progress can be saved in this browser’s storage. Other people with access to this browser profile may be able to read or export them. Public lessons do not require an account.</p><p>The diagnostic and its plan are saved locally only when you choose Save progress. Adding the plan to your notebook makes it part of the notebook’s storage and supported account synchronization. Local records remain until you clear them, clear browser storage, or use the applicable account cleanup controls. Downloaded backups and exports remain wherever you save them.</p><p>Use Practice → Your data → Backup and restore to download a local backup. Use the diagnostic’s own Clear control to remove its saved results. A restored backup contains personal data; keep it private and review it before importing into an account.</p></section>
+    <section><h2>What your account stores</h2><p>When accounts are configured, the server stores account identity, sign-in information, session records and supported synchronized workspace data. The synchronized state can include practice history, messages, applications, question history, notebook, bookmarks, roadmap and reading positions. Some workspace keys remain device-only; the practice workspace describes sync status and conflicts.</p><p>Passwords use salted scrypt hashes. Session tokens are stored as hashes on the server; production session cookies are HttpOnly, Secure and SameSite=Lax. Sessions expire after 14 days unless revoked sooner. Password-reset and email-verification tokens expire after 30 minutes. App-managed multi-factor authentication is not currently offered; an external sign-in provider may have its own additional security steps.</p><p>Account identity and synchronized learning records remain until you delete the account. Security audit records can include email, IP address and delivery errors; the configured application audit-pruning window is {policy.auditDays} days. Expired tokens and old audit records are removed by the application pruning routine when it runs; this is not a guarantee of instant erasure at the exact expiry time.</p></section>
+    <section><h2>Export, deletion and backups</h2><p>In Practice → Account → Account &amp; settings, export your server account data or request account deletion. Deletion removes the live account, its sessions and synchronized learning state. It does not erase copies you downloaded, data retained by an AI or email provider, or database-host backups. Audit records may remain for the security-retention window above after the account identifier is detached.</p><p>Sign out on shared devices and review local data controls. If browser policy prevents local cleanup, clear site data through browser settings before sharing the browser profile. Closing a tab does not delete saved work. Contact the support address above if account access prevents a request. We will need to verify ownership; never send your password as verification.</p><p>Database backup schedules, recovery copies and provider retention are controlled by the deployment operator and hosting providers. The application does not claim to have verified their purge schedules. Ask support for the current hosting-specific retention information.</p></section>
+    <section><h2>What AI and browser services receive</h2><p>When you request AI help, the app sends the relevant prompt, question, candidate profile, submitted answer and selected conversation context through its server to the configured Google Gemini service. Resume, job-description text and screenshots are sent when you submit them for those features. Responses may quote your input and can be saved with your practice history. Do not submit employer secrets, customer records or credentials.</p><p>Microphone capture starts only after your explicit microphone action. Browser speech recognition may process speech using the browser’s speech service. Recording Review keeps audio in its dialog and sends the previewed transcript for AI review; the app does not save that recording audio. Generated feedback may quote a transcript even when you choose not to keep the original transcript in the conversation.</p><p>Online Java execution sends your source and standard input to the configured separate runner. Local download does not execute code online. Execution limits and availability are described in the editor. See <Link href="/capabilities">feature availability and limitations</Link>.</p><p>Vercel, the configured database host, transactional-email delivery services and external sign-in providers may process the data necessary to operate their features. Their policies and retention apply separately. Configuration and automated source tests do not independently establish the security of a deployment.</p></section>
+    <section><h2>Optional product measurements</h2><p>Optional product analytics are off until you opt in on this browser. They record predefined events, route categories, pseudonymous tab-session identifiers, practice-attempt identifiers and bounded numeric or predefined values. They do not include answer bodies, names, email addresses, screenshots, transcripts or query strings. The browser keeps at most 2,000 opted-in measurement events; clearing measurements removes that local journal.</p><p>Server collection is {policy.analyticsConfigured ? 'configured for opted-in requests; this is not a storage health check' : 'not currently configured'}. When enabled, pseudonymous measurement events are reported within a {policy.analyticsDays}-day retention window. Expired rows are pruned on collection and by the operator’s scheduled pruning command; this does not promise instant erasure on an idle deployment. They have no account ID, so account deletion cannot identify those pseudonymous rows. A hashed withdrawal identifier is retained for the same window to prevent late requests from recreating deleted measurement rows. Withdrawing consent stops future collection from this browser; it does not erase already received pseudonymous rows before their retention period. Security and service-operation logs are separate from optional product analytics.</p><AnalyticsPreferences /></section>
+    <section><h2>Learning content and public contributions</h2><p>Reader requests and corrections are moderated before public display. Do not include personal or customer data in a contribution. An editorial update date is distinct from a runtime test or a named review. See <Link href="/editorial">editorial standards and provenance</Link>.</p></section>
+  </ReaderLayout>;
 }
+export function getServerSideProps() { return { props: { policy: publicDataPolicy(process.env) } }; }

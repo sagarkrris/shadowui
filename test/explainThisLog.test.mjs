@@ -25,7 +25,7 @@ test("log reader is static, avoids uploads, and records only bounded lifecycle e
   assert.match(index, /does not accept, upload, or store production logs/);
   assert.match(sitemap, /EXPLAIN_LOGS/);
   assert.match(rss, /explainLogItems/);
-  assert.deepEqual(normalizeAnalyticsEvent({ name: "explain_log_completed", path: "/explain-log/x", value: "x" }), { name: "explain_log_completed", path: "/explain-log/x", value: "x" });
+  assert.deepEqual(normalizeAnalyticsEvent({ name: "explain_log_completed", path: "/explain-log/x", value: "x" }), { name: "explain_log_completed", path: "/explain-log", value: "x" });
   assert.deepEqual(summarizeExplainLogEvents([
     { name: "explain_log_started", value: "x", sessionId: "session_1" },
     { name: "explain_log_completed", value: "x", sessionId: "session_1" },

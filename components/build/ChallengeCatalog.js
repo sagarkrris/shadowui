@@ -8,7 +8,7 @@ export default function ChallengeCatalog() {
   const [query,setQuery]=useState(''); const [track,setTrack]=useState('All'); const [difficulty,setDifficulty]=useState('All'); const [progress,setProgress]=useState({});
   useEffect(() => { try { setProgress(normalizeChallengeProgress(JSON.parse(localStorage.getItem(CHALLENGE_STORAGE_KEY)||'{}'))); } catch { /* Catalog works without storage. */ } },[]);
   const filtered=BUILD_CHALLENGES.filter(c => (track==='All'||c.track===track) && (difficulty==='All'||c.difficulty===difficulty) && `${c.title} ${c.contract}`.toLowerCase().includes(query.toLowerCase()));
-  return <section aria-labelledby="challenge-catalog"><h2 id="challenge-catalog">Practice engineering in code</h2><p>{BUILD_CHALLENGES.length} original Java 17 challenges. Implement a contract, test its failure cases, then explain your design. Save your progress in this browser.</p>
+  return <section aria-labelledby="challenge-catalog"><h2 id="challenge-catalog">Practice engineering in code</h2><p>{BUILD_CHALLENGES.length} original Java 17 challenges. Implement a contract, test its failure cases, then explain your design. Save your progress in this browser.</p><p>Every challenge supports local download. Online checks require a connected Java runner; each editor shows availability before you run.</p>
     <div className={`${styles.actions} ${practice.filters}`}>
       <label>Search challenges<input type="search" value={query} onChange={e=>setQuery(e.target.value)} /></label>
       <div><label htmlFor="challenge-track">Track</label><select id="challenge-track" value={track} onChange={e=>setTrack(e.target.value)}>{['All','System components','Object design','Concurrency'].map(t=><option key={t}>{t}</option>)}</select></div>

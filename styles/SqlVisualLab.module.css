@@ -41,5 +41,5 @@
 .card { border:1px solid #ccd9cf; border-radius:10px; padding:18px; background:#fffef9; }
 .card h3 { margin:8px 0; }
 @media(max-width:1050px) { .layout { grid-template-columns:210px minmax(0,1fr); gap:20px; } .editorGrid { grid-template-columns:1fr; } .resultPane { border-left:0; border-top:1px solid #d6dfda; } }
-@media(max-width:700px) { .layout { grid-template-columns:1fr; gap:20px; } .sidebar { position:static; max-height:none; padding:14px; } .lessonList { grid-template-columns:repeat(2,minmax(0,1fr)); } .sidebar .group { grid-column:1 / -1; margin-top:12px; } .sidebar .lessonButton { height:100%; padding:9px; font-size:13px; } .header h1 { font-size:32px; } }
+@media(max-width:700px) { .layout { grid-template-columns:1fr; gap:20px; } .sidebar { position:static; max-height:none; padding:14px; } .lessonList { grid-template-columns:1fr; gap:14px; } .lessonList > div { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; align-items:start; } .sidebar .group { grid-column:1 / -1; margin-top:12px; } .sidebar .lessonButton { height:auto; min-height:44px; padding:9px; font-size:13px; overflow-wrap:anywhere; } .header h1 { font-size:32px; } }
 .workspace .editorPane textarea { font:14px/1.7 ui-monospace, SFMono-Regular, Consolas, monospace; }

@@ -19,10 +19,10 @@ function buildBeginnerCardGuide(card, pack) {
   const firstFollowUp = card.followUps?.[0] || "Explain one trade-off and one edge case.";
 
   return {
-    what: `${primaryTag} is the core idea this practice item is testing. In an interview, first explain it in plain language before jumping into tools or syntax.`,
-    why: `It matters because the interviewer wants to see whether you can connect ${primaryTag} to real implementation choices, debugging steps, and trade-offs.`,
-    where: `You will use it in ${pack.topic} work, production debugging, code reviews, and design conversations for ${pack.accent}.`,
-    interviewReady: [firstPoint, ...card.answerPoints.slice(1)].join(" "),
+    what: card.explanation?.what || `This is a rehearsal prompt about ${primaryTag}. The outline below is a planning aid, not a supplied technical answer.`,
+    why: card.explanation?.why || "Use the prompt to practise connecting a concrete mechanism to an example and a failure boundary.",
+    where: card.explanation?.where || `Choose a specific ${pack.topic} example you can substantiate; do not present this outline as personal experience.`,
+    interviewReady: card.interviewAnswer || [firstPoint, ...card.answerPoints.slice(1)].join(" "),
     practiceFlow: [
       "Restate the question in your own words.",
       "Give the simple definition and one concrete example.",
@@ -124,7 +124,7 @@ export default function PracticePack({ profile, selectedCat, selectedSub, diffic
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <span style={{ border: `1px solid ${theme.accentBorder}`, background: theme.accentMuted, color: theme.accentText, borderRadius: 999, padding: "4px 8px", fontSize: 10.5, fontWeight: 700 }}>
-            {pack.bankSize} most asked
+            {pack.bankSize} practice prompts
           </span>
           <button className="glass-button" onClick={showFreshQuestions} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 9px", borderRadius: 8, border: `1px solid ${theme.accentBorder}`, color: theme.accentText, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
             <i className="ti ti-refresh" />New Questions
@@ -167,9 +167,11 @@ export default function PracticePack({ profile, selectedCat, selectedSub, diffic
                   <p style={{ color: "#cbd5e1", fontSize: 11.5, lineHeight: 1.5, margin: 0 }}><strong style={{ color: "#e8e8f0" }}>Where is it used?</strong> {beginnerGuide.where}</p>
                 </section>
                 <section style={{ border: "1px solid rgba(167,243,208,.24)", borderRadius: 8, background: "rgba(16,185,129,.06)", padding: 10 }}>
-                  <div style={{ color: "#a7f3d0", fontSize: 11, fontWeight: 900, marginBottom: 5, textTransform: "uppercase" }}>Interview-ready answer</div>
+                  <div style={{ color: "#a7f3d0", fontSize: 11, fontWeight: 900, marginBottom: 5, textTransform: "uppercase" }}>{card.interviewAnswer ? "Interview-ready answer" : "Answer outline · write your own response"}</div>
                   <p style={{ color: "#d1fae5", fontSize: 11.5, lineHeight: 1.55, margin: 0 }}>{beginnerGuide.interviewReady}</p>
                 </section>
+                {card.example && <section><strong>Worked example</strong><p>{card.example}</p><strong>Trade-offs and verification</strong><p>{card.tradeOff} {card.verification}</p></section>}
+                {card.sources && <p>Primary references: {card.sources.map(([title, href]) => <a key={href} href={href} style={{ marginRight: 8 }}>{title}</a>)}</p>}
                 <div style={{ display: "grid", gap: 9, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 210px), 1fr))" }}>
                   <div>
                     <div style={{ color: theme.accentText, fontSize: 11, fontWeight: 800, marginBottom: 5 }}>Answer points</div>
@@ -186,7 +188,7 @@ export default function PracticePack({ profile, selectedCat, selectedSub, diffic
                   <div>
                     <div style={{ color: theme.accentText, fontSize: 11, fontWeight: 800, marginBottom: 5 }}>Follow-ups</div>
                     <ul style={{ margin: 0, paddingLeft: 17, color: "#6b7280", fontSize: 11.5, lineHeight: 1.5 }}>
-                      {card.followUps.map((followUp) => <li key={followUp}>{followUp}</li>)}
+                      {card.followUps.map((followUp, index) => <li key={followUp}>{followUp}{card.followUpAnswers?.[index] && <p>{card.followUpAnswers[index]}</p>}</li>)}
                     </ul>
                   </div>
                   <div>
@@ -198,7 +200,7 @@ export default function PracticePack({ profile, selectedCat, selectedSub, diffic
 
               <div style={{ display: "flex", gap: 8, marginTop: "auto", flexWrap: "wrap" }}>
                 <button className="glass-button" onClick={() => setOpenCard(isOpen ? null : card.id)} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 10px", borderRadius: 8, border: `1px solid ${theme.accentBorder}`, color: theme.accentText, fontSize: 11.5, fontWeight: 700, cursor: "pointer" }}>
-                  <i className="ti ti-notes" />Full Guide Shown
+                  <i className="ti ti-notes" />{card.interviewAnswer ? "Full Guide Shown" : "Outline Shown"}
                 </button>
                 <button className="glass-button" onClick={() => recordCardAttempt(card, 4)} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 10px", borderRadius: 8, border: `1px solid ${theme.accentBorder}`, color: theme.accentText, fontSize: 11.5, fontWeight: 700, cursor: "pointer" }}>
                   <i className="ti ti-rotate-clockwise" />Review Again

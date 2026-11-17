@@ -89,7 +89,7 @@ test("guided prep mission board is rendered from connected prep signals", () => 
   assert.match(insightsSource, /Guided Prep Mission/);
   assert.match(insightsSource, /buildGuidedPrepMissions/);
   assert.match(insightsSource, /missionBoard\.tasks/);
-  assert.match(insightsSource, /Offer readiness impact/);
+  assert.match(insightsSource, /Checklist estimate/);
 });
 
 test("answer coach and resume bullet generator actions are wired into prep insights", () => {
@@ -129,7 +129,7 @@ test("answer rewrite studio and code explanation judge are visible after chat an
 });
 
 test("company readiness score is wired into company prep", () => {
-  assert.match(companySource, /Company Readiness/);
+  assert.match(companySource, /Company Preparation Checklist/);
   assert.match(companySource, /buildCompanyReadinessScore/);
   assert.match(companySource, /Provider Status/);
   assert.match(companySource, /buildCompanyProviderStatus/);
@@ -201,7 +201,7 @@ test("proof vault offer readiness heatmap and interview day pack are rendered", 
   assert.match(insightsSource, /Proof Vault/);
   assert.match(insightsSource, /deriveProofVaultStories/);
   assert.match(insightsSource, /story\.actions/);
-  assert.match(insightsSource, /Offer Readiness/);
+  assert.match(insightsSource, /Preparation Checklist/);
   assert.match(insightsSource, /buildOfferReadinessScore/);
   assert.match(insightsSource, /Answer Quality Heatmap/);
   assert.match(insightsSource, /deriveAnswerQualityHeatmap/);

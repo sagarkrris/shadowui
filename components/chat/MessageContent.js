@@ -1,5 +1,6 @@
 import { renderInline } from "../../lib/chatMarkdown.mjs";
 import CodeBlock from "./CodeBlock";
+import { displayAssessmentText } from "../../lib/answerSource.mjs";
 
 function isPartHeading(line) {
   return /^\*\*Part\s+\d+:/i.test(line.trim()) || /^Part\s+\d+:/i.test(line.trim());
@@ -61,9 +62,11 @@ function renderTextLines(part, keyPrefix) {
 }
 
 export default function MessageContent({ content }) {
+  const display = displayAssessmentText(content);
   return (
     <div className="message-content">
-      {content.split(/(```[\s\S]*?```)/g).map((part, i) => {
+      {display.incomplete && <p className="message-line" role="note">This saved response contains unfinished grading fields. They are not completed assessment scores.</p>}
+      {display.text.split(/(```[\s\S]*?```)/g).map((part, i) => {
         if (part.startsWith("```")) {
           const lang = (part.match(/```(\w*)\n?/) || [])[1] || "java";
           const code = part.replace(/```\w*\n?/, "").replace(/```$/, "").trim();

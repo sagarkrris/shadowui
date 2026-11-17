@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { clearPrivateLocalData } from "../lib/localStoragePrivacy.mjs";
+import { clearPrivateBrowserData } from "../lib/localStoragePrivacy.mjs";
 
 function friendlyAuthError(message, status) {
   if (String(message || "").toLowerCase().includes("csrf")) return "Your security session expired. Refresh the page and try again.";
@@ -90,9 +90,12 @@ export function useAuth() {
       setError(error.message);
       throw error;
     }
-    clearPrivateLocalData();
+    clearPrivateBrowserData(window);
     setUser(null);
     setCsrfToken("");
+    // A full document navigation discards private React state after sign-out.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+    window.location.assign('/practice');
     return true;
   }, [csrfToken, fetchCsrfToken]);
   const postAuthAction = useCallback(async (action, body = {}) => {
@@ -117,11 +120,14 @@ export function useAuth() {
     const response = await fetch("/api/account", { method: "DELETE", headers: csrfToken ? { "X-CSRF-Token": csrfToken } : {} });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) { setError(friendlyAuthError(payload.error, response.status)); return payload; }
-    clearPrivateLocalData();
+    clearPrivateBrowserData(window);
     setUser(null);
     setCsrfToken("");
     if (payload.emailDelivery?.delivered) setDeliveryNotice("Account deleted. A confirmation email was sent.");
     else setDeliveryWarning("Account deleted, but the confirmation email could not be sent.");
+    // Account deletion must also discard every mounted workspace's private state.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+    window.location.assign('/practice');
     return payload;
   }, [csrfToken]);
   const refreshCsrfToken = useCallback(() => fetchCsrfToken({ force: true }), [fetchCsrfToken]);

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { LANDING_TRACKS } from '../lib/landingTracks.mjs';
+import { createSessionSnapshot, SESSION_STORAGE_KEY } from './helpers/app.js';
 
 for (const width of [375, 1366]) {
   test(`role onboarding previews public paths at ${width}px`, async ({ page }) => {
@@ -19,7 +20,7 @@ for (const width of [375, 1366]) {
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
     await dialog.getByRole('button', { name: 'Next: AI setup →' }).click();
-    await expect(dialog.getByRole('heading', { name: 'Check AI availability' })).toBeVisible();
+    await expect(dialog.getByRole('heading', { name: 'Choose how to practise' })).toBeVisible();
     await dialog.getByRole('button', { name: 'Close mock setup' }).click();
     await expect(dialog).not.toBeVisible();
     await selector.getByRole('button', { name: 'Senior Backend Java / Spring', exact: true }).click();
@@ -28,3 +29,19 @@ for (const width of [375, 1366]) {
     await expect(page.getByRole('heading', { name: 'Your connection pool is full. Is the database actually slow?', exact: true })).toBeVisible();
   });
 }
+
+
+test('returning profile resumes practice without repeating the setup dialog', async ({ page }) => {
+  await page.addInitScript(({key, session}) => {
+    localStorage.setItem(key, JSON.stringify(session));
+    localStorage.setItem('interviewiq.homeDemoSeen.v1', '1');
+  }, {key: SESSION_STORAGE_KEY, session: createSessionSnapshot()});
+  await page.goto('/');
+  const onboarding = page.getByRole('region', {name: 'Choose your target role'});
+  const resume = onboarding.getByRole('link', {name: 'Resume practice', exact: true});
+  await expect(resume).toBeVisible();
+  await expect(onboarding.getByRole('button', {name: 'Set up AI mock drills'})).toHaveCount(0);
+  await resume.click();
+  await expect(page).toHaveURL(/\/practice$/);
+  await expect(page.getByRole('textbox', {name: 'Message composer', exact: true})).toBeVisible();
+});

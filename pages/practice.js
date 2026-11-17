@@ -1,6 +1,8 @@
+import { applyCloudDeviceSnapshot } from "../lib/cloudDeviceSnapshot.mjs";
+import { readAiJsonResponse } from "../lib/aiResponse.mjs";
 import { SITE_URL } from "../lib/siteUrl.mjs";
 import { cloudRecoveryBackup } from '../lib/practiceBackup.mjs';
-import { readLearningDeviceState, applyLearningDeviceState } from '../lib/learningDeviceState.mjs';
+import { readLearningDeviceState } from '../lib/learningDeviceState.mjs';
 import { downloadText } from '../lib/downloadText.mjs';
 import { archivePrepSession, normalizePrepSessionPlan } from '../lib/prepSessionPlan.mjs';
 import { applicationDebriefReview } from '../lib/applicationTracker.mjs';
@@ -760,8 +762,9 @@ export default function Home() {
     return () => window.removeEventListener('career-toolkit-change', read);
   }, []);
   const cloudSnapshot = useMemo(() => ({ learningState, session: createSessionSnapshot({ candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSession: interviewSessionState, systemDesignCanvas, input, codeInput, practice, mockTimer: { endsAt: mockTimerEndsAt, status: mockTimerStatus, remaining: mockTimerStatus === "paused" ? mockTimerRemaining : MOCK_ANSWER_SECONDS } }), themePreference, toolkitState, applications, javaDigestProgress, questionMemory, prepProgressState }), [learningState, candidateProfile, profileDraft, messages, selectedCat, selectedSub, expandedCat, mode, interviewMode, roundStrategy, interviewPanel, difficulty, activeTab, interviewSessionState, systemDesignCanvas, mockTimerEndsAt, mockTimerStatus, mockTimerRemaining, input, codeInput, practice, themePreference, toolkitState, applications, javaDigestProgress, questionMemory, prepProgressState]);
-  const applyCloudState = useCallback((snapshot) => {
-    if (snapshot.learningState) { applyLearningDeviceState(localStorage, snapshot.learningState); setLearningState(readLearningDeviceState(localStorage)); }
+  const applyCloudState = useCallback((snapshot, options = {}) => {
+    snapshot = applyCloudDeviceSnapshot(localStorage, snapshot, { ...options, transientStorage: sessionStorage });
+    setLearningState(snapshot.learningState);
     const session = createSessionSnapshot(snapshot.session || snapshot);
     setCandidateProfile(session.candidateProfile);
     setProfileDraft(session.profileDraft);
@@ -786,7 +789,7 @@ export default function Home() {
     setMockTimerStatus(session.mockTimer?.status || "idle");
     if (snapshot.themePreference) setThemePreference(normalizeThemePreference(snapshot.themePreference));
     resetInterviewSession(session.interviewSession);
-    if (snapshot.session) { setToolkitState(snapshot.toolkitState || {}); setApplications(Array.isArray(snapshot.applications) ? snapshot.applications : []); setJavaDigestProgress(snapshot.javaDigestProgress || { completedTopics: [], masteredTopics: [], reviewStages: {} }); setQuestionMemory(snapshot.questionMemory || { questions: {} }); setPrepProgressState(snapshot.prepProgressState || createPrepProgressState()); }
+    if (snapshot._fullDeviceSnapshot) { setToolkitState(snapshot.toolkitState || {}); setApplications(Array.isArray(snapshot.applications) ? snapshot.applications : []); setJavaDigestProgress(snapshot.javaDigestProgress || { completedTopics: [], masteredTopics: [], reviewStages: {} }); setQuestionMemory(snapshot.questionMemory || { questions: {} }); setPrepProgressState(snapshot.prepProgressState || createPrepProgressState()); }
   }, [resetInterviewSession, setActiveTab]);
   const handleCloudSyncStatus = useCallback((status) => {
     setCloudStatus(status === "error" ? "offline" : status);
@@ -805,7 +808,7 @@ export default function Home() {
       setMockTimerEndsAt(null);
       setMockTimerStatus("review");
       setMode("practice");
-      showToast("Time is up. Review ready - send what you have for feedback.", "info");
+      showToast("Time is up. Submit your answer for feedback.", "info");
     };
 
     tick();
@@ -957,8 +960,7 @@ export default function Home() {
       const timeout = setTimeout(() => abortRef.current?.abort(), 90000);
       try {
         const response = await fetch("/api/evaluate", { method: "POST", headers: { "Content-Type": "application/json" }, signal: abortRef.current.signal, body: JSON.stringify({ question: activeQuestion.question, answer, profile: candidateProfile, round: activeQuestion.round, difficulty: activeQuestion.difficulty, feedbackDepth: practice.feedbackDepth }) });
-        const payload = await response.json();
-        if (!response.ok || !payload.evaluation) throw new Error(payload.error || "Evaluation failed. Your answer is saved; retry this attempt.");
+        const payload = await readAiJsonResponse(response);
         const evaluation = payload.evaluation;
         const feedback = evaluationMarkdown(evaluation);
         const attempt = { ...activeQuestion, ...evaluation, id: attemptId, answer, feedback, rubricVersion: 1, completedAt: new Date().toISOString() };
@@ -969,7 +971,9 @@ export default function Home() {
         if (activeQuestion.parentId) { const comparison = compareAttempts(practice.attempts.find(a => a.id === activeQuestion.parentId), attempt); trackEvent("retest_completed", { attemptId, value: `${comparison.status}:${comparison.delta ?? "unassessed"}` }); }
         lastRequestRef.current = null;
       } catch (error) {
-        showToast(error.name === "AbortError" ? "Evaluation interrupted. Retry the saved answer." : error.message, "error");
+        const message = error.name === "AbortError" ? "Evaluation stopped or timed out. Your answer is saved." : error.message;
+        setPractice(prev => ({ ...prev, pending: prev.pending ? { ...prev.pending, error: message } : null }));
+        showToast(message, "error");
         trackEvent("ai_failed", { attemptId });
       } finally {
         clearTimeout(timeout); requestBusy.current = false; setLoading(false);
@@ -1075,6 +1079,7 @@ export default function Home() {
         }
       }
     } catch(err) {
+      setPractice(prev => ({ ...prev, pending: prev.pending ? { ...prev.pending, error: err.name === "AbortError" ? "Request stopped or timed out. Your answer is saved." : err.message } : null }));
       if (err.name !== "AbortError") {
         setMessages(prev => { const u=[...prev]; u[u.length-1]={role:"assistant",content: (u.at(-1)?.content || "") + "\n\n⚠️ " + (err.message||"Something went wrong."),streaming:false,interrupted:true}; return u; });
         showToast(err.message || "API error", "error");
@@ -1096,11 +1101,13 @@ export default function Home() {
   }, [techBuddyOpen, messages, codeInput, loading, showToast, candidateProfile, techTheme.key, showCodeTools, mockTimerStatus, interviewMode, roundStrategy, interviewPanel, selectedCat, selectedSub, practice, difficulty]);
 
   // ── Screen analyze ────────────────────────────────────────────────────────
-  const analyzeScreen = useCallback(async (b64, ctx) => {
-    setShowScreen(false);
+  const analyzeScreen = useCallback(async (b64, ctx, mimeType = "image/png") => {
     if (techBuddyOpen) { showToast('Return to the conversation to analyze a screen.', 'info'); return; }
     if (loading || requestBusy.current) return;
+    if (practice.pending) { showToast("Resolve the saved request before analyzing a screen.", "info"); return; }
+    setShowScreen(false);
     requestBusy.current = true;
+    setHomeView(false);
     setLoading(true);
     const label = `📸 Screenshot${ctx?" — "+ctx:""}`;
     const newMsgs = [...messages, { role:"user", content:label }];
@@ -1112,7 +1119,7 @@ export default function Home() {
       timeout = setTimeout(() => abortRef.current?.abort(), 90000);
       const res = await fetch("/api/analyze-screen", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ imageBase64:b64, mimeType:"image/png", context:ctx, profile: candidateProfile }),
+        body: JSON.stringify({ imageBase64:b64, mimeType, context:ctx, profile: candidateProfile }),
         signal: abortRef.current.signal,
       });
       if (!res.ok) {
@@ -1147,7 +1154,7 @@ export default function Home() {
         showToast("Screen analysis failed", "error");
       }
     } finally { clearTimeout(timeout); requestBusy.current = false; setLoading(false); setMessages(prev => prev.map(m => m.streaming ? { ...m, streaming: false, interrupted: true, content: (m.content || "") + "\nScreen analysis stopped. Reopen Analyze Screen to retry." } : m)); }
-  }, [techBuddyOpen, messages, loading, showToast, candidateProfile]);
+  }, [techBuddyOpen, messages, loading, showToast, candidateProfile, practice.pending]);
 
   // ── Voice ─────────────────────────────────────────────────────────────────
   const stopVoice = useCallback(() => {
@@ -1269,6 +1276,7 @@ export default function Home() {
     setTechBuddyLaunch(previous => previous?.fresh ? { ...previous, fresh: false } : previous);
   }, []);
   const closeBuddy = useCallback(buddy => {
+    saveBuddySession(buddy);
     setTechBuddyOpen(false);
     setInput(buddy.interaction === 'ask' ? buddy.askDraft : buddy.phase === 'question' ? buddy.draft : '');
     if (buddy.interaction === 'ask') { setMode('practice'); setInterviewMode('directAnswer'); }
@@ -1278,7 +1286,7 @@ export default function Home() {
       topic: buddy.topic || 'General interview', difficulty: options.difficulty, round: options.roundStrategy,
       attemptId: crypto.randomUUID(),
     } : null }));
-  }, []);
+  }, [saveBuddySession]);
   const reviewAssessment = (id, review) => {
     setPractice(state => ({ ...state, attempts: state.attempts.map(attempt => attempt.id === id ? { ...attempt, assessmentReview: { ...review, updatedAt: new Date().toISOString() } } : attempt), buddy: state.buddy ? { ...state.buddy, turns: state.buddy.turns.map(turn => turn.id === id ? { ...turn, assessmentReview: review } : turn) } : null }));
     setQuestionMemory(state => {
@@ -1293,6 +1301,8 @@ export default function Home() {
   useEffect(() => {
     if (!sessionReady || !router.isReady || !candidateProfile) return;
     if (router.query.buddy !== '1') { buddyLinkRef.current = ''; return; }
+    // Finish restoring navigation before launching; the workspace effect closes Buddy outside chat.
+    if (activeTab !== 'chat') { setActiveTab('chat'); return; }
     const topic = typeof router.query.buddyTopic === 'string' ? router.query.buddyTopic.slice(0, 180) : '';
     const mode = router.query.buddyMode === 'warmup' ? 'warmup' : 'practice';
     const key = `${topic}:${mode}`;
@@ -1306,7 +1316,7 @@ export default function Home() {
     delete query.lessonHref;
     delete query.lessonTitle;
     void router.replace({ pathname: router.pathname, query }, undefined, { shallow: true });
-  }, [sessionReady, router, candidateProfile, openTechBuddy]);
+  }, [sessionReady, router, candidateProfile, activeTab, setActiveTab, openTechBuddy]);
 
   const reviewLinkRef = useRef('');
   useEffect(() => {
@@ -1357,7 +1367,7 @@ export default function Home() {
   useEffect(() => { if (activeTab !== 'chat') setTechBuddyOpen(false); }, [activeTab]);
 
   const retryLastAiRequest = useCallback(() => {
-    const retry = buildAiRetryRequest(lastRequestRef.current);
+    const retry = buildAiRetryRequest(practice.pending || lastRequestRef.current);
     if (!retry.apiText) {
       showToast("No previous AI request to retry yet.", "info");
       return;
@@ -1368,7 +1378,16 @@ export default function Home() {
       ...retry.metadata,
       replaceLastRequest: !retry.metadata?.retryEvaluation,
     });
-  }, [callAPI, showToast]);
+  }, [callAPI, showToast, practice.pending]);
+
+  const continueWithoutRetry = () => {
+    if (loading) return;
+    lastRequestRef.current = null;
+    setPractice(prev => ({ ...prev, pending: null, active: null }));
+    setHomeView(false);
+    showToast("Your submitted answer remains in the conversation. You can continue now.", "info");
+    inputRef.current?.focus();
+  };
 
   const continueAiFollowUp = useCallback(() => {
     const latestUser = [...messages].reverse().find((message) => message.role === "user")?.content || "";
@@ -1883,6 +1902,8 @@ export default function Home() {
             </div>
           )}
 
+            {cloudConflict && <section className="practice-sync-conflict" aria-label="Cloud save conflict"><details><summary>Cloud saving paused · Review copies</summary><h2>{cloudConflict.accountChanged ? "Choose data for this signed-in account" : cloudConflict.unownedDeviceWork ? "Choose whether to import this device’s work" : "Work changed on another device"}</h2>{cloudConflict.unownedDeviceWork && <p>This device’s saved work has no account-owner record. It may be a guest draft or work from an older account. Nothing will be imported until you choose. Keeping this device copy imports it into the signed-in account; using the cloud copy clears the unowned local workspaces.</p>}{cloudConflict.accountChanged && <p>The browser holds data from another account. Keeping this device copy explicitly imports it into the current account. Using an empty cloud copy clears the previous account’s local workspaces. Download a backup before choosing.</p>}<p>Automatic saving is paused. Download both copies before selecting which copy should become current. Your device draft is preserved.</p><button type="button" onClick={() => (() => { downloadText(cloudRecoveryBackup(cloudSnapshot), 'interviewiq-device-recovery.json', 'application/json'); downloadText(cloudRecoveryBackup(cloudConflict.state), 'interviewiq-cloud-recovery.json', 'application/json'); })()}>Download both copies</button><button type="button" onClick={() => { downloadText(cloudRecoveryBackup(cloudSnapshot), 'interviewiq-device-recovery.json', 'application/json'); resolveCloudConflict('cloud'); }}>Use cloud copy</button><button type="button" onClick={() => { downloadText(cloudRecoveryBackup(cloudConflict.state), 'interviewiq-cloud-recovery.json', 'application/json'); resolveCloudConflict('device'); }}>Keep this device copy</button></details></section>}
+
           <div className="mobile-shell-controls">
             <button type="button" className="glass-button" aria-expanded={mobileHeaderOpen} aria-controls="app-header" onClick={() => setMobileHeaderOpen(value => !value)}>Navigation & settings</button>
             <button type="button" className="glass-button" aria-expanded={mobileActionsOpen} aria-controls="session-actions" onClick={() => setMobileActionsOpen(value => !value)}>Session actions</button>
@@ -1914,7 +1935,6 @@ export default function Home() {
               {activeTab !== "chat" ? <><span className="header-breadcrumb-root">Today</span><span className="header-breadcrumb-separator">/</span>{headerTitle}</> : headerTitle}
             </span>
             <details><summary>Device sync details</summary><p>Account sync: practice, plans, applications, question history, notebook, archive, bookmarks, roadmap and reading positions. Other workspace keys remain device-only; include them in a full backup. Open the practice workspace on each device to synchronize learning changes.</p></details>
-            {cloudConflict && <section aria-label="Cloud save conflict"><h2>Work changed on another device</h2><p>Automatic saving is paused. Download both copies before selecting which copy should become current. Your device draft is preserved.</p><button type="button" onClick={() => (() => { downloadText(cloudRecoveryBackup(cloudSnapshot), 'interviewiq-device-recovery.json', 'application/json'); downloadText(cloudRecoveryBackup(cloudConflict.state), 'interviewiq-cloud-recovery.json', 'application/json'); })()}>Download both copies</button><button type="button" onClick={() => { downloadText(cloudRecoveryBackup(cloudSnapshot), 'interviewiq-device-recovery.json', 'application/json'); resolveCloudConflict('cloud'); }}>Use cloud copy</button><button type="button" onClick={() => { downloadText(cloudRecoveryBackup(cloudConflict.state), 'interviewiq-cloud-recovery.json', 'application/json'); resolveCloudConflict('device'); }}>Keep this device copy</button></section>}
             <span className={`cloud-sync-status cloud-sync-${cloudStatus}`} role="status" aria-live="polite" title="Workspace sync status">
               <i className={`ti ${cloudStatus === "saving" || cloudStatus === "hydrating" ? "ti-loader-2" : cloudStatus === "offline" ? "ti-device-floppy" : "ti-cloud-check"}`} />
               {localSaveStatus === "error" ? "Device save failed" : localSaveStatus !== "saved" ? "Loading…" : cloudStatus === "conflict" ? "Saved on device · Choose sync copy" : cloudStatus === "saving" ? "Saved on device · Syncing…" : cloudStatus === "hydrating" ? "Loading cloud…" : cloudStatus === "offline" ? "Saved on device · Sync failed" : !auth.user ? "Saved on this device" : cloudStatus === "saved" ? "Saved and synced" : "Saved on device · Waiting for sync"}
@@ -2038,18 +2058,26 @@ export default function Home() {
                           <button key={m} className={mode===m?"glass-button":""} onClick={() => setMode(m)} style={{ flex: 1, padding: "6px 10px", fontSize: 11, fontWeight: 800, borderRadius: 6, border: mode===m?`1px solid ${techTheme.accentBorder}`:"none", cursor: "pointer", color: mode===m?techTheme.accentText:"#9ca3af", background: mode===m?techTheme.accentSoft:"transparent", textTransform:"capitalize" }}>{m}</button>
                         ))}
                       </div>
+                      <label className="prep-control-field"><span>Difficulty</span>
                       <select value={difficulty} onChange={e => setDifficulty(e.target.value)} aria-label="Difficulty level" className="glass-input" style={{ fontSize: 12, padding: "8px 9px", borderRadius: 7, border: "1px solid rgba(255,255,255,.09)", color:"#cbd5e1", outline:"none" }}>
                         {DIFFS.map(d => <option key={d}>{d}</option>)}
                       </select>
+                      </label>
+                      <label className="prep-control-field"><span>Interview calibration</span>
                       <select value={interviewMode} onChange={e => setInterviewMode(e.target.value)} aria-label="Interview calibration mode" className="glass-input" style={{ fontSize: 12, padding: "8px 9px", borderRadius: 7, border: "1px solid rgba(255,255,255,.09)", color:"#cbd5e1", outline:"none" }}>
                         {INTERVIEW_MODES.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}
                       </select>
+                      </label>
+                      <label className="prep-control-field"><span>Round strategy</span>
                       <select value={roundStrategy} onChange={e => setRoundStrategy(e.target.value)} aria-label="Round Strategy Mode" className="glass-input" style={{ fontSize: 12, padding: "8px 9px", borderRadius: 7, border: "1px solid rgba(255,255,255,.09)", color:"#cbd5e1", outline:"none" }}>
                         {ROUND_STRATEGY_MODES.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}
                       </select>
+                      </label>
+                      <label className="prep-control-field"><span>Interview panel</span>
                       <select value={interviewPanel} onChange={e => setInterviewPanel(e.target.value)} aria-label="AI Interview Panel Mode" className="glass-input" style={{ fontSize: 12, padding: "8px 9px", borderRadius: 7, border: "1px solid rgba(255,255,255,.09)", color:"#cbd5e1", outline:"none" }}>
                         {INTERVIEW_PANEL_OPTIONS.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}
                       </select>
+                      </label>
                       <button className="glass-button" aria-label="Start mock round" onClick={() => { startSession(); setTopControlsOpen(false); }} disabled={!candidateProfile || !selectedCat || loading} style={{ alignItems: "center", border: `1px solid ${techTheme.accentBorder}`, borderRadius: 8, color: techTheme.accentText, cursor: candidateProfile&&selectedCat&&!loading ? "pointer" : "not-allowed", display: "flex", fontSize: 12, fontWeight: 900, gap: 6, justifyContent: "center", minHeight: 39, opacity: candidateProfile&&selectedCat&&!loading ? 1 : .4, padding: "8px 12px" }}>
                         <i className="ti ti-player-play" style={{ fontSize: 12 }} />Start mock
                       </button>
@@ -2102,7 +2130,7 @@ export default function Home() {
             {quickProfile && !lessonContext && <p className="practice-panel">Using quick-start defaults: Learner · general software engineering · experience not specified. Edit Profile to personalize.</p>}
             {practice.active?.reviewBaseline && <section className="practice-panel" aria-label="Original question review"><h2>Retest your saved question</h2><p>{practice.active.question}</p><p>Previous score: {practice.active.reviewBaseline.score ?? 'Not assessed'}</p>{practice.active.reviewBaseline.answer && <details><summary>Your previous answer</summary><p>{practice.active.reviewBaseline.answer}</p></details>}<p>Submit a fresh answer below. Your previous attempt remains in history.</p></section>}
             {lessonContext && <section className="practice-panel" aria-label="Current lesson"><strong>Practising: {lessonContext.title || lessonContext.topic}</strong>{quickProfile && <p>Using quick-start defaults: Learner · general software engineering · experience not specified.</p>}<div className="practice-actions">{lessonContext.href && <Link href={lessonContext.href}>Back to lesson</Link>}{candidateProfile && <button type="button" disabled={loading} onClick={() => { setProfileDraft(candidateProfile); setEditingProfile(true); setActiveTab('chat'); }}>Personalize practice profile</button>}</div></section>}
-            {activeTab === "chat" && candidateProfile && !editingProfile && !techBuddyOpen && <div className="workspace-shortcuts" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}><button type="button" className="glass-button" disabled={loading} style={{ padding: '10px 14px' }} onClick={() => openTechBuddy()}>Open Tech Buddy</button><button type="button" className="glass-button" disabled={loading} onClick={() => openTechBuddy({ mode: 'warmup' })}>Five-question interview warm-up</button><Link href="/tech-buddy-demo">Try offline demo</Link><Link href="/learn">Learning hub</Link><Link href="/labs">Interactive labs</Link></div>}
+            {activeTab === "chat" && candidateProfile && !editingProfile && !techBuddyOpen && <div className="workspace-shortcuts" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}><button type="button" className="glass-button" disabled={loading} style={{ padding: '10px 14px' }} onClick={() => openTechBuddy()}>Open Tech Buddy</button><details className="practice-shortcut-menu"><summary>More ways to practise</summary><button type="button" className="glass-button" disabled={loading} onClick={() => openTechBuddy({ mode: 'warmup' })}>Five-question interview warm-up</button><Link href="/tech-buddy-demo">Try offline demo</Link><Link href="/learn">Learning hub</Link><Link href="/labs">Interactive labs</Link></details></div>}
             {loading ? <div className="ai-progress-status" role="status" aria-live="polite"><span className="dot" />InterviewIQ is preparing your response…</div> : null}
             {activeTab === "course" ? (
               <AgenticUICourse theme={techTheme} variant="full" />
@@ -2301,6 +2329,7 @@ export default function Home() {
                     </div>
                   ))}
                   <PracticeReview onAssessmentChange={reviewAssessment} onReassess={attempt => callAPI(attempt.answer, { retryEvaluation: { ...attempt, id: undefined, attemptId: crypto.randomUUID(), parentId: attempt.id, assessmentOnly: true, assessmentReview: { exclude: true, status: "disputed", reason: "Separate reassessment pending your check" } }, retryAnswer: attempt.answer })} repairRequested={repairRequested} onRepairChange={repair => setPractice(state => ({ ...state, repairs: [...state.repairs.filter(item => item.attemptId !== repair.attemptId), repair] }))} practice={practice} onExercise={exerciseNotes => setPractice(prev => ({ ...prev, exerciseNotes }))} loading={loading} onDelete={id => { setPractice(prev => ({ ...prev, attempts: prev.attempts.filter(a => a.id !== id) })); setMessages(prev => prev.filter(m => m.attemptId !== id)); }} onRetest={(attempt, comparable, exercise) => { setPractice(prev => ({ ...prev, active: { questionId: comparable ? undefined : attempt.questionId, question: comparable ? attempt.followUp : attempt.question, topic: attempt.topic, difficulty: attempt.difficulty, round: attempt.round, parentId: attempt.id, exercise, attemptId: crypto.randomUUID() } })); setHomeView(false); setInput(""); setMockTimerRemaining(60); setMockTimerEndsAt(Date.now() + 60000); setMockTimerStatus("answering"); }} />
+                  <details className="practice-panel practice-secondary-tools"><summary>Answer tools · Rewrite and explanation checks</summary>
                   <PostAnswerTools
                     profile={candidateProfile}
                     messages={messages}
@@ -2311,6 +2340,7 @@ export default function Home() {
                     loading={loading}
                     onAction={(prompt) => callAPI(prompt, { skipQuestionMemory: true })}
                   />
+                  </details>
                 </>
               )
             }
@@ -2330,11 +2360,15 @@ export default function Home() {
             <div className="practice-context">
               <span>{practice.active?.topic || currentLabel || "General"} · {practice.active?.difficulty || difficulty} · {practice.active?.round || roundStrategy}</span>
               <label>Feedback depth <select value={practice.feedbackDepth} onChange={e => setPractice(prev => ({ ...prev, feedbackDepth: e.target.value }))}>{["Quick review", "Detailed explanation", "Strict interview"].map(v => <option key={v}>{v}</option>)}</select></label>
-              {practice.active && !techBuddyOpen && <details open><summary>Current question</summary><p>{practice.active.question}</p></details>}
+              {practice.active && !techBuddyOpen && <details className="practice-current-question" open><summary>Current question</summary><p>{practice.active.question}</p></details>}
               {loading && <p role="status">AI request in progress · {requestElapsed}s {requestElapsed >= 30 ? "· Taking longer than usual. You can stop and retry." : ""}<button onClick={() => abortRef.current?.abort()}>Stop request</button></p>}
-              {!loading && practice.pending && <p role="alert">Request unfinished. Your submitted answer is saved. <button onClick={retryLastAiRequest}>Retry saved request</button> Retry replaces this response; it does not add another attempt.</p>}
+              {!loading && practice.pending && <section className="practice-request-recovery" aria-label="Unfinished request">
+                <p role="alert"><strong>Request unfinished. Your submitted answer is saved.</strong>{practice.pending.error && <span className="practice-request-error">{practice.pending.error}</span>}</p>
+                <div><button onClick={retryLastAiRequest}>Retry saved request</button><button onClick={continueWithoutRetry}>Keep answer and continue</button></div>
+                <small>Retry uses the same answer without adding an attempt. Continue keeps it in the conversation without a new assessment.</small>
+              </section>}
             </div>
-            {mockTimerStatus !== "idle" && !techBuddyOpen && (
+            {["answering", "paused"].includes(mockTimerStatus) && !techBuddyOpen && (
               <div role="status" aria-live="polite" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8, border: `1px solid ${techTheme.accentBorder}`, borderRadius: 8, padding: "6px 9px", background: techTheme.accentMuted }}>
                 <span style={{ color: techTheme.accentText, fontSize: 11.5, fontWeight: 800, display: "inline-flex", alignItems: "center", gap: 6 }}>
                   <i className="ti ti-clock" />Mock answer timer

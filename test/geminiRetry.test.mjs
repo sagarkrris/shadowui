@@ -84,3 +84,10 @@ test("falls back to the next Gemini model after retryable failures", async () =>
   assert.equal(result, "reply");
   assert.deepEqual(attempts, ["gemini-a", "gemini-b"]);
 });
+
+test('provider credential failures and request limits have actionable safe messages', () => {
+  const invalidKey = getSafeGeminiErrorMessage({ status: 400, message: '{"error":{"message":"API key not valid","reason":"API_KEY_INVALID"}}' });
+  assert.match(invalidKey, /site owner.*provider API key/);
+  assert.match(getSafeGeminiErrorMessage({ status: 429 }), /request limit/);
+  assert.match(getSafeGeminiErrorMessage({ name: 'AbortError' }), /timed out/);
+});

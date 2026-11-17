@@ -105,3 +105,20 @@ test('notebook restores a previewed backup without removing unrelated saved work
   await expect(page.getByRole('link', { name: note.title, exact: true })).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('interviewiq.unrelated.v1'))).toBe('keep me');
 });
+
+for (const activeTab of ['chat', 'javaDigest']) test(`lesson link opens warm-up after restoring ${activeTab}`, async ({ page }) => {
+  await gotoSeededApp(page, { activeTab, selectedCat: 'System Design', selectedSub: '' });
+  await page.goto('/tech-blogs/java-runtime-jdk-jvm-classloaders');
+  const link = page.getByRole('link', { name: 'Practise this lesson with Tech Buddy →', exact: true }).first();
+  const query = new URL(await link.getAttribute('href'), 'http://localhost').searchParams;
+  await link.click();
+  const buddy = page.getByRole('region', { name: 'Tech Buddy interview', exact: true });
+  await expect(buddy).toBeVisible();
+  await expect(buddy.getByLabel('Practice topic', { exact: true })).toHaveValue(query.get('buddyTopic').slice(0, 180));
+  await expect(buddy.getByLabel('Session type', { exact: true })).toHaveValue('warmup');
+  await expect(page.getByRole('link', { name: 'Back to lesson', exact: true })).toHaveAttribute('href', query.get('lessonHref'));
+  await expect(page).toHaveURL(/\/practice$/);
+  await page.getByRole('button', { name: 'Back to conversation', exact: true }).click();
+  await page.getByRole('button', { name: 'Open Tech Buddy', exact: true }).click();
+  await expect(buddy.getByLabel('Practice topic', { exact: true })).toHaveValue(query.get('buddyTopic').slice(0, 180));
+});

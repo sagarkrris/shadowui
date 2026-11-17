@@ -1,6 +1,6 @@
 # Java engineering practice
 
-`/build` includes eighteen original Java 17 challenges across system components,
+`/build` includes 21 original Java 17 challenges across system components,
 object design, and concurrency. Existing multi-chapter projects remain available.
 Each challenge has an editable starter, explicit contract, visible examples and
 failure checks, progressive hints, authored reference, design follow-up, and
@@ -79,3 +79,11 @@ For new tech blogs, add a related challenge only when a small executable contrac
 improves the lesson. Reuse an existing challenge when appropriate. Add it to the
 shared catalog; both lesson readers and sitemap discover it automatically. Keep
 the stated challenge count and tests in sync, and run this verifier after changes.
+
+## Inventory definition
+
+The challenge count comes from `BUILD_CHALLENGES` in `lib/buildChallenges.mjs`.
+The shared build-time inventory in `lib/contentInventory.mjs` counts those unique
+contracts and publishes the current count at `/capabilities#content-inventory`.
+Multi-chapter projects, coding-problem views and standalone Node exercises are
+separate formats; they do not increase the Java build challenge count.

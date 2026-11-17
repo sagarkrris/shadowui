@@ -1,3 +1,4 @@
+import { trackEvent } from '../../lib/analytics.mjs';
 import Link from 'next/link';
 import { buddyHref } from '../../lib/learningHub.mjs';
 import useHubProgress from './useHubProgress';
@@ -17,7 +18,7 @@ export default function LessonPractice({ id, title, question, exercise }) {
     </div>
     <fieldset className={styles.progress} aria-describedby={helpId}>
       <legend>Your learning progress</legend>
-      <label><input type="checkbox" disabled={!ready} checked={progress.completed.includes(id)} onChange={() => toggle('completed', id)} /> <span>I completed this lesson and its self-check</span></label>
+      <label><input type="checkbox" disabled={!ready} checked={progress.completed.includes(id)} onChange={() => { trackEvent(progress.completed.includes(id) ? 'lesson_reopened' : 'lesson_completed'); toggle('completed', id); }} /> <span>I completed this lesson and its self-check</span></label>
       <label><input type="checkbox" disabled={!ready} checked={progress.weak.includes(id)} onChange={() => toggle('weak', id)} /> <span>I need another attempt at this lesson</span></label>
       <p id={helpId} className={styles.help}>Completion records what you finished. Mark another attempt when you want to revisit it; both can be selected. Progress is saved in this browser.</p>
     </fieldset>

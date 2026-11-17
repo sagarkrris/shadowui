@@ -72,6 +72,7 @@ test('five-question warm-up counts retry once, renders strengths and gaps, and f
   const requests = await mockChat(page, () => `Explain Java scenario ${++generated}.`);
   await page.route('**/api/evaluate', route => route.fulfill({ json: { evaluation } }));
   await gotoSeededApp(page);
+  await page.getByText('More ways to practise', { exact: true }).click();
   await page.getByRole('button', { name: 'Five-question interview warm-up' }).click();
   const buddy = buddyRegion(page);
   await buddy.getByRole('button', { name: 'Start Buddy interview' }).click();
@@ -128,6 +129,8 @@ test('voice stops speech before listening, aborts recognition before submit, and
   await page.evaluate(() => window.__utterance.onstart());
   await expect(buddy.getByText('Speaking', { exact: true })).toBeVisible();
   await page.evaluate(() => window.__utterance.onend());
+  expect(await page.evaluate(() => window.__mediaEvents)).not.toContain('listen');
+  await buddy.getByRole('button', { name: 'Start microphone for answer' }).click();
   expect(await page.evaluate(() => window.__recognition.lang)).toBe('en-IN');
   await expect(buddy.getByRole('button', { name: 'Mute microphone' })).toBeVisible();
   expect((await page.evaluate(() => window.__mediaEvents)).at(-1)).toBe('listen');
@@ -152,7 +155,7 @@ test('voice stops speech before listening, aborts recognition before submit, and
   await expect(buddy.getByRole('region', { name: 'Tech Buddy session summary' })).toBeVisible();
 });
 
-test('Gemini speech failure switches to device voice and continues into microphone capture', async ({ page }) => {
+test('Gemini speech failure switches to device voice without enabling microphone capture', async ({ page }) => {
   await mockSpeech(page);
   await mockChat(page, 'Explain idempotency.');
   await page.route('**/api/tech-buddy/speech', route => route.fulfill({ status: 503, json: { error: 'Speech provider unavailable' } }));
@@ -161,10 +164,11 @@ test('Gemini speech failure switches to device voice and continues into micropho
   await expect(buddy.getByText('Natural speech is unavailable. Switched to your device voice.', { exact: true })).toBeVisible();
   await expect(buddy.getByLabel('Speech voice', { exact: true })).toHaveValue('device');
   await page.evaluate(() => window.__utterance.onend());
-  await expect(buddy.getByRole('button', { name: 'Mute microphone' })).toBeVisible();
+  expect(await page.evaluate(() => window.__mediaEvents)).not.toContain('listen');
+  await expect(buddy.getByRole('button', { name: 'Start microphone for answer' })).toBeVisible();
 });
 
-test('automatic listening keeps text entered while the question is being read', async ({ page }) => {
+test('explicit microphone capture keeps text entered while the question is being read', async ({ page }) => {
   await mockSpeech(page);
   await mockChat(page, 'Explain idempotency.');
   const buddy = await openBuddy(page);
@@ -173,6 +177,8 @@ test('automatic listening keeps text entered while the question is being read', 
   await expect(buddy.getByRole('article', { name: 'Interviewer question' })).toContainText('Explain idempotency.');
   await buddy.getByLabel('Your interview answer', { exact: true }).fill('Typed context before speaking.');
   await page.evaluate(() => window.__utterance.onend());
+  expect(await page.evaluate(() => window.__mediaEvents)).not.toContain('listen');
+  await buddy.getByRole('button', { name: 'Start microphone for answer' }).click();
   await page.evaluate(() => {
     const result = [{ transcript: 'and a safe retry.' }]; result.isFinal = true;
     window.__recognition.onresult({ results: [result] });
@@ -377,4 +383,30 @@ test('a Buddy answer can be finished in the regular composer without losing its 
   await page.getByRole('button', { name: 'Open Tech Buddy', exact: true }).click();
   await expect(buddy.getByRole('article', { name: 'Tech Buddy feedback' })).toContainText('8/10');
   expect((await saved(page)).attempts.length).toBe(1);
+});
+
+
+test('offline interview start, replay, and next question never start the microphone implicitly', async ({ page }) => {
+  await mockSpeech(page);
+  await page.goto('/tech-buddy-demo');
+  const buddy = buddyRegion(page);
+  await buddy.getByRole('button', { name: 'Start Buddy interview' }).click();
+  await expect(buddy.getByLabel('Your interview answer', { exact: true })).toBeEnabled();
+  await expect.poll(() => page.evaluate(() => Boolean(window.__utterance))).toBe(true);
+  await page.evaluate(() => window.__utterance.onend());
+  expect(await page.evaluate(() => window.__mediaEvents)).not.toContain('listen');
+  await buddy.getByRole('button', { name: 'Replay question' }).click();
+  await page.evaluate(() => window.__utterance.onend());
+  expect(await page.evaluate(() => window.__mediaEvents)).not.toContain('listen');
+  await submitAnswer(buddy, 'The JDK includes development tools and a runtime; the JVM executes bytecode.');
+  await expect(buddy.getByRole('article', { name: 'Tech Buddy feedback' })).toBeVisible();
+  await buddy.getByRole('button', { name: 'Next Buddy question' }).click();
+  await expect(buddy.getByLabel('Your interview answer', { exact: true })).toBeEnabled();
+  await page.evaluate(() => window.__utterance.onend());
+  expect(await page.evaluate(() => window.__mediaEvents)).not.toContain('listen');
+  await buddy.getByRole('button', { name: 'Start microphone for answer' }).click();
+  expect(await page.evaluate(() => window.__mediaEvents)).toContain('listen');
+  await buddy.getByRole('button', { name: 'Stop listening' }).click();
+  await buddy.getByRole('button', { name: 'End session', exact: true }).click();
+  expect((await page.evaluate(() => window.__mediaEvents)).filter(item => item === 'recognition-abort')).toHaveLength(1);
 });

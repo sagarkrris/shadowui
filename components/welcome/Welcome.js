@@ -73,17 +73,19 @@ export default function Welcome({ practice = { attempts: [] }, onResume, hasDraf
       <section className="practice-panel today-card">
         <p>Today · choose your study time</p><h1>Practise {lastAttempt?.topic || topic || 'your next interview topic'}</h1>
         <p>{lastAttempt?.gaps?.[0] ? `Your last answer: ${lastAttempt.gaps[0]}` : 'Answer one question, review the evidence, and try again.'}</p>
-        <button onClick={() => onStart(lastAttempt?.topic || topic)}>Start practice</button>
-        {hasDraft && <button onClick={onResume}>Resume last session</button>}
+        <button className="practice-primary-action" onClick={hasDraft ? onResume : () => onStart(lastAttempt?.topic || topic)}>{hasDraft ? "Resume last session" : "Start practice"}</button>
+        {hasDraft && <button onClick={() => onStart(lastAttempt?.topic || topic)}>Start practice</button>}
         <p>{summary.completed} completed attempts · {summary.average === null ? 'Not assessed' : `${summary.average}/10 average`}</p>
         <p>{summary.readiness}</p>
         <button onClick={() => onOpenWorkspace?.('javaDigest')}>Explore topics</button>
         <p>Learn: study an explanation · Practice: improve an answer · Mock: timed interview · Review: revisit recorded evidence.</p>
       </section>
       {onPlanChange && <PrepSessionPlan plan={practice.plan} history={practice.planHistory} onNewSession={onNewSession} onChange={onPlanChange} onRecall={onRecall} onRepair={onRepair} hasAttempt={practice.attempts.length > 0} />}
+      <details className="practice-panel practice-explore"><summary>Explore debugging and backend practice</summary>
       <section className="practice-panel" style={{ width: "100%" }}><h2>Production Detective</h2><p>Investigate a five-minute debugging mystery. Follow the evidence, choose a diagnosis, and explore the repair.</p><Link href="/detective">Open the case files →</Link></section>
       <section className="practice-panel" style={{ width: "100%" }}><h2>When Advice Fails</h2><p>Five practical backend field notes on the conditions where familiar advice breaks—and how to verify a safer correction.</p><Link href="/advice-fails">Read the field notes →</Link></section>
       <section className="practice-panel" style={{ width: "100%" }}><h2>Explain This Log</h2><p>Decode fictional stack traces, query plans, thread dumps, and HTTP exchanges without uploading production data.</p><Link href="/explain-log">Open the log reader →</Link></section>
+      </details>
       <details className="practice-panel" style={{ width: '100%' }}><summary>Advanced tools and learning plans</summary>
       <div className="welcome-actions" style={{ display: "flex", gap: 10, marginBottom: 24, flexWrap: "wrap", justifyContent: "center" }}>
         <button className="glass-button" onClick={onStart} disabled={!onStart} aria-label="Start mock interview" style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 18px", border: `1px solid ${theme.accentBorder}`, borderRadius: 10, background: theme.accentSoft, color: theme.accentText, fontSize: 13, fontWeight: 800, cursor: onStart ? "pointer" : "not-allowed", opacity: onStart ? 1 : 0.55 }}>

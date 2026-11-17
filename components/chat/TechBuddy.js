@@ -19,7 +19,6 @@ export default function TechBuddy({ initialSession, config, profile, onChange, o
   const media = useTechBuddyMedia(isAsk ? controller.setAskDraft : controller.setDraft, session.mode === 'demo');
   const [topicDraft, setTopicDraft] = useState(session.topic);
   const answerRef = useRef(null);
-  const answerDraftRef = useRef('');
   const summaryRef = useRef(null);
   const speakNextQuestion = useRef(false);
   const previousQuestionId = useRef(session.current?.id);
@@ -32,20 +31,18 @@ export default function TechBuddy({ initialSession, config, profile, onChange, o
   const canAnswer = session.phase === 'question';
   const canAsk = ['idle', 'review'].includes(session.phase) && !session.pending;
   const spokenReviewId = useRef(lastTurn?.id);
-  const readThenListenRef = useRef(media.readThenListen);
   const speakRef = useRef(media.speak);
   const { stopAll } = media;
   useEffect(() => {
     if (complete) { stopAll(); summaryRef.current?.focus(); }
   }, [complete, stopAll]);
-  useEffect(() => { readThenListenRef.current = media.readThenListen; speakRef.current = media.speak; }, [media.readThenListen, media.speak]);
-  useEffect(() => { answerDraftRef.current = isAsk ? session.askDraft : session.draft; }, [isAsk, session.askDraft, session.draft]);
+  useEffect(() => { speakRef.current = media.speak; }, [media.speak]);
   useEffect(() => { if (canAnswer || isAsk) answerRef.current?.focus(); }, [canAnswer, isAsk, currentQuestionId]);
   useEffect(() => {
     if (!speakNextQuestion.current || !currentQuestionText || currentQuestionId === previousQuestionId.current) return;
     speakNextQuestion.current = false;
     previousQuestionId.current = currentQuestionId;
-    readThenListenRef.current(currentQuestionText, () => answerDraftRef.current);
+    speakRef.current(currentQuestionText);
   }, [currentQuestionId, currentQuestionText]);
   useEffect(() => {
     if (isAsk || !lastTurn || !['review', 'complete'].includes(session.phase) || spokenReviewId.current === lastTurn.id) return;
@@ -135,7 +132,7 @@ export default function TechBuddy({ initialSession, config, profile, onChange, o
             <button disabled={busy || complete || Boolean(session.pending) || (!isAsk && !canAnswer)} aria-pressed={media.listening} onClick={() => media.listen(isAsk ? session.askDraft : session.draft)}>{media.listening ? 'Mute microphone' : isAsk ? 'Start microphone for question' : 'Start microphone for answer'}</button>
             {media.listening && <button onClick={media.stopRecognition}>Stop listening</button>}
           </div>}
-          <p className={styles.status}>Speech recognition may use your browser&apos;s speech service. Review the transcript before submitting.</p>
+          <p className={styles.status}>The microphone stays off until you select Start microphone. You can type your answer instead. Speech recognition may use your browser&apos;s speech service. Review the transcript before submitting.</p>
         </article>
       </div>
       {!complete && <form onSubmit={submit} className={styles.form}>

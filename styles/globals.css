@@ -1381,3 +1381,52 @@ a:focus-visible,
 .reader-copy-code { margin: 8px 0 18px; }
 .reader-article-scroll :is(h2,h3)[id] { scroll-margin-top: 15px; }
 @media print { .reader-tools, .reader-section-actions, .reader-copy-code { display: none; } .reader-article-scroll, .reader-article-scroll .tutorial-article-page { overflow: visible; height: auto; } }
+
+/* Practice keeps recovery and the current answer in view; optional tools unfold on demand. */
+.practice-sync-conflict { flex: 0 0 auto; max-height: 35dvh; overflow: auto; padding: 8px 12px; border: 1px solid #8b5cf6; border-radius: 8px; font-size: 12px; }
+.practice-sync-conflict summary { cursor: pointer; font-weight: 650; }
+.practice-sync-conflict h2 { font-size: 15px; margin-top: 12px; }
+.practice-sync-conflict button { padding: 8px; margin: 4px; }
+.practice-request-recovery { width: 100%; padding: 10px 12px; border: 1px solid #8b5cf6; border-radius: 8px; background: var(--tech-accent-muted, rgba(139,92,246,.08)); }
+.practice-request-recovery p { margin: 0 0 6px; }
+.practice-request-error { display: block; margin-top: 6px; overflow-wrap: anywhere; }
+.practice-request-recovery small { display: block; line-height: 1.5; }
+.practice-context .practice-current-question { max-height: 72px; }
+.practice-primary-action { background: #175cd3 !important; color: white !important; border-color: #175cd3 !important; font-weight: 700; }
+.practice-explore > .practice-panel { margin: 8px 0; border: 0; padding: 8px 0; }
+.practice-secondary-tools .post-answer-tools { max-width: 100%; }
+.screen-modal-overlay { --screen-text: #e2e8f0; --screen-muted: #b6c2d2; --screen-bg: #17212f; color: var(--screen-text); }
+.screen-modal-overlay.theme-light { --screen-text: #172b45; --screen-muted: #4b6078; --screen-bg: #fff; }
+.screen-modal-panel { background: var(--screen-bg); color: var(--screen-text); box-shadow: 0 24px 80px rgba(0,0,0,.3); box-sizing: border-box; }
+.screen-modal-panel p, .screen-modal-panel label, .screen-modal-panel span, .screen-modal-panel input, .screen-modal-panel button, .screen-modal-panel i { color: var(--screen-text) !important; }
+.screen-modal-panel .glass-card, .screen-modal-panel .glass-input, .screen-modal-panel .glass-button { background: transparent !important; border-color: #8293a8 !important; box-shadow: none; }
+.screen-modal-panel .glass-input::placeholder { color: var(--screen-muted); }
+.screen-modal-panel .screen-modal-help { color: var(--screen-muted) !important; font-size: 12px; line-height: 1.6; margin: 10px 0; }
+.screen-modal-panel .screen-modal-error { color: var(--screen-text) !important; border-left: 3px solid #e879f9; padding: 8px 12px; font-size: 13px; }
+.screen-modal-panel button { min-height: 38px; }
+.screen-modal-panel button:disabled { opacity: .55; cursor: not-allowed !important; }
+.screen-modal-panel .screen-modal-submit:not(:disabled) { background: #175cd3 !important; color: #fff !important; }
+.screen-modal-panel .screen-modal-submit:not(:disabled) i { color: #fff !important; }
+.screen-modal-panel .icon-btn { background: transparent; border: 1px solid #8293a8; width: 36px; }
+@media (max-width: 600px) {
+  .screen-modal-overlay { padding: 12px !important; }
+  .screen-modal-panel { padding: 16px !important; max-height: calc(100dvh - 24px) !important; }
+  .practice-request-recovery button { margin-left: 0; }
+}
+.practice-shortcut-menu { position: relative; align-self: center; font-size: 12px; }
+.practice-shortcut-menu summary { cursor: pointer; padding: 10px; }
+.practice-shortcut-menu[open] { border: 1px solid #8293a8; border-radius: 8px; padding: 6px; }
+.practice-shortcut-menu[open] a, .practice-shortcut-menu[open] button { display: block; padding: 9px 12px; }
+
+.prep-control-field { display: grid; gap: 4px; color: inherit; font-size: 12px; font-weight: 600; }
+.prep-control-field select { width: 100%; min-width: 0; }
+.rewrite-guidance { padding: 8px; border-left: 2px solid currentColor; line-height: 1.6; }
+/* A fixed shell must become scrollable when its controls exceed the viewport. */
+@media (max-height: 600px) {
+  .app-shell > main { overflow-y: auto !important; overflow-x: hidden !important; }
+  .app-shell .app-topbar, .app-shell .session-actions { flex-shrink: 0; }
+  .app-shell .chat-scroll { flex: 1 0 160px !important; min-height: 160px !important; overflow: auto !important; }
+  .app-shell .composer-footer { flex-shrink: 0; }
+  .app-shell .composer-tools { flex-direction: row !important; flex-wrap: wrap; }
+  .app-shell .composer-footer textarea[aria-label="Message composer"] { height: 42px; min-height: 42px; }
+}

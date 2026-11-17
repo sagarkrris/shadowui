@@ -11,7 +11,7 @@
 .textView .nodes button { display:grid; gap:5px; width:100%; height:100%; padding:12px; border:1px solid #71839a; border-radius:8px; background:#fffdf8; color:#20364c; text-align:left; font:inherit; cursor:pointer; }
 .textView .nodes button[aria-pressed="true"] { border:2px solid #20364c; box-shadow:0 0 0 2px #b9dafa; }
 .textView .nodes button:focus-visible { outline:3px solid #4484c8; outline-offset:3px; }
-.textView .nodes span,.textView .connections span { color:#40586d; font-size:12px; line-height:1.5; }
+.textView .nodes span { color:#40586d; font-size:12px; line-height:1.5; }
 .textView .connections { padding-left:24px; font-size:13px; line-height:1.7; }
 .textView .connections li { padding:5px 0; overflow-wrap:anywhere; }
-.textView .connections span { display:block; }
+.textView .connections span { display:block; color:inherit; font-size:12px; line-height:1.5; }

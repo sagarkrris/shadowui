@@ -35,7 +35,7 @@ export function getServerSideProps({ res }) {
     ...["/explore", "/learn/spring-transactions", "/weekly", ...WEEKLY_CHALLENGES.map(issue => `/weekly/${issue.slug}`)].map(path => ({ loc: `${SITE_URL}${path}`, changefreq: "weekly", priority: "0.8" })),
     ...SCENARIO_SEEDS.map(scenario => ({ loc: `${SITE_URL}/scenarios/${scenario.id}`, changefreq: "monthly", priority: "0.7" })),
     ...["/symptoms", ...SYMPTOMS.map(entry => `/symptoms/${entry.slug}`)].map(path => ({ loc: `${SITE_URL}${path}`, changefreq: "monthly", priority: "0.8" })),
-    ...["/time-machine/database-decisions", "/build/java-dependency-injection", "/series", "/editorial", "/corrections", "/requests", "/digest", ...READING_SERIES.map(s => `/series/${s.slug}`)].map(path => ({ loc: `${SITE_URL}${path}`, changefreq: "weekly", priority: "0.7" })),
+    ...["/capabilities", "/diagnostic", "/progress", "/time-machine/database-decisions", "/build/java-dependency-injection", "/series", "/editorial", "/corrections", "/requests", "/digest", ...READING_SERIES.map(s => `/series/${s.slug}`)].map(path => ({ loc: `${SITE_URL}${path}`, changefreq: "weekly", priority: "0.7" })),
     { loc: `${SITE_URL}/detective`, changefreq: "weekly", priority: "0.9" },
     ...DETECTIVE_CASES.map(incident => ({ loc: `${SITE_URL}/detective/${incident.slug}`, changefreq: "monthly", priority: "0.8" })),
     { loc: `${SITE_URL}/advice-fails`, changefreq: "weekly", priority: "0.9" },

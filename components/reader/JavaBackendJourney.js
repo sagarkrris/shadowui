@@ -1,3 +1,4 @@
+import { trackEvent } from '../../lib/analytics.mjs';
 import useHubProgress from "../learning/useHubProgress";
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -20,7 +21,7 @@ export default function JavaBackendJourney() {
   function toggle(id) {
     const next = done.includes(id) ? done.filter(item => item !== id) : [...done, id];
     setDone(next);
-    try { localStorage.setItem(BACKEND_ROADMAP_KEY, JSON.stringify(next)); setMessage('Progress saved in this browser.'); }
+    try { localStorage.setItem(BACKEND_ROADMAP_KEY, JSON.stringify(next)); if (done.length < total && next.length === total) trackEvent('path_completed',{value:'java-backend'}); setMessage('Progress saved in this browser.'); }
     catch (error) { setMessage(notebookSaveMessage(error, 'Could not save progress. Your checks will last only for this visit.')); }
   }
   const next = nextRoadmapActivity(done);

@@ -63,7 +63,7 @@ function OverviewPanel({ overview, accent }) {
   return (
     <section style={responsiveGrid(180, 10)}>
       <div style={{ background: "rgba(0,0,0,.16)", border: `1px solid ${accent}33`, borderRadius: 8, display: "grid", gap: 6, padding: 12 }}>
-        <span style={{ color: "#9fb0c7", fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Offer readiness</span>
+        <span style={{ color: "#9fb0c7", fontSize: 10.5, fontWeight: 900, textTransform: "uppercase" }}>Preparation checklist</span>
         <strong style={{ color: accent, fontSize: 34, lineHeight: 1 }}>{overview.score}%</strong>
         <span style={{ color: "#dbeafe", fontSize: 11.4, lineHeight: 1.45 }}>{overview.label}</span>
       </div>

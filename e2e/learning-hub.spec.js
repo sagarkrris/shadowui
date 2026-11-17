@@ -33,7 +33,7 @@ test('lesson completion and weakness flow from a public lesson to the shared map
   await expect(page.getByText(/1 of \d+ catalogue lessons complete · 1 lessons marked/)).toBeVisible();
   await expect(page.getByRole('link',{name:/Revisit/})).toBeVisible();
   await page.getByRole('searchbox',{name:'Search courses and lessons'}).fill('Java Money');
-  await expect(page.getByText('1 courses and collections')).toBeVisible();
+  await expect(page.getByText('1 catalog entry')).toBeVisible();
   await page.getByText('Ordered lessons and checkpoints',{exact:true}).click();
   await expect(page.getByText(/· complete · revisit/)).toBeVisible();
 });

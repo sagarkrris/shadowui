@@ -5,6 +5,7 @@ import { withApiObservability } from "../../lib/apiObservability.mjs";
 import { deliverAuthEmail } from "../../lib/authDelivery.mjs";
 
 async function handler(req, res) {
+  res.setHeader("Cache-Control", "private, no-store, max-age=0");
   const user = await getUserBySession(sessionTokenFromRequest(req));
   if (!user) return res.status(401).json({ error: "Authentication required." });
   if (req.method !== "GET" && !(await requireCsrf(req))) return res.status(403).json({ error: "CSRF validation failed." });

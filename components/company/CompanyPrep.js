@@ -356,7 +356,7 @@ export default function CompanyPrep({ theme, weakSpots, mockScores = [], message
                 ["System Design", prep.systemDesign.length, "ti-topology-star"],
                 ["Behavioral", prep.behavioral.length, "ti-users"],
                 ["Resources", prep.resources.length, "ti-link"],
-                ["Readiness", `${readiness.score}%`, "ti-gauge"],
+                ["Checklist", `${readiness.score}%`, "ti-gauge"],
               ].map(([label, value, icon]) => (
                 <span key={label}><i aria-hidden="true" className={`ti ${icon}`} />{label} <strong>{value}</strong></span>
               ))}
@@ -568,7 +568,7 @@ export default function CompanyPrep({ theme, weakSpots, mockScores = [], message
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
                 <div>
                   <h2 style={{ color: theme.accentText, fontSize: 13, display: "flex", alignItems: "center", gap: 7, marginBottom: 4 }}>
-                    <i className="ti ti-gauge" />Company Readiness
+                    <i className="ti ti-gauge" />Company Preparation Checklist
                   </h2>
                   <p style={{ color: "#9ca3af", fontSize: 11.5, lineHeight: 1.45 }}>{readiness.label}</p>
                 </div>

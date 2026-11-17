@@ -8,7 +8,6 @@ import { SITE_URL } from "../lib/siteUrl.mjs";
 import { useEffect } from "react";
 import "../styles/globals.css";
 import "../styles/corporate.css";
-import { SpeedInsights } from '@vercel/speed-insights/next';
 import { installIconTooltips } from "../lib/iconTooltips.mjs";
 import BrandWatermark from "../components/BrandWatermark";
 import { trackEvent } from "../lib/analytics.mjs";
@@ -48,7 +47,6 @@ export default function App({ Component, pageProps, router }) {
       {bookRoute && <ArticleBookReader {...bookRoute} />}
       {(isReaderArticle || /^\/(?:build|detective)\/.+/.test(articlePath)) && <LearningPosition key={articlePath} path={articlePath} />}
       <BrandWatermark publicPage={router.pathname !== '/practice'} />
-      <SpeedInsights />
     </>
   );
 }

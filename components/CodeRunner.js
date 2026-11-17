@@ -1,13 +1,29 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CODE_RUNNER_FEATURE_STATE, JAVA_LANGUAGE, JAVA_VERSIONS } from "../lib/codeRunner.mjs";
+import { downloadText } from '../lib/downloadText.mjs';
 
-export default function CodeRunner({ theme }) {
-  const [code, setCode] = useState(JAVA_LANGUAGE.starter);
+export default function CodeRunner({ theme = {}, initialCode = JAVA_LANGUAGE.starter, initialJavaVersion = 21, draft, onDraftChange }) {
+  const [localCode, setLocalCode] = useState(initialCode);
+  const code = draft ?? localCode;
+  const setCode = value => { setLocalCode(value); onDraftChange?.(value); };
   const [stdin, setStdin] = useState("");
-  const [javaVersion, setJavaVersion] = useState(21);
+  const [javaVersion, setJavaVersion] = useState(initialJavaVersion);
+  const [health, setHealth] = useState(null);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState("Choose a Java version, then run your program.");
+  useEffect(() => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => {
+      controller.abort();
+      setHealth({ runnable: false, summary: 'Online runner status timed out. Download Main.java and run it locally.' });
+    }, 10000);
+    fetch('/api/run-code/health', { signal: controller.signal }).then(response => response.ok ? response.json() : Promise.reject(new Error('Runner status unavailable'))).then(setHealth).catch(error => {
+      if (error.name !== 'AbortError') setHealth({ runnable: false, summary: 'Online runner status could not be checked. Download Main.java and run it locally.' });
+    }).finally(() => clearTimeout(timeout));
+    return () => { clearTimeout(timeout); controller.abort(); };
+  }, []);
   async function runCode() {
+    if (!health?.runnable || running) return;
     setRunning(true); setResult("Compiling and running in an isolated container…");
     try {
       const response = await fetch("/api/run-code", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ language: "java", javaVersion, code, stdin }) });
@@ -18,5 +34,5 @@ export default function CodeRunner({ theme }) {
     } catch (error) { setResult(`Error: ${error.message}`); } finally { setRunning(false); }
   }
   const inputStyle = { width: "100%", resize: "vertical", border: `1px solid ${theme.accentBorder}`, borderRadius: 8, background: "rgba(2,6,23,0.55)", color: "#e5e7eb", padding: 10, fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", fontSize: 12, lineHeight: 1.55, outline: "none" };
-  return <section style={{ width: "100%", maxWidth: 980, display: "grid", gap: 12, marginTop: 22, textAlign: "left" }}><div className="glass-card" style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 12 }}><div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 12 }}><div><div style={{ color: theme.accentText, fontSize: 12, fontWeight: 900 }}><i className="ti ti-terminal-2" /> Java Code Runner</div><p style={{ color: "#9ca3af", fontSize: 12 }}>{CODE_RUNNER_FEATURE_STATE.summary}</p></div><label style={{ color: theme.accentText, fontSize: 11, fontWeight: 800 }}>JDK <select aria-label="Java version" value={javaVersion} onChange={(event) => setJavaVersion(Number(event.target.value))}>{JAVA_VERSIONS.map((version) => <option key={version} value={version}>Java {version}</option>)}</select></label></div><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", gap: 10 }}><label style={{ display: "grid", gap: 6 }}><span style={{ color: "#8b949e", fontSize: 11, fontWeight: 850 }}>Main.java</span><textarea value={code} onChange={(event) => setCode(event.target.value)} spellCheck={false} rows={12} style={{ ...inputStyle, minHeight: 220 }} /></label><div style={{ display: "grid", gap: 10 }}><label style={{ display: "grid", gap: 6 }}><span style={{ color: "#8b949e", fontSize: 11, fontWeight: 850 }}>stdin</span><textarea value={stdin} onChange={(event) => setStdin(event.target.value)} rows={5} style={{ ...inputStyle, minHeight: 90 }} /></label><button className="glass-button" type="button" onClick={runCode} disabled={running} style={{ minHeight: 36, border: `1px solid ${theme.accentBorder}`, borderRadius: 8, color: theme.accentText, background: theme.accentMuted, fontSize: 12, fontWeight: 900, cursor: running ? "wait" : "pointer" }}><i className="ti ti-player-play" /> {running ? "Running…" : "Run Java"}</button><pre aria-live="polite" style={{ minHeight: 132, maxHeight: 260, overflow: "auto", whiteSpace: "pre-wrap", border: `1px solid ${theme.accentBorder}`, borderRadius: 8, background: "rgba(2,6,23,0.48)", color: "#d1d5db", padding: 10, fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", fontSize: 11.5, lineHeight: 1.55 }}>{result}</pre></div></div></div></section>;
+  return <section aria-label="Java Code Runner" style={{ width: "100%", maxWidth: 980, display: "grid", gap: 12, marginTop: 22, textAlign: "left" }}><div className="glass-card" style={{ border: `1px solid ${theme.accentBorder}`, borderRadius: 8, padding: 12 }}><div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 12 }}><div><div style={{ color: theme.accentText, fontSize: 12, fontWeight: 900 }}><i className="ti ti-terminal-2" /> Java Code Runner</div><p style={{ color: "#9ca3af", fontSize: 12 }}>{health ? health.summary || (health.runnable ? CODE_RUNNER_FEATURE_STATE.summary : 'Online Java execution is unavailable. Download Main.java and use javac --release ' + javaVersion + ' Main.java, then java Main.') : 'Checking online runner availability. Local download is always available.'}</p></div><label style={{ color: theme.accentText, fontSize: 11, fontWeight: 800 }}>JDK <select aria-label="Java version" value={javaVersion} onChange={(event) => setJavaVersion(Number(event.target.value))}>{JAVA_VERSIONS.map((version) => <option key={version} value={version}>Java {version}</option>)}</select></label></div><p>Standard-library Java only. For frameworks or external services, use a configured local project. Download your file and run <code>javac --release {javaVersion} Main.java</code>, then <code>java Main</code>.</p><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", gap: 10 }}><label style={{ display: "grid", gap: 6 }}><span style={{ color: "#8b949e", fontSize: 11, fontWeight: 850 }}>Main.java</span><textarea value={code} onChange={(event) => setCode(event.target.value)} spellCheck={false} rows={12} style={{ ...inputStyle, minHeight: 220 }} /></label><div style={{ display: "grid", gap: 10 }}><label style={{ display: "grid", gap: 6 }}><span style={{ color: "#8b949e", fontSize: 11, fontWeight: 850 }}>stdin</span><textarea value={stdin} onChange={(event) => setStdin(event.target.value)} rows={5} style={{ ...inputStyle, minHeight: 90 }} /></label><button className="glass-button" type="button" onClick={runCode} disabled={running || !health?.runnable} style={{ minHeight: 36, border: `1px solid ${theme.accentBorder}`, borderRadius: 8, color: theme.accentText, background: theme.accentMuted, fontSize: 12, fontWeight: 900, cursor: running ? "wait" : "pointer" }}><i aria-hidden="true" className="ti ti-player-play" /> {running ? "Running…" : "Run Java"}</button><button className="glass-button" type="button" onClick={() => downloadText(code, "Main.java")}>Download Main.java</button><pre aria-live="polite" style={{ minHeight: 132, maxHeight: 260, overflow: "auto", whiteSpace: "pre-wrap", border: `1px solid ${theme.accentBorder}`, borderRadius: 8, background: "rgba(2,6,23,0.48)", color: "#d1d5db", padding: 10, fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", fontSize: 11.5, lineHeight: 1.55 }}>{result}</pre></div></div></div></section>;
 }

@@ -25,7 +25,7 @@ try {
   for (const key of Object.keys(env)) if (key.startsWith('E2E_')) delete env[key];
   Object.assign(env, { E2E_PRODUCTION: '1', E2E_PORT: '3001', PLAYWRIGHT_HTML_OUTPUT_DIR: join(output, 'html'), PLAYWRIGHT_JSON_OUTPUT_FILE: join(output, 'browser.json'), FORCE_COLOR: '0', NODE_DISABLE_COLORS: '1' });
   runTechBlogGate({ commands: techBlogGateCommands(output), cwd: root, env, fingerprint: () => sourceFingerprint(root), report, persist, output });
-  console.log(`Tech-blog gate PASSED for ${report.courses.length} courses. Evidence: ${join(output, 'report.json')}`);
+  console.log(`Tech-blog gate PASSED for ${report.courses.length} registered catalog entries. Evidence: ${join(output, 'report.json')}`);
 } catch (error) {
   report.status = 'failed';
   report.error = error.message;

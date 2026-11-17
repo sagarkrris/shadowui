@@ -2,7 +2,7 @@ import { SITE_URL } from "../../lib/siteUrl.mjs";
 import ChapterGuidance from "./ChapterGuidance";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from 'next/link';
 import {
   CSES_JAVA_PARTS,
@@ -40,6 +40,8 @@ import JavaDigestTutorialCard from "./JavaDigestTutorialCard";
 import MechanismDiagram from "./MechanismDiagram";
 import JavaDigestReviewQueue from "./JavaDigestReviewQueue";
 import TechBlogReader from "./TechBlogReader";
+import CodeRunner from "../CodeRunner";
+import { buildJavaProgramRunner } from "../../lib/javaProgramRunner.mjs";
 
 const wrap = {
   minWidth: 0,
@@ -670,6 +672,10 @@ export default function JavaDigest({ theme = {}, onAction, onJavaProgressChange,
   const [selectedRefresherSection, setSelectedRefresherSection] = useState("all");
   const [randomQuestionId, setRandomQuestionId] = useState("");
   const [expandedRefresherQuestionId, setExpandedRefresherQuestionId] = useState("");
+  const [runnerProgram, setRunnerProgram] = useState(null);
+  const [runnerDrafts, setRunnerDrafts] = useState({});
+  const runnerRef = useRef(null);
+  useEffect(() => { if (runnerProgram && activeView === "Practice Lab") runnerRef.current?.focus(); }, [runnerProgram, activeView]);
   const [practiceQuestionId, setPracticeQuestionId] = useState("");
   const [practiceResponse, setPracticeResponse] = useState("");
   const [practiceAnswerRevealed, setPracticeAnswerRevealed] = useState(false);
@@ -1233,7 +1239,13 @@ export default function JavaDigest({ theme = {}, onAction, onJavaProgressChange,
             <h3 style={{ ...wrap, color: "var(--jd-text)", fontSize: 15.5, lineHeight: 1.25 }}>Practice one small thing at a time</h3>
             <p style={{ ...wrap, color: "var(--jd-text-muted)", fontSize: 11.6, lineHeight: 1.5 }}>Implement a program, state the invariant and complexity, then use a quiz question to check whether the concept is understood—not just memorized.</p>
           </section>
-          <div style={responsiveGrid(280, 9)}>{JAVA_PROGRAM_EXAMPLES.map((program) => <article key={program.id} className="java-digest-card" style={{ ...wrap, borderRadius: 8, display: "grid", gap: 6, padding: 10 }}><div style={{ color: accent, fontSize: 10.2, fontWeight: 900, textTransform: "uppercase" }}>{program.level}</div><h4 style={{ ...wrap, color: "var(--jd-text)", fontSize: 13, margin: 0 }}>{program.title}</h4><p style={{ ...wrap, color: "var(--jd-text-soft)", fontSize: 11.2, lineHeight: 1.45, margin: 0 }}>{program.prompt}</p><div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}><ChipButton label={learningProgress.completedIds.has(program.id) ? "Completed" : "Mark complete"} icon="ti-check" active={learningProgress.completedIds.has(program.id)} accent={accent} onClick={() => toggleLearningStatus("completedPrograms", program.id)} /><ChipButton label={learningProgress.bookmarkedIds.has(program.id) ? "Bookmarked" : "Bookmark"} icon="ti-bookmark" active={learningProgress.bookmarkedIds.has(program.id)} accent="var(--jd-warning)" onClick={() => toggleLearningStatus("bookmarkedPrograms", program.id)} /><button type="button" className="glass-button" onClick={() => onAction?.(`Help me implement ${program.title} in Java. ${program.prompt}`, { type: "javaCodeRunner", program })} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "var(--jd-text)", fontSize: 10.5, padding: "5px 7px" }}><i className="ti ti-player-play" style={{ color: accent, marginRight: 4 }} />Open runner</button></div></article>)}</div>
+          {runnerProgram && <section ref={runnerRef} tabIndex={-1} aria-label="Java practice runner" style={{ ...wrap, scrollMarginTop: 24 }}>
+            <h3>{runnerProgram.title}</h3>
+            <p>{runnerProgram.prompt}</p>
+            <p>{buildJavaProgramRunner(runnerProgram).instructions}</p>
+            <CodeRunner key={runnerProgram.id} theme={theme} initialCode={buildJavaProgramRunner(runnerProgram).code} initialJavaVersion={17} draft={runnerDrafts[runnerProgram.id]} onDraftChange={code => setRunnerDrafts(previous => ({ ...previous, [runnerProgram.id]: code }))} />
+          </section>}
+          <div style={responsiveGrid(280, 9)}>{JAVA_PROGRAM_EXAMPLES.map((program) => <article key={program.id} className="java-digest-card" style={{ ...wrap, borderRadius: 8, display: "grid", gap: 6, padding: 10 }}><div style={{ color: accent, fontSize: 10.2, fontWeight: 900, textTransform: "uppercase" }}>{program.level}</div><h4 style={{ ...wrap, color: "var(--jd-text)", fontSize: 13, margin: 0 }}>{program.title}</h4><p style={{ ...wrap, color: "var(--jd-text-soft)", fontSize: 11.2, lineHeight: 1.45, margin: 0 }}>{program.prompt}</p><div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}><ChipButton label={learningProgress.completedIds.has(program.id) ? "Completed" : "Mark complete"} icon="ti-check" active={learningProgress.completedIds.has(program.id)} accent={accent} onClick={() => toggleLearningStatus("completedPrograms", program.id)} /><ChipButton label={learningProgress.bookmarkedIds.has(program.id) ? "Bookmarked" : "Bookmark"} icon="ti-bookmark" active={learningProgress.bookmarkedIds.has(program.id)} accent="var(--jd-warning)" onClick={() => toggleLearningStatus("bookmarkedPrograms", program.id)} /><button type="button" className="glass-button" onClick={() => setRunnerProgram(program)} style={{ border: `1px solid ${accent}55`, borderRadius: 7, color: "var(--jd-text)", fontSize: 10.5, padding: "5px 7px" }}><i aria-hidden="true" className="ti ti-player-play" style={{ color: accent, marginRight: 4 }} />Open runner</button></div></article>)}</div>
           <div style={{ display: "grid", gap: 8 }}>{JAVA_QUIZ_BANK.map((quiz) => <details key={quiz.id} style={{ ...wrap, background: "var(--jd-surface-subtle)", border: "1px solid var(--jd-border)", borderRadius: 8, padding: "9px 10px" }}><summary style={{ color: "var(--jd-text)", cursor: "pointer", fontSize: 11.8, fontWeight: 800 }}>{quiz.topic}: {quiz.question}</summary><p style={{ color: "var(--jd-text-soft)", fontSize: 11.2, lineHeight: 1.5, margin: "7px 0 0" }}><b style={{ color: accent }}>Answer:</b> {quiz.answer}</p><StarAnswer story={buildStarFrame(quiz.topic, quiz.answer)} accent={accent} label="How to frame it in STAR" /><div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 7 }}><ChipButton label={learningProgress.completedIds.has(quiz.id) ? "Completed" : "Mark complete"} icon="ti-check" active={learningProgress.completedIds.has(quiz.id)} accent={accent} onClick={() => toggleLearningStatus("completedQuizzes", quiz.id)} /><ChipButton label={learningProgress.bookmarkedIds.has(quiz.id) ? "Bookmarked" : "Bookmark"} icon="ti-bookmark" active={learningProgress.bookmarkedIds.has(quiz.id)} accent="var(--jd-warning)" onClick={() => toggleLearningStatus("bookmarkedQuizzes", quiz.id)} /></div></details>)}</div>
         </div>
       )}

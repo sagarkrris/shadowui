@@ -65,3 +65,83 @@ test('design versions restore user components and assumptions after refresh', as
 test('executable DSA handles empty input and saves independent progress states', async ({ page }) => {
   await gotoSeededApp(page, { activeTab: 'dsaLab', homeDemoSeen: true }); await page.getByText('Executable DSA practice · input, code and trace together', { exact: true }).click(); await page.getByLabel('Input JSON', { exact: true }).fill('[]'); await expect(page.getByText('Output: null', { exact: true })).toBeVisible(); await page.getByLabel('Understood (self-reported)', { exact: true }).check(); await expect(page.getByLabel('Solved independently (self-reported)', { exact: true })).not.toBeChecked(); await page.reload(); await page.getByText('Executable DSA practice · input, code and trace together', { exact: true }).click(); await expect(page.getByLabel('Understood (self-reported)', { exact: true })).toBeChecked(); await expect(page.getByLabel('Input JSON', { exact: true })).toHaveValue('[]');
 });
+
+test('failed evaluation keeps diagnostics after reload and lets the user continue without losing the answer', async ({ page }) => {
+  await page.route('**/api/evaluate', route => route.fulfill({ status: 504, contentType: 'text/html', headers: { 'x-request-id': 'timeout-fixture' }, body: '<h1>Gateway timeout</h1>' }));
+  await seed(page); await start(page); await answer(page);
+  const recovery = page.getByRole('region', { name: 'Unfinished request' });
+  await expect(recovery).toContainText('AI evaluation timed out');
+  await expect(recovery).toContainText('timeout-fixture');
+  await page.reload();
+  await expect(recovery).toContainText('timeout-fixture');
+  await page.getByRole('button', { name: 'Keep answer and continue', exact: true }).click();
+  await expect(recovery).toHaveCount(0);
+  await expect(page.getByRole('article', { name: 'Your message' }).filter({ hasText: 'I use a lock' })).toHaveCount(1);
+  expect((await attempts(page)).length).toBe(0);
+  await page.getByLabel('Message composer').fill('Explain atomicity instead.');
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(page.getByRole('article', { name: 'Your message' }).filter({ hasText: 'Explain atomicity instead.' })).toBeVisible();
+});
+
+test('screen analysis is readable in light mode, validates uploads, and sends JPEG with its actual MIME type', async ({ page }) => {
+  await seed(page);
+  // The modal lives outside the themed app shell and must carry its own theme.
+  await page.getByRole('button', { name: 'Analyze Screen', exact: true }).last().click();
+  const modal = page.getByRole('dialog', { name: 'Analyze Screen' });
+  await expect(modal).toBeVisible();
+  await expect(modal).toHaveClass(/theme-light/);
+  const colors = await modal.locator('.screen-modal-panel').evaluate(element => ({ foreground: getComputedStyle(element).color, background: getComputedStyle(element).backgroundColor }));
+  expect(colors.background).toBe('rgb(255, 255, 255)');
+  expect(colors.foreground).toBe('rgb(23, 43, 69)');
+  await expect(modal.getByRole('button', { name: 'Analyze with AI', exact: true })).toBeDisabled();
+  await modal.getByLabel('Screenshot image').setInputFiles({ name: 'bad.svg', mimeType: 'image/svg+xml', buffer: Buffer.from('<svg/>') });
+  await expect(modal.getByRole('alert')).toHaveText('Choose a PNG, JPEG, or WebP image.');
+  const image = await page.evaluate(() => { const canvas = document.createElement('canvas'); canvas.width = 20; canvas.height = 20; return canvas.toDataURL('image/jpeg').split(',')[1]; });
+  await modal.getByLabel('Screenshot image').setInputFiles({ name: 'capture.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(image, 'base64') });
+  await expect(modal.getByRole('img', { name: 'Screenshot preview' })).toBeVisible();
+  await expect(modal.getByRole('button', { name: 'Analyze with AI', exact: true })).toBeEnabled();
+  let mimeType;
+  await page.route('**/api/analyze-screen', route => { mimeType = route.request().postDataJSON().mimeType; return route.fulfill({ contentType: 'text/event-stream', body: 'data: {"text":"The image shows a blank canvas."}\n\ndata: [DONE]\n\n' }); });
+  await modal.getByRole('button', { name: 'Analyze with AI', exact: true }).click();
+  await expect(page.getByRole('article', { name: 'InterviewIQ response' }).filter({ hasText: 'The image shows a blank canvas.' })).toBeVisible();
+  expect(mimeType).toBe('image/jpeg');
+});
+
+test('screen dialog fits a narrow viewport and keeps close and upload controls reachable', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 600 });
+  await seed(page);
+  await page.getByRole('button', { name: 'Analyze Screen', exact: true }).last().click();
+  const modal = page.getByRole('dialog', { name: 'Analyze Screen' });
+  await expect(modal.getByRole('button', { name: 'Upload Image', exact: true })).toBeVisible();
+  const bounds = await modal.locator('.screen-modal-panel').boundingBox();
+  expect(bounds.x).toBeGreaterThanOrEqual(0);
+  expect(bounds.y).toBeGreaterThanOrEqual(0);
+  expect(bounds.y + bounds.height).toBeLessThanOrEqual(600);
+  await modal.getByRole('button', { name: 'Close screen analysis' }).click();
+  await expect(modal).toHaveCount(0);
+});
+
+test('home groups optional practice cards and answer tools stay collapsed until requested', async ({ page }) => {
+  await page.route('**/api/evaluate', route => route.fulfill({ json: { evaluation } }));
+  await seed(page);
+  await expect(page.getByRole('heading', { name: 'Production Detective' })).not.toBeVisible();
+  await page.getByText('Explore debugging and backend practice', { exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Production Detective' })).toBeVisible();
+  await start(page); await answer(page);
+  await expect(page.getByRole('region', { name: 'Practice review' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Polish', exact: true })).not.toBeVisible();
+  await page.getByText('Answer tools · Rewrite and explanation checks', { exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Polish', exact: true })).toBeVisible();
+});
+
+
+test('screen analysis carries the dark theme outside the app shell', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await seed(page);
+  await page.getByRole('button', { name: 'Analyze Screen', exact: true }).last().click();
+  const modal = page.getByRole('dialog', { name: 'Analyze Screen' });
+  await expect(modal).toHaveClass(/theme-dark/);
+  const colors = await modal.locator('.screen-modal-panel').evaluate(element => ({ foreground: getComputedStyle(element).color, background: getComputedStyle(element).backgroundColor }));
+  expect(colors.background).toBe('rgb(23, 33, 47)');
+  expect(colors.foreground).toBe('rgb(226, 232, 240)');
+});
