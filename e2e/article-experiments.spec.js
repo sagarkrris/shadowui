@@ -34,7 +34,7 @@ for (const [id, model] of Object.entries(EXPERIMENTS)) test(`predict, compare an
   expect(await page.evaluate(async () => (await window.axe.run('#experiment', { runOnly: ['wcag2a', 'wcag2aa', 'wcag21aa'] })).violations)).toEqual([]);
   if (id === 'request-timed-out-did-payment-happen') {
     await experiment.getByLabel(model.condition, { exact: true }).scrollIntoViewIfNeeded();
-    await page.screenshot({ path: `/private/tmp/experiment-${test.info().project.name}.png` });
+    await page.screenshot({ path: test.info().outputPath(`experiment-${test.info().project.name}.png`) });
   }
 });
 test('project chapter resumes without losing its saved implementation', async ({ page }) => {

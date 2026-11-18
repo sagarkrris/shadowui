@@ -46,7 +46,7 @@ for (const width of [390, 1440]) test(`advanced workshop and mock review at ${wi
   expect(contents).toContain('1/4 criteria marked');
   expect(contents).toContain('independently test revocation');
   expect(await simulator.evaluate(el => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
-  await page.screenshot({ path: `/private/tmp/advanced-interview-${width}.png` });
+  await page.screenshot({ path: test.info().outputPath(`advanced-interview-${width}.png`) });
   await review.getByRole('button', { name: 'Try this scenario again' }).click();
   await expect(simulator.getByRole('region', { name: 'Interview answer review' })).toHaveCount(0);
   await simulator.getByRole('button', { name: 'Start interview' }).click();

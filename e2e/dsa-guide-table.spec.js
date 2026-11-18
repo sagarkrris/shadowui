@@ -18,7 +18,7 @@ for (const width of [390, 768, 1440]) test(`study guide preserves readable state
   expect(await table.evaluate(el => el.getBoundingClientRect().right)).toBeLessThanOrEqual(width);
   expect(await dialog.evaluate(el => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
   await expect(dialog.getByRole('table', { name: 'Test it yourself', exact: true }).getByRole('columnheader', { name: 'Expected', exact: true })).toBeAttached();
-  await page.screenshot({ path: `/private/tmp/dsa-state-${width}-${test.info().project.name}.png` });
+  await page.screenshot({ path: test.info().outputPath(`dsa-state-${width}-${test.info().project.name}.png`) });
   await dialog.getByRole('link', { name: 'Java solution', exact: true }).click();
   await expect(dialog.getByLabel('Code example')).toBeVisible();
   await dialog.getByRole('button', { name: 'Close study guide' }).click();

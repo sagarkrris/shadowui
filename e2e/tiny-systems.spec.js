@@ -66,7 +66,7 @@ for (const width of [390, 768, 1440]) test(`tiny systems remain readable at ${wi
     if (width === 390) {
       await page.addScriptTag({ path: 'node_modules/axe-core/axe.min.js' });
       expect(await page.evaluate(async () => (await window.axe.run('main', { runOnly: ['wcag2a', 'wcag2aa', 'wcag21aa'] })).violations)).toEqual([]);
-      if (project.slug === 'retry-scheduler') await page.screenshot({ path: '/private/tmp/tiny-system-mobile.png' });
+      if (project.slug === 'retry-scheduler') await page.screenshot({ path: test.info().outputPath('tiny-system-mobile.png') });
     }
   }
 });

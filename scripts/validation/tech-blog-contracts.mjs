@@ -26,6 +26,7 @@ export const JAVA_BLOG_FIXTURES = {
   'java-bulkheads-backpressure': 'BulkheadExampleChecks',
   'java-idempotent-commands': 'IdempotencyCommandExampleChecks',
   'java-transactional-outbox': 'TransactionalOutboxExampleChecks',
+  'java-cursor-pagination': 'CursorPaginationExampleChecks',
 };
 
 export function validateTechBlogCatalog(blogs = listTechBlogs(), assignments = COURSE_DEMO_ASSIGNMENTS, fixtures = JAVA_BLOG_FIXTURES) {

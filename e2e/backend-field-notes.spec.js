@@ -58,7 +58,7 @@ for (const width of [390, 768, 1440]) test(`articles scroll and remain accessibl
     if (width === 390) {
       await page.addScriptTag({ path: 'node_modules/axe-core/axe.min.js' });
       expect(await page.evaluate(async () => (await window.axe.run('main', { runOnly: ['wcag2a', 'wcag2aa', 'wcag21aa'] })).violations)).toEqual([]);
-      if (blog.id === BACKEND_FIELD_NOTES[0].id) { await page.getByRole('heading', { name: 'Follow the annotated trace' }).scrollIntoViewIfNeeded(); await page.screenshot({ path: '/private/tmp/blog-mobile.png' }); }
+      if (blog.id === BACKEND_FIELD_NOTES[0].id) { await page.getByRole('heading', { name: 'Follow the annotated trace' }).scrollIntoViewIfNeeded(); await page.screenshot({ path: test.info().outputPath('blog-mobile.png') }); }
     }
   }
 });

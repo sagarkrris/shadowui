@@ -80,6 +80,6 @@ for (const width of [390, 768, 1440]) test(`expanded shared design remains reada
   await expect(diagram.getByText('Where the obligations came from', { exact: true })).toBeInViewport();
   if (width === 1440) {
     await diagram.scrollIntoViewIfNeeded();
-    await diagram.screenshot({ path: '/private/tmp/time-machine-design-desktop.png' });
+    await diagram.screenshot({ path: test.info().outputPath('time-machine-design-desktop.png') });
   }
 });

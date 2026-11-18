@@ -94,7 +94,7 @@ test('five-question warm-up counts retry once, renders strengths and gaps, and f
   expect(requests.length).toBe(5);
   await expect(buddy.getByRole('button', { name: 'Next Buddy question' })).toHaveCount(0);
   await expect.poll(async () => (await saved(page)).attempts.length).toBe(6);
-  await summary.screenshot({ path: '/private/tmp/tech-buddy-summary.png' });
+  await summary.screenshot({ path: test.info().outputPath('tech-buddy-summary.png') });
 });
 
 async function mockSpeech(page) {
@@ -216,7 +216,7 @@ test('mobile voice-only interviewer supports keyboard and reduced motion', async
   await expect(buddy.getByText('No camera or video is used.', { exact: false })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   expect(await buddy.evaluate(element => getComputedStyle(element).animationName)).toBe('none');
-  await page.screenshot({ path: '/private/tmp/tech-buddy-mobile.png' });
+  await page.screenshot({ path: test.info().outputPath('tech-buddy-mobile.png') });
 });
 
 test('offline demo cycles six local questions without any AI calls or invented scores', async ({ page }) => {

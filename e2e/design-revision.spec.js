@@ -53,7 +53,7 @@ for (const width of [390, 768, 1440]) test(`revise, compare and resume across de
   await expect(workshop.getByLabel('Revision title')).toHaveValue('Outage exercise');
   expect(await workshop.evaluate(el => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
   await workshop.getByRole('img', { name: 'After: current revision architecture diagram' }).scrollIntoViewIfNeeded();
-  await page.screenshot({ path: `/private/tmp/design-revision-${width}-${test.info().project.name}.png` });
+  await page.screenshot({ path: test.info().outputPath(`design-revision-${width}-${test.info().project.name}.png`) });
   expect(ai).toBe(0);
 });
 

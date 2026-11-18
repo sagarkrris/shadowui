@@ -42,7 +42,7 @@ for (const width of [390, 1440]) test(`beginner paths and inspectable RAG at ${w
   await expect(playground.getByRole('status')).toContainText('[api-1]');
   await expect(playground.getByRole('status')).toContainText('[password-1]');
   expect(await playground.evaluate(el => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
-  await page.screenshot({ path: `/private/tmp/beginner-rag-${width}.png` });
+  await page.screenshot({ path: test.info().outputPath(`beginner-rag-${width}.png`) });
   await playground.getByLabel('Your question (maximum 500 characters)').fill(' ');
   await expect(playground.getByRole('button', { name: 'Run retrieval', exact: true })).toBeDisabled();
   expect(calls).toBe(0);

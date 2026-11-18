@@ -76,7 +76,7 @@ test('new learning pages and detective reflection pass accessibility checks', as
     expect(await page.evaluate(async () => (await window.axe.run('main', { runOnly: ['wcag2a', 'wcag2aa', 'wcag21aa'] })).violations)).toEqual([]);
     if (route === '/learn/spring-transactions') {
       await page.getByRole('heading', { name: 'Before and after the repair' }).scrollIntoViewIfNeeded();
-      await page.screenshot({ path: '/private/tmp/learning-journey-mobile.png' });
+      await page.screenshot({ path: test.info().outputPath('learning-journey-mobile.png') });
     }
   }
 });

@@ -95,7 +95,7 @@ test("mobile keyboard access and accessible evidence / completion views", async 
   await page.goto("/detective");
   await page.addScriptTag({ path: "node_modules/axe-core/axe.min.js" });
   expect(await page.evaluate(async () => (await window.axe.run("main", { runOnly: ["wcag2a", "wcag2aa", "wcag21aa"] })).violations)).toEqual([]);
-  await page.screenshot({ path: "/private/tmp/production-detective-index.png", fullPage: true });
+  await page.screenshot({ path: test.info().outputPath("production-detective-index.png"), fullPage: true });
   await page.goto(`/detective/${DETECTIVE_CASES[4].slug}`);
   await expect(page.getByRole("button", { name: /01 \/ Two request traces/ })).toBeEnabled();
   // macOS WebKit uses Option-Tab to include links in keyboard navigation.
@@ -122,7 +122,7 @@ test("mobile keyboard access and accessible evidence / completion views", async 
   await page.addScriptTag({ path: "node_modules/axe-core/axe.min.js" });
   expect(await page.evaluate(async () => (await window.axe.run("main", { runOnly: ["wcag2a", "wcag2aa", "wcag21aa"] })).violations)).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.screenshot({ path: "/private/tmp/production-detective-case.png", fullPage: true });
+  await page.screenshot({ path: test.info().outputPath("production-detective-case.png"), fullPage: true });
 });
 
 test("later-day return is measured once and reload does not inflate it", async ({ page }) => {

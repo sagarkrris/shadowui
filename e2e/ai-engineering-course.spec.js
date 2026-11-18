@@ -31,7 +31,7 @@ for (const width of [390, 1440]) test(`AI curriculum and attempt-before-reveal a
   await studio.getByLabel('Experience level').selectOption('Senior');
   await expect(studio.getByRole('article')).toHaveCount(4);
   expect(await studio.evaluate(el => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
-  await page.screenshot({ path: `/private/tmp/ai-course-${width}.png` });
+  await page.screenshot({ path: test.info().outputPath(`ai-course-${width}.png`) });
 });
 
 for (const width of [390, 1440]) test(`visual lessons and context budget at ${width}px`, async ({ page }) => {
@@ -75,5 +75,5 @@ for (const width of [390, 1440]) test(`visual lessons and context budget at ${wi
   await lessonModule.scrollIntoViewIfNeeded();
   expect(await lessonModule.evaluate(el => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
   await visual.evaluate(el => el.scrollIntoView({ block: "start" }));
-  await page.screenshot({ path: `/private/tmp/ai-visual-course-${width}.png` });
+  await page.screenshot({ path: test.info().outputPath(`ai-visual-course-${width}.png`) });
 });
