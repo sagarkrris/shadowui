@@ -9,8 +9,11 @@ for (const viewport of [{ width: 390, height: 750 }, { width: 634, height: 650 }
       const navigation = page.getByRole('button', { name: 'Navigation & settings', exact: true });
       if (await navigation.getAttribute('aria-expanded') === 'false') await navigation.click();
     }
+    const sync = page.getByText('Device sync details', { exact: true });
+    await expect(sync).toBeHidden();
     const more = page.getByLabel('Workspace options', { exact: true });
     await more.click();
+    await expect(sync).toBeVisible();
     const help = page.getByRole('button', { name: 'About & help', exact: true });
     // Opening More must reveal an action immediately, before browser auto-scrolling.
     await expect.poll(() => help.evaluate(element => {
@@ -28,6 +31,8 @@ for (const viewport of [{ width: 390, height: 750 }, { width: 634, height: 650 }
       const hit = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
       return element === hit || element.contains(hit);
     })).toBe(true);
+    await sync.click();
+    await expect(page.getByText(/Account sync: practice, plans/)).toBeVisible();
     await tools.focus();
     await page.keyboard.press('Escape');
     await expect(more).toBeFocused();

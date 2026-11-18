@@ -227,6 +227,8 @@ export default function Home() {
   const [voiceSessionReport, setVoiceSessionReport] = useState(null);
 
   const chatRef    = useRef(null);
+  const latestMessageRef = useRef(null);
+  const revealedMessageRef = useRef(null);
   const inputRef   = useRef(null);
   const abortRef   = useRef(null);
   const recogRef   = useRef(null);
@@ -711,11 +713,22 @@ export default function Home() {
 
   // ── Auto-scroll ───────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!sessionReady || activeTab !== "chat" || homeView || techBuddyOpen || messages.length === 0) return;
+    if (!sessionReady || activeTab !== "chat" || homeView || techBuddyOpen || messages.length === 0) {
+      revealedMessageRef.current = null;
+      return;
+    }
     const scroller = chatRef.current;
-    scroller?.scrollTo({ top: scroller.scrollHeight, behavior: "smooth" });
-    // Stop an in-flight chat animation before this container displays another workspace.
-    return () => scroller?.scrollTo({ top: scroller.scrollTop, behavior: "instant" });
+    const message = latestMessageRef.current;
+    if (!scroller || !message) return;
+    const hasContent = Boolean(messages.at(-1)?.content);
+    const previous = revealedMessageRef.current;
+    // Reveal a new turn, then its first text. Later chunks and completion must
+    // leave the reader in control instead of scrolling into the review panels.
+    if (previous?.element === message && (previous.hasContent || !hasContent)) return;
+    revealedMessageRef.current = { element: message, hasContent };
+    const padding = Number.parseFloat(window.getComputedStyle(scroller).paddingTop) || 0;
+    const top = scroller.scrollTop + message.getBoundingClientRect().top - scroller.getBoundingClientRect().top - padding;
+    scroller.scrollTo({ top, behavior: "instant" });
   }, [messages, loading, activeTab, homeView, techBuddyOpen, sessionReady]);
 
   useEffect(() => {
@@ -1934,7 +1947,6 @@ export default function Home() {
             <span className="header-title" style={{ flex:1, fontSize:13, fontWeight:500, color: currentLabel?"#e8e8f0":"#4b5563", minWidth:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
               {activeTab !== "chat" ? <><span className="header-breadcrumb-root">Today</span><span className="header-breadcrumb-separator">/</span>{headerTitle}</> : headerTitle}
             </span>
-            <details><summary>Device sync details</summary><p>Account sync: practice, plans, applications, question history, notebook, archive, bookmarks, roadmap and reading positions. Other workspace keys remain device-only; include them in a full backup. Open the practice workspace on each device to synchronize learning changes.</p></details>
             <span className={`cloud-sync-status cloud-sync-${cloudStatus}`} role="status" aria-live="polite" title="Workspace sync status">
               <i className={`ti ${cloudStatus === "saving" || cloudStatus === "hydrating" ? "ti-loader-2" : cloudStatus === "offline" ? "ti-device-floppy" : "ti-cloud-check"}`} />
               {localSaveStatus === "error" ? "Device save failed" : localSaveStatus !== "saved" ? "Loading…" : cloudStatus === "conflict" ? "Saved on device · Choose sync copy" : cloudStatus === "saving" ? "Saved on device · Syncing…" : cloudStatus === "hydrating" ? "Loading cloud…" : cloudStatus === "offline" ? "Saved on device · Sync failed" : !auth.user ? "Saved on this device" : cloudStatus === "saved" ? "Saved and synced" : "Saved on device · Waiting for sync"}
@@ -1966,6 +1978,7 @@ export default function Home() {
               {messages.length > 0 && <button type="button" aria-label="Clear" onClick={clearChat}>Clear conversation</button>}
               <button type="button" aria-controls="session-actions" aria-expanded={mobileActionsOpen} onClick={() => setMobileActionsOpen(value => !value)}>Session tools</button>
             </>
+            <details><summary>Device sync details</summary><p>Account sync: practice, plans, applications, question history, notebook, archive, bookmarks, roadmap and reading positions. Other workspace keys remain device-only; include them in a full backup. Open the practice workspace on each device to synchronize learning changes.</p></details>
             </WorkspaceOptions>
 
 
@@ -2312,7 +2325,7 @@ export default function Home() {
               : (
                 <>
                   {messages.map((msg, idx) => (
-                    <div key={idx} className="msg-anim" role="article" aria-label={msg.role==="user" ? "Your message" : "InterviewIQ response"} style={{ display:"flex", gap: isMobile?8:10, marginBottom: isMobile?14:18, flexDirection: msg.role==="user"?"row-reverse":"row", alignItems:"flex-start" }}>
+                    <div key={idx} ref={idx === messages.length - 1 ? latestMessageRef : null} className="msg-anim" role="article" aria-label={msg.role==="user" ? "Your message" : "InterviewIQ response"} style={{ display:"flex", gap: isMobile?8:10, marginBottom: isMobile?14:18, flexDirection: msg.role==="user"?"row-reverse":"row", alignItems:"flex-start" }}>
                       <div style={{ width:28, height:28, borderRadius:"50%", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", background: msg.role==="user"?techTheme.accentSoft:"rgba(168,85,247,.12)", border: msg.role==="user"?`1px solid ${techTheme.accentBorder}`:"1px solid rgba(168,85,247,.25)", fontSize:13 }}>
                         <i className={`ti ${msg.role==="user"?"ti-user":"ti-robot"}`} style={{ color: msg.role==="user"?techTheme.accentStrong:"#c084fc" }} />
                       </div>
