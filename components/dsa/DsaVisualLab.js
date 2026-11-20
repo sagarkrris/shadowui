@@ -48,9 +48,10 @@ import BeginnerGuideBanner from "../BeginnerGuideBanner";
 import AnswerAtAGlance from "../learning/AnswerAtAGlance";
 import { DiagramSymbol } from '../learning/DiagramArtwork';
 import GuideSectionContent from './GuideSectionContent';
+import ConstraintDetective from './ConstraintDetective';
 import guideStyles from '../../styles/DsaGuide.module.css';
 
-const GUIDED_STAGES = ["Learn", "Pattern Atlas", "Visual Playground", "Big-O Board", "Visualize", "Dry run", "Explain-Then-Code", "Code", "Quiz", "Interview Challenges", "Drill Room", "Practice as Mock"];
+const GUIDED_STAGES = ["Learn", "Constraint Detective", "Pattern Atlas", "Visual Playground", "Big-O Board", "Visualize", "Dry run", "Explain-Then-Code", "Code", "Quiz", "Interview Challenges", "Drill Room", "Practice as Mock"];
 const FRESHER_DSA_REVIEW_STORAGE_KEY = "interviewiq:fresher-dsa-review:v2";
 const CHALLENGE_FILTERS = [
   { id: "all", label: "All" },
@@ -3168,6 +3169,8 @@ function DsaVisualLabContent({ initialLessonId = "arrays", onPractice, theme = {
           onApproach={() => chooseTrack("thinking")}
         />
       ) : null}
+
+      {stage === "Constraint Detective" ? <ConstraintDetective /> : null}
 
       {stage === "Pattern Atlas" ? (
         <PatternAtlasPanel

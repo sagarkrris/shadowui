@@ -10,3 +10,9 @@
 .navigation a { color: inherit; border: 1px solid #62778d; border-radius: 6px; padding: 8px 10px; font-size: 12px; text-decoration: none; }
 .tableWrap:focus-visible, .navigation a:focus-visible { outline: 3px solid #3b82f6; outline-offset: 2px; }
 @media (max-width: 500px) { .table th, .table td { padding: 9px; } }
+
+.constraintGuide p, .constraintGuide li { margin-block: 8px; }
+.constraintGuide ol { padding-inline-start: 24px; }
+.constraintGuide h3, .constraintGuide h4 { margin-block: 12px 4px; }
+.constraintGuide a { color: var(--jd-text, #93c5fd); text-decoration: underline; }
+.constraintGuide summary { cursor: pointer; padding-block: 8px; }
