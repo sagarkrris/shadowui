@@ -1,3 +1,4 @@
+import { withApiObservability } from "../../lib/apiObservability.mjs";
 import { runRepositoryAssessment } from '../../lib/repositoryAssessmentRunner.mjs';
 import { validateAssessmentFiles } from '../../lib/repositoryAssessment.mjs';
 import { runnerConfiguration } from '../../lib/challengeRunner.mjs';
@@ -5,7 +6,7 @@ import { requireConfiguredUser } from '../../lib/apiAuth.mjs';
 import { checkDistributedRateLimit } from '../../lib/redisRateLimit.mjs';
 import { getClientAddress } from '../../lib/requestSecurity.mjs';
 export const config = { api: { bodyParser: {sizeLimit:'16kb'} } };
-export default async function handler(req,res) {
+async function handler(req,res) {
   res.setHeader('Cache-Control','no-store');
   if (req.method === 'GET') return res.status(200).json({configured:Boolean(runnerConfiguration())});
   if (req.method !== 'POST') {res.setHeader('Allow','GET, POST'); return res.status(405).json({error:'Use POST.'});}
@@ -17,3 +18,5 @@ export default async function handler(req,res) {
   try {const files=validateAssessmentFiles(req.body?.files,req.body?.id||'checkout');const {statusCode,...result}=await runRepositoryAssessment(files,req.body?.mode,{assessmentId:req.body?.id||'checkout'});return res.status(statusCode).json(result);}
   catch(error){return res.status(400).json({error:error.message});}
 }
+
+export default withApiObservability("/api/repository-assessment", handler);

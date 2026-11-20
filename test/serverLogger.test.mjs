@@ -68,3 +68,13 @@ test("writes request-scoped events with elapsed time", () => {
     messageCount: 2,
   });
 });
+
+test("logs diagnostic error fields without exception messages or nested causes", () => {
+  const sink = captureSink();
+  const logger = createRequestLogger({ route: "/api/evaluate", sink });
+  const error = Object.assign(new TypeError("private document text", {
+    cause: new Error("private provider response"),
+  }), { code: "ECONNRESET", status: 502 });
+  logger.error("request.failed", { error });
+  assert.deepEqual(sink.events[0].event.error, { name: "TypeError", code: "ECONNRESET", status: 502 });
+});

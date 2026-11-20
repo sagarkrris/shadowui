@@ -1,3 +1,5 @@
+import { logOperationalFailure } from "../../lib/serverLogger.mjs";
+import { withApiObservability } from "../../lib/apiObservability.mjs";
 import { sameOriginJson, validateReaderSubmission, validVoteId, EDITORIAL_REQUESTS } from "../../lib/readerCommunity.mjs";
 import { readerCommunityConfigured, readerIdentity, listReaderRequests, submitReaderRequest, voteReaderRequest } from "../../lib/readerCommunityStore.mjs";
 import { checkDistributedRateLimit } from "../../lib/redisRateLimit.mjs";
@@ -24,8 +26,11 @@ return async function handler(req, res) {
     try { submission = validateReaderSubmission(req.body); } catch (error) { res.status(400).json({ error: error.message }); return; }
     const receipt = await store.submitReaderRequest(submission, identity.id);
     res.status(202).json({ receipt, status: "pending", message: "Received for editorial review. This submission is not public yet." });
-  } catch { res.status(503).json({ error: "The request board is temporarily unavailable. Your submission was not confirmed; please retry later." }); }
+  } catch (error) {
+    logOperationalFailure(req, "/api/reader-community", "reader.storage_failed", error);
+    res.status(503).json({ error: "The request board is temporarily unavailable. Your submission was not confirmed; please retry later." });
+  }
 }
 
 }
-export default createReaderCommunityHandler();
+export default withApiObservability("/api/reader-community", createReaderCommunityHandler());

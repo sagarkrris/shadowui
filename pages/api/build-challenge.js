@@ -1,10 +1,11 @@
+import { withApiObservability } from "../../lib/apiObservability.mjs";
 import { runnerConfiguration, validateChallengeRun, executeChallenge } from '../../lib/challengeRunner.mjs';
 import { requireConfiguredUser } from '../../lib/apiAuth.mjs';
 import { checkDistributedRateLimit } from '../../lib/redisRateLimit.mjs';
 import { getClientAddress } from '../../lib/requestSecurity.mjs';
 
 export const config = { api: { bodyParser: { sizeLimit: '64kb' } } };
-export default async function handler(req, res) {
+async function handler(req, res) {
   res.setHeader('Cache-Control','no-store');
   if (req.method === 'GET') return res.status(200).json({ configured: Boolean(runnerConfiguration()) });
   if (req.method !== 'POST') { res.setHeader('Allow','GET, POST'); return res.status(405).json({ error: 'Method not allowed' }); }
@@ -18,3 +19,5 @@ export default async function handler(req, res) {
   const { statusCode, ...result } = await executeChallenge(input);
   return res.status(statusCode).json(result);
 }
+
+export default withApiObservability("/api/build-challenge", handler);

@@ -184,7 +184,7 @@ async function handler(req, res) {
     }
     return res.status(405).json({ error: "Unsupported auth operation." });
   } catch (error) {
-    reportServerError(error, { route: "/api/auth", action });
+    await reportServerError(error, { route: "/api/auth", requestId: req.requestId, action });
     if (error.code === "EMAIL_EXISTS") return res.status(409).json({ error: error.message });
     return res.status(503).json({ error: "Account service is not configured or temporarily unavailable." });
   }

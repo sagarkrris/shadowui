@@ -1,3 +1,5 @@
+import { logOperationalFailure } from "../../lib/serverLogger.mjs";
+import { withApiObservability } from "../../lib/apiObservability.mjs";
 import { analyticsConfiguration, analyticsEnvelope, analyticsVisitor, createProductAnalyticsStore } from '../../lib/productAnalyticsStore.mjs';
 import { sameOriginJson } from '../../lib/readerCommunity.mjs';
 import { checkDistributedRateLimit } from '../../lib/redisRateLimit.mjs';
@@ -27,7 +29,10 @@ export function createAnalyticsHandler({ store = createProductAnalyticsStore(), 
       const receipt = await store.record(event);
       if (receipt.withdrawn) return res.status(200).json({stored:false,reason:'This measurement identifier was withdrawn.'});
       return res.status(202).json({stored:true});
-    } catch { return res.status(503).json({ error:'Measurement storage is unavailable. No receipt is confirmed.' }); }
+    } catch (error) {
+      logOperationalFailure(req, "/api/analytics", "analytics.storage_failed", error);
+      return res.status(503).json({ error:'Measurement storage is unavailable. No receipt is confirmed.' });
+    }
   };
 }
-export default createAnalyticsHandler();
+export default withApiObservability("/api/analytics", createAnalyticsHandler());

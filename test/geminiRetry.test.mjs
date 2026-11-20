@@ -69,6 +69,7 @@ test("maps provider safety blocks to a helpful app message", () => {
 
 test("falls back to the next Gemini model after retryable failures", async () => {
   const attempts = [];
+  const fallbacks = [];
 
   const { modelName, result } = await withGeminiModelFallback(
     ["gemini-a", "gemini-b"],
@@ -77,12 +78,13 @@ test("falls back to the next Gemini model after retryable failures", async () =>
       if (candidate === "gemini-a") throw { status: 429, message: "quota exceeded for this model" };
       return "reply";
     },
-    { retries: 0, onFallback: () => {} },
+    { retries: 0, onFallback: details => fallbacks.push(details) },
   );
 
   assert.equal(modelName, "gemini-b");
   assert.equal(result, "reply");
   assert.deepEqual(attempts, ["gemini-a", "gemini-b"]);
+  assert.deepEqual(fallbacks, [{ modelName: "gemini-a", name: "Error", status: 429 }]);
 });
 
 test('provider credential failures and request limits have actionable safe messages', () => {

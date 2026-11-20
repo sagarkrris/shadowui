@@ -1,3 +1,4 @@
+import { reportBrowserError } from "../../lib/browserErrors.mjs";
 import { Component, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   buildDsaExplainThenCodeCoach,
@@ -355,7 +356,7 @@ class DsaVisualLabErrorBoundary extends Component {
 
   static getDerivedStateFromError() { return { hasError: true }; }
 
-  componentDidCatch(error) { if (process.env.NODE_ENV !== "production") console.error("[DsaVisualLab] workspace render failed", error); }
+  componentDidCatch(error) { reportBrowserError({ kind: "render_error", route: "/practice" }); if (process.env.NODE_ENV !== "production") console.error("[DsaVisualLab] workspace render failed", error); }
 
   render() {
     if (this.state.hasError) return <section className="glass-card" role="alert" style={{ margin: 16, padding: 18 }}><h2>DSA Visual Lab needs a refresh</h2><p>One lesson or visualizer could not be rendered. Reload the workspace to restore the learning lab.</p><button type="button" className="glass-button" onClick={() => this.setState({ hasError: false })}>Try again</button></section>;

@@ -133,7 +133,9 @@ test("standalone examples compile against Java 17 and distributed behavior check
     "resilience-engineering",
     "microservices-migration-patterns",
     "spring-boot-configuration",
-  ].includes(blog.id) || blog.javaRelease === 17);
+  ].includes(blog.id));
+  // These legacy fixtures span multiple courses. Courses declaring javaRelease
+  // are compiled with their registered fixtures in isolated directories by the release gate.
   const chapters = blogs.flatMap(blog => blog.chapters).filter(chapter => !chapter.exampleRuntime);
   const dir = mkdtempSync(join(tmpdir(), "pattern-test-"));
   try {

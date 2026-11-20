@@ -1,3 +1,5 @@
+import { logOperationalFailure } from "../../lib/serverLogger.mjs";
+import { withApiObservability } from "../../lib/apiObservability.mjs";
 import { digestSignup, sameOriginJson } from "../../lib/readerCommunity.mjs";
 import { checkDistributedRateLimit } from "../../lib/redisRateLimit.mjs";
 import { getClientAddress } from "../../lib/requestSecurity.mjs";
@@ -20,8 +22,11 @@ return async function handler(req, res) {
     const response = await fetchImpl(endpoint, { method: "POST", signal: AbortSignal.timeout(10000), headers: { "Content-Type": "application/json", Authorization: `Bearer ${env.DIGEST_SUBSCRIPTION_TOKEN}` }, body: JSON.stringify({ ...signup, consentedAt: new Date().toISOString(), source: "public-digest-form", postalAddress: env.DIGEST_POSTAL_ADDRESS }) });
     if (!response.ok || (await response.json()).status !== "pending_confirmation") throw new Error("Confirmation was not acknowledged");
     res.status(202).json({ message: "Check your email to confirm. You are not subscribed until you confirm." });
-  } catch { res.status(503).json({ error: "Email confirmation could not be verified. Please try again later; you may still receive a confirmation email." }); }
+  } catch (error) {
+    logOperationalFailure(req, "/api/digest-subscription", "digest.delivery_failed", error);
+    res.status(503).json({ error: "Email confirmation could not be verified. Please try again later; you may still receive a confirmation email." });
+  }
 }
 
 }
-export default createDigestHandler();
+export default withApiObservability("/api/digest-subscription", createDigestHandler());

@@ -48,7 +48,7 @@ return async function handler(req, res) {
     if (error.name === "EvaluationValidationError") return res.status(502).json({ error: error.message, requestId: logger.requestId });
     if (error.name === "AiConfigError") return res.status(error.status).json(getSafeConfigErrorPayload(error));
     logger.error("request.failed", { error });
-    reportServerError(error, { route: "/api/evaluate", requestId: logger.requestId });
+    await reportServerError(error, { route: "/api/evaluate", requestId: logger.requestId });
     return res.status(getGeminiErrorStatus(error)).json({ error: getSafeGeminiErrorMessage(error), requestId: logger.requestId });
   }
 }

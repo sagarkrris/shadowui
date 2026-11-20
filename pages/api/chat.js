@@ -111,7 +111,7 @@ async function handler(req, res) {
       status: error.status,
       code: error.code,
     });
-    reportServerError(error, { route: "/api/chat", requestId: logger.requestId, status });
+    await reportServerError(error, { route: "/api/chat", requestId: logger.requestId, status });
     const safeError = getSafeGeminiErrorMessage(error);
     if (!res.headersSent) {
       res.status(status).json({ error: safeError, requestId: logger.requestId });

@@ -1,3 +1,5 @@
+import { logOperationalFailure } from "../../lib/serverLogger.mjs";
+import { withApiObservability } from "../../lib/apiObservability.mjs";
 import { ImageResponse } from 'next/og';
 import { HLD_SOLUTIONS } from '../../lib/designLibraryHld.mjs';
 import { DETECTIVE_CASES } from '../../lib/productionDetective.mjs';
@@ -8,7 +10,7 @@ const cards = new Map([
   ...DETECTIVE_CASES.map(item => [`/detective/${item.slug}`, { title: item.title, label: 'Debugging challenge' }]),
   ...READING_SERIES.map(item => [`/series/${item.slug}`, { title: item.title, label: 'Connected reading path' }]),
 ]);
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'GET') { res.setHeader('Allow', 'GET'); return res.status(405).end(); }
   const card = typeof req.query.path === 'string' && cards.get(req.query.path);
   if (!card) return res.status(404).json({ error: 'Unknown public sharing card.' });
@@ -18,5 +20,10 @@ export default async function handler(req, res) {
     res.setHeader('Content-Type', 'image/png');
     res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=3600');
     return res.status(200).send(buffer);
-  } catch { return res.status(503).json({ error: 'Sharing image temporarily unavailable.' }); }
+  } catch (error) {
+    logOperationalFailure(req, "/api/og", "sharing.render_failed", error);
+    return res.status(503).json({ error: 'Sharing image temporarily unavailable.' });
+  }
 }
+
+export default withApiObservability("/api/og", handler);

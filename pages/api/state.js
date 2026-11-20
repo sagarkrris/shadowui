@@ -1,3 +1,4 @@
+import { logOperationalFailure } from "../../lib/serverLogger.mjs";
 import { getUserBySession, loadUserState, saveUserState } from "../../lib/serverPersistence.mjs";
 import { getClientAddress } from "../../lib/requestSecurity.mjs";
 import { checkDistributedRateLimit } from "../../lib/redisRateLimit.mjs";
@@ -23,7 +24,8 @@ async function handler(req, res) {
       return res.status(200).json({ ok: true, ...result });
     }
     return res.status(405).json({ error: "Method not allowed." });
-  } catch {
+  } catch (error) {
+    logOperationalFailure(req, "/api/state", "state.persistence_failed", error);
     return res.status(503).json({ error: "State persistence is not configured." });
   }
 }

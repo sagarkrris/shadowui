@@ -1,3 +1,5 @@
+import { logOperationalFailure } from "../../lib/serverLogger.mjs";
+import { withApiObservability } from "../../lib/apiObservability.mjs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { getBlind75Problem } from "../../lib/blind75VisualTrack.mjs";
@@ -21,7 +23,7 @@ async function getGuideEntry(problem) {
   return entryCache.get(problem.id);
 }
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
 
   const problemId = typeof req.query.problemId === "string" ? req.query.problemId : "";
@@ -33,7 +35,10 @@ export default async function handler(req, res) {
     if (!entry?.sections?.length) return res.status(404).json({ error: "This question is not included in the supplied Java study guide. You can still open its visualizer." });
     res.setHeader("Cache-Control", "no-cache");
     return res.status(200).json(entry);
-  } catch {
+  } catch (error) {
+    logOperationalFailure(req, "/api/blind75-guide", "guide.read_failed", error);
     return res.status(500).json({ error: "The Java study guide could not be read" });
   }
 }
+
+export default withApiObservability("/api/blind75-guide", handler);
