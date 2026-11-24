@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import useDismissableLayer from "../../hooks/useDismissableLayer";
+import Link from "next/link";
 
 const WORKSPACE_MENU_DETAILS = {
   buildEngineering: "Maven, Gradle, dependencies, CI, and build-system drills.",
@@ -38,15 +40,7 @@ export function TabletWorkspaceMenu({ activeTab, accent = "#8bd3ff", onToggleWor
   const [menuOpen, setMenuOpen] = useState(false);
   const activeWorkspace = workspaces.find((workspace) => workspace.id === activeTab);
 
-  useEffect(() => {
-    if (!menuOpen) return undefined;
-    const closeOnEscape = (event) => {
-      if (event.key === "Escape") setMenuOpen(false);
-    };
-
-    window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [menuOpen]);
+  const menuRef = useDismissableLayer(menuOpen, () => setMenuOpen(false));
 
   const selectWorkspace = (workspaceId) => {
     onToggleWorkspace(workspaceId);
@@ -54,7 +48,7 @@ export function TabletWorkspaceMenu({ activeTab, accent = "#8bd3ff", onToggleWor
   };
 
   return (
-    <div className="tablet-workspace-menu" style={{ flexShrink: 0, minWidth: 0, position: "relative" }}>
+    <div ref={menuRef} className="tablet-workspace-menu" style={{ flexShrink: 0, minWidth: 0, position: "relative" }}>
       <button
         type="button"
         className={`glass-button ${activeWorkspace ? "active" : ""}`}
@@ -83,6 +77,7 @@ export function TabletWorkspaceMenu({ activeTab, accent = "#8bd3ff", onToggleWor
               <i className="ti ti-x" />
             </button>
           </div>
+          <Link href="/learn#courses" className="workspace-menu-course-link">Browse in-depth courses →</Link>
           <div style={{ display: "grid", gap: 8, gridTemplateColumns: "1fr" }}>
             {workspaces.map((workspace) => (
               <button
@@ -150,15 +145,7 @@ export function MobileBottomNav({ accent = "#8bd3ff", items = [] }) {
     ));
   }, [items]);
 
-  useEffect(() => {
-    if (!menuOpen) return undefined;
-    const closeOnEscape = (event) => {
-      if (event.key === "Escape") setMenuOpen(false);
-    };
-
-    window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [menuOpen]);
+  const menuRef = useDismissableLayer(menuOpen, () => setMenuOpen(false));
 
   const runAction = (item) => {
     if (item.disabled) return;
@@ -167,7 +154,7 @@ export function MobileBottomNav({ accent = "#8bd3ff", items = [] }) {
   };
 
   return (
-    <div style={{ flexShrink: 0, minWidth: 0, position: "relative" }}>
+    <div ref={menuRef} style={{ flexShrink: 0, minWidth: 0, position: "relative" }}>
       {menuOpen && (
         <section
           aria-label="Mobile workspace menu"

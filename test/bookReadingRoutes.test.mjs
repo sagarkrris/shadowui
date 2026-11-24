@@ -14,9 +14,16 @@ test("Book Mode is available on public lessons and article detail pages", () => 
   assert.equal(bookReadingRoute("/java/listicle/example").contentsHref, "/java");
   assert.equal(bookReadingRoute("/guides/java/example").contentsHref, "/guides");
   assert.equal(bookReadingRoute("/senior-java-interview/daily/example").contentsHref, "/senior-java-interview/daily");
-  for (const course of ["ai-engineering", "spring-transactions"]) {
+  for (const course of ["ai-engineering", "spring-transactions", "java", "hibernate", "micronaut", "spring/spring-framework", "spring/spring-boot"]) {
     assert.equal(bookReadingRoute(`/learn/${course}`).contentsHref, "/learn");
   }
+});
+
+test("course lab pages and unknown course slugs do not receive a reader", () => {
+  for (const path of ["/learn/java/capstone", "/learn/hibernate/capstone", "/learn/micronaut/capstone", "/learn/spring/capstone", "/learn/spring/unknown"]) {
+    assert.equal(bookReadingRoute(path), null);
+  }
+  assert.deepEqual(bookReadingRoute("/learn/java/?source=practice#arrays"), { path: "/learn/java", contentsHref: "/learn" });
 });
 
 test("reading identity is stable across section links, queries and trailing slash", () => {

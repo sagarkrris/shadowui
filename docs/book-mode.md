@@ -14,6 +14,13 @@ the regular reader at the current passage. The regular reader remains the defaul
   scenario exercises, weekly editions, and the AI engineering and Spring
   transaction learning journeys.
 - Senior Java interview guide parts, companion Java files, and daily sets.
+- Standalone Java, Spring Framework, Spring Boot, Hibernate, and Micronaut
+  courses in `/learn`. Their lesson checkpoints retain progress when entering
+  or exiting Book Mode; runnable capstone pages keep their regular layout.
+
+From practice, select **Courses** in the header or **Browse in-depth courses**
+on the welcome card to open the learning catalog. The Workspaces popup also
+links to that catalog; Java Digest continues to offer its Tech Blogs reader.
 
 Indexes, roadmaps, dashboards, labs, and live practice tools retain their existing
 layout. Book Mode is intended for reading a lesson, not navigating a catalog or

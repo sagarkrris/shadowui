@@ -1,9 +1,9 @@
 import { applyCloudDeviceSnapshot } from "../lib/cloudDeviceSnapshot.mjs";
 import { readAiJsonResponse } from "../lib/aiResponse.mjs";
 import { SITE_URL } from "../lib/siteUrl.mjs";
-import { cloudRecoveryBackup } from '../lib/practiceBackup.mjs';
+import CloudCopyReview from '../components/practice/CloudCopyReview';
+import CurrentQuestion from '../components/practice/CurrentQuestion';
 import { readLearningDeviceState } from '../lib/learningDeviceState.mjs';
-import { downloadText } from '../lib/downloadText.mjs';
 import { archivePrepSession, normalizePrepSessionPlan } from '../lib/prepSessionPlan.mjs';
 import { applicationDebriefReview } from '../lib/applicationTracker.mjs';
 import LessonQuickStart from '../components/practice/LessonQuickStart';
@@ -30,6 +30,7 @@ import TechBackground from "../components/TechBackground";
 import TypingDots from "../components/chat/TypingDots";
 import CommandPalette from "../components/app/CommandPalette";
 import WorkspaceOptions from "../components/app/WorkspaceOptions";
+import useDismissableLayer from "../hooks/useDismissableLayer";
 import { DesktopWorkspaceNav, MobileBottomNav, TabletWorkspaceMenu } from "../components/app/WorkspaceNav";
 const AgenticUICourse = dynamic(() => import("../components/course/AgenticUICourse"), { ssr: false });
 const DesignLab = dynamic(() => import("../components/design-lab/DesignLab"), { ssr: false });
@@ -236,6 +237,7 @@ export default function Home() {
   const pendingPracticeCard = useRef(null);
   const toastTimer = useRef(null);
   const userMenuRef = useRef(null);
+  const prepControlsRef = useDismissableLayer(topControlsOpen, () => setTopControlsOpen(false));
   // Keep a compact popover inside the content column when the header wraps.
   useEffect(() => {
     if (!topControlsOpen) return;
@@ -288,7 +290,6 @@ export default function Home() {
   const canSelectPrepTopics = canUsePrepTopics({ candidateProfile });
   const showCodeTools = shouldShowCodeTools({ activeTab, candidateProfile, selectedCat });
   const canSend = Boolean(input.trim() || (showCodeTools && codeInput.trim()));
-  const footerHint = showCodeTools ? "screen · voice · code · Enter to send" : "screen · voice · Enter to send";
   const mockTimerLabel = mockTimerStatus === "answering"
     ? `${Math.floor(mockTimerRemaining / 60)}:${String(mockTimerRemaining % 60).padStart(2, "0")}`
     : mockTimerStatus === "paused" ? `Paused · ${mockTimerRemaining}s` : "Review ready";
@@ -602,16 +603,6 @@ export default function Home() {
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
-
-  useEffect(() => {
-    if (!topControlsOpen) return undefined;
-    const closeOnEscape = (event) => {
-      if (event.key === "Escape") setTopControlsOpen(false);
-    };
-
-    window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [topControlsOpen]);
 
   useEffect(() => {
     if (!userMenuOpen) return undefined;
@@ -1699,8 +1690,14 @@ export default function Home() {
   };
 
   // ── Session start ─────────────────────────────────────────────────────────
-  const startSession = useCallback((topicOverride) => {
-    if (!candidateProfile || !selectedCat || loading) return;
+  const startSession = useCallback((sessionMode, topicOverride) => {
+    if (!candidateProfile || !selectedCat || loading || requestBusy.current || techBuddyOpen) return;
+    if (practice.pending) {
+      showToast("Retry or dismiss the saved request before starting a new session.", "info");
+      return;
+    }
+    const isMock = sessionMode === "interview";
+    setMode(sessionMode);
     trackEvent("practice_started", { value: String(Date.now() - pageOpenedAt.current) });
     const topic = typeof topicOverride === "string" ? topicOverride : selectedSub || selectedCat;
     const style = INTERVIEW_MODES.find((item) => item.key === interviewMode)?.label || "Strict Interviewer";
@@ -1709,7 +1706,7 @@ export default function Home() {
     const pressureRules = interviewMode === "realPressure"
       ? "Real Pressure rules: strict timed one-question mode, no hints, interruption follow-ups, and final hire/no-hire scorecard."
       : "";
-    const prompt = mode === "interview"
+    const prompt = isMock
       ? `Start a ${style} mock interview for ${displayName} on "${topic}". Round Strategy Mode: ${round}. AI Interview Panel Mode: ${panel}. Difficulty: ${difficulty}. ${pressureRules} Ask your first question.`
       : `Ask ${displayName} one ${difficulty}-level practice question on "${topic}". Wait for their answer; do not provide a solution.`;
     setPractice(prev => ({ ...prev, active: null, pending: null }));
@@ -1719,16 +1716,22 @@ export default function Home() {
     setMockTimerEndsAt(null);
     recordWorkspaceActivity({
       workspaceId: "chat",
-      type: mode === "interview" ? "mock" : "practice",
-      label: mode === "interview" ? "Started mock interview" : "Started practice session",
+      type: isMock ? "mock" : "practice",
+      label: isMock ? "Started mock interview" : "Started practice session",
       detail: `${difficulty} ${topic}`,
     });
-    if (mode === "interview") {
+    if (isMock) {
       resetInterviewSession({ mode: "interview", round: roundStrategy, panel: interviewPanel, profile: candidateProfile });
       startInterviewQuestion({ questionId: `${selectedCat}-${Date.now()}`, question: `Interview question about ${topic}` });
     }
-    callAPI(prompt, { topic, startAnswerTimer: mode === "interview", isInterviewPrompt: true });
-  }, [callAPI, candidateProfile, difficulty, displayName, interviewMode, interviewPanel, loading, mode, recordWorkspaceActivity, roundStrategy, selectedCat, selectedSub, setActiveTab, resetInterviewSession, startInterviewQuestion]);
+    callAPI(prompt, {
+      topic,
+      startAnswerTimer: isMock,
+      isInterviewPrompt: true,
+      interviewMode: isMock ? interviewMode : "singleQuestionPractice",
+      interviewPanel: isMock ? interviewPanel : null,
+    });
+  }, [callAPI, candidateProfile, difficulty, displayName, interviewMode, interviewPanel, loading, practice.pending, recordWorkspaceActivity, roundStrategy, selectedCat, selectedSub, setActiveTab, resetInterviewSession, startInterviewQuestion, showToast, techBuddyOpen]);
 
   const clearChat = useCallback(() => {
     abortRef.current?.abort(); setMessages([]); setLoading(false);
@@ -1789,7 +1792,7 @@ export default function Home() {
       } else if (key === "enter") {
         event.preventDefault();
         if (techBuddyOpen) return;
-        startSession();
+        startSession("interview");
       } else if (event.shiftKey && key === "c") {
         event.preventDefault();
         clearChat();
@@ -1915,7 +1918,7 @@ export default function Home() {
             </div>
           )}
 
-            {cloudConflict && <section className="practice-sync-conflict" aria-label="Cloud save conflict"><details><summary>Cloud saving paused · Review copies</summary><h2>{cloudConflict.accountChanged ? "Choose data for this signed-in account" : cloudConflict.unownedDeviceWork ? "Choose whether to import this device’s work" : "Work changed on another device"}</h2>{cloudConflict.unownedDeviceWork && <p>This device’s saved work has no account-owner record. It may be a guest draft or work from an older account. Nothing will be imported until you choose. Keeping this device copy imports it into the signed-in account; using the cloud copy clears the unowned local workspaces.</p>}{cloudConflict.accountChanged && <p>The browser holds data from another account. Keeping this device copy explicitly imports it into the current account. Using an empty cloud copy clears the previous account’s local workspaces. Download a backup before choosing.</p>}<p>Automatic saving is paused. Download both copies before selecting which copy should become current. Your device draft is preserved.</p><button type="button" onClick={() => (() => { downloadText(cloudRecoveryBackup(cloudSnapshot), 'interviewiq-device-recovery.json', 'application/json'); downloadText(cloudRecoveryBackup(cloudConflict.state), 'interviewiq-cloud-recovery.json', 'application/json'); })()}>Download both copies</button><button type="button" onClick={() => { downloadText(cloudRecoveryBackup(cloudSnapshot), 'interviewiq-device-recovery.json', 'application/json'); resolveCloudConflict('cloud'); }}>Use cloud copy</button><button type="button" onClick={() => { downloadText(cloudRecoveryBackup(cloudConflict.state), 'interviewiq-cloud-recovery.json', 'application/json'); resolveCloudConflict('device'); }}>Keep this device copy</button></details></section>}
+            {cloudConflict && <CloudCopyReview device={cloudSnapshot} conflict={cloudConflict} onChoose={resolveCloudConflict} />}
 
           <div className="mobile-shell-controls">
             <button type="button" className="glass-button" aria-expanded={mobileHeaderOpen} aria-controls="app-header" onClick={() => setMobileHeaderOpen(value => !value)}>Navigation & settings</button>
@@ -1944,6 +1947,7 @@ export default function Home() {
               onToggleWorkspace={toggleWorkspace}
             />
 
+            <Link href="/learn#courses" className="practice-courses-link">Courses</Link>
             <span className="header-title" style={{ flex:1, fontSize:13, fontWeight:500, color: currentLabel?"#e8e8f0":"#4b5563", minWidth:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
               {activeTab !== "chat" ? <><span className="header-breadcrumb-root">Today</span><span className="header-breadcrumb-separator">/</span>{headerTitle}</> : headerTitle}
             </span>
@@ -2019,14 +2023,14 @@ export default function Home() {
                 {INTERVIEW_PANEL_OPTIONS.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}
               </select>
 
-              <button className="glass-button" aria-label="Start mock round" onClick={startSession} disabled={!candidateProfile || !selectedCat || loading}
+              <button className="glass-button" aria-label="Start mock round" onClick={() => startSession("interview")} disabled={!candidateProfile || !selectedCat || loading}
                 style={{ padding:"4px 12px", fontSize:12, fontWeight:600, borderRadius:7, border:`1px solid ${techTheme.accentBorder}`, color:techTheme.accentText, cursor: candidateProfile&&selectedCat&&!loading?"pointer":"not-allowed", opacity: candidateProfile&&selectedCat&&!loading?1:.4, display:"flex", alignItems:"center", gap:5 }}>
-                <i className="ti ti-player-play" style={{ fontSize:11 }} />Start
+                <i className="ti ti-player-play" style={{ fontSize:11 }} />Start mock
               </button>
             </div>}
 
             {showInterviewTools && (
-              <div className="compact-controls-menu" style={{ flexShrink: 0, position: "relative" }}>
+              <div ref={prepControlsRef} className="compact-controls-menu" style={{ flexShrink: 0, position: "relative" }}>
                 <button
                   type="button"
                   className="glass-button"
@@ -2091,7 +2095,7 @@ export default function Home() {
                         {INTERVIEW_PANEL_OPTIONS.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}
                       </select>
                       </label>
-                      <button className="glass-button" aria-label="Start mock round" onClick={() => { startSession(); setTopControlsOpen(false); }} disabled={!candidateProfile || !selectedCat || loading} style={{ alignItems: "center", border: `1px solid ${techTheme.accentBorder}`, borderRadius: 8, color: techTheme.accentText, cursor: candidateProfile&&selectedCat&&!loading ? "pointer" : "not-allowed", display: "flex", fontSize: 12, fontWeight: 900, gap: 6, justifyContent: "center", minHeight: 39, opacity: candidateProfile&&selectedCat&&!loading ? 1 : .4, padding: "8px 12px" }}>
+                      <button className="glass-button" aria-label="Start mock round" onClick={() => { startSession("interview"); setTopControlsOpen(false); }} disabled={!candidateProfile || !selectedCat || loading} style={{ alignItems: "center", border: `1px solid ${techTheme.accentBorder}`, borderRadius: 8, color: techTheme.accentText, cursor: candidateProfile&&selectedCat&&!loading ? "pointer" : "not-allowed", display: "flex", fontSize: 12, fontWeight: 900, gap: 6, justifyContent: "center", minHeight: 39, opacity: candidateProfile&&selectedCat&&!loading ? 1 : .4, padding: "8px 12px" }}>
                         <i className="ti ti-player-play" style={{ fontSize: 12 }} />Start mock
                       </button>
                     </div>
@@ -2286,7 +2290,8 @@ export default function Home() {
                     });
                     callAPI(text);
                   }}
-                  onStart={startSession}
+                  onStart={topic => startSession("practice", topic)}
+                  onStartMock={() => startSession("interview")}
                   onScreen={() => setShowScreen(true)}
                   onVoice={toggleVoice}
                   onRecordReview={() => setShowRecordingReview(true)}
@@ -2360,7 +2365,7 @@ export default function Home() {
             </> : null}
             {candidateProfile && <>
               {activeTab === "chat" && !techBuddyOpen && (homeView || messages.length === 0) && <LearningSearch attempts={practice.attempts} designs={practice.designs} onQuestion={(question, topic) => { setPractice(prev => ({ ...prev, active: { question, topic, difficulty, round: roundStrategy, attemptId: crypto.randomUUID() } })); setMessages(prev => [...prev, { role: "assistant", content: question }]); setHomeView(false); }} onSaved={attempt => { setHomeView(false); setMessages(prev => [...prev, { role: "assistant", content: `Saved attempt: ${attempt.question}\n\nYour answer: ${attempt.answer}\n\n${attempt.feedback}`, replay: true }]); }} onDesign={id => { setPractice(prev => ({ ...prev, selectedDesignId: id })); openWorkspace("canvas"); }} />}
-              {activeTab === "chat" && !techBuddyOpen && (homeView || messages.length === 0) && <EvidenceNotebook records={practice.evidence} onChange={evidence => setPractice(prev => ({ ...prev, evidence }))} />}
+              {activeTab === "chat" && !techBuddyOpen && (homeView || messages.length === 0) && <details className="practice-panel practice-foldout"><summary>Resume evidence notebook</summary><EvidenceNotebook records={practice.evidence} onChange={evidence => setPractice(prev => ({ ...prev, evidence }))} /></details>}
               {activeTab === "dsaLab" && <ExecutableDsa />}
               {activeTab === "canvas" && <DesignWorkbench initialSelectedId={practice.selectedDesignId} designs={practice.designs} onChange={designs => setPractice(prev => ({ ...prev, designs }))} saveStatus={localSaveStatus} canvas={systemDesignCanvas} onRestoreCanvas={setSystemDesignCanvas} onReview={startCanvasAction} />}
               <ContentReport context={`${activeTab}: ${selectedSub || selectedCat || "Home"}`} reports={practice.reports} onChange={reports => setPractice(prev => ({ ...prev, reports }))} />
@@ -2371,9 +2376,11 @@ export default function Home() {
           {/* ── Input area ── */}
           {showComposer && !techBuddyOpen && <footer className="glass-chrome composer-footer" style={{ padding: isMobile ? (isKeyboardOpen ? "8px 10px" : "8px 10px 10px") : "10px 12px 12px", borderTop:"1px solid rgba(255,255,255,.08)", flexShrink:0 }}>
             <div className="practice-context">
-              <span>{practice.active?.topic || currentLabel || "General"} · {practice.active?.difficulty || difficulty} · {practice.active?.round || roundStrategy}</span>
-              <label>Feedback depth <select value={practice.feedbackDepth} onChange={e => setPractice(prev => ({ ...prev, feedbackDepth: e.target.value }))}>{["Quick review", "Detailed explanation", "Strict interview"].map(v => <option key={v}>{v}</option>)}</select></label>
-              {practice.active && !techBuddyOpen && <details className="practice-current-question" open><summary>Current question</summary><p>{practice.active.question}</p></details>}
+              {practice.active && <>
+                <span>{practice.active.topic || currentLabel || "General"} · {practice.active.difficulty || difficulty}</span>
+                <label>Feedback depth <select value={practice.feedbackDepth} onChange={e => setPractice(prev => ({ ...prev, feedbackDepth: e.target.value }))}>{["Quick review", "Detailed explanation", "Strict interview"].map(v => <option key={v}>{v}</option>)}</select></label>
+              </>}
+              {practice.active && <CurrentQuestion key={practice.active.question} question={practice.active.question} />}
               {loading && <p role="status">AI request in progress · {requestElapsed}s {requestElapsed >= 30 ? "· Taking longer than usual. You can stop and retry." : ""}<button onClick={() => abortRef.current?.abort()}>Stop request</button></p>}
               {!loading && practice.pending && <section className="practice-request-recovery" aria-label="Unfinished request">
                 <p role="alert"><strong>Request unfinished. Your submitted answer is saved.</strong>{practice.pending.error && <span className="practice-request-error">{practice.pending.error}</span>}</p>
@@ -2405,11 +2412,11 @@ export default function Home() {
                 onKeyDown={e => { if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();callAPI(input);} }}
                 rows={2} disabled={loading || (techBuddyOpen && !practice.active)}
                 aria-label="Message composer"
-                placeholder={mode==="interview" ? "Type your answer… or use 📸/🎤" : "Ask anything about frontend, backend, DSA, system design, or databases…"}
+                placeholder={practice.active || mode === "interview" ? "Type your answer…" : "Ask anything…"}
                 className="glass-input"
                 style={{ flex:1, border:"1px solid rgba(255,255,255,.09)", borderRadius:9, padding:"9px 12px", fontSize: isMobile?14:13, color:"#e8e8f0", outline:"none", lineHeight:1.5, maxHeight:120 }} />
 
-              <div className="composer-tools" style={{ display:"flex", flexDirection:"column", gap:4 }}>
+              <div className="composer-tools">
                 <button className="icon-btn" onClick={() => setShowScreen(true)} title="Analyze Screen" aria-label="Analyze Screen" style={{ width:30, height:30, fontSize:15 }}><i className="ti ti-screenshot" /></button>
                 <button className={`icon-btn ${isListening?"recording":""}`} onClick={toggleVoice} title="Voice" aria-label="Voice" style={{ width:30, height:30, fontSize:15 }}><i className={`ti ${isListening?"ti-microphone-off":"ti-microphone"}`} /></button>
                 {showCodeTools && <button className={`icon-btn ${showCode?"active":""}`} onClick={() => setShowCode(p=>!p)} title="Code" aria-label="Code" style={{ width:30, height:30, fontSize:15 }}><i className="ti ti-code" /></button>}
@@ -2422,57 +2429,12 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Desktop hint / Mobile mode bar */}
-            {isMobile && !isKeyboardOpen && !techBuddyOpen ? (
-              <div className="composer-mode-bar" style={{ marginTop:8, display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, flexWrap:"wrap" }}>
+            {isMobile && !isKeyboardOpen && (
+              <div className="composer-mode-bar">
                 <button type="button" className="glass-button" onClick={() => { setMobileHeaderOpen(true); setTopControlsOpen(true); }}>Prep settings</button>
-                <div style={{ display:"flex", background:"rgba(255,255,255,.04)", borderRadius:7, padding:2, border:"1px solid rgba(255,255,255,.07)", flex:"1 1 148px" }}>
-                  {["interview","practice"].map(m => (
-                    <button key={m} className={mode===m?"glass-button":""} onClick={() => setMode(m)} style={{ flex:1, padding:"5px 6px", fontSize:11, fontWeight:500, borderRadius:5, border:mode===m?`1px solid ${techTheme.accentBorder}`:"none", cursor:"pointer", color: mode===m?techTheme.accentText:"#6b7280", background: mode===m?techTheme.accentSoft:"transparent", textTransform:"capitalize" }}>{m}</button>
-                  ))}
-                </div>
-                <select value={difficulty} onChange={e => setDifficulty(e.target.value)}
-                  aria-label="Difficulty level"
-                  className="glass-input"
-                  style={{ fontSize:11, padding:"5px 6px", borderRadius:6, border:"1px solid rgba(255,255,255,.09)", color:"#9ca3af", outline:"none" }}>
-                  {DIFFS.map(d => <option key={d}>{d}</option>)}
-                </select>
-                <select value={interviewMode} onChange={e => setInterviewMode(e.target.value)}
-                  aria-label="Interview calibration mode"
-                  className="glass-input"
-                  style={{ fontSize:11, padding:"5px 6px", borderRadius:6, border:"1px solid rgba(255,255,255,.09)", color:"#9ca3af", outline:"none", minWidth:96 }}>
-                  {INTERVIEW_MODES.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}
-                </select>
-                <select value={roundStrategy} onChange={e => setRoundStrategy(e.target.value)}
-                  aria-label="Round Strategy Mode"
-                  className="glass-input"
-                  style={{ fontSize:11, padding:"5px 6px", borderRadius:6, border:"1px solid rgba(255,255,255,.09)", color:"#9ca3af", outline:"none", minWidth:86 }}>
-                  {ROUND_STRATEGY_MODES.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}
-                </select>
-                <select value={interviewPanel} onChange={e => setInterviewPanel(e.target.value)}
-                  aria-label="AI Interview Panel Mode"
-                  className="glass-input"
-                  style={{ fontSize:11, padding:"5px 6px", borderRadius:6, border:"1px solid rgba(255,255,255,.09)", color:"#9ca3af", outline:"none", minWidth:120, flex:"1 1 120px" }}>
-                  {INTERVIEW_PANEL_OPTIONS.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}
-                </select>
-                <button className="glass-button" aria-label="Start mock round" onClick={startSession} disabled={!candidateProfile||!selectedCat||loading}
-                  style={{ padding:"5px 12px", fontSize:11, fontWeight:600, borderRadius:7, border:`1px solid ${techTheme.accentBorder}`, color:techTheme.accentText, cursor: candidateProfile&&selectedCat&&!loading?"pointer":"not-allowed", opacity: candidateProfile&&selectedCat&&!loading?1:.4, display:"flex", alignItems:"center", gap:4, whiteSpace:"nowrap" }}>
-                  <i className="ti ti-player-play" style={{ fontSize:10 }} />Start
-                </button>
               </div>
-            ) : null}
-            {isMobile && !isKeyboardOpen && voiceHint ? (
-              <div style={{ marginTop:6, fontSize:10.5, color:"#6b7280", lineHeight:1.4 }}>
-                {voiceHint}
-              </div>
-            ) : (
-              !isMobile && (
-              <div style={{ marginTop:5, display:"flex", justifyContent:"space-between", fontSize:10.5, color:"#cbd5e1" }}>
-                <span>{voiceHint || `${footerHint} · Keyboard Power Mode: / focus, ⌘K topics, ⌘↵ mock`}</span>
-                <span style={{ color: "var(--ui-muted)", marginRight: 90, whiteSpace: "nowrap" }}>By Sagar Krishna</span>
-              </div>
-              )
             )}
+            {voiceHint && <p className="composer-voice-status" role="status">{voiceHint}</p>}
           </footer>}
 
           {/* ── Mobile bottom nav ── */}

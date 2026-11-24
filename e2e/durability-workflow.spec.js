@@ -26,10 +26,10 @@ test('sign-out offers backup before clearing local-only work',async({page})=>{
  await protect.getByRole('button',{name:'Cancel sign-out'}).click();expect(await page.evaluate(()=>localStorage.getItem('interviewiq.learningNotebook.v1'))).toContain(note.id);
 });
 test('completed and replaced plans retain dated session history',async({page})=>{
- await seed(page);await page.goto('/practice');const plan=page.getByRole('region',{name:'Your prep session'});await plan.getByLabel('Available study time').selectOption('5');
+ await seed(page);await page.goto('/practice');const plan=page.getByRole('region',{name:'Your prep session'});await page.getByText('Study session plan',{exact:true}).click();await plan.getByLabel('Available study time').selectOption('5');
  const boxes=plan.getByRole('checkbox');for(let i=0;i<await boxes.count();i++)await boxes.nth(i).check();await plan.getByLabel('Session reflection and remaining gaps').fill('My completed reflection');await plan.getByRole('button',{name:'Complete prep session',exact:true}).click();
  await expect.poll(async()=>(await saved(page)).planHistory.some(item=>item.reflection==='My completed reflection')).toBe(true);
- await plan.getByRole('button',{name:'Start a new prep session'}).click();await plan.getByText(/Session history/).click();await expect(plan.getByText('My completed reflection',{exact:true})).toBeVisible();await page.reload();await plan.getByText(/Session history/).click();await expect(plan.getByText('My completed reflection',{exact:true})).toBeVisible();
+ await plan.getByRole('button',{name:'Start a new prep session'}).click();await plan.getByText(/Session history/).click();await expect(plan.getByText('My completed reflection',{exact:true})).toBeVisible();await page.reload();await page.getByText('Study session plan',{exact:true}).click();await plan.getByText(/Session history/).click();await expect(plan.getByText('My completed reflection',{exact:true})).toBeVisible();
 });
 test('cloud conflict pauses saves and keeps the chosen device copy with the newer revision',async({page})=>{
  await auth(page);let reads=0;const writes=[];const remote=createSessionSnapshot().snapshot;remote.input='Cloud draft';

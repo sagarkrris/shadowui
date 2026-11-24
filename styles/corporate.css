@@ -52,6 +52,7 @@ html[data-design="corporate"] .app-shell .workspace-shortcuts { align-items: cen
 html[data-design="corporate"] .app-shell .workspace-shortcuts :is(a,button) { color: var(--ui-accent); background: transparent !important; border: 0; padding: 8px; font: 13px/1.5 var(--ui-font); text-decoration: none; }
 html[data-design="corporate"] .app-shell .welcome-screen { text-align: left; padding-top: 0 !important; }
 html[data-design="corporate"] .app-shell .practice-panel { background: var(--ui-surface); border-color: var(--ui-border); border-radius: 8px; padding: 24px; }
+html[data-design="corporate"] .app-shell .practice-foldout { padding: 0 24px; }
 html[data-design="corporate"] .app-shell .practice-panel p { font-size: 14px; color: var(--ui-muted); margin: 10px 0; line-height: 1.6; }
 html[data-design="corporate"] .app-shell .practice-panel h1 { font: 500 30px/1.3 var(--ui-font); color: var(--ui-text); margin: 12px 0; }
 html[data-design="corporate"] .app-shell .practice-panel h2 { font: 500 20px/1.4 var(--ui-font); color: var(--ui-text); margin: 0 0 12px; }

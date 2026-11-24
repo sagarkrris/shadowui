@@ -1,0 +1,17 @@
+META-INF/micronaut/io.micronaut.inject.BeanDefinitionReference/learning.micronaut.$FrameworkMechanicsTest$Marker$Definition
+learning/micronaut/FrameworkMechanicsTest$MarkCall.class
+learning/micronaut/$FrameworkMechanicsTest$Example$Definition$Intercepted.class
+META-INF/micronaut/io.micronaut.inject.BeanDefinitionReference/learning.micronaut.$FrameworkMechanicsTest$Example$Definition$Intercepted$Definition
+learning/micronaut/OrderControllerTest.class
+learning/micronaut/FrameworkMechanicsTest$Marker.class
+learning/micronaut/FrameworkMechanicsTest$Example.class
+learning/micronaut/$FrameworkMechanicsTest$Example$Definition$Exec.class
+learning/micronaut/OrderPolicyTest.class
+learning/micronaut/$FrameworkMechanicsTest$Example$Definition$Intercepted$Definition.class
+learning/micronaut/$FrameworkMechanicsTest$Marker$Definition.class
+learning/micronaut/$OrderControllerTest$RecordingClock$Definition.class
+learning/micronaut/OrderControllerTest$RecordingClock.class
+META-INF/micronaut/io.micronaut.inject.BeanDefinitionReference/learning.micronaut.$OrderControllerTest$RecordingClock$Definition
+learning/micronaut/FrameworkMechanicsTest.class
+META-INF/micronaut/io.micronaut.inject.BeanDefinitionReference/learning.micronaut.$FrameworkMechanicsTest$Example$Definition
+learning/micronaut/$FrameworkMechanicsTest$Example$Definition.class

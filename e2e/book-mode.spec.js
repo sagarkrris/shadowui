@@ -84,7 +84,39 @@ const publicRoutes = [
   '/senior-java-interview/daily/2026-10-07-set-01',
   '/learn/ai-engineering',
   '/learn/spring-transactions',
+  '/learn/java',
+  '/learn/spring/spring-framework',
+  '/learn/spring/spring-boot',
+  '/learn/hibernate',
+  '/learn/micronaut',
 ];
+
+for (const route of ['/learn/java', '/learn/spring/spring-framework', '/learn/spring/spring-boot', '/learn/hibernate', '/learn/micronaut']) {
+  test(`Book Mode standalone course: ${route} preserves lesson progress across exit and reload`, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await page.goto(route);
+    const first = page.getByRole('checkbox', { name: 'I completed this lesson and its self-check', exact: true }).first();
+    await first.check();
+    const book = await openBook(page);
+    await expect(pageStatus(book)).toHaveText(/^Pages \d+–\d+ of \d+$/);
+    await expect(first).toBeChecked();
+    const action = book.locator('[data-book-primary-action]').first();
+    await expect(action).toHaveCSS('color', 'rgb(255, 255, 255)');
+    await expect(action).toHaveCSS('background-color', 'rgb(25, 103, 210)');
+    await book.getByLabel('Book contents').selectOption({ index: 1 });
+    await book.getByRole('button', { name: 'Next page', exact: false }).click();
+    await expect(pageStatus(book)).not.toHaveText(/^Pages 1–2 of /);
+    await page.screenshot({ path: test.info().outputPath('standalone-book.png') });
+    await book.getByRole('button', { name: 'Exit Book Mode', exact: false }).click();
+    await expect(first).toBeChecked();
+    await page.reload();
+    await expect(first).toBeChecked();
+    await page.screenshot({ path: test.info().outputPath('standalone-course.png') });
+    expect(errors).toEqual([]);
+  });
+}
 
 for (const route of publicRoutes) {
   test(`Book Mode public route: ${route} uses one mobile page and restores its content`, async ({ page }, testInfo) => {

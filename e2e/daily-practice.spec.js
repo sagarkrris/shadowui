@@ -8,7 +8,7 @@ async function start(page) { await page.getByRole('button', { name: 'Start pract
 async function answer(page) { await page.getByLabel('Message composer').fill('I use a lock around the shared counter.'); await page.getByRole('button', { name: 'Send', exact: true }).click(); }
 async function attempts(page) { return page.evaluate(() => JSON.parse(localStorage.getItem('interviewprep.session.v1')).snapshot.practice.attempts); }
 
-test('mock result survives reload and agrees with review, home, history and export', async ({ page }) => {
+test('practice result survives reload and agrees with review, home, history and export', async ({ page }) => {
   await page.route('**/api/evaluate', route => route.fulfill({ json: { evaluation } })); await seed(page); await start(page); await answer(page);
   const review = page.getByRole('region', { name: 'Practice review' }); await expect(review).toContainText('6/10'); await expect.poll(async () => (await attempts(page)).length).toBe(1);
   await page.reload(); await expect(review).toContainText('6/10');
@@ -16,9 +16,29 @@ test('mock result survives reload and agrees with review, home, history and expo
   await page.getByRole('button', { name: 'Home', exact: true }).first().click(); await expect(page.getByText('1 completed attempts · 6/10 average')).toBeVisible();
   await page.getByText('Your data · Backup and restore', { exact: true }).click(); const downloadPromise = page.waitForEvent('download'); await page.getByRole('button', { name: 'Download full practice backup' }).click(); const download = await downloadPromise; expect(download.suggestedFilename()).toBe('interviewiq-practice-backup.json');
 });
-test('draft, current question and paused timer survive refresh and navigation', async ({ page }) => {
-  await seed(page); await start(page); await page.getByLabel('Message composer').fill('Draft includes atomicity'); await page.getByRole('button', { name: 'Pause timer', exact: true }).click(); await page.reload(); await expect(page.getByLabel('Message composer')).toHaveValue('Draft includes atomicity'); await expect(page.getByRole('button', { name: 'Resume timer', exact: true })).toBeVisible();
+test('mock draft, current question and paused timer survive refresh and navigation', async ({ page }) => {
+  await seed(page); await page.getByRole('button', { name: 'Start mock', exact: true }).click(); await page.getByLabel('Message composer').fill('Draft includes atomicity'); await page.getByRole('button', { name: 'Pause timer', exact: true }).click(); await page.reload(); await expect(page.getByLabel('Message composer')).toHaveValue('Draft includes atomicity'); await expect(page.getByRole('button', { name: 'Resume timer', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Home', exact: true }).first().click(); await page.getByRole('button', { name: 'Resume last session' }).click(); await expect(page.getByLabel('Message composer')).toHaveValue('Draft includes atomicity');
+});
+
+test('practice stays untimed and reveals formatted code on demand, while mock starts a timer', async ({ page }) => {
+  const requests = await mockChat(page, '**Explain atomicity** in the following snippet.\n\n```java\ncount++;\n```');
+  await gotoSeededApp(page);
+  await start(page);
+  expect(requests.at(-1).interviewMode).toBe('singleQuestionPractice');
+  expect(requests.at(-1).interviewPanel).toBeNull();
+  await expect(page.getByRole('button', { name: 'Pause timer' })).toHaveCount(0);
+  const full = page.getByRole('region', { name: 'Full current question' });
+  await expect(full).toBeHidden();
+  await page.getByText('Show full question', { exact: true }).click();
+  await expect(full.locator('strong')).toHaveText('Explain atomicity');
+  await expect(full.locator('pre')).toContainText('count++;');
+  await page.getByText('Hide full question', { exact: true }).click();
+  await expect(full).toBeHidden();
+  await page.getByRole('button', { name: 'Home', exact: true }).first().click();
+  await page.getByRole('button', { name: 'Start mock', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Pause timer' })).toBeVisible();
+  expect(requests.at(-1).interviewMode).toBe('strict');
 });
 test('failed evaluation retries the same answer once, including after refresh', async ({ page }) => {
   let count = 0; await page.route('**/api/evaluate', route => { count++; return route.fulfill(count === 1 ? { status: 503, json: { error: 'Unavailable' } } : { json: { evaluation } }); });
@@ -26,7 +46,7 @@ test('failed evaluation retries the same answer once, including after refresh', 
 });
 test('drill and retest save two answers and a comparison with the same rubric', async ({ page }) => {
   let count = 0; await page.route('**/api/evaluate', route => route.fulfill({ json: { evaluation: { ...evaluation, score: ++count === 1 ? 6 : 8 } } })); await seed(page); await start(page); await answer(page);
-  const review = page.getByRole('region', { name: 'Practice review' }); await expect(review).toBeVisible(); await review.getByLabel('Targeted exercise notes').fill('Read, increment and write must be one protected operation.'); await review.getByRole('button', { name: 'Complete drill and retest' }).click(); await expect(page.getByText('How would you make a shared counter safe?', { exact: true })).toBeVisible(); await answer(page); await expect(review).toContainText('Improved'); await expect.poll(async () => (await attempts(page)).length).toBe(2); expect((await attempts(page))[1].parentId).toBe((await attempts(page))[0].id);
+  const review = page.getByRole('region', { name: 'Practice review' }); await expect(review).toBeVisible(); await review.getByLabel('Targeted exercise notes').fill('Read, increment and write must be one protected operation.'); await review.getByRole('button', { name: 'Complete drill and retest' }).click(); await expect(page.locator('.practice-current-question summary')).toContainText('How would you make a shared counter safe?'); await answer(page); await expect(review).toContainText('Improved'); await expect.poll(async () => (await attempts(page)).length).toBe(2); expect((await attempts(page))[1].parentId).toBe((await attempts(page))[0].id);
 });
 test('null score stays unassessed and individual deletion removes its messages', async ({ page }) => {
   await page.route('**/api/evaluate', route => route.fulfill({ json: { evaluation: { ...evaluation, score: null } } })); await seed(page); await start(page); await answer(page); const review = page.getByRole('region', { name: 'Practice review' }); await expect(review).toContainText('Not assessed'); await review.getByText(/Attempt history and topic trends/).click(); await review.locator('details').last().locator('summary').click(); await review.getByRole('button', { name: 'Remove this practice record' }).click(); await expect.poll(async () => (await attempts(page)).length).toBe(0); await expect(page.getByRole('article', { name: 'Your message' }).filter({ hasText: 'I use a lock' })).toHaveCount(0);
@@ -56,7 +76,7 @@ test('full backup preview restores saved drafts and rejects incompatible data', 
   await page.getByText('Your data · Backup and restore', { exact: true }).click(); await page.getByLabel('Preview backup to restore').setInputFiles({ name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from('{"format":"interviewiq-practice","version":99,"entries":{}}') }); await expect(page.getByText('Incompatible backup. No data was changed.')).toBeVisible(); await expect(page.getByLabel('Message composer')).toHaveValue('Restore this draft');
 });
 test('resume evidence and contextual reports persist without inventing missing facts', async ({ page }) => {
-  await seed(page); await page.getByRole('button', { name: 'Add evidence record' }).click(); await page.getByLabel('Project or situation', { exact: true }).fill('Order service'); await page.getByLabel('Action and technical decision', { exact: true }).fill('Added idempotency keys'); await expect(page.getByText(/Measurement needed/)).toBeVisible();
+  await seed(page); await page.getByText('Resume evidence notebook', { exact: true }).click(); await page.getByRole('button', { name: 'Add evidence record' }).click(); await page.getByLabel('Project or situation', { exact: true }).fill('Order service'); await page.getByLabel('Action and technical decision', { exact: true }).fill('Added idempotency keys'); await expect(page.getByText(/Measurement needed/)).toBeVisible();
   await page.getByText('Report a problem with this content', { exact: true }).click(); await page.getByLabel('What is incorrect?').fill('The example does not handle empty input.'); await page.getByRole('button', { name: 'Preview report' }).click(); await expect(page.locator('pre').filter({ hasText: 'The example does not handle empty input.' })).toBeVisible(); await page.getByRole('button', { name: 'Save report locally' }).click(); await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('interviewprep.session.v1')).snapshot.practice.evidence[0]?.project)).toBe('Order service'); await page.reload(); await expect(page.getByLabel('Project or situation', { exact: true })).toHaveValue('Order service');
 });
 test('design versions restore user components and assumptions after refresh', async ({ page }) => {

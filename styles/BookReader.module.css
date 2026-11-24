@@ -84,6 +84,7 @@
 .dialog .flow h2 { font-size: 1.4em !important; }
 .dialog .flow :is(h3,h4,h5,h6) { font-size: 1.12em !important; }
 .flow [data-book-content] a { color: var(--accent) !important; }
+.flow [data-book-content] a[data-book-primary-action] { color: var(--paper) !important; background: var(--accent) !important; }
 .flow [data-book-content] :is(button,select,input,textarea) { color: var(--ink) !important; background: var(--paper) !important; border-color: var(--edge) !important; max-width: 100%; }
 .flow [data-book-content] :is(input,textarea,select) { font-size: max(16px, .9em); }
 .flow [data-book-content] textarea { width: 100%; }

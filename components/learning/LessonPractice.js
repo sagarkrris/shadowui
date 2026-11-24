@@ -13,7 +13,7 @@ export default function LessonPractice({ id, title, question, exercise, lessonHr
     <h3>Practice this lesson</h3><p>{exercise || 'Write the smallest example, test a boundary input, and explain one limitation.'}</p>
     <p className={styles.checkpoint}><strong>Checkpoint:</strong> {question || `Explain ${title}, give an example, and defend one trade-off.`}</p>
     <div className={styles.actions}>
-      <Link className={styles.start} prefetch={false} href={buddyHref(`${title}: ${question || 'Explain the mechanism, a boundary case, and a trade-off.'}`, { href: lessonHref || router.asPath.split('?')[0], title })}>Practise this lesson with Tech Buddy →</Link>
+      <Link className={styles.start} data-book-primary-action prefetch={false} href={buddyHref(`${title}: ${question || 'Explain the mechanism, a boundary case, and a trade-off.'}`, { href: lessonHref || router.asPath.split('?')[0], title })}>Practise this lesson with Tech Buddy →</Link>
       <Link prefetch={false} href="/learn">View my learning progress →</Link>
     </div>
     <fieldset className={styles.progress} aria-describedby={helpId}>

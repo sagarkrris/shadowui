@@ -66,6 +66,7 @@ test('gap repair retains study and exercise evidence across a lesson visit and r
 for (const minutes of [5, 15, 30]) test(`${minutes}-minute plan persists and has an explicit finish line`, async ({ page }) => {
   await seed(page); await page.goto('/practice');
   const plan = page.getByRole('region', { name: 'Your prep session' });
+  await page.getByText('Study session plan', { exact: true }).click();
   await plan.getByLabel('Available study time').selectOption(String(minutes));
   const boxes = plan.getByRole('checkbox');
   for (let index = 0; index < await boxes.count(); index++) await boxes.nth(index).check();
@@ -73,7 +74,7 @@ for (const minutes of [5, 15, 30]) test(`${minutes}-minute plan persists and has
   await plan.getByLabel('Session reflection and remaining gaps').fill('Revisit isolation tomorrow.');
   await plan.getByRole('button', { name: 'Complete prep session' }).click();
   await expect.poll(async () => (await saved(page)).plan.finished).toBe(true);
-  await page.reload(); await expect(plan.getByRole('status')).toContainText('Session complete');
+  await page.reload(); await page.getByText('Study session plan', { exact: true }).click(); await expect(plan.getByRole('status')).toContainText('Session complete');
 });
 test('application stage, follow-up and debrief persist and create a targeted review', async ({ page }) => {
   const application = { id: 'app-1', company: 'Example', role: 'Engineer', stage: 'applied' };
@@ -103,6 +104,7 @@ test('new plan and repair controls fit a phone and pass automated accessibility 
   await page.setViewportSize({ width: 390, height: 844 });
   await seed(page, { practice: { attempts: [baseline] } });
   await page.goto('/practice');
+  await page.getByText('Study session plan', { exact: true }).click();
   await expect(page.getByRole('region', { name: 'Your prep session' })).toBeVisible();
   const scroll = page.locator('.chat-scroll');
   expect(await scroll.evaluate(el => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
