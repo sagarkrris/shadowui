@@ -11,6 +11,7 @@ import { BUILD_CHALLENGES } from '../../lib/buildChallenges.mjs';
 
 // Explicit fixtures, not a compilation-only fallback. A new javaRelease course must register here.
 export const JAVA_BLOG_FIXTURES = {
+  'microservices-design-patterns': 'MicroservicesExampleChecks',
   "java-runtime-jdk-jvm-classloaders": "RuntimeClassLoadingChecks",
   'java-background-jobs': 'BackgroundJobsChecks',
   'java-connection-pools': 'ConnectionPoolExampleChecks',
@@ -28,6 +29,8 @@ export const JAVA_BLOG_FIXTURES = {
   'java-transactional-outbox': 'TransactionalOutboxExampleChecks',
   'java-cursor-pagination': 'CursorPaginationExampleChecks',
   'java-retry-budgets': 'RetryBudgetExampleChecks',
+  'java-conditional-writes': 'ConditionalWriteExampleChecks',
+  'java-ai-stream-cancellation': 'ModelStreamExampleChecks',
 };
 
 export function validateTechBlogCatalog(blogs = listTechBlogs(), assignments = COURSE_DEMO_ASSIGNMENTS, fixtures = JAVA_BLOG_FIXTURES) {

@@ -1,0 +1,231 @@
+<h2 id="set-39-privilege-boundaries-and-trustworthy-audit-evidence">Set 39 — Privilege boundaries and trustworthy audit evidence</h2>
+
+<p>24 November 2026 · S39-Q01–S39-Q12</p>
+
+<p>Assume Java 21 without preview features, PostgreSQL 17, Spring Boot 3.5 with Spring Security 6.5 in servlet proxy mode, and Kafka 4.0 where relevant. These are reference versions, not claims about the latest releases. Examples are original contextual SQL, configuration and protocol sketches, not runnable courses or deployed integrations. This set extends the Senior Java guide&#39;s Spring, persistence, microservices and security foundations. Practise each complete spoken answer in 45–90 seconds, then explain its verification and follow-up.</p>
+
+<p>A database role is a named database identity or group used to assign authority. A runtime identity is the account used by the running application; a migration identity changes database structure during controlled releases. A proxy is a wrapper that intercepts a call before forwarding it to the actual object.</p>
+<h3 id="1-a-service-can-drop-its-own-tables-even-after-delete-is-revoked-which-privilege-boundary-was-missed">1. A service can DROP its own tables even after DELETE is revoked. Which privilege boundary was missed?</h3>
+
+<p><strong>Say aloud:</strong> “Database ownership is authority over an object&#39;s definition, while DELETE is permission to remove rows. Revoking one data permission does not remove ownership or prevent an owner from restoring ordinary privileges. If the application&#39;s runtime account creates and owns production tables, a compromised service can have much more authority than its business operations require. I would separate a controlled migration identity from the runtime identity and grant only the operations the running service needs. The runtime role must also lack a path to assume the owner role. This adds credential and deployment management, but makes accidental destructive changes harder. I would verify the boundary using the actual runtime login, testing required operations and rejected schema changes in an isolated database.”</p>
+
+<p><strong>Example:</strong></p>
+
+<pre><code class="text">schema_owner: owns billing objects; migration job can assume it.
+billing_runtime: selected row operations; cannot assume schema_owner or alter its tables.
+</code></pre>
+
+<p><strong>Deep dive / verification:</strong> Inventory ownership, inherited memberships, role-assumption rights and PUBLIC grants. PUBLIC means every database role. A successful normal request proves usability, not least privilege. Denial tests must include DROP, ALTER, TRUNCATE and granting privileges onward; ordinary data grants do not inherently authorize all four. Ownership is a security guarantee boundary, not an algorithmic complexity issue.</p>
+
+<p><strong>Follow-ups:</strong> Could the runtime still cause damage through UPDATE? Yes; least privilege limits authority, while business validation, scoped writes, backups and recovery still matter.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://www.postgresql.org/docs/17/ddl-priv.html">PostgreSQL 17 privileges and ownership</a>.</p>
+
+<hr>
+<h3 id="2-a-restricted-account-can-read-orders-but-cannot-insert-into-a-serial-id-table-why-is-granting-insert-insufficient">2. A restricted account can read orders but cannot insert into a serial-ID table. Why is granting INSERT insufficient?</h3>
+
+<p><strong>Say aloud:</strong> “A PostgreSQL serial column uses a separate sequence, an object that supplies successive numbers through a default expression. Table privileges and sequence privileges are separate. The account also needs permission to use the containing schema, which allows object lookup without granting every operation on its contents. I would inspect the failing operation and grant only the missing schema and sequence access, rather than promote the service to an owner. In this example the runtime needs INSERT on the table and USAGE on the sequence used by nextval. If the insert returns other columns, those require suitable SELECT access too. I would test the complete generated insert because an object-relational mapper, which translates objects into database operations, can request returned identifiers or issue extra queries that a simplified manual test misses.”</p>
+
+<p><strong>Example:</strong></p>
+
+<pre><code class="sql">-- Context: existing billing schema, serial-backed orders.id and billing_runtime role.
+GRANT USAGE ON SCHEMA billing TO billing_runtime;
+GRANT INSERT ON billing.orders TO billing_runtime;
+GRANT USAGE ON SEQUENCE billing.orders_id_seq TO billing_runtime;
+-- Add SELECT only on columns actually read or returned by the operation.
+</code></pre>
+
+<p><strong>Deep dive / verification:</strong> Inspect the real column default and sequence name instead of guessing naming conventions. This scenario specifically assumes serial/explicit nextval, not every identity-generation strategy. Schema USAGE differs from schema CREATE. Test an allowed insert, forbidden updates, and forbidden sequence resets; USAGE alone does not grant setval.</p>
+
+<p><strong>Follow-ups:</strong> Should all sequences be writable? No; grant access to the ones used by the runtime&#39;s supported operations and include future-object policy deliberately.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://www.postgresql.org/docs/17/sql-grant.html">PostgreSQL 17 GRANT</a>.</p>
+
+<hr>
+<h3 id="3-existing-tables-work-but-tomorrow-s-migration-creates-an-inaccessible-table-why-did-the-default-grant-miss-it">3. Existing tables work, but tomorrow&#39;s migration creates an inaccessible table. Why did the default grant miss it?</h3>
+
+<p><strong>Say aloud:</strong> “Default privileges are a template applied when future database objects are created; they do not repair existing objects. The important identity is the role actually creating the object. A default configured for a developer or group role does not automatically become the default for every member creating objects under its own identity. I would standardize the migration creator and configure that role&#39;s future-object grants in the intended schema. Existing objects need a separate, reviewed grant. This makes deployments predictable but requires discipline when migration tooling changes credentials or assumes roles. I would run a representative migration using the exact production role transition, then connect as the runtime account to verify both intended access and forbidden operations on the newly created object.”</p>
+
+<p><strong>Example:</strong></p>
+
+<pre><code class="sql">-- Executed by an administrator authorized to configure schema_owner&#39;s defaults.
+ALTER DEFAULT PRIVILEGES FOR ROLE schema_owner IN SCHEMA billing
+  GRANT SELECT ON TABLES TO reporting_runtime;
+-- A migration creating as migration_login instead needs that creator&#39;s defaults,
+-- or must deliberately SET ROLE schema_owner before creation.
+</code></pre>
+
+<p><strong>Deep dive / verification:</strong> Table defaults do not also configure sequences or functions. Test a new object and an old object separately. A per-schema REVOKE cannot undo a grant established by global default privileges; inspect both scopes. Avoid blanket grants solely to silence deployment errors.</p>
+
+<p><strong>Follow-ups:</strong> Does changing the default revoke an existing table&#39;s access? No; modify existing object grants explicitly and assess active consumers first.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://www.postgresql.org/docs/17/sql-alterdefaultprivileges.html">PostgreSQL 17 ALTER DEFAULT PRIVILEGES</a>.</p>
+
+<hr>
+<h3 id="4-a-tenant-isolation-policy-passes-owner-run-tests-but-production-returns-every-tenant-s-rows-what-should-the-test-identity-expose">4. A tenant-isolation policy passes owner-run tests but production returns every tenant&#39;s rows. What should the test identity expose?</h3>
+
+<p><strong>Say aloud:</strong> “Row-level security adds database policies controlling which rows a role can read or modify. Enabling it does not mean every identity is constrained equally. PostgreSQL table owners normally bypass these policies, and superusers or roles with BYPASSRLS bypass them. I would investigate the application&#39;s effective role before rewriting the predicate. The runtime should use a constrained identity; FORCE ROW LEVEL SECURITY can subject an owner to policies but does not constrain a superuser or BYPASSRLS role. I would test both allowed and denied tenant reads and writes under the real runtime login. The benefit is another enforcement layer, but a policy can still be wrong or skipped through privileged access, so owner-only tests provide misleading evidence.”</p>
+
+<p><strong>Example:</strong></p>
+
+<pre><code class="text">Test identities: tenant runtime A, tenant runtime B, migration owner.
+Assert: A cannot read B; A cannot insert or move a row into B; owner behavior is tested separately.
+</code></pre>
+
+<p><strong>Deep dive / verification:</strong> Check USING for eligible existing rows and WITH CHECK for proposed row values. Missing policies after enabling row security default to denial for ordinary constrained access. Whole-table operations such as TRUNCATE are outside row security, so withhold those privileges. Policy evaluation can affect query plans; inspect realistic plans rather than promising zero overhead.</p>
+
+<p><strong>Follow-ups:</strong> Is FORCE enough if runtime can alter the table? No; an owner can change policy configuration, reinforcing the need for separated runtime authority.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://www.postgresql.org/docs/17/ddl-rowsecurity.html">PostgreSQL 17 row security policies</a>.</p>
+
+<hr>
+<h3 id="5-a-connection-pool-reuses-yesterday-s-tenant-setting-how-can-transaction-scope-help-without-turning-context-into-authentication">5. A connection pool reuses yesterday&#39;s tenant setting. How can transaction scope help without turning context into authentication?</h3>
+
+<p><strong>Say aloud:</strong> “A pooled connection is a reused database session, so committed session settings can survive beyond one request. If tenant policies read a session parameter, leaving the previous tenant there can misroute later work. I would derive tenant identity from authenticated, authorized context and establish it locally inside each explicit transaction before any tenant query. A transaction-local setting ends on commit or rollback, reducing cleanup dependence. This requires every tenant access path to follow the same transaction contract and reject missing context. It also does not make a freely settable parameter a trusted identity against arbitrary SQL execution. I would test connection reuse, exceptions and rollback with a pool of one connection, including a request that omits context entirely.”</p>
+
+<p><strong>Example:</strong></p>
+
+<pre><code class="text">Begin transaction -&gt; set_config(&#39;app.tenant_id&#39;, boundTenant, true)
+-&gt; tenant-scoped SQL -&gt; commit/rollback. The final true requests transaction-local scope.
+Use a bound value through JDBC, Java&#39;s database access API; derive it from trusted membership, not request JSON alone.
+</code></pre>
+
+<p><strong>Deep dive / verification:</strong> Start with a clean pool/session baseline; a pre-existing session value can reappear after the local override ends. Make absent, blank and invalid context fail closed. Savepoint rollback to before the setting also removes it, so nested transaction behavior matters. Keep context establishment and queries on the same physical transaction. Autocommit setup followed by a separate query loses the intended scope.</p>
+
+<p><strong>Follow-ups:</strong> Does this defend against a compromised runtime issuing arbitrary SQL? Not by itself; a settable parameter is a context mechanism, and stronger identity isolation needs a different trust boundary.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://www.postgresql.org/docs/17/sql-set.html">PostgreSQL 17 SET and SET LOCAL</a>, <a href="https://www.postgresql.org/docs/17/functions-admin.html#FUNCTIONS-ADMIN-SET">transaction-local set_config</a>.</p>
+
+<hr>
+<h3 id="6-a-privileged-database-helper-reads-an-attacker-s-temporary-table-why-can-a-correct-parameterized-query-still-be-unsafe">6. A privileged database helper reads an attacker&#39;s temporary table. Why can a correct parameterized query still be unsafe?</h3>
+
+<p><strong>Say aloud:</strong> “A SECURITY DEFINER function runs with its owner&#39;s database privileges rather than only its caller&#39;s privileges. Parameter binding protects values from becoming SQL syntax, but it does not decide which object an unqualified name resolves to. An unsafe search path can let an attacker substitute an object, including a temporary table, for the intended one. I would qualify sensitive object names, set a function-local search path containing only trusted schemas with the temporary schema last, and keep the function owner&#39;s authority narrow. I would also restrict who can execute the function. This can offer a small privileged operation without broad table access, but the helper becomes security-sensitive code requiring adversarial tests, not merely a convenient shared query.”</p>
+
+<p><strong>Example:</strong></p>
+
+<pre><code class="text">Function option: SECURITY DEFINER SET search_path = pg_catalog, billing_private, pg_temp
+Precondition: untrusted roles cannot CREATE objects in billing_private.
+Create helper, revoke PUBLIC execution, and grant intended execution in one transaction.
+</code></pre>
+
+<p><strong>Deep dive / verification:</strong> Grant schema USAGE where needed for callers to reach the helper. Review operator/function resolution and any dynamic SQL as well as tables. Explicitly listing pg_temp last matters; simply omitting it can permit temporary-table masking. Verify rejection with attacker-created same-name objects and unauthorized callers. Path hardening does not replace business authorization inside the helper.</p>
+
+<p><strong>Follow-ups:</strong> Why revoke PUBLIC immediately? New functions normally allow execution by PUBLIC; doing creation and grants atomically avoids an unintended exposure window.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://www.postgresql.org/docs/17/sql-createfunction.html#SQL-CREATEFUNCTION-SECURITY">PostgreSQL 17 safe SECURITY DEFINER functions</a>.</p>
+
+<hr>
+<h3 id="7-an-annotated-spring-repair-operation-runs-for-an-unauthorized-caller-why-is-seeing-preauthorize-in-source-insufficient">7. An annotated Spring repair operation runs for an unauthorized caller. Why is seeing PreAuthorize in source insufficient?</h3>
+
+<p><strong>Say aloud:</strong> “Method authorization checks permission when an operation is invoked, rather than relying only on the HTTP route. In Spring Security&#39;s default proxy approach, an interceptor around the managed bean performs that check. An annotation is not proof that the interceptor is active or that the call traverses it. I would enable method security explicitly, identify the actual bean and call path, and place the protected operation behind a managed service boundary used by all entry points. A plain object created with new or a same-object call can avoid that proxy boundary. I would test an unauthorized invocation through the application context and assert that no repair effect occurs. This adds configuration and test work but protects alternative callers such as jobs or message handlers.”</p>
+
+<p><strong>Example:</strong></p>
+
+<pre><code class="text">Controller or scheduled adapter -&gt; injected secured repair service proxy -&gt; operation.
+Test principal without repair authority: denied before the first database mutation.
+Explicitly define authenticated system authority for jobs; do not silently bypass checks.
+</code></pre>
+
+<p><strong>Deep dive / verification:</strong> Boot&#39;s security starter alone does not enable method security. Include authorized and denied tests, and invoke the real context-managed bean rather than a hand-built test object. Review proxyability and all alternate entry points. Method permission still needs tenant and object scope; a broad repair authority is not permission to mutate every tenant.</p>
+
+<p><strong>Follow-ups:</strong> Is post-authorization suitable for preventing a destructive write? Prefer a precondition before the effect; denying a returned result after execution does not inherently undo the write.</p>
+
+<p><strong>Primary references:</strong> <a href="https://docs.spring.io/spring-security/reference/6.5/servlet/authorization/method-security.html">Spring Security 6.5 method security</a>, <a href="https://docs.spring.io/spring-framework/reference/6.2/core/aop/proxying.html">Spring proxy self-invocation semantics</a>.</p>
+
+<hr>
+<h3 id="8-adding-a-custom-web-security-chain-unexpectedly-exposes-an-actuator-endpoint-which-assumptions-should-be-retested">8. Adding a custom web security chain unexpectedly exposes an Actuator endpoint. Which assumptions should be retested?</h3>
+
+<p><strong>Say aloud:</strong> “Actuator provides operational endpoints such as health and configuration inspection. Exposure decides whether an endpoint is remotely available; authorization decides who may use it. In Spring Boot 3.5, adding a custom SecurityFilterChain makes the automatic web security configuration back off, so I must deliberately secure the operational surface as well as the business API. I would expose only needed endpoints, define ordered matching rules for management and application requests, and test the effective deployment ports and paths. A separate management port can help network isolation but is not an authorization policy by itself. The trade-off is more explicit configuration, with the benefit that operators&#39; access and public health access become intentional contracts instead of assumptions about defaults.”</p>
+
+<p><strong>Example:</strong></p>
+
+<pre><code class="text">Required outcomes: anonymous minimal health allowed if policy permits;
+anonymous configuration inspection denied; authorized operator access narrowly allowed;
+unmatched application paths still receive an explicit security rule.
+</code></pre>
+
+<p><strong>Deep dive / verification:</strong> Test endpoint availability and permission separately; a 404 from a disabled endpoint does not prove authorization for an enabled one. Include changed base paths, management ports, chain ordering and public ingress routing. Keep sensitive values minimized even for operators. Do not disable browser security controls merely to make a management POST pass.</p>
+
+<p><strong>Follow-ups:</strong> Does an Actuator-only chain secure everything else? No; configure a chain covering the remaining application surface as well.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://docs.spring.io/spring-boot/3.5/reference/actuator/endpoints.html">Spring Boot 3.5 endpoint exposure and security</a>.</p>
+
+<hr>
+<h3 id="9-a-kafka-consumer-can-read-its-topic-but-fails-when-joining-a-new-group-why-should-the-fix-avoid-wildcard-permissions">9. A Kafka consumer can read its topic but fails when joining a new group. Why should the fix avoid wildcard permissions?</h3>
+
+<p><strong>Say aloud:</strong> “An access-control list, or ACL, maps a principal, the caller&#39;s authenticated identity, to permitted operations on particular Kafka resources. A topic and a consumer group are different resources. Reading topic data does not automatically authorize joining a group or committing its progress. If a deployment changes the group ID, existing topic permissions may be correct while group authorization fails. I would inspect the exact principal, group ID, resource pattern and denied operation, then grant the narrow group access required by the intended deployment. A broad wildcard can hide the error while allowing the service to interfere with unrelated workloads. I would test real consumer startup, fetching and offset commits with the production permission shape, plus a negative test against an unrelated group.”</p>
+
+<p><strong>Example:</strong></p>
+
+<pre><code class="text">Principal shipment_reader: READ on topic shipments;
+READ on group shipment_projection_v2, with required describe access.
+A rename to shipment_projection_v3 is a reviewed permission and replay transition.
+</code></pre>
+
+<p><strong>Deep dive / verification:</strong> Inspect effective literal, prefixed and wildcard ACLs, including denies and configured superusers. Some permissions imply others; validate the actual broker rules rather than inventing a generic role hierarchy. Group authorization protects group operations, not tenant fields inside records. Changing the group can also change replay position, independently of whether authorization succeeds.</p>
+
+<p><strong>Follow-ups:</strong> Why test commits after successful fetch? Different protocol operations exercise different resource checks; a socket connection or metadata request is insufficient evidence.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://kafka.apache.org/40/security/authorization-and-acls/">Kafka 4.0 authorization and ACL resource checks</a>.</p>
+
+<hr>
+<h3 id="10-an-invoice-api-accepts-a-correctly-signed-token-intended-for-a-calendar-api-what-is-missing-from-validation">10. An invoice API accepts a correctly signed token intended for a calendar API. What is missing from validation?</h3>
+
+<p><strong>Say aloud:</strong> “A token signature establishes integrity under a trusted signing key; it does not establish that this service is the intended recipient. The audience identifies the resource server a token targets. An invoice service must reject a calendar-only token even when the issuer and signature are valid. For a signed JSON access token following the OAuth authorization protocol, I would validate the expected token type, issuer, permitted signing algorithms, signature, time constraints and audience, then enforce operation scope and resource ownership. I would obtain a properly targeted downstream token instead of forwarding a token merely because another service accepts its issuer. The trade-off is token issuance and configuration complexity, but audience separation limits cross-service replay and prevents trust in one API from silently granting entry to another.”</p>
+
+<p><strong>Example:</strong></p>
+
+<pre><code class="text">Token: trusted issuer, aud = calendar-api, scope = read.
+Invoice API: reject wrong audience; a generic read string does not change the recipient.
+A correctly targeted invoice token still needs invoice-specific authorization.
+</code></pre>
+
+<p><strong>Deep dive / verification:</strong> Test a validly signed wrong-audience token, an identity token (login evidence) substituted for an access token (API authority), expired tokens, and insufficient scope. Configure exact accepted identifiers; do not use substring matching. Tests should inspect denial before data access. Resource indicators help clients request tokens for intended resources when supported by the authorization server.</p>
+
+<p><strong>Follow-ups:</strong> Does audience restriction stop theft and replay at the intended API? No; bearer-token protection, transport security and appropriate lifetime or sender constraints remain separate concerns.</p>
+
+<p><strong>Primary references:</strong> <a href="https://www.rfc-editor.org/rfc/rfc9068.html#section-4">RFC 9068 access-token validation</a>, <a href="https://www.rfc-editor.org/rfc/rfc8707.html">RFC 8707 resource indicators</a>.</p>
+
+<hr>
+<h3 id="11-a-repair-commits-but-its-success-audit-message-disappears-during-a-crash-which-evidence-should-commit-with-the-change">11. A repair commits but its success audit message disappears during a crash. Which evidence should commit with the change?</h3>
+
+<p><strong>Say aloud:</strong> “A success audit record is durable evidence of a committed action, while a normal application log is often buffered and independently delivered. Logging success after commit leaves a crash window where the data changed but the evidence is absent. For a repair whose audit completeness is mandatory, I would insert the operation&#39;s audit fact in the same database transaction as the mutation. Either both commit or neither does. An external reporting pipeline can later copy that fact using a stable operation ID, accepting replay and deduplicating there. This couples repair availability to audit storage, which is appropriate only when the requirement demands it. I would inject failure before commit and after commit, then reconcile database state and evidence rather than trust the HTTP response.”</p>
+
+<p><strong>Example:</strong></p>
+
+<pre><code class="text">Transaction: validate approved operation -&gt; conditional repair -&gt; insert audit fact -&gt; commit.
+Audit fact: operation ID, trusted actor, tenant, approved change reference, actual outcome.
+Reporter: copies committed facts; retries use the same event identity.
+</code></pre>
+
+<p><strong>Deep dive / verification:</strong> A timeout after commit remains ambiguous to the caller; recover the stored outcome using the operation ID. An audit insertion failure must abort the repair instead of being caught and ignored. This guarantees local atomicity, not instant delivery or permanent immutability in another store. Bound retained audit data and monitor reporting backlog; avoid putting full secrets or sensitive payloads into the fact.</p>
+
+<p><strong>Follow-ups:</strong> Where do denied attempts belong? A separate security-event path, since a transaction rolled back with the attempted mutation cannot preserve its own inserted denial record.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://www.postgresql.org/docs/17/tutorial-transactions.html">PostgreSQL 17 transaction atomicity</a>. The audit protocol is an illustrative application design built on that local guarantee.</p>
+
+<hr>
+<h3 id="12-the-same-administrator-can-edit-repairs-and-erase-their-audit-trail-does-append-only-application-code-make-the-evidence-trustworthy">12. The same administrator can edit repairs and erase their audit trail. Does append-only application code make the evidence trustworthy?</h3>
+
+<p><strong>Say aloud:</strong> “Append-only means the normal writer adds records instead of changing prior ones. That is useful behavior, but it does not prevent a more privileged identity from deleting or rewriting the storage. I would define the threat model: which administrators, service credentials and storage failures must the evidence withstand? Then I would separate audit administration from repair execution, restrict mutation and deletion rights, export to independently controlled retention, and monitor gaps or delivery failures. Cryptographic linking can reveal some modifications only if a trusted checkpoint survives outside the attacker&#39;s control; it does not make deletion impossible. These controls cost storage and operational coordination. I would verify them with deletion-denial tests and a recovery drill that proves retained evidence is still readable and attributable.”</p>
+
+<p><strong>Example:</strong></p>
+
+<pre><code class="text">Repair operator: requests approved operations, cannot delete retained audit objects.
+Audit writer: append authority only; retention administration is a separate identity.
+Independent monitor: checks delivery lag, expected operation coverage and retention failures.
+</code></pre>
+
+<p><strong>Deep dive / verification:</strong> Minimize personal data, define retention and authorized deletion policy, and exclude credentials. Record stable operation IDs and trusted actor identity; timestamps alone cannot correlate every concurrent event. Reconcile committed operations against facts rather than assume an unbroken counter proves completeness. A denied-attempt logging outage needs an explicit availability policy and alerting; it must not silently authorize the denied operation.</p>
+
+<p><strong>Follow-ups:</strong> Does hashing each record prove completeness? No; without an independent expected inventory or trusted checkpoint, missing records or a replaced history can remain undetected.</p>
+
+<p><strong>Primary reference:</strong> <a href="https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html">OWASP logging protection and verification guidance</a>. Separation and reconciliation above are illustrative design choices, not a claim of compliance certification.</p>
+
+<hr>
+<h4 id="topic-coverage">Topic coverage</h4>
+
+<p>S39-Q01–Q03: runtime ownership, serial sequences and future-object grants. Q04–Q06: row policies, pooled session scope and privileged helpers. Q07–Q08: Spring method and operational endpoint boundaries. Q09–Q10: Kafka resource permissions and OAuth audiences. Q11–Q12: crash-safe audit facts, independent retention and evidence limits. These are authorization and protocol guarantees; algorithmic big-O is not the governing cost. Evaluate policy query plans, authorization latency, audit storage and reporting backlog under realistic load.</p>
+<h4 id="next-set">Next set</h4>
+
+<p>Build on these boundaries with authorization changes during long-running work, revocation timing, service-to-service delegation and policy rollout testing. Return to concurrency and coding through new scenarios rather than repeating tenant-context cleanup, repair replay or Java linkage questions.</p>

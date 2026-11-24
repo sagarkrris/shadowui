@@ -26,6 +26,14 @@ export default function TopicReader({ topic, groups, legacy }) {
     <nav aria-label="Guide breadcrumb" className={styles.guideBreadcrumb}><Link href="/senior-java-interview">Senior Java interview guide</Link> / <Link href="/senior-java-interview/topics">Topics</Link> / {topic.title}</nav>
     <p className={styles.eyebrow}>TOPIC STUDY PATH · {topic.count} PRIMARY QUESTIONS</p>
     <h1>{topic.title} interview questions</h1>
+    {['spring-framework', 'spring-boot'].includes(topic.slug) &&
+      <p><Link href={`/learn/spring/${topic.slug}`}>Study the {topic.title} course and runnable labs</Link></p>}
+    {topic.slug === 'hibernate' &&
+      <p><Link href="/learn/hibernate">Study the Hibernate course and runnable labs</Link></p>}
+    {topic.slug === 'micronaut' &&
+      <p><Link href="/learn/micronaut">Study the Java and Micronaut course and runnable labs</Link></p>}
+    {topic.slug === 'java' &&
+      <p><Link href="/learn/java">Study Core and Advanced Java with runnable labs</Link></p>}
     <p className={styles.lead}>{topic.description}</p>
     <p className={styles.small}>{topic.baseline} These are conceptual answers and verification scenarios. Runnable examples remain in the linked guide; no live framework, database or cloud test is implied.</p>
     <section id="coverage" aria-labelledby="coverage-title">
@@ -59,7 +67,7 @@ export default function TopicReader({ topic, groups, legacy }) {
                 <p><strong>Tier 1 · Foundation:</strong> {group.questions[0].answer}</p>
                 <blockquote><p><strong>{questionIndex === 0 ? 'Tier 2 · How it works:' : 'Tier 2 · Direct answer:'}</strong> {questionIndex === 0 ? group.mechanism : entry.answer}</p></blockquote>
                 <details><summary>Tier 3 · Answered follow-ups</summary>{followUps.map(followUp => <div key={followUp.question}><h4>{followUp.question}</h4><p>{followUp.answer}</p></div>)}</details>
-                <details><summary>Tier 4 · Deep dive and verification</summary>{questionIndex !== 0 && <p><strong>Internals:</strong> {group.mechanism}</p>}<p><strong>Trade-off:</strong> {group.tradeOff}</p><p><strong>How to verify:</strong> {group.verify}</p></details>
+                <details><summary>Tier 4 · Deep dive and verification</summary>{entry.course && <p><Link href={entry.course}>Worked example and runnable checkpoint</Link>{entry.course.endsWith("#transactions") && <> · <Link href="/learn/spring/annotation-internals">Transaction annotation internals</Link></>}</p>}{questionIndex !== 0 && <p><strong>Internals:</strong> {group.mechanism}</p>}<p><strong>Trade-off:</strong> {group.tradeOff}</p><p><strong>How to verify:</strong> {group.verify}</p></details>
               </section>;
             })}
           </section>;

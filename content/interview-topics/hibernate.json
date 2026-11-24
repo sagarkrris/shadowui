@@ -8,7 +8,8 @@
       "questions": [
         {
           "question": "What is an object-relational mapper?",
-          "answer": "A tool translating between object models and relational storage, including mapping, identity and state-management behavior."
+          "answer": "An object-relational mapper translates operations on managed objects into relational reads and writes. Jakarta Persistence defines the contract and Hibernate implements it. In the lab a PurchaseOrder becomes a purchase_orders row while its lines occupy a separate table. Read the SQL and committed rows because an ORM still obeys database joins, constraints and locks.",
+          "course": "/learn/hibernate#setup"
         },
         {
           "question": "When is Hibernate useful?",
@@ -37,7 +38,8 @@
       "questions": [
         {
           "question": "What is the persistence context?",
-          "answer": "A unit tracking managed entity instances and their lifecycle, providing identity consistency for a persistent identity within that context."
+          "answer": "A persistence context combines identity and change tracking for a unit of work. Fetching the same order twice in one context returns its managed instance. Another Session has a separate instance and can observe a different snapshot. Use a fresh Session for commit assertions so the identity map does not hide database state.",
+          "course": "/learn/hibernate#lifecycle"
         },
         {
           "question": "When should a context be short-lived?",
@@ -66,7 +68,8 @@
       "questions": [
         {
           "question": "What is a transient entity?",
-          "answer": "An instance not yet associated with a persistence context as a persistent managed entity."
+          "answer": "A new order is transient until you persist it. It is managed while attached to a context, detached after closing or clearing it, and removed when a managed deletion is registered. Modifying a detached field changes only that Java object. Verify each transition with contains and a fresh database read after transaction completion.",
+          "course": "/learn/hibernate#lifecycle"
         },
         {
           "question": "When does an entity become detached?",
@@ -95,7 +98,8 @@
       "questions": [
         {
           "question": "What does merge return?",
-          "answer": "A managed instance receiving the supplied state; it may be a different Java object from the detached argument."
+          "answer": "Merge copies entity state into a managed target and returns it. The original detached order does not become managed. Mutating the returned copy is tracked, but changing the original again is not. For a partial client update, load the current entity and apply allowed changes so an absent field cannot overwrite stored data.",
+          "course": "/learn/hibernate#lifecycle"
         },
         {
           "question": "When is explicit command mapping safer than merge?",
@@ -124,7 +128,8 @@
       "questions": [
         {
           "question": "Why does every entity need an identifier?",
-          "answer": "The persistence system needs a stable identity to distinguish rows and track managed instances across operations."
+          "answer": "Identity links a managed entity to a row within its mapped type. The order lab uses a database sequence and can assign the ID before the insert. Rollback can leave gaps, and allocation order does not prove commit order. Choose the generator based on the database and batching requirements, then inspect the generated SQL.",
+          "course": "/learn/hibernate#identifiers"
         },
         {
           "question": "When is a generated surrogate key useful?",
@@ -153,7 +158,8 @@
       "questions": [
         {
           "question": "Why is entity equality harder than DTO equality?",
-          "answer": "Entities have lifecycle and identity assignment, and proxies can alter runtime class behavior without changing persistent identity."
+          "answer": "Generated IDs are absent on new objects and can appear later, so equality and hashing based on a changing ID can break membership in a HashSet. Hibernate proxies can also affect class comparisons. Choose a stable equality contract for the domain and test transient, managed, detached and proxy references across Sessions.",
+          "course": "/learn/hibernate#identifiers"
         },
         {
           "question": "When should associations be excluded from equals and hashCode?",
@@ -182,7 +188,8 @@
       "questions": [
         {
           "question": "What is the owning side of an association?",
-          "answer": "The mapped side responsible for writing the relationship's relational representation, such as the foreign key or join table."
+          "answer": "The owning side controls the persisted link. OrderLine owns order_id through its @ManyToOne mapping, while PurchaseOrder.lines uses mappedBy to name the Java field on the line. Adding only to the inverse collection does not reliably write the foreign key. Set both sides and verify the stored value with an independent read.",
+          "course": "/learn/hibernate#relationships"
         },
         {
           "question": "When should helper methods update both association sides?",
@@ -211,7 +218,8 @@
       "questions": [
         {
           "question": "What is a cascade operation?",
-          "answer": "Propagation of a specified persistence operation from one entity to associated entities according to mapping configuration."
+          "answer": "Cascade propagates a named operation, such as PERSIST from an order to its new lines. Orphan removal can delete an existing owned child removed from the relationship. Neither choice controls the fetch plan. Test both insertion and removal with real rows, and avoid cascading deletion to shared entities such as products.",
+          "course": "/learn/hibernate#relationships"
         },
         {
           "question": "When is orphanRemoval appropriate?",
@@ -240,7 +248,8 @@
       "questions": [
         {
           "question": "What does lazy fetching defer?",
-          "answer": "Loading associated state until needed through a supported managed access path, subject to mapping and enhancement capabilities."
+          "answer": "Lazy loading defers reading state until it is needed. In the lab a line collection can load on first access while its Session is open. An uninitialized collection accessed after closure fails. Choose a fetch plan for each read and return a DTO with the required fields so serialization cannot decide when to query.",
+          "course": "/learn/hibernate#fetching"
         },
         {
           "question": "When is a DTO projection preferable to loading entities?",
@@ -269,7 +278,8 @@
       "questions": [
         {
           "question": "What is an N+1 query pattern?",
-          "answer": "One query loads many parents, then additional queries load related state separately for each parent or row."
+          "answer": "N+1 means one root query plus one additional query per root when navigating its association. Three orders can therefore cause four statements. A collection fetch join can make root pagination unsafe or expensive. Page root IDs first and fetch that bounded set separately, then check both statement counts and inclusion of empty orders.",
+          "course": "/learn/hibernate#pagination"
         },
         {
           "question": "When can batch fetching help?",
@@ -298,7 +308,8 @@
       "questions": [
         {
           "question": "What is dirty checking?",
-          "answer": "Detection of changes to managed entity state so Hibernate can generate appropriate updates during synchronization."
+          "answer": "Dirty checking compares managed state with what Hibernate already knows or uses enhancement-assisted tracking. Flush synchronizes changes with SQL. A flushed rename can still roll back, so observing an UPDATE is not proof of durability. Force a rollback after flush and read the committed row in a new Session.",
+          "course": "/learn/hibernate#flush"
         },
         {
           "question": "When is explicit flush useful?",
@@ -327,7 +338,8 @@
       "questions": [
         {
           "question": "What does Version provide?",
-          "answer": "Optimistic concurrency checking using a version attribute so stale updates can be detected rather than silently replacing newer state."
+          "answer": "Optimistic locking detects a competing write through a version check. Hibernate includes the observed version in an update predicate and treats a stale match as a conflict. Two Sessions can read the same version, but the second rename cannot quietly replace the winner. Verify this with two transactions and a fresh read.",
+          "course": "/learn/hibernate#locking"
         },
         {
           "question": "When is optimistic locking a good fit?",
@@ -356,7 +368,8 @@
       "questions": [
         {
           "question": "What is pessimistic locking?",
-          "answer": "Acquiring database locks to prevent conflicting concurrent operations during a transaction, according to the selected lock mode and database behavior."
+          "answer": "Pessimistic locking asks the database to hold a lock while the transaction reads or updates the protected row. It can prevent a competing writer from proceeding immediately, but can also cause timeouts and deadlocks. Test competing transactions and timeout behavior on the target database, and avoid locking across slow remote work.",
+          "course": "/learn/hibernate#locking"
         },
         {
           "question": "When is it preferable to optimistic retries?",
@@ -385,7 +398,8 @@
       "questions": [
         {
           "question": "How do Session and transaction differ?",
-          "answer": "A Session manages persistence context operations; a transaction defines a database consistency and completion boundary used by those operations."
+          "answer": "The Session tracks Java entity state and the transaction defines an atomic database boundary. A SessionFactory is shared, but each request or use case should own its Session. A connection can be acquired lazily. Keep the read or write transaction small and map a DTO before closing the context when it needs lazy state.",
+          "course": "/learn/hibernate#setup"
         },
         {
           "question": "When should remote calls be kept outside a database transaction?",
@@ -414,7 +428,8 @@
       "questions": [
         {
           "question": "When is bulk update useful?",
-          "answer": "For set-based changes where per-entity loading is unnecessary and the bypassed lifecycle behavior is acceptable."
+          "answer": "Bulk JPQL or HQL modifies a set of rows directly instead of visiting every managed entity. That can reduce work but leaves already-loaded objects stale and normally bypasses version increments and callbacks. In the lab refresh reveals the changed database value. Plan the flush and refresh or clear boundaries before using bulk operations.",
+          "course": "/learn/hibernate#flush"
         },
         {
           "question": "How does bulk DML differ from changing managed entities?",
@@ -443,7 +458,8 @@
       "questions": [
         {
           "question": "What is JDBC statement batching?",
-          "answer": "Sending compatible parameterized statement executions together through the driver to reduce round trips and execution overhead."
+          "answer": "JDBC batching groups compatible writes for delivery through the driver. Hibernate needs suitable SQL shapes and identifiers before it can group inserts. An IDENTITY insert typically must obtain its generated ID immediately and cannot use normal Hibernate insert batching. Measure actual batches and round trips, since prepared statement counts alone are insufficient.",
+          "course": "/learn/hibernate#operations"
         },
         {
           "question": "When do flush and clear help batch processing?",
@@ -472,7 +488,8 @@
       "questions": [
         {
           "question": "How does second-level cache differ from first-level cache?",
-          "answer": "Second-level cache can share mapped entity data across contexts, while first-level identity and managed state belong to one persistence context."
+          "answer": "The persistence context holds managed identity for one Session. An optional second-level cache can share eligible entity state across Sessions, while a query cache has its own result and invalidation policy. A close ends the first-level cache only. Test invalidation under writes and external updates, with the provider and region policy you deploy.",
+          "course": "/learn/hibernate#operations"
         },
         {
           "question": "When is entity caching appropriate?",
@@ -501,7 +518,8 @@
       "questions": [
         {
           "question": "What are common JPA inheritance strategies?",
-          "answer": "Single-table, joined and table-per-class mappings, each with different schema and polymorphic query trade-offs."
+          "answer": "Inheritance mapping trades schema shape for query shape. Single-table mappings avoid inheritance joins but can leave subclass columns sparse. Joined mappings normalize subclass data but require joins. Table-per-class can require unions for polymorphic queries. A mapped superclass contributes persistent fields without being an independently queryable entity. Inspect polymorphic SQL on realistic data before choosing.",
+          "course": "/learn/hibernate#mapping"
         },
         {
           "question": "When is an embeddable useful?",
@@ -530,7 +548,8 @@
       "questions": [
         {
           "question": "How do JPQL and native SQL differ?",
-          "answer": "JPQL targets mapped entities and attributes; native SQL targets the database schema and can use vendor-specific features."
+          "answer": "JPQL queries use entity and attribute names, while native queries use physical tables and columns. Bind values rather than assembling query text. A projection can select just the fields a read needs and avoid lazy access afterward. Verify result cardinality and SQL, especially when a join can repeat root rows or omit empty parents.",
+          "course": "/learn/hibernate#fetching"
         },
         {
           "question": "When should a query use bound parameters?",
@@ -559,7 +578,8 @@
       "questions": [
         {
           "question": "Where should an ORM performance investigation start?",
-          "answer": "With exact generated statements, query count, transferred rows, database waits and transaction boundaries for the slow use case."
+          "answer": "Begin with the operation that regressed. Compare bound SQL, row counts, actual plans and connection or lock wait evidence under comparable inputs. ORM statistics reveal statement patterns but not every network round trip. When changing versions, replay schema, query and concurrency checks against the supported dialect before drawing conclusions.",
+          "course": "/learn/hibernate#operations"
         },
         {
           "question": "When is Hibernate statistics useful?",
@@ -588,7 +608,8 @@
       "questions": [
         {
           "question": "What does @Entity cause Hibernate to recognize?",
-          "answer": "A managed persistent type in the persistence unit's discovered mapping set; the annotation does not itself register every class globally."
+          "answer": "@Entity marks a persistent type when discovered or registered. @Table sets its relational mapping. Hibernate builds the metadata at startup and normally derives its access strategy from the ID annotation placement. The order lab places @Id on a field. Keep access deliberate so a change of annotation placement cannot silently change stored attributes.",
+          "course": "/learn/hibernate#mapping"
         },
         {
           "question": "How does @Table differ from @Entity?",
@@ -617,7 +638,8 @@
       "questions": [
         {
           "question": "What does @Id identify?",
-          "answer": "The entity attribute or supported composite structure representing persistent identity within the mapping."
+          "answer": "@Id marks the identity attribute and @GeneratedValue selects a generator. A sequence can allocate an ID before an insert, whereas IDENTITY obtains it from the inserted row. Match database sequence configuration to allocation settings, allow gaps, and measure batching rather than inferring it from annotation syntax.",
+          "course": "/learn/hibernate#identifiers"
         },
         {
           "question": "How does @GeneratedValue influence persistence?",
@@ -646,7 +668,8 @@
       "questions": [
         {
           "question": "What does @Column(nullable=false) express?",
-          "answer": "Column mapping/schema-generation metadata; enforce the intended deployed database constraint and validation rather than assuming every path rejects null early."
+          "answer": "@Basic describes a simple persistent value, @Column maps its relational details, and @Transient excludes it. A column declaration can influence generated schema, while an existing migration must actually enforce the database constraint. Validate the request independently and check both generated mapping metadata and deployed DDL.",
+          "course": "/learn/hibernate#mapping"
         },
         {
           "question": "How does persistence @Transient differ from Java transient?",
@@ -675,7 +698,8 @@
       "questions": [
         {
           "question": "How does @ManyToOne map a common foreign-key relationship?",
-          "answer": "The referencing entity holds association metadata pointing to the target identity, commonly through a JoinColumn on the owning side."
+          "answer": "@ManyToOne with @JoinColumn owns the line’s foreign key. The inverse @OneToMany names that association with mappedBy, using its Java property name. Keep both sides consistent even when cascade persists the child. Inspect order_id after creation and remove a child to prove the orphan rule.",
+          "course": "/learn/hibernate#relationships"
         },
         {
           "question": "What does mappedBy on @OneToMany mean internally?",
@@ -704,7 +728,8 @@
       "questions": [
         {
           "question": "What does @OneToOne promise conceptually?",
-          "answer": "A single associated entity at each side's mapped cardinality, which should be supported by appropriate relational constraints."
+          "answer": "@OneToOne describes cardinality and @MapsId derives part or all of a dependent identifier from an association. With a shared primary key the child also points at the parent row. On the inverse side Hibernate may need SQL to discover whether a child exists. Test both null and present children with your enhancement settings.",
+          "course": "/learn/hibernate#relationships"
         },
         {
           "question": "When is @MapsId useful?",
@@ -733,7 +758,8 @@
       "questions": [
         {
           "question": "How does @Version protect an update internally?",
-          "answer": "Hibernate includes the expected version in the database update contract and detects a mismatch when the stored version changed."
+          "answer": "@Version tells the provider which attribute to use for optimistic checks. A normal versioned update matches both the ID and old version, then advances the version. A bulk update can bypass those steps. Use two independent Sessions and force the stale flush to prove the database did not accept an overwrite.",
+          "course": "/learn/hibernate#locking"
         },
         {
           "question": "When should a stale version be returned as a conflict?",
@@ -762,7 +788,8 @@
       "questions": [
         {
           "question": "Why choose EnumType.STRING over ORDINAL in many models?",
-          "answer": "Names are usually less sensitive to reordering than ordinals, although renaming constants still requires an explicit persisted-data migration."
+          "answer": "@Enumerated chooses how an enum is represented. Ordinal mapping depends on declaration order; name mapping depends on persisted names. @Convert delegates value transformation to an AttributeConverter where appropriate. Treat the stored representation as a compatibility contract and test existing rows when changing names or the converter.",
+          "course": "/learn/hibernate#mapping"
         },
         {
           "question": "What does @Converter do?",
@@ -791,7 +818,8 @@
       "questions": [
         {
           "question": "What does @NamedQuery declare?",
-          "answer": "A named entity-model query available through persistence APIs, with provider validation and runtime execution under the active mapping model."
+          "answer": "@NamedQuery registers a query under a stable name in the persistence unit. The query uses entity and attribute names and can be called with bound parameters from multiple use cases. A named query does not itself specify a complete fetch plan. Verify the expected parameters and result shape, and apply a named entity graph or explicit fetch join when the use case needs related data.",
+          "course": "/learn/hibernate#fetching"
         },
         {
           "question": "How does @NamedEntityGraph influence loading?",

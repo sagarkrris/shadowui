@@ -8,7 +8,8 @@
       "questions": [
         {
           "question": "Is Java pass-by-value or pass-by-reference?",
-          "answer": "Always pass-by-value. An object argument copies a reference value, allowing shared-object mutation without allowing the callee to replace the caller's variable."
+          "answer": "Java always copies argument values. For a primitive that is the primitive value. For an object it is the value of the reference. In the file indexer a method can mutate a shared list through that copy, but reassigning its parameter cannot change the caller’s variable. Verify the two cases separately.",
+          "course": "/learn/java#objects"
         },
         {
           "question": "When should an API defensively copy a collection?",
@@ -37,7 +38,8 @@
       "questions": [
         {
           "question": "How do identity and equality differ?",
-          "answer": "Identity asks whether references designate the same object. Equality can express equivalent values according to the type's equals contract."
+          "answer": "Identity asks whether two references point at the same object. Equality asks whether their values compare equal under the type’s contract. Two different String objects can hold the same search term. Use equals for the index key and guarantee equal keys have equal hash codes. Keep equality inputs stable while keys are stored.",
+          "course": "/learn/java#objects"
         },
         {
           "question": "When must equals and hashCode be implemented together?",
@@ -66,7 +68,8 @@
       "questions": [
         {
           "question": "How do List, Set and Map differ?",
-          "answer": "Lists represent sequences, sets represent uniqueness, and maps associate keys with values. Each implementation adds its own ordering and concurrency guarantees."
+          "answer": "A List preserves position and permits duplicates, a Set models membership, and a Map associates a key with a value. For the file indexer a Map links words to Set instances holding file paths. Return a sorted list at the output boundary so hash iteration order cannot change the result.",
+          "course": "/learn/java#collections"
         },
         {
           "question": "When is ArrayList preferable to LinkedList?",
@@ -95,7 +98,8 @@
       "questions": [
         {
           "question": "What is the purpose of a HashMap load factor?",
-          "answer": "It controls the occupancy threshold that triggers resizing. Higher occupancy can save space while increasing collision-related work."
+          "answer": "Load factor sets how full a HashMap can get before resizing. A smaller value uses more capacity for the same entries, while a larger value can increase collision cost. For the index, estimate typical vocabulary size and measure allocation and lookup. The API does not promise an iteration order or timing for a particular key.",
+          "course": "/learn/java#collections"
         },
         {
           "question": "Why pre-size a frequently populated map?",
@@ -124,7 +128,8 @@
       "questions": [
         {
           "question": "Why is List<Integer> not a subtype of List<Number>?",
-          "answer": "If it were, a caller could add a Double through the Number view and violate the Integer list's element contract."
+          "answer": "If List<Integer> could be passed as List<Number>, that method could insert a Double into a list whose caller expects only Integer. Java prevents that by making the generic types invariant. When an operation reads numbers use a suitable extends wildcard and when it writes integers consider a super wildcard. Verify misuse with a negative compile test.",
+          "course": "/learn/java#generics"
         },
         {
           "question": "What does producer-extends consumer-super mean?",
@@ -153,7 +158,8 @@
       "questions": [
         {
           "question": "How do checked and unchecked exceptions differ?",
-          "answer": "Checked exceptions must be caught or declared under language rules. Unchecked exceptions do not require that declaration, but still need an intentional error policy."
+          "answer": "Checked exceptions generally need a catch or a throws declaration, while unchecked exceptions can propagate without that declaration. Both still cross call, resource and transaction boundaries. For a failed reservation, inspect the actual transaction rollback policy and use try-with-resources to close the statement even when the operation throws.",
+          "course": "/learn/micronaut#java"
         },
         {
           "question": "When should an exception be translated at a boundary?",
@@ -161,7 +167,8 @@
         },
         {
           "question": "What is a suppressed exception in try-with-resources?",
-          "answer": "A secondary failure, commonly during close, attached to the primary failure so cleanup does not hide the original problem."
+          "answer": "When try-with-resources is already unwinding a body failure, subsequent failures from close are attached as suppressed exceptions. The original error remains primary. The supplied language lab throws from the body and two close operations, then checks that cleanup ran in reverse order and both close failures remain visible.",
+          "course": "/learn/java#resources"
         },
         {
           "question": "Why is returning from finally dangerous?",
@@ -182,7 +189,8 @@
       "questions": [
         {
           "question": "What does a Java record provide?",
-          "answer": "A component declaration with generated accessors, constructor-related behavior and value-oriented equals, hashCode and toString implementations."
+          "answer": "A record declares data components and provides accessors, a canonical constructor, equality and a string representation. Its compact constructor can validate an invariant, as OrderPolicy does for the quantity limit. Records are shallowly immutable. If a component is a mutable list, copy it or define clearly who owns later changes.",
+          "course": "/learn/micronaut#java"
         },
         {
           "question": "When is a normal class better than a record?",
@@ -194,7 +202,8 @@
         },
         {
           "question": "Why is a record containing an array not deeply immutable?",
-          "answer": "The array remains mutable, and generated equality uses the component's equality semantics rather than automatically providing deep array equality."
+          "answer": "A record’s array component is a final reference, but the array elements can still be changed. If callers must not change the contents, copy on input and avoid returning the original array. Also decide whether equality should compare contents. The default generated equality for an array component uses the array’s own equality behavior.",
+          "course": "/learn/java#objects"
         },
         {
           "question": "How would you evolve a public record without breaking consumers?",
@@ -211,7 +220,8 @@
       "questions": [
         {
           "question": "What makes a stream operation lazy?",
-          "answer": "Intermediate operations generally describe work that is executed when a terminal operation consumes the pipeline."
+          "answer": "Intermediate stream operations describe a pipeline and typically do not traverse the source until a terminal operation demands a result. A short-circuiting terminal operation may consume only part of the input. In a search pipeline, avoid using peek for required writes. Test results, encounter ordering and resource closure with the real terminal operation.",
+          "course": "/learn/java#collections"
         },
         {
           "question": "When should map be replaced by flatMap?",
@@ -240,7 +250,8 @@
       "questions": [
         {
           "question": "What problem does Optional solve?",
-          "answer": "It makes expected absence visible in a return type and encourages callers to choose an explicit alternative path."
+          "answer": "Optional represents an explicitly absent result, which lets the caller choose how to handle it. For example a lookup can distinguish no matching file from a failure to read the index. Keep errors separate from absence and use an empty collection when the successful result legitimately contains zero matches.",
+          "course": "/learn/java#objects"
         },
         {
           "question": "How do orElse and orElseGet differ?",
@@ -269,7 +280,8 @@
       "questions": [
         {
           "question": "What does volatile guarantee?",
-          "answer": "Visibility and ordering associated with reads and writes of that variable. It does not make a compound operation such as increment atomic."
+          "answer": "A volatile write establishes a happens-before relationship with subsequent reads of the same field under the Java memory model. It can publish a completed immutable index reference. It does not make increment or a multi-step update atomic. Identify which data needs visibility and which invariant needs stronger coordination.",
+          "course": "/learn/java#memory-model"
         },
         {
           "question": "When does synchronized provide visibility?",
@@ -298,7 +310,8 @@
       "questions": [
         {
           "question": "When is AtomicInteger preferable to volatile int?",
-          "answer": "When the operation needs atomic read-modify-write behavior such as increment, compare-and-set or update functions."
+          "answer": "Use AtomicInteger when a single numeric update must be atomic under concurrent access, such as incrementing a counter. A volatile int makes reads and writes visible but does not make read-modify-write indivisible. If the invariant includes several fields, use a lock or redesign ownership. Test the actual invariant under controlled contention.",
+          "course": "/learn/java#memory-model"
         },
         {
           "question": "Why can two atomic variables still produce an inconsistent pair?",
@@ -327,11 +340,13 @@
       "questions": [
         {
           "question": "What is the difference between execute and submit?",
-          "answer": "execute accepts a task without a result Future. submit returns a Future whose failure must be observed to avoid silent task errors."
+          "answer": "execute submits a Runnable without a Future. submit returns a Future that represents completion and captures task failure. In a backend, choose how the caller observes errors and what happens when the executor rejects work. Test with a bounded executor and await completion with a deadline instead of sleeping.",
+          "course": "/learn/micronaut#execution"
         },
         {
           "question": "Why must an executor queue be bounded deliberately?",
-          "answer": "Queued work retains inputs and consumes request deadlines. An unbounded backlog can exhaust memory while throughput remains unchanged."
+          "answer": "A pool with a fixed worker count can still accept more tasks than memory or deadlines permit. Bound queued or outstanding work and define what happens when that bound is hit. The Java lab holds one worker and fills one waiting slot, then proves that a third submission is rejected.",
+          "course": "/learn/java#executors"
         },
         {
           "question": "How do shutdown and shutdownNow differ?",
@@ -356,7 +371,8 @@
       "questions": [
         {
           "question": "What is the difference between thenApply and thenCompose?",
-          "answer": "thenApply transforms a completed value; thenCompose flattens a function returning another CompletionStage into one composed stage."
+          "answer": "thenApply transforms the completed value of a stage. thenCompose is for a function that returns another stage and flattens the result. In a file workflow, choose between formatting a ready result and starting a separate asynchronous read. Test failure and cancellation separately because flattening alone does not define cancellation propagation.",
+          "course": "/learn/java#executors"
         },
         {
           "question": "When is handle preferable to exceptionally?",
@@ -385,7 +401,8 @@
       "questions": [
         {
           "question": "What workload benefits from virtual threads?",
-          "answer": "Many concurrent tasks spending substantial time waiting for blocking I/O, provided downstream resources and admission are controlled."
+          "answer": "Virtual threads can help workloads with many concurrent blocking waits. They reduce the cost of a waiting Java thread but do not increase CPU, connection capacity or database throughput. Compare the same reservation workload with explicit admission limits and observe connection waits, queueing and tail latency.",
+          "course": "/learn/micronaut#execution"
         },
         {
           "question": "Should virtual threads be pooled like platform workers?",
@@ -393,7 +410,8 @@
         },
         {
           "question": "How does Java 21 monitor pinning affect virtual threads?",
-          "answer": "Blocking while holding certain synchronized monitors can pin a carrier in Java 21. Later JDK behavior differs, so verify the deployed runtime."
+          "answer": "On Java 21, blocking while holding an intrinsic monitor can pin a virtual thread to its carrier. Enough pinned carriers can reduce concurrency even if many virtual threads exist. Later JDKs changed monitor-related pinning, so verify the exact version. Avoid long blocking work under a monitor and measure application throughput.",
+          "course": "/learn/java#executors"
         },
         {
           "question": "Why can virtual threads make database latency worse?",
@@ -414,7 +432,8 @@
       "questions": [
         {
           "question": "What is a garbage-collection root?",
-          "answer": "A starting point for reachability analysis, such as live thread references and certain runtime-held references, from which retained objects are traced."
+          "answer": "A GC root is a starting point the collector uses when determining what objects are reachable. An application can retain objects through live thread state or a reachable static cache even after requests end. For the indexer, compare retained data after repeat builds instead of treating every allocation spike as a leak.",
+          "course": "/learn/java#jvm"
         },
         {
           "question": "How do allocation pressure and a retention leak differ?",
@@ -443,7 +462,8 @@
       "questions": [
         {
           "question": "What is the difference between loading and initialization?",
-          "answer": "Loading obtains a class representation; initialization executes class initialization logic when required by language and runtime rules."
+          "answer": "Loading creates or obtains the JVM representation of a class. Initialization runs its static initialization logic for defined active uses. The lab calls Class.forName with initialization disabled, then enables it and observes exactly one initialization for that Class object. Distinguish this from loading a different definition with another loader.",
+          "course": "/learn/java#classloading"
         },
         {
           "question": "Why can two identical class names fail a cast?",
@@ -472,7 +492,8 @@
       "questions": [
         {
           "question": "How do byte streams and character readers differ?",
-          "answer": "Byte streams process raw bytes; readers decode characters using a charset. Choose an explicit charset for external data."
+          "answer": "Byte streams read encoded bytes. Character readers decode them according to a charset. The indexer uses a strict UTF-8 decoder, so an invalid sequence aborts the build rather than inserting replacement characters into search terms. Test encoding at the input boundary and ensure decoding failure preserves the previous snapshot.",
+          "course": "/learn/java#resources"
         },
         {
           "question": "Why must code handle a partial read?",
@@ -530,7 +551,8 @@
       "questions": [
         {
           "question": "What does a CPU profile show?",
-          "answer": "Where executing threads spend sampled CPU time. It does not directly account for every blocked request's elapsed waiting time."
+          "answer": "A sampled CPU profile shows where the observed process spent CPU time during the recording. Waiting on locks, storage or an executor queue may cause latency without dominating those samples. Correlate an actual index build event with runtime evidence and compare workloads before deciding which code path to optimize.",
+          "course": "/learn/java#jvm"
         },
         {
           "question": "When is a thread dump useful?",
@@ -559,7 +581,8 @@
       "questions": [
         {
           "question": "How do source and binary compatibility differ?",
-          "answer": "Source compatibility concerns recompilation; binary compatibility concerns existing compiled callers linking against the changed library without recompilation."
+          "answer": "Source compatibility asks whether consumers still compile. Binary compatibility asks whether their already compiled artifacts still link. A method signature change can break a deployed caller even when the library builds successfully. Compile against the intended release and run representative compiled clients against the packaged artifact.",
+          "course": "/learn/java#first-program"
         },
         {
           "question": "When is an unchecked exception a compatibility concern?",
@@ -588,7 +611,8 @@
       "questions": [
         {
           "question": "How do primitives differ from wrapper objects?",
-          "answer": "Primitives represent built-in values; wrappers are reference types that support generics and null but introduce boxing and identity considerations."
+          "answer": "Primitives store values such as int directly in the language model. Wrappers are objects that can participate in generics and can also be null. Autoboxing and unboxing bridge the forms, but unboxing null throws. In a file workflow use primitives for validated counts and make optional values explicit before arithmetic.",
+          "course": "/learn/java#first-program"
         },
         {
           "question": "When can unboxing throw NullPointerException?",
@@ -617,7 +641,8 @@
       "questions": [
         {
           "question": "Why is String immutable?",
-          "answer": "Its public contract does not permit changing an existing string's value, supporting safe sharing and stable string-key behavior."
+          "answer": "String values cannot change after construction. That makes them suitable stable keys in the index even when references are shared. A different case or a decomposed Unicode spelling can still produce a different value. Define one normalization policy for both stored terms and queries and test equivalent inputs.",
+          "course": "/learn/java#collections"
         },
         {
           "question": "When should StringBuilder be used?",
@@ -646,7 +671,8 @@
       "questions": [
         {
           "question": "How do overloading and overriding differ?",
-          "answer": "Overloading provides different parameter signatures; overriding supplies subtype behavior for an inherited eligible instance method."
+          "answer": "Overload selection uses the method name, argument types and accessibility at compilation. Overriding supplies a different implementation selected for an eligible instance call at runtime. The Java lab invokes a String formatter through a generic base type, then inspects the bridge that preserves dispatch after erasure.",
+          "course": "/learn/java#generics"
         },
         {
           "question": "When is composition preferable to inheritance?",
@@ -733,7 +759,8 @@
       "questions": [
         {
           "question": "What are Java annotations?",
-          "answer": "Typed metadata attached to supported program elements for tools or runtime consumers to interpret."
+          "answer": "Annotations attach metadata to Java program elements. A compiler processor, runtime reflection code or a framework can interpret that metadata if it is available at the relevant stage. A JFR event name is consumed by the recording system. Retention and the consumer determine when the annotation has any effect.",
+          "course": "/learn/java#classloading"
         },
         {
           "question": "How do SOURCE, CLASS and RUNTIME retention differ?",
@@ -762,7 +789,8 @@
       "questions": [
         {
           "question": "What is reflection used for?",
-          "answer": "Inspecting types and invoking or accessing supported members dynamically, common in tools and frameworks."
+          "answer": "Reflection inspects metadata or invokes members through runtime APIs. The language lab uses it to see the erased descriptor and compiler-generated bridge rather than inferring these from the source. Access rules and module boundaries still apply, and tests should verify only the metadata contract the program actually relies on.",
+          "course": "/learn/java#generics"
         },
         {
           "question": "When might a method handle be useful?",
@@ -791,7 +819,8 @@
       "questions": [
         {
           "question": "What does module-info.java describe?",
-          "answer": "A named module's dependencies, exported packages, services and reflective opening decisions."
+          "answer": "module-info.java declares dependencies, exported packages, reflective openings and service relationships for a named module. The indexer uses the simpler classpath so its packaging lesson does not require a module descriptor. A modular variant should test launch, service discovery and cross-module access against the built artifact.",
+          "course": "/learn/java#first-program"
         },
         {
           "question": "How do exports and opens differ?",
@@ -878,7 +907,8 @@
       "questions": [
         {
           "question": "What does ThreadLocal store?",
-          "answer": "A value associated with the current thread under that ThreadLocal key, rather than a globally shared value."
+          "answer": "ThreadLocal associates a value with the current thread. It does not automatically follow work submitted to another executor. Reused worker threads can retain stale values if cleanup is missed. Verify propagation for diagnostic context separately from resource ownership and never assume a JDBC transaction crosses the handoff.",
+          "course": "/learn/micronaut#execution"
         },
         {
           "question": "When should a ThreadLocal value be removed?",
@@ -907,7 +937,8 @@
       "questions": [
         {
           "question": "How do wait and sleep differ?",
-          "answer": "wait requires monitor ownership and releases that monitor while waiting; sleep pauses the current thread without releasing held monitors."
+          "answer": "Object.wait requires ownership of that object’s monitor and releases it while waiting. Thread.sleep pauses the current thread without releasing monitors it holds. Recheck a condition in a loop after wait because wake-ups can occur without the condition becoming true. Use a latch in tests instead of guessing timing with sleep.",
+          "course": "/learn/java#memory-model"
         },
         {
           "question": "Why must wait be used inside a predicate loop?",
@@ -936,7 +967,8 @@
       "questions": [
         {
           "question": "What is a weak reference?",
-          "answer": "A reference that does not by itself keep its referent strongly reachable, allowing collection when other reachability conditions permit it."
+          "answer": "A weak reference does not keep its referent strongly reachable. The collector can clear it when the object becomes weakly reachable, but the clearing time is not deterministic. Use proper ownership and bounds for the index itself. Do not treat a weak reference as a guarantee about when memory becomes available.",
+          "course": "/learn/java#jvm"
         },
         {
           "question": "When is WeakHashMap useful?",
@@ -965,7 +997,8 @@
       "questions": [
         {
           "question": "How does Java serialization differ from a deliberate DTO protocol?",
-          "answer": "It encodes object-oriented state under serialization rules, often coupling consumers more closely to implementation types and evolution details."
+          "answer": "Native Java serialization stores an object graph using Java serialization rules. An explicit snapshot protocol defines the fields, version and bounds that the consumer may parse. The indexer reads data fields, checks counts and a checksum, and rejects malformed input. It does not reconstruct arbitrary objects. A checksum provides no authenticity guarantee.",
+          "course": "/learn/java#snapshot"
         },
         {
           "question": "What does serialVersionUID control?",
@@ -1023,7 +1056,8 @@
       "questions": [
         {
           "question": "How do Path and File differ conceptually?",
-          "answer": "Path participates in the NIO filesystem abstraction and richer operations, while File is an older pathname abstraction with different API ergonomics."
+          "answer": "Path represents a path in a filesystem provider and works with Files for operations such as traversal and opening. File is an older path abstraction. A Path value alone does not establish what exists there. The indexer checks the stable local tree and avoids following symbolic links, with tests for traversal and invalid files.",
+          "course": "/learn/java#resources"
         },
         {
           "question": "When should a temporary file plus atomic move be considered?",
@@ -1052,7 +1086,8 @@
       "questions": [
         {
           "question": "How do time and space complexity differ?",
-          "answer": "Time describes how work grows with input size; space describes additional storage growth under stated assumptions."
+          "answer": "Time complexity describes how the work grows with input size. Space complexity describes growth in memory use. For search, collecting a small posting set first reduces intermediate storage and comparisons. Report indexing separately from querying and distinguish the number of documents, unique terms and total document-term pairs.",
+          "course": "/learn/java#collections"
         },
         {
           "question": "When is a heap preferable to sorting every item?",
@@ -1081,7 +1116,8 @@
       "questions": [
         {
           "question": "What is JIT compilation?",
-          "answer": "Runtime compilation of executed bytecode into optimized machine code, guided by JVM implementation behavior and observed workload."
+          "answer": "A just-in-time compiler turns eligible bytecode into native code during execution. HotSpot may optimize using observed behavior and later deoptimize when assumptions change. A running loop or one elapsed time does not prove compilation. Use appropriate runtime events and comparable warmup before attributing an index build difference to the JIT.",
+          "course": "/learn/java#jvm"
         },
         {
           "question": "Why separate startup from warmed performance?",
@@ -1139,7 +1175,8 @@
       "questions": [
         {
           "question": "What does javac --release protect?",
-          "answer": "It checks language and supported platform API compatibility for the selected release; it does not make every external dependency compatible."
+          "answer": "javac --release selects a supported language level, class-file version and platform API surface. This prevents a Java 21 target from accidentally using newer JDK APIs. It does not pin third-party dependencies or packaging. Verify the intended launcher separately and run the packaged indexer in a fresh JVM.",
+          "course": "/learn/java#first-program"
         },
         {
           "question": "When should a preview API be isolated?",
@@ -1325,7 +1362,8 @@
         },
         {
           "question": "Why is interrupt not a guaranteed immediate stop?",
-          "answer": "Work must cooperate or use interruptible operations; CPU loops, libraries or remote effects may continue despite the signal."
+          "answer": "An interrupt requests cooperation. A task in an interruptible wait may throw InterruptedException, while other work needs explicit checks or an API-specific cancellation mechanism. The lab uses a latch to observe interruption without sleeping. The indexer checks before publication because an already committed move cannot be undone by a later interrupt.",
+          "course": "/learn/java#executors"
         },
         {
           "question": "How would you terminate a worker robustly?",
@@ -1400,7 +1438,8 @@
       "questions": [
         {
           "question": "How do JDK, runtime and bytecode relate?",
-          "answer": "The JDK supplies development tools and runtime components; Java source compiles to bytecode executed by a compatible runtime with required dependencies."
+          "answer": "The JDK supplies the compiler and tools such as javap and jar. A runtime loads class files and executes their bytecode with platform libraries. Compiling the indexer and running its JAR in another JVM proves these are separate steps. Check artifact contents and class-file compatibility when a launch fails before main.",
+          "course": "/learn/java#first-program"
         },
         {
           "question": "What does a JAR contain?",
@@ -1429,7 +1468,8 @@
       "questions": [
         {
           "question": "How do unit and integration tests differ?",
-          "answer": "Unit tests isolate a focused decision or type; integration tests include the real interactions needed to verify a boundary contract."
+          "answer": "A unit test isolates one policy such as normalization or record ownership. An integration test exercises interactions such as reading files and validating a persisted snapshot. A packaged end-to-end test starts the actual entry point and reads from a separate JVM. Choose the boundary that can expose the failure you are trying to prove.",
+          "course": "/learn/java#tests"
         },
         {
           "question": "When are parameterized tests useful?",

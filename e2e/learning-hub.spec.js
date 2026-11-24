@@ -83,3 +83,147 @@ for(const width of [390,1440]) test(`hub, roadmaps, and labs fit and pass access
   }
   await page.goto('/learn'); await page.screenshot({path:test.info().outputPath(`learning-hub-${width}.png`)});
 });
+
+test('Spring courses connect the catalog, lesson progress, topic answers and downloadable lab', async ({ page, request }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto('/learn');
+  await page.getByRole('searchbox', { name: 'Search courses and lessons' }).fill('Spring Framework');
+  await page.getByRole('link', { name: 'Spring Framework from first bean to production boundaries' }).click();
+  await page.getByRole('link', { name: 'Transactions and proxy boundaries', exact: true }).click();
+  await expect(page).toHaveURL(/#transactions$/);
+  const lesson = page.getByRole('region', { name: 'Transactions and proxy boundaries' });
+  const buddyLink = lesson.getByRole('link', { name: 'Practise this lesson with Tech Buddy →' });
+  await expect(buddyLink).toHaveAttribute('href', /lessonHref=%2Flearn%2Fspring%2Fspring-framework%23transactions/);
+  await lesson.getByText('Failure cases and interview follow-up').click();
+  await expect(lesson.getByText(/test-owned transaction/)).toBeVisible();
+  await lesson.getByRole('checkbox', { name: 'I completed this lesson and its self-check' }).check();
+  await page.reload();
+  await expect(lesson.getByRole('checkbox', { name: 'I completed this lesson and its self-check' })).toBeChecked();
+
+  await page.getByRole('link', { name: 'Get the project and run the labs' }).click();
+  await page.getByText('Download project files').click();
+  for (const link of await page.locator('a[download]').all()) {
+    const href = await link.getAttribute('href');
+    expect((await request.get(href)).status(), href).toBe(200);
+  }
+  await expect(page.getByRole('heading', { name: 'Capstone acceptance criteria' })).toBeVisible();
+
+  await page.goto('/senior-java-interview/topics/spring-boot#spring-boot-001');
+  const firstAnswer = page.locator('[data-interview-question]').first();
+  await firstAnswer.getByText('Tier 4 · Deep dive and verification').click();
+  await firstAnswer.getByRole('link', { name: 'Worked example and runnable checkpoint' }).click();
+  await expect(page).toHaveURL(/spring-boot#startup$/);
+});
+
+test('Spring annotation guide explains proxy and startup behavior at mobile width', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto('/learn/spring/spring-framework#transactions');
+  const lesson = page.getByRole('region', { name: 'Transactions and proxy boundaries' });
+  await lesson.getByRole('link', { name: 'Annotation internals for this lesson' }).click();
+  await expect(page).toHaveURL(/annotation-internals#transaction-cases$/);
+  await expect(page.getByText('One row survives.', { exact: true })).toBeVisible();
+  await expect(page.getByText('Zero rows survive.', { exact: true }).first()).toBeVisible();
+  const navigation = page.getByRole('navigation', { name: 'Annotation topics' });
+  await navigation.getByRole('link', { name: '@Autowired, @Qualifier and @Primary' }).click();
+  const injection = page.getByRole('region', { name: '@Autowired, @Qualifier and @Primary' });
+  await injection.getByText('Edge cases, verification and follow-up').click();
+  await expect(injection.getByText(/Constructor cycles cannot both complete/)).toBeVisible();
+  expect(await page.locator('main').evaluate(main => main.scrollWidth <= main.clientWidth)).toBe(true);
+});
+
+test('Hibernate course connects interview answers, tracked lessons and runnable project files', async ({ page, request }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/senior-java-interview/topics/hibernate');
+  const answer = page.locator('[data-interview-question]').first();
+  await answer.getByText('Tier 4 · Deep dive and verification').click();
+  await answer.getByRole('link', { name: 'Worked example and runnable checkpoint' }).click();
+  await expect(page).toHaveURL(/learn\/hibernate#setup$/);
+
+  const navigation = page.getByRole('navigation', { name: 'Hibernate course contents' });
+  await navigation.getByRole('link', { name: 'Optimistic and pessimistic concurrency' }).click();
+  const lesson = page.getByRole('region', { name: 'Optimistic and pessimistic concurrency' });
+  await lesson.getByText('Edge cases and interview follow-up').click();
+  await expect(lesson.getByText(/Bulk updates normally bypass automatic version checks/)).toBeVisible();
+  await lesson.getByRole('checkbox', { name: 'I completed this lesson and its self-check' }).check();
+  await page.reload();
+  await expect(lesson.getByRole('checkbox', { name: 'I completed this lesson and its self-check' })).toBeChecked();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+
+  await page.getByRole('link', { name: 'Get the project and run the labs' }).click();
+  await page.getByText('Download project files').click();
+  const downloads = page.locator('a[download]');
+  await expect(downloads).toHaveCount(8);
+  for (const link of await downloads.all()) {
+    const href = await link.getAttribute('href');
+    expect((await request.get(href)).status(), href).toBe(200);
+  }
+  await expect(page.getByRole('heading', { name: 'Acceptance criteria' })).toBeVisible();
+});
+
+test('Java and Micronaut course connects interview answers, Java bridge and runnable downloads', async ({ page, request }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/senior-java-interview/topics/micronaut');
+  const answer = page.locator('[data-interview-question]').first();
+  await answer.getByText('Tier 4 · Deep dive and verification').click();
+  await answer.getByRole('link', { name: 'Worked example and runnable checkpoint' }).click();
+  await expect(page).toHaveURL(/learn\/micronaut#di$/);
+
+  await page.getByText('Java bridge', { exact: true }).click();
+  for (const link of await page.locator('details[open] a[href^="/java/tutorial/"]').all()) {
+    const href = await link.getAttribute('href');
+    expect((await request.get(href)).status(), href).toBe(200);
+  }
+  const navigation = page.getByRole('navigation', { name: 'Micronaut course contents' });
+  await navigation.getByRole('link', { name: 'Trace generated interception and same-class calls' }).click();
+  const lesson = page.getByRole('region', { name: 'Trace generated interception and same-class calls' });
+  await lesson.getByText('Edge cases and interview follow-up').click();
+  await expect(lesson.getByText(/Private or final methods cannot be overridden/)).toBeVisible();
+  await lesson.getByRole('checkbox', { name: 'I completed this lesson and its self-check' }).check();
+  await page.reload();
+  await expect(lesson.getByRole('checkbox', { name: 'I completed this lesson and its self-check' })).toBeChecked();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+
+  await page.getByRole('link', { name: 'Get the project and run the labs' }).click();
+  await page.getByText('Download project files').click();
+  const downloads = page.locator('a[download]');
+  await expect(downloads).toHaveCount(13);
+  for (const link of await downloads.all()) {
+    const href = await link.getAttribute('href');
+    expect((await request.get(href)).status(), href).toBe(200);
+  }
+  await expect(page.getByRole('heading', { name: 'Acceptance criteria' })).toBeVisible();
+});
+
+test('Standalone Java course connects the Java guide, tracked lessons and the indexer download', async ({ page, request }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/senior-java-interview/topics/java');
+  const answer = page.locator('[data-interview-question]').first();
+  await answer.getByText('Tier 4 · Deep dive and verification').click();
+  await answer.getByRole('link', { name: 'Worked example and runnable checkpoint' }).click();
+  await expect(page).toHaveURL(/learn\/java#objects$/);
+
+  await page.getByText('Start here if Java is new to you').click();
+  for (const link of await page.locator('details[open] a[href^="/java/tutorial/"]').all()) {
+    const href = await link.getAttribute('href');
+    expect((await request.get(href)).status(), href).toBe(200);
+  }
+  const navigation = page.getByRole('navigation', { name: 'Standalone Java course contents' });
+  await navigation.getByRole('link', { name: 'Publish a versioned snapshot and recover after restart' }).click();
+  const lesson = page.getByRole('region', { name: 'Publish a versioned snapshot and recover after restart' });
+  await lesson.getByText('Edge cases and interview follow-up').click();
+  await expect(lesson.getByText(/no power-loss durability guarantee/)).toBeVisible();
+  await lesson.getByRole('checkbox', { name: 'I completed this lesson and its self-check' }).check();
+  await page.reload();
+  await expect(lesson.getByRole('checkbox', { name: 'I completed this lesson and its self-check' })).toBeChecked();
+
+  await page.getByRole('link', { name: 'Get the indexer and run the labs' }).click();
+  await page.getByText('Download project files').click();
+  const downloads = page.locator('a[download]');
+  await expect(downloads).toHaveCount(11);
+  for (const link of await downloads.all()) {
+    const href = await link.getAttribute('href');
+    expect((await request.get(href)).status(), href).toBe(200);
+  }
+  await expect(page.getByRole('heading', { name: 'Observe the JVM' })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});

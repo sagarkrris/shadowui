@@ -33,17 +33,20 @@ for (const course of courses) {
     await page.goto(`/tech-blogs/${course.id}`);
     await expect(page.getByRole('searchbox', { name: 'Search within this article' })).toBeVisible();
     const examples = await page.locator('main pre').allTextContents();
-    const answer = page.locator('main details').filter({ has: page.locator('summary', { hasText: /^Sample answer$/ }) }).first();
+    const disclosureLabel = course.chapters[0].advantages ? 'Failure case and verification' : 'Sample answer';
+    const disclosure = page.locator('main details').filter({
+      has: page.locator('summary').filter({ hasText: new RegExp(`^${disclosureLabel}$`) }),
+    }).first();
     if (course.format !== 'field-note') {
-      await answer.locator('summary').click();
-      await expect(answer).toHaveAttribute('open', '');
+      await disclosure.locator('summary').click();
+      await expect(disclosure).toHaveAttribute('open', '');
     }
     const lastHeading = page.locator('main h2').last();
     const finalTitle = await lastHeading.textContent();
     const book = await openBook(page);
     await expect(pageStatus(book)).toHaveText(/^Pages \d+–\d+ of \d+$/);
     expect(await book.locator('pre').allTextContents()).toEqual(examples);
-    if (course.format !== 'field-note') await expect(answer).toHaveAttribute('open', '');
+    if (course.format !== 'field-note') await expect(disclosure).toHaveAttribute('open', '');
     const pages = book.getByRole('region', { name: 'Book pages', exact: true });
     await jumpTo(book, (await book.getByLabel('Book contents').locator('option').nth(1).textContent()).trim());
     const before = await pages.evaluate(element => element.scrollLeft);
@@ -57,7 +60,7 @@ for (const course of courses) {
     await expect(bookDialog(page)).toHaveCount(0);
     await expect(lastHeading).toBeInViewport();
     expect(await page.locator('main pre').allTextContents()).toEqual(examples);
-    if (course.format !== 'field-note') await expect(answer).toHaveAttribute('open', '');
+    if (course.format !== 'field-note') await expect(disclosure).toHaveAttribute('open', '');
     expect(errors).toEqual([]);
   });
 }

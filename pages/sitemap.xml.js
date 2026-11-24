@@ -21,12 +21,14 @@ import { SENIOR_JAVA_DAILY_SETS } from "../lib/seniorJavaDaily.mjs";
 import { INTERVIEW_TOPICS, topicHref } from "../lib/interviewTopics.mjs";
 
 
+import { SPRING_COURSES, springCourseHref } from '../lib/springCourses.mjs';
+
 export default function Sitemap() { return null; }
 
 export function getServerSideProps({ res }) {
   const urls = [
     ...['/hld', '/lld', ...DESIGN_PROBLEMS.map(designHref)].map(path => ({ loc: `${SITE_URL}${path}`, changefreq: 'monthly', priority: '0.8' })),
-    ...["/learn", "/learn/ai-engineering", "/labs", ...HUB_LABS.map(lab => `/labs/${lab.id}`), ...LEARNING_PATHS.filter(path => path.id !== "java-backend").map(path => `/learn/roadmaps/${path.id}`)].map(path => ({ loc: `${SITE_URL}${path}`, changefreq: "monthly", priority: "0.8" })),
+    ...["/learn", "/learn/ai-engineering", "/learn/hibernate", "/learn/hibernate/capstone", "/learn/micronaut", "/learn/micronaut/capstone", "/learn/java", "/learn/java/capstone", "/learn/spring/capstone", "/learn/spring/annotation-internals", ...SPRING_COURSES.map(({ id }) => springCourseHref(id)), "/labs", ...HUB_LABS.map(lab => `/labs/${lab.id}`), ...LEARNING_PATHS.filter(path => path.id !== "java-backend").map(path => `/learn/roadmaps/${path.id}`)].map(path => ({ loc: `${SITE_URL}${path}`, changefreq: "monthly", priority: "0.8" })),
     { loc: `${SITE_URL}/system-design/visual-guide`, changefreq: "monthly", priority: "0.8" },
     ...BUILD_CHALLENGES.map(c => ({ loc: `${SITE_URL}/build/practice/${c.id}`, changefreq: 'monthly', priority: '0.8' })),
     { loc: `${SITE_URL}/tech-blogs`, changefreq: "weekly", priority: "0.8" },

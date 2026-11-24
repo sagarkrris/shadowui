@@ -128,10 +128,17 @@ async function verifyLesson(reader, course) {
   }
   if (course.format !== 'field-note') {
     await expect(reader.getByText('When to avoid:', { exact: true })).toHaveCount(course.chapters.length);
-    const answers = reader.locator('details').filter({ has: reader.page().locator('summary', { hasText: /^Sample answer$/ }) });
-    await expect(answers).toHaveCount(course.chapters.length);
-    await answers.last().locator('summary').click();
-    await expect(answers.last()).toContainText(course.chapters.at(-1).answer);
+    if (course.chapters.every(chapter => chapter.advantages)) {
+      const answers = reader.locator('[data-course-interview-answer]');
+      await expect(answers).toHaveCount(course.chapters.length);
+      await expect(answers.last()).toBeVisible();
+      await expect(answers.last()).toContainText(course.chapters.at(-1).answer);
+    } else {
+      const answers = reader.locator('details').filter({ has: reader.page().locator('summary', { hasText: /^Sample answer$/ }) });
+      await expect(answers).toHaveCount(course.chapters.length);
+      await answers.last().locator('summary').click();
+      await expect(answers.last()).toContainText(course.chapters.at(-1).answer);
+    }
   }
   for (const challenge of BUILD_CHALLENGES.filter(c => c.lesson === course.id)) {
     await expect(reader.getByRole('link', { name: challenge.title, exact: true })).toHaveAttribute('href', `/build/practice/${challenge.id}`);
@@ -171,4 +178,17 @@ test('every course is discoverable in the public index and sitemap', async ({ pa
     await expect(page.locator(`a[href="/tech-blogs/${course.id}"]`).first()).toBeVisible();
     expect(xml).toContain(`/tech-blogs/${course.id}</loc>`);
   }
+});
+
+test('Java AI streaming article identifies its Medium profile and distinguishes disconnect from cleanup', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 850 });
+  await page.goto('/tech-blogs/java-ai-stream-cancellation');
+  await expect(page.getByRole('link', { name: 'Medium profile' })).toHaveAttribute('href', 'https://medium.com/@sagarkrris');
+  await expect(page.getByRole('link', { name: 'HTML Standard: Server-Sent Events and Last-Event-ID' })).toBeVisible();
+  const chapter = page.locator('#lesson-3');
+  await expect(chapter.getByRole('heading', { name: '3. A disconnect requests cancellation' })).toBeVisible();
+  await expect(chapter.getByRole('paragraph').filter({ hasText: 'Provider-side completion and billing require separate evidence.' })).toBeVisible();
+  await chapter.locator('summary').filter({ hasText: /^Sample answer$/ }).click();
+  await expect(chapter.getByText(/Local resources for that attempt were cleaned up/)).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

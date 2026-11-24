@@ -102,7 +102,7 @@ test("production Tech Blogs include full-length courses for the highest-value ga
 
   const microservices = blogs.get("microservices-design-patterns");
   assert.equal(microservices.category, "Microservices architecture");
-  assert.equal(microservices.chapters.length, 7);
+  assert.equal(microservices.chapters.length, 12);
   assert.ok(microservices.chapters.every(chapter => chapter.diagram.includes("→") && chapter.whenToUse && chapter.avoid && chapter.answer));
   assert.ok(microservices.chapters.every(chapter => chapter.lesson.includes(chapter.whenToUse)));
 

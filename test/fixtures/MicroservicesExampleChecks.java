@@ -8,6 +8,45 @@ class MicroservicesExampleChecks {
     if (!ok) throw new AssertionError();
   }
   public static void main(String[] args) throws Exception {
+    check(GatewayExample.route("/orders").service().equals("order-service"));
+    check(GatewayExample.route("/catalog/items").service().equals("catalog-service"));
+    try {
+      GatewayExample.route("/orders-archive");
+      throw new AssertionError("Unrelated route reached Orders");
+    } catch (IllegalArgumentException expected) { }
+
+    var inbox = new InboxExample();
+    var contenders = java.util.concurrent.Executors.newFixedThreadPool(2);
+    try {
+      var start = new java.util.concurrent.CountDownLatch(1);
+      var first = contenders.submit(() -> { start.await(); return inbox.reserve("reserve-A"); });
+      var duplicate = contenders.submit(() -> { start.await(); return inbox.reserve("reserve-A"); });
+      start.countDown();
+      check(first.get(2, java.util.concurrent.TimeUnit.SECONDS));
+      check(duplicate.get(2, java.util.concurrent.TimeUnit.SECONDS));
+      check(!inbox.reserve("reserve-B"));
+    } finally {
+      contenders.shutdownNow();
+    }
+
+    var view = new OrderProjectionExample();
+    view.apply(new OrderProjectionExample.Snapshot(3, "CONFIRMED"));
+    view.apply(new OrderProjectionExample.Snapshot(2, "PAYING"));
+    check(view.current().status().equals("CONFIRMED"));
+    check(OrderReplayExample.replay(java.util.List.of()) == OrderReplayExample.State.NEW);
+    check(OrderReplayExample.replay(java.util.List.of(
+        OrderReplayExample.Event.PLACED, OrderReplayExample.Event.CONFIRMED)) == OrderReplayExample.State.CONFIRMED);
+    try {
+      OrderReplayExample.replay(java.util.List.of(OrderReplayExample.Event.CONFIRMED));
+      throw new AssertionError("Out-of-order confirmation accepted");
+    } catch (IllegalStateException expected) { }
+    check(HistoryCutoverExample.selectWriteOwner(false, true, true) == HistoryCutoverExample.Owner.LEGACY);
+    check(HistoryCutoverExample.selectWriteOwner(true, true, false) == HistoryCutoverExample.Owner.PAUSED);
+    check(HistoryCutoverExample.selectWriteOwner(true, false, true) == HistoryCutoverExample.Owner.PAUSED);
+    check(HistoryCutoverExample.selectWriteOwner(true, true, true) == HistoryCutoverExample.Owner.NEW);
+    check(RetryOwnershipExample.worstCaseAttempts(2, 3) == 6);
+    check(RetryOwnershipExample.worstCaseAttempts(Integer.MAX_VALUE, 3) == 6442450941L);
+
     var saga = new SagaOutboxExample();
     saga.placeOrder("order-1");
     var initial = saga.snapshot();

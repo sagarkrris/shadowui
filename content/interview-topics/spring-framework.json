@@ -8,7 +8,8 @@
       "questions": [
         {
           "question": "What is inversion of control in Spring?",
-          "answer": "The container controls construction and wiring of configured objects, rather than application components manually locating and assembling all collaborators."
+          "answer": "Inversion of control moves object assembly to the application container. The order service declares a store, policy and clock in its constructor. Spring creates the service from those bean definitions when it refreshes the context. Missing wiring fails early, while a plain unit test can still construct the service with controlled collaborators.",
+          "course": "/learn/spring/spring-framework#wiring"
         },
         {
           "question": "How does dependency injection support testing?",
@@ -37,7 +38,8 @@
       "questions": [
         {
           "question": "Why prefer constructor injection for required dependencies?",
-          "answer": "It exposes requirements, supports final fields and makes incomplete construction harder. It also enables straightforward unit construction without reflective field injection."
+          "answer": "Constructor injection puts required dependencies in the class contract. The order service can store its clock in a final field and the test can supply a fixed time. An unusually large constructor can also expose too many responsibilities. Verify business rules with direct construction and verify candidate selection with a small context test.",
+          "course": "/learn/spring/spring-framework#wiring"
         },
         {
           "question": "When is setter injection reasonable?",
@@ -66,7 +68,8 @@
       "questions": [
         {
           "question": "What does Spring singleton scope mean?",
-          "answer": "The container maintains one shared instance for that bean definition within its context, rather than guaranteeing one object globally across the process."
+          "answer": "A Spring singleton is shared per bean definition in a context. Two lookups of the same order service return one instance, while another context can have its own. This is a lifetime rule. Keep request-specific data in local variables and use a concurrent test if you introduce shared mutable state.",
+          "course": "/learn/spring/spring-framework#beans"
         },
         {
           "question": "When should prototype scope be used?",
@@ -219,7 +222,8 @@
         },
         {
           "question": "Why does self-invocation bypass ordinary Spring proxy advice?",
-          "answer": "The target calls itself directly without routing the invocation through the external proxy that owns the interceptor chain."
+          "answer": "Spring applies proxy advice when a call enters through the managed wrapper. A service calling this.reserve() directly reaches the target method without crossing that wrapper. Move the advised operation behind an injected collaborator if it needs its own boundary. Verify with an external call and an independent database read after a forced failure.",
+          "course": "/learn/spring/spring-framework#transactions"
         },
         {
           "question": "Why might a private Transactional method not establish a transaction?",
@@ -240,7 +244,8 @@
       "questions": [
         {
           "question": "What does Transactional do?",
-          "answer": "It supplies transaction metadata used by Spring's transaction infrastructure around eligible managed invocations; the annotation alone does not execute a transaction."
+          "answer": "A transaction makes related database operations succeed or fail together. @Transactional tells the manager and proxy how to wrap an eligible call. In the order lab, an insert failure after stock reservation rolls both operations back. A direct call on a manually created instance bypasses this setup. Inspect persisted stock outside the failed call.",
+          "course": "/learn/spring/spring-framework#transactions"
         },
         {
           "question": "Where should a transaction boundary usually live?",
@@ -310,7 +315,8 @@
         },
         {
           "question": "Why can two individually valid reads lead to overselling?",
-          "answer": "Both transactions can decide from the same stale availability. Use an atomic conditional update, locking or appropriate isolation plus constraints."
+          "answer": "Two requests can both read five units and each decide that three is available. If the decision and update are separate, both requests can report success. Put the check and decrement in one conditional statement and treat zero affected rows as a conflict. Test both responses and the final stock on the target database.",
+          "course": "/learn/spring/spring-framework#concurrency"
         },
         {
           "question": "How would you make serialization retries safe?",
@@ -327,7 +333,8 @@
       "questions": [
         {
           "question": "What role does DispatcherServlet play?",
-          "answer": "It acts as Spring MVC's front controller, dispatching requests to appropriate handlers and coordinating result rendering or response writing."
+          "answer": "DispatcherServlet is the central MVC dispatcher. It finds the handler and an adapter invokes it after resolving arguments. A converter reads the order JSON, validation checks the DTO, and the controller delegates to the service. A servlet filter can reject the request first. Use HTTP tests to distinguish security, binding and business failures.",
+          "course": "/learn/spring/spring-framework#mvc"
         },
         {
           "question": "When should a servlet Filter be used instead of HandlerInterceptor?",
@@ -472,7 +479,8 @@
       "questions": [
         {
           "question": "What is an application event in Spring?",
-          "answer": "A notification delivered through the application context's event infrastructure, with behavior influenced by listener and executor configuration."
+          "answer": "An application event lets components communicate through the Spring context. A listener can run in the publisher’s thread, so timing and failures depend on the configured dispatch mechanism. An order confirmation that must survive a restart needs durable publication intent. Test the crash window between commit and delivery before claiming eventual notification.",
+          "course": "/learn/spring/spring-framework#execution"
         },
         {
           "question": "When is TransactionalEventListener useful?",
@@ -588,7 +596,8 @@
       "questions": [
         {
           "question": "How does @Component become a managed bean internally?",
-          "answer": "A configured scanner recognizes its metadata or composed stereotypes and registers a BeanDefinition, which the container later uses for construction and lifecycle processing."
+          "answer": "The scanner reads class metadata, applies filters and registers eligible component definitions. During refresh the container resolves collaborators and creates bean instances. The order service appears when its package is scanned. The same Java class can also be registered explicitly. Verify which path registered it before diagnosing a missing dependency.",
+          "course": "/learn/spring/annotation-internals#scanning"
         },
         {
           "question": "How do @Service and @Repository differ from @Component?",
@@ -617,7 +626,8 @@
       "questions": [
         {
           "question": "Which infrastructure interprets @Autowired?",
-          "answer": "Spring's configured injection post-processing and bean-factory resolution infrastructure; an ordinary object constructed outside that path receives no automatic injection."
+          "answer": "AutowiredAnnotationBeanPostProcessor participates in choosing candidate constructors and processing annotated fields and methods. The bean factory resolves a dependency descriptor using type and qualifying metadata. A lone constructor can be selected without the annotation. In the order lab, add a second Clock and test what actually resolves.",
+          "course": "/learn/spring/annotation-internals#inject"
         },
         {
           "question": "When can a constructor omit @Autowired?",
@@ -646,7 +656,8 @@
       "questions": [
         {
           "question": "What processes @Configuration and @Bean declarations?",
-          "answer": "Spring's configuration-class infrastructure parses the metadata and registers bean definitions before ordinary bean creation."
+          "answer": "ConfigurationClassPostProcessor parses configuration candidates, registrars, imports and bean methods. Each bean method contributes a factory definition whose arguments come from the container. With full configuration an eligible inter-bean method call can resolve a managed bean. With enhancement disabled, pass the collaborator as a method argument to avoid constructing a second client.",
+          "course": "/learn/spring/annotation-internals#configuration"
         },
         {
           "question": "How does @Import differ from component scanning?",
@@ -675,7 +686,8 @@
       "questions": [
         {
           "question": "How is @Profile implemented conceptually?",
-          "answer": "It is a conditional configuration mechanism based on the active Environment profiles, influencing which definitions become eligible."
+          "answer": "A profile is a condition evaluated during registration against the Environment’s active expressions. For example, a local-only gateway can be absent by definition in production. Activating multiple profiles can register competing candidates or the wrong adapter. Start a context with each supported combination and assert the actual implementation.",
+          "course": "/learn/spring/annotation-internals#conditions"
         },
         {
           "question": "When does @Conditional affect a bean?",
@@ -704,7 +716,8 @@
       "questions": [
         {
           "question": "Does @Aspect alone register an object as a Spring bean?",
-          "answer": "No. It marks aspect metadata; the aspect still needs registration and the relevant AOP infrastructure enabled."
+          "answer": "An aspect declares advice and pointcuts. Register the aspect as a bean and enable Spring AOP so Spring can build advisors and apply them to matching bean proxies. A timing aspect that is never registered cannot intercept an order call. Test a known matching call and verify the advice ran in the intended order.",
+          "course": "/learn/spring/annotation-internals#aop"
         },
         {
           "question": "How does @Around influence method execution?",
@@ -733,7 +746,8 @@
       "questions": [
         {
           "question": "How does @Transactional cause database behavior internally?",
-          "answer": "Configured transaction advice reads its attributes and delegates to a transaction manager around an eligible invocation, controlling participation and completion."
+          "answer": "Transaction infrastructure finds method attributes and exposes eligible beans through a proxy. On an intercepted call, TransactionInterceptor selects a manager and joins or opens a transaction. A JDBC manager binds a connection so JdbcTemplate can participate. A call on this bypasses the inner interceptor, while an active outer transaction still applies. Prove each case by checking committed rows.",
+          "course": "/learn/spring/annotation-internals#transaction-cases"
         },
         {
           "question": "What does rollbackFor change?",
@@ -762,7 +776,8 @@
       "questions": [
         {
           "question": "How does @GetMapping work internally?",
-          "answer": "It is a composed RequestMapping declaration restricting HTTP method to GET; MVC handler-mapping infrastructure registers and matches the resulting metadata."
+          "answer": "GetMapping composes RequestMapping with a GET method constraint. MVC inspects handler annotations at startup and stores mappings. DispatcherServlet matches the method and path, and a handler adapter resolves arguments before calling the method. Send GET and POST to the same URL under the same authorization to distinguish routing from security.",
+          "course": "/learn/spring/annotation-internals#mvc-mappings"
         },
         {
           "question": "How does @RestController differ from @Controller?",
@@ -791,7 +806,8 @@
       "questions": [
         {
           "question": "How does @Valid trigger nested validation?",
-          "answer": "At a supported validation boundary it requests cascading into the annotated value, using the installed Bean Validation provider and applicable constraints."
+          "answer": "Valid asks the validator to traverse a nested value and check its constraints. It does not require the value to exist. A nested address can be absent unless you also declare a null constraint. Test missing, null and present-but-invalid cases and verify which failures stop the controller before the service runs.",
+          "course": "/learn/spring/annotation-internals#validation"
         },
         {
           "question": "What additional role can @Validated play?",
@@ -820,7 +836,8 @@
       "questions": [
         {
           "question": "What activates @Async behavior?",
-          "answer": "Supported async infrastructure, commonly enabled through EnableAsync, applies advice that submits eligible managed invocations to the selected executor."
+          "answer": "EnableAsync installs async processing, and the default advisor intercepts eligible external calls to submit them to an executor. An internal call on this can execute synchronously. The worker cannot inherit the caller’s JDBC transaction. Use named threads and a future to prove where the code ran and how it reports failure.",
+          "course": "/learn/spring/annotation-internals#async"
         },
         {
           "question": "Why does self-invocation bypass normal @Async advice?",
@@ -849,7 +866,8 @@
       "questions": [
         {
           "question": "What interprets @Cacheable at runtime?",
-          "answer": "Configured caching advisors/interceptors use cache-operation metadata, resolve caches and keys, and decide whether the underlying method needs execution."
+          "answer": "The cache interceptor resolves the operation, key and cache before invoking an eligible method. A hit can return without running the target. An internal call bypasses that lookup in proxy mode. Verify target invocation counts and key identity, then test the actual provider for expiry and concurrent loading.",
+          "course": "/learn/spring/annotation-internals#cache"
         },
         {
           "question": "How do condition and unless differ conceptually?",

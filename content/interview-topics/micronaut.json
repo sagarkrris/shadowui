@@ -8,7 +8,8 @@
       "questions": [
         {
           "question": "What is Micronaut and how does it differ from Spring Boot?",
-          "answer": "Compare when framework work happens, available integrations and operational fit. Micronaut moves much discovery work into compilation. Conventional Spring applications do more at startup, while Spring also supports AOT. Neither framework choice alone establishes better latency or lower total cost. Micronaut core, Spring AOT."
+          "answer": "Micronaut is a Java framework that generates substantial bean and interception metadata during compilation. Spring Boot configures a Spring application and also supports an AOT path. For the same reservation endpoint, compare generated artifacts, startup, and actual request execution. Use equivalent integration tests before substituting one framework for the other.",
+          "course": "/learn/micronaut#di"
         },
         {
           "question": "Is Boot a replacement JVM?",
@@ -37,7 +38,8 @@
       "questions": [
         {
           "question": "Does compile-time DI mean every dependency is resolved during compilation?",
-          "answer": "Micronaut generates bean metadata, then creates objects in an application context. Environment-dependent availability and external resources still matter at runtime. Compilation is one validation boundary, not proof that production can start. DI guide."
+          "answer": "Compilation generates descriptions for the container, including how to construct a bean and which injection points it has. Runtime still evaluates environment conditions, selects candidates and creates scopes. An unsupported clock setting can compile and then fail when the service asks for a Clock. Test the actual context with each supported setting.",
+          "course": "/learn/micronaut#di"
         },
         {
           "question": "Why prefer constructor injection?",
@@ -66,7 +68,8 @@
       "questions": [
         {
           "question": "How do the common Spring and Micronaut annotations map?",
-          "answer": "Translate the contract, not just the annotation name. Check scope, imports, route behavior, validation and test lifecycle. A compiler accepting an annotation is not proof the selected framework processes it. Micronaut core reference."
+          "answer": "Map the capability before mapping the annotation name. @Controller describes a Micronaut route, @ExecuteOn chooses an executor, and @Serdeable participates in generated serialization. A Spring route, proxy or JSON annotation can match only part of that contract. Verify routes, status codes, bean eligibility and execution under the actual deployed settings.",
+          "course": "/learn/micronaut#http"
         },
         {
           "question": "Are the two ConfigurationProperties annotations the same type?",
@@ -95,7 +98,8 @@
       "questions": [
         {
           "question": "Is Micronaut always faster and smaller than Spring Boot?",
-          "answer": "There is no universal winner. Benchmark the actual workload, including dependencies, warm-up, container limits and JVM versus native mode. Use repeated measurements and an explicit target such as time to the first successful business request. Framework labels are not benchmark results."
+          "answer": "Generated metadata can reduce some startup work, but workload, native or JVM packaging, heap settings and logging all affect cost. A service spending most of its time waiting on a locked database row may gain no throughput from a faster startup. Compare readiness, post-warm-up latency and memory using the same traffic and dependency workload.",
+          "course": "/learn/micronaut#operations"
         },
         {
           "question": "Is a startup log line a readiness measurement?",
@@ -124,7 +128,8 @@
       "questions": [
         {
           "question": "How do scopes and lifecycle differ from thread safety?",
-          "answer": "Scope is not synchronization. Keep shared services stateless when practical, and make request identity explicit. A prototype injected once into a singleton does not automatically become a fresh object on each method call; use an appropriate provider or scope boundary."
+          "answer": "Scope controls instance lifetime, while thread safety concerns concurrent access to that instance. A singleton order service can serve concurrent requests, so it keeps request values in local variables. @Context requests eager creation and @Prototype changes reuse, but neither makes mutable shared state safe. Verify what actually shares state across requests.",
+          "course": "/learn/micronaut#di"
         },
         {
           "question": "Can a singleton hold the current customer's ID?",
@@ -153,7 +158,8 @@
       "questions": [
         {
           "question": "How do conditions and configuration replace Boot auto-configuration?",
-          "answer": "Define explicit defaults and typed configuration, then validate invariants before accepting traffic. Test missing, empty and conflicting settings. Treat feature-off and integration-misconfigured as separate states; silently falling back can send traffic to the wrong destination."
+          "answer": "@Requires determines whether a bean definition participates under the current environment or property values. A typed property object describes settings and validation. The lab selects a fixed clock through configuration. Check default, valid and unsupported settings, and distinguish a disabled definition from a bean whose later construction failed.",
+          "course": "/learn/micronaut#configuration"
         },
         {
           "question": "Is a missing value equivalent to an empty string?",
@@ -182,7 +188,8 @@
       "questions": [
         {
           "question": "How does Micronaut AOP differ from Spring proxy AOP?",
-          "answer": "Spring proxy self-invocation normally bypasses advice. Micronaut's default subclass-based around advice can intercept eligible calls from within the class, while proxy-target configurations differ. Avoid copying either rule universally. Verify the concrete advice, method visibility and generated proxy mode."
+          "answer": "Micronaut normally generates an overriding subclass for @Around, so an eligible same-class call can dispatch to the interceptor. Spring proxy self-invocation commonly bypasses advice. A delegated Micronaut proxy can behave differently. The lab compares external, internal and manually constructed calls. Check method eligibility and actual proxy mode before applying the result to transactions or security.",
+          "course": "/learn/micronaut#aop"
         },
         {
           "question": "Does manually constructing the service preserve advice?",
@@ -211,7 +218,8 @@
       "questions": [
         {
           "question": "Why must blocking work leave the HTTP event loop?",
-          "answer": "In Micronaut, use an appropriate executor boundary such as ExecuteOn for blocking work and confirm the configured thread-selection policy. Moving work off the event loop still needs bounded concurrency, timeouts and rejection behavior. A reactive return type alone does not make JDBC nonblocking."
+          "answer": "Netty event-loop threads service many connections. A synchronous JDBC wait occupies one thread and can delay unrelated requests. @ExecuteOn selects where a route runs, but capacity still depends on workers, waiting tasks and connections. Verify the actual thread at the JDBC call boundary and measure saturation with representative traffic.",
+          "course": "/learn/micronaut#execution"
         },
         {
           "question": "Is Thread.sleep safe on an event loop?",
@@ -240,7 +248,8 @@
       "questions": [
         {
           "question": "How do you migrate REST binding, validation and errors?",
-          "answer": "Preserve observable behavior with request fixtures. Test missing fields, explicit null, malformed JSON and unsupported content types. Use framework validation and error handling intentionally, and expose stable safe error codes rather than exception internals. Micronaut HTTP reference."
+          "answer": "Preserve the HTTP contract by testing each layer. Micronaut selects a route, reads the body with configured serialization, validates DTO constraints and then executes business rules. A missing quantity and a configured quantity limit both yield 400 in the lab through different mechanisms. Verify error bodies and ensure invalid requests do not create database rows.",
+          "course": "/learn/micronaut#http"
         },
         {
           "question": "Is an absent request body the same as an empty object?",
@@ -269,7 +278,8 @@
       "questions": [
         {
           "question": "How do declarative clients, retries and cancellation interact?",
-          "answer": "Specify deadlines, connection limits, retryable failures and idempotency independently of client syntax. A lost response can leave the remote action committed. Local cancellation or a timeout does not prove the remote work stopped. Reconcile unknown outcomes before retrying writes."
+          "answer": "A declarative client generates invocation behavior for an annotated interface. Its deadline, cancellation and retry contract still need configuration. A caller can time out after the server commits a reservation. Retrying can then consume stock twice. Test late responses and use an operation key when the write must be safe to retry.",
+          "course": "/learn/micronaut#resilience"
         },
         {
           "question": "Is every 500 safe to retry?",
@@ -298,7 +308,8 @@
       "questions": [
         {
           "question": "How does Micronaut Data differ from Spring Data?",
-          "answer": "Compare repository generation separately from the storage backend. Micronaut Data JDBC, JPA and R2DBC have different persistence and execution models. Porting a repository method name does not establish equivalent SQL, pagination, transaction or locking behavior."
+          "answer": "Micronaut Data can derive repository query metadata at compilation. Spring Data uses its own repository infrastructure. In both cases the selected backend determines SQL, transaction and mapping behavior. The lab generates reservation repository operations and binds values for its stock update. Inspect emitted queries and verify durable state instead of inferring behavior from repository syntax.",
+          "course": "/learn/micronaut#data"
         },
         {
           "question": "Can compilation detect every bad production query?",
@@ -327,7 +338,8 @@
       "questions": [
         {
           "question": "Can you replace Hibernate with JDBC by changing a dependency?",
-          "answer": "A JPA-to-JDBC migration changes the persistence model. Make writes and relationship fetching explicit, preserve optimistic locking and test aggregate boundaries. Keeping Micronaut Data JPA initially can reduce the number of simultaneous changes."
+          "answer": "JDBC and Hibernate provide different persistence semantics. A direct JDBC repository does not keep a managed entity graph or perform Hibernate dirty checking. Replacing the dependency can therefore change when writes run and what cascades, locks and fetches occur. Inventory each relied-on behavior, then validate it with database assertions.",
+          "course": "/learn/micronaut#data"
         },
         {
           "question": "Does modifying a loaded object necessarily update a JDBC row?",
@@ -356,7 +368,8 @@
       "questions": [
         {
           "question": "What must you verify about transactions and async boundaries?",
-          "answer": "Verify manager selection, propagation, rollback rules and the real interception path. Do not assume an arbitrary executor task inherits a thread-bound transaction. For reactive access, use supported reactive transaction context rather than transferring a JDBC connection across threads."
+          "answer": "Identify the transaction manager, advice mode, rollback rules and connection scope. A JDBC reservation and a stock update can share one transaction on the calling thread. Work handed to another thread needs its own deliberate boundary. Test the failure after the first write and read committed state from a separate operation.",
+          "course": "/learn/micronaut#data"
         },
         {
           "question": "If an exception is caught, will rollback always happen?",
@@ -385,7 +398,8 @@
       "questions": [
         {
           "question": "What is the difference between introspection and serialization?",
-          "answer": "Identify whether the service uses Micronaut Serialization or Jackson Databind, then configure DTO support for that integration. Preserve field names, null rules, date formats and allowed inputs. Avoid exposing persistence entities as accidental public schemas."
+          "answer": "Introspection supplies generated bean metadata such as property access. Serialization decides how to encode and bind a representation and is configured separately. @Serdeable opts the lab DTO into Micronaut Serialization. Inspect record properties through the introspection API and verify the actual JSON for missing and nullable fields.",
+          "course": "/learn/micronaut#http"
         },
         {
           "question": "Does a Java field rename preserve its JSON name?",
@@ -414,7 +428,8 @@
       "questions": [
         {
           "question": "How do you migrate authentication and authorization safely?",
-          "answer": "Recreate security requirements explicitly instead of copying filter configuration. Validate trusted token issuer, audience, signature and time claims, then enforce resource ownership and tenant boundaries. Preserve public-route exceptions deliberately and protect operational endpoints."
+          "answer": "Preserve both caller identity and resource-level authorization. Test token or credential validation, then test whether the authenticated caller can access this particular record. An endpoint can still leak data when role checks pass but tenant ownership is missing. Verify unauthorized requests leave no durable database effects.",
+          "course": "/learn/micronaut#operations"
         },
         {
           "question": "Does decoding a JWT authenticate the caller?",
@@ -443,7 +458,8 @@
       "questions": [
         {
           "question": "How does MicronautTest differ from a plain unit test?",
-          "answer": "Use unit tests for business decisions, context tests for wiring and advice, HTTP tests for the API, and real database tests for persistence. A test-managed transaction does not imply a separately executed server request shares it. Verify cleanup and commit behavior explicitly."
+          "answer": "A plain unit test calls Java code directly. @MicronautTest can start a context and install its own test lifecycle and transactions. The lab instead opens its context and HTTP server explicitly. Real request threads can commit outside a test-owned transaction, so read committed state independently and isolate fixture databases.",
+          "course": "/learn/micronaut#testing"
         },
         {
           "question": "Can direct construction test AOP?",
@@ -472,7 +488,8 @@
       "questions": [
         {
           "question": "What can go wrong with annotation processing and multi-module builds?",
-          "answer": "Treat processors, generated resources and platform alignment as build inputs. Reproduce failures with a clean command-line build, inspect the published library, and compare IDE and CI configuration. Compile success without the needed processor can still produce an unusable application artifact."
+          "answer": "Bean metadata is emitted by the module compiling the annotated source. A class can compile without its processor and later be missing from runtime bean discovery. Shading can also lose discovery resources. Compare generated artifacts with the packaged files, then boot the exact artifact and resolve a known bean.",
+          "course": "/learn/micronaut#testing"
         },
         {
           "question": "Why can incremental compilation hide a problem?",
@@ -501,7 +518,8 @@
       "questions": [
         {
           "question": "How do Micronaut and Spring Boot compare for GraalVM native images?",
-          "answer": "Treat JVM and native packaging as separate targets. Check reflection, resources, proxies, initialization and library support. Compare cold readiness, memory and warmed throughput against longer builds and different diagnostics. Run the actual native executable before approving it."
+          "answer": "Both frameworks can build GraalVM native executables through supported tooling. Generated metadata can help reachability, but the entire dependency graph, runtime initialization and native configuration still matter. Compare JVM and native builds with the same routes, drivers and payloads. A successful native compilation alone does not establish runtime behavior or performance.",
+          "course": "/learn/micronaut#operations"
         },
         {
           "question": "Does a passing JVM test prove native behavior?",
@@ -530,7 +548,8 @@
       "questions": [
         {
           "question": "How do you diagnose a Micronaut service that is healthy but slow?",
-          "answer": "Start with the user-visible SLO and a latency breakdown. Correlate traces with event-loop stalls, worker queues, connection waits, GC and downstream timing. Check that request identity survives executor changes. Keep metric labels bounded and exclude secrets from logs."
+          "answer": "Start with evidence at each waiting boundary. A service can report healthy while requests queue for workers, database connections or row locks. Record latency and throughput under a representative workload, then correlate executor, pool and SQL metrics before blaming the framework. Verify client-visible changes after any tuning.",
+          "course": "/learn/micronaut#operations"
         },
         {
           "question": "Why can average latency hide a problem?",
@@ -559,7 +578,8 @@
       "questions": [
         {
           "question": "How would you decide whether to migrate a Spring Boot service to Micronaut?",
-          "answer": "Keep the framework if it meets the requirements economically. Prototype a representative slice if startup, memory or deployment density is a measured constraint. Preserve API, security, data and failure semantics, compare equivalent workloads, and migrate gradually with a tested rollback path."
+          "answer": "Give the migration a measurable goal such as startup latency under a specific deployment constraint. Hold the business and HTTP contracts constant while comparing build, security, persistence, native support and support cost. Test ambiguous writes and restart behavior, and keep a rollback artifact before diverting real traffic.",
+          "course": "/learn/micronaut#operations"
         },
         {
           "question": "What belongs in the first prototype?",
@@ -588,7 +608,8 @@
       "questions": [
         {
           "question": "How do Named, Primary, Replaces and Factory solve different problems?",
-          "answer": "Use a qualifier for explicit selection, Primary for a deliberate default, Replaces for an intentional implementation substitution, and Factory for construction. Do not use Primary to hide two accidentally active production gateways. A replacement must target the correct type, qualifier and factory where relevant. Primary API, Replaces API, Factory API."
+          "answer": "@Named narrows injection by qualifier, @Primary supplies a preference, @Replaces substitutes a definition, and @Factory supplies construction. These annotations answer different questions. The HTTP test replaces Clock only in its test environment. In production verify eligible bean sets so a preferred bean cannot silently conceal an accidental duplicate.",
+          "course": "/learn/micronaut#configuration"
         },
         {
           "question": "Does Primary delete the other implementation?",
@@ -617,7 +638,8 @@
       "questions": [
         {
           "question": "When should you use EachProperty and EachBean?",
-          "answer": "EachProperty models repeated typed configuration, while EachBean derives another bean for each matching parent. Named qualification links each configured entry to its client. Validate every entry and budget total resources. This is useful for a bounded set of integrations, but it is not automatically a dynamic tenant provisioning system."
+          "answer": "Use @EachProperty when configuration contains a family of named entries, and @EachBean when each entry should produce a corresponding bean. For regional gateways, the region key can link settings and client selection. Test missing or invalid children, explicit qualifier handling and which resources close when the context stops.",
+          "course": "/learn/micronaut#configuration"
         },
         {
           "question": "How do you choose the Europe client?",
@@ -646,7 +668,8 @@
       "questions": [
         {
           "question": "How do Micronaut HTTP filters differ from Spring servlet filters and interceptors?",
-          "answer": "Port the filter's purpose, matching rules, ordering and execution model. Define whether it continues or short-circuits the request and which response paths it observes. A blocking continuation requires appropriate offloading. Route-specific parameters can also change which requests match the filter. RequestFilter API."
+          "answer": "Micronaut filters are part of its HTTP pipeline and can observe, short-circuit or decorate requests. A Spring servlet filter or MVC interceptor runs at a different layer. Port behavior by testing route matching, filter order, error responses and the executor when a filter performs blocking work.",
+          "course": "/learn/micronaut#http"
         },
         {
           "question": "If a filter returns an unauthorized response, should it also call the continuation?",
@@ -675,7 +698,8 @@
       "questions": [
         {
           "question": "How do reactive demand and Java virtual threads change the execution model?",
-          "answer": "Choose one understandable execution model per boundary. Reactive demand can regulate compatible streams, while virtual threads simplify high-concurrency blocking code. Both still need bounded admission, connection limits and deadlines. In Micronaut, inspect the actual executor behind the blocking boundary rather than assuming every request uses virtual threads."
+          "answer": "Reactive demand bounds how much work a cooperating upstream may emit. Virtual threads reduce the cost of blocked Java threads and use a different concurrency model. Neither creates database connections or automatically bounds admission. Test cancellation, executor or scheduler placement and downstream capacity separately under load.",
+          "course": "/learn/micronaut#execution"
         },
         {
           "question": "Does subscribing twice to a cold operation necessarily reuse one result?",
@@ -704,7 +728,8 @@
       "questions": [
         {
           "question": "How are retries, circuit breakers, bulkheads and fallbacks different?",
-          "answer": "Give each mechanism a separate contract. Micronaut CircuitBreaker builds on Retryable and maintains circuit state; it does not replace transport deadlines, concurrency limits or idempotency. Define retryable exceptions, recovery behavior and the business meaning of fallback data. CircuitBreaker API."
+          "answer": "Retry repeats a safe operation, a circuit breaker rejects selected calls in a failure state, and a bulkhead limits shared resource use. A fallback chooses alternate behavior whose business meaning must remain correct. For reservation writes, avoid retrying ambiguous commits without a durable key and measure attempts within the caller deadline.",
+          "course": "/learn/micronaut#resilience"
         },
         {
           "question": "Does an open circuit stop calls already executing?",
@@ -733,7 +758,8 @@
       "questions": [
         {
           "question": "Are application events and Scheduled jobs durable or cluster-wide?",
-          "answer": "Separate in-process notification from durable work. A scheduled invoice job on three replicas can execute three times. Use durable job identity, idempotent effects and an appropriate ownership protocol when completion must survive crashes. Specify time zone, overlap policy, deadlines and failure reporting."
+          "answer": "Application events and scheduled methods are local mechanisms. Each replica may schedule the same work, and in-process publication does not persist it through restart. When a reservation must produce a durable event, commit an outbox row with it and define how the consumer handles duplicate delivery.",
+          "course": "/learn/micronaut#operations"
         },
         {
           "question": "What is the difference between fixed delay and fixed rate?",
@@ -762,7 +788,8 @@
       "questions": [
         {
           "question": "What changes when migrating Spring cache annotations to Micronaut Cache?",
-          "answer": "Preserve the cache contract: key, value shape, tenant boundary, expiry, maximum size, negative-result policy and invalidation timing. Determine whether storage is local or shared and whether calls actually cross the advice boundary. Never treat a cache hit as authorization by itself."
+          "answer": "Port cache behavior by examining key generation, scope, expiry and failure semantics. A cache hit can bypass work, so keep required side effects out of cached methods. Tenant-specific data needs a tenant-aware key. Verify rollback and post-commit invalidation failures on the actual provider and across replicas if sharing matters.",
+          "course": "/learn/micronaut#resilience"
         },
         {
           "question": "Is product ID alone a safe key for tenant-specific prices?",
@@ -791,7 +818,8 @@
       "questions": [
         {
           "question": "How do Kafka listener acknowledgments interact with database commits?",
-          "answer": "Acknowledge according to the durable effect you promise, not merely receipt or task submission. Committing progress before the database effect risks loss; committing after the effect leaves a duplicate window. Make the effect idempotent and verify partition ordering, redelivery and rebalance behavior. Kafka transactions alone do not make an external database write atomic with the offset."
+          "answer": "Offset commit and external database commit represent different durable events. Acknowledging early risks losing processing, while acknowledging after commit leaves a redelivery window. Store an idempotency key atomically with the database effect and test consumer restart and reassignment before relying on a listener annotation to guarantee an outcome.",
+          "course": "/learn/micronaut#operations"
         },
         {
           "question": "The listener submits work to an executor and returns. Has the record been processed?",
@@ -820,7 +848,8 @@
       "questions": [
         {
           "question": "How does @Singleton work in Micronaut internally?",
-          "answer": "Compilation generates bean metadata carrying scope; runtime context resolution creates and reuses the scoped instance rather than constructing production objects during compilation."
+          "answer": "Micronaut generates a bean definition with scope metadata. At runtime @Singleton normally reuses one instance for that definition in its context. Eager creation is a separate choice and shared instances can serve multiple threads. Verify scope using identity across lookups and keep request state out of singleton fields.",
+          "course": "/learn/micronaut#di"
         },
         {
           "question": "How does @Prototype differ from @Singleton?",
@@ -849,7 +878,8 @@
       "questions": [
         {
           "question": "Why use @Factory for an SDK client?",
-          "answer": "It lets the container manage construction and injection of a third-party type that cannot conveniently carry application annotations."
+          "answer": "@Factory lets the container manage an SDK client created by a method rather than annotating the vendor class. The generated definition describes its arguments, scope and qualifiers, and the method constructs the object at runtime. Test configuration, client replacement and ownership of cleanup for resources the factory opens.",
+          "course": "/learn/micronaut#configuration"
         },
         {
           "question": "What does @Inject identify in Micronaut?",
@@ -878,7 +908,8 @@
       "questions": [
         {
           "question": "How does @Requires differ from a Java if statement?",
-          "answer": "It governs container eligibility from condition metadata rather than branching inside an already created business object."
+          "answer": "@Requires determines bean eligibility as the context evaluates definitions. A Java if inside a bean runs after the object already exists and can make decisions per operation. In the lab configuration chooses one Clock or leaves none. Test what actually appears in the context instead of inferring selection from a successful build.",
+          "course": "/learn/micronaut#configuration"
         },
         {
           "question": "How does @Replaces differ from @Primary?",
@@ -907,7 +938,8 @@
       "questions": [
         {
           "question": "What role does @InterceptorBean play?",
-          "answer": "It links a managed interceptor to supported interceptor binding annotations so generated advice can select it."
+          "answer": "@InterceptorBean binds an interceptor to the specified advice annotations. The generated interception code constructs the invocation chain, and calling proceed continues to the target. The lab adds a marker to the result on external and eligible same-class calls. Verify delegation and ordering when several interceptors apply.",
+          "course": "/learn/micronaut#aop"
         },
         {
           "question": "How does @Around affect code generation?",
@@ -936,7 +968,8 @@
       "questions": [
         {
           "question": "What does @Introspected generate?",
-          "answer": "Compile-time bean introspection metadata enabling supported property and constructor access without ordinary runtime reflective discovery."
+          "answer": "@Introspected tells the processor to generate metadata for bean properties and construction. That enables operations such as reading the quantity record component without discovering it through ordinary reflection. Serialization needs an appropriate serializer contract as well. Check generated introspection and test actual JSON separately.",
+          "course": "/learn/micronaut#http"
         },
         {
           "question": "What does @Serdeable declare?",
@@ -965,7 +998,8 @@
       "questions": [
         {
           "question": "How does @Controller with @Get expose a route?",
-          "answer": "Compilation supplies supported executable and route metadata used by the HTTP server to match requests and invoke the controller."
+          "answer": "@Controller supplies a route prefix and @Get contributes an HTTP method and relative path. The framework uses generated method metadata when exposing and invoking the route. Route selection, URI binding and executor selection still happen at runtime. Send a valid identifier and an absent one to verify 200 and 404 behavior.",
+          "course": "/learn/micronaut#http"
         },
         {
           "question": "What does @Client generate or configure?",

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { contentInventory, INVENTORY_DEFINITIONS } from '../lib/contentInventory.mjs';
 import { learningCatalogue } from '../lib/learningCatalog.mjs';
+import { SPRING_COURSES } from '../lib/springCourses.mjs';
 import { listTechBlogs } from '../lib/techBlogs.mjs';
 import { listBlind75Problems } from '../lib/blind75VisualTrack.mjs';
 import { BUILD_CHALLENGES } from '../lib/buildChallenges.mjs';
@@ -13,7 +14,7 @@ import { PRODUCT_CAPABILITIES, PRODUCT_IDENTITY } from '../lib/productIdentity.m
 test('registered inventory separates field notes, courses, collections and mirrored coding views', async () => {
   const { counts } = await contentInventory();
   assert.equal(counts.catalogEntries, learningCatalogue().length);
-  assert.equal(counts.courses, listTechBlogs().filter(course => course.format !== 'field-note').length + 1);
+  assert.equal(counts.courses, listTechBlogs().filter(course => course.format !== 'field-note').length + 4 + SPRING_COURSES.length);
   assert.ok(counts.courses < counts.catalogEntries);
   assert.equal(counts.collections, 1);
   assert.equal(counts.codingProblems, listBlind75Problems().length);
