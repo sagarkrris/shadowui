@@ -1,0 +1,245 @@
+# Set 40 — Authorization when permissions change
+
+25 November 2026 · S40-Q01–S40-Q12
+
+Assume Java 21 without preview features, Spring Security 6.5 in servlet mode, Jakarta Persistence 3.2, PostgreSQL 17 and Kafka 4.0 where applicable. The examples are original protocol sketches and algorithm traces. In these scenarios, a policy revision identifies a particular published version of the rules or permissions within a defined scope. Practise each spoken answer in 45–90 seconds, then explain how you would verify it.
+
+**1. A job passes authorization, then a revocation commits before its database write. How can the write be serialized with revocation?**
+
+**Say aloud:** “I would first decide which event wins when revocation and a protected write overlap. If the rule is that a revocation which commits first must prevent the write, a separate permission check before the transaction leaves a gap. With both values in one PostgreSQL database, I can use a persistent guard row that represents that permission scope. The writer locks it and reads the current permission before making its protected update. The revoker locks the same guard before changing permission. The lock stays held until transaction end, so the second transaction observes the outcome of the first under Read Committed. This costs contention, especially with a broad guard. I would force both lock acquisition orders in an integration test and use a consistent order when several guards are required.”
+
+**Example:**
+
+```text
+Revoker locks the team guard, removes edit permission, and commits.
+Writer acquires the guard after waiting, reads the new permission, and denies.
+If the writer wins the guard, its allowed write commits before revocation.
+```
+
+**Deep dive / verification:** Create the guard before use and fail closed if it is missing. Lock it before reading permissions in a separate Read Committed statement. Every relevant grant and revoke path must participate, including changes through groups. Keep the protected write in the same transaction and keep network calls outside the lock lifetime.
+
+**Follow-ups:** What if the effect is a call to another service? The database lock cannot order the remote commit. Define the enforcement boundary there or state the weaker guarantee explicitly.
+
+**Primary references:** [PostgreSQL 17 explicit locking](https://www.postgresql.org/docs/17/explicit-locking.html) and [Read Committed isolation](https://www.postgresql.org/docs/17/transaction-iso.html).
+
+---
+
+**2. A protected download is already streaming when access is removed. How would you define a meaningful cutoff?**
+
+**Say aloud:** “I would define the cutoff in terms of bytes the service can still choose to release. A response that is already in progress may have data in application, proxy, or network buffers, and a recipient can keep bytes already received. If policy requires midstream enforcement, I would authorize a small batch before releasing it and impose a maximum lifetime on each permission decision. When a decision expires, the server needs a fresh one before releasing more data, even if the connection is still open. Batch size and buffering give a practical bound on additional data already in flight. Frequent checks increase load, so I would test both an active revocation and authority unavailability while a deliberately slow client keeps the stream open.”
+
+**Example:**
+
+```text
+Authorize up to 64 KiB for one release, with a short decision deadline.
+Revocation is observed before the next release; terminate the response.
+Previously released bytes may still arrive through an intermediary.
+```
+
+**Deep dive / verification:** Bound readahead, concurrent streams, release size and the freshness of permission reads before promising a cutoff. After a blocked write resumes, check the deadline before the next release. A write already accepted by the transport is in flight. Test a paused stream, multiple streams, and an HTTP range reconnect. If the architecture hands a client direct storage access, the application is no longer mediating every release.
+
+**Follow-ups:** Can a server change a committed 200 response to a 403? The client may already have received the status. Abort the incomplete transfer and enforce authorization again for any resumed request.
+
+**Primary reference:** [RFC 9110, HTTP semantics and response status](https://www.rfc-editor.org/rfc/rfc9110.html).
+
+---
+
+**3. A report service calls a ledger on a user's behalf. How should the ledger distinguish the user from the acting service?**
+
+**Say aloud:** “Delegation means a service acts on behalf of a user while both identities remain meaningful. I would have the report service obtain a token intended for the ledger through an authorized exchange. The token can identify the user as the subject and the report service as the current actor. The ledger should validate the token and require that the actor is allowed to act in that role, the subject can access the target resource, and the granted scope covers the operation. This lets the ledger make that decision without trusting user names copied into request headers. It adds a token issuance dependency and a second token lifecycle. I would test mismatched actors, cross-tenant objects and a token presented to the wrong destination.”
+
+**Example:**
+
+```text
+Trusted issuer's token profile:
+sub = user-17, act.sub = report-service, aud = ledger, scope = ledger:read
+Request: read statement 602. Also check tenant and object-level entitlement.
+```
+
+**Deep dive / verification:** The authorization server must authenticate callers and enforce which exchanges are permitted. The example assumes an issuer profile that guarantees the meaning of its actor claim. A signed actor claim does not prove that the presenter of a bearer token currently holds the actor's key. If that property matters, require a separate sender constraint that the ledger actually verifies.
+
+**Follow-ups:** Does revoking the original token automatically revoke the exchanged token? RFC 8693 leaves lifecycle coupling to deployment policy. Verify the configured behavior and choose lifetimes and enforcement that meet it.
+
+**Primary reference:** [RFC 8693, OAuth 2.0 Token Exchange](https://www.rfc-editor.org/rfc/rfc8693.html).
+
+---
+
+**4. A Spring background task carries yesterday's authority into today's execution. What should the task carry instead?**
+
+**Say aloud:** “A Spring Security context carries authentication and its associated authorities for the current execution. A context-propagating executor brings that context onto the worker thread, which can be appropriate for short work associated with a live request. It does not refresh authorities after a task has been queued for hours. For durable work I would store the server-validated requester identity, tenant, requested operation and target. The worker uses its own service credentials to load the job and resolves whether the requester can still perform that operation before the effect. That makes revocation during queue delay meaningful. I would test a job accepted before revocation, a resumed job and a reused worker thread where the previous job must leave no identity behind.”
+
+**Example:**
+
+```text
+Durable command: requester=user-17, tenant=team-a, action=report:publish, target=602
+At execution: authenticate worker, load trusted command, evaluate current policy.
+```
+
+**Deep dive / verification:** Authorize at admission too, so unauthorized users cannot fill the queue. Record the terminal outcome when entitlement is gone and distinguish that from a transient lookup failure. The final effect still needs an explicit race policy if revocation can occur after the worker checks.
+
+**Follow-ups:** What about a job that must survive the requester leaving the company? Model an explicit service-owned operation or approved grant with its own scope and lifecycle. The original requester's identity remains relevant to audit.
+
+**Primary reference:** [Spring Security 6.5 concurrency support](https://docs.spring.io/spring-security/reference/6.5/features/integrations/concurrency.html).
+
+---
+
+**5. A document changes after a teammate is removed. How do you prevent old permissions from exposing the new content?**
+
+**Say aloud:** “This is a causal ordering problem: authorization must reflect the removal that the document update depended on. I would obtain an authorization revision after the removal and store it with the new document version as a minimum freshness requirement. A reader asks the authorization system to decide using a consistent snapshot at least that fresh. If a nearby replica cannot meet the requirement, the service must route to a sufficiently fresh one, wait within a deadline, or withhold the new content. This avoids evaluating the new document against permissions from before the removal. It adds latency when replicas lag. I would pause replication in a test and confirm the reader never gets the new document from the stale allow decision.”
+
+**Example:**
+
+```text
+Remove Kim at revision 70. Save document version 9 requiring at least revision 70.
+Authorization replica serves revision 69. Withhold version 9 until a fresh check.
+```
+
+**Deep dive / verification:** Couple the freshness requirement to the exact content version delivered. Use tokens issued by the authority and interpreted within its consistency domain. A timestamp from an unrelated server does not provide that property. A lower bound tied to version 9 does not by itself account for all later revocations. Define the independent freshness policy for subsequent reads.
+
+**Follow-ups:** Why accept revision 72? A sufficiently fresh consistent snapshot can include later changes. The concrete authorization decision still comes from that snapshot.
+
+**Primary reference:** [Zanzibar system paper and presentation](https://www.usenix.org/conference/atc19/presentation/pang).
+
+---
+
+**6. A slow Java reload finishes after a newer policy activates. How can one JVM avoid going backward?**
+
+**Say aloud:** “Checking a revision and setting a reference in separate steps creates a race. A slow reload can read the old revision, then overwrite the newer policy after another thread activates it. I would build and validate a complete immutable snapshot before publishing it. An AtomicReference lets me compare and set the reference in one operation. If another thread wins, I reread the current snapshot and retry the comparison. I publish only when the candidate revision is greater. Each request reads the reference once so one evaluation sees coherent rules and data. This orders activation within a process. I would test with latches so the older candidate reaches publication after the newer one, then repeat the scenario across a restart.”
+
+**Example:**
+
+```text
+Active revision 10. Load 11 stalls. Load 12 activates.
+Load 11 resumes and discards its candidate because 12 is already active.
+Intentional rollback: publish approved old rules under new revision 13.
+```
+
+**Deep dive / verification:** Compare-and-set uses the exact reference that was read. A failed comparison requires rechecking the revision. Require one immutable payload per revision, detect conflicting same-revision content, and define restart recovery from an authoritative revision. A JVM-local reference cannot coordinate a fleet. Repeated contention may require multiple attempts for a publisher.
+
+**Follow-ups:** Can policy evaluation consult the reference twice? It can see two different revisions. Pass the chosen snapshot through the entire decision.
+
+**Primary reference:** [Java 21 AtomicReference API](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/atomic/AtomicReference.html).
+
+---
+
+**7. New policy rules require a field that older callers omit. How would you roll them out safely?**
+
+**Say aloud:** “A decision input is a contract between the caller and the policy engine. Publishing a policy bundle can activate rules and accompanying policy data together on one engine, while callers still upgrade at different times. I would first define how missing, invalid and explicitly false values differ. If the new field is necessary for a sensitive allow, the policy should require trustworthy evidence or deny that path. Then I would deploy callers that send the field, evaluate the new policy alongside the active policy without enforcing its output, and compare decisions by caller version. I would enable enforcement only for compatible callers, then expand once coverage is demonstrated. The temporary compatibility period costs coordination and needs an end date.”
+
+**Example:**
+
+```text
+Legacy caller: verifiedDevice absent.
+Updated caller: verifiedDevice = false.
+Both lack evidence for a new sensitive action. Telemetry distinguishes the cases.
+```
+
+**Deep dive / verification:** A shadow evaluation computes an outcome without controlling the request. Compare old and new over equivalent inputs, and record the decision pair and reason with minimal sensitive data. Test old and new caller inputs against both policy versions, including rollback. Ensure there is no alternative grant rule that accidentally bypasses the new predicate.
+
+**Follow-ups:** Is it safe to treat missing as true during rollout? That grants access without the evidence the rule requires. Use an explicitly approved compatibility policy for previously supported actions and keep new sensitive actions gated.
+
+**Primary reference:** [Open Policy Agent bundle management](https://www.openpolicyagent.org/docs/management-bundles).
+
+---
+
+**8. Kafka delivers a job before its required authorization revision reaches the worker. Should the worker pause the whole partition?**
+
+**Say aloud:** “A Kafka offset orders records inside a partition. It does not prove that a separate policy stream has reached a corresponding state. I would include a trusted minimum revision in the job and attempt a current decision whose snapshot meets that bound. If the authority is temporarily too far behind, the job needs a bounded waiting strategy. Pausing the partition preserves local ordering but blocks unrelated jobs behind that record, and the application still needs to poll while paused. If order is independent, a durable deferral can release that partition after the pending job is safely recorded. I would test policy lag, restart during deferral, redelivery, and a job whose revision can never be satisfied.”
+
+**Example:**
+
+```text
+Job J requires revision 42. The worker can only evaluate at 41.
+Defer J durably or keep progress before J. Execute only after a fresh allow.
+```
+
+**Deep dive / verification:** Pausing controls future polling results. The worker must also account for later records already returned in the same batch. A local buffer alone cannot justify advancing the committed consumer position. If deferral and offset commit use different stores, record the deferral first and ensure replay does not create a second pending job. Prevent later jobs for the same resource from passing a deferred job if the application requires ordered effects.
+
+**Follow-ups:** Should an explicit policy denial go into the lag retry loop? Denial and an unavailable decision have different meanings. Apply the product's terminal denial behavior and retry temporary evaluation failures under a deadline.
+
+**Primary reference:** [Kafka 4.0 consumer position, liveness, and consumption control](https://kafka.apache.org/40/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html).
+
+---
+
+**9. A JPA permission entity was loaded before a lock was taken. Why can the application still see the old permission?**
+
+**Say aloud:** “A persistence context keeps a managed object for a particular entity identity. Obtaining a lock controls concurrent database access, while that operation alone does not promise to overwrite every field on the object already in memory. If an authorization transaction needs both fresh permissions and a lock, I would arrange an intentional read boundary. In a dedicated short transaction, I can refresh a clean managed permission entity using a pessimistic lock, which asks the database to acquire the lock while reloading the entity. Every relevant writer must update the same protected row for that lock to enforce the rule. I would verify this with two database connections and a test that loads before revocation and refreshes afterward.”
+
+**Example:**
+
+```text
+PostgreSQL Read Committed, unversioned permission row, clean managed entity.
+A loads allowed=true. B sets false and commits.
+A refreshes the entity with PESSIMISTIC_WRITE, checks false, and denies.
+```
+
+**Deep dive / verification:** Refresh can discard pending changes, so keep the permission object clean. Missing records, lock timeouts and provider exceptions must never become a successful allow. Version checks for versioned entities and stricter database isolation can produce failures rather than the example's successful refresh. A lock on one entity is insufficient for permissions derived from other independently updated rows.
+
+**Follow-ups:** Does disabling the shared second-level cache solve this? The already managed object belongs to the first-level persistence context. Choose explicit refresh or an appropriately scoped fresh read.
+
+**Primary reference:** [Jakarta Persistence 3.2, persistence context, refresh, and locking](https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2).
+
+---
+
+**10. Fleet health is green after a revocation, but some workers still use older policy snapshots. What would you measure?**
+
+**Say aloud:** “I would measure revocation at the places where access is actually granted. A bundle download or healthy process heartbeat says little about the revision used for an individual decision. I would make each worker report its activated revision and have decision telemetry include the evaluated revision, scope and outcome. To measure propagation time, record the authority commit and use a controlled synthetic permission removed and then checked through real traffic paths. Include workers that stopped reporting, since counting only responsive replicas hides an important failure. Group dashboards by region or service rather than putting user IDs or arbitrary revisions in metric labels. I would test a partitioned worker and a worker whose download succeeded but activation failed.”
+
+**Example:**
+
+```text
+Region A: 12 expected evaluators, 11 confirmed at or beyond the target, 1 silent.
+Synthetic access probe through Region A: result pending.
+Fleet propagation is still unconfirmed.
+```
+
+**Deep dive / verification:** Measure revision lag separately from elapsed time, because ten revisions might represent milliseconds or hours. Define the expected evaluator population and what counts as silent. A sample of synthetic denials supplies evidence on exercised paths. A strong enforcement requirement needs an active freshness gate; a dashboard alone cannot stop stale decisions.
+
+**Follow-ups:** Can healthy evaluators keep serving during a controller outage? Only within the service's explicit freshness policy. For sensitive operations, deny once the evaluator cannot establish acceptable freshness.
+
+**Primary reference:** [Open Policy Agent status and activation reporting](https://www.openpolicyagent.org/docs/management-status).
+
+---
+
+**11. Return the shortest delegation chain that carries all requested scopes. When can you discard an edge?**
+
+**Say aloud:** “I would model principals as vertices and each valid delegation as a directed edge labeled by the set of operations it grants. In this simplified model the authority carried along a path is the intersection of all its edge scopes. Since intersection can only remove operations, I can discard any edge missing even one required scope. Then I run breadth-first search, which visits vertices in increasing number of hops, and record each predecessor so I can return the actual chain. I mark vertices seen when I enqueue them, which avoids looping in cycles. This works for one fixed requested set and one policy snapshot. I would test a short invalid path, a longer valid path and an input with no chain.”
+
+**Example:**
+
+```text
+Need read and export. A has both scopes at the start.
+A -> B grants read. B -> D grants both. Discard A -> B.
+A -> C and C -> D grant both. Return A -> C -> D.
+```
+
+**Deep dive / verification:** Assume a simple directed graph, a stable adjacency list, and prior filtering for expiry, tenant and other edge validity. If each scope-subset test costs C, the worst-case time is O(V + E × (1 + C)), with O(V) extra memory, excluding graph storage. Return a zero-edge chain for an authorized source equal to target. Reject empty requested scope sets if the caller intends this operation as an authorization decision.
+
+**Follow-ups:** What if a rule depends on whether you passed through a particular organization? The vertex alone no longer identifies the search state. Track the relevant history and revisit the state-space bound.
+
+**Primary reference:** [Java 21 ArrayDeque API for queue operations](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/ArrayDeque.html).
+
+---
+
+**12. Given a snapshot of grant intervals, count active grants at many times without scanning every interval again.**
+
+**Say aloud:** “I would sort starts and ends into separate arrays and treat each validity interval as inclusive at the start and exclusive at the end. At time t, a grant is active if it has started and has not ended. So I count all starts at or before t and subtract all ends at or before t. Each count comes from an upper-bound binary search, which finds the first array element strictly greater than t. This handles repeated endpoints and makes an expiring grant disappear exactly when a new grant can start. Sorting costs O(n log n), each lookup costs O(log n), and the arrays use O(n) space. I would compare it with direct counting on small randomized intervals, especially at boundaries.”
+
+**Example:**
+
+```text
+Grants [2,5), [5,9), [5,7). At t=5:
+3 starts <= 5 minus 1 end <= 5 equals 2 active grants.
+```
+
+**Deep dive / verification:** Count grant records, not unique users. Validate that start is no later than end; zero-length intervals cancel. Compare timestamp values directly to avoid overflow from subtraction. On duplicate keys Java's Arrays.binarySearch may return any matching index, so implement the boundary search explicitly. For a single large batch, sorting query times and sweeping endpoints replaces repeated lookups with an additional sorting cost.
+
+**Follow-ups:** What changes for frequent updates? Use an ordered structure with subtree counts, or coordinate compression and a Fenwick tree when endpoints are known. A Fenwick tree stores prefix counts and supports logarithmic updates and queries over indexed coordinates.
+
+**Primary reference:** [Java 21 Arrays API and binarySearch duplicate behavior](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Arrays.html).
+
+# Coverage and next set
+
+This set covers transaction-ordered revocation, streaming cutoffs, OAuth delegation, Spring background identity, causal freshness, atomic JVM policy activation, mixed-version rollout, Kafka deferral, JPA refresh, fleet evidence, graph search and interval counting.
+
+The next set will build on these consistency requirements with isolation between tenants during policy evaluation, tracing across queues and safe reconstruction of policy state from historical changes.

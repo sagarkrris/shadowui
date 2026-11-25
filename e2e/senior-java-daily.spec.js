@@ -59,3 +59,13 @@ test("daily sitemap has one entry per set and unknown dates return 404", async (
   const response = await page.goto("/senior-java-interview/daily/2026-10-08-set-99");
   expect(response.status()).toBe(404);
 });
+
+test("set 40 opens directly at the active-grant coding question", async ({ page }) => {
+  const route = "/senior-java-interview/daily/2026-11-25-set-40";
+  const fragment = "12-given-a-snapshot-of-grant-intervals-count-active-grants-at-many-times-without-scanning-every-interval-again";
+  await page.goto(`${route}#${fragment}`);
+  const target = page.locator("article h3:target");
+  await expect(target).toHaveText(/count active grants at many times/);
+  await expect(target).toBeInViewport();
+  await expect(page.locator("article pre").last()).toContainText("equals 2 active grants");
+});
